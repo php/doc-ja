@@ -1,14 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.10 $ -->
  <reference id="ref.sockets">
   <title>ソケット関数</title>
   <titleabbrev>ソケット</titleabbrev>
+
   <partintro>
    &warn.experimental;
    <simpara>
     ソケット拡張により、ソケット通信関数への低レベルなインターフェース
-    が実装され、クライアントとしてだけでなく、ソケットサーバーとして動作する
-    ことが可能となります。
+    が実装され、クライアントとしてだけでなく、ソケットサーバーとして動
+    作することが可能となります。
    </simpara>
+   <para>
+    ここに既述されたソケット関数はPHP拡張モジュールの一部であり、コン
+    パイル時に<command>configure</command>にオプション<option
+    role="configure">--enable-sockets</option>を指定することにより使用
+    可能となります。
+   </para>
    <para>
     より一般的なクライアントサイドのソケットインターフェースについては、
     <function>fsockopen</function> および
@@ -38,56 +46,57 @@
       り、エコーバックされます。接続を閉じるには、'quit'を入力します。
      </para>
      <programlisting role="php">
-&lt;?php
-error_reporting(E_ALL);
+<![CDATA[
+<?php
+error_reporting (E_ALL);
 
-/* 接続待ちの間、スクリプトを待機させるようにする。 */
-set_time_limit(0);
+/* Allow the script to hang around waiting for connections. */
+set_time_limit (0);
 
 $address = '192.168.1.53';
 $port = 10000;
 
-if (($sock = socket(AF_INET, SOCK_STREAM, 0)) &lt; 0) {
-    echo "socket() failed: reason: " . strerror($sock) . "\n";
+if (($sock = socket_create (AF_INET, SOCK_STREAM, 0)) < 0) {
+    echo "socket_create() failed: reason: " . socket_strerror ($sock) . "\n";
 }
 
-if (($ret = bind($sock, $address, $port)) &lt; 0) {
-    echo "bind() failed: reason: " . strerror($ret) . "\n";
+if (($ret = socket_bind ($sock, $address, $port)) < 0) {
+    echo "socket_bind() failed: reason: " . socket_strerror ($ret) . "\n";
 }
 
-if (($ret = listen($sock, 5)) &lt; 0) {
-    echo "listen() failed: reason: " . strerror($ret) . "\n";
+if (($ret = socket_listen ($sock, 5)) < 0) {
+    echo "socket_listen() failed: reason: " . socket_strerror ($ret) . "\n";
 }
 
 do {
-    if (($msgsock = accept_connect($sock)) &lt; 0) {
-        echo "accept_connect() failed: reason: " . strerror($msgsock) . "\n";
+    if (($msgsock = socket_accept($sock)) < 0) {
+        echo "socket_accept() failed: reason: " . socket_strerror ($msgsock) . "\n";
         break;
     }
     do {
-        $buf = '';
-        $ret = read($msgsock, $buf, 2048);
-        if ($ret &lt; 0) {
-            echo "read() failed: reason: " . strerror($ret) . "\n";
+        $buf = socket_read ($msgsock, 2048);
+        if ($buf == FALSE) {
+            echo "socket_read() failed: reason: " . socket_strerror ($ret) . "\n";
             break 2;
         }
-        if ($ret == 0) {
+        if (!$buf) {
             break 2;
         }
-        $buf = trim($buf);
+        $buf = trim ($buf);
         if ($buf == 'quit') {
-            close($msgsock);
+            socket_close ($msgsock);
             break 2;
         }
         $talkback = "PHP: You said '$buf'.\n";
-        write($msgsock, $talkback, strlen($talkback));
+        socket_write ($msgsock, $talkback, strlen ($talkback));
         echo "$buf\n";
     } while (true);
-    close($msgsock);
+    socket_close ($msgsock);
 } while (true);
 
-close($sock);
+socket_close ($sock);
 ?>
+]]>
      </programlisting>
     </example>
    </para>
@@ -99,29 +108,30 @@ close($sock);
       ジに接続し、HEADリクエストを送信し、応答を出力た後、終了します。
      </para>
      <programlisting role="php">
-&lt;?php
-error_reporting(E_ALL);
+<![CDATA[
+<?php
+error_reporting (E_ALL);
 
-echo "&lt;h2>TCP/IP Connection&lt;/h2>\n";
+echo "<h2>TCP/IP Connection</h2>\n";
 
-/* WWWサービスのポートを得る。 */
-$service_port = getservbyname('www', 'tcp');
+/* Get the port for the WWW service. */
+$service_port = getservbyname ('www', 'tcp');
 
-/* ターゲットホストのIPアドレスを得る。 */
-$address = gethostbyname('www.php.net');
+/* Get the IP address for the target host. */
+$address = gethostbyname ('www.php.net');
 
-/* TCP/IPソケットを作成する。 */
-$socket = socket(AF_INET, SOCK_STREAM, 0);
-if ($socket &lt; 0) {
-    echo "socket() failed: reason: " . strerror($socket) . "\n";
+/* Create a TCP/IP socket. */
+$socket = socket_create (AF_INET, SOCK_STREAM, 0);
+if ($socket < 0) {
+    echo "socket_create() failed: reason: " . socket_strerror ($socket) . "\n";
 } else {
-    "socket() successful: " . strerror($socket) . "\n";
+    "socket_create() successful: " . socket_strerror ($socket) . "\n";
 }
 
 echo "Attempting to connect to '$address' on port '$service_port'...";
-$result = connect($socket, $address, $service_port);
-if ($result &lt; 0) {
-    echo "connect() failed.\nReason: ($result) " . strerror($result) . "\n";
+$result = socket_connect ($socket, $address, $service_port);
+if ($result < 0) {
+    echo "socket_connect() failed.\nReason: ($result) " . socket_strerror($result) . "\n";
 } else {
     echo "OK.\n";
 }
@@ -130,52 +140,55 @@ $in = "HEAD / HTTP/1.0\r\n\r\n";
 $out = '';
 
 echo "Sending HTTP HEAD request...";
-write($socket, $in, strlen($in));
+socket_write ($socket, $in, strlen ($in));
 echo "OK.\n";
 
 echo "Reading response:\n\n";
-while (read($socket, $out, 2048)) {
+while ($out = socket_read ($socket, 2048)) {
     echo $out;
 }
 
 echo "Closing socket...";
-close($socket);
+socket_close ($socket);
 echo "OK.\n\n";
 ?>
+]]>
      </programlisting>
     </example>
    </para>
   </partintro>
 
-  <refentry id="function.accept-connect">
+  <refentry id="function.socket-accept">
    <refnamediv>
-    <refname>accept_connect</refname>
+    <refname>socket_accept</refname>
     <refpurpose>ソケットへの接続を許可する</refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>int <function>accept_connect</function></funcdef>
-      <paramdef>int <parameter>socket</parameter></paramdef>
+      <funcdef>int <function>socket_accept</function></funcdef>
+      <paramdef>resource <parameter>socket</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
+     &warn.experimental.func;
     <para>
-     <function>socket</function>を使用してソケット
+     <function>socket_create</function>を使用してソケット
      <parameter>socket</parameter>を作成した後、
-     <function>bind</function>で名前に関連付け、
-     <function>listen</function>で接続をモニタします。この関数は、この
-     ソケットへの接続を許可します。接続に成功すると、新規のソケット記
-     述子が返されます。この記述子は、通信の際に使用可能です。ソケット
-     上に複数の接続がキューで待っている場合、最初の接続が使用されます。
-     接続待ちがない場合、<function>accept_connect</function>は接続が存
-     在するまでブロックされます。<parameter>socket</parameter>が
+     <function>socket_bind</function>で名前に関連付け、
+     <function>socket_listen</function>で接続をモニタします。この関数
+     は、このソケットへの接続を許可します。接続に成功すると、新規のソ
+     ケット記述子が返されます。この記述子は、通信の際に使用可能です。
+     ソケット上に複数の接続がキューで待っている場合、最初の接続が使用
+     されます。接続待ちがない場合、<function>socket_accept</function>
+     は接続が存在するまでブロックされます。
+     <parameter>socket</parameter>が
      <function>socket_set_blocking</function>または
-     <function>set_nonblock</function>により非ブロックモードで作成され
-     た場合、エラーコードが返されます。
+     <function>socket_set_nonblock</function>により非ブロックモードで
+     作成された場合、エラーコードが返されます。
     </para>
     <para>
-     <function>accept_connect</function>により返されたソケット記述子は、
+     <function>socket_accept</function>により返されたソケット記述子は、
      新規接続を許可するために使用することはできません。この場合でも元
      の接続待ちのソケット <parameter>socket</parameter>は、オープンさ
      れたままであり、再使用可能です。
@@ -183,24 +196,20 @@ echo "OK.\n\n";
     <para>
      成功時に新規ソケット記述子を返し、失敗時に負のエラーコードを返し
      ます。このコードは、エラーの内容を文字列で取得するために
-     <function>strerror</function>に渡すことが可能です。
+     <function>socket_strerror</function>に渡すことが可能です。
     </para>
     <para>
-     <function>accept_connect</function>の使用例については、
-     <function>bind</function>のドキュメントを参照下さい。
-    </para>
-    <para>
-     <function>bind</function>,
-     <function>connect</function>,
-     <function>listen</function>,
-     <function>socket</function>,
-     <function>socket_get_status</function>, 
-     <function>strerror</function>も参照下さい。
+     <function>socket_bind</function>,
+     <function>socket_connect</function>,
+     <function>socket_listen</function>,
+     <function>socket_create</function>,
+     <function>socket_get_status</function>,
+     <function>socket_strerror</function>も参照下さい。
     </para>
    </refsect1>
   </refentry>
 
-  <refentry id="function.bind">
+  <refentry id="function.socket-bind">
    <refnamediv>
     <refname>bind</refname>
     <refpurpose>ソケットに名前をバインドする</refpurpose>
@@ -209,8 +218,8 @@ echo "OK.\n\n";
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>int <function>bind</function></funcdef>
-      <paramdef>int <parameter>socket</parameter></paramdef>
+      <funcdef>int <function>socket_bind</function></funcdef>
+      <paramdef>resource <parameter>socket</parameter></paramdef>
       <paramdef>string <parameter>address</parameter></paramdef>
       <paramdef>int 
        <parameter>
@@ -219,11 +228,13 @@ echo "OK.\n\n";
       </paramdef>
      </funcprototype>
     </funcsynopsis>
+     &warn.experimental.func;
     <para>
-     <function>bind</function>は、<parameter>address</parameter>で指定
-     した名前を<parameter>socket</parameter>で指定したソケットにバイン
-     ドします。このソケットは、<function>socket</function>で作成した有
-     効なソケット記述子である必要があります。
+     <function>socket_bind</function>は、
+     <parameter>address</parameter>で指定した名前を
+     <parameter>socket</parameter>で指定したソケットにバインドします。
+     このソケットは、<function>socket</function>で作成した有効なソケッ
+     ト記述子である必要があります。
     </para>
     <para>
      ソケットの種類が<constant>AF_INET</constant>の場合、パラメータ
@@ -239,124 +250,70 @@ echo "OK.\n\n";
     <para>
      成功時にゼロを返し、失敗時に負のエラーコードを返します。このコー
      ドは、エラーの内容を文字列で取得するために
-     <function>strerror</function>に渡すことが可能です。
+     <function>socket_strerror</function>に渡すことが可能です。
     </para>
     <para>
-     <example>
-      <title><function>bind</function>の例</title>
-      <programlisting role="php">
-&lt;?php
-error_reporting(E_ALL);
-
-/* スクリプトが接続を待ち続けることを許可する */
-set_time_limit(0);
-
-if (($sock = socket(AF_INET, SOCK_STREAM, 0)) &lt; 0) {
-    echo "socket() failed: reason: " . strerror($sock) . "\n";
-}
-
-if (($ret = bind($sock, '192.168.1.53', 10001)) &lt; 0) {
-    echo "bind() failed: reason: " . strerror($ret) . "\n";
-}
-
-if (($ret = listen($sock, 5)) &lt; 0) {
-    echo "listen() failed: reason: " . strerror($ret) . "\n";
-}
-
-do {
-    if (($msgsock = accept_connect($soc<function>socket_get_status</function>, k)) &lt; 0) {
-        echo "accept_connect() failed: reason: " . strerror($msgsock) . "\n";
-        break;
-    }
-    do {
-        $buf = '';
-        $ret = read($msgsock, $buf, 2048);
-        if ($ret &lt; 0) {
-            echo "read() failed: reason: " . strerror($ret) . "\n";
-            break 2;
-        }
-        if ($ret == 0) {<function>socket_get_status</function>, 
-            break 2;
-        }
-        $buf = trim($buf);
-        if ($buf == 'quit') {
-            close($msgsock);
-            break 2;
-        }
-        $talkback = "PHP: You said '$buf'.\n";
-        write($msgsock, $talkback, strlen($talkback));
-        echo "$buf\n";<function>socket_get_status</function>, 
-    } while (true);
-    close($msgsock);
-} while (true);
-
-close($sock);
-?>
-      </programlisting>
-     </example>
-    </para>
-    <para>
-     <function>accept_connect</function>,
-     <function>connect</function>,
-     <function>listen</function>,
-     <function>socket</function>,
-     <function>socket_get_status</function>, 
-     <function>strerror</function>も参照下さい。
+     <function>socket_connect</function>,
+     <function>socket_listen</function>,
+     <function>socket_create</function>,
+     <function>socket_get_status</function>,
+     <function>socket_strerror</function>も参照下さい。
     </para>
    </refsect1>
   </refentry>
 
-  <refentry id="function.close">
+  <refentry id="function.socket-close">
    <refnamediv>
-    <refname>close</refname>
+    <refname>socket_close</refname>
     <refpurpose>ファイル記述子を閉じる</refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>bool <function>close</function></funcdef>
+      <funcdef>bool <function>socket_close</function></funcdef>
       <paramdef>resource <parameter>socket</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
-	&warn.experimental.func;
+     &warn.experimental.func;
     <para>
-
-     <function>close</function> は、<parameter>socket</parameter>で
-     指定したファイル(またはソケット)記述子を閉じます。
+     <function>socket_close</function> は、
+     <parameter>socket</parameter>で指定したファイル(またはソケット)記
+     述子を閉じます。
     </para>
     <para>
-     <function>close</function> で、<function>fopen</function>,
+     <function>socket_close</function> で、<function>fopen</function>,
      <function>popen</function>, <function>fsockopen</function>, 
      <function>psockopen</function>で作成されたPHPのファイル記述子を
      使用してはならないことに注意して下さい。この関数は、
-     <function>socket</function>、または
-     <function>accept_connect</function>で作成されたソケット用です。
+     <function>socket_create</function>、または
+     <function>socket_accept</function>で作成されたソケット用です。
     </para>
     <para>
      成功時に &true; 、エラー発生時(すなわち<parameter>socket</parameter>
      が無効の場合)に &false; を返します。
     </para>
     <para>
-     <function>bind</function>, <function>listen</function>,
-     <function>socket</function>,
-     <function>socket_get_status</function>, 
-     <function>strerror</function>も参照下さい。
+     <function>socket_bind</function>,
+     <function>socket_listen</function>,
+     <function>socket_create</function>,
+     <function>socket_get_status</function>,
+     <function>socket_strerror</function>も参照下さい。
     </para>
    </refsect1>
   </refentry>
 
-  <refentry id="function.connect">
+  <refentry id="function.socket-connect">
    <refnamediv>
-    <refname>connect</refname>
+    <refname>socket_connect</refname>
     <refpurpose>ソケット上の接続を初期化する</refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>int <function>connect</function></funcdef>
-      <paramdef>int <parameter>socket</parameter></paramdef>
+      <funcdef>int <function>socket_connect</function></funcdef>
+      <paramdef>resource <parameter>socket</parameter></paramdef>
       <paramdef>string <parameter>address</parameter></paramdef>
       <paramdef>int 
        <parameter>
@@ -368,8 +325,8 @@ close($sock);
     &warn.experimental.func;
     <para>
      ソケット記述子<parameter>socket</parameter>を用いて接続を初期化し
-     ます。この記述子は、<function>socket</function>で作成した有効なソ
-     ケット記述子である必要があります。
+     ます。この記述子は、<function>socket_create</function>で作成した
+     有効なソケット記述子である必要があります。
     </para>
     <para>
      ソケットの種類が<constant>AF_INET</constant>の場合、パラメータ
@@ -388,34 +345,34 @@ close($sock);
      <function>strerror</function>に渡すことが可能です。
     </para>
     <para>
-     <function>bind</function>,
-     <function>listen</function>,
-     <function>socket</function>, 
-     <function>socket_get_status</function>, 
-     <function>strerror</function>も参照下さい。
+     <function>socket_bind</function>,
+     <function>socket_listen</function>,
+     <function>socket_create</function>,
+     <function>socket_get_status</function>,
+     <function>socket_strerror</function>も参照下さい。
     </para>
    </refsect1>
   </refentry>
 
-  <refentry id="function.listen">
+  <refentry id="function.socket-listen">
    <refnamediv>
-    <refname>listen</refname>
+    <refname>socket_listen</refname>
     <refpurpose>ソケット上で接続待ち(listen)する</refpurpose>
    </refnamediv>
    <refsect1>
-    <title>Description</title>
+    <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>int <function>listen</function></funcdef>
-      <paramdef>int <parameter>socket</parameter></paramdef>
+      <funcdef>int <function>socket_listen</function></funcdef>
+      <paramdef>resource <parameter>socket</parameter></paramdef>
       <paramdef>int <parameter>backlog</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     &warn.experimental.func;
     <para>
      ソケット<parameter>socket</parameter>が
-     <function>socket</function>を用いて作成され、
-     <function>bind</function>で名前が付けられた後、
+     <function>socket_create</function>を用いて作成され、
+     <function>socket_bind</function>で名前が付けられた後、
      <parameter>socket</parameter>上の接続要求を待つための通信ができる
      ようになります。最大<parameter>backlog</parameter>個の接続を処理
      用のキューで待ち受けることが可能です。
@@ -427,35 +384,31 @@ close($sock);
     </para>
     <para>
      成功時にゼロ、失敗時に負のエラーコードを返します。このコードを
-     <function>strerror</function>に指定することによりエラーの内容を文
-     字列として取得可能です。
+     <function>socket_strerror</function>に指定することによりエラーの
+     内容を文字列として取得可能です。
     </para>
     <para>
-     <function>listen</function>の使用例については、
-     <function>bind</function>の使用例の記述を参照下さい。
-    </para>
-    <para>
-     <function>accept_connect</function>,
-     <function>bind</function>,
-     <function>connect</function>,
-     <function>socket</function>,
+     <function>socket_accept</function>,
+     <function>socket_bind</function>,
+     <function>socket_connect</function>,
+     <function>socket_create</function>,
      <function>socket_get_status</function>,
-     <function>strerror</function>も参照下さい。
+     <function>socket_strerror</function>も参照下さい。
     </para>
    </refsect1>
   </refentry>
 
-  <refentry id="function.read">
+  <refentry id="function.socket-read">
    <refnamediv>
-    <refname>read</refname>
+    <refname>socket_read</refname>
     <refpurpose>ソケットから読みこむ</refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>int <function>read</function></funcdef>
-      <paramdef>int <parameter>socket_des</parameter></paramdef>
+      <funcdef>string <function>socket_read</function></funcdef>
+      <paramdef>resource <parameter>socket_des</parameter></paramdef>
       <paramdef>string <parameter>buffer</parameter></paramdef>
       <paramdef>int <parameter>length</parameter></paramdef>
       <paramdef>int 
@@ -463,15 +416,16 @@ close($sock);
       </paramdef>
      </funcprototype>
     </funcsynopsis>
-    &warn.experimental.func;
+     &warn.experimental.func;
     <para>
-     関数 <function>read</function> は、関数
-     <function>accept_connect</function> により作成されたソケット
+     関数 <function>socket_read</function> は、関数
+     <function>socket_accept</function> により作成されたソケット
      <parameter>socket_des</parameter> から
      <parameter>length</parameter> に設定されたバイト数分、
      <parameter>buffer</parameter> に読み込みます。これ以外に読み込み
-     を終了するために \n、\t、\0 を使用することが可能です。読み込まれ
-     たバイト数が返されます。
+     を終了するために \n、\t、\0 を使用することが可能です。この関数は、
+     データを返します。<function>socket_read</function>が失敗した場合
+     に&false;を返します。
     </para>
     <para>
      オプションのパラメータ <parameter>type</parameter> は、名前のある
@@ -479,7 +433,8 @@ close($sock);
      <itemizedlist>
       <listitem>
        <simpara>
-        PHP_BINARY_READ - バイナリ対応のread() (PHP >= 4.0.7でデフォルト)
+        PHP_BINARY_READ - システムの<function>socket_read</function>を
+        使用する (PHP &gt;= 4.1.0でデフォルト)
        </simpara>
       </listitem>
       <listitem>
@@ -491,33 +446,33 @@ close($sock);
      </itemizedlist>
     </para>
     <para>
-     <function>accept_connect</function>,
-     <function>bind</function>,
-     <function>connect</function>,
-     <function>listen</function>,
-     <function>strerror</function>,
+     <function>socket_accept</function>,
+     <function>socket_bind</function>,
+     <function>socket_connect</function>,
+     <function>socket_listen</function>,
+     <function>socket_strerror</function>,
      <function>socket_get_status</function>,
-     <function>write</function> も参照下さい。
+     <function>socket_write</function>も参照下さい。
     </para>
    </refsect1>
   </refentry>
 
-  <refentry id="function.socket">
+  <refentry id="function.socket-create">
    <refnamediv>
-    <refname>socket</refname>
+    <refname>socket_create</refname>
     <refpurpose>ソケットを作成する(通信時の終端)</refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>int <function>socket</function></funcdef>
+      <funcdef>resource <function>socket_create</function></funcdef>
       <paramdef>int <parameter>domain</parameter></paramdef>
       <paramdef>int <parameter>type</parameter></paramdef>
       <paramdef>int <parameter>protocol</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
-    &warn.experimental.func;
+     &warn.experimental.func;
     <para>
      通信用の終端(ソケット)を作成し、そのソケットへの記述子を返します。
     </para>
@@ -539,61 +494,63 @@ close($sock);
     </para>
     <para>
      成功時に有効な記述子を返し、失敗時に負のエラーコードを返します。
-     このコードを<function>strerror</function>に渡すことにより、エラー
-     の内容を文字列で取得することが可能です。
+     このコードを<function>socket_strerror</function>に渡すことにより、
+     エラーの内容を文字列で取得することが可能です。
     </para>
     <para>
-     <function>socket</function>の使用法に関するより詳しい情報や種々の
-     パラメータの意味については、UNIXマニュアルページ<filename>socket
-     (2)</filename>を参照下さい。
+     <function>socket_create</function>の使用法に関するより詳しい情報
+     や種々のパラメータの意味については、UNIXマニュアルページ
+     <filename>socket (2)</filename>を参照下さい。
     </para>
     <para>
-     <function>accept_connect</function>,
-     <function>bind</function>,
-     <function>connect</function>,
-     <function>listen</function>,
-     <function>strerror</function>,
+     <function>socket_accept</function>,
+     <function>socket_bind</function>,
+     <function>socket_connect</function>,
+     <function>socket_listen</function>,
+     <function>socket_strerror</function>,
      <function>socket_get_status</function>も参照下さい。
     </para>
    </refsect1>
   </refentry>
 
-  <refentry id="function.strerror">
+  <refentry id="function.socket-strerror">
    <refnamediv>
-    <refname>strerror</refname>
+    <refname>socket_strerror</refname>
     <refpurpose>ソケットエラーの内容を文字列として返す</refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>string <function>strerror</function></funcdef>
+      <funcdef>string <function>socket_strerror</function></funcdef>
       <paramdef>int <parameter>errno</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
-    &warn.experimental.func;
+     &warn.experimental.func;
     <para>
-     <function>strerror</function> は、パラメータ
+     <function>socket_strerror</function> は、パラメータ
      <parameter>errno</parameter>にソケット関数の返り値の一つを引数と
      して指定し、対応する内容を文字列で返します。これは、動作しない原
      因を明らかにする際に便利です。例えば、システムのインクルードファ
      イルを探し'-111'が意味することを探す代わりに、これを
-     <function>strerror</function>に渡すだけで、原因を知ることができま
-     す。
+     <function>socket_strerror</function>に渡すだけで、原因を知ること
+     ができます。
     </para>
     <para>
      <example>
       <title><function>strerror</function>の例</title>
       <programlisting role="php">
-&lt;?php
-if (($socket = socket(AF_INET, SOCK_STREAM, 0)) &lt; 0) {
-   echo "socket() failed: reason: " . strerror($socket) . "\n";
+<![CDATA[
+<?php
+if (($socket = socket_create (AF_INET, SOCK_STREAM, 0)) < 0) {
+   echo "socket_create() failed: reason: " . socket_strerror ($socket) . "\n";
 } 
 
-if (($ret = bind($socket, '127.0.0.1', 80)) &lt; 0) {
-   echo "bind() failed: reason: " . strerror($ret) . "\n";
+if (($ret = socket_bind ($socket, '127.0.0.1', 80)) < 0) {
+   echo "socket_bind() failed: reason: " . socket_strerror ($ret) . "\n";
 }
 ?>
+]]>
       </programlisting>
       <para>
        上記の例の出力はおそらく次のようになります。(このスクリプトがルー
@@ -605,46 +562,756 @@ if (($ret = bind($socket, '127.0.0.1', 80)) &lt; 0) {
      </example>
     </para>
     <para>
-     <function>accept_connect</function>,
-     <function>bind</function>,
-     <function>connect</function>,
-     <function>listen</function>, 
-     <function>socket</function>,
+     <function>socket_accept</function>,
+     <function>socket_bind</function>,
+     <function>socket_connect</function>,
+     <function>socket_listen</function>,
+     <function>socket_create</function>,
      <function>socket_get_status</function>も参照下さい。
     </para>
    </refsect1>
   </refentry>
 
-  <refentry id="function.write">
+  <refentry id="function.socket-write">
    <refnamediv>
-    <refname>write</refname>
+    <refname>socket_write</refname>
     <refpurpose>ソケットに書き込む</refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>int <function>write</function></funcdef>
-      <paramdef>int <parameter>socket_des</parameter></paramdef>
+      <funcdef>int <function>socket_write</function></funcdef>
+      <paramdef>resource <parameter>socket_des</parameter></paramdef>
       <paramdef>string <parameter>&amp;buffer</parameter></paramdef>
       <paramdef>int <parameter>length</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
-    &warn.experimental.func;
+     &warn.experimental.func;
     <para>
-     関数 <function>write</function> は、
+     関数 <function>socket_write</function> は、
      <parameter>length</parameter>で指定されたバイト数分、
      <parameter>&amp;buffer</parameter> の内容をソケット
      <parameter>socket_des</parameter> に書き込みます。
     </para>
     <para>
-     <function>accept_connect</function>,
-     <function>bind</function>,
-     <function>connect</function>,
-     <function>listen</function>,
-     <function>read</function>,
-     <function>strerror</function>,
-     <function>socket_get_status</function> も参照下さい。
+     <function>socket_accept</function>,
+     <function>socket_bind</function>,
+     <function>socket_connect</function>,
+     <function>socket_listen</function>,
+     <function>socket_read</function>,
+     <function>socket_strerror</function>,
+     <function>socket_get_status</function>.も参照下さい。
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.socket-fd-alloc">
+   <refnamediv>
+    <refname>socket_fd_alloc</refname>
+    <refpurpose>ファイル記述子集合を確保する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>resource <function>socket_fd_alloc</function></funcdef>
+      <void/>
+     </funcprototype>
+    </funcsynopsis>
+     &warn.experimental.func;
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.socket-fd-free">
+   <refnamediv>
+    <refname>socket_fd_free</refname>
+    <refpurpose>ファイル記述子集合を解放する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>bool <function>socket_fd_free</function></funcdef>
+      <paramdef>resource <parameter>set</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+     &warn.experimental.func;
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.socket-fd-set">
+   <refnamediv>
+    <refname>socket_fd_set</refname>
+    <refpurpose>集合にファイル記述子を追加する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>bool <function>socket_fd_set</function></funcdef>
+      <paramdef>resource <parameter>set</parameter></paramdef>
+      <paramdef>mixed <parameter>socket</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+     &warn.experimental.func;
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.socket-fd-clear">
+   <refnamediv>
+    <refname>socket_fd_clear</refname>
+    <refpurpose>ある集合からファイル記述子をクリアする</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>bool <function>socket_fd_clear</function></funcdef>
+      <paramdef>resource <parameter>set</parameter></paramdef>
+      <paramdef>mixed <parameter>socket</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+     &warn.experimental.func;
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.socket-fd-isset">
+   <refnamediv>
+    <refname>socket_fd_isset</refname>
+    <refpurpose>
+     あるファイル記述子が、ファイル記述子集合の中で設定されているかど
+     うかを調べる
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>bool <function>socket_fd_isset</function></funcdef>
+      <paramdef>resource <parameter>set</parameter></paramdef>
+      <paramdef>resource <parameter>socket</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+     &warn.experimental.func;
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.socket-fd-zero">
+   <refnamediv>
+    <refname>socket_fd_zero</refname>
+    <refpurpose>ファイル記述子集合をクリアする</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>bool <function>socket_fd_zero</function></funcdef>
+      <paramdef>resource <parameter>set</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+     &warn.experimental.func;
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.socket-select">
+   <refnamediv>
+    <refname>socket_select</refname>
+    <refpurpose>
+     tv_secとtv_usec で指定した有効時間でselect()システムコールを実行
+     する
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>int <function>socket_select</function></funcdef>
+      <paramdef>resource <parameter>read_fd</parameter></paramdef>
+      <paramdef>resource <parameter>write_fd</parameter></paramdef>
+      <paramdef>resource <parameter>except_fd</parameter></paramdef>
+      <paramdef>int <parameter>tv_sec</parameter></paramdef>
+      <paramdef>int
+       <parameter><optional>tv_usec</optional></parameter>
+      </paramdef>
+     </funcprototype>
+    </funcsynopsis>
+     &warn.experimental.func;
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.socket-create-listen">
+   <refnamediv>
+    <refname>socket_create_listen</refname>
+    <refpurpose>
+     接続を受けつけるためにポートにソケットをオープンする
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>resource <function>socket_create_listen</function></funcdef>
+      <paramdef>int <parameter>port</parameter></paramdef>
+      <paramdef>int
+       <parameter><optional>backlog</optional></parameter>
+      </paramdef>
+     </funcprototype>
+    </funcsynopsis>
+     &warn.experimental.func;
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.socket-set-nonblock">
+   <refnamediv>
+    <refname>socket_set_nonblock</refname>
+    <refpurpose>ファイル記述子fdを非ブロックモードに設定する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>bool <function>socket_set_nonblock</function></funcdef>
+      <paramdef>resource <parameter>socket</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+     &warn.experimental.func;
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.socket-getsockname">
+   <refnamediv>
+    <refname>socket_getsockname</refname>
+    <refpurpose>
+     fdを指定、ソケットのローカル側を既述するsa.sin_addrおよび
+     sa.sin_portの値をaddrおよびportの文字列に保存する
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>bool <function>socket_getsockname</function></funcdef>
+      <paramdef>resource <parameter>socket</parameter></paramdef>
+      <paramdef>string <parameter>&amp;addr</parameter></paramdef>
+      <paramdef>int
+       <parameter><optional>&amp;port</optional></parameter>
+      </paramdef>
+     </funcprototype>
+    </funcsynopsis>
+     &warn.experimental.func;
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.socket-getpeername">
+   <refnamediv>
+    <refname>socket_getpeername</refname>
+    <refpurpose>
+     fdを指定、ソケットのリモート側を既述するsa.sin_addrおよび
+     sa.sin_portの値をaddrおよびportの文字列に保存する
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>bool <function>socket_getpeername</function></funcdef>
+      <paramdef>resource <parameter>socket</parameter></paramdef>
+      <paramdef>string <parameter>&amp;addr</parameter></paramdef>
+      <paramdef>int
+       <parameter><optional>&amp;port</optional></parameter>
+      </paramdef>
+     </funcprototype>
+    </funcsynopsis>
+     &warn.experimental.func;
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.socket-iovec-alloc">
+   <refnamediv>
+    <refname>socket_iovec_alloc</refname>
+    <refpurpose>
+     sendmsg, recvmsg, writev, readvで使用するよう'struct iovec'を構築する
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>resource <function>socket_iovec_alloc</function></funcdef>
+      <paramdef>int <parameter>num_vectors</parameter></paramdef>
+      <paramdef>int
+       <parameter><optional></optional></parameter>
+      </paramdef>
+     </funcprototype>
+    </funcsynopsis>
+     &warn.experimental.func;
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.socket-iovec-fetch">
+   <refnamediv>
+    <refname>socket_iovec_fetch</refname>
+    <refpurpose>
+     iovec_id[iovec_position] で指定したiovecに保存されたデータを返す
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>string <function>socket_iovec_fetch</function></funcdef>
+      <paramdef>resource <parameter>iovec</parameter></paramdef>
+      <paramdef>int <parameter>iovec_position</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+     &warn.experimental.func;
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.socket-iovec-set">
+   <refnamediv>
+    <refname>socket_iovec_set</refname>
+    <refpurpose>
+     iovec_id[iovec_position]に保持されたデータにnew_valを設定する
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>bool <function>socket_iovec_set</function></funcdef>
+      <paramdef>resource <parameter>iovec</parameter></paramdef>
+      <paramdef>int <parameter>iovec_position</parameter></paramdef>
+      <paramdef>string <parameter>new_val</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+     &warn.experimental.func;
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.socket-iovec-add">
+   <refnamediv>
+    <refname>socket_iovec_add</refname>
+    <refpurpose>新規ベクトルを収集用配列に追加する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>bool <function>socket_iovec_add</function></funcdef>
+      <paramdef>resource <parameter>iovec</parameter></paramdef>
+      <paramdef>int <parameter>iov_len</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+     &warn.experimental.func;
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.socket-iovec-delete">
+   <refnamediv>
+    <refname>socket_iovec_delete</refname>
+    <refpurpose>ベクトルの配列からベクトルを削除する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>bool <function>socket_iovec_delete</function></funcdef>
+      <paramdef>resource <parameter>iovec</parameter></paramdef>
+      <paramdef>int <parameter>iov_pos</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+     &warn.experimental.func;
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.socket-iovec-free">
+   <refnamediv>
+    <refname>socket_iovec_free</refname>
+    <refpurpose>iovec_idで指定したiovecを解放する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>bool <function>socket_iovec_free</function></funcdef>
+      <paramdef>resource <parameter>iovec</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+     &warn.experimental.func;
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.socket-readv">
+   <refnamediv>
+    <refname>socket_readv</refname>
+    <refpurpose>
+     iovec_idで定義した収集用配列を用いてfdから読み込む
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>bool <function>socket_readv</function></funcdef>
+      <paramdef>resource <parameter>socket</parameter></paramdef>
+      <paramdef>resource <parameter>iovec_id</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+     &warn.experimental.func;
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.socket-writev">
+   <refnamediv>
+    <refname>socket_writev</refname>
+    <refpurpose>
+     iovec_idで定義した収集用配列を用いてファイル記述子fdに書き込む
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>bool <function>socket_writev</function></funcdef>
+      <paramdef>resource <parameter>socket</parameter></paramdef>
+      <paramdef>resource <parameter>iovec_id</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+     &warn.experimental.func;
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.socket-recv">
+   <refnamediv>
+    <refname>socket_recv</refname>
+    <refpurpose>接続したソケットからデータを受信する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>string <function>socket_recv</function></funcdef>
+      <paramdef>resource <parameter>socket</parameter></paramdef>
+      <paramdef>int <parameter>len</parameter></paramdef>
+      <paramdef>int <parameter>flags</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+     &warn.experimental.func;
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.socket-send">
+   <refnamediv>
+    <refname>socket_send</refname>
+    <refpurpose>接続したソケットにデータを送信する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>int <function>socket_send</function></funcdef>
+      <paramdef>resource <parameter>socket</parameter></paramdef>
+      <paramdef>string <parameter>buf</parameter></paramdef>
+      <paramdef>int <parameter>len</parameter></paramdef>
+      <paramdef>int <parameter>flags</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+     &warn.experimental.func;
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.socket-recvfrom">
+   <refnamediv>
+    <refname>socket_recvfrom</refname>
+    <refpurpose>
+     接続しているかどうかによらず、ソケットからデータを受信する
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>int <function>socket_recvfrom</function></funcdef>
+      <paramdef>resource <parameter>socket</parameter></paramdef>
+      <paramdef>string <parameter>&amp;buf</parameter></paramdef>
+      <paramdef>int <parameter>len</parameter></paramdef>
+      <paramdef>int <parameter>flags</parameter></paramdef>
+      <paramdef>string <parameter>&amp;name</parameter></paramdef>
+      <paramdef>int
+       <parameter><optional>&amp;port</optional></parameter>
+      </paramdef>
+     </funcprototype>
+    </funcsynopsis>
+     &warn.experimental.func;
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.socket-sendto">
+   <refnamediv>
+    <refname>socket_sendto</refname>
+    <refpurpose>
+     接続しているかどうかによらずソケットにメッセージを送信する
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>int <function>socket_sendto</function></funcdef>
+      <paramdef>resource <parameter>socket</parameter></paramdef>
+      <paramdef>string <parameter>buf</parameter></paramdef>
+      <paramdef>int <parameter>len</parameter></paramdef>
+      <paramdef>int <parameter>flags</parameter></paramdef>
+      <paramdef>string <parameter>addr</parameter></paramdef>
+      <paramdef>int
+       <parameter><optional>port</optional></parameter>
+      </paramdef>
+     </funcprototype>
+    </funcsynopsis>
+     &warn.experimental.func;
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.socket-recvmsg">
+   <refnamediv>
+    <refname>socket_recvmsg</refname>
+    <refpurpose>
+     接続用であるかどうかにかかわらずソケットのメッセージを受信する
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>bool <function>socket_recvmsg</function></funcdef>
+      <paramdef>resource <parameter>socket</parameter></paramdef>
+      <paramdef>resource <parameter>iovec</parameter></paramdef>
+      <paramdef>array <parameter>&amp;control</parameter></paramdef>
+      <paramdef>int <parameter>&amp;controllen</parameter></paramdef>
+      <paramdef>int <parameter>&amp;flags</parameter></paramdef>
+      <paramdef>string <parameter>&amp;addr</parameter></paramdef>
+      <paramdef>int
+       <parameter><optional>&amp;port</optional></parameter>
+      </paramdef>
+     </funcprototype>
+    </funcsynopsis>
+     &warn.experimental.func;
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.socket-sendmsg">
+   <refnamediv>
+    <refname>socket_sendmsg</refname>
+    <refpurpose>
+     接続用であるかどうかにかかわらずソケットにメッセージを送信する
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>bool <function>socket_sendmsg</function></funcdef>
+      <paramdef>resource <parameter>socket</parameter></paramdef>
+      <paramdef>resource <parameter>iovec</parameter></paramdef>
+      <paramdef>int <parameter>flags</parameter></paramdef>
+      <paramdef>string <parameter>addr</parameter></paramdef>
+      <paramdef>int
+       <parameter><optional>port</optional></parameter>
+      </paramdef>
+     </funcprototype>
+    </funcsynopsis>
+     &warn.experimental.func;
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.socket-getopt">
+   <refnamediv>
+    <refname>socket_getopt</refname>
+    <refpurpose>ソケットのオプションを取得する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>mixed <function>socket_getopt</function></funcdef>
+      <paramdef>resource <parameter>socket</parameter></paramdef>
+      <paramdef>int <parameter>level</parameter></paramdef>
+      <paramdef>int <parameter>optname</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+     &warn.experimental.func;
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.socket-setopt">
+   <refnamediv>
+    <refname>socket_setopt</refname>
+    <refpurpose>ソケットのオプションを設定する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>bool <function>socket_setopt</function></funcdef>
+      <paramdef>resource <parameter>socket</parameter></paramdef>
+      <paramdef>int <parameter>level</parameter></paramdef>
+      <paramdef>int <parameter>optname</parameter></paramdef>
+      <paramdef>int <parameter></parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+     &warn.experimental.func;
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.socket-create-pair">
+   <refnamediv>
+    <refname>socket_create_pair</refname>
+    <refpurpose>
+     区別できないソケットの組を作成し、fdに保存する
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>bool <function>socket_create_pair</function></funcdef>
+      <paramdef>int <parameter>domain</parameter></paramdef>
+      <paramdef>int <parameter>type</parameter></paramdef>
+      <paramdef>int <parameter>protocol</parameter></paramdef>
+      <paramdef>array <parameter>&amp;fd</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+     &warn.experimental.func;
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.socket-shutdown">
+   <refnamediv>
+    <refname>socket_shutdown</refname>
+    <refpurpose>
+     受信、送信、または送受信用のソケットをシャットダウンする
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>bool <function>socket_shutdown</function></funcdef>
+      <paramdef>resource <parameter>socket</parameter></paramdef>
+      <paramdef>int
+       <parameter><optional>how</optional></parameter>
+      </paramdef>
+     </funcprototype>
+    </funcsynopsis>
+     &warn.experimental.func;
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.socket-last-error">
+   <refnamediv>
+    <refname>socket_last_error</refname>
+    <refpurpose>ソケットの直近のエラーを返す/クリアする</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>int <function>socket_last_error</function></funcdef>
+      <paramdef>resource <parameter>socket</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+     &warn.experimental.func;
+    <para>
+     &warn.undocumented.func;
     </para>
    </refsect1>
   </refentry>

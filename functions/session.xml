@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.27 $ -->
  <reference id="ref.session">
-  <title>セッション処理関数</title>
+  <title>セッション処理関数(session)</title>
   <titleabbrev>セッション</titleabbrev>
 
   <partintro>
@@ -49,6 +50,14 @@
      に on となりました。
     </para>
    </note>
+   <note>
+    <para>
+     PHP 4.1.0以降、$_SESSIONは、$_POST, $_GET, $_REQUEST等のようにグ
+     ローバル変数として利用可能です。$HTTP_SESSION_VARSと異なり、
+     $_SESSIONは常にグローバルです。そこで、
+     <literal>global</literal>は$_SESSIONの場合は不要です。
+    </para>
+   </note>
    <para>
     <link linkend="ini.track-vars"><literal>track_vars</literal></link>
     が有効で<link linkend="ini.register-globals">
@@ -63,10 +72,53 @@
       が有効な時に変数を登録する
      </title>
      <programlisting role="php">
-&lt;?php
-session_register("count");
-$HTTP_SESSION_VARS["count"]++;
-?&gt;
+<![CDATA[
+<?php
+if (isset($HTTP_SESSION_VARS['count'])) {
+   $HTTP_SESSION_VARS['count']++;
+}
+else {
+   $HTTP_SESSION_VARS['count'] = 0;
+}
+?>
+]]>
+     </programlisting>
+    </example>
+   </para>
+   <para>
+    セキュリティとコードの可読性のために$_SESSION(またはPHP 4.0.6以前
+    は$HTTP_SESSION_VARS)の使用が推奨されます。$_SESSIONまたは
+    $HTTP_SESSION_VARSの場合、
+    session_register()/session_unregister()/session_is_registered()は
+    不要です。ユーザは、通常の変数と同様にセッション変数にアクセス可能
+    です。
+    <example>
+     <title>
+      $_SESSIONで変数を登録
+     </title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+// PHP 4.0.6以前の場合は$HTTP_SESSION_VARSを使用して下さい
+if (!isset($_SESSION['count'])) {
+    $_SESSION['count'] = 0;
+}
+else {
+    $_SESSION['count']++;
+?>
+]]>
+     </programlisting>
+    </example>
+    <example>
+     <title>$_SESSIONで変数の登録を解除する</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+// PHP 4.0.6以前の場合は$HTTP_SESSION_VARSを使用して下さい
+unset($_SESSION['count']);
+
+?>
+]]>
      </programlisting>
     </example>
    </para>
@@ -75,7 +127,19 @@ $HTTP_SESSION_VARS["count"]++;
     linkend="ini.register-globals"><literal>register_globals</literal></link>
     が有効な場合、全てのグローバル変数はセッション変数として登録するこ
     とが可能で、セッション変数は対応するグローバル変数として回復されま
-    す。
+    す。PHPは、どのグローバル変数がセッション変数として登録されるのか
+    を知る必要があるため、ユーザは、変数をsession_register()関数で登録
+    する必要があります。しかし、$HTTP_SESSION_VARS/$_SESSIONの場合は、
+    session_register()を使用する必要はありません。
+    <caution>
+     <para>
+      $HTTP_SESSION_VARS/$_SESSIONを使用する場合、セッションモジュール
+      の内部動作を知っているユーザ以外は、
+      <function>session_register</function>,
+      <function>session_is_registered</function>,
+      <function>session_unregister</function>を使用しないで下さい。
+     </para>
+    </caution>
     <example>
      <title>
       <link
@@ -83,10 +147,17 @@ $HTTP_SESSION_VARS["count"]++;
       が有効な場合に、変数を登録する
      </title>
      <programlisting role="php">
-&lt;?php
-session_register("count");
-$count++;
-?&gt;
+<![CDATA[
+<?php
+if (!session_is_registered('count')) {
+    session_register("count");
+    $count = 0;
+}
+else {
+    $count++;
+}
+?>
+]]>
      </programlisting>
     </example>
    </para>
@@ -95,8 +166,8 @@ $count++;
     linkend="ini.track-vars"><literal>track_vars</literal></link>と
     <link
     linkend="ini.register-globals"><literal>register_globals</literal></link>
-    が共に有効な場合、グローバル変数と$HTTP_SESSION_VARSエントリは同じ
-    値へのリファレンスとなります。
+    が共に有効な場合、グローバル変数と$HTTP_SESSION_VARS/$_SESSIONエン
+    トリは同じ値へのリファレンスとなります。
    </para>
    <para>
     セッションIDの通知を行うためには次の二つの方法があります。
@@ -135,27 +206,33 @@ $count++;
     <example>
      <title>単一のユーザーに関するヒット数を数える</title>
      <programlisting role="php">
-&lt;?php
-session_register("count");
-$count++;
-?&gt;
+<![CDATA[
+<?php
+if (!session_is_registered('count')) {
+    session_register('count');
+    $count = 1;
+}
+else {
+    $count++;
+}
+?>
 
-こんにちは、あなたがこのページに来たのは&lt;?php echo $count; ?&gt;回目ですね。 &lt;p&gt;
+こんにちは、あなたがこのページに来たのは<?php echo $count; ?>回目ですね。 <p>
 
-&lt;php?
+<?php
 # ユーザーがクッキーを使用不可としている場合は、セッションIDを
-# 保持するために &lt;?=SID?&gt; が必要です。
-?&gt;
+# 保持するために<?=SID> が必要です。
+?>
 
-続けるには、
-&lt;A HREF="nextpage.php?&lt;?=SID?&gt;"&gt;ここをクリック&lt;/A&gt;
-して下さい。
+続けるには、<A HREF="nextpage.php?<?=SID?>">ここをクリック</A>して下さい。
+]]>
      </programlisting>
     </example>
    </para>
    <para>
-    PHPのコンパイル時に <literal>--enable-trans-sid</literal>を指定し
-    た場合には、<literal>&lt;?=SID?&gt;</literal> は必要ありません。
+    PHPのコンパイル時に <link linkend="install.configure.enable-trans-sid">
+    <literal>--enable-trans-sid</literal></link>を指定した場合には、
+    <literal>&lt;?=SID?&gt;</literal> は必要ありません。
    </para>
    <note>
     <para>
@@ -187,6 +264,8 @@ $count++;
        引数を定義します。デフォルトのファイルハンドラ選択した場合、
        ファイルが作成される場所のパスになります。デフォルトは、
        <literal>/tmp</literal> です。
+       <literal>session.save_path</literal>のパスの深さが2より大きい場
+       合、ガーベッジコレクションは行われません。
       </simpara>
      </listitem>
      <listitem>
@@ -293,6 +372,25 @@ $count++;
        デフォルトは、<literal>180</literal>です。
       </simpara>
      </listitem>    
+     <listitem>
+      <simpara>
+       <literal>session.use_trans_sid</literal>は、
+       <link linkend="install.configure.enable-trans-sid">
+       <literal>--enable-trans-sid</literal></link>を指定してコンパイ
+       ルを行うことにより有効となった場合に、透過的なセッション
+       IDの付加をするかどうかを指定します。
+       デフォルトは、<literal>1</literal>(有効)です。
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       <literal>url_rewriter.tags</literal>は、透過的なセッションIDの
+       付加機能が有効となった場合に、セッションIDを含めるために書き換
+       えられるHTMLタグを指定します。デフォルトは、
+       <literal>a=href,area=href,frame=src,input=src,form=fakeentry</literal>
+       です。
+      </simpara>
+     </listitem>
     </itemizedlist>
     <note>
      <para>
@@ -321,12 +419,35 @@ $count++;
      ンに基づき現在のセッションを復帰します)
     </simpara>
     <simpara>
+     名前付きのセッションを使用したい場合、
+     <function>session_start</function>の前に
+     <function>session_name</function>をコールする必要があります。
+    </simpara>
+    <simpara>
      この関数は常に &true; を返します。
     </simpara>
     <note>
      <para>
-      この関数は、PHP 4.0 で追加されました。
+      クッキーに基づくセッションを使用している場合、ブラウザに何か出力
+      を行う前に<function>session_start</function>をコールする必要があ
+      ります。
      </para>
+    </note>
+    <simpara>
+     <function>session_start</function>は、
+     <literal>trans-sid</literal>が有効の場合にURL書換え用の内部出力ハ
+     ンドラを登録します。ユーザが、<function>ob_start</function>と共に
+     <literal>ob_gzhandler</literal>または類似のものを使用している場合、
+     出力ハンドラの順番は正しく出力を行うために重要です。例えば、
+     セッション開始時にユーザは<literal>ob_gzhandler</literal>を登録す
+     る必要があります。
+    </simpara>
+    <note>
+     <simpara>
+      <literal>ob_gzhandler</literal>よりも
+      <literal>zlib.output_compression</literal>の使用が推奨されていま
+      す。
+     </simpara>
     </note>
    </refsect1>
   </refentry>
@@ -346,24 +467,61 @@ $count++;
     </funcsynopsis>
     <simpara>
      <function>session_destroy</function>は、現在のセッションに
-     関連づけられた全てのデータを破棄します。
+     関連づけられた全てのデータを破棄します。この関数は、
+     セッションに関するグローバル変数を破棄しません。また、セッション
+     クッキーを破棄しません。
     </simpara>   
     <simpara>
-     この関数は成功時に&true;、失敗時にセッションデータを破棄するために
-     &false;を返します。
-    </simpara> 
-    <note>
-     <para>
-      この関数は、PHP 4.0で追加されました。
-     </para>
-    </note>
+     この関数はセッションデータの破棄に成功した場合に&true;、失敗した
+     場合に&false;を返します。
+    </simpara>
+    <para>
+     <example>
+      <title>セッションを破棄する</title>
+      <programlisting role="php">
+<![CDATA[
+<?php
+
+// Initialize the session.
+// If you are using session_name("something"), don't forget it now!
+session_start();
+// Unset all of the session variables.
+session_unset();
+// Finally, destroy the session.
+session_destroy();
+
+?>
+]]>
+      </programlisting>
+     </example>
+    </para>
+    <para>
+     <example>
+      <title>$_SESSIONでセッションを破棄する</title>
+      <programlisting role="php">
+<![CDATA[
+<?php
+
+// Initialize the session.
+// If you are using session_name("something"), don't forget it now!
+session_start();
+// Unset all of the session variables.
+unset($_SESSION);
+// Finally, destroy the session.
+session_destroy();
+
+?>
+]]>
+      </programlisting>
+     </example>
+    </para>
    </refsect1>
   </refentry>
 
   <refentry id="function.session-name">
    <refnamediv>
     <refname>session_name</refname>
-    <refpurpose>現在のセッション名を取得または設定する</refpurpose>
+    <refpurpose>カレントのセッション名を取得または設定する</refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
@@ -378,9 +536,9 @@ $count++;
      </funcprototype>
     </funcsynopsis>
     <para>
-     <function>session_name</function> は、現在のセッション名を返します。
-     <parameter>name</parameter> を指定した場合、現在のセッション名は、
-     その値に変更されます。
+     <function>session_name</function> は、カレントのセッション名を返
+     します。<parameter>name</parameter> を指定した場合、カレントのセッ
+     ション名は、その値に変更されます。
     </para>
     <para>
      セッション名は、クッキーおよびURLのセッションIDを参照します。
@@ -396,21 +554,18 @@ $count++;
     <example>
      <title><function>session_name</function>の例</title>
      <programlisting role="php">
-&lt;?php
+<![CDATA[
+<?php
 
-# セッション名をWebsiteIDに設定する
+// セッション名をWebsiteIDに設定する
   
 $previous_name = session_name("WebsiteID");
   
-echo "前回のセッション名は、$previous_name です。&lt;p&gt;";
-?&gt;
+echo "前回のセッション名は、$previous_name です。<p>";
+?>
+]]>
      </programlisting>
     </example>
-    <note>
-     <para>
-      この関数は、PHP 4.0 で追加されました。
-     </para>    
-    </note>
    </refsect1>
   </refentry>
 
@@ -432,15 +587,9 @@ echo "前回のセッション名は、$previous_name です。&lt;p&gt;";
      </funcprototype>
     </funcsynopsis>
     <para>
-     <function>session_module_name</function> は、現在のセッションモジュール
-     の名前を返します。
-     <parameter>module</parameter> が指定された場合、そのモジュール
-     が変わりに使用されます。
-     <note>
-      <para>
-       この関数は、PHP 4.0 で追加されました。
-      </para>    
-     </note>
+     <function>session_module_name</function>は、現在のセッションモジュー
+     ルの名前を返します。<parameter>module</parameter> が指定された場
+     合、そのモジュールが変わりに使用されます。
     </para>    
    </refsect1>
   </refentry>
@@ -448,7 +597,9 @@ echo "前回のセッション名は、$previous_name です。&lt;p&gt;";
   <refentry id="function.session-save-path">
    <refnamediv>
     <refname>session_save_path</refname>
-    <refpurpose>現在のセッションデータ保存パスを取得または設定する</refpurpose>
+    <refpurpose>
+     現在のセッションデータ保存パスを取得または設定する
+    </refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
@@ -463,10 +614,9 @@ echo "前回のセッション名は、$previous_name です。&lt;p&gt;";
      </funcprototype>
     </funcsynopsis>
     <para>
-     <function>session_save_path</function> は、現在のセッションデータ保存
-     パスを返します。
-     <parameter>path</parameter> が指定された場合、データを保存する
-     パスが変更されます。
+     <function>session_save_path</function>は、現在のセッションデータ
+     保存パスを返します。<parameter>path</parameter> が指定された場合、
+     データを保存するパスが変更されます。
     <note>
      <para>
        いくつかのオペレーションシステムでは、多くの小さなファイルを効率的に
@@ -475,11 +625,6 @@ echo "前回のセッション名は、$previous_name です。&lt;p&gt;";
        優れています。
       </para>    
      </note>
-     <note>
-      <para>
-       この関数は、PHP 4.0で追加されました。
-      </para> 
-     </note>
     </para>
    </refsect1>
   </refentry>
@@ -487,7 +632,7 @@ echo "前回のセッション名は、$previous_name です。&lt;p&gt;";
   <refentry id="function.session-id">
    <refnamediv>
     <refname>session_id</refname>
-    <refpurpose>現在のセッションIDを取得または設定する</refpurpose>
+    <refpurpose>カレントのセッションIDを取得または設定する</refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
@@ -502,13 +647,13 @@ echo "前回のセッション名は、$previous_name です。&lt;p&gt;";
      </funcprototype>
     </funcsynopsis>
     <para>
-     <function>session_id</function>は、現在のセッションのセッションIDを
-     返します。<parameter>id</parameter>が指定された場合、
-     現在のセッションIDセッションを置換します。
+     <function>session_id</function>は、カレントのセッションのセッショ
+     ンIDを返します。<parameter>id</parameter>が指定された場合、カレン
+     トのセッションIDを置換します。
     </para>    
     <para>
-     現在の名前とセッションIDを、URLに追加可能な文字列として取得するために
-     定数 <systemitem>SID</systemitem> も使用することが可能です。
+     カレントの名前とセッションIDを、URLに追加可能な文字列として取得す
+     るために定数 <systemitem>SID</systemitem> も使用することが可能です。
     </para>
    </refsect1>
   </refentry>
@@ -538,14 +683,68 @@ echo "前回のセッション名は、$previous_name です。&lt;p&gt;";
      各変数名が処理される毎に、<function>session_register</function>
      は、その変数名のグローバル変数を現在のセッションに登録します。
     </para>
+    <caution>
+     <para>
+      この関数は、<emphasis>global</emphasis>変数を登録します。セッショ
+      ン変数を関数の内部で登録したい場合、<function>global</function>
+      を用いてその変数をグローバルとするか、下記のようにsession配列を
+      使用して下さい。
+     </para>
+    </caution>
+    <caution>
+     <para>
+      $HTTP_SESSION_VARS/$_SESSIONを使用する場合、
+      <function>session_register</function>,
+      <function>session_is_registered</function>,
+      <function>session_unregister</function>を使用しないで下さい。
+     </para>
+    </caution>
     <para>
-     この関数は、変数のセッションの登録が成功した場合に&true;を
+     この関数は全ての変数のセッションへの登録に成功した場合に&true;を
      返します。
-     <note>
-      <para>
-       この関数は、PHP 4.0 で追加されました。
-      </para>
-     </note>
+    </para>
+    <para>
+     この関数をコールする前に<function>session_start</function>をコー
+     ルしていない場合、暗黙のうちに引数を付けずに
+     <function>session_start</function>がコールされます。
+    </para>
+    <para>
+     配列$HTTP_SESSION_VARSまたは$_SESSION (PHP >= 4.1.0)の適当なメン
+     バに設定をするだけでもセッション変数を作成することが可能です。
+     <informalexample>
+      <programlisting role="php">
+<![CDATA[
+$barney = "A big purple dinosaur.";
+session_register("barney");
+
+$HTTP_SESSION_VARS["zim"] = "An invader from another planet.";
+
+# the auto-global $_SESSION array was introduced in PHP 4.1.0
+$_SESSION["spongebob"] = "He's got square pants.";
+]]>
+      </programlisting>
+     </informalexample>
+    </para>
+    <note>
+     <para>
+      セッションにリソース変数を登録することは現在できません。例えば、
+      データベースへの接続を生成し、接続IDをセッション変数として登録し、
+      セッションが回復された時点で、接続が有効であることを期待すること
+      はできません。リソースを返すPHP関数は、その関数定義に
+      <literal>resource</literal>型の返り値を有することが示されている。
+      リソースを返す関数のリストは、付録
+      <link linkend="resource">resource types</link>で見ることができま
+      す。
+     </para>
+     <para>
+      $_SESSION (またはPHP 4.0.6以前は$HTTP_SESSION_VARS)が使用されて
+      いる場合、$_SESSIONに変数を代入して下さい。
+      すなわち、$_SESSION['var'] = 'ABC';
+     </para>
+    </note>
+    <para>
+     <function>session_is_registered</function>および
+     <function>session_unregister</function>も参照下さい。
     </para>
    </refsect1>
   </refentry>
@@ -571,12 +770,30 @@ echo "前回のセッション名は、$previous_name です。&lt;p&gt;";
     <para>
      この関数は、セッションからの変数登録の削除が成功した場合に&true;を
      返します。
-     <note>
-      <para>
-       この関数は、PHP 4.0で追加されました。
-      </para>
-     </note>
     </para>
+    <note>
+     <para>
+      $_SESSION (またはPHP 4.0.6以前の場合は$HTTP_SESSION_VARS)が使用
+      されている場合、セッション変数の登録を削除する際に
+      <function>unset</function>を使用して下さい。
+     </para>
+    </note>
+    <caution>
+     <para>
+      この関数は、<parameter>name</parameter>に対応するグローバル変数
+      の登録を削除しません。セッションとしてその変数が保存されるのを妨
+      げるだけです。対応するグローバル変数を削除するには、
+      <function>unset</function>をコールする必要があります。
+     </para>
+    </caution>
+    <caution>
+     <para>
+      $HTTP_SESSION_VARS/$_SESSIONを使用している場合、
+      <function>session_register</function>,
+      <function>session_is_registered</function>,
+      <function>session_unregister</function>を使用して下さい。
+     </para>
+    </caution>
    </refsect1>
   </refentry>
 
@@ -591,9 +808,7 @@ echo "前回のセッション名は、$previous_name です。&lt;p&gt;";
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>void 
-       <function>session_unset</function>
-      </funcdef>
+      <funcdef>void <function>session_unset</function></funcdef>
       <void/>
      </funcprototype>
     </funcsynopsis>
@@ -601,6 +816,14 @@ echo "前回のセッション名は、$previous_name です。&lt;p&gt;";
      関数<function>session_unset</function>は現在登録されている全ての
      セッション変数を開放します。
     </para>
+    <note>
+     <para>
+      $_SESSION(またはPHP 4.0.6以前の場合は$HTTP_SESSION_VARS)が使用さ
+      れている場合、セッション変数の登録を削除するために
+      <function>unset</function>を使用して下さい。
+      すなわち、unset($_SESSION);
+     </para>
+    </note>
    </refsect1>
   </refentry>
 
@@ -621,14 +844,24 @@ echo "前回のセッション名は、$previous_name です。&lt;p&gt;";
     </funcsynopsis>
     <para>
      <function>session_is_registered</function> は、
-     <parameter>name</parameter> という名前の変数が現在のセッションに
-     登録されている場合に &true; を返します。
-     <note>
-      <para>
-      この関数は、PHP 4.0で追加されました。
-      </para>
-     </note>
+     <parameter>name</parameter>という名前の変数がカレントのセッション
+     に登録されている場合に &true; を返します。
     </para>
+    <note>
+     <para>
+      $_SESSION(またはPHP 4.0.6以前の場合は$HTTP_SESSION_VARS)が使用さ
+      れている場合、ある変数が$_SESSIONに登録されているかを確認するた
+      めに<function>isset</function>を使用して下さい。
+     </para>
+    </note>
+    <caution>
+     <para>
+      $HTTP_SESSION_VARS/$_SESSIONを使用している場合、
+      <function>session_register</function>,
+      <function>session_is_registered</function>,
+      <function>session_unregister</function>を使用しないで下さい。
+     </para>
+    </caution>
    </refsect1>
   </refentry>
 
@@ -667,6 +900,12 @@ echo "前回のセッション名は、$previous_name です。&lt;p&gt;";
           <listitem>
        <simpara>
 	"domain" -  クッキーのドメイン
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+        "secure" -  クッキーはセキュアな接続でのみ送信されます。
+        (この項目は、PHP 4.0.4で追加されました)
        </simpara>
       </listitem>
      </itemizedlist>
@@ -727,11 +966,6 @@ echo "前回のセッション名は、$previous_name です。&lt;p&gt;";
      <function>session_decode</function> は、
      <parameter>data</parameter> のセッションデータをデコードし、
      セッションに保存する変数を設定します。
-     <note>
-      <para>
-      この関数は、PHP 4.0 で追加されました。
-      </para>
-     </note>
     </para>
    </refsect1>
   </refentry>
@@ -754,11 +988,6 @@ echo "前回のセッション名は、$previous_name です。&lt;p&gt;";
     <para>
      <function>session_encode</function> は、現在のセッションの内容を
      エンコードした文字列を返します．
-     <note>
-      <para>
-       この関数は、PHP 4.0 で追加されました。
-      </para>
-     </note>
     </para>
    </refsect1>
   </refentry>
@@ -777,13 +1006,12 @@ echo "前回のセッション名は、$previous_name です。&lt;p&gt;";
       <funcdef>void
        <function>session_set_save_handler</function>
       </funcdef>
-      <paramdef>string
-      <parameter>open</parameter></paramdef><paramdef>string
-      <parameter>close</parameter></paramdef><paramdef>string
-      <parameter>read</parameter></paramdef><paramdef>string
-      <parameter>write</parameter></paramdef><paramdef>string
-      <parameter>destroy</parameter></paramdef><paramdef>string
-      <parameter>gc</parameter></paramdef>
+      <paramdef>string <parameter>open</parameter></paramdef>
+      <paramdef>string <parameter>close</parameter></paramdef>
+      <paramdef>string <parameter>read</parameter></paramdef>
+      <paramdef>string <parameter>write</parameter></paramdef>
+      <paramdef>string <parameter>destroy</parameter></paramdef>
+      <paramdef>string <parameter>gc</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
@@ -816,13 +1044,19 @@ echo "前回のセッション名は、$previous_name です。&lt;p&gt;";
      ように容易に拡張可能です。
     </para>
     <para>
+     saveハンドラが期待通りに動作するようにread関数は常に文字列を返す
+     必要があります。データがない場合には、空の文字列を返して下さい。
+     他のハンドラからの返り値は、論理式、すなわち、成功時に&true;、失
+     敗した場合に&false;を返します。
+    </para>
+    <para>
      <example>
       <title>
        <function>session_set_save_handler</function>の例
       </title>
       <programlisting role="php">
-&lt;?php
-
+<![CDATA[
+<?php
 function open ($save_path, $session_name) {
   global $sess_save_path, $sess_session_name;
        
@@ -843,7 +1077,7 @@ function read ($id) {
     $sess_data = fread($fp, filesize($sess_file));
     return($sess_data);
   } else {
-    return("");
+    return(""); // Must return "" here.
   }
 
 }
@@ -879,9 +1113,10 @@ session_set_save_handler ("open", "close", "read", "write", "destroy", "gc");
 
 session_start();
 
-// 通常と同様にセッションを使用します。
+// proceed to use sessions normally
 
-?&gt;
+?>
+]]>
       </programlisting>
      </example>
     </para>
@@ -922,7 +1157,20 @@ session_start();
      くなります。
     </para>
     <para>
-     キャッシュリミッタは、リクエストによる起動時に
+     <literal>private</literal>モードにおいて、Expireヘッダがクライア
+     ントに送信されます。これは、Mozillaのようないくつかのブラウザを混
+     乱させます。これを避けるには、
+     <literal>private_no_expire</literal>モードを使用して下さい。
+     このモードでは、Expireヘッダはクライアントに送信されません。
+    </para>
+    <note>
+     <para>
+      <literal>private_no_expire</literal>は、PHP 4.2.0devで追加されま
+      した。
+     </para>
+    </note>
+    <para>
+     キャッシュリミッタは、リクエスト開始時に
      <literal>session.cache_limiter</literal>に保存されたデフォルト値
      にリセットされます。つまり、各リクエスト毎に
      (<function>session_start</function>がコールされた後に)
@@ -932,22 +1180,43 @@ session_start();
     <example>
      <title><function>session_cache_limiter</function>の例</title>
      <programlisting role="php">
-&lt;?php
+<![CDATA[
+<?php
 
 # キャッシュリミッタを'private'に設定する
 
 session_cache_limiter('private');
 $cache_limiter = session_cache_limiter();
 
-echo "The cache limiter is now set to $cache_limiter&lt;p&gt;";
-?&gt;
+echo "The cache limiter is now set to $cache_limiter<p>";
+?>
+]]>
      </programlisting>
     </example>
-    <note>
-     <para>
-      この関数は、PHP 4.0.3で追加されました。
-     </para>
-    </note>
+   </refsect1>
+  </refentry>
+
+  <refentry id='function.session-cache-expire'>
+   <refnamediv>
+    <refname>session_cache_expire</refname>
+    <refpurpose>カレントのキャッシュの有効期限を返す</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>int <function>session_cache_expire</function></funcdef>
+      <paramdef>int 
+       <parameter><optional>new_cache_expire</optional></parameter>
+      </paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     <function>session_cache_expire</function>は、カレントのキャッシュ
+     の有効期限を返します。<parameter>new_cache_expire</parameter>が指
+     定された場合、カレントのキャッシュの有効期限は、
+     <parameter>new_cache_expire</parameter>で置換されます。
+    </para>
    </refsect1>
   </refentry>
 
@@ -965,21 +1234,22 @@ echo "The cache limiter is now set to $cache_limiter&lt;p&gt;";
      </funcprototype>
     </funcsynopsis>
     <para>
-     End the current session and store session data.
+     カレントのセッションを終了し、セッションデータを保存します。
     </para>
     <para>
-     Session data is usually stored after your script terminated
-     without the need to call <function>session_write_close</function>, but as
-     session data is locked to prevent concurrent writes only one
-     script may operate on a session at any time. When using framesets
-     together with sessions you will experience the frames loading one
-     by one due to this locking. You can reduce the time needed to
-     load all the frames by ending the session as soon as all changes
-     to session variables are done.
+     セッションデータは、<function>session_write_close</function>をコー
+     ルしなくても、スクリプト終了時に保存されます。しかし、
+     セッションデータは、同時書き込みを防ぐためにロックされるため、あ
+     る時点であるセッションの処理ができるスクリプトは、1つだけです。
+     セッションでフレームセットを使用する場合、このロックのためにフレー
+     ムがひとつずつロードされるような経験をするでしょう。
+     セッションへの全ての変更が行われるとすぐにセッションを終了するこ
+     とにより、全てのフレームのロードに要する時間を減らすことができま
+     す。
     </para>
 <!-- commented out until final decision on implementation
     <para>
-     See also: <function>session_readonly</function>.
+     <function>session_readonly</function>も参照下さい。
     </para>
 -->
    </refsect1>
