@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.8 $ -->
-<!-- EN-Revision: 1.22 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.9 $ -->
+<!-- EN-Revision: 1.40 Maintainer: hirokawa Status: ready -->
  <chapter id="faq.installation">
   <title>インストール</title>
   <titleabbrev>インストール</titleabbrev>
@@ -20,6 +20,86 @@
   </para>
 
   <qandaset>
+   <qandaentry id="faq.installation.apache2">
+    <question>
+     <para>
+      Why shouldn't I use Apache 2 in a production environment?
+     </para>
+    </question>
+    <answer>
+     <para>
+      The following answer is based in this modified excerpt of a mail
+      by Rasmus Lerdorf.
+     </para>
+     <para>
+      Apache 2 is a complete rewrite and a complete architecture change from
+      Apache 1. It is not like going from PHP 3 to PHP 4 or from PHP 4 to PHP 5.
+      There is a lot of code that is common, and certainly the base architecture
+      of PHP has not changed for years. So comparing Apache 1 vs. Apache 2 to
+      PHP 4 vs. PHP 5 makes no sense. The architecture has been proven over
+      the years and the code, while somewhat unwieldy in places, is a known
+      entity. PHP from the very early days was designed against this basic
+      Apache 1 architecture and works extremely well running under it.
+     </para>
+     <para>
+      The major feature that draws people to Apache 2 is threading.  On Windows
+      where most basic libraries are, and must be, threadsafe, Apache 2 does
+      actually make sense and it would be good to work out the kinks on that
+      platform. However, on UNIX there are a lot of basic libraries where
+      thread safety is an unknown. And this is not about PHP extensions, it is
+      about 3rd-party libraries underneath PHP's hundreds of extensions.
+      Whether any one 3rd-party library is threadsafe is really hard to
+      determine. There are a lot of variables involved, including which OS,
+      which version of the OS, which libc, which version of that libc and on
+      some platforms even the compiler flags used to compile these things. And
+      to make it even more fun, tracking down a thread safety problem is damn
+      well near impossible. Hundreds of people may well state that
+      Apache+PHP+ext/foo works perfectly for them, but maybe they are only
+      getting about a million hits a day. Then another user comes along who
+      gets 100 million hits a day and uses a fast dual-cpu machine and
+      everything blows up because now suddenly the window for some tiny race
+      condition has been made much larger due to the faster cpu speeds, the
+      second cpu and the higher frequency of requests.  And the bug report we
+      get from this user will be something along the lines of:
+     </para>
+     <blockquote>
+      <para>
+       It don't work sometimes.  Most of the times it works fine, but then
+       every now and then it just don't. The error is different each time
+       and I have no idea how to reproduce it, but fix it right away!!!
+      </para>
+     </blockquote>
+
+     <para>What can we do about these?</para>
+     <para>
+      There are a number of (fixable) technical reasons Rasmus does not think
+      Apache2+PHP is a good idea in a production environment, but setting
+      those aside it really boils down to one simple concept:
+     </para>
+     <para>
+      PHP is glue. It is the glue used to build cool web applications by
+      sticking dozens of 3rd-party libraries together and making it all appear
+      as one coherent entity through an intuitive and easy to learn language
+      interface. The flexibility and power of PHP relies on the stability and
+      robustness of the underlying platform. It needs a working OS, a working
+      web server and working 3rd-party libraries to glue together. When any of
+      these stop working PHP needs ways to identify the problems and fix them
+      quickly. By making the underlying framework more complex by not having
+      completely separate execution threads, completely separate memory
+      segments and a strong sandbox for each request to play in, a feet of
+      clay is introduced into PHP's system.
+     </para>
+     <para>
+      Using the prefork mpm with Apache 2 to avoid the threading is possible,
+      and yes using a standalone fastcgi mechanism to avoid the threading,
+      too, but then defining characteristic of the web server of choice are
+      avoided.  At this point in its development, Rasmus still maintains that
+      one is better off simply sticking with Apache 1 for serving up PHP pages
+      with the one caveat that Apache 1 sucks pretty badly on Windows.
+     </para>
+    </answer>
+   </qandaentry>
+
    <qandaentry id="faq.installation.phpini">
     <question>
      <para>
@@ -28,18 +108,21 @@
     </question>
     <answer>
      <para>
-     UNIXの場合、デフォルトでは<filename>/usr/local/lib</filename>
-     です。コンパイル時に
-     <link linkend="install.configure.with-config-file-path">--with-config-file-path</link>
-     オプションを使用してこの場所を変えたいという人も多いでしょう。
-     例えばこのようにすることも出来ます：
-     <programlisting>
+      UNIXの場合、デフォルトでは<filename>/usr/local/lib</filename>
+      です。コンパイル時に
+      <link linkend="configure.with-config-file-path">--with-config-file-path</link>
+      オプションを使用してこの場所を変えたいという人も多いでしょう。
+      例えばこのようにすることも出来ます：
+      <programlisting role="shell">
 --with-config-file-path=/etc
-     </programlisting>
-     そしてディストリビューションの<filename>php.ini-dist</filename>
-     を<filename>/etc/php.ini</filename>にコピーして環境に合うように
-     編集してください。
+      </programlisting>
+      そしてディストリビューションの<filename>php.ini-dist</filename>
+      を<filename>/etc/php.ini</filename>にコピーして環境に合うように
+      編集してください。
      </para>
+     <programlisting role="shell">
+--with-config-file-scan-dir=PATH 
+     </programlisting>
      <para>
      ウィンドウズの場合、&php.ini;のデフォルトパスはWindowsディレクトリになります。
      Apacheウェブサーバを使っている場合はまずApacheがインストールされているディレクトリ
@@ -140,9 +223,10 @@
     <answer>
      <para>
      あなたがApacheとPHPの両方をRPMでインストールしたとすると、いかに示す
-     内容の一部もしくは全てを<filename>httpd.conf</filename>ファイルに追加
-     するか、コメントを外す必要があります：
-      <programlisting>
+     内容の一部もしくは全てを&httpd.conf;ファイルに追加するか、コメントを
+      外す必要があります：
+      <programlisting role="apache-conf">
+<![CDATA[
 # Extra Modules
 AddModule mod_php.c
 AddModule mod_php3.c
@@ -150,9 +234,10 @@ AddModule mod_perl.c
 
 # Extra Modules
 LoadModule php_module         modules/mod_php.so
-LoadModule php3_module        modules/libphp3.so     /* for PHP 3 */
-LoadModule php4_module        modules/libphp4.so     /* for PHP 4 */
+LoadModule php3_module        modules/libphp3.so     # for PHP 3
+LoadModule php4_module        modules/libphp4.so     # for PHP 4
 LoadModule perl_module        modules/libperl.so
+]]>
       </programlisting>
       そして以下の行：
       <programlisting>
@@ -201,7 +286,7 @@ AddType application/x-httpd-php .php      /* for PHP 4 */
        <listitem>
         <para>
          まずmod_php3を削除します : 
-         <programlisting>
+         <programlisting role="shell">
 rpm -e mod_php3
          </programlisting>
         </para>
@@ -209,7 +294,7 @@ rpm -e mod_php3
        <listitem>
         <para>
          ソースRPMを手に入れてインストールします。--rebuildではありません。
-         <programlisting>
+         <programlisting role="shell">
 rpm -Uvh mod_php3-3.0.5-2.src.rpm
          </programlisting>
         </para>
@@ -223,26 +308,24 @@ rpm -Uvh mod_php3-3.0.5-2.src.rpm
         </para>
         <para>
          MySQLの場合は以下のようになります。
-         <programlisting>
+<option role="configure">--with-mysql=/usr</option>
+         The %build section will look something like this:
+         <programlisting role="shell">
+./configure --prefix=/usr \
+--with-apxs=/usr/sbin/apxs \
+--with-config-file-path=/usr/lib \
+--enable-debug=no \
+--enable-safe-mode \
+--with-exec-dir=/usr/bin \
 --with-mysql=/usr \
-         </programlisting>
-         %buildセクションは例えば以下のようになるでしょう
-         <programlisting>
- ./configure --prefix=/usr \
- --with-apxs=/usr/sbin/apxs \
- --with-config-file-path=/usr/lib \
- --enable-debug=no \
- --enable-safe-mode \
- --with-exec-dir=/usr/bin \
- --with-mysql=/usr \
- --with-system-regex
+--with-system-regex
          </programlisting>
         </para>
        </listitem>
        <listitem>
         <para>
          変更が終了したら以下のようにしてバイナリRPMを構築します：
-         <programlisting>
+         <programlisting role="shell">
 rpm -bb /usr/src/redhat/SPECS/mod_php3.spec
          </programlisting>
         </para>
@@ -250,7 +333,7 @@ rpm -bb /usr/src/redhat/SPECS/mod_php3.spec
        <listitem>
         <para>
          インストールします。
-         <programlisting>
+         <programlisting role="shell">
 rpm -ivh /usr/src/redhat/RPMS/i386/mod_php3-3.0.5-2.i386.rpm
          </programlisting>
         </para>
@@ -330,7 +413,7 @@ rpm -ivh /usr/src/redhat/RPMS/i386/mod_php3-3.0.5-2.i386.rpm
      <para> 
       PHPをインストールするまではエラーもなく問題なく進んだのですが、
       apacheを起動させようとするとundefined symbolエラーが発生します:
-      <programlisting>
+      <programlisting role="shell">
 [mybox:user /src/php4] root# apachectl configtest
  apachectl: /usr/local/apache/bin/httpd Undefined symbols:
   _compress
@@ -341,7 +424,8 @@ rpm -ivh /usr/src/redhat/RPMS/i386/mod_php3-3.0.5-2.i386.rpm
     <answer>
      <para>
       これは、PHPとは関係なくMySQLクライアントライブラリの問題です。
-      このライブラリのうちある種のものは --with-zlib を必要とし、
+      このライブラリのうちある種のものは <option
+      role="configure">--with-zlib</option> を必要とし、
       他のものは必要としません。こ問題はMySQL FAQでも扱われています。
      </para>
     </answer>
@@ -352,12 +436,12 @@ rpm -ivh /usr/src/redhat/RPMS/i386/mod_php3-3.0.5-2.i386.rpm
      <para>
       Windows: PHPをインストールしたのですがブラウザからPHPスクリプト
       にアクセスすると次のようなエラーが出力されます：
-      <programlisting>
+      <screen>
 cgi error:
  The specified CGI application misbehaved by not
  returning a complete set of HTTP headers.
  The headers it did return are:
-      </programlisting>
+      </screen>
      </para>
     </question>
     <answer>
@@ -366,7 +450,7 @@ cgi error:
       ことを意味します。詳細なエラーメッセージを得るためにはコマンドラ
       インから、PHP実行ファイル(Windowsでは
       <filename>php.exe</filename>)のあるディレクトリに移動して
-      <literal>php -i</literal>を実行して下さい。もしPHPの実行時に問題
+      <command>php -i</command>を実行して下さい。もしPHPの実行時に問題
       があった場合は適切なエラーメッセージが表示されるのでそれを手がか
       りに次に何をすべきかを知ることができます。画面一杯に
       HTML(<function>phpinfo</function>関数の出力)が表示された場合には
@@ -480,6 +564,170 @@ cgi error:
     </answer>
    </qandaentry>
 
+   <qandaentry id="faq.installation.addtopath">
+    <question>
+     <para>
+      How do I add my PHP directory to the <varname>PATH</varname>
+      on Windows?
+     </para>
+    </question>
+    <answer>
+     <para>
+      On Windows NT, 2000, XP and 2003:
+      <itemizedlist>
+       <listitem><para>
+        Go to Control Panel and open the System icon (Start -&gt; Settings
+        -&gt; Control Panel -&gt; System, or just Start -&gt; Control Panel
+        -&gt; System for Windows XP/2003)
+       </para></listitem>
+       <listitem><para>
+        Go to the Advanced tab
+       </para></listitem>
+       <listitem><para>
+        Click on the 'Environment Variables' button
+       </para></listitem>
+       <listitem><para>
+        Look into the 'System Variables' pane
+       </para></listitem>
+       <listitem><para>
+        Find the Path entry (you may need to scroll to find it)
+       </para></listitem>
+       <listitem><para>
+        Double click on the Path entry
+       </para></listitem>
+       <listitem><para>
+        Enter your PHP directory ant the end, including ';' before (e.g.
+        <literal>;C:\php</literal>)
+       </para></listitem>
+       <listitem><para>
+        Press OK and restart your computer
+       </para></listitem>
+      </itemizedlist>
+     </para>
+     <para>
+      On Windows 98/Me you need to edit the <filename>autoexec.bat</filename>
+      file:
+      <itemizedlist>
+       <listitem><para>
+        Open the Notepad (Start -&gt; Run and enter notepad)
+       </para></listitem>
+       <listitem><para>
+        Open the <filename>C:\autoexec.bat</filename> file
+       </para></listitem>
+       <listitem><para>
+        Locate the line with PATH=C:\WINDOWS;C:\WINDOWS\COMMAND;..... and add:
+        <literal>;C:\php</literal> to the end of the line
+       </para></listitem>
+       <listitem><para>
+        Save the file and restart your computer
+       </para></listitem>
+      </itemizedlist>
+     </para> 
+     <para> 
+      The PHP manual used to promote the copying of files into the Windows 
+      system directory, this is because this directory  
+      (<filename>C:\Windows</filename>, <filename>C:\WINNT</filename>, etc.)
+      is by default in the systems PATH.  Copying files into the Windows 
+      system directory has long since been deprecated and may cause problems.
+     </para>
+    </answer>
+   </qandaentry>
+
+   <qandaentry id="faq.installation.phprc">
+    <question>
+     <para>
+      How do I make the &php.ini; file available to PHP on windows?
+     </para>
+    </question>
+    <answer>
+     <para>
+      There are several ways of doing this. If you are using Apache, read
+      their installation specific instructions (<link
+       linkend="install.windows.apache1">Apache 1</link>, <link
+       linkend="install.windows.apache2">Apache 2</link>), otherwise you must
+      set the <varname>PHPRC</varname> environment variable:
+     </para>
+     <para>
+      On Windows NT, 2000, XP and 2003:
+      <itemizedlist>
+       <listitem><para>
+        Go to Control Panel and open the System icon (Start -&gt; Settings
+        -&gt; Control Panel -&gt; System, or just Start -&gt; Control Panel
+        -&gt; System for Windows XP/2003)
+       </para></listitem>
+       <listitem><para>
+        Go to the Advanced tab
+       </para></listitem>
+       <listitem><para>
+        Click on the 'Environment Variables' button
+       </para></listitem>
+       <listitem><para>
+        Look into the 'System variables' pane
+       </para></listitem>
+       <listitem><para>
+         Click on 'New' and enter 'PHPRC' as the variable name and the
+         directory where &php.ini; is located as the variable value (e.g.
+         <literal>C:\php</literal>)
+       </para></listitem>
+       <listitem><para>
+        Press OK and restart your computer
+       </para></listitem>
+      </itemizedlist>
+     </para>
+     <para>
+      On Windows 98/Me you need to edit the <filename>autoexec.bat</filename>
+      file:
+      <itemizedlist>
+       <listitem><para>
+        Open the Notepad (Start -&gt; Run and enter notepad)
+       </para></listitem>
+       <listitem><para>
+        Open the <filename>C:\autoexec.bat</filename> file
+       </para></listitem>
+       <listitem><para>
+        Add a new line to the end of the file: <literal>set PHPRC
+         C:\php</literal> (replace <literal>C:\php</literal> with the
+        directory where &php.ini; is located)
+       </para></listitem>
+       <listitem><para>
+        Save the file and restart your computer
+       </para></listitem>
+      </itemizedlist>
+     </para>      
+    </answer>
+   </qandaentry>
+
+   <qandaentry id="faq.installation.apache.multiviews">
+    <question>
+     <para>
+      Is it possible to use Apache content negotiation (MultiViews option)
+      with PHP?
+     </para>
+    </question>
+    <answer>
+     <para>
+      If links to PHP files include extension, everything works perfect. This
+      FAQ is only for the case when links to PHP files don't include extension
+      and you want to use content negotiation to choose PHP files from URL
+      with no extension.
+      In this case, replace the line <literal>AddType application/x-httpd-php
+      .php</literal> with:
+      <programlisting role="apache-conf">
+<![CDATA[
+# PHP 4
+AddHandler php-script php
+AddType text/html php
+
+# PHP 5
+AddHandler php5-script php
+AddType text/html php
+]]>
+     </programlisting>
+     This solution doesn't work for Apache 1 as PHP module doesn't catch
+     <literal>php-script</literal>.
+     </para>
+    </answer>
+   </qandaentry>
   </qandaset>
  </chapter>
 
