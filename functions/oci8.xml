@@ -3,19 +3,113 @@
   <title>Oracle 8 関数</title>
   <titleabbrev>OCI8</titleabbrev>
   <partintro>
-   <simpara>
-   以下の関数により Oracle8 および Oracle7 データベースへのアクセスが
-   可能となります。
-   この関数は、Oracle8 Call-Interface (OCI8) を使用します。
-   この拡張機能を使用するには、Oracle8 クライアントライブラリが必要です。
-   </simpara>
-   <simpara>
-    この拡張機能は、通常のOracle拡張機能より柔軟性があります。
-    この拡張機能は、グローバルおよびローカルの PHP 変数の Ocacle 
-    プレースホルダーへのバインドをサポートします。
-    この拡張機能は、LOB,FILE,ROWID を完全にサポートしており、ユーザー定義の
-    変数が使用可能です。
-   </simpara>
+   <para>
+    以下の関数により Oracle8 および Oracle7 データベースへのアクセスが
+    可能となります。この関数は、Oracle8 Call-Interface (OCI8) を使用し
+    ます。この拡張機能を使用するには、Oracle8 クライアントライブラリが
+    必要です。
+   </para>
+   <para>
+    この拡張モジュールは、通常のOracle拡張機能より柔軟性があります。
+    この拡張モジュールは、グローバルおよびローカルの PHP 変数の Ocacle 
+    プレースホルダーへのバインドをサポートします。また、LOB,FILE,ROWID
+    を完全にサポートしており、ユーザー定義の変数が使用可能です。
+   </para>
+   <para>
+    この拡張モジュールを使用する前に WebデーモンのユーザでもあるOracle
+    ユーザのOracle用環境変数が正しく設定されていることを確認して下さい。
+    設定されている必要がある変数を以下に示します。
+    <itemizedlist>
+     <listitem>
+      <simpara>
+       ORACLE_HOME
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       ORACLE_SID
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       LD_PRELOAD
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       LD_LIBRARY_PATH
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       NLS_LANG
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       ORA_NLS33
+      </simpara>
+     </listitem>
+    </itemizedlist>
+   </para>
+   <para>
+    Webサーバーのユーザ用に環境変数を設定した後、Webサーバーのユーザ
+    (nobody, www)をグループoracleに追加して下さい。
+   </para>
+   <para>
+    <example>
+     <title>OCIに関するヒント</title>
+      <programlisting role="php">
+&lt;?php
+// by sergo@bacup.ru
+
+// コマンドの実行を遅延させるには、オプション OCI_DEFAULT を使用して
+// 下さい
+OCIExecute($stmt, OCI_DEFAULT);
+
+// (クエリ結果取得後に)使用するデータを取得
+
+$result = OCIResult($stmt, $n);
+if (is_object ($result)) $result = $result->load();
+
+// INSERT または UPDATE 命令の場合に使用
+
+$sql = "insert into table (field1, field2) values (field1 = 'value',
+ field2 = empty_clob()) returning field2 into :field2";
+OCIParse($conn, $sql);
+$clob = OCINewDescriptor($conn, OCI_D_LOB);
+OCIBindByName ($stmt, ":field2", &$clob, -1, OCI_B_CLOB);
+OCIExecute($stmt, OCI_DEFAULT);
+$clob->save ("some text");
+
+?&gt;
+     </programlisting>
+    </example>
+   </para>
+   <para>
+    コマンドラインで実行するのと同様な手法により、ストアドプロシージャ
+    に簡単にアクセス可能です。
+    <example>
+     <title>ストアドプロシージャの使用法</title>
+      <programlisting role="php">
+&lt;?php
+// by webmaster@remoterealty.com
+$sth = OCIParse ( $dbh, "begin sp_newaddress( :address_id, '$firstname',
+ '$lastname', '$company', '$address1', '$address2', '$city', '$state',
+ '$postalcode', '$country', :error_code );end;" );
+
+// この命令は、:address_id を入出力変数、:error_code を出力変数として
+// ストアドプロシージャ sp_newaddress をコールします。
+// 続いて、以下のようにバインドを実行します。
+
+   OCIBindByName ( $sth, ":address_id", $addr_id, 10 );
+   OCIBindByName ( $sth, ":error_code", $errorcode, 10 );
+   OCIExecute ( $sth );
+
+?&gt;
+     </programlisting>
+    </example>
+   </para>
   </partintro>
 	
 <!--
@@ -389,7 +483,7 @@ print "&lt;/PRE>&lt;/HTML>";
      インスタンス)または TWO_TASK (tnsnames.ora) を使用します。
     </para>
     <para>
-     <function>OCINLogon</function> は強制的に新規接続を作成します。
+     <function>OCINLogon</function> は強�的に新規接続を作成します。
      一連のトランザクションを独立して実行する必要がある場合にこの関数を
      使用する必要があります。デフォルトでは、接続は、     
      <function>OCILogon</function> を使用した場合はページレベルで共有され、
@@ -674,7 +768,7 @@ Upload file: &lt;input type="file" name="lob_upload">&lt;br>
      }else{
         echo "Blob をアップロードできませんでした\n";
      }
-     OCIFreeDescriptor($lob);
+     OCIFreeDesc($lob);
      OCIFreeStatement($stmt);
      OCILogoff($conn);
   }
@@ -1256,7 +1350,27 @@ OCILogoff($conn);
     </para>
    </refsect1>
   </refentry>
-  
+
+  <refentry id="function.ocifreedesc">
+   <refnamediv>
+    <refname>OCIFreeDesc</refname>
+    <refpurpose>ラージオブジェクト記述子を削除する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>int <function>OCIFreeDesc</function></funcdef>
+      <paramdef>object <parameter>lob</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     <function>OCIFreeDesc</function> は成功時にtrue、成功しなかった場
+     合にfalseを返します。
+    </para>
+   </refsect1>
+  </refentry>
+
   <refentry id="function.ocicolumnname">
    <refnamediv>
     <refname>OCIColumnName</refname>
