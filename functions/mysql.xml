@@ -45,18 +45,44 @@
     </funcsynopsis>
     <para> 
      <function>mysql_affected_rows</function>は、指定した
-     link_identifierが指すサーバーにおいて直近のINSERT、UPDATE、DELETE
-     クエリーにより変更された行の数を返します。link_identifierが指定さ
-     れない場合、最後にオープンされたリンクが仮定されます。
+     <parameter>link_identifier</parameter> が指すサーバーにおいて直近
+     のINSERT、UPDATE、DELETEクエリーにより変更された行の数を返します。
+     link_identifierが指定されない場合、
+     <function>mysql_connect</function> により直近にオープンされたリン
+     クが指定されたと仮定されます。
     </para>
+    <note>
+     <para>
+      トランザクションを使用する場合には、 コミット後ではなく、INSERT,
+      UPDATE, DELETE クエリの後に
+      <function>mysql_affected_rows</function> をコールする必要があり
+      ます。
+     </para>
+    </note>
     <para>
      直近のクエリーがWHERE節のないDELETEクエリーであった場合、全レコー
      ドはテーブルから削除されていますが、この関数はゼロを返します。
     </para>
+    <note>
+     <para>
+      UPDATEを使用する場合、MySQL は新しい値が古い値と同じ場合にはカラ
+      ムを更新しません。このため、
+      <function>mysql_affected_rows</function> はマッチした行の数には
+      一致しない可能性があり、単にクエリにより文字の上で作用された行
+      の数となります。
+     </para>
+    </note>
     <para>
-     このコマンドは、SELECT文には使用できません。レコードを修正する文
-     でのみ使用できます。SELECTから返される行の数を得る際には、
-     <function>mysql_num_rows</function>を使用して下さい。
+     <function>mysql_affected_rows</function> は、SELECT文には使用でき
+     ません。レコードを修正する文でのみ使用できます。SELECTから返され
+     る行の数を得る際には、<function>mysql_num_rows</function>を使用し
+     て下さい。
+    </para>
+    <para>
+     直近のクエリが失敗した場合、この関数は-1を返します。
+    </para>
+    <para>
+     <function>mysql_num_rows</function> も参照下さい。
     </para>
    </refsect1>
   </refentry>
@@ -228,11 +254,13 @@
      <title>MySQL に接続する例</title>
      <programlisting role="php">
 &lt;?php
-    $link = mysql_connect ("kraemer", "marliesle", "secret")
+
+    $link = mysql_connect ("localhost", "username", "secret")
         or die ("接続できませんでした");
     print ("接続に成功しました");
     mysql_close ($link);
-?>
+
+?&gt;
      </programlisting>
     </example>
     <para> 
@@ -1411,28 +1439,30 @@ mysql_close();
     <para>
      <function>mysql_num_rows</function>は結果セットにおける行の数を返
      します。このコマンドはSELECT文でのみ有効です。
-     INSERT、UPDATE、DELETEから返される行の数を取得する際には、
+     INSERT、UPDATE、DELETE クエリから返される行の数を取得する際には、
      <function>mysql_affected_rows</function>を使用して下さい。
      <example>
-      <title>
-       crubel@trilizio.org による <function>mysql_num_rows</function>
-       の例
-      </title>
+      <title><function>mysql_num_rows</function>の例</title>
       <programlisting role="php">
 &lt;?php
-$conn = mysql_connect("hostaddress", "username", "password"); 
-mysql_select_db("database",$conn); // 複数のデータベースがある場合は必要
-$Resultfornummembers = mysql_query("SELECT * FROM Accounts",$conn); 
-$NumMembers = mysql_num_rows($Resultfornummembers); 
-echo "$NumMembers Members";
-?>                          
+
+$link = mysql_connect("localhost", "username", "password"); 
+mysql_select_db("database", $link);
+
+$result = mysql_query("SELECT * FROM table1", $link); 
+$num_rows = mysql_num_rows($result); 
+
+echo "$num_rows 行\n";
+
+?&gt;                          
       </programlisting>
      </example>
     </para>
     <para>
-     <function>mysql_db_query</function>、
-     <function>mysql_query</function>、 
-     <function>mysql_fetch_row</function> も参照下さい。
+     <function>mysql_affected_rows</function>, 
+     <function>mysql_connect</function>, 
+     <function>mysql_select_db</function>,
+     <function>mysql_query</function> も参照下さい。
     </para>
     <para>
      下位互換性の維持のため、<function>mysql_numrows</function>

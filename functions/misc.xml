@@ -76,6 +76,52 @@
    </refsect1>
   </refentry>
  
+  <refentry id="function.constant">
+   <refnamediv>
+    <refname>constant</refname>
+    <refpurpose>定数の値を返す</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>mixed <function>constant</function></funcdef>
+      <paramdef>string <parameter>name</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <simpara>
+     <function>constant</function> は、<parameter>name</parameter>で指
+     定した定数の値を返します。
+    </simpara>
+    <simpara>
+     <function>constant</function> はある定数の値を取得する必要がある
+     が、その名前が不明な場合に有用です。これは、定数が変数に保存され
+     ているか、関数により返されるかの場合です。
+    </simpara>
+    <para>
+     <example>
+      <title><function>constant</function> の例</title>
+      <programlisting role="php">
+&lt;php
+
+define ("MAXSIZE", 100);
+
+echo MAXSIZE;
+echo constant("MAXSIZE"); // 前の行と動作は同じ
+
+?&gt;
+      </programlisting>
+     </example>
+    </para>
+    <para>
+     <function>define</function>,
+     <function>defined</function>,
+     <function>constant</function> および <link
+      linkend="language.constants">定数</link> の節を参照下さい。
+    </para>
+   </refsect1>
+  </refentry>
+
   <refentry id="function.define">
    <refnamediv>
     <refname>define</refname>
@@ -148,7 +194,8 @@ echo CONSTANT; // "Hello world."を出力します。
      返します。
     </para>
     <para>
-     <function>defined</function>および
+     <function>defined</function>,
+     <function>constant</function> および 
      <link linkend="language.constants">定数</link>の節も参照下さい。
     </para>
    </refsect1>
@@ -174,7 +221,8 @@ echo CONSTANT; // "Hello world."を出力します。
      true、その他の場合にfalseを返します。
     </para>
     <para>
-     <function>define</function>および
+     <function>define</function>,
+     <function>constant</function> および
      <link linkend="language.constants">定数</link> の節も参照下さい。
     </para>
    </refsect1>
@@ -196,20 +244,48 @@ echo CONSTANT; // "Hello world."を出力します。
      </funcprototype>
     </funcsynopsis>
     <simpara>
-     この言語構造は、メッセージを出力し、スクリプトの処理を終了します。
-     この関数は、リターンを行いません。
+     <function>die</function> は、<parameter>message</parameter> を出
+     力し、スクリプトの処理を終了します。この関数は値を何も返しません。
+    </simpara>
+    <simpara>
+     また、<function>die</function> には、パラメータとして関数も指定可
+     能です。この関数は、<function>die</function> がスクリプトのパース
+     を終了する前に実行されます。
     </simpara>
     <para>
      <example>
-      <title>die の例</title>
+      <title><function>die</function> の例</title>
       <programlisting role="php">
 &lt;?php
+
 $filename = '/path/to/data-file';
-$file = fopen($filename, 'r')
-  or die "ファイルunable to open file ($filename)";
+$file = fopen ($filename, 'r')
+  or die("unable to open file ($filename)");
+
 ?&gt;
-       </programlisting>
-      </example>
+      </programlisting>
+     </example>
+    </para>
+    <para>
+     <example>
+      <title>関数を使用する <function>die</function> の例</title>
+      <programlisting role="php">
+&lt;?php
+
+function handle_error($msg) {
+    if ($fp = @fopen("/tmp/error.log", "a")) {
+        fwrite($fp, $msg, strlen($msg));
+        fclose($fp);
+    }
+}
+
+if ($bad) {
+    die(handle_error("Something bad happened.\n"));
+}
+
+?&gt;
+      </programlisting>
+     </example>
     </para>
     <simpara>
      <function>exit</function>も参照下さい。
@@ -422,8 +498,17 @@ Mozilla/4.5 [en] (X11; U; Linux 2.2.9 i586)&lt;hr&gt;
      関数 <function>highlight_file</function>は、
      <parameter>filename</parameter>の中のコードをPHP組込の構文ハイラ
      イタで定義されたカラーを使用して構文ハイライト表示したものを出力
-     します。
+     します。この関数は、成功時にtrue、その他の場合にfalseを返します。
+     (PHP 4)
     </simpara>
+    <note>
+     <simpara>
+      関数 <function>show_source</function> および
+      <function>highlight_file</function>を使用する場合には、パスワー
+      ドや潜在的なセキュリティ上の危険を生む類の他の情報のような重要な
+      情報を不注意で公開してしまわないように注意する必要があります。
+     </simpara>
+    </note>
     <para>
      <example>
       <title>URLのソースハイライト表示の作成</title>
@@ -790,7 +875,7 @@ $binarydata = pack("nvc*", 0x1234, 0x5678, 65, 66);
      型や構造を失わずにPHPの値を保存または渡す際に有効です。
     </simpara>
     <simpara>
-     シリアル化さ?た文字列をPHPの値に戻すには、
+     シリアル化された文字列をPHPの値に戻すには、
      <function>unserialize</function>を使用して下さい。
      <function>serialize</function>は型<type>integer</type>, 
      <type>double</type>,<type>string</type>,<type>array</type> 
@@ -842,10 +927,16 @@ if (!odbc_execute($stmt, &$sqldata)) {
      構文ハイライト表示を出力します。
      成功時にtrue、そうでない場合にfalseを返します。(PHP 4)
     </simpara>
+    <simpara>
+     この関数は、関数<function>highlight_file</function>のエイリアスで
+     す。
+    </simpara>
     <note>
      <simpara>
-      この関数は、関数<function>highlight_file</function>のエイリアス
-      です。
+      関数 <function>show_source</function> および
+      <function>highlight_file</function>を使用する場合には、パスワー
+      ドや潜在的なセキュリティ上の危険を生む類の他の情報のような重要な
+      情報を不注意で公開してしまわないように注意する必要があります。
      </simpara>
     </note>
     <simpara>
