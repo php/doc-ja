@@ -1,36 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- EN-Revision: 1.9 Maintainer: hirokawa Status: ready -->
-  <refentry id="function.array-merge">
-   <refnamediv>
-    <refname>array_merge</refname>
-    <refpurpose>二つ以上の配列をマージする</refpurpose>
-   </refnamediv>
-   <refsect1>
-    <title>説明</title>
-     <methodsynopsis>
-      <type>array</type><methodname>array_merge</methodname>
-      <methodparam><type>array</type><parameter>array1</parameter></methodparam>
-      <methodparam><type>array</type><parameter>array2</parameter></methodparam>
-      <methodparam choice="opt"><type>array</type><parameter>...</parameter></methodparam>
-     </methodsynopsis>
-    <para>
-     <function>array_merge</function>は、前の配列の後ろに配列を追加することに
-     より、二つ以上の配列の要素をマージし、得られた配列を返します。
-    </para>
-    <para>
-     入力配列が同じキー文字列を有していた場合、そのキーに関する後に指定された
-     値が、前の値を上書きします。しかし、配列が同じ添字番号を有していても
-     値は加算されるため、このようなことは起きません。
-    </para>
-    <para>
-     <example>
-      <title><function>array_merge</function>の例</title>
-      <programlisting role="php">
+<!-- $Revision: 1.5 $ -->
+<!-- EN-Revision: 1.15 Maintainer: hirokawa Status: ready -->
+<refentry id="function.array-merge">
+ <refnamediv>
+  <refname>array_merge</refname>
+  <refpurpose>1つまたは複数の配列をマージする</refpurpose>
+ </refnamediv>
+ <refsect1>
+  <title>説明</title>
+  <methodsynopsis>
+   <type>array</type><methodname>array_merge</methodname>
+   <methodparam><type>array</type><parameter>array1</parameter></methodparam>
+   <methodparam choice="opt"><type>array</type><parameter>array2</parameter></methodparam>
+   <methodparam choice="opt"><type>array</type><parameter>...</parameter></methodparam>
+  </methodsynopsis>
+  <para>
+   <function>array_merge</function>は、前の配列の後ろに配列を追加することに
+   より、1つまたは複数の配列の要素をマージし、得られた配列を返します。
+  </para>
+  <para>
+   入力配列が同じキー文字列を有していた場合、そのキーに関する後に指定された
+   値が、前の値を上書きします。しかし、配列が同じ添字番号を有していても
+   値は加算されるため、このようなことは起きません。
+  </para>
+  <para>
+   配列が一つだけ指定され、その配列が数字で添字指定されていた場合、
+   キーの添字が連続となるように振り直されます。
+   連想配列の場合、だぶりのあるエントリは最後のエントリにマージされます。
+   詳細は3番目の例を参照してください。
+  </para>
+  <para>
+   <example>
+    <title><function>array_merge</function>の例</title>
+    <programlisting role="php">
 <![CDATA[
 <?php
-$array1 = array ("color" => "red", 2, 4);
-$array2 = array ("a", "b", "color" => "green", "shape" => "trapezoid", 4);
-$result = array_merge ($array1, $array2);
+$array1 = array("color" => "red", 2, 4);
+$array2 = array("a", "b", "color" => "green", "shape" => "trapezoid", 4);
+$result = array_merge($array1, $array2);
 print_r($result);
 ?>
 ]]>
@@ -91,7 +98,6 @@ $result = $array1 + $array2;
 ]]>
       </programlisting>
       <para>
-       The numeric key will be preserved and thus the association remains.
        数値添字は維持され、関連が保持されます。
       </para>
       <screen role="php">
@@ -103,17 +109,84 @@ Array
 ]]>
       </screen>
      </example>
-    </para>
-    <note>
-     <para>
-      同じキーの場合、そのキーに関する後に指定された 値が、前の値を上書きします
-     </para>
-    </note>
-    <para>
-     <function>array_merge_recursive</function>も参照してください。
-    </para>
-   </refsect1>
-  </refentry>
+     <example>
+      <title><function>array_merge</function>の例</title>
+      <programlisting role="php">
+<![CDATA[
+<?php
+$array_one = array(0 => "jay", 1 => "bob", 2 => "randal", 3 => "dante");
+$array_two = array("jay" => "bob", "randal" => "dante", "jay" => "jason");
+
+unset($array_one[2]);
+
+$result_one = array_merge($array_one);
+$result_two = array_merge($array_two);
+
+print_r($result_one);
+print_r($result_two);
+?>
+]]>
+      </programlisting>
+      &example.outputs;
+      <screen role="php">
+<![CDATA[
+Array
+(
+    [0] => jay
+    [1] => bob
+    [2] => dante
+)
+Array
+(
+    [jay] => jason
+    [randal] => dante
+)
+]]>
+    </screen>
+   </example>
+  </para>
+  <note>
+   <para>
+    同じキーの場合、そのキーに関する後に指定された 値が、前の値を上書きします
+   </para>
+  </note>
+  <warning>
+   <para>
+    <function>array_merge</function> の動作はPHP 5で変更されました。PHP 4とは異なり、
+    <function>array_merge</function> は、<type>array</type>型のパラメータのみを受け取る
+    ようになりました。しかし、他の型をマージするために型キャストを使用することも可能です。
+    詳細は以下の例を参照してください。
+   </para>
+   <para>
+    <example>
+     <title><function>array_merge</function> PHP 5の例</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+$beginning = 'foo';
+$end = array(1 => 'bar');
+$result = array_merge((array)$beginning, (array)$end);
+?>
+]]>
+     </programlisting>
+     &example.outputs;
+     <screen role="php">
+<![CDATA[
+Array
+(
+    [0] => foo
+    [1] => bar
+)
+]]>
+     </screen>
+    </example>
+   </para>
+  </warning>
+  <para>
+   <function>array_merge_recursive</function>も参照してください。
+  </para>
+ </refsect1>
+</refentry>
 
 <!-- Keep this comment at the end of the file
 Local variables:
