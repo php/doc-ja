@@ -41,7 +41,7 @@ allowed to access /etc/passwd owned by uid 0 in /docroot/script.php on line 2
   <para>
    safe_modeの代わりに、open_basedir ディレクトリを設定すると、全ての
    ファイル操作は、指定したディレクトリ以下にあるものに制限されます。
-   例を以下に示します。(Apache httpd.ini の例) 
+   例を以下に示します。(Apache httpd.conf の例) 
    <programlisting role="ini">
 &lt;Directory /docroot&gt; 
 php_admin_value open_basedir /docroot 
@@ -66,6 +66,211 @@ Warning: readfile() has been disabled for security reasons in
 /docroot/script.php on line 2 
    </programlisting>
   </para>
+
+  <sect1 id="features.safe-mode.functions">
+   <title>セーフモードにより拘束または無効となる関数</title>
+   <para>
+    <link linkend="features.safe-mode">safe-mode</link>により制限される
+    関数のリストを示します。ただし、まだ、不完全で、不正確である可能性
+    があります。
+    <!-- TODO: add &note.sm.*; to the functions mentioned here.
+    That entity should link to this section -->
+    <table>
+     <title>セーフモードで制限される関数</title>
+     <tgroup cols="2">
+      <thead>
+       <row>
+        <entry>関数</entry>
+        <entry>制限</entry>
+       </row>
+      </thead>
+      <tbody>
+       <row>
+        <entry><function>dbmopen</function></entry>
+        <entry>&sm.uidcheck;</entry>
+       </row>
+       <row>
+        <entry><function>dbase_open</function></entry>
+        <entry>&sm.uidcheck;</entry>
+       </row>
+       <row>
+        <entry><function>filepro</function></entry>
+        <entry>&sm.uidcheck;</entry>
+       </row>
+       <row>
+        <entry><function>filepro_rowcount</function></entry>
+        <entry>&sm.uidcheck;</entry>
+       </row>
+       <row>
+        <entry><function>filepro_retrieve</function></entry>
+        <entry>&sm.uidcheck;</entry>
+       </row>
+       <row>
+        <entry><function>ifx_*</function></entry>
+        <entry>sql_safe_mode restrictions, (!= safe-mode)</entry>
+        <!-- TODO: more info on sql-safe-mode -->
+       </row>
+       <row>
+        <entry><function>ingres_*</function></entry>
+        <entry>sql_safe_mode restrictions, (!= safe-mode)</entry>
+        <!-- TODO: more info on sql-safe-mode -->
+       </row>
+       <row>
+        <entry><function>mysql_*</function></entry>
+        <entry>sql_safe_mode restrictions, (!= safe-mode)</entry>
+        <!-- TODO: more info on sql-safe-mode -->
+       </row>
+       <row>
+        <entry><function>pg_loimport</function></entry>
+        <entry>&sm.uidcheck;</entry>
+        <!-- source TODO: there is no PHP-warning for that safe-mode-restriction -->
+       </row>
+       <row>
+        <entry><function>posix_mkfifo</function></entry>
+        <entry>&sm.uidcheck.dir;</entry>
+       </row>
+       <row>
+        <entry><function>putenv</function></entry>
+        <entry>
+	 iniディレクティブのsafe_mode_protected_env_vars および
+	 safe_mode_allowed_env_varsに依存します。
+	 <function>putenv</function>のドキュメントも参照下さい。
+	</entry>
+        <!-- TODO: document those directives in chapters/config.xml -->
+       </row>
+       <row>
+        <entry><function>move_uploaded_file</function></entry>
+        <entry>&sm.uidcheck; <!-- TODO: check this --></entry>
+       </row>
+
+       <!-- TODO: from here on, add warning to the function itself -->
+
+       <row>
+        <entry><function>chdir</function></entry>
+        <entry>&sm.uidcheck.dir;</entry>
+       </row>
+       <row>
+        <entry><function>dl</function></entry>
+        <entry>&sm.disabled;</entry>
+       </row>
+       <row>
+        <entry>
+	 <link linkend="language.operators.execution">backtick演算子</link>
+	</entry>
+        <entry>&sm.disabled;</entry>
+       </row>
+       <row>
+        <entry><function>shell_exec</function> (backticksに等価な機能)</entry>
+        <entry>&sm.disabled;</entry>
+       </row>
+       <row>
+        <entry><function>exec</function></entry>
+        <entry>
+	 <link linkend="ini.safe-mode-exec-dir">safe_mode_exec_dir</link>
+	 の中でのみ実行可能です。実行上の理由により、現在、実行パスに
+	 <literal>..</literal>を含めることは許可されていません。
+	</entry>
+       </row>
+       <row>
+        <entry><function>system</function></entry>
+        <entry>
+	 <link linkend="ini.safe-mode-exec-dir">safe_mode_exec_dir</link>
+	 の中でのみ実行可能です。実行上の理由により、現在、実行パスに
+	 <literal>..</literal>を含めることは許可されていません。
+	</entry>
+       </row>
+       <row>
+        <entry><function>passthru</function></entry>
+        <entry>
+	 <link linkend="ini.safe-mode-exec-dir">safe_mode_exec_dir</link>
+	 の中でのみ実行可能です。実行上の理由により、現在、実行パスに
+	 <literal>..</literal>を含めることは許可されていません。
+	</entry>
+       </row>
+       <row>
+        <entry><function>popen</function></entry>
+        <entry>
+	 <link linkend="ini.safe-mode-exec-dir">safe_mode_exec_dir</link>
+	 の中でのみ実行可能です。実行上の理由により、現在、実行パスに
+	 <literal>..</literal>を含めることは許可されていません。
+	</entry>
+        <!-- TODO: not sure. popen uses a completely different implementation
+        Don't know why, don't know whether it's behaving the same -->
+       </row>
+       <row>
+        <entry><function>mkdir</function></entry>
+        <entry>&sm.uidcheck.dir;</entry>
+       </row>
+       <row>
+        <entry><function>rmdir</function></entry>
+        <entry>&sm.uidcheck;</entry>
+       </row>
+       <row>
+        <entry><function>rename</function></entry>
+        <entry>
+	 &sm.uidcheck; &sm.uidcheck.dir;
+	 <!-- on the old name only, it seems. Is rename preventing moving files? -->
+	</entry>
+       </row>
+       <row>
+        <entry><function>unlink</function></entry>
+        <entry>&sm.uidcheck; &sm.uidcheck.dir;</entry>
+       </row>
+       <row>
+        <entry><function>copy</function></entry>
+        <entry>&sm.uidcheck; &sm.uidcheck.dir; ( 
+        <parameter>source</parameter> および
+        <parameter>target</parameter>において) </entry>
+       </row>
+       <row>
+        <entry><function>chgrp</function></entry>
+        <entry>&sm.uidcheck;</entry>
+       </row>
+       <row>
+        <entry><function>chown</function></entry>
+        <entry>&sm.uidcheck;</entry>
+       </row>
+       <row>
+        <entry><function>chmod</function></entry>
+        <entry>
+	 &sm.uidcheck; 加えて、SUID, SGID, stickyビットを設定できません。
+	</entry>
+       </row>
+       <row>
+        <entry><function>touch</function></entry>
+        <entry>&sm.uidcheck; &sm.uidcheck.dir;</entry>
+       </row>
+       <row>
+        <entry><function>symlink</function></entry>
+        <entry>&sm.uidcheck; &sm.uidcheck.dir; (note: only the target is 
+        checked)</entry>
+       </row>
+       <row>
+        <entry><function>link</function></entry>
+        <entry>&sm.uidcheck; &sm.uidcheck.dir; (note: only the target is 
+        checked)</entry>
+       </row>
+       <row>
+        <entry><function>getallheaders</function></entry>
+        <entry>
+	 セーフモードでは、'authorization'で始まるヘッダ(大文字小文字は
+	 区別されません)は返されません。
+	 警告: これは、AOLサーバにおける
+	 <function>getallheaders</function>の実装では正常に動作しません!
+	</entry>
+       </row>
+       <row>
+        <entry>
+         <filename>php4/main/fopen_wrappers.c</filename>を使用する全ての関数
+        </entry>
+        <entry>??</entry>
+       </row>
+      </tbody>
+     </tgroup>
+    </table>
+   </para>
+  </sect1>
+
  </chapter>
 
 <!-- Keep this comment at the end of the file
