@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.23 $ -->
+<!-- $Revision: 1.24 $ -->
  <chapter id="language.types">
   <title>型</title>
   
@@ -1015,9 +1015,9 @@ echo "\$foo==$foo; type is " . gettype ($foo) . "<br>\n";
    <title>配列</title>
 
    <para>
-    PHPの配列は、実際には順番付けられたマップです。マップは、
-    <emphasis>値</emphasis>を<emphasis>キー</emphasis>にマップする型で
-    す。この型は、いくつかの手法で最適化されます。このため、実際の配列
+    PHPの配列は、実際には順番付けられたマップです。マップは型の一種で、
+    <emphasis>値</emphasis>を<emphasis>キー</emphasis>にマップします。
+    この型は、いくつかの手法で最適化されます。このため、実際の配列
     またはリスト(ベクトル)、(あるマップの実装である)ハッシュテーブル、
     ディレクトリ、コレクション、スタック、キュー等として使用することが
     可能です。PHPの配列には他のPHP配列を値として保持することができるた
@@ -1028,8 +1028,6 @@ echo "\$foo==$foo; type is " . gettype ($foo) . "<br>\n";
     造に各々に関する例を少なくとも一つ見付けることが可能です。これらの
     構造に関するより詳細な情報については、データ構造に関する良書を購入
     して下さい。
-    <!-- like goodrich&tamassia: datastructures and algorithmes.
-    Only, the subtitle is: in Java, and it's quite academic too -->
    </para>
    
    <sect2 id="language.types.array.syntax">
@@ -1038,37 +1036,91 @@ echo "\$foo==$foo; type is " . gettype ($foo) . "<br>\n";
     <sect3 id="language.types.array.syntax.array-func">
      <title><function>array</function>で指定</title>
      <para>
-      <type>配列</type> は、言語構造<function>array</function> で作成
-      することが可能です。この構造は、特定の数のカンマで区切られた
+      <type>配列</type> は、言語に組み込まれた
+      <function>array</function> で作成することが可能です。この構造は、
+      特定の数のカンマで区切られた
       <literal><replaceable>key</replaceable> =&gt; <replaceable
       >value</replaceable></literal>の組を引数とします。
+     </para>
+     <para>
+      <synopsis>
+array( <optional> <replaceable>key</replaceable> =&gt; </optional> <replaceable
+>value</replaceable>
+     , ...
+     )
+// <replaceable>key</replaceable>は、<type>文字列</type>または非負の
+// <type>整数</type>です。
+// <replaceable>value</replaceable>|に制約はありません.
+      </synopsis>
+     </para>
+     <para>
+      <informalexample>
+       <programlisting role="php">
+<![CDATA[
+<?php
+$arr = array("foo" => "bar", 12 => true);
+
+echo $arr["foo"]; // bar
+echo $arr[12];    // 1
+?>
+]]>
+       </programlisting>
+      </informalexample>
      </para>
      <para>
       <varname>key</varname> は、<type>整数</type> または
       <type>文字列</type>です。
       あるキーが、<type>整数</type>の標準的な表現形式である場合、
-      そのように解釈されます。(つまり、<literal>'8'</literal>は
+      そのように解釈されます。(つまり、<literal>"8"</literal>は
       <literal>8</literal>として解釈されます。一方、
-      <literal>'08'</literal>は<literal>'08'</literal>として解釈されま
+      <literal>"08"</literal>は<literal>"08"</literal>として解釈されま
       す。)
+      PHPにおいては添字配列と連想配列の間に違いはなく、配列型は１つだ
+      けで、整数または文字列のインデックスを使用することができます。
      </para>
      <para>
-      値は、何でも構いません。
+      値には、PHPの全ての型を使用することができます。
+      <informalexample>
+       <programlisting role="php">
+<![CDATA[
+<?php
+$arr = array("somearray" => array(6 => 5, 13 => 9, "a" => 42));
+
+echo $arr["somearray"][6];    // 5
+echo $arr["somearray"][13];   // 9
+echo $arr["somearray"]["a"];  // 42
+?>
+]]>
+       </programlisting>
+      </informalexample>
      </para>
      <para>
       キーを省略した場合、整数添字の最大値が使用され、新しいキーはそ
-      の最大値+1となります。整数値は負の数となる可能性があるため、
-      負の添字も有りえます。例えば、最高時の添字が<literal>-6</literal>
+      の最大値+1となります。整数値は負の数とすることができ、負の添字に
+      ついても同様となります。例えば、最高時の添字が<literal>-6</literal>
       の場合、次のキーは<literal>-5</literal>となります。
       整数添字がまだ存在しない場合、キーは<literal>0</literal>(ゼロ)となります。
       値が既に代入されているキーを指定した場合、元の値は上書きされます。
+      <informalexample>
+       <programlisting role="php">
+<![CDATA[
+<?php
+// この配列は以下の配列と同じです ...
+array(5 => 43, 32, 56, "b" => 12);
+
+// この配列は上の配列と同じです
+array(5 => 43, 6 => 32, 7 => 56, "b" => 12);
+?>
+]]>
+       </programlisting>
+      </informalexample>
      </para>
      <para>
-      キーとして <literal>true</literal> を使用すると、
-      <type>integer</type> <literal>1</literal>がキーとして評価されます。
-      キーとして<literal>false</literal>を使用すると、
-      <type>integer</type> <literal>0</literal>がキーとして評価されます。
-      キーとして<literal>NULL</literal>を使用すると、空の文字列として評価
+      キーとして &true; を使用した場合、
+      <type>整数</type>型の<literal>1</literal>がキーとして解釈されます。
+      キーとして &false; を使用した場合、
+      <type>整数</type>型の<literal>0</literal>がキーとして解釈されます。
+      キーとして<literal>NULL</literal>を使用した場合、空の文字列として評価
       されます。キーとして空の文字列を使用すると、空の文字列のキーとその値を
       作成(または上書き)します。空の括弧を用いた場合と同じではありません。
      </para>
@@ -1076,17 +1128,6 @@ echo "\$foo==$foo; type is " . gettype ($foo) . "<br>\n";
       配列またはオブジェクトをキーとして使用することはできません。
       これを行なうと、warning: <literal>Illegal offset type</literal>
       を発生します。
-     </para>
-
-     <para>
-      <synopsis>
-array( <optional> <replaceable>key</replaceable> =&gt; </optional> <replaceable
->value</replaceable>
-     , ...
-     )
-// <replaceable>key</replaceable> は <type>string</type> または非負の <type>整数</type>のどちらか
-// <replaceable>value</replaceable> は何でも可
-      </synopsis>
      </para>
     </sect3>
     
@@ -1097,27 +1138,62 @@ array( <optional> <replaceable>key</replaceable> =&gt; </optional> <replaceable
       す。
      </para>
      <para>
-      これは、角括弧の中にキーを指定することにより、配列に値を代入する
-      ことにより行うことが可能です。キーを省略することも可能です。この
-      場合、空の角括弧("<literal>[]</literal>")の変数名として追加して
-      下さい。
+      これは、角括弧の中にキーを指定し、配列に値を代入することにより行
+      います。キーを省略することも可能です。この場合、空の角括弧
+      ("<literal>[]</literal>")の変数名として追加して下さい。
       <synopsis>
 $arr[<replaceable>key</replaceable>] = <replaceable>value</replaceable>;
 $arr[] = <replaceable>value</replaceable>;
-// <replaceable>key</replaceable> は <type>string</type> または非負の
+// <replaceable>key</replaceable> は <type>文字列</type> または非負の
 // <type>整数</type>のどちらかです。
 
 // <replaceable>value</replaceable> は何でもかまいません
       </synopsis>
       <varname>$arr</varname> がまだ存在しない場合、作成されます。
       配列を指定する別の手段でもあります。ある値を変更するには、新し
-      い値に値を代入します。キー/値の組を削除したい場合には、
+      い値に値を代入します。特定のキー/値の組を削除したい場合には、
       <function>unset</function> を使用する必要があります。
+      <informalexample>
+       <programlisting role="php">
+<![CDATA[
+<?php
+$arr = array(5 => 1, 12 => 2);
 
+$arr[] = 56;    // このスクリプトのこの位置に記述した場合、
+                // $arr[13] = 56; と同じです
+
+$arr["x"] = 42; // キー"x"の新しい要素を配列に追加します
+                
+unset($arr[5]); // 配列から要素を削除します
+
+unset($arr);    // 配列全体を削除します
+?>
+]]> 
+       </programlisting>
+      </informalexample>
      </para>
-
+     <note>
+      <para>
+       同一スクリプト内でキーを省略して新規要素を追加する場合、
+       追加される数値添字は、使用されている添字の最大値+1になります。
+       ただし、     
+       <function>unset</function>関数により添字が最大の要素を削除した場合も、
+       使用されている添字の最大値は不変であることに注意して下さい。
+       <informalexample>
+        <programlisting role="php">
+<![CDATA[
+<?php
+$a = array("orange","apple","banana");
+unset($a[2]); // $a[2]を消去
+$a[] = 'carrot'; // 添字を省略して代入
+var_dump($a); // 出力: array(0 => 'orange', 1 => 'apple', 3 => 'carrot')
+?>
+]]> 
+        </programlisting>
+       </informalexample>       
+      </para>
+     </note>
     </sect3>
-    
 
    </sect2><!-- end syntax -->
    
@@ -1132,25 +1208,34 @@ $arr[] = <replaceable>value</replaceable>;
       <function>unset</function>関数は配列のキーを削除することが出来ます。
       ただし、これによってインデックスの再構築が行われるわけでは<emphasis>
        ない</emphasis>ということに気をつけてください。
+      "通常の整数添字"(0から始まり、1つずつ増加)のみを使用している場合、
+      <function>array_values</function>を用いてインデックスを再構築す
+      ることができます。
       <informalexample>
        <programlisting role="php">
 <![CDATA[
-$a = array( 1 => 'one', 2 => 'two', 3 => 'three' );
-unset( $a[2] );
+<?php
+$a = array(1 => 'one', 2 => 'two', 3 => 'three');
+unset($a[2]);
 /* これにより配列は以下の様に定義されます。
-   $a = array( 1=>'one', 3=>'three');
-   こうではありません：
+   $a = array( 1 => 'one', 3 => 'three');
+   以下ではありません：
    $a = array( 1 => 'one', 2 => 'three');
 */
+
+$b = array_values($a);
+// bは、array(1 => 'one', 2 =>'three')となります
+?>
 ]]>
        </programlisting>
       </informalexample>
+
      </para>
     </note>
     <para>
-     制御構造<link linkend="control-structures.foreach">foreach</link> 
-     が配列用に限定して存在します。この構造は、配列の要素に簡単に連続
-     的にアクセスする手段を提供します。
+     配列専用の制御構造として<link
+     linkend="control-structures.foreach">foreach</link>があります。こ
+     の構造は、配列の要素に簡単に連続的にアクセスする手段を提供します。
     </para>
    </sect2>
    
@@ -1160,39 +1245,113 @@ unset( $a[2] );
     <sect3 id="language.types.array.foo-bar">
      <title>なぜ、<literal>$foo[bar]</literal> は使用できないのか?</title>
      <para>
+      連想配列の添字の前後は常に引用符で括る必要があります。
+      例えば、$foo[bar]ではなく$foo['bar']を使用して下さい。
+      しかし、 $foo[bar]はなぜ誤りなのでしょうか?
       古いスクリプトで次のような構文を見たことがあるかもしれません。
       <informalexample>
        <programlisting role="php">
 <![CDATA[
+<?php
 $foo[bar] = 'enemy';
 echo $foo[bar];
-// 等
+// etc
+?>
 ]]>
        </programlisting>
       </informalexample>
       これは間違っていますが、動作します。では、なぜ間違っているのでしょ
-      う? その理由は、<link linkend="language.types.array.syntax"
+      う? その理由は、このコードには文字列('bar' - 引用符で括られてい
+      る)ではなく未定義の定数(bar)が使用されており、PHPが同じ名前の定
+      数を不幸にして同じコードの中に定義する可能性があるためです。
+      下位互換性の維持のために未定義の定数は同じ名前の文字列に自動的に
+      変換されるため、このコードは動作します。
+     </para>
+     <para>
+      この具体例を以下に示します。
+      <informalexample>
+       <programlisting role="php">
+<![CDATA[
+<?php
+// エラーを全て表示するよう設定
+error_reporting(E_ALL);
+
+$arr = array('fruit' => 'apple', 'veggie' => 'carrot');
+
+// 正しい
+print $arr['fruit'];  // apple
+print $arr['veggie']; // carrot
+
+// 間違い。これは動作しますが、未定義の定数fruitを使用しているため、
+// 同時にE_NOTICEレベルのPHPエラーを発生します
+// 
+// Notice: Use of undefined constant fruit - assumed 'fruit' in...
+print $arr[fruit];    // apple
+
+// 検証のため、定数を定義してみましょう。
+// fruitという名前の定数に値'veggie'を代入します。
+define('fruit','veggie');
+
+// ここでは、出力が異なることに注意して下さい。
+print $arr['fruit'];  // apple
+print $arr[fruit];    // carrot
+
+// 以下は文字列の中であるためOKです。定数は、文字列の中では解釈されな
+// いため、E_NOTICEエラーはここでは発生しません。
+print "Hello $arr[fruit]";      // Hello apple
+
+// 例外が１つあり、文字列の中で波括弧で配列を括った場合には、
+// 定数が解釈されます
+print "Hello {$arr[fruit]}";    // Hello carrot
+print "Hello {$arr['fruit']}";  // Hello apple
+
+// これは動作せず、以下のようなパースエラーを発生します:
+// Parse error: parse error, expecting T_STRING' or T_VARIABLE' or T_NUM_STRING'
+// 文字列の中でオートグローバルを使用した場合も無論同様です。
+print "Hello $arr['fruit']";
+print "Hello $_GET['foo']";
+
+// 文字列結合で同じことをすることもできます。
+print "Hello " . $arr['fruit']; // Hello apple
+?>
+]]>
+       </programlisting>
+      </informalexample>
+     </para>
+     <para>
+      <link linkend="function.error-reporting">error_reporting</link>
+      で(<constant>E_ALL</constant>を指定する等により)
+      <literal>E_NOTICE</literal> レベルのエラー出力を有効にした場合、
+      上記のエラーが出力されます。
+      デフォルトでは、<link linkend="ini.error-reporting">
+      error_reporting</link>はこれらを表示しない設定になっています。
+     </para>
+     <para>
+      <link linkend="language.types.array.syntax"
       >構文</link>の節に記述したように、角括弧の間
-      ('<literal>[</literal>'および'<literal>]</literal>')に式がなけれ
-      ばならないためです。これは、次のように書くことが可能であることを
+      ('<literal>[</literal>'および'<literal>]</literal>')には、式がなけれ
+      ばなりません。これは、次のように書くことが可能であることを
       意味します。
       <informalexample>
        <programlisting role="php">
 <![CDATA[
-echo $arr[ foo(true) ];        
+<?php
+echo $arr[somefunc($bar)];
+?>
 ]]>
        </programlisting>
       </informalexample>
-      これは、関数の出力を配列の添字として使用する例です。PHPは定数に
-      ついても認識します。前に<literal>E_*</literal>を見たことがあるか
-      もしれません。
-
+      これは、関数の戻り値を配列の添字として使用する例です。PHPは定数に
+      ついても認識し、以下のような<literal>E_*</literal>の使用例を見た
+      ことがあるかもしれません。
       <informalexample>
        <programlisting role="php">
 <![CDATA[
-$error_descriptions[E_ERROR] = "A fatal error has occured";
+<?php
+$error_descriptions[E_ERROR]   = "A fatal error has occured";
 $error_descriptions[E_WARNING] = "PHP issued a warning";
-$error_descriptions[E_NOTICE] = "This is just an informal notice";
+$error_descriptions[E_NOTICE]  = "This is just an informal notice";
+?>
 ]]>
        </programlisting>
       </informalexample>
@@ -1202,9 +1361,11 @@ $error_descriptions[E_NOTICE] = "This is just an informal notice";
       <informalexample>
        <programlisting role="php">
 <![CDATA[
+<?php
 $error_descriptions[1] = "A fatal error has occured";
 $error_descriptions[2] = "PHP issued a warning";
 $error_descriptions[8] = "This is just an informal notice";
+?>
 ]]>
        </programlisting>
       </informalexample>
@@ -1232,12 +1393,12 @@ $error_descriptions[8] = "This is just an informal notice";
       </para>
       <note>
        <simpara>
-        <link linkend="function.error-reporting">error_reporting</link> を
-        <literal>E_ALL</literal> に変えた場合、PHPがこの構造が使用され
-        ているところ見付ける度に警告が生成されます。この機能は、他の過
-        去の「機能」についても有効です。
-        (スクリプトに行 <literal>error_reporting(E_ALL);</literal> を
-        置いて下さい)
+        二重引用符で括られた<type>文字列</type>の中では、
+        引用符で配列の添字を括らないことができ、このため、
+        <literal>"$foo[bar]"</literal>は有効です。
+        この理由の詳細については、上記の例や
+        <link linkend="language.types.string.parsing">文字列中での変数
+        のパース</link>を参照して下さい。
        </simpara>
       </note>
       <note>
