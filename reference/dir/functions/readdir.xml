@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- splitted from ./ja/functions/dir.xml, last change in rev 1.1 -->
-<!-- last change to 'readdir' in en/ tree in rev 1.2 -->
+<!-- last change to 'readdir' in en/ tree in rev 1.4 -->
   <refentry id="function.readdir">
    <refnamediv>
     <refname>readdir</refname>
@@ -13,48 +13,74 @@
       <methodparam><type>resource</type><parameter>dir_handle</parameter></methodparam>
      </methodsynopsis>
     <para>
-     ディレクトリから次のファイルのファイル名を返します。ファイル名は
-     特定の順序で返されるわけではありません。
+     ディレクトリから次のファイルのファイル名を返します。
+     ファイル名はファイルシステム上に格納されている順番で返されます。
+    </para>
+    <para>
+     <function>readdir</function>の戻り値は以下の例のように
+     チェックされることに注目してください。
+     We are explicitly
+     testing whether the return value is identical to (equal to and of
+     the same type as--see <link
+     linkend="language.operators.comparison">Comparison
+     Operators</link> for more information) &false; since otherwise,
+     any directory entry whose name evaluates to &false; will stop the
+     loop (e.g. a directory named "0").
+    </para>
+    <para>
      <example>
-      <title>カレントディレクトリにある全ファイルのリスト</title>
+      <title>カレントディレクトリにある全ファイルのリストを得る</title>
       <programlisting role="php">
 <![CDATA[
 // Note that !== did not exist until 4.0.0-RC2
 <?php
-$handle=opendir('.');
-echo "Directory handle: $handle\n";
-echo "Files:\n";
-while (false !== ($file = readdir($handle))) { 
-    echo "$file\n";
+if ($handle = opendir('/path/to/files')) {
+    echo "Directory handle: $handle\n";
+    echo "Files:\n";
+
+    /* This is the correct way to loop over the directory. */
+    while (false !== ($file = readdir($handle))) { 
+        echo "$file\n";
+    }
+
+    /* This is the WRONG way to loop over the directory. */
+    while ($file = readdir($handle)) { 
+        echo "$file\n";
+    }
+
+    closedir($handle); 
 }
-closedir($handle); 
 ?>
 ]]>
       </programlisting>
      </example>
     </para>
     <para>
-     <function>readdir</function> は、エントリ . および .. を返すことに
+     <function>readdir</function> は、エントリ <literal>.</literal> および 
+     <literal>..</literal> を返すことに
      注意して下さい。これらを必要としない場合には、次のように取り除いて下さい。
      <example>
       <title>
-       現在のディレクトリの . および .. を除いた全てのファイルの一覧を表示。
+       現在のディレクトリの <literal>.</literal> および <literal>..</literal> を
+       除いた全てのファイルの一覧を表示。
       </title>
       <programlisting role="php">
 <![CDATA[
 <?php 
-$handle = opendir('.'); 
-while (false !== ($file = readdir($handle))) { 
-    if ($file != "." && $file != "..") { 
-        echo "$file\n"; 
-    } 
+if ($handle = opendir('.')) {
+    while (false !== ($file = readdir($handle))) { 
+        if ($file != "." && $file != "..") { 
+            echo "$file\n"; 
+        } 
+    }
+    closedir($handle); 
 }
-closedir($handle); 
 ?>
 ]]>
       </programlisting>
      </example>
     </para>
+    <para>See also <function>is_dir</function>, and <function>glob</function>.</para>
    </refsect1>
   </refentry>
 
