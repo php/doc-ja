@@ -1,113 +1,137 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.7 $ -->
+<!-- $Revision: 1.8 $ -->
+<!-- EN-Revision: 1.21 Maintainer: hirokawa Status: ready -->
  <reference id="ref.mbstring">
   <title>マルチバイト文字列関数(mbstring)</title> 
-  <titleabbrev>
-   マルチバイト文字列
-  </titleabbrev>
+  <titleabbrev>マルチバイト文字列</titleabbrev>
   <partintro>
    
-  <section id="mbstring.intro">
-   &reftitle.intro;
-   <para>
-    全ての文字をシングルバイトで表現可能な言語は数多くあります。マル
-    チバイト文字コードは、多くの言語で文字を表すために使用されていま
-    す。<literal>mbstring</literal> は日本語文字を処理するために開発
-    されました。しかし、<literal>mbstring</literal> 関数の多くは、日
-    本語以外の文字エンコーディングも処理することが可能です。
-   </para>
-   <para>
-    マルチバイト文字エンコーディングは、バイトの並びで単一の文字を表
-    現します。いくつかの文字エンコーディングでは、マルチバイト文字列
-    の始まり/終わりを表すためにシフト(エスケープ)シーケンスが使用され
-    ています。この場合、マルチバイト文字エンコーディングに対応した方
-    法でない限り、分割または追加されるとマルチバイト文字列は壊れてし
-    まう可能性があります。このモジュールは、マルチバイト文字列に対応
-    した文字列関数および変換関数のようなその他のユーティリティ関数を
-    提供します。
-   </para>
-   <para>
-    PHPは、基本的にISO-8859-1用に設計されているため、いくつかのマルチ
-    バイト文字エンコーディングは、PHPで正常に動作しません。このため、
-    <literal>mbstring.language</literal> に適切な言語(日本語の場合は
-    Japanese)、<literal>mbstring.internal_encoding</literal> にPHPで動
-    作する文字エンコーディングを設定することが必要です。
-   </para>
-   <para>
-    PHP4の文字エンコーディングに関する規約
-   </para>
-   <para>
-    <itemizedlist>
-     <listitem>
-      <simpara>
-       バイト毎のエンコーディングである。
-      </simpara>
-     </listitem>
-     <listitem>
-      <simpara>
-       シングルバイト文字は、<literal>ASCII</literal>互換の
-       <literal>00h-7fh</literal>の範囲にある。
-      </simpara>
-     </listitem>
-     <listitem>
-      <simpara>
-       マルチバイト文字は、<literal>00h-7fh</literal>以外を使用する。
-       </simpara>
-     </listitem>
-    </itemizedlist>
-   </para>
-   <para>
-    PHPの内部エンコーディングとして使用可能な文字エンコーディングと
-    使用できない文字エンコーディングの例を以下に示します。
-    <informalexample>
-     <programlisting>
-<![CDATA[
-PHPで動作する文字エンコーディング: 
-ISO-8859-*, EUC-JP, UTF-8
-
-PHPで動作しない文字エンコーディング:
-JIS, SJIS
-]]>
-     </programlisting>
-    </informalexample>
-   </para>
-   <para>
-     PHPの内部エンコーディングとして使用できない文字エンコーディングは、
-     <literal>mbstring</literal>のHTTP入力/出力変換の機能/関数により変換
-     することが可能です。
+   <section id="mbstring.intro">
+    &reftitle.intro;
+    <para>
+     全ての文字をシングルバイトで一対一表現可能な言語は数多くありますが、
+     文字表現に単一バイトによる表現範囲を越えるほど多くの文字を必要とする
+     言語も多くあります。マルチバイト文字のエンコーディング法は、
+     こうした(256を越える)多くの文字を通常のビット単位の符号化システムで表現するために
+     開発されました。
     </para>
-    <note>
+    <para>
+     マルチバイトエンコーディングで符号化された文字列を(trim, split, splice,などで)
+     処理する際、こうしたエンコーディングでは二つ以上の連続するバイトが一つの文字を表す
+     可能性があるため、特別な関数を使用する必要があります。
+     マルチバイトに対応しない文字列関数を文字列に適用した場合、マルチバイト文字の
+     先頭バイトまたは終了バイトを検出できずに文字列を壊し、多くの場合には元の意味を
+     失わせてしまう可能性があります。
+    </para>
+    <para>
+     <literal>mbstring</literal>は、これらのマルチバイト対応関数を
+     提供し、マルチバイトエンコーディング、シングルバイトエンコーディングの処理を
+     基本的に前提とするPHPで処理することを容易にします。
+     これに加えて、<literal>mbstring</literal> は、複数のエンコーディング間での
+     文字エンコーディング変換を行います。
+    </para>
+    <para>
+     <literal>mbstring</literal>は、もともと日本語のWebページで使用する
+     ために開発されましたが、UTF-8やUCS-2のようなUnicodeに基づく
+     エンコーディングや多くの(以下に示す)シングルバイトエンコーディングも処理する
+     ことが可能です。
+    </para>
+
+    <section id="mbstring.php4.req">
+     <title>PHPの文字エンコーディングに関する要件</title>
      <para>
-      SJIS は、読者がパーサ/コンパイラ、文字エンコーディングと文字エン
-      コーディングの問題点について精通していない限り内部エンコーディン
-      グとして使用するべきではありません。
+      以下の型のエンコーディングが、PHPで安全に使用することができます。
+      <itemizedlist>
+       <listitem>
+        <para>
+         シングルバイトエンコーディングで、
+         <itemizedlist>
+          <listitem>
+           <simpara>
+            <literal>00h</literal>から <literal>7fh</literal>の範囲の文字に関して、
+            ASCII互換(ISO646互換)のマッピングを有する。
+           </simpara>
+          </listitem>
+         </itemizedlist>
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         マルチバイトエンコーディングで、
+         <itemizedlist>
+          <listitem>
+           <simpara>
+            <literal>00h</literal>から <literal>7fh</literal>の範囲の文字では、
+            ASCII互換のマッピングを有する。
+           </simpara>
+          </listitem>
+          <listitem>
+           <simpara>
+            ISO2022エスケープシーケンスを使用しない。
+           </simpara>
+          </listitem>
+          <listitem>
+           <simpara>
+            単一の文字を表す複数バイトのいずれにおいても
+            <literal>00h</literal>から<literal>7fh</literal>の
+            値を使用しない。
+           </simpara>
+          </listitem>
+         </itemizedlist>  
+        </para>
+       </listitem>
+      </itemizedlist>
      </para>
-    </note>
-    <note>
      <para>
-      PHPでデータベースを使用する場合、性能を向上させるためにデータベー
-      スとPHPの内部エンコーディングについて同じ文字エンコーディングを使用
-      することを推奨します。
+      PHPで動作しないと思われる文字エンコーディングの例を以下に示します。
+      <informalexample>
+       <programlisting>
+<![CDATA[
+JIS, SJIS, ISO-2022-JP, BIG-5
+]]>
+       </programlisting>
+      </informalexample>
      </para>
      <para>
-      PostgreSQLを使用している場合、バックエンドの文字エンコーディング
-      と異なる文字エンコーディングを使用することが可能です。詳細につい
-      ては、PostgreSQLのマニュアルを参照下さい。
+      これらのエンコーディングで書かれたPHPスクリプトは、
+      特に符号化された文字列がスクリプトで記述子やリテラルに使用される場合には、
+      動作しない可能性がありますが、入力されるHTTPクエリに関して
+      <literal>mbstring</literal>の透過的なエンコーディングフィルタを
+      設定することでこれらのエンコーディングをほとんど使用しないようにすることが
+      できます。
      </para>
-    </note>
+     <note>
+      <para>
+       SJIS, BIG5, CP936, CP949, GB18030 は、読者がパーサ/コンパイラ、
+       文字エンコーディングと文字エンコーディングの問題点について精通していない限り
+       内部エンコーディングとして使用するべきではありません。
+      </para>
+     </note>
+     <note>
+      <para>
+       PHPでデータベースを使用する場合、性能を向上させるためにデータベースとPHPの
+       内部エンコーディングについて同じ文字エンコーディングを使用することを推奨します。
+      </para>
+      <para>
+       PostgreSQLを使用している場合、バックエンドの文字エンコーディング
+       と異なる文字エンコーディングを使用することが可能です。詳細につい
+       ては、PostgreSQLのマニュアルを参照下さい。
+      </para>
+     </note>
+    </section>
    </section>
 
    &reference.mbstring.configure;
-
+   
    &reference.mbstring.ini;
-
+   
    <section id="mbstring.resources">
     &reftitle.resources;
     &no.resource;
    </section>
-
+   
    &reference.mbstring.constants;
-
+   
    <section id="mbstring.http">
     <title>HTTP入出力</title>
     <para>
@@ -117,7 +141,7 @@ JIS, SJIS
     </para>
     <note>
      <para>
-      PHP 4.3.3よりも前のバージョンの場合、
+      PHP 4.3.2およびそれ以前のバージョンの場合、
       HTMLフォームの<literal>enctype</literal>が
       <literal>multipart/form-data</literal>に設定された場合、
       <literal>mbstring</literal> は、POSTデータの文字エンコーディング
@@ -131,13 +155,13 @@ JIS, SJIS
       <literal>multipart/form-data</literal>に設定され、かつ、
       &php.ini;において
       <literal>mbstring.encoding_translation</literal>にOnが指定されて
-      いる場合、
+       いる場合、
       POSTデータの変数とアップロードされたファイルの名前の
       文字エンコーディングは、内部文字エンコーディングに変換されます。
-      ただし、HTMLフォームのnameに指定した文字は変換されません。
+      ただし、クエリキーに関しては、変換されません。
      </para>
     </note>
-    <para>
+     <para>
      <itemizedlist>
       <listitem>
        <simpara>
@@ -156,42 +180,42 @@ mbstring.http_input = pass
 ;; HTTP入力変換を無効にする (PHP 4.3.0以降)
 mbstring.encoding_translation = Off
 ]]>
-	  </programlisting>
-	 </example>
-	</para>
-	<para>
-	 PHPをApacheモジュールで使用する場合、PHP iniの設定を
-	 <literal>httpd.conf</literal>により仮想ホスト単位で、または
-	 <literal>.htaccess</literal>によりディレクトリ単位で上書きす
-	 ることが可能です。詳細は、<link linkend="configuration">設定
-	 </link>の節およびApacheマニュアルを参照下さい。
-	</para>
+         </programlisting>
+        </example>
+       </para>
+       <para>
+        PHPをApacheモジュールで使用する場合、PHP iniの設定を
+        &httpd.conf; により仮想ホスト単位で、または
+        &htaccess; によりディレクトリ単位で上書きすることが可能です。
+        詳細は、<link linkend="configuration">設定</link>の節および
+        Apacheマニュアルを参照下さい。
+       </para>
+      </listitem>
+      <listitem>
+       <simpara>
+        HTTP出力
+       </simpara>
+       <para>
+        出力の文字エンコーディング変換を有効にする方法は複数あります。
+        一つ目は &php.ini;、もう１つは
+        <function>ob_start</function> で <literal>ob_start</literal>
+        のコールバック関数として
+        <function>mb_output_handler</function> を指定するものです。
+       </para>
+       <note>
+        <para>
+         PHP3-i18nのユーザにとっては、<literal>mbstring</literal>の出
+         力変換は、PHP3-i18nとは異なっています。文字エンコーディング
+         は、出力のバッファリング機能を使用して変換されます。
+        </para>
+       </note>
        </listitem>
-       <listitem>
-	<simpara>
-	 HTTP出力
-	</simpara>
-	<para>
-	 出力の文字エンコーディング変換を有効にする方法は複数あります。
-	 一つ目は <literal>php.ini</literal>、もう１つは
-	 <function>ob_start</function> で <literal>ob_start</literal>
-	 のコールバック関数として
-	 <function>mb_output_handler</function> を指定するものです。
-	</para>
-	<note>
-	 <para>
-	  PHP3-i18nのユーザにとっては、<literal>mbstring</literal>の出
-	  力変換は、PHP3-i18nとは異なっています。文字エンコーディング
-	  は、出力のバッファリング機能を使用して変換されます。
-	 </para>
-	</note>
-       </listitem>
-      </itemizedlist>
-     </para>
-     <para>
-      <example>
-       <title>&php.ini; の設定例</title>
-       <programlisting>
+     </itemizedlist>
+    </para>
+    <para>
+     <example>
+      <title>&php.ini; の設定例</title>
+      <programlisting>
 <![CDATA[
 ;; 全てのPHPページで出力の文字エンコーディング変換を有効にする
 
@@ -201,13 +225,13 @@ output_buffering    = On
 ;; mb_output_handlerによる出力変換を有効にする
 output_handler      = mb_output_handler
 ]]>
-       </programlisting>
-      </example>
-     </para>
-     <para>
-      <example>
-       <title>スクリプトの例</title>
-       <programlisting role="php">
+      </programlisting>
+     </example>
+    </para>
+    <para>
+     <example>
+      <title>スクリプトの例</title>
+      <programlisting role="php">
 <![CDATA[
 <?php
 
@@ -222,85 +246,101 @@ ob_start('mb_output_handler');
 
 ?>
 ]]>
-       </programlisting>
-      </example>
-     </para>
-    </section>
-
-    <section id="mbstring.encodings">
-     <title>サポートされる文字エンコーディング</title>
-     <simpara>
-      現在、以下の文字エンコーディングが<literal>mbstring</literal>モ
-      ジュールによりサポートされています。文字エンコーディングは、
-      <literal>mbstring</literal>関数の<literal>encoding</literal>パラ
-      メータで指定することが可能です。
-     </simpara>
-     <para>
-      以下の文字エンコーディングがこのPHP拡張モジュールでサポートされ
-      ています。
-     </para>
-     <para>
-      <literal>UCS-4</literal>, <literal>UCS-4BE</literal>,
-      <literal>UCS-4LE</literal>, <literal>UCS-2</literal>,
-      <literal>UCS-2BE</literal>, <literal>UCS-2LE</literal>,
-      <literal>UTF-32</literal>, <literal>UTF-32BE</literal>,
-      <literal>UTF-32LE</literal>, <literal>UCS-2LE</literal>,
-      <literal>UTF-16</literal>, <literal>UTF-16BE</literal>,
-      <literal>UTF-16LE</literal>, <literal>UTF-8</literal>,
-      <literal>UTF-7</literal>, <literal>ASCII</literal>,
-      <literal>EUC-JP</literal>, <literal>SJIS</literal>,
-      <literal>eucJP-win</literal>, <literal>SJIS-win</literal>,
-      <literal>ISO-2022-JP</literal>, <literal>JIS</literal>,
-      <literal>ISO-8859-1</literal>, <literal>ISO-8859-2</literal>,
-      <literal>ISO-8859-3</literal>, <literal>ISO-8859-4</literal>,
-      <literal>ISO-8859-5</literal>, <literal>ISO-8859-6</literal>,
-      <literal>ISO-8859-7</literal>, <literal>ISO-8859-8</literal>,
-      <literal>ISO-8859-9</literal>, <literal>ISO-8859-10</literal>,
-      <literal>ISO-8859-13</literal>, <literal>ISO-8859-14</literal>,
-      <literal>ISO-8859-15</literal>, <literal>byte2be</literal>,
-      <literal>byte2le</literal>, <literal>byte4be</literal>,
-      <literal>byte4le</literal>, <literal>BASE64</literal>,
-      <literal>7bit</literal>, <literal>8bit</literal>,
-      <literal>UTF7-IMAP</literal>
-     </para>
-     <para>
-      PHP 4.3.0以降、以下の文字エンコーディングのサポートが実験的に
-      行なわれます。
-      <literal>EUC-CN</literal>, <literal>CP936</literal>, <literal>HZ</literal>, 
-      <literal>EUC-TW</literal>, <literal>CP950</literal>, <literal>BIG-5</literal>, 
-      <literal>EUC-KR</literal>, <literal>UHC</literal> (<literal>CP949</literal>), 
-      <literal>ISO-2022-KR</literal>,
-      <literal>Windows-1251</literal> (<literal>CP1251</literal>),
-      <literal>Windows-1252</literal> (<literal>CP1252</literal>),
-      <literal>CP866</literal>, 
-      <literal>KOI8-R</literal>.
-     </para>
-     <para>
-      エンコーディング名を指定可能な&php.ini;のエントリでは、
-      &quot;<literal>auto</literal>&quot; および
-      &quot;<literal>pass</literal>&quot; も指定可能です。
-      <literal>mbstring</literal> 関数には、エンコーディング名と
-      &quot;<literal>auto</literal>&quot; を指定可能です。
-     </para>
-     <para>
-      &quot;<literal>pass</literal>&quot; が指定された場合、文字エンコー
-      ディング変換は行われません。
-     </para>
-     <para>
-      &quot;<literal>auto</literal>&quot; が指定された場合、この文字列
-      は、&quot;<literal>ASCII,JIS,UTF-8,EUC-JP,SJIS</literal>&quot;に
-      変換されます。
-     </para>
-     <para>
-      <function>mb_detect_order</function>も参照下さい。
-     </para>
-     <note>
-      <para>
-       &quot;サポートされる文字エンコーディング&quot; は、内部文字コー
-       ドとして動作するものとは異なります。
-      </para>
-     </note>
-    </section>
+      </programlisting>
+     </example>
+    </para>
+   </section>
+   
+   <section id="mbstring.supported-encodings">
+    <title>サポートされる文字エンコーディング</title>
+    <simpara>
+     現在、以下の文字エンコーディングが<literal>mbstring</literal>モ
+     ジュールによりサポートされています。文字エンコーディングは、
+     <literal>mbstring</literal>関数の<literal>encoding</literal>パラ
+     メータで指定することが可能です。
+    </simpara>
+    <para>
+     以下の文字エンコーディングがこのPHPエクステンションでサポートされ
+     ています。
+    </para>
+    <itemizedlist>
+     <listitem><simpara>UCS-4</simpara></listitem>
+     <listitem><simpara>UCS-4BE</simpara></listitem>
+     <listitem><simpara>UCS-4LE</simpara></listitem>
+     <listitem><simpara>UCS-2</simpara></listitem>
+     <listitem><simpara>UCS-2BE</simpara></listitem>
+     <listitem><simpara>UCS-2LE</simpara></listitem>
+     <listitem><simpara>UTF-32</simpara></listitem>
+     <listitem><simpara>UTF-32BE</simpara></listitem>
+     <listitem><simpara>UTF-32LE</simpara></listitem>
+     <listitem><simpara>UTF-16</simpara></listitem>
+     <listitem><simpara>UTF-16BE</simpara></listitem>
+     <listitem><simpara>UTF-16LE</simpara></listitem>
+     <listitem><simpara>UTF-7</simpara></listitem>
+     <listitem><simpara>UTF7-IMAP</simpara></listitem>
+     <listitem><simpara>UTF-8</simpara></listitem>
+     <listitem><simpara>ASCII</simpara></listitem>
+     <listitem><simpara>EUC-JP</simpara></listitem>
+     <listitem><simpara>SJIS</simpara></listitem>
+     <listitem><simpara>eucJP-win</simpara></listitem>
+     <listitem><simpara>SJIS-win</simpara></listitem>
+     <listitem><simpara>ISO-2022-JP</simpara></listitem>
+     <listitem><simpara>JIS</simpara></listitem>
+     <listitem><simpara>ISO-8859-1</simpara></listitem>
+     <listitem><simpara>ISO-8859-2</simpara></listitem>
+     <listitem><simpara>ISO-8859-3</simpara></listitem>
+     <listitem><simpara>ISO-8859-4</simpara></listitem>
+     <listitem><simpara>ISO-8859-5</simpara></listitem>
+     <listitem><simpara>ISO-8859-6</simpara></listitem>
+     <listitem><simpara>ISO-8859-7</simpara></listitem>
+     <listitem><simpara>ISO-8859-8</simpara></listitem>
+     <listitem><simpara>ISO-8859-9</simpara></listitem>
+     <listitem><simpara>ISO-8859-10</simpara></listitem>
+     <listitem><simpara>ISO-8859-13</simpara></listitem>
+     <listitem><simpara>ISO-8859-14</simpara></listitem>
+     <listitem><simpara>ISO-8859-15</simpara></listitem>
+     <listitem><simpara>byte2be</simpara></listitem>
+     <listitem><simpara>byte2le</simpara></listitem>
+     <listitem><simpara>byte4be</simpara></listitem>
+     <listitem><simpara>byte4le</simpara></listitem>
+     <listitem><simpara>BASE64</simpara></listitem>
+     <listitem><simpara>HTML-ENTITIES</simpara></listitem>
+     <listitem><simpara>7bit</simpara></listitem>
+     <listitem><simpara>8bit</simpara></listitem>
+     <listitem><simpara>EUC-CN</simpara></listitem>
+     <listitem><simpara>CP936</simpara></listitem>
+     <listitem><simpara>HZ</simpara></listitem>
+     <listitem><simpara>EUC-TW</simpara></listitem>
+     <listitem><simpara>CP950</simpara></listitem>
+     <listitem><simpara>BIG-5</simpara></listitem>
+     <listitem><simpara>EUC-KR</simpara></listitem>
+     <listitem><simpara>UHC (CP949)</simpara></listitem>
+     <listitem><simpara>ISO-2022-KR</simpara></listitem>
+     <listitem><simpara>Windows-1251 (CP1251)</simpara></listitem>
+     <listitem><simpara>Windows-1252 (CP1252)</simpara></listitem>
+     <listitem><simpara>CP866 (IBM866)</simpara></listitem>
+     <listitem><simpara>KOI8-R</simpara></listitem>
+    </itemizedlist>
+    <para>
+     &php.ini;のエントリではエンコーディング名を指定可能ですが、
+     &quot;<literal>auto</literal>&quot; および
+     &quot;<literal>pass</literal>&quot; も指定可能です。
+     <literal>mbstring</literal> 関数には、エンコーディング名と
+     &quot;<literal>auto</literal>&quot; を指定可能です。
+    </para>
+    <para>
+     &quot;<literal>pass</literal>&quot; が指定された場合、文字エンコー
+     ディング変換は行われません。
+    </para>
+    <para>
+     &quot;<literal>auto</literal>&quot; が指定された場合、この文字列
+     は、&quot;<literal>ASCII,JIS,UTF-8,EUC-JP,SJIS</literal>&quot;に
+     変換されます。
+    </para>
+    <para>
+     <function>mb_detect_order</function>も参照下さい。
+    </para>
+   </section>
     
    <section id="mbstring.overload">
     <title>マルチバイト対応版関数による既存関数のオーバーロード</title>
@@ -336,69 +376,76 @@ ob_start('mb_output_handler');
       <title>オーバーロードされる関数</title>
       <tgroup cols="3">
        <thead>
-	<row>
-	 <entry>mbstring.func_overloadの値</entry>
-	 <entry>元の関数</entry>
+        <row>
+         <entry>mbstring.func_overloadの値</entry>
+         <entry>元の関数</entry>
          <entry>オーバーロードする関数</entry>
-	</row>
+        </row>
        </thead>
        <tbody>
-	<row>
-	 <entry>1</entry>
-          <entry><function>mail</function></entry>
-          <entry><function>mb_send_mail</function></entry>
-         </row>
-	<row>
-          <entry>2</entry>
-          <entry><function>strlen</function></entry>
-          <entry><function>mb_strlen</function></entry>
-         </row>
-         <row>
-          <entry>2</entry>
-          <entry><function>strpos</function></entry>
-          <entry><function>mb_strpos</function></entry>
-         </row>
-         <row>
-          <entry>2</entry>
-          <entry><function>strrpos</function></entry>
-          <entry><function>mb_strrpos</function></entry>
-         </row>
-         <row>
-          <entry>2</entry>
-          <entry><function>substr</function></entry>
-          <entry><function>mb_substr</function></entry>
-         </row>
-         <row>
-          <entry>4</entry>
+        <row>
+         <entry>1</entry>
+         <entry><function>mail</function></entry>
+         <entry><function>mb_send_mail</function></entry>
+        </row>
+        <row>
+         <entry>2</entry>
+         <entry><function>strlen</function></entry>
+         <entry><function>mb_strlen</function></entry>
+        </row>
+        <row>
+         <entry>2</entry>
+         <entry><function>strpos</function></entry>
+         <entry><function>mb_strpos</function></entry>
+        </row>
+        <row>
+         <entry>2</entry>
+         <entry><function>strrpos</function></entry>
+         <entry><function>mb_strrpos</function></entry>
+        </row>
+        <row>
+         <entry>2</entry>
+         <entry><function>substr</function></entry>
+         <entry><function>mb_substr</function></entry>
+        </row>
+        <row>
+         <entry>4</entry>
           <entry><function>ereg</function></entry>
-          <entry><function>mb_ereg</function></entry>
-         </row>
+         <entry><function>mb_ereg</function></entry>
+        </row>
          <row>
-          <entry>4</entry>
-          <entry><function>eregi</function></entry>
-          <entry><function>mb_eregi</function></entry>
-         </row>
-         <row>
-          <entry>4</entry>
-          <entry><function>ereg_replace</function></entry>
-          <entry><function>mb_ereg_replace</function></entry>
-         </row>
-         <row>
-          <entry>4</entry>
-          <entry><function>eregi_replace</function></entry>
-          <entry><function>mb_eregi_replace</function></entry>
-         </row>
-         <row>
-          <entry>4</entry>
-          <entry><function>split</function></entry>
-          <entry><function>mb_split</function></entry>
-	</row>
+         <entry>4</entry>
+         <entry><function>eregi</function></entry>
+         <entry><function>mb_eregi</function></entry>
+        </row>
+        <row>
+         <entry>4</entry>
+         <entry><function>ereg_replace</function></entry>
+         <entry><function>mb_ereg_replace</function></entry>
+        </row>
+        <row>
+         <entry>4</entry>
+         <entry><function>eregi_replace</function></entry>
+         <entry><function>mb_eregi_replace</function></entry>
+        </row>
+        <row>
+         <entry>4</entry>
+         <entry><function>split</function></entry>
+         <entry><function>mb_split</function></entry>
+        </row>
        </tbody>
       </tgroup>
      </table>
     </para>
+    <note>
+     <para>
+      ディレクトリ単位の設定でこの関数オーバーロディングオプションを使用することは
+      推奨されません。これは、実用的な環境ではまだ安定性が確認されておらず、予期しない
+      結果をもたらす可能性があるためです。
+     </para>
+    </note>
    </section>
-
+   
    <section id="mbstring.ja-basic">
     <title>日本語のマルチバイト文字に関する基本事項</title>
     <para>
@@ -426,20 +473,27 @@ ob_start('mb_output_handler');
       </listitem>
       <listitem>
        <simpara>
-        いくつかの文字エンコーディングでは、マルチバイト文字列を開始/
-        終了するためのシフト(エスケープ)シーケンスが定義されています。
+        いくつかの文字エンコーディングでは、ISO2022で定義された
+        マルチバイト文字列を開始/終了するためのシフト(エスケープ)シーケンスを
+        使用しています。
        </simpara>
       </listitem>
       <listitem>
        <simpara>
-        SMTP/NNTPでは、ISO-2022-JP を使用する必要があります。
+        SMTP/NNTPでは、ISO-2022-JP を使用する必要があり、ヘッダとエンティティは
+        各RFCの規定に基づき再度符号化される必要があります。
+        これらは必須のものではありませんが、多くの一般的なユーザーエージェントは、
+        他の符号化手法を認識できないため、行っておく方が良いでしょう。
        </simpara>
       </listitem>
       <listitem>
-       <para>
-        &quot;i-mode&quot; 用Webサイトは、SJISを使用する必要がありま
-        す。
-       </para>
+       <simpara>
+        <ulink url="&url.imode;">i-mode</ulink>,
+        <ulink url="&url.vlife;">Vodafone live!</ulink>, または
+        <ulink url="&url.ezweb;">EZweb</ulink>のような
+        携帯電話サービス用に作成されたWebページは、Shift_JISを使用する
+        ことになります。
+       </simpara>
       </listitem>
      </itemizedlist>
     </para>
@@ -457,7 +511,7 @@ ob_start('mb_output_handler');
         Unicode/UTF/UCS/等
        </para>
        <para>
-        <literal>http://www.unicode.org/</literal>
+        <ulink url="&url.unicode;">&url.unicode;</ulink>
        </para>
       </listitem>
       <listitem>
@@ -466,18 +520,20 @@ ob_start('mb_output_handler');
        </para>
        <para>
         <literal>
-	 ftp://ftp.ora.com/pub/examples/nutshell/ujip/doc/cjk.inf
+         <ulink url="&url.oreilly.cjk-inf;">&url.oreilly.cjk-inf;</ulink>
         </literal>
        </para>
       </listitem>
      </itemizedlist>
-    </para>
+     </para>
    </section>
+   &reference.mbstring.encodings;
+    
   </partintro>
+  
+  &reference.mbstring.functions;
 
-&reference.mbstring.functions;
-
-</reference>
+ </reference>
  <!-- Keep this comment at the end of the file
 Local variables:
 mode: sgml
