@@ -1,0 +1,408 @@
+<?xml encoding="utf-8"?>
+<!-- $Revision: 1.1 $ -->
+ <chapter id="faq.installation">
+  <title>インストール</title>
+  <titleabbrev>インストール</titleabbrev>
+
+  <para>
+   このセクションではPHPのインストール方法に関する一般的な質問扱います。
+   PHPは(OSX以前のMacOSを除けば)ほとんど全てのOSと、ウェブサーバで利用
+   可能です。
+  </para>
+  <para>
+   PHPをインストールには、ディストリビューションに含まれる<ulink
+   url="&faqurl.file.installation;">INSTALL</ulink>ファイルの説明に従っ
+   てください。ウィンドウズユーザの場合は加えて<ulink
+   url="&faqurl.file.readmewin;">install.txt</ulink>ファイルも読む必要
+   があります。またウィンドウズユーザのための役立つヒントが<link
+   linkend="install.windows">ここ</link>にあります。
+  </para>
+
+  <qandaset>
+   <qandaentry id="faq.installation.phpini">
+    <question>
+     <para>
+      Unix/Windows: php.iniファイルはどこに置けばよいのですか？
+     </para>
+    </question>
+    <answer>
+     <para>
+     UNIXの場合、デフォルトでは<filename>/usr/local/lib</filename>
+     です。コンパイル時に
+     <link linkend="install.configure.with-config-file-path">--with-config-file-path</link>
+     オプションを使用してこの場所を変えたいという人も多いでしょう。
+     例えばこのようにすることも出来ます：
+     <programlisting>
+--with-config-file-path=/etc
+     </programlisting>
+     そしてディストリビューションの<filename>php.ini-dist</filename>
+     を<filename>/etc/php.ini</filename>にコピーして環境に合うように
+     編集してください。
+     </para>
+     <para>
+     ウィンドウズの場合、<filename>php.ini</filename>のデフォルトパス
+     はWindowsディレクトリになります。
+     </para>
+    </answer>
+   </qandaentry>
+
+   <qandaentry id="faq.installation.nodata">
+    <question>
+     <para>
+      Unix: PHPをインストールしましたが、ファイルをロードするたびに
+      'Document Contains No Data(ページが表示できません)'というメッ
+      セージが表示されます。何が起こっているのですか？
+     </para>
+    </question>
+    <answer>
+     <para>
+      これはおそらくPHPに何らかの問題が起こっていてコアダンプしている
+      という状態です。サーバのエラーログを見てこのケースかどうかチェッ
+      クしてください。そして小さなテストケースで問題を再現させてみてく
+      ださい。もし'gdb'の使い方が分かるならバグレポートに加えてバック
+      トレースを提供してもらえると開発者が問題の箇所を突き止めるのに非
+      常に役立ちます。もしあなたがPHPをApacheモジュールとして使用して
+      いる場合は以下のようにします：
+      <itemizedlist>
+       <listitem>
+        <para>
+         httpdを停止します
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         gdb httpd
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         &gt; run -X -f /path/to/httpd.conf
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         ブラウザから問題のあるURLにアクセスします
+        </para>
+       </listitem>      
+       <listitem>
+        <para>
+         もしコアダンプが発生するとgdbが知らせてくれます
+        </para>
+       </listitem>      
+       <listitem>
+        <para>
+         bt とタイプします
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         このバックトレースをバグレポートに含めてください。バグレポートは
+         <ulink url="&faqurl.php.bugs;">&faqurl.php.bugs;</ulink> 
+         から送信してください。
+        </para>
+       </listitem>
+      </itemizedlist>
+     </para>
+     <para>
+     もしそのスクリプトが正規表現関数を使用している場合
+     (<function>ereg</function>やその類似関数)、PHPとApacheが同じ正規表現の
+     パッケージを使用してコンパイルされているかどうかを確認してください。
+     PHPとApache 1.3.xを使用している場合は常に確認が必要です。
+     </para>
+    </answer>
+   </qandaentry>
+
+   <qandaentry id="faq.installation.processing">
+    <question>
+     <para>
+      Unix: RPMを使ってPHPをインストールしたのですが、ApacheがPHPのページを
+      処理してくれません。何が起こっているのですか？
+     </para>
+    </question>
+    <answer>
+     <para>
+     あなたがApacheとPHPの両方をRPMでインストールしたとすると、いかに示す
+     内容の一部もしくは全てを<filename>httpd.conf</filename>ファイルに追加
+     するか、コメントを外す必要があります：
+      <programlisting>
+# Extra Modules
+AddModule mod_php.c
+AddModule mod_php3.c
+AddModule mod_perl.c
+
+# Extra Modules
+LoadModule php_module         modules/mod_php.so
+LoadModule php3_module        modules/libphp3.so     /* for PHP 3 */
+LoadModule php4_module        modules/libphp4.so     /* for PHP 4 */
+LoadModule perl_module        modules/libperl.so
+      </programlisting>
+      そして以下の行：
+      <programlisting>
+AddType application/x-httpd-php3 .php3    /* for PHP 3 */
+AddType application/x-httpd-php .php      /* for PHP 4 */
+      </programlisting>
+      以上の内容を全体設定、もしくはPHPサポートを追加したいバーチャル
+      ドメインの設定に加えてください。
+     </para>
+    </answer>
+   </qandaentry>
+
+   <qandaentry id="faq.installation.compile">
+    <question>
+     <para>
+      Unix: PHP 3をRPMを使ってインストールしたのですが、そのRPMは私が必
+      要なデータベースサポートなしでコンパイルされたものでした。どうす
+      ればよいですか？
+     </para>
+    </question>
+    <answer>
+     <para>
+      PHP 3のビルド方法の制約により、どの環境にも対応できる柔軟なPHPの
+      RPMを作成するのは困難です。この問題に関してはPHP 4で取り組んでい
+      ます。PHP 3ではとりあえずPHPディストリビューションの
+      INSTALL.REDHATファイルで説明されている方法を用いることをお勧めし
+      ます。もしどうしてもRPMバージョンのPHP 3を使う、という場合は続き
+      をお読みください。
+     </para>
+     <para>
+      RPMのパッケージャはインストール処理を単純化するため、<emphasis>
+       そして</emphasis>標準の/usr/local/ディレクトリではなく/usr/を使
+      用するためにデータベースサポート無しのRPMを作成しています。デー
+      タベースサポートを追加するにはRPM specファイルにサポートするデー
+      タベースの種類と最上位ディレクトリを指定する必要があります。
+     </para>
+     <para>
+      以下の例は広く使われているMySQLデータベースサポートを追加して
+      Apacheモジュールをインストールする場合について説明しています。
+     </para>
+     <para>
+      もちろん以下の全ての情報はPHPがサポートするいずれのデータベース
+      の場合でも対象箇所を適宜変更すれば対応可能です。この場合はMySQL
+      とApache共にRPMのみを使ってインストールしたものと仮定しています。
+      <itemizedlist>
+       <listitem>
+	<para>
+         まずmod_php3を削除します : 
+         <programlisting>
+rpm -e mod_php3
+         </programlisting>
+	</para>
+       </listitem>
+       <listitem>
+	<para>
+         ソースRPMを手に入れてインストールします。--rebuildではありません。
+         <programlisting>
+rpm -Uvh mod_php3-3.0.5-2.src.rpm
+         </programlisting>
+	</para>
+       </listitem>
+       <listitem>
+	<para>
+	 <filename>/usr/src/redhat/SPECS/mod_php3.spec</filename>を編集します
+	</para>
+	<para>
+         %buildセクションに追加するデータベースサポートとそのパスを記述します。
+	</para>
+	<para>
+         MySQLの場合は以下のようになります。
+         <programlisting>
+--with-mysql=/usr \
+         </programlisting>
+         %buildセクションは例えば以下のようになるでしょう
+         <programlisting>
+	./configure --prefix=/usr \
+	--with-apxs=/usr/sbin/apxs \
+	--with-config-file-path=/usr/lib \
+	--enable-debug=no \
+	--enable-safe-mode \
+	--with-exec-dir=/usr/bin \
+	--with-mysql=/usr \
+	--with-system-regex
+         </programlisting>
+	</para>
+       </listitem>
+       <listitem>
+	<para>
+	 変更が終了したら以下のようにしてバイナリRPMを構築します：
+         <programlisting>
+rpm -bb /usr/src/redhat/SPECS/mod_php3.spec
+         </programlisting>
+	</para>
+       </listitem>
+       <listitem>
+	<para>
+	 インストールします。
+         <programlisting>
+rpm -ivh /usr/src/redhat/RPMS/i386/mod_php3-3.0.5-2.i386.rpm
+         </programlisting>
+	</para>
+       </listitem>
+      </itemizedlist>
+      Apacheを再起動するのを忘れないでください。そうすればPHP 3には
+      MySQLサポートが追加されているはずです。ただ、ディストリビューショ
+      ンのtarファイルから構築してそこに含まれる
+      <filename>INSTALL.REDHAT</filename>ファイルにしたがった方がおそ
+      らくずっと簡単である、ということも忘れないでください。
+     </para>
+    </answer>
+   </qandaentry>
+
+   <qandaentry id="faq.installation.frontpage">
+    <question>
+     <para>
+      Unix: ApacheにFrontPageエクステンションのパッチを当てたら、突然
+      PHPが動作しなくなってしまいました。PHPはApacheのFrontPageエクス
+      テンションと共存することはできないのですか？
+     </para>
+    </question>
+    <answer>
+     <para>
+      いいえ。PHPはFrontPageエクステンションと問題なく共存できます。問
+      題はFrontPageエクステンションのパッチがPHPが依存しているApacheの
+      構造の一部を変更してしまうことにあります。パッチを当てた後でPHP
+      を再コンパイル('make clean; make'として下さい)すれば問題は解決さ
+      れます。
+     </para>
+    </answer>
+   </qandaentry>
+
+   <qandaentry id="faq.installation.blankscreen">
+    <question>
+     <para>
+      Unix/Windows: PHPをインストールしたのですがブラウザからPHPスクリ
+      プトにアクセスしても何も表示されません。
+     </para>
+    </question>
+    <answer>
+     <para>
+      ブラウザの「ソースの表示」を実行してください。おそらくPHPのソー
+      スコードが表示されると思います。これはウェブサーバがスクリプトを
+      PHPに渡していないためスクリプトが実行されていない、ということを
+      意味します。サーバ側の設定のどこかが間違っているはずですので、
+      PHPインストールマニュアルに従って再度入念に設定を確認してみてく
+      ださい。
+     </para>
+    </answer>
+   </qandaentry>
+
+   <qandaentry id="faq.installation.500error">
+    <question>
+     <para>
+      Unix/Windows: PHPをインストールしたのですがブラウザからPHPスクリ
+      プトにアクセスするとInternal Server Error 500となってしまいます。
+     </para>
+    </question>
+    <answer>
+     <para>
+      ウェブサーバがPHPを実行するときに何らかの問題が起きています。ど
+      んなエラーが起こっているか確認するために、コマンドラインでPHP実
+      行ファイル(Windowsでは<filename>php.exe</filename>)のあるディレ
+      クトリに移動して<literal>php -i</literal>を実行して下さい。もし
+      PHPの実行時に問題があった場合は適切なエラーメッセージが表示され
+      るのでそれを手がかりに次に何をすべきかを知ることができます。画面
+      一杯にHTML(<function>phpinfo</function>関数の出力)が表示された場
+      合にはPHPは問題なく動作していますので、問題はウェブサーバの設定
+      にあるはずです。再度入念にチェックしてみて下さい。
+     </para>
+    </answer>
+   </qandaentry>
+
+   <qandaentry id="faq.installation.cgierror">
+    <question>
+     <para>
+      Windows: PHPをインストールしたのですがブラウザからPHPスクリプト
+      にアクセスすると次のようなエラーが出力されます：
+      <programlisting>
+cgi error:
+ The specified CGI application misbehaved by not
+ returning a complete set of HTTP headers.
+ The headers it did return are:
+      </programlisting>
+     </para>
+    </question>
+    <answer>
+     <para>
+      このエラーメッセージはPHPが(何らかの理由で)何も出力できなかった
+      ことを意味します。詳細なエラーメッセージを得るためにはコマンドラ
+      インから、PHP実行ファイル(Windowsでは
+      <filename>php.exe</filename>)のあるディレクトリに移動して
+      <literal>php -i</literal>を実行して下さい。もしPHPの実行時に問題
+      があった場合は適切なエラーメッセージが表示されるのでそれを手がか
+      りに次に何をすべきかを知ることができます。画面一杯に
+      HTML(<function>phpinfo</function>関数の出力)が表示された場合には
+      PHPは問題なく動作しています。
+     </para>
+     <para>
+      PHPがコマンドラインで動作したなら、再度ブラウザからPHPスクリプト
+      にアクセスしてみて下さい。もしまだ失敗するようなら以下のいずれか
+      の理由によるものと思われます。
+     </para>
+     <itemizedlist>
+      <listitem>
+       <simpara>
+        PHPスクリプト, 
+        <filename>php.exe</filename>, <filename>php4ts.dll</filename>,
+        <filename>php.ini</filename>もしくはロードしようとしているPHP
+        エクステンションのファイルパーミッションが匿名インターネットユー
+        ザ<literal>IUSER_&lt;machinename&gt;</literal>にアクセスできな
+        いものになっている。
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+        スクリプトが存在しない(もしくはあなたが在ると思っている場所と
+        ウェブサーバのルートディレクトリからの相対位置がずれている)。
+        IISを使用している場合は、Internet Service Managerでスクリプト
+        マッピングを設定するときに「ファイルの存在を確認する」にチェッ
+        クをすることでこのエラーをトラップすることができます。もしスク
+        リプトファイルが存在しない場合はサーバが代わりに404エラーを返
+        すようになります。これにはもう一つ利点があります。それはIISが
+        スクリプトファイルのNTLanManパーミッションに応じて認証を要求す
+        るようになる、ということです。
+       </simpara>
+      </listitem>
+     </itemizedlist>
+    </answer>
+   </qandaentry>
+
+   <qandaentry id="faq.install.phpandiis">
+    <question>
+     <para>
+      Windows: 全ての説明に従っているのにPHPがIISで動作しません！
+     </para>
+    </question>
+    <answer>
+     <para>
+      PHPスクリプトを実行しようとするあらゆるユーザが
+      <filename>php.exe</filename>の実行権限を必要としているということを忘
+      れないでください。IISはインストール時に追加された匿名ユーザを使用し
+      ます。このユーザに対して<filename>php.exe</filename>の実行権限が必要
+      です。また、認証された全てのユーザに関しても
+      <filename>php.exe</filename>の実行権限が必要です。IIS4の場合はさらに
+      PHPがスクリプトエンジンであるということを教えてやる必要があります。
+     </para>
+    </answer>
+   </qandaentry>
+
+  </qandaset>
+ </chapter>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+sgml-parent-document:nil
+sgml-default-dtd-file:"../../manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
