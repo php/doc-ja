@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- $Revision: 1.1 $ -->
-<!-- sync: 1.1 -->
+<!-- $Revision: 1.2 $ -->
+<!-- sync: 1.4 -->
   <refentry id="function.stream-wrapper-register">
    <refnamediv>
     <refname>stream_wrapper_register</refname>
@@ -26,6 +26,17 @@
      以後そのインスタンスと共にメソッドを呼び出そうとします。
      これらのメソッドは、下記に示したとおり、正確に実装されなければなりません。
      さもないと、定義されていない動作をします。
+    </para>
+    <para>
+     <literal>PHP 5.0.0</literal> より新たに、<parameter>classname</parameter>
+     のインスタンス内の <parameter>context</parameter> プロパティが、
+     <literal>コンテキストリソース</literal> を参照する形で
+     初期化されるようになります。なお、
+     この <literal>コンテキストリソース</literal>は、
+     <function>stream_context_get_options</function> によっても
+     取得することができます。
+     もし、コンテキストがストリーム生成関数に対し渡されていない場合は、
+     <parameter>context</parameter> の値は &null; にセットされます。
     </para>
     <para>
      <function>stream_wrapper_register</function> は、
@@ -96,7 +107,7 @@
 
     <methodsynopsis>
      <type>void</type><methodname>stream_close</methodname>
-     <methodparam><type>void</type><parameter></parameter></methodparam>
+     <void />
     </methodsynopsis>
     <para>
      このメソッドは、<function>fclose</function>によってストリームが閉じられるときに呼び出されます。
@@ -138,7 +149,7 @@
    
     <methodsynopsis>
      <type>bool</type><methodname>stream_eof</methodname>
-     <methodparam><type>void</type><parameter></parameter></methodparam>
+     <void/>
     </methodsynopsis>
     <para>
      このメソッドは、ストリームに対する <function>feof</function> 関数の実行に
@@ -151,7 +162,7 @@
 
     <methodsynopsis>
      <type>int</type><methodname>stream_tell</methodname>
-     <methodparam><type>void</type><parameter></parameter></methodparam>
+     <void/>
     </methodsynopsis>
     <para>
      このメソッドは、ストリームに対する <function>ftell</function> 関数の
@@ -177,7 +188,7 @@
 
     <methodsynopsis>
      <type>bool</type><methodname>stream_flush</methodname>
-     <methodparam><type>void</type><parameter></parameter></methodparam>
+     <void/>
     </methodsynopsis>
     <para>
      このメソッドは、ストリームに対する <function>fflush</function> 関数の
@@ -189,6 +200,102 @@
      がない) 場合は、&true; を、もしくは、データを書き出すことができなかった
      場合は &false; を返します。
     </para>
+    <methodsynopsis>
+     <type>array</type><methodname>stream_stat</methodname>
+     <void/>
+    </methodsynopsis>
+    <para>
+     このメソッドは、ストリームに対する <function>fstat</function> 関数の
+     実行に対応して呼び出されます。
+     <function>fstat</function> が返すのと同じような要素をもつ配列に、
+     適切な値を入れて返さなくてはなりません。
+    </para>
+
+    <methodsynopsis>
+     <type>bool</type><methodname>unlink</methodname>
+     <methodparam><type>string</type><parameter>path</parameter></methodparam>
+    </methodsynopsis>
+    <para>
+     このメソッドは、ラッパに関連付けられた URL のパスに対する
+     <function>unlink</function> 関数の実行に対応して呼び出されます。
+     <parameter>path</parameter> で指定されたパスにあるアイテムを
+     削除しようと試みなければなりません。その時、削除に成功したら
+     &true; を、失敗したら &false; を返してください。
+     適切なエラーメッセージがユーザに返されるよう、ラッパ側で削除を
+     サポートしない場合は、このメソッドを定義しないで下さい。
+    </para>
+    <note>
+     <simpara>
+      ユーザ定義のラッパにおける unlink メソッドは、
+      <literal>PHP 5.0.0</literal> 以前ではサポートされていません。
+     </simpara>
+    </note>
+<!-- 
+      Note: url_stat() is not yet implemented. 
+            ext/standard/filestat.c needs to route through wrappers first. 
+    
+    <methodsynopsis> 
+     <type>array</type><methodname>url_stat</methodname> 
+     <methodparam><type>string</type><parameter>path</parameter></methodparam> 
+    </methodsynopsis> 
+    <para> 
+     This method is called in response to <function>stat</function> 
+     calls on the URL paths associated with the wrapper and should 
+     return as many elements in common with the system function as 
+     possible.  Unknown or unavailable values should be set to a 
+     rational value (usually <constant>0</constant>). 
+    </para> 
+  --> 
+    
+    <methodsynopsis> 
+     <type>bool</type><methodname>dir_opendir</methodname> 
+     <methodparam><type>string</type><parameter>path</parameter></methodparam> 
+     <methodparam><type>int</type><parameter>options</parameter></methodparam> 
+    </methodsynopsis> 
+    <para> 
+     このメソッドは、ディレクトリの内容を走査するために、
+     ストリームオブジェクトが <function>opendir</function>によって
+     生成されるその時に呼び出されます。
+
+     <parameter>path</parameter> は、<function>opendir</function> に
+     渡された、このオブジェクトが走査すべき場所を示す URL を指定します。
+     このとき、<function>parse_url</function> を使えば、この URL を
+     細分することができます。
+    </para> 
+
+    <methodsynopsis> 
+     <type>string</type><methodname>dir_readdir</methodname> 
+     <void /> 
+    </methodsynopsis> 
+    <para>
+     このメソッドは、<function>readdir</function> 関数の呼び出しに
+     対応して呼ばれます。<function>dir_opendir</function> メソッドにおいて
+     指定された場所にあるファイルのリスト上の、次のファイル名を表す
+     文字列を返さなくてはなりません。
+    </para> 
+  
+    <methodsynopsis> 
+     <type>bool</type><methodname>dir_rewinddir</methodname> 
+     <void /> 
+    </methodsynopsis> 
+    <para> 
+     このメソッドは、<function>rewinddir</function> 関数の呼び出しに
+     対応して呼ばれます。このとき、<function>dir_readdir</function>
+     メソッドにおいて変更された状態をリセットしなくてはなりません。
+     つまり、このメソッドの呼び出しに続いて <function>dir_readdir</function> が
+     呼ばれると、<function>dir_opendir</function> によって開かれた
+     ファイルのリスト上の、最初のエントリを返すことになります。
+    </para> 
+  
+    <methodsynopsis> 
+     <type>bool</type><methodname>dir_closedir</methodname> 
+     <void /> 
+    </methodsynopsis> 
+    <para> 
+     このメソッドは、<function>closedir</function> 関数の呼び出しに
+     対応して呼ばれます。このとき、ディレクトリストリームの利用に際して
+     確保されたりロックされたリソースを全て開放しなければなりません。
+    </para> 
 
     <para>
      下記の例は、var:// プロトコルハンドラを実装し、
@@ -203,6 +310,8 @@
       <title>A Stream for reading/writing global variables</title>
       <programlisting role="php">
 <![CDATA[
+<?php
+
 class VariableStream {
     var $position;
     var $varname;
@@ -295,7 +404,7 @@ while(!feof($fp)) {
 }
 fclose($fp);
 var_dump($myvar);
-
+?>
 ]]>
       </programlisting>
      </example>
