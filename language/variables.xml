@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.23 $ -->
-<!-- EN-Revision: 1.66 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.24 $ -->
+<!-- EN-Revision: 1.83 Maintainer: hirokawa Status: ready -->
  <chapter id="language.variables">
   <title>変数</title>
   
@@ -28,6 +28,12 @@
    </note>
 
    <para>
+    変数関連の関数に関する情報については、
+    <link linkend="ref.var">変数関数リファレンス</link>
+    を参照下さい。
+   </para>
+
+   <para>
     <informalexample>
      <programlisting role="php"> 
 <![CDATA[
@@ -53,7 +59,7 @@ $täyte = 'mansikka';    // 有効：'ä' はアスキーコード228です。
     <link linkend="language.expressions">式</link> を参照下さい。
    </para>
    <para>
-    PHP 4 は変数に値の代入を行う別の方法を提供します。それは、
+    PHP 4以降では、変数に値の代入を行う別の方法を提供します。それは、
     <emphasis>参照による代入</emphasis> です。
     この場合、新規の変数は元の変数を参照するだけです。
     (言いかえると、元の変数の"エイリアスを作る"または元の変数を"指す")
@@ -143,7 +149,7 @@ $bar = &test();    // 無効。
      この変更に関する情報については、
      <link linkend="ini.register-globals">register_globals</link>に関する設定
      エントリ、セキュリティに関する章の 
-     <link linkend="security.registerglobals">register_globalsの使用</link>、
+     <link linkend="security.globals">register_globalsの使用</link>、
      また、<ulink url="&url.php.release4.1.0;">4.1.0</ulink>および
      <ulink url="&url.php.release4.2.0;">4.2.0</ulink>の
      Release Announcementsを参照して下さい。
@@ -178,6 +184,13 @@ $bar = &test();    // 無効。
     <para>
      <link linkend="language.variables.variable">可変変数</link>として
      スーパーグローバルを使うことはできません。
+    </para>
+   </note>
+
+   <note>
+    <para>
+     Even though both the superglobal and HTTP_*_VARS can exist at the same
+     time; they are not identical, so modifying one will not change the other.
     </para>
    </note>
 
@@ -355,11 +368,18 @@ Test();
     ある C 言語と少々異なっていると気がつかれるかもしれません。C言語の
     ような場合、グローバル変数を不注意で変更してしまうという問題を生じ
     る可能性があります。PHP では、グローバル変数は、関数の内部で使用す
-    る場合、関数の内部でグローバルとして宣言する必要があります。例を以
-    下に示します。
+    る場合、関数の内部でグローバルとして宣言する必要があります。
    </simpara>
-   <informalexample>
-    <programlisting role="php">
+
+   <sect2 id="language.variables.scope.global">
+    <title>globalキーワード</title>
+    <simpara>
+     まず、<literal>global</literal>の使用例を示します。
+    </simpara>
+    <para>
+     <example>
+      <title>globalの使用</title>
+      <programlisting role="php">
 <![CDATA[
 <?php
 $a = 1;
@@ -376,24 +396,27 @@ Sum();
 echo $b;
 ?>
 ]]>
-    </programlisting>
-   </informalexample>
+      </programlisting>
+     </example>
+    </para>
+    
+    <simpara>
+     上のスクリプトは、&quot;3&quot; を出力します。関数の内部で
+     <varname>$a</varname>、<varname>$b</varname>
+     をグローバル宣言を行うことにより、両変数への参照は、グローバル変数
+     の方を参照することになります。ある関数により操作できるグローバル変
+     数の数は無制限です。
+    </simpara>
 
-   <simpara>
-    上のスクリプトは、&quot;3&quot; を出力します。関数の内部で
-    <varname>$a</varname>、<varname>$b</varname>
-    をグローバル宣言を行うことにより、両変数への参照は、グローバル変数
-    の方を参照することになります。ある関数により操作できるグローバル変
-    数の数は無制限です。
-   </simpara>
-
-   <simpara>
-    グローバルスコープから変数をアクセスする2番目の方法は、PHPが定義す
-    る配列<varname>$GLOBALS</varname>を使用することです。先の例は、次
-    のように書き換えることができます。
-   </simpara>
-   <informalexample>
-    <programlisting role="php">
+    <simpara>
+     グローバルスコープから変数をアクセスする2番目の方法は、PHPが定義す
+     る配列<varname>$GLOBALS</varname>を使用することです。先の例は、次
+     のように書き換えることができます。
+    </simpara>
+    <para>
+     <example>
+      <title>globalのかわりに<varname>$GLOBALS</varname>を使用する</title>
+      <programlisting role="php">
 <![CDATA[
 <?php
 $a = 1;
@@ -408,20 +431,22 @@ Sum();
 echo $b;
 ?>
 ]]>
-    </programlisting>
-   </informalexample>
-   <simpara>
-    配列<varname>$GLOBALS</varname>は連想配列であり、グローバル変数の
-    名前がキー、その変数の内容が配列要素の値となっています。
-    $GLOBALS は <link
-    linkend="language.variables.superglobals">スーパーグローバル</link>
-    であるため、<varname>$GLOBALS</varname>は全てのスコープに存在します。
-    以下にスーパーグローバルの効果を示す例を示します。
-   </simpara>
-   <para>
-   
-   <informalexample>
-    <programlisting role="php">
+      </programlisting>
+     </example>
+    </para>
+
+    <simpara>
+     配列<varname>$GLOBALS</varname>は連想配列であり、グローバル変数の
+     名前がキー、その変数の内容が配列要素の値となっています。
+     <varname>$GLOBALS</varname> は <link
+      linkend="language.variables.superglobals">スーパーグローバル</link>
+     であるため、<varname>$GLOBALS</varname>は全てのスコープに存在します。
+     以下にスーパーグローバルの効果を示す例を示します。
+    </simpara>
+    <para>
+     <example>
+      <title>Example demonstrating superglobals and scope</title>
+      <programlisting role="php">   
 <![CDATA[
 <?php
 function test_global()
@@ -430,28 +455,32 @@ function test_global()
     // ローカルスコープで有効とするには'global'をコールする必要があります。
     global $HTTP_POST_VARS;
     
-    print $HTTP_POST_VARS['name'];
+    echo $HTTP_POST_VARS['name'];
     
     // スーパーグローバルはどのスコープでも有効であり
     // 'global'をコールする必要がありません。
     // スーパーグローバルはPHP4.1.0以降で利用できます。
-    print $_POST['name'];
+    echo $_POST['name'];
 }
 ?>
 ]]>
-     </programlisting>
-    </informalexample>
-   </para>
-   
-   <simpara>
-    変数のスコープに関する別の重要な機能は、<emphasis>静的
-    (static)</emphasis> 変数です。静的変数はローカル関数スコープのみに
-    存在しますが、プログラム実行がこのスコープの外で行われるようになっ
-    てもその値を失わないません。次の例を見てください。
-   </simpara>
+      </programlisting>
+     </example>
+    </para>
+   </sect2>
 
-   <informalexample>
-    <programlisting role="php">
+   <sect2 id="language.variables.scope.static">
+    <title>Using static variables</title>   
+    <simpara>
+     変数のスコープに関する別の重要な機能は、<emphasis>静的
+      (static)</emphasis> 変数です。静的変数はローカル関数スコープのみに
+     存在しますが、プログラム実行がこのスコープの外で行われるようになっ
+     てもその値を失わないません。次の例を見てください。
+    </simpara>
+    <para>
+     <example>
+      <title>Example demonstrating need for static variables</title>
+     <programlisting role="php">    
 <![CDATA[
 <?php
 function Test() {
@@ -461,19 +490,21 @@ function Test() {
 }
 ?>
 ]]>
-    </programlisting>
-   </informalexample>
-
-   <simpara>
-    この関数は、コールされる度に<varname>$a</varname>を
-    <literal>0</literal>にセットし、&quot;0&quot; を出力するのでほとん
-    ど役にたちません。変数を1増やす $a++ は、関数から外に出ると変数
-    <varname>$a</varname>が消えてしまうために目的を達成しません。現在
-    のカウントの追跡ができるようにカウント関数を使用できるようにするた
-    めには、変数<varname>$a</varname>をstaticとして宣言します。
-   </simpara>
-   <informalexample>
-    <programlisting role="php">
+      </programlisting>
+     </example>
+    </para>
+    <simpara>
+     この関数は、コールされる度に<varname>$a</varname>を
+     <literal>0</literal>にセットし、&quot;0&quot; を出力するのでほとん
+     ど役にたちません。変数を1増やす $a++ は、関数から外に出ると変数
+     <varname>$a</varname>が消えてしまうために目的を達成しません。現在
+     のカウントの追跡ができるようにカウント関数を使用できるようにするた
+     めには、変数<varname>$a</varname>をstaticとして宣言します。
+    </simpara>
+    <para>
+     <example>
+      <title>Example use of static variables</title>
+      <programlisting role="php">
 <![CDATA[
 <?php
 function Test() {
@@ -483,25 +514,27 @@ function Test() {
 }
 ?>
 ]]>
-    </programlisting>
-   </informalexample>
-
-   <simpara>
-    こうすると、Test() 関数がコールされる度に<varname>$a</varname>の値
-    を出力し、その値を増加させます。
-   </simpara>
-
-   <simpara>
-    static変数は、再帰関数を実現する1つの手段としても使用されます。再帰
-    関数は、自分自身をコールする関数です。再帰関数を書くときには、無限
-    に再帰を行う可能性があるため、注意する必要があります。適当な方法に
-    より再帰を確実に終了させる必要があります。次の簡単な関数は、中止す
-    るタイミングを知るためにstatic変数<varname>$count</varname>を用いて、
-    10 回まで再帰を行います。
-   </simpara>
-
-   <informalexample>
-    <programlisting role="php">
+      </programlisting>
+     </example>
+    </para>
+    
+    <simpara>
+     こうすると、Test() 関数がコールされる度に<varname>$a</varname>の値
+     を出力し、その値を増加させます。
+    </simpara>
+    
+    <simpara>
+     static変数は、再帰関数を実現する1つの手段としても使用されます。再帰
+     関数は、自分自身をコールする関数です。再帰関数を書くときには、無限
+     に再帰を行う可能性があるため、注意する必要があります。適当な方法に
+     より再帰を確実に終了させる必要があります。次の簡単な関数は、中止す
+     るタイミングを知るためにstatic変数<varname>$count</varname>を用いて、
+     10 回まで再帰を行います。
+    </simpara>
+    <para>
+     <example>
+      <title>Static variables with recursive functions</title>
+      <programlisting role="php">
 <![CDATA[
 <?php
 function Test() {
@@ -516,23 +549,54 @@ function Test() {
 }
 ?>
 ]]>
-    </programlisting>
-   </informalexample>
+      </programlisting>
+     </example>
+    </para>
 
-   <simpara>
-    <literal>PHP4</literal>を駆動するZend Engine 1では、
-    リファレンス変数の修正子
-    <literal>static</literal> および <literal>global</literal>
-    を実装しています。
-    例えば、関数スコープ内に<literal>global</literal>
-    命令により実際にインポートされた真のグローバル変数は、
-    実際にグローバル変数へのリファレンスを作成します。
-    これにより、以下の例が示すように予測できない動作を引き起こす可能性
-    があります。
-   </simpara>
+    <note>  
+     <para>  
+       Static variables maybe declared as seen in the examples above. 
+       Trying to assign values to these variables which are the 
+       result of expressions will cause a parse error.
+     </para> 
+     <para>  
+      <example>
+       <title>Declaring static variables</title>
+       <programlisting role="php">
+<![CDATA[
+<?php
+function foo(){
+    static $int = 0;          // correct 
+    static $int = 1+2;        // wrong  (as it is an expression)
+    static $int = sqrt(121);  // wrong  (as it is an expression too)
 
-   <informalexample>
-    <programlisting role="php">
+    $int++;
+    echo $int;
+}
+?>
+]]>
+       </programlisting>
+      </example>
+     </para> 
+    </note>
+   </sect2>
+   
+   <sect2 id="language.variables.scope.references">
+    <title>References with global and static variables</title>
+    <simpara>
+     <literal>PHP4</literal>を駆動するZend Engine 1では、
+     リファレンス変数の修正子
+     <literal>static</literal> および <literal>global</literal>
+     を実装しています。
+     例えば、関数スコープ内に<literal>global</literal>
+     命令により実際にインポートされた真のグローバル変数は、
+     実際にグローバル変数へのリファレンスを作成します。
+     これにより、以下の例が示すように予測できない動作を引き起こす可能性
+     があります。
+    </simpara>
+
+    <informalexample>
+     <programlisting role="php">
 <![CDATA[
 <?php
 function test_global_ref() {
@@ -551,14 +615,14 @@ test_global_noref();
 var_dump($obj);
 ?>
 ]]>
-    </programlisting>
-   </informalexample>
+     </programlisting>
+    </informalexample>
+    
+    <simpara>
+     この例を実行すると以下の出力が結果として表示されます。
+    </simpara>
 
-   <simpara>
-    この例を実行すると以下の出力が結果として表示されます。
-   </simpara>
-
-   <screen>
+    <screen>
 NULL
 object(stdClass)(0) {
 }
@@ -606,14 +670,14 @@ $obj2 = get_instance_noref();
 $still_obj2 = get_instance_noref();
 ?>
 ]]>
-    </programlisting>
-   </informalexample>
+     </programlisting>
+    </informalexample>
 
-   <simpara>
-    この例を実行すると以下の出力となります。
-   </simpara>
+    <simpara>
+     この例を実行すると以下の出力となります。
+    </simpara>
 
-   <screen>
+    <screen>
 Static object: NULL
 Static object: NULL
 
@@ -622,15 +686,14 @@ Static object: object(stdClass)(1) {
   ["property"]=>
   int(1)
 }
-   </screen>
+    </screen>
 
-   <simpara>
-    この例は、static変数にリファレンスを代入した時に
-    <literal>&amp;get_instance_ref()</literal>関数を2回目に
-    コールした際に保持されていないことを示しています。
-   </simpara>
-
-
+    <simpara>
+     この例は、static変数にリファレンスを代入した時に
+     <literal>&amp;get_instance_ref()</literal>関数を2回目に
+     コールした際に保持されていないことを示しています。
+    </simpara>
+   </sect2>
   </sect1>
 
   <sect1 id="language.variables.variable">
@@ -713,16 +776,14 @@ echo "$a $hello";
     <varname>${$a}[1]</varname>とする構文を用います。
    </simpara>
 
-   <simpara>
-    可変変数は、PHPの<link linkend="language.variables.superglobals">
-     スーパーグローバル配列</link>で使用することができないことに注意して
-    下さい。これは、<varname>${$_GET}</varname>のようなことを行なうことが
-    できないことを意味します。
-    スーパーグローバルおよび<varname>HTTP_*_VARS</varname>の
-    利用可能性を処理する手段を探している場合、これらの
-    <link linkend="language.references">リファレンスを作成</link>する
-    ことを試してみて下さい。
-   </simpara>
+   <warning>
+    <simpara>
+     関数やクラスメソッドの内部で、可変変数をPHPの
+     <link linkend="language.variables.superglobals">
+      スーパーグローバル配列</link>と組み合わせて使用することができないことに
+     注意して下さい。
+    </simpara>
+   </warning>
 
   </sect1>
   
@@ -741,12 +802,12 @@ echo "$a $hello";
     <para>
      <example>
       <title>簡単なHTMLフォーム</title>
-      <programlisting role="php">
+      <programlisting role="html">
 <![CDATA[
 <form action="foo.php" method="post">
-    Name:  <input type="text" name="username"><br>
-    Email: <input type="text" name="email"><br>
-    <input type="submit" name="submit" value="Submit me!">
+    Name:  <input type="text" name="username" /><br />
+    Email: <input type="text" name="email" /><br />
+    <input type="submit" name="submit" value="Submit me!" />
 </form>
 ]]>
       </programlisting>
@@ -766,21 +827,22 @@ echo "$a $hello";
 <?php 
 // PHP 4.1.0以降で利用可能
 
-   print $_POST['username'];
-   print $_REQUEST['username'];
+   echo $_POST['username'];
+   echo $_REQUEST['username'];
 
    import_request_variables('p', 'p_');
-   print $p_username;
+   echo $p_username;
 
-// PHP 3以降で利用可能
+// Available since PHP 3. As of PHP 5.0.0, these long predefined
+// variables can be disabled with the register_long_arrays directive.
 
-   print $HTTP_POST_VARS['username'];
+   echo $HTTP_POST_VARS['username'];
 
 // PHPディレクティブregister_globals = onの場合に利用可能。
 // PHP 4.2.0以降、register_globalsのデフォルト値はoffとなっています。
 // この方法の使用/依存は推奨されません。
 
-   print $username;
+   echo $username;
 ?>
 ]]>
       </programlisting>
@@ -842,26 +904,25 @@ echo "$a $hello";
       <programlisting>
 <![CDATA[
 <?php
-if ($HTTP_POST_VARS['action'] == 'submitted') {
-    print '<pre>';
+if (isset($_POST['action']) && $_POST['action'] == 'submitted') {
+    echo '<pre>';
+    print_r($_POST);
+    echo '<a href="'. $_SERVER['PHP_SELF'] .'">Please try again</a>';
 
-    print_r($HTTP_POST_VARS);
-    print '<a href="'. $HTTP_SERVER_VARS['PHP_SELF'] .'">Please try again</a>';
-
-    print '</pre>';
+    echo '</pre>';
 } else {
 ?>
-<form action="<?php echo $HTTP_SERVER_VARS['PHP_SELF']; ?>" method="post">
-    Name:  <input type="text" name="personal[name]"><br>
-    Email: <input type="text" name="personal[email]"><br>
-    Beer: <br>
+<form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post">
+    Name:  <input type="text" name="personal[name]" /><br />
+    Email: <input type="text" name="personal[email]" /><br />
+    Beer: <br />
     <select multiple name="beer[]">
         <option value="warthog">Warthog</option>
         <option value="guinness">Guinness</option>
         <option value="stuttgarter">Stuttgarter Schwabenbräu</option>
-    </select><br>
-    <input type="hidden" name="action" value="submitted">
-    <input type="submit" name="submit" value="submit me!">
+    </select><br />
+    <input type="hidden" name="action" value="submitted" />
+    <input type="submit" name="submit" value="submit me!" />
 </form>
 <?php
 }
@@ -872,7 +933,7 @@ if ($HTTP_POST_VARS['action'] == 'submitted') {
     </para>
 
     <para>
-     PHP 3では、配列変数は1次元配列に限定されていました。PHP 4ではこの
+     PHP 3では、配列変数は1次元配列に限定されていました。PHP 4以降ではこの
      ような制約はありません。
     </para>
  
@@ -887,7 +948,7 @@ if ($HTTP_POST_VARS['action'] == 'submitted') {
      <informalexample>
       <programlisting role="html">
 <![CDATA[
-<input type="image" src="image.gif" name="sub">
+<input type="image" src="image.gif" name="sub" />
 ]]>
       </programlisting>
      </informalexample>
@@ -960,7 +1021,11 @@ if ($HTTP_POST_VARS['action'] == 'submitted') {
      <programlisting role="php">
 <![CDATA[
 <?php
-$count++;
+if (isset($_COOKIE['count'])) {
+    $count = $_COOKIE['count'] + 1;
+} else {
+    $count = 1;
+}
 setcookie("count", $count, time()+3600);
 setcookie("Cart[$count]", $item, time()+3600);
 ?>
