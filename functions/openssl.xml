@@ -166,45 +166,43 @@ openssl_free_key($pkeyid);
      </funcprototype>
     </funcsynopsis>
     <para>
-     Returns the length of the sealed data on success, or false on error.
-     If successful the sealed data is returned in
-     <parameter>sealed_data</parameter>, and the envelope keys in
-     <parameter>env_keys</parameter>.
-
+     成功時にシール(暗号化)されたデータの長さ、エラー時にfalseを返しま
+     す。成功時には、暗号化されたデータが
+     <parameter>sealed_data</parameter>に、エンベロープキーが
+     <parameter>env_keys</parameter> に返されます。
     </para>
     <para>
-     <function>openssl_seal</function> seals (encrypts)
-     <parameter>data</parameter> by using RC4 with a randomly generated
-     secret key. The key is encrypted with each of the public keys
-     associated with the identifiers in <parameter>pub_key_ids</parameter>
-     and each encrypted key is returned
-     in <parameter>env_keys</parameter>. This means that one can send
-     sealed data to multiple recipients (provided one has obtained their
-     public keys). Each recipient must receive both the sealed data and
-     the envelope key that was encrypted with the recipient's public key.
+     <function>openssl_seal</function> は、ランダムに生成された秘密キー
+     により RC4 を使用して <parameter>data</parameter>をシール(暗号化)
+     します。このキーは、<parameter>pub_key_ids</parameter> をIDとする
+     各公開キーで暗号化されます。これは、暗号化されたデータを複数の受
+     信者に送信できることを意味します。(この際、各受信者は送信側に公開
+     キーを提供します。)各受信者は、暗号化されたデータとその受信者の公
+     開キーで暗号化されたエンベロープキーを受け取る必要があります。
     </para>
     <para>
      <example>
       <title><function>openssl_seal</function> の例</title>
       <programlisting role="php">
-// $data is assumed to contain the data to be sealed
+// $data には、暗号化されるデータが含まれていると仮定
 
-// fetch public keys for our recipients, and ready them
+// 受信者の公開キーを取得し、使用可能にする
 $fp = fopen("/src/openssl-0.9.6/demos/maurice/cert.pem", "r");
 $cert = fread($fp, 8192);
 fclose($fp);
 $pk1 = openssl_get_publickey($cert);
-// Repeat for second recipient
+// 2番目の受信者についても同様
 $fp = fopen("/src/openssl-0.9.6/demos/sign/cert.pem", "r");
 $cert = fread($fp, 8192);
 fclose($fp);
 $pk2 = openssl_get_publickey($cert);
 
-// seal message, only owners of $pk1 and $pk2 can decrypt $sealed with keys
-// $ekeys[0] and $ekeys[1] respectively.
+// メッセージを暗号化。$pk1 および $pk2 の所有者のみが、暗号化された
+// データをそれぞれエンベロープキー$ekeys[0]および$ekeys[1]で復号化す
+// ることが可能
 openssl_seal($data, $sealed, $ekeys, array($pk1,$pk2));
 
-// free the keys from memory
+// キーをメモリから開放する
 openssl_free_key($pk1);
 openssl_free_key($pk2);
       </programlisting>
@@ -219,7 +217,7 @@ openssl_free_key($pk2);
   <refentry id="function.openssl-sign">
    <refnamediv>
     <refname>openssl_sign</refname>
-    <refpurpose>データの署名</refpurpose>
+    <refpurpose>署名を生成する</refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
@@ -288,34 +286,35 @@ openssl_free_key($pkeyid);
      に -1 を返します。
     </para>
     <para>
-     <function>openssl_verify</function> verifies that the
-     <parameter>signature</parameter> is correct for the specified
-     <parameter>data</parameter> using the public key associated with
-     <parameter>pub_key_id</parameter>. This must be the public key
-     corresponding to the private key used for signing.
+     <function>openssl_verify</function> は、
+     <parameter>pub_key_id</parameter> が指す公開キーを使用して指定し
+     た <parameter>data</parameter> に関して
+     <parameter>signature</parameter> が正しいことを確認します。署名が
+     正しいと判定されるためには、その公開キーが署名の際に使用した秘密
+     キーに対応していることを必要とします。
     </para>
     <para>
      <example>
       <title><function>openssl_verify</function> の例</title>
       <programlisting role="php">
-// $data and $signature are assumed to contain the data and the signature
+// $data および $signature はデータおよび署名が含まれていると仮定
 
-// fetch public key from certificate and ready it
+// 認証局から公開キーを取得し、使用可能にする
 $fp = fopen("/src/openssl-0.9.6/demos/sign/cert.pem", "r");
 $cert = fread($fp, 8192);
 fclose($fp);
 $pubkeyid = openssl_get_publickey($cert);
 
-// state whether signature is okay or not
+// 署名が正しいかどうかを確認
 $ok = openssl_verify($data, $signature, $pubkeyid);
 if ($ok == 1)
-    echo "good";
+    echo "正しいです";
 elseif ($ok == 0)
-    echo "bad";
+    echo "正しくありません";
 else
-    echo "ugly, error checking signature";
+    echo "署名を確認する際にエラーが発生しました";
 
-// free the key from memory
+// メモリからキーを開放
 openssl_free_key($pubkeyid);
       </programlisting>
      </example>
