@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.11 $ -->
  <reference id="ref.yaz">
   <title>YAZ 関数</title>
   <titleabbrev>YAZ</titleabbrev>
@@ -38,7 +39,8 @@
     </para>
     <para>
      <informalexample>
-      <programlisting>
+    <programlisting role="shell">
+<![CDATA[
 gunzip -c yaz-1.6.tar.gz|tar xf -
 gunzip -c php-4.0.X.tar.gz|tar xf -
 cd yaz-1.6
@@ -49,6 +51,7 @@ cd ../php-4.0.X
 ./configure --with-yaz=/usr/bin
 make
 make install
+]]>
       </programlisting>
      </informalexample>
     </para>
@@ -76,33 +79,34 @@ make install
        索します。
       </simpara>
       <programlisting role="php">
+<![CDATA[
 $num_hosts = count ($host);
 if (empty($term) || count($host) == 0) {
-    echo '&lt;form method="get"&gt;
-    &lt;input type="checkbox"
-    name="host[]" value="bagel.indexdata.dk/gils"&gt;
+    echo '<form method="get">
+    <input type="checkbox"
+    name="host[]" value="bagel.indexdata.dk/gils">
         GILS test
-    &lt;input type="checkbox"
-    name="host[]" value="localhost:9999/Default"&gt;
+    <input type="checkbox"
+    name="host[]" value="localhost:9999/Default">
         local test
-    &lt;input type="checkbox" checked="1"
-    name="host[]" value="z3950.bell-labs.com/books"&gt;
+    <input type="checkbox" checked="1"
+    name="host[]" value="z3950.bell-labs.com/books">
         BELL Labs Library
-    &lt;br>
+    <br>
     RPN Query:
-    &lt;input type="text" size="30" name="term"&gt;
-    &lt;input type="submit" name="action" value="Search"&gt;
+    <input type="text" size="30" name="term">
+    <input type="submit" name="action" value="Search">
     ';        
 } else {
-    echo 'You searced for ' . htmlspecialchars($term) . '&lt;br&gt;';
-    for ($i = 0; $i &lt; $num_hosts; $i++) {
+    echo 'You searced for ' . htmlspecialchars($term) . '<br>';
+    for ($i = 0; $i < $num_hosts; $i++) {
         $id[] = yaz_connect($host[$i]);
         yaz_syntax($id[$i],"sutrs");
         yaz_search($id[$i],"rpn",$term);
     }
     yaz_wait();
-    for ($i = 0; $i &lt; $num_hosts; $i++) {
-        echo '&lt;hr&gt;' . $host[$i] . ":";
+    for ($i = 0; $i < $num_hosts; $i++) {
+        echo '<hr>' . $host[$i] . ":";
         $error = yaz_error($id[$i]);
         if (!empty($error)) {
             echo "Error: $error";
@@ -110,17 +114,18 @@ if (empty($term) || count($host) == 0) {
             $hits = yaz_hits($id[$i]);
             echo "Result Count $hits";
         }
-        echo '&lt;dl&gt;';
-        for ($p = 1; $p &lt;= 10; $p++) {
+        echo '<dl>';
+        for ($p = 1; $p <= 10; $p++) {
             $rec = yaz_record($id[$i],$p,"string");
             if (empty($rec)) continue;
-            echo "&lt;dt&gt;&lt;b&gt;$p&lt;/b&gt;&lt;/dt&gt;&lt;dd&gt;";
-            echo ereg_replace("\n", "&lt;br&gt;\n",$rec);
-            echo "&lt;/dd&gt;";
+            echo "<dt><b>$p</b></dt><dd>";
+            echo ereg_replace("\n", "<br>\n",$rec);
+            echo "</dd>";
         }
-        echo '&lt;/dl&gt;';
+        echo '</dl>';
     }
 }
+]]>
       </programlisting>
      </example>
     </para>
@@ -202,7 +207,7 @@ if (empty($term) || count($host) == 0) {
     </para>
     <para>
      <parameter>options</parameter> に配列が指定された場合、その配列の内
-     容はオプションとして処理されます。配列オプションは、PHP 4.0.7以降
+     容はオプションとして処理されます。配列オプションは、PHP 4.1.0以降
      でのみサポートされることに注意して下さい。
 
      <variablelist>
@@ -346,6 +351,38 @@ if (empty($term) || count($host) == 0) {
      の要素集合の名前を指定します。多くのサーバは、
      <literal>F</literal> (完全版)および<literal>B</literal> (短縮版)
      の名前をサポートします。
+    </para>
+    <para>
+     成功時に&true;、エラー時に&false;を返します。
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.yaz-database">
+   <refnamediv>
+    <refname>yaz_database</refname>
+    <refpurpose>
+     セッション内のデータベースを指定する
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>int <function>yaz_database</function></funcdef>
+      <paramdef>int <parameter>id</parameter></paramdef>
+      <paramdef>string <parameter>databases</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     この関数は、検索、取得等で使用する１つまたは複数のデータベースを
+     指定します。<function>yaz_connect</function>をコールする際に指定
+     したデータベースを上書きします。複数のデータベースは、可算記号
+     <literal>+</literal>で区切ります。
+    </para>
+    <para>
+     この関数は、あるセッションの中で異なるデータベースの集合を使用す
+     ることを可能にします。
     </para>
     <para>
      成功時に&true;、エラー時に&false;を返します。
@@ -542,7 +579,7 @@ if (empty($term) || count($host) == 0) {
     <funcsynopsis>
      <funcprototype>
       <funcdef>int <function>yaz_present</function></funcdef>
-      <void></void>
+      <void/>
      </funcprototype>
     </funcsynopsis>
     <para>
@@ -626,34 +663,36 @@ if (empty($term) || count($host) == 0) {
     <example>
     <title>タイトルをスキャンするPHP関数</title>
     <programlisting>
+<![CDATA[
       function scan_titles($id, $starterm) {
         yaz_scan($id,"rpn", "@attr 1=4 " . $starterm);
         yaz_wait();
         $errno = yaz_errno($id);
         if ($errno == 0) {
-          $ar = yaz_scan_result($id,&amp;$options);
+          $ar = yaz_scan_result($id,&$options);
           echo 'Scan ok; ';
-          $ar = yaz_scan_result($id, &amp;$options);
+          $ar = yaz_scan_result($id, &$options);
           while(list($key,$val)=each($options)) {
              echo "$key = $val &nbsp;";
           }
-          echo '&lt;br>&lt;table>&lt;tr>&lt;td>';
+          echo '<br><table><tr><td>';
           while(list($key,list($k, $term, $tcount))=each($ar)) {
             if (empty($k)) continue;
-            echo "&lt;tr>&lt;td>$term&lt;/td>&lt;td>";
+            echo "<tr><td>$term</td><td>";
             echo $tcount;
-            echo "&lt;/td>&lt;/tr>";
+            echo "</td></tr>";
           }
-          echo '&lt;/table>';
+          echo '</table>';
         } else {
-          echo "Scan failed. Error: " . yaz_error($id) . "&lt;br>";
+          echo "Scan failed. Error: " . yaz_error($id) . "<br>";
         }
       }
-    </programlisting>
-    </example>
-     </para>
-    </refsect1>
-   </refentry>
+]]>
+      </programlisting>
+     </example>
+    </para>
+   </refsect1>
+  </refentry>
  
   <refentry id="function.yaz-scan-result">
    <refnamediv>
@@ -721,10 +760,12 @@ if (empty($term) || count($host) == 0) {
        ゲットIDであることを仮定しています。
       </simpara>
       <programlisting>
-       $field["ti"] = "1=4";
-       $field["au"] = "1=1";
-       $field["isbn"] = "1=7";
-       yaz_ccl_conf($id,$field);
+<![CDATA[
+      $field["ti"] = "1=4";
+      $field["au"] = "1=1";
+      $field["isbn"] = "1=7";
+      yaz_ccl_conf($id,$field);
+]]>
       </programlisting>
      </example>
     </para>
@@ -935,6 +976,75 @@ itemorder-item
    </refsect1>
   </refentry>
 
+  <refentry id="function.yaz-sort">
+   <refnamediv>
+    <refname>yaz_sort</refname>
+    <refpurpose>ソートの基準を設定する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>int <function>yaz_sort</function></funcdef>
+      <paramdef>int <parameter>id</parameter></paramdef>
+      <paramdef>string <parameter>criteria</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     この関数は、ソートの基準を設定し、Z39.50 Sortを有効にします。
+     この関数は、<function>yaz_search</function>または
+     <function>yaz_present</function>と共に使用して下さい。この関数の
+     みを使用しても何も意味はありません。
+     <function>yaz_search</function>と組み合わせて使用した場合、
+     検索応答が受信され、全てのZ39.50 Presentで取得される前にZ39.50
+     Sortが送信されます。
+    </para>
+    <para>
+      <replaceable>field1 flags1 field2 flags2</replaceable> ...
+    </para>
+    <para>
+     ただし、field1は最初の属性でのソートを指定し、2番目にfield2といっ
+     たように指定します。フィールドは、カンマで区切られた 型=値 の組か
+     らなる数値属性の組み合わせ(例 <literal>1=4,2=1</literal>)、または、
+     文字列の方法を指定することも可能です。
+     (例 <literal>title</literal>) 
+     フラグは、次の文字の並びからなり、空白により区切ることはありません。
+    </para>
+    <variablelist>
+      <title>ソートフラグ</title>
+      <varlistentry><term><literal>a</literal></term><listitem>
+       <simpara>昇順ソート</simpara></listitem>
+      </varlistentry>
+      <varlistentry><term><literal>d</literal></term><listitem>
+       <simpara>降順ソート</simpara></listitem>
+      </varlistentry>
+      <varlistentry><term><literal>i</literal></term><listitem>
+       <simpara>大文字小文字を区別しないソート</simpara></listitem>
+      </varlistentry>
+      <varlistentry><term><literal>s</literal></term><listitem>
+       <simpara>文字小文字を区別するソート</simpara></listitem>
+      </varlistentry>
+    </variablelist>
+    <example>
+    <title>ソート方法</title>
+    <para>
+      Bib1属性タイトルで大文字小文字を区別しない昇順のソートを行うには、
+      以下のソート方法を使用して下さい。
+      <screen>
+       1=4 ia
+      </screen>
+     </para>
+     <para>
+      2番目のソート方法をauthorとし、大文字小文字を区別する昇順のソー
+      トを行うには、以下のようにします。
+      <screen>
+       1=4 ia 1=1003 sa
+      </screen>
+     </para>
+    </example>
+   </refsect1>
+  </refentry>
+  
  </reference>
 
 <!-- Keep this comment at the end of the file
