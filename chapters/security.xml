@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.20 $ -->
+<!-- $Revision: 1.21 $ -->
  <chapter id="security">
   <title>セキュリティ</title>
 
@@ -616,67 +616,68 @@ else {
    </sect2>
 
    <sect2 id="security.database.sql-injection">
-    <title>SQL Injection</title>
+    <title>SQLの発行</title>
     <simpara>
-     Many web developers are unaware of how SQL queries can be tampered with,
-     and assume that an SQL query is a trusted command. It means that SQL
-     queries are able to circumvent access controls, thereby bypassing standard
-     authentication and authorization checks, and sometimes SQL queries even
-     may allow access to host operating system level commands.
+     多くの開発者はSQLクエリがどのように改竄されるかということを余り
+     気にかけておらず、またSQLクエリは信用できるものと考えているようです。
+     実際にはSQLクエリはアクセス制限を回避することが可能で、従って
+     通常の認証や権限のチェックを無視することができます。時には、
+     OSレベルのコマンドを実行できてしまうこともあります。
     </simpara>
     <simpara>
-     Direct SQL Command Injection is a technique where an attacker creates or
-     alters existing SQL commands to expose hidden data, or to override valuable
-     ones, or even to execute dangerous system level commands on the database
-     host. This is accomplished by the application taking user input and
-     combining it with static parameters to build a SQL query. The following
-     examples are based on true stories, unfortunately.
+     Direct SQL Command Injection(SQLコマンドの直接実行)という手法は、
+     攻撃者がSQLコマンドを生成もしくは既存のコマンドを変更することで
+     隠蔽すべきデータを公開したり、重要なデータを書き換えたり、データベース
+     ホストで危険なシステムレベルのコマンドを実行したりするものの事です。
+     この手法は、ユーザからの入力をスタティックなパラメータと組み合わせて
+     SQLクエリを生成するアプリケーションにおいて使用されます。以下の例は
+     不幸なことに実際の事例に基づいたものです。
     </simpara>
     <para>
-     Owing to the lack of input validation and connecting to the database on
-     behalf of a superuser or the one who can create users, the attacker
-     may create a superuser in your database.
+     入力のチェックを怠っており、スーパーユーザもしくはデータベース作成権限を
+     持つユーザ以外のユーザでデータベースに接続<emphasis>していない</emphasis>
+     ために、攻撃者はデータベースにスーパーユーザを作成することが出来ます。
      <example>
       <title>
-       Splitting the result set into pages ... and making superusers
-       (PostgreSQL and MySQL)
+       表示するデータを分割し ... そしてスーパーユーザを作成します。
+       (PostgreSQLとMySQLの例)
       </title>
       <programlisting role="php">
 <![CDATA[
-$offset = argv[0]; // beware, no input validation!
+$offset = argv[0]; // 入力チェックが行われていません！
 $query  = "SELECT id, name FROM products ORDER BY name LIMIT 20 OFFSET $offset;";
-// with PostgreSQL 
+// PostgreSQLの場合
 $result = pg_exec($conn, $query);
-// with MySQL
+// MySQLの場合
 $result = mysql_query($query);
 ]]>
       </programlisting>
      </example>
-      Normal users click on the 'next', 'prev' links where the <varname>$offset</varname>
-      is encoded into the URL. The script expects that the incoming
-      <varname>$offset</varname> is decimal number. However, someone tries to
-      break in with appending <function>urlencode</function>'d form of the
-      following to the URL 
+      通常のユーザは、<varname>$offset</varname>がURL埋め込まれている
+      '次へ'または'前へ'リンクをクリックします。スクリプトは、受け取った
+      <varname>$offset</varname>が数字であることを期待します。しかしながら、
+      攻撃者は<function>urlencode</function>された以下のようなURLを追加
+      することで攻撃を試みます。
       <informalexample>
        <programlisting>
 <![CDATA[
-// in case of PostgreSQL
+// PostgreSQLの場合
 0;
 insert into pg_shadow(usename,usesysid,usesuper,usecatupd,passwd)
     select 'crack', usesysid, 't','t','crack'
     from pg_shadow where usename='postgres';
 --
 
-// in case of MySQL
+// MySQLの場合
 0;
 UPDATE user SET Password=PASSWORD('crack') WHERE user='root';
 FLUSH PRIVILEGES;
 ]]>
        </programlisting>
       </informalexample>
-      If it happened, then the script would present a superuser access to him.
-      Note that <literal>0;</literal> is to supply a valid offset to the
-      original query and to terminate it.
+      このようなことが行われると、スクリプトは攻撃者にスーパーユーザ権限での
+      アクセスを提供してしまいます。<literal>0;</literal>が正しいオフセット
+      指していると同時に、クエリをそこで終端させていることに気をつけて下さい。
     </para>
     <note>
      <para>
