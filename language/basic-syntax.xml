@@ -49,39 +49,55 @@
    <title>HTML からの脱出</title>
    
    <para>
-    PHPがファイル処理を開始する際、PHPが処理するテキストを単純に出力し
-    ます。このため、あるHTMLファイルの拡張子を.phpに変更した場合でも、
-    出力は同じとなります。
+    PHPはファイルからPHPコードの開始を示す特別なタグを見つけるまでは
+    単純にその内容を出力します。PHPコードの開始を示すタグが見つかると
+    PHPはコードの終了を示すタグとの間にあるコードを実行します。この
+    メカニズムによりPHPコードをHTMLの中に埋め込むことが出来るのです。
+    つまり、PHPタグの中にある文字列はPHPコードとして解釈されますが、
+    外にある文字列(つまり普通のHTML)はあくまで単純に出力されるだけ
+    ということです。
    </para>
    
    <para>
-    PHPの命令をファイルの中に挿入したい場合、以下の手段のどれかにより
-    「PHPモード」に入ることにより、PHPにそれを示す必要があります。
+    PHPコードのブロックであることを宣言するタグは4種類あります。
+	これらのうちの2つ((&lt;?php. . .?&gt;と&lt;script language="php"&gt;
+	. . .&lt;/script&gt;)は常に使用することが出来ます。その他の
+	タグは<filename>php.ini</filename>設定ファイルでonまたはoffに
+	するとが出来ます。短縮型のタグ(&lt;?. . .?&gt;)とASP形式の
+	タグは便利なのですが、長いタグに比べると移植性に欠けます。
+	また、PHPコードをXMLやXHTMLに埋め込もうとする場合にはXMLの
+	規格に従うために&lt;?php. . .?&gt;形式を使用する必要があるでしょう。
+   </para>
+
+   <para>
+    PHPでサポートされるタグは以下のとおりです:
    </para>
    
    <para>
     <example>
      <title>HTMLからの脱出法</title>
-     <programlisting>
-1.  &lt;? echo ("この方法は最も簡単で、SGMLの処理命令です\n"); ?&gt;
+     <programlisting role="php">
+<![CDATA[
+1.  <? echo ("この方法は最も簡単で、SGMLの処理命令です\n"); ?>
  
-2.  &lt;?php echo("XHTMLまたはXMLドキュメントを処理したい場合は、この方法が良いでしょう\n"); ?&gt;
+2.  <?php echo("XHTMLまたはXMLドキュメントを処理したい場合は、この方法が良いでしょう\n"); ?>
 
-3.  &lt;script language="php"&gt;
+3.  <script language="php">
         echo ("(FrontPageのような) いくつかのエディタ は処理命令を好み
         ません");
-    &lt;/script&gt;
+    </script>
 
-4.  &lt;% echo ("オプションでASP形式のタグを使用可能です"); %&gt;
-    &lt;%= $variable; # これは、"&lt;%echo .." のショートカットです。%&gt;
+4.  <% echo ("オプションでASP形式のタグを使用可能です"); %>
+    <%= $variable; # これは、"<%echo .." のショートカットです。%>
+]]>
      </programlisting>
     </example>
    </para>
    
    <para>
     最初の方法は、短縮型のタグが有効な場合にのみ利用可能です。
-    短縮型のタグは、PHPの設定ファイルに
-    <!-- <function>short_tags</function> 関数を使用するか、-->
+	短縮型のタグは、<function>short_tags</function> 関数を使用するか
+	(PHP 3のみ)、 PHPの設定ファイルに
     <link linkend="ini.short-open-tag">short_open_tag</link>を設定する
     か--enable-short-tags オプションを <command>configure</command> に
     指定して PHP をコンパイルすることにより、有効にできます。
@@ -105,38 +121,42 @@
    </para>
 
    <para>
-    ブロックの閉じ括弧(右括弧)タグは、直後に改行がある場合、それを含ん
-    だものになります。
+    ブロックの終了タグは、直後に改行がある場合、それを含ん
+    だものになります。また、終了タグには自動的にセミコロン
+	が含まれていると認識されます。従ってPHPコードの最終行
+	にはセミコロンを記述する必要はありません。
    </para>
 
-   <para> <!-- TODO: find a better place for this para -->
+   <para>
     PHP は、次のような構造を使用可能です。
     <example><title>高度なエスケープ処理</title>
      <programlisting role="php">
-&lt;?php
+<![CDATA[
+<?php
 
 if ( boolean-expression )
 {
-    ?&gt;
-&lt;strong&gt;This is true.&lt;/strong&gt;
-    &lt;?php
+    ?>
+<strong>This is true.</strong>
+    <?php
 }
 else
 {
-    ?&gt;
-&lt;strong&gt;This is false.&lt;/strong&gt;
-    &lt;?php
+    ?>
+<strong>This is false.</strong>
+    <?php
 }
-      ?&gt;
+      ?>
+]]>
      </programlisting>
     </example>
     
     このコードは期待通りに動作します。これは、PHPが?&gt; および
     &lt;?phpの中のテキストを<function>echo</function>命令として処理す
-    るためです。
-    <!-- without the parsing if vars, that is (hopefully?) obvious -->
+    るためです。この例はもちろん不自然なものですがPHPモードを抜ける
+    ことでテキストを出力させる方法は、それらを<function>echo</function>
+    や<function>print</function>等を使って出力させるより便利です。
    </para>
-
   </sect1>
 
   <sect1 id="language.basic-syntax.instruction-separation">
@@ -152,12 +172,14 @@ else
     文は等価です。
     
     <informalexample>
-     <programlisting>
-&lt;?php
+     <programlisting role="php">
+<![CDATA[
+<?php
     echo "This is a test";
 ?>
 
-&lt;?php echo "This is a test" ?>
+<?php echo "This is a test" ?>
+]]>
      </programlisting>
     </informalexample>
    </para>
@@ -171,14 +193,16 @@ else
     例えば、
     
     <informalexample>
-     <programlisting>
-&lt;?php
+     <programlisting role="php">
+<![CDATA[
+<?php
 echo "This is a test"; // C++型の単一行用のコメント
 /* 複数行用のコメント
    もう一行分のコメント */
 echo "This is yet another test";
 echo "One Final Test"; # シェル型のコメント
 ?>
+]]>
      </programlisting>
     </informalexample>
    </para>
@@ -188,9 +212,11 @@ echo "One Final Test"; # シェル型のコメント
     のうちどちらか最初にくる方までです。
    </simpara>
    <informalexample>
-    <programlisting>
-&lt;h1>This is an &lt;?php # echo "simple";?> example.&lt;/h1>
-&lt;p>The header above will say 'This is an example'.
+    <programlisting role="php">
+<![CDATA[
+<h1>This is an &lt;?php # echo "simple";?> example.</h1>
+<p>The header above will say 'This is an example'.
+]]>
     </programlisting>
    </informalexample>
 
@@ -200,12 +226,14 @@ echo "One Final Test"; # シェル型のコメント
    </simpara>
 
    <informalexample>
-    <programlisting>
-&lt;?php
+    <programlisting role="php">
+<![CDATA[
+<?php
  /* 
     echo "This is a test"; /* このコメントが問題を生じます */
  */
 ?>
+]]>
     </programlisting>
    </informalexample>
   </sect1>
