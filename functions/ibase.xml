@@ -1,13 +1,12 @@
-
  <reference id="ref.ibase">
-  <title>InterBase 関数</title>
+  <title>InterBase関数</title>
   <titleabbrev>InterBase</titleabbrev>
 
   <partintro>
    <para>
     InterBaseはBorlab/Inpriseが開発した有名なデータベースです。
-    InterBaseに関する詳細な情報は<ulink
-    url="&url.ibase;">&url.ibase;</ulink>から得ることができます。
+    InterBaseに関する詳細な情報は、
+    <ulink url="&url.ibase;">&url.ibase;</ulink>から得ることができます。
     ところで、InterBaseはオープンソース運動に加わりました！
    </para>
   </partintro>
@@ -15,7 +14,9 @@
   <refentry id="function.ibase-connect">
    <refnamediv>
     <refname>ibase_connect</refname>
-    <refpurpose>InterBaseデータベースへの接続をオープンする</refpurpose>
+    <refpurpose>
+     InterBaseデータベースへの接続をオープンする
+    </refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
@@ -28,22 +29,42 @@
      <paramdef>string 
       <parameter><optional>password</optional></parameter>
      </paramdef>
+     <paramdef>string 
+      <parameter><optional>charset</optional></parameter>
+     </paramdef>
+     <paramdef>string 
+      <parameter><optional>role</optional></parameter>
+     </paramdef>
     </funcsynopsis>
     <para>
-     InterBaseデータベースへの接続をオープンします。
+     InterBaseサーバーへの接続を確立します。引数databaseは
+     データベースファイルへの正しいパスである必要があります。
+     usernameおよびpasswordはPHP設定ディレクティブibase.default_user
+     およびibase.default_passwordで指定することも可能です。
+     同じ引数で<function>ibase_connect</function>が再度コールされた場合、
+     新規のリンクは作成されず、代わりに既にオープンされているリンクの
+     リンクIDが返されます。
+     <function>ibase_close</function>を明示的にコールしない限り、
+     サーバーへのリンクはスクリプトの実行終了時に閉じられます。
      <example>
       <title><function>ibase_connect</function>の例</title>
       <programlisting role="php">
-$dbh = ibase_connect($host, $username, $password);
+$dbh = ibase_connect ($host, $username, $password);
 $stmt = 'SELECT * FROM tblname';
-$sth = ibase_query($dbh, $stmt);
-while ( $row = ibase_fetch_object($sth) ) {
+$sth = ibase_query ($dbh, $stmt);
+while ($row = ibase_fetch_object ($sth)) {
     print $row->email . "\n";
 }
-ibase_close($dbh);
+ibase_close ($dbh);
       </programlisting>
      </example>
     </para>
+    <note>
+     <para>
+      <parameter>role</parameter>はPHP4-RC2で追加されました。
+      この機能は、InterBase 5以降でのみ使用可能です。
+     </para>
+    </note>
     <para>
      <function>ibase_pconnect</function>も参照下さい。
     </para>
@@ -68,12 +89,30 @@ ibase_close($dbh);
      <paramdef>string 
       <parameter><optional>password</optional></parameter>
      </paramdef>
+     <paramdef>string 
+      <parameter><optional>charset</optional></parameter>
+     </paramdef>
+     <paramdef>string 
+      <parameter><optional>role</optional></parameter>
+     </paramdef>
     </funcsynopsis>
-    <simpara>
-     InterBaseデータベースへの持続的接続をオープンします。
-    </simpara>
     <para>
-     <function>ibase_connect</function>も参照下さい。
+     <function>ibase_pconnect</function>の動作は、
+     <function>ibase_connect</function>と非常に似ていますが、
+     大きな違いが二つあります。
+     まず、この関数は接続時に同じパラメータで既にオープンされている
+     (持続的)リンクを探します。見つかった場合、新規接続をオープンする
+     代わりにそのリンクのIDが返されます。
+     2番目の違いとしては、InterBaseサーバーへの接続は
+     スクリプト終了時にも閉じられないということです。
+     代わりに、そのリンクは今後使用するためにオープンされたままとなります。
+     (<function>ibase_close</function>は<function>ibase_pconnect</function>
+     によりオープンされたリンクを閉じません)
+     このため、この型のリンクは'持続的(persistent)'と呼ばれます。
+    </para>
+    <para>
+     この関数に渡されるパラメータの意味については、
+     <function>ibase_connect</function>を参照下さい。引数の意味は全く同じです。
     </para>
    </refsect1>
   </refentry>
@@ -81,17 +120,24 @@ ibase_close($dbh);
   <refentry id="function.ibase-close">
    <refnamediv>
     <refname>ibase_close</refname>
-    <refpurpose></refpurpose>
+    <refpurpose>
+     InterBaseデータベースへの接続を閉じる
+    </refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
     <funcsynopsis>
      <funcdef>int <function>ibase_close</function></funcdef>
-     <paramdef>int <parameter><optional>connection_id</optional></parameter></paramdef>
+     <paramdef>int 
+      <parameter><optional>connection_id</optional></parameter>
+     </paramdef>
     </funcsynopsis>
     <para>
-     InterBaseデータベースへの接続を閉じます。この関数はibase_connectから返された
-     接続IDを引数とします。
+     <function>ibase_connect</function>から返された接続IDが指す
+     InterBaseデータベースへのリンクを閉じます。
+     接続IDが省略された場合、最後にオープンされたリンクが仮定されます。
+     リンクにおけるデフォルトのトランザクションがコミットされ、
+     他のトランザクションはロールバックされます。
     </para>
    </refsect1>
   </refentry>
@@ -99,13 +145,15 @@ ibase_close($dbh);
   <refentry id="function.ibase-query">
    <refnamediv>
     <refname>ibase_query</refname>
-    <refpurpose>クエリを実行する</refpurpose>
+    <refpurpose>InterBaseデータベースでクエリを実行する</refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
     <funcsynopsis>
      <funcdef>int <function>ibase_query</function></funcdef>
-     <paramdef>int <parameter><optional>link_identifier</optional></parameter></paramdef>
+     <paramdef>int 
+      <parameter><optional>link_identifier</optional></parameter>
+     </paramdef>
      <paramdef>string <parameter>query</parameter> </paramdef>
      <paramdef>int 
       <parameter><optional>bind_args</optional></parameter> 
@@ -117,6 +165,14 @@ ibase_close($dbh);
      <function>ibase_free_result</function>,
      <function>ibase_free_query</function>で使用されます。
     </simpara>
+    <note>
+     <para>
+      この関数は、パラメータへの変数のバインドをサポートしていますが、
+      この機能を使用する意味はあまりありません。
+      実用例については、<function>ibase_prepare</function>および
+      <function>ibase_execute</function>を参照下さい。
+     </para>
+    </note>
    </refsect1>
   </refentry>
 
@@ -141,7 +197,7 @@ ibase_close($dbh);
   <refentry id="function.ibase-fetch-object">
    <refnamediv>
     <refname>ibase_fetch_object</refname>
-    <refpurpose>1行分の結果をオブジェクトとして取得する</refpurpose>
+    <refpurpose>InterBaseデータベースからオブジェクトを得る</refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
@@ -183,7 +239,8 @@ ibase_close($dbh);
      <paramdef>int <parameter>result_identifier</parameter></paramdef>
     </funcsynopsis>
     <simpara>
-     <function>ibase_query</function>で作成された結果保持用メモリを解放します。
+     <function>ibase_query</function>により作成された結果保持用メモリを
+     解放します。
     </simpara>
    </refsect1>
   </refentry>
@@ -205,32 +262,9 @@ ibase_close($dbh);
      <paramdef>string <parameter>query</parameter></paramdef>
     </funcsynopsis>
     <simpara>
-     (<function>ibase_bind</function>による)対応するパラメータのバインドや
+     対応するパラメータのバインドや
      (<function>ibase_execute</function>による)実行をするためのクエリを準備します。
     </simpara>
-   </refsect1>
-  </refentry>
-
-  <refentry id="function.ibase-bind">
-   <refnamediv>
-    <refname>ibase_bind</refname>
-    <refpurpose>準備されたクエリからパラメータを対応するバインドする</refpurpose>
-   </refnamediv>
-   <refsect1>
-    <title>説明</title>
-    <funcsynopsis>
-     <funcdef>int <function>ibase_bind</function></funcdef>
-     <paramdef>int <parameter>query</parameter></paramdef>
-    </funcsynopsis>
-    <simpara>
-     <function>ibase_prepare</function>により準備されたクエリから
-     パラメータをバインドします。
-    </simpara>
-    <note>
-     <para>
-      <function>ibase_bind</function>は現在PHP4では動作しません。
-     </para>
-    </note>
    </refsect1>
   </refentry>
 
@@ -246,8 +280,8 @@ ibase_close($dbh);
      <paramdef>int <parameter>query</parameter></paramdef>
     </funcsynopsis>
     <simpara>
-     <function>ibase_prepare</function>および<function>ibase_bind</function>により
-     事前に準備されたクエリを実行（およびバインドを実行）します。
+     <function>ibase_prepare</function>により
+     事前に準備された(場合によってはバインドされた)クエリを実行します。
     </simpara>
    </refsect1>
   </refentry>
@@ -255,7 +289,9 @@ ibase_close($dbh);
   <refentry id="function.ibase-free-query">
    <refnamediv>
     <refname>ibase_free_query</refname>
-    <refpurpose>準備されたクエリにより確保されたメモリを解放する</refpurpose>
+    <refpurpose>
+     準備されたクエリにより確保されたメモリを解放する
+    </refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
@@ -272,7 +308,9 @@ ibase_close($dbh);
   <refentry id="function.ibase-timefmt">
    <refnamediv>
     <refname>ibase_timefmt</refname>
-    <refpurpose>クエリから返されるdatetimeカラムのフォーマットを設定する</refpurpose>
+    <refpurpose>
+     クエリから返されるdatetimeカラムのフォーマットを設定する
+    </refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
