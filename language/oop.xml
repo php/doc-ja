@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.20 $ -->
+<!-- $Revision: 1.21 $ -->
 <!-- sync: 1.43 -->
  <chapter id="language.oop">
   <title>クラスとオブジェクト</title>
@@ -114,12 +114,13 @@ class test {
     <programlisting role="php">
 <![CDATA[
 <?php
-/* 以下のコードはPHP 4では動作しません。 */
 class Cart
 {
+    /* 以下のコードはPHP 4では動作しません。 */
     var $todays_date = date("Y-m-d");
     var $name = $firstname;
     var $owner = 'Fred ' . 'Jones';
+    /* Arrays containing constant values will, though. */
     var $items = array("VCR", "TV");
 }
 
@@ -129,7 +130,7 @@ class Cart
     var $todays_date;
     var $name;
     var $owner;
-    var $items;
+    var $items = array("VCR", "TV");
 
     function Cart()
     {
@@ -697,7 +698,7 @@ $b->example();
   $s = serialize($a);
   // page2.phpが見付られる場所に$sを保存
   $fp = fopen("store", "w");
-  fputs($fp, $s);
+  fwrite($fp, $s);
   fclose($fp);
 
 // page2.php:
@@ -897,36 +898,30 @@ set from outside */
     
     <informalexample>
      <programlisting role="php">
-<![CDATA[      
-class A
-{
-    function A($i)
-    {
+<![CDATA[
+<?php      
+class A {
+    function A($i) {
         $this->value = $i;
         // ここで参照を使う必要がない理由を考えてみて下さい
         $this->b = new B($this);
     }
 
-    function createRef()
-    {
+    function createRef() {
         $this->c = new B($this);
     }
 
-    function echoValue()
-    {
+    function echoValue() {
         echo "<br>","class ",get_class($this),': ',$this->value;
     }
 }
 
-class B
-{
-    function B(&$a)
-    {
+class B {
+    function B(&$a) {
         $this->a = &$a;
     }
 
-    function echoValue()
-    {
+    function echoValue() {
         echo "<br>","class ",get_class($this),': ',$this->a->value;
     }
 }
@@ -946,17 +941,22 @@ $a->echoValue();
 $a->b->echoValue(); // *
 $a->c->echoValue();
 
-/*
-出力:
+?>
+]]>
+     </programlisting>
+     <para>
+      この例の出力は以下のようになります。
+     </para>
+     <screen>
+<![CDATA[
 class A: 10
 class B: 10
 class B: 10
 class A: 11
 class B: 11
 class B: 11
-*/
 ]]>
-     </programlisting>
+     </screen>
     </informalexample>
    </para>
   </sect1>
@@ -1124,13 +1124,12 @@ o1 !== o2 : TRUE
    <para>
     比較演算子(<literal>==</literal>)を用いた場合、
     オブジェクト変数は単純に比較されます。つまり、
-    同じ属性と値を有し、同じ名前空間で定義された同じクラスのインスタン
-    スである場合に二つのオブジェクトのインスタンスが等しくなります。
+    同じ属性と値を有し、同じクラスのインスタンスである場合に
+    二つのオブジェクトのインスタンスが等しくなります。
    </para>
    <para>
     一方、identity演算子(<literal>===</literal>)の場合、
-    オブジェクト変数は、(特定の名前空間の)
-    同じクラスの同じインスタンスを参照する場合のみ
+    オブジェクト変数は、同じクラスの同じインスタンスを参照する場合のみ
     等しくなります。
    </para>
    <para>
@@ -1163,22 +1162,18 @@ class Flag {
     }
 }
 
-namespace Other {
+class OtherFlag {
+    var $flag;
 
-    class Flag {
-        var $flag;
-
-        function Flag($flag=true) {
-                $this->flag = $flag;
-        }
+    function OtherFlag($flag=true) {
+            $this->flag = $flag;
     }
-
 }
 
 $o = new Flag();
 $p = new Flag();
 $q = $o;
-$r = new Other::Flag();
+$r = new OtherFlag();
 
 echo "Two instances of the same class\n";
 compareObjects($o, $p);
@@ -1186,7 +1181,7 @@ compareObjects($o, $p);
 echo "\nTwo references to the same instance\n";
 compareObjects($o, $q);
 
-echo "\nInstances of similarly named classes in different namespaces\n";
+echo "\nInstances of two different classes\n";
 compareObjects($o, $r);
 ?>
 ]]>
