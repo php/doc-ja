@@ -757,8 +757,15 @@ endswitch;
     に置換します。
    </simpara>
    <simpara>
-    ファイルの読み込みに関して注意すべき点としては、
-    ファイルが<function>include</function>または<function>require</function>
+    "URL fopen ラッパー"がPHPで有効な場合(デフォルト設定では有効です)、
+    ローカルなパス名の代わりにURLを用いて<function>require</function>
+    されるファイルを指定することが可能です。詳細な情報については、
+    <link linkend="features.remote-files">リモートファイル</link>と
+    <function>fopen</function>を参照下さい。 
+   </simpara>
+   <simpara>
+    ファイルの読み込みに関して注意すべき点としては、ファイルが
+    <function>include</function>または<function>require</function>
     される際には、読み込まれるファイルの先頭でPHPモードから抜け
     HTMLモードになること、読み込み完了時にPHPモードに戻ることがあります。
     このため、読み込むファイル中のPHPコードとして実行する必要がある
@@ -797,32 +804,52 @@ require ('header.inc');
      </programlisting>
     </informalexample>
    </para>
+   <simpara>
+    ファイルが<function>require</function>で読み込まれる際、そのファイ
+    ルに含まれるコードは、<function>require</function>を実行する行の変
+    数スコープを継承します。コールする側のファイルのその行で利用可能な
+    全ての変数が、読み込まれたファイル内で利用可能です。コールする側の
+    ファイルの関数内で<function>require</function>を行う場合、コールさ
+    れるファイルに含まれる全てのコードは、その関数内で定義されているも
+    のとして動作します。
+   </simpara>
    <para>
-    <function>include</function>および<function>require</function>は共に
-    実際にターゲットファイルの中身を呼出側のファイル自体に読みこむことに
-    注意してください。ターゲットをHTTPのようなものを経由してコールする
-    わけではありません。
-    読み込まれるファイルは実際に呼出側のファイルの一部になるため、
-    呼出側のスコープで設定された全ての変数は読み込まれるファイルの中
-    でも自動的に利用可能です。
+    <function>require</function>で読み込まれたファイルが、fopen ラッパー
+    を用いてHTTP経由でコールされた場合、そして、ターゲットのサーバーが
+    そのターゲットファイルをPHPコードとして解釈する場合、変数は、
+    HTTP GETを使用している場合と同様にURLリクエストとして
+    <function>require</function>されたファイルに渡すことが可能です。
+    直接的な記述ではありませんが、<function>require</function>でファイル
+    を読み込むのと同様に親ファイルの変数スコープを継承します。
+    スクリプトは、実際にはリモートサーバーで実行された後、結果はローカ
+    ルスクリプトに読み込まれます。
     <informalexample>
      <programlisting role="php">
-require ("file.inc?varone=1&amp;vartwo=2"); /* 動作せず */
+/* この例は、someserverで .php を処理するように設定されており、.txt に
+ * ついては設定されていないことを仮定しています。また、ここでの'動作す
+ * る'という意味は、変数 $varoneと$vartwoがrequire()で読み込まれたファ
+ * イルで利用であることを意味します。*/
+
+/* 動作しない; file.txt は、someserverで処理されない。 */
+require ("http://someserver/file.txt?varone=1&amp;vartwo=2");
+
+/* 動作しない; ローカルファイルシステムの'file.php?varone=1&amp;vartwo=2'
+ *  という名前のファイルを探す。 */
+require ("file.php?varone=1&amp;vartwo=2");               
+
+/* 動作する。 */
+require ("http://someserver/file.php?varone=1&amp;vartwo=2"); 
 
 $varone = 1;
 $vartwo = 2;
-require ("file.inc");  /* $varoneと$vartwoはfile.incで利用可能 */
+require ("file.txt");  /* 動作する。 */
+require ("file.php");  /* 動作する。 */
      </programlisting>
     </informalexample>
    </para>
    <simpara>
-    <link linkend="features.remote-files">リモートファイル</link>機能により
-    HTTP経由でrequireやincludeによるファイルの読み込めることと誤解しないで
-    下さい。その場合は、可能です。
-   </simpara>
-   <simpara>
-    PHP3では、<function>require</function>されたファイルのグローバルスコープで
-    のみ<function>require</function>されたファイル内で
+    PHP3では、<function>require</function>されたファイルのグローバルス
+    コープでのみ<function>require</function>されたファイル内で
     <literal>return</literal>文を実行することが可能です。
     ブロック内(括弧{}の中を意味します)では使用することはできません。
     しかし、PHP4では、この機能は廃止されました。この機能が必要な場合、
@@ -842,17 +869,24 @@ require ("file.inc");  /* $varoneと$vartwoはfile.incで利用可能 */
     評価します。
    </simpara>
    <simpara>
-    ファイルの読み込みに関して注意すべき点としては、
-    ファイルが<function>include</function>または<function>require</function>
-    される際には、読み込まれるファイルの先頭でPHPモードから抜け
-    HTMLモードになること、読み込み完了時にPHPモードに戻ることがあります。
+    "URL fopen ラッパー"がPHPで有効な場合(デフォルト設定では有効です)、
+    ローカルなパス名の代わりにURLを用いて<function>include</function>
+    されるファイルを指定することが可能です。詳細な情報については、
+    <link linkend="features.remote-files">リモートファイル</link>と
+    <function>fopen</function>を参照下さい。 
+   </simpara>
+   <simpara>
+    ファイルの読み込みに関して注意すべき点としては、ファイルが
+    <function>include</function>または<function>require</function>
+    される際には、読み込まれるファイルの先頭でPHPモードから抜けてHTML
+    モードになること、読み込み完了時にPHPモードに戻ることがあります。
     このため、読み込むファイル中のPHPコードとして実行する必要がある
-    コードは、<link linkend="language.basic-syntax.phpmode">
-     有効なPHPの開始タグおよび終了タグ </link>で括る必�があります。
+    コードは、<link linkend="language.basic-syntax.phpmode">有効なPHP
+    の開始タグおよび終了タグ </link>で括る必要があります。
    </simpara>
    <para>
     読み込み処理は<literal>include</literal>文を処理する度に行われます。
-    このため、異なった複数のファイルを読み込むためにルッצǋ造の中で
+    このため、異なった複数のファイルを読み込むためにループ構造の中で
     <literal>include</literal>を使用することができます。
     <informalexample>
      <programlisting role="php">
@@ -864,12 +898,12 @@ for ($i = 0; $i &lt; count($files); $i++) {
     </informalexample>
    </para>
    <para>
-   <function>include</function>は<function>require</function>と異なり、
-    include文が実行される度に再度評価されます。
-    (そして、実行時に初めて評価されます。)一方、<function>require</function>文は、
-    (条件式がfalseである<link linkend="control-structures.if">if</link>
-    文の中にある場合のように)読み込まれるファイルの内容が評価されるかによらず
-    最初に処理された際に読み込まれるファイルで置換されます。
+    <function>include</function>は<function>require</function>と異なり、
+    include文が実行される度に再度評価されます。(そして、実行時に初めて
+    評価されます。)一方、<function>require</function>文は、(条件式が
+    falseである<link linkend="control-structures.if">if</link>文の中に
+    ある場合のように)読み込まれるファイルの内容が評価されるかによらず最
+    初に処理された際に読み込まれるファイルで置換されます。
    </para>
    <para>
     <function>include</function>は特殊な言語構造なので、if構造内
@@ -975,33 +1009,53 @@ Before the return
      </screen>
     </para>
     <para>
-     偽の'27'はPHP3がファイルから<literal>return</literal>により値を返すことを
-     サポートしていないことによるものです。
+     スプリアス'27'はPHP3がファイルから<literal>return</literal>により
+     値を返すことをサポートしていないことによるものです。
     </para>
    </example>
+   <simpara>
+    ファイルが<function>include</function>で読み込まれる際、そのファイ
+    ルに含まれるコードは、<function>include</function>を実行する行の変
+    数スコープを継承します。コールする側のファイルのその行で利用可能な
+    全ての変数が、読み込まれたファイル内で利用可能です。コールする側の
+    ファイルの関数内で<function>include</function>を行う場合、コールさ
+    れるファイルに含まれる全てのコードは、その関数内で定義されているも
+    のとして動作します。
+   </simpara>
    <para>
-    <function>include</function>および<function>require</function>は共に
-    実際にターゲットファイルの中身を呼出側のファイル自体に読みこむことに
-    注意してください。ターゲットをHTTPのようなものを経由してコールする
-    わけではありません。よって、
-    インクルードされるファイルは効率的に呼出側のファイルの一部になるため、
-    インクルードされた側のスコープで設定された全ての変数はインクルード
-    されるファイルの中でも自動的に利用可能です。
+    <function>include</function>で読み込まれたファイルが、fopen ラッパー
+    を用いてHTTP経由でコールされた場合、そして、ターゲットのサーバーが
+    そのターゲットファイルをPHPコードとして解釈する場合、変数は、
+    HTTP GETを使用している場合と同様にURLリクエストとして
+    <function>include</function>されたファイルに渡すことが可能です。
+    直接的な記述ではありませんが、<function>include</function>でファイル
+    を読み込むのと同様に親ファイルの変数スコープを継承します。
+    スクリプトは、実際にはリモートサーバーで実行された後、結果はローカ
+    ルスクリプトに読み込まれます。
     <informalexample>
      <programlisting role="php">
-include( "file.inc?varone=1&amp;vartwo=2" ); /* 動作しません */
- 
+/* この例は、someserverで .php を処理するように設定されており、.txt に
+ * ついては設定されていないことを仮定しています。また、ここでの'動作す
+ * る'という意味は、変数 $varoneと$vartwoがinclude()で読み込まれたファ
+ * イルで利用であることを意味します。*/
+
+/* 動作せず; file.txt は someserverで処理されない。 */
+include ("http://someserver/file.txt?varone=1&amp;vartwo=2");
+
+/* 動作せず; ローカルファイルシステムの'file.php?varone=1&amp;vartwo=2'
+ * という名前のファイルを探す。 */
+include ("file.php?varone=1&amp;vartwo=2");               
+
+/* 動作する。 */
+include ("http://someserver/file.php?varone=1&amp;vartwo=2"); 
+
 $varone = 1;
 $vartwo = 2;
-include ("file.inc");  /* $varoneおよび$vartwoはfile.incで利用可能です */
+include ("file.txt");  /* 動作する。 */
+include ("file.php");  /* 動作する。 */
      </programlisting>
     </informalexample>
-    </para>
-   <simpara>
-    <link linkend="features.remote-files">リモートファイル</link>機能により
-    HTTP経由でrequireやincludeによるファイルの読み込めることと誤解しないで
-    下さい。その場合は、可能です。
-   </simpara>
+   </para>
    <simpara>
     <function>require</function>, <function>require_once</function>,
     <function>include_once</function>, <function>readfile</function>,
