@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- splitted from ./ja/functions/filesystem.xml, last change in rev 1.37 -->
-<!-- last change to 'parse-ini-file' in en/ tree in rev 1.87 -->
+<!-- last change to 'parse-ini-file' in en/ tree in rev 1.13 -->
   <refentry id="function.parse-ini-file">
    <refnamediv>
     <refname>parse_ini_file</refname>
@@ -11,9 +11,7 @@
      <methodsynopsis>
       <type>array</type><methodname>parse_ini_file</methodname>
       <methodparam><type>string</type><parameter>filename</parameter></methodparam>
-      <methodparam choice="opt"><type>bool</type><parameter>
-        process_sections
-       </parameter></methodparam>
+      <methodparam choice="opt"><type>bool</type><parameter>process_sections</parameter></methodparam>
      </methodsynopsis>
     <para>
      <function>parse_ini_file</function> は、
@@ -32,9 +30,33 @@
       可能です。
      </para>
     </note>
+    <note>
+     <para>
+      iniファイル上の値に英数字ではないものがある場合、
+      ダブルクォート(")で囲う必要があります。
+     </para>
+    </note>
+    <note>
+     <simpara>
+      PHP4.2.1以降では、この関数は &safemode; と
+      <link linkend="ini.open-basedir">open_basedir</link>の影響を受けます。
+     </simpara>
+    </note>
+    <note>
+     <simpara>
+      iniファイル上でキーとして使ってはいけない単語があります。
+      それらは yes, no, true, false などが含まれます。
+     </simpara>
+    </note>
     <para>
      初期ファイルの構造は、<filename>php.ini</filename>の構造に似てい
      ます。
+    </para>
+    <para>
+     <link linkend="language.constants">定数</link>もiniファイル上でパースされます。
+     そのため、<function>parse_ini_file</function>をコールする前に
+     iniファイル上の値として定数を定義した場合、返り値に統合されます。
+     iniファイル上の値だけが評価されます。以下は例です：
     </para>
     <para>
      <example>
@@ -47,9 +69,11 @@
 [first_section]
 one = 1
 five = 5
+animal = BIRD
 
 [second_section]
 path = /usr/local/bin
+URL = "http://www.example.com/~username"
 ]]>
       </programlisting>
      </example>
@@ -60,6 +84,8 @@ path = /usr/local/bin
       <programlisting>
 <![CDATA[
 <?php
+
+define ('BIRD', 'Dodo bird');
 
 // Parse without sections
 $ini_array = parse_ini_file("sample.ini");
@@ -83,7 +109,9 @@ Array
 (
     [one] => 1
     [five] => 5
+    [animal] => Dodo bird
     [path] => /usr/local/bin
+    [URL] => http://www.example.com/~username
 )
 Array
 (
@@ -91,11 +119,13 @@ Array
         (
             [one] => 1
             [five] => 5
+            [animal] = Dodo bird
         )
 
     [second_section] => Array
         (
             [path] => /usr/local/bin
+            [URL] => http://www.example.com/~username
         )
 
 )
