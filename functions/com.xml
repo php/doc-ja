@@ -1,13 +1,233 @@
  <reference id="ref.com">
   <title>Windows用のCOMサポート関数</title>
   <titleabbrev>COM</titleabbrev>
-
+  
   <partintro>
    <simpara>
     以下の関数は、Windows版のPHPでのみ利用可能です。これらの関数は、
     PHP4で追加されました。
    </simpara>
   </partintro>
+  
+  <refentry id="class.com">
+   <refnamediv>
+    <refname>COM</refname>
+    <refpurpose>COM class</refpurpose>
+   </refnamediv>
+   <refsynopsisdiv>
+    <synopsis>$obj = new <classname>COM</classname>("server.object")</synopsis>
+   </refsynopsisdiv>
+   <refsect1 id="class.com.class">
+    <title>説明</title>
+    <simpara>
+     COM クラスは、PHPスクリプトに統合された (D)COMコンポーネントのフ
+     レームワークを提供します。
+    </simpara>
+   </refsect1>
+   <refsect1 id="class.com.constructor">
+    <title>メソッド</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>string <function>COM::COM</function></funcdef>
+      <paramdef>string <parameter>module_name</parameter></paramdef>
+      <paramdef>string 
+       <parameter><optional>server_name</optional></parameter>
+      </paramdef>
+      <paramdef>int 
+       <parameter><optional>codepage</optional></parameter>
+      </paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     COM クラスのコンストラクタ。 パラメータ:
+     <variablelist>
+      <varlistentry><term>module_name</term>
+       <listitem>
+	<simpara>
+	 リクエストされたコンポーネントの名前またはクラスID。
+	</simpara>
+       </listitem>
+      </varlistentry>
+      <varlistentry><term>server_name</term>
+       <listitem>
+	<simpara>
+	 コンポーネントを取得するDCOMサーバの名前。
+	 <literal>NULL</literal>の場合には、
+	 <literal>localhost</literal>が指定されたと仮定されます。
+	 DCOMを使用するためには、<filename>php.ini</filename>で
+	 <constant>com.allow_dcom</constant> を
+	 <literal>TRUE</literal>に設定してある必要があります。
+	</simpara>
+       </listitem>
+      </varlistentry>
+      <varlistentry><term>codepage</term>
+       <listitem>
+	<simpara>
+	 PHPの文字列のUNICODE文字列への変換およびその逆変換で使用され
+	 るコードページを指定します。使用可能な値は、
+	 <constant>CP_ACP</constant>, <constant>CP_MACCP</constant>,
+	 <constant>CP_OEMCP</constant>,
+	 <constant>CP_SYMBOL</constant>,
+	 <constant>CP_THREAD_ACP</constant>,
+	 <constant>CP_UTF7</constant>, <constant>CP_UTF8</constant>で
+	 す。
+	</simpara>
+       </listitem>
+      </varlistentry>
+     </variablelist>
+    </para>
+    <para>
+     <example id="example.com1">
+      <title>COM の例 (1)</title>
+      <programlisting role="php">
+// Wordを起動
+$word = new COM("word.application") or die("Unable to instanciate Word");
+print "Loaded Word, version {$word->Version}\n";
+
+// 前面に表示
+$word->Visible = 1;
+
+// 空のドキュメントをオープン
+$word->Documents->Add();
+
+// 何か単純な作業をする
+$word->Selection->TypeText("This is a test...");
+$word->Documents[1]->SaveAs("Useless test.doc");
+
+// Wordを閉じる
+$word->Quit();
+
+// オブジェクトを開放
+$word->Release();
+$word = null;
+      </programlisting>
+     </example>
+    </para>
+    <para>
+     <example id="example.com2">
+      <title>COM の例 (2)</title>
+      <programlisting role="php">
+$conn = new COM("ADODB.Connection") or die("Cannot start ADO");
+$conn->Open("Provider=SQLOLEDB; Data Source=localhost;
+Initial Catalog=database; User ID=user; Password=password");
+
+$rs = $conn->Execute("SELECT * FROM sometable");    // Recordset
+
+$num_columns = $rs->Fields->Count();
+echo $num_columns . "\n";
+
+for ($i=0; $i < $num_columns; $i++)
+{
+    $fld[$i] = $rs->Fields($i);
+}
+
+$rowcount = 0;
+while (!$rs->EOF)
+{
+    for ($i=0; $i < $num_columns; $i++)
+    {
+        echo $fld[$i]->value . "\t";
+    }
+    echo "\n";
+    $rowcount++;            // 行カウンタを増やす
+    $rs->MoveNext();
+}
+
+$rs->Close();
+$conn->Close();
+
+$rs->Release();
+$conn->Release();
+
+$rs = null;
+$conn = null;
+      </programlisting>
+     </example>
+    </para>
+   </refsect1>
+  </refentry>
+  
+  <refentry id="class.variant">
+   <refnamediv>
+    <refname>VARIANT</refname>
+    <refpurpose>VARIANT クラス</refpurpose>
+   </refnamediv>
+   <refsynopsisdiv>
+    <synopsis>$vVar = new <classname>VARIANT</classname>($var)</synopsis>
+   </refsynopsisdiv>
+   <refsect1 id="class.variant.class">
+    <title>説明</title>
+    <simpara>
+     VARIANT構造体に変数をラップするための簡単なコンテナクラス。
+    </simpara>
+   </refsect1>
+   <refsect1 id="class.variant.constructor">
+    <title>メソッド</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>string <function>VARIANT::VARIANT</function></funcdef>
+      <paramdef>mixed 
+       <parameter><optional>value</optional></parameter>
+      </paramdef>
+      <paramdef>int 
+       <parameter><optional>type</optional></parameter>
+      </paramdef>
+      <paramdef>int 
+       <parameter><optional>codepage</optional></parameter>
+      </paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     VARIANT クラスのコンストラクタ。 パラメータ:
+     <variablelist>
+      <varlistentry><term>value</term>
+       <listitem>
+	<simpara>
+	 初期値。省略した場合には、VT_EMPTYオブジェクトが作成されます。
+	</simpara>
+       </listitem>
+      </varlistentry>
+      <varlistentry><term>type</term>
+       <listitem>
+	<simpara>
+	 VARIANTオブジェクトのcontent型を指定します。使用可能な値は、
+	 <constant>VT_UI1</constant>, <constant>VT_UI2</constant>,
+	 <constant>VT_UI4</constant>, <constant>VT_I1</constant>,
+	 <constant>VT_I2</constant>, <constant>VT_I4</constant>, 
+	 <constant>VT_R4</constant>, <constant>VT_R8</constant>,
+	 <constant>VT_INT</constant>, <constant>VT_UINT</constant>,
+	 <constant>VT_BOOL</constant>, <constant>VT_ERROR</constant>,
+	 <constant>VT_CY</constant>,  <constant>VT_DATE</constant>,
+	 <constant>VT_BSTR</constant>,
+	 <constant>VT_DECIMAL</constant>, 
+	 <constant>VT_UNKNOWN</constant>,
+	 <constant>VT_DISPATCH</constant>,
+	 <constant>VT_VARIANT</constant>です。これらの値は相互に排他的
+	 ですが、値があることを指定するために
+	 <constant>VT_BYREF</constant>を組み合わせることが可能です。
+	 省略された場合には、<parameter>value</parameter> の型が使用さ
+	 れます。その他の情報については、MSDNライブラリを参照下さい。
+	</simpara>
+       </listitem>
+      </varlistentry>
+      <varlistentry><term>codepage</term>
+       <listitem>
+	<simpara>
+	 PHPの文字列のUNICODE文字列への変換およびその逆変換で使用され
+	 るコードページを指定します。使用可能な値は、
+	 <constant>CP_ACP</constant>, <constant>CP_MACCP</constant>,
+	 <constant>CP_OEMCP</constant>,
+	 <constant>CP_SYMBOL</constant>,
+	 <constant>CP_THREAD_ACP</constant>,
+	 <constant>CP_UTF7</constant>, <constant>CP_UTF8</constant>で
+	 す。
+	</simpara>
+       </listitem>
+      </varlistentry>
+     </variablelist>
+    </para>
+   </refsect1>
+  </refentry>
 
   <refentry id="function.com-load">
    <refnamediv>
@@ -27,12 +247,22 @@
 	<replaceable><optional>server name</optional></replaceable>
        </parameter>
       </paramdef>
+      <paramdef>int
+       <parameter>
+	<optional>codepage</optional>
+       </parameter>
+      </paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
      <function>com_load</function>は、新規のCOMコンポーネントを作成し、
      このコンポーネントへのリファレンスを返します。失敗した場合に
      <literal>false</literal>を返します。
+     Possible values for <parameter>codepage</parameter> are
+     <constant>CP_ACP</constant>, <constant>CP_MACCP</constant>,
+     <constant>CP_OEMCP</constant>, <constant>CP_SYMBOL</constant>,
+     <constant>CP_THREAD_ACP</constant>, <constant>CP_UTF7</constant>
+     and <constant>CP_UTF8</constant>.
     </para>
    </refsect1>
   </refentry>
@@ -180,10 +410,50 @@
     </funcsynopsis>
     <para>
      <parameter>com_object</parameter>が指すCOMコンポーネントの
-     <parameter>property</parameter>の値を設定します。
-     <parameter>property</parameter>が設定されている場合に
-     <literal>true</literal>を返します。エラー時に
-     <literal>false</literal>を返します。
+     <parameter>property</parameter>の値を設定します。成功時に新規に設
+     定された値、エラーの場合に<literal>false</literal>を返します。
+    </para>
+   </refsect1>
+  </refentry>
+  
+  <refentry id="function.com-addref">
+   <refnamediv>
+    <refname>com_addref</refname>
+    <refpurpose>
+     コンポーネントリファレンスカウンタを増やす
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>void <function>com_addref</function></funcdef>
+      <void/>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     コンポーネントリファレンスカウンタを増やします。
+    </para>
+   </refsect1>
+  </refentry>
+  
+  <refentry id="function.com-release">
+   <refnamediv>
+    <refname>com_release</refname>
+    <refpurpose>
+     コンポーネントリファレンスカウンタを減らす
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>void <function>com_release</function></funcdef>
+      <void/>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     コンポーネントリファレンスカウンタを減らします。
     </para>
    </refsect1>
   </refentry>

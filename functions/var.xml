@@ -791,6 +791,11 @@ echo isset($a); // false
      オブジェクトに関しても同様の表示形式となります。
     </simpara>
     <simpara>
+     <function>print_r</function>は、配列ポインタを終端まで移動するこ
+     とに注意して下さい。ポインタを最初に戻すために
+     <function>reset</function>を使用して下さい。
+    </simpara>
+    <simpara>
      <function>print_r</function>を
      <function>var_dump</function>と比較してみて下さい。
     </simpara>
@@ -817,6 +822,75 @@ print_r ($a);
    </refsect1>
   </refentry>
   
+  <refentry id="function.serialize">
+   <refnamediv>
+    <refname>serialize</refname>
+    <refpurpose>
+     値の保存可能な表現を生成する
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>string <function>serialize</function></funcdef>
+      <paramdef>mixed <parameter>value</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <simpara>
+     <function>serialize</function> は、<parameter>value</parameter>の
+     保存可能なバイトストリーム表現を含む文字列を返します。
+    </simpara>
+    <simpara>
+     型や構造を失わずにPHPの値を保存または渡す際に有効です。
+    </simpara>
+    <simpara>
+     シリアル化された文字列をPHPの値に戻すには、
+     <function>unserialize</function>を使用して下さい。
+     <function>serialize</function>は型<type>integer</type>, 
+     <type>double</type>,<type>string</type>,<type>array</type> 
+     (多次元),<type>object</type> 
+     (オブジェクトプロパティはシリアル化されますが、メソッドは失われます)
+     に対応します。
+    </simpara>
+    <note>
+     <para>
+      PHP 3では、メソッドはシリアル化されたオブジェクトを非シリアル化
+      する際に保存されません。PHP 4ではこの制限は取り除かれ、プロパティ
+      とメソッドの両方を保存します。より詳細な情報については、
+      <link linkend="language.oop">オブジェクトとクラス</link> の
+      <link linkend="language.oop.serialization">オブジェクトのシリア
+      ル化</link>の節を参照下さい。
+     </para>
+    </note>
+    <para>
+     <example>
+      <title><function>serialize</function>の例</title>
+      <programlisting role="php">
+// $session_data はカレントユーザーのセッション情報を含む多次元配列を
+// 保持しています。リクエストの最後にこれをデータベースに保存するために
+//  serialize() を使用します。
+
+$conn = odbc_connect("webdb", "php", "chicken");
+$stmt = odbc_prepare($conn,
+      "UPDATE sessions SET data = ? WHERE id = ?");
+$sqldata = array(serialize($session_data), $PHP_AUTH_USER);
+if (!odbc_execute($stmt, &amp;$sqldata)) {
+    $stmt = odbc_prepare($conn,
+     "INSERT INTO sessions (id, data) VALUES(?, ?)");
+    if (!odbc_execute($stmt, &amp;$sqldata)) {
+    /* 何か問題があったようです。Bitch, whine and moan. */
+    }
+}
+      </programlisting>
+     </example>
+    </para>
+    <para>
+     <function>unserialize</function>も参照下さい。
+    </para>
+   </refsect1>
+  </refentry>
+ 
   <refentry id="function.settype">
    <refnamediv>
     <refname>settype</refname>
@@ -898,6 +972,69 @@ settype($bar, "string");  // ここでは、$bar は "1" です (文字列)
    </refsect1>
   </refentry>
  
+  <refentry id="function.unserialize">
+   <refnamediv>
+    <refname>unserialize</refname>
+    <refpurpose>保存用表現から PHP の値を生成する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>mixed <function>unserialize</function></funcdef>
+      <paramdef>string <parameter>str</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <simpara>
+     <function>unserialize</function> は、シリアル化された変数
+     (<function>serialize</function> を参照) をとり、PHP 変数値に
+     戻す変換を行います。変換された値が返されます。その値は、
+     <type>integer</type>, <type>double</type>,
+     <type>string</type>, <type>array</type> , <type>object</type>
+     とすることが可能です。オブジェクトがシリアル化された場合、返り値
+     にそのメソッドは保存されていません。
+    </simpara>
+    <note>
+     <para>
+      PHP 3では、メソッドはシリアル化されたオブジェクトを非シリアル化
+      する際に保存されません。PHP 4ではこの制限は取り除かれ、プロパティ
+      とメソッドの両方を保存します。より詳細な情報については、
+      <link linkend="language.oop">オブジェクトとクラス</link> の
+      <link linkend="language.oop.serialization">オブジェクトのシリア
+      ル化</link>の節を参照下さい。
+     </para>
+    </note>
+    <para>
+     <example>
+      <title><function>unserialize</function>の例</title>
+      <programlisting role="php">
+// ここで、データベースから $session_data にセッションデータをロード 
+// するために unserialize() を使用します。
+// この例は、<function>serialize</function> で記述された例を補足するものです。
+ 
+$conn = odbc_connect("webdb", "php", "chicken");
+$stmt = odbc_prepare($conn, "SELECT data FROM sessions WHERE id = ?");
+$sqldata = array($PHP_AUTH_USER);
+if (!odbc_execute($stmt, &$sqldata) || !odbc_fetch_into($stmt, &$tmp)) {
+    // 実行または取得が失敗した場合、空の配列で初期化します
+    $session_data = array();
+} else {
+    // $tmp[0] にシリアル化されたデータを保持している必要があります。
+    $session_data = unserialize($tmp[0]);
+    if (!is_array($session_data)) {
+        // 何か問題があったため、空の配列で初期化します。
+        $session_data = array();
+    }
+}
+      </programlisting>
+     </example>
+    </para>
+    <para>
+     <function>serialize</function>も参照下さい。
+    </para>
+   </refsect1>
+  </refentry>
+
   <refentry id="function.unset">
    <refnamediv>
     <refname>unset</refname>
