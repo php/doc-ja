@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.12 $ -->
-<!-- EN-Revision: 1.42 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.13 $ -->
+<!-- EN-Revision: 1.58 Maintainer: hirokawa Status: ready -->
  <chapter id="features.safe-mode">
   <title>セーフモード</title>
 
@@ -126,7 +126,7 @@
        <simpara>
         PHP 4.2.0以降、このディレクティブは
         <link linkend="ini.include-path">include_path</link>と同様に
-        セミコロンで分けた形式で複数のパスを書くことができます。
+        コロン(Windowsではセミコロン)で分けた形式で複数のパスを書くことができます。
        </simpara>
        <simpara>
         ここで指定される制限は実はプレフィックスでありディレクトリ名ではありません。
@@ -148,6 +148,8 @@
         PHPがセーフモードで動作する場合、<function>system</function>や
         その他の<link linkend="ref.exec">プログラム実行関数</link>を、
         このディレクトリ以外で起動することは拒否されます。
+        Windowsを含む全ての環境において
+        ディレクトリのセパレータとして<literal>/</literal>を使用する必要があります。
        </para>
       </listitem>
      </varlistentry>
@@ -206,8 +208,18 @@
        </para>
        <para>
         <systemitem class="constant">.</systemitem>は特別な値で、
-        スクリプトが格納されているディレクトリをbase-directoryとして
+        スクリプトが格納されているワーキングディレクトリをベースディレクトリとして
         使用することを意味します。
+        これは、しかし、スクリプトのワーキングディレクトリが
+        <function>chdir</function>により容易に変更されるために
+        やや危険です。
+       </para>
+       <para>
+        <filename>httpd.conf</filename>の中で、open_basedir はオフにすることができます。
+        (例: 仮想サーバの場合)
+        他の設定ディレクティブと
+        <link linkend="configuration.changes.apache">同様に</link>
+        "php_admin_value open_basedir none"とします。
        </para>
        <para>
         Windows上では、ディレクトリをセミコロンで区切ってください。
@@ -285,7 +297,7 @@
 
   <para>
    <link linkend="ini.safe-mode">セーフモード</link>がonの場合、PHPは、
-   現在のスクリプトの所有者がファイル関数により処理されているファイル
+   現在のスクリプトの所有者がファイル関数により処理されているファイルまたはディレクトリ
    の所有者に一致するかどうかを調べます。例えば、
    <programlisting role="ls">
 <![CDATA[
@@ -415,7 +427,7 @@ Warning: readfile() has been disabled for security reasons in
         <!-- TODO: more info on sql-safe-mode -->
        </row>
        <row>
-        <entry><function>pg_loimport</function></entry>
+        <entry><function>pg_lo_import</function></entry>
         <entry>&sm.uidcheck;</entry>
         <!-- source TODO: there is no PHP-warning for that safe-mode-restriction -->
        </row>
@@ -459,36 +471,48 @@ Warning: readfile() has been disabled for security reasons in
        <row>
         <entry><function>exec</function></entry>
         <entry>
-     <link linkend="ini.safe-mode-exec-dir">safe_mode_exec_dir</link>
-     の中でのみ実行可能です。実行上の理由により、現在、実行パスに
-     <literal>..</literal>を含めることは許可されていません。
-    </entry>
+         <link linkend="ini.safe-mode-exec-dir">safe_mode_exec_dir</link>
+         の中でのみ実行可能です。現実的な理由により、現在、実行パスに
+         <literal>..</literal>を含めることは許可されていません。
+         <function>escapeshellcmd</function>はこの関数の引数にたいして
+         実行できます。
+        </entry>
        </row>
        <row>
         <entry><function>system</function></entry>
         <entry>
-     <link linkend="ini.safe-mode-exec-dir">safe_mode_exec_dir</link>
-     の中でのみ実行可能です。実行上の理由により、現在、実行パスに
-     <literal>..</literal>を含めることは許可されていません。
+         <link linkend="ini.safe-mode-exec-dir">safe_mode_exec_dir</link>
+         の中でのみ実行可能です。現実的な理由により、現在、実行パスに
+         <literal>..</literal>を含めることは許可されていません。
+         <function>escapeshellcmd</function>はこの関数の引数にたいして
+         実行できます。
     </entry>
        </row>
        <row>
         <entry><function>passthru</function></entry>
         <entry>
-     <link linkend="ini.safe-mode-exec-dir">safe_mode_exec_dir</link>
-     の中でのみ実行可能です。実行上の理由により、現在、実行パスに
-     <literal>..</literal>を含めることは許可されていません。
-    </entry>
+         <link linkend="ini.safe-mode-exec-dir">safe_mode_exec_dir</link>
+         の中でのみ実行可能です。現実的な理由により、現在、実行パスに
+         <literal>..</literal>を含めることは許可されていません。
+         <function>escapeshellcmd</function>はこの関数の引数にたいして
+         実行できます。
+        </entry>
        </row>
        <row>
         <entry><function>popen</function></entry>
         <entry>
-     <link linkend="ini.safe-mode-exec-dir">safe_mode_exec_dir</link>
-     の中でのみ実行可能です。実行上の理由により、現在、実行パスに
-     <literal>..</literal>を含めることは許可されていません。
-    </entry>
+         <link linkend="ini.safe-mode-exec-dir">safe_mode_exec_dir</link>
+         の中でのみ実行可能です。現実的な理由により、現在、実行パスに
+         <literal>..</literal>を含めることは許可されていません。
+         <function>escapeshellcmd</function>はこの関数の引数にたいして
+         実行できます。
+        </entry>
         <!-- TODO: not sure. popen uses a completely different implementation
         Don't know why, don't know whether it's behaving the same -->
+       </row>
+       <row>
+        <entry><function>fopen</function></entry>
+        <entry>&sm.uidcheck.dir;</entry>
        </row>
        <row>
         <entry><function>mkdir</function></entry>
@@ -496,7 +520,7 @@ Warning: readfile() has been disabled for security reasons in
        </row>
        <row>
         <entry><function>rmdir</function></entry>
-        <entry>&sm.uidcheck;</entry>
+        <entry>&sm.uidcheck.dir;</entry>
        </row>
        <row>
         <entry><function>rename</function></entry>
@@ -542,15 +566,13 @@ Warning: readfile() has been disabled for security reasons in
         確認されます)</entry>
        </row>
        <row>
-        <entry><function>getallheaders</function></entry>
+        <entry><function>apache_request_headers</function></entry>
         <entry>
-     セーフモードでは、'authorization'で始まるヘッダ(大文字小文字は
-     区別されません)は返されません。
-     警告: これは、AOLサーバにおける
-     <function>getallheaders</function>の実装では正常に動作しません!
-    </entry>
+         セーフモードでは、'authorization'で始まるヘッダ(大文字小文字は
+         区別されません)は返されません。
+        </entry>
        </row>
-        <row>
+       <row>
         <entry><function>header</function></entry>
         <entry>
          セーフモードでは、<literal>WWW-Authenticate</literal>
@@ -603,8 +625,16 @@ Warning: readfile() has been disabled for security reasons in
         </entry>
        </row>
        <row>
-        <entry>Any function that uses 
-         <filename>php4/main/fopen_wrappers.c</filename>
+        <entry>
+         <function>mail</function>
+        </entry>
+        <entry>
+         セーフモードでは、5番目のパラメータが無効となります。(注意: PHP 4.2.3以降のみ適用)
+        </entry>
+       </row>
+       <row>
+        <entry>
+         <filename>php4/main/fopen_wrappers.c</filename>を使用する全ての関数
         </entry>
         <entry>??</entry>
        </row>
