@@ -8,6 +8,149 @@
    </para>
   </partintro>
 
+  <refentry id="function.create-function">
+   <refnamediv>
+    <refname>create_function</refname>
+    <refpurpose>匿名(ラムダ形式)関数を作成する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>string <function>create_function</function></funcdef>
+      <paramdef>string <parameter>args</parameter></paramdef>
+      <paramdef>string <parameter>code</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     指定したパラメータにより匿名関数を作成し、その関数のユニークな名
+     前を返します。通常、<parameter>args</parameter> をシングルクオー
+     トで括られた文字列で指定します。<parameter>code</parameter> につ
+     いても同様に指定することが推奨されます。シングルクオートで括った
+     文字列を使用する理由は、パース時に変数名を保護するためです。ダブ
+     ルクオートを使用した場合には、<literal>\$avar</literal>のように変
+     数名をエスケープする必要があります。
+    </para>
+    <para>
+     (例えば、)実行時に取得した情報から関数を作成する際にこの関数を使
+     用することが可能です。
+     <example>
+      <title>
+       <function>create_function</function>により匿名関数を作成する
+      </title>
+      <programlisting role="php">
+$newfunc = create_function('$a,$b','return "ln($a) + ln($b) = ".log($a * $b);');
+echo "New anonymous function: $newfunc\n";
+echo $newfunc(2,M_E)."\n";
+// 出力
+// 新規匿名関数: lambda_1
+// ln(2) + ln(2.718281828459) = 1.6931471805599
+      </programlisting>
+     </example>
+     もしくは、一般的なハンドル関数を作成するために、パラメータのリス
+     トに一連の演算子を適用することも可能です。
+     <example>
+      <title>
+       <function>create_function</function>で一般的な処理関数を作成する
+      </title>
+      <programlisting role="php">
+function process($var1, $var2, $farr) {
+    for ($f=0; $f &lt; count($farr); $f++)
+    echo $farr[$f]($var1,$var2)."\n";
+}
+
+// 一連の数学関数を作成する
+$f1 = 'if ($a &gt;=0) {return "b*a^2 = ".$b*sqrt($a);} else {return false;}';
+$f2 = "return \"min(b^2+a, a^2,b) = \".min(\$a*\$a+\$b,\$b*\$b+\$a);";
+$f3 = 'if ($a &gt; 0 &amp;&amp; $b != 0) {return "ln(a)/b = ".log($a)/$b;} else {return false;}';
+$farr = array(
+    create_function('$x,$y', 'return "some trig: ".(sin($x) + $x*cos($y));'),
+    create_function('$x,$y', 'return "a hypotenuse: ".sqrt($x*$x + $y*$y);'),
+    create_function('$a,$b', $f1),
+    create_function('$a,$b', $f2),
+    create_function('$a,$b', $f3)
+    );
+
+echo "\nUsing the first array of anonymous functions\n";
+echo "parameters: 2.3445, M_PI\n";
+process(2.3445, M_PI, $farr);
+
+// 一連の文字列処理関数を作成する
+$garr = array(
+    create_function('$b,$a','if (strncmp($a,$b,3) == 0) return "** \"$a\" '.
+    'and \"$b\"\n** Look the same to me! (looking at the first 3 chars)";'),
+    create_function('$a,$b','; return "CRCs: ".crc32($a)." , ".crc32(b);'),
+    create_function('$a,$b','; return "similar(a,b) = ".similar_text($a,$b,&$p)."($p%)";')
+    );
+echo "\nUsing the second array of anonymous functions\n";
+process("Twas brilling and the slithy toves", "Twas the night", $garr);
+      </programlisting>
+     </example>
+     上のコードを実行した場合、出力は次のようになります。
+     <informalexample>
+      <programlisting>
+Using the first array of anonymous functions
+parameters: 2.3445, M_PI
+some trig: -1.6291725057799
+a hypotenuse: 3.9199852871011
+b*a^2 = 4.8103313314525
+min(b^2+a, a^2,b) = 8.6382729035898
+ln(a/b) = 0.27122299212594
+
+Using the second array of anonymous functions
+** "Twas the night" and "Twas brilling and the slithy toves"
+** Look the same to me! (looking at the first 3 chars)
+CRCs: -725381282 , 1908338681
+similar(a,b) = 11(45.833333333333%)
+      </programlisting>
+     </informalexample>
+     しかし、恐らくラムダ形式の(匿名)関数の最も一般的な使用法は、
+    <function>array_walk</function> または <function>usort</function>
+     を使用する場合にようにコールバック関数を作成する場合でしょう。
+    <example>
+     <title>コールバック関数として匿名関数を使用</title>
+     <programlisting role="php">
+$av = array("the ","a ","that ","this ");
+array_walk($av, create_function('&$v,$k','$v = $v."mango";'));
+print_r($av);  // for PHP3 use var_dump()
+// 出力:
+// Array
+// (
+//   [0] =&gt; the mango
+//   [1] =&gt; a mango
+//   [2] =&gt; that mango
+//   [3] =&gt; this mango
+// )
+
+// 短い順にソートされた文字列の配列
+$sv = array("small","larger","a big string","it is a string thing");
+print_r($sv);
+// 出力:
+// Array
+// (
+//   [0] =&gt; small
+//   [1] =&gt; larger
+//   [2] =&gt; a big string
+//   [3] =&gt; it is a string thing
+// )
+
+// 長さ順にソートする
+usort($sv, create_function('$a,$b','return strlen($b) - strlen($a);'));
+print_r($sv);
+// 出力:
+// Array
+// (
+//   [0] =&gt; it is a string thing
+//   [1] =&gt; a big string
+//   [2] =&gt; larger
+//   [3] =&gt; small
+// )
+     </programlisting>
+    </example>
+    </para>
+   </refsect1>
+  </refentry>
+
   <refentry id="function.connection-aborted">
    <refnamediv>
     <refname>connection_aborted</refname>
@@ -319,7 +462,7 @@ This is a cup with my coffee in it.
     </simpara>
     <simpara>
      <parameter>arg_num</parameter> が実際に渡された引数の数よりも大きい場合、
-     警告を発生し、<function>func_get_arg</function>はFALSEを返します。
+     警告を発生し、<function>func_get_arg</function>はFALSEを返し��す。
     </simpara>
     <para>
      <informalexample>
@@ -394,7 +537,7 @@ foo( 1, 2, 3 );
     <simpara>
      <function>func_get_args</function>は<function>func_num_args</function>
      および<function>func_get_arg</function>と組み合わせて使用され、
-     これによりユーザ定義の関数において可変長の引数リストを使用することが
+     これによりユーザ定義の章において可変長の引数リストを使用することが
      できるようになります。
     </simpara>
     <note>
@@ -484,17 +627,20 @@ foo( 1, 2, 3 );  // 'Number of arguments: 3'を出力します。
     <funcsynopsis>
      <funcprototype>
       <funcdef>object <function>get_browser</function></funcdef>
-      <paramdef>string <parameter><optional>user_agent</optional></parameter></paramdef>
+      <paramdef>string 
+       <parameter><optional>user_agent</optional></parameter>
+      </paramdef>
      </funcprototype>
     </funcsynopsis>
     <simpara>
-     <function>get_browser</function> は、ユーザーのブラウザの機能を
-     定義します。これは、<filename>browscap.ini</filename>ファイルの
-     ブラウザ情報を調べることにより行います。
-     デフォルトでは、$HTTP_USER_AGENTの値が使用されます。しかし、
-     オプションの <parameter>user_agent</parameter> パラメータを
-     <function>get_browser</function> に渡すことにより、
-     これを変える(すなわち、他のブラウザの情報を調べる)ことが可能です?   </simpara>
+     <function>get_browser</function> は、ユーザーのブラウザの機能を定
+     義します。これは、<filename>browscap.ini</filename>ファイルのブラ
+     ウザ情報を調べることにより行います。デフォルトでは、
+     $HTTP_USER_AGENTの値が使用されます。しかし、オプションの
+     <parameter>user_agent</parameter> パラメータを
+     <function>get_browser</function> に渡すことにより、これを変える
+     (すなわち、他のブラウザの情報を調べる)ことが可能です。
+    </simpara>
     <simpara>
      返される情報はオブジェクトであり、例えば、ブラウザのメジャーおよび
      マイナーバージョン暗号やID文字列、といった様々なデータ要素を含んでいます。
@@ -505,7 +651,7 @@ foo( 1, 2, 3 );  // 'Number of arguments: 3'を出力します。
      <filename>browscap.ini</filename> は多くのブラウザに関する情報を
      有していますが、データベースを最新に保つのはユーザーによる更新
      に依存しています。
-     ファイルのフォーマャÈ自体を見ればおおよそのことがわかります。
+     ファイルのフォーマット自体を見ればおおよそのことがわかります。
     </simpara>
     <para>
      次の例では、ユーザーのブラウザに関する全ての取得可能な情報
@@ -561,6 +707,122 @@ Mozilla/4.5 [en] (X11; U; Linux 2.2.9 i586)&lt;hr&gt;
      (<filename>browscap.ini</filename> ファイルを取得できる場所を含む)
      より詳細な情報については、
      <ulink url="&url.php.faq;">&url.php.faq;</ulink>にあるPHP FAQを参照下さい。
+    </simpara>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.highlight-file">
+   <refnamediv>
+    <refname>highlight_file</refname>
+    <refpurpose>ファイルの構文ハイライト表示</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>void <function>highlight_file</function></funcdef>
+      <paramdef>string <parameter>filename</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <simpara>
+     関数 <function>highlight_file</function>は、
+     <parameter>filename</parameter>の中のコードをPHP組込の構文ハイラ
+     イタで定義されたカラーを使用して構文ハイライト表示したものを出力
+     します。
+    </simpara>
+    <para>
+     <example>
+      <title>URLのソースハイライト表示の作成</title>
+      <simpara>
+       引数として指定したスクリプトのコードをハイライト表示できるよう
+       なURLを設定する際には、適したURLパターンを生成するためにApache
+       の &quot;ForceType&quot; ディレクティブを使用し、見栄えの良いコー
+       ドリストを表示するために関数<function>highlight_file</function>
+       を使用します。
+      </simpara>
+      <simpara>
+       httpd.confに次のような記述を追加します。
+      </simpara>
+      <para>
+       <informalexample>
+	<programlisting>
+&lt;Location /source&gt;
+    ForceType application/x-httpd-php
+&lt;/Location&gt;
+	</programlisting>
+       </informalexample>
+      </para>
+      <simpara>
+       そして、&quot;source&quot; という名前のファイルを作成し、それを
+       Webのルートディレクトリに置きます。
+      </simpara>
+      <para>
+       <programlisting role="php">
+&lt;HTML&gt;
+&lt;HEAD&gt;
+&lt;TITLE&gt;Source Display&lt;/TITLE&gt;
+&lt;/HEAD&gt;
+&lt;BODY BGCOLOR=&quot;white&quot;&gt;
+&lt;?php
+    $script = getenv (&quot;PATH_TRANSLATED&quot;);
+    if(!$script) {
+    echo &quot;&lt;BR&gt;&lt;B&gt;ERROR: Script Name needed&lt;/B&gt;&lt;BR&gt;&quot;;
+    } else {
+    if (ereg(&quot;(\.php|\.inc)$&quot;,$script)) {
+	echo &quot;&lt;H1&gt;Source of: $PATH_INFO&lt;/H1&gt;\n&lt;HR&gt;\n&quot;;
+	highlight_file($script);
+    } else {
+	echo &quot;&lt;H1&gt;ERROR: Only PHP or include script names are allowed&lt;/H1&gt;&quot;; 
+    }
+    }
+    echo &quot;&lt;HR&gt;Processed: &quot;.date(&quot;Y/M/d H:i:s&quot;,time());
+?&gt;
+&lt;/BODY&gt;
+&lt;/HTML&gt;
+       </programlisting>
+      </para>
+      <simpara>
+       これにより、&quot;/path/to/script.php&quot; にあるスクリプトの
+       カラー表示を表示するために以下のURLを使用することができるように
+       なります。
+      </simpara>
+      <para>
+       <informalexample>
+    <programlisting>
+http://your.server.com/source/path/to/script.php
+    </programlisting>
+       </informalexample>
+      </para>
+     </example>
+    </para>
+    <simpara>
+     <function>highlight_string</function>,
+     <function>show_source</function>も参照下さい。
+    </simpara>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.highlight-string">
+   <refnamediv>
+    <refname>highlight_string</refname>
+    <refpurpose>文字列の構文ハイライト化</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>void <function>highlight_string</function></funcdef>
+      <paramdef>string <parameter>str</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <simpara>
+     <function>highlight_string</function> 関数は、PHP組込みの構文ハイ
+     ライタで定義されたカラーを使用して<parameter>str</parameter>を構
+     文ハイライト表示されたものを出力します。
+    </simpara>
+    <simpara>
+     <function>highlight_file</function>,
+     <function>show_source</function>も参照下さい。
     </simpara>
    </refsect1>
   </refentry>
@@ -716,7 +978,7 @@ Mozilla/4.5 [en] (X11; U; Linux 2.2.9 i586)&lt;hr&gt;
       </listitem>
       <listitem>
        <simpara>
-	n unsigned short (常に 16 ビット、ビッ��インディアンバイトオーダー)
+	n unsigned short (常に 16 ビット、ビッ°インディアンバイトオーダー)
        </simpara>
       </listitem>
       <listitem>
@@ -831,7 +1093,36 @@ $binarydata = pack("nvc*", 0x1234, 0x5678, 65, 66);
     </simpara>
    </refsect1>
   </refentry>
- 
+
+  <refentry id="function.restore-error-handler">
+   <refnamediv>
+    <refname>restore_error_handler</refname>
+    <refpurpose>
+     以前のエラーハンドラ関数を回復する
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>void <function>restore_error_handler</function></funcdef>
+      <paramdef>void</paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     <function>set_error_handler</function>を使用してエラーハンドラ関
+     数を変更した後、元のエラーハンドラ(組込またはユーザ定義関数)に戻
+     すために使用されます。
+    </para>
+    <para>
+     <function>error_reporting</function>,
+     <function>set_error_handler</function>,
+     <function>trigger_error</function>,
+     <function>user_error</function>も参照下さい。
+    </para>
+   </refsect1>
+  </refentry>
+
   <refentry id="function.serialize">
    <refnamediv>
     <refname>serialize</refname>
@@ -855,7 +1146,7 @@ $binarydata = pack("nvc*", 0x1234, 0x5678, 65, 66);
      型や構造を失わずにPHPの値を保存または渡す際に有効です。
     </simpara>
     <simpara>
-     シリアル化された文字列をPHPの値に戻すには、
+     シリアル化さ?た文字列をPHPの値に戻すには、
      <function>unserialize</function>を使用して下さい。
      <function>serialize</function>は型<type>integer</type>, 
      <type>double</type>,<type>string</type>,<type>array</type> 
@@ -888,6 +1179,193 @@ if (!odbc_execute($stmt, &$sqldata)) {
    </refsect1>
   </refentry>
  
+  <refentry id="function.set-error-handler">
+   <refnamediv>
+    <refname>set_error_handlers</refname>
+    <refpurpose>
+     ユーザ定義のエラーハンドラ関数を設定する
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>string <function>set_error_handler</function></funcdef>
+      <paramdef>string <parameter>error_handler</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     スクリプトのエラー処理を行うユーザ関数
+     (<parameter>error_handler</parameter>)を設定します。定義済のエラー
+     ハンドラまたはエラーの際に false を返します。この関数は、実行時の
+     エラー処理をユーザが定義するために使用します。例えば、致命的なエ
+     ラーを発生した場合や、ある条件のもとに
+     (<function>trigger_error</function>を使用して)エラーを発生する必
+     要がある場合にデータやファイルを消去する必要があるようなアプリケー
+     ションがこの場合にあたります。
+    </para>
+    <para>
+     ユーザ関数の引数は2つ、エラーコードとエラーを記述する文字列です。
+     以下の例では、エラーを発生することにより内部例外の処理を表示し、
+     ユーザ定義関数によりこれを処理します。
+     <example>
+      <title>
+       <function>set_error_handler</function>および
+       <function>trigger_error</function>によるエラー処理
+      </title>
+      <programlisting role="php">
+&lt;?php
+
+// ユーザエラー定数による再定義 - PHP4 のみ
+define(FATAL,E_USER_ERROR);
+define(ERROR,E_USER_WARNING);
+define(WARNING,E_USER_NOTICE);
+
+// このスクリプトのエラー出力レベルを設定
+error_reporting(FATAL + ERROR + WARNING);
+
+// エラーハンドラ関数
+function myErrorHandler ($errno, $errstr) {
+    switch ($errno) {
+    case FATAL:
+	echo &quot;&lt;b&gt;FATAL&lt;/b&gt; [$errno] $errstr&lt;br&gt;\n&quot;;
+	echo &quot;  Fatal error in line &quot;.__LINE__.&quot; of file &quot;.__FILE__;
+	echo &quot;, PHP &quot;.PHP_VERSION.&quot; (&quot;.PHP_OS.&quot;)&lt;br&gt;\n&quot;;
+	echo &quot;Aborting...&lt;br&gt;\n&quot;;
+	exit -1;
+	break;
+    case ERROR:
+	echo &quot;&lt;b&gt;ERROR&lt;/b&gt; [$errno] $errstr&lt;br&gt;\n&quot;;
+	break;
+    case WARNING:
+	echo &quot;&lt;b&gt;WARNING&lt;/b&gt; [$errno] $errstr&lt;br&gt;\n&quot;;
+	break;
+    default:
+	echo &quot;Unkown error type: [$errno] $errstr&lt;br&gt;\n&quot;;
+	break;
+    }
+}
+
+// エラー処理のテスト用関数
+function scale_by_log ($vect, $scale) {
+    if ( !is_numeric($scale) || $scale &lt;= 0 )
+    trigger_error(&quot;log(x) for x &lt;= 0 is undefined, you used: scale = $scale&quot;, 
+	      FATAL);
+    if (!is_array($vect)) {
+    trigger_error(&quot;Incorrect input vector, array of values expected&quot;, ERROR);
+    return null;
+    }
+    for ($i=0; $i&lt;count($vect); $i++) {
+    if (!is_numeric($vect[$i]))
+	trigger_error(&quot;Value at position $i is not a number, using 0 (zero)&quot;, 
+	      WARNING);
+    $temp[$i] = log($scale) * $vect[$i];
+    }
+    return $temp;
+}
+
+// 定義したエラーハンドラを設定する
+$old_error_handler = set_error_handler(&quot;myErrorHandler&quot;);
+
+// エラーを発生します。まず、数値でない項目が混ざった配列を定義します。
+echo &quot;vector a\n&quot;;
+$a = array(2,3,&quot;foo&quot;,5.5,43.3,21.11);
+print_r($a);
+
+// 次に警告を発生するような2番目の配列を生成します。
+echo &quot;----\nvector b - a warning (b = log(PI) * a)\n&quot;;
+$b = scale_by_log($a, M_PI);
+print_r($b);
+
+// 配列の代わりに文字列を渡しており、問題を発生します。
+echo &quot;----\nvector c - an error\n&quot;;
+$c = scale_by_log(&quot;not array&quot;,2.3);
+var_dump($c);
+
+// ゼロまたは負数の log が定義されないという致命的なエラーを発生します。
+echo &quot;----\nvector d - fatal error\n&quot;;
+$d = scale_by_log($a, -2.5);
+
+?&gt;
+      </programlisting>
+     </example>
+     このサンプルスクリプトを実行すると、出力は次のようになります。
+     <informalexample>
+      <programlisting>
+vector a
+Array
+(
+    [0] =&gt; 2
+    [1] =&gt; 3
+    [2] =&gt; foo
+    [3] =&gt; 5.5
+    [4] =&gt; 43.3
+    [5] =&gt; 21.11
+)
+----
+vector b - a warning (b = log(PI) * a)
+&lt;b&gt;WARNING&lt;/b&gt; [1024] Value at position 2 is not a number, using 0 (zero)&lt;br&gt;
+Array
+(
+    [0] =&gt; 2.2894597716988
+    [1] =&gt; 3.4341896575482
+    [2] =&gt; 0
+    [3] =&gt; 6.2960143721717
+    [4] =&gt; 49.566804057279
+    [5] =&gt; 24.165247890281
+)
+----
+vector c - an error
+&lt;b&gt;ERROR&lt;/b&gt; [512] Incorrect input vector, array of values expected&lt;br&gt;
+NULL
+----
+vector d - fatal error
+&lt;b&gt;FATAL&lt;/b&gt; [256] log(x) for x &lt;= 0 is undefined, you used: scale = -2.5&lt;br&gt;
+  Fatal error in line 16 of file trigger_error.php, PHP 4.0.1pl2 (Linux)&lt;br&gt;
+Aborting...&lt;br&gt;
+      </programlisting>
+     </informalexample>
+    </para>
+    <para>
+     <function>error_reporting</function>,
+     <function>restore_error_handler</function>,
+     <function>trigger_error</function>,
+     <function>user_error</function>も参照下さい。
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.show-source">
+   <refnamediv>
+    <refname>show_source</refname>
+    <refpurpose>ファイルの構文ハイライト表示</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>void <function>show_source</function></funcdef>
+      <paramdef>string <parameter>filename</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <simpara>
+     <function>show_source</function>関数は、組込みのPHP用構文ハイライ
+     ト表示用に定義された色を使用して<parameter>filename</parameter>の
+     構文ハイライト表示を出力します。
+    </simpara>
+    <note>
+     <simpara>
+      この関数は、関数<function>highlight_file</function>のエイリアス
+      です。
+     </simpara>
+    </note>
+    <simpara>
+     <function>highlight_string</function>,
+     <function>highlight_file</function>も参照下さい。
+    </simpara>
+   </refsect1>
+  </refentry>
+
   <refentry id="function.sleep">
    <refnamediv>
     <refname>sleep</refname>
@@ -908,6 +1386,52 @@ if (!odbc_execute($stmt, &$sqldata)) {
     <simpara>
      <function>usleep</function> も参照のこと。
     </simpara>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.trigger-error">
+   <refnamediv>
+    <refname>trigger_error</refname>
+    <refpurpose>
+     ユーザレベルのエラー/警告/通知メッセージを生成する
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>void <function>trigger_error</function></funcdef>
+      <paramdef>string <parameter>error_msg</parameter></paramdef>
+      <paramdef>int
+       <parameter><optional>error_type</optional></parameter>
+      </paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     ユーザエラーを発生するために使用され、組込のエラーハンドラまたは
+     新しいエラーハンドラ(<function>set_error_handler</function>)とし
+     て設定済のユーザ定義関数と組み合わせて使用されます。この関数は、
+     実行時の例外に特定の応答を生成する必要がある場合に有用です。
+     以下に例を示します。
+     <informalexample>
+      <programlisting>
+if (assert($divisor == 0))
+   trigger_error("Cannot divide by zero", E_USER_ERROR);
+      </programlisting>
+     </informalexample>
+     <note>
+      <para>
+       より、詳細な例については、
+       <function>set_error_handler</function> を参照下さい。
+     </para>
+     </note>
+    </para>
+    <para>
+     <function>error_reporting</function>,
+     <function>set_error_handler</function>,
+     <function>restore_error_handler</function>, 
+     <function>user_error</function>も参照下さい。
+    </para>
    </refsect1>
   </refentry>
 
@@ -948,7 +1472,6 @@ if (!odbc_execute($stmt, &$sqldata)) {
       PHP 4またはPHP 3.0.13以降でのみ使用可能です。
      </simpara>
     </note>
-
     <para>
      ユニークなIDまたはトークンが必要な場合、そして、
      ネットワーク経由でユーザーにそのトークンを渡そうとする場合、
@@ -970,7 +1493,7 @@ $better_token = md5 (uniqid (rand())); // 推測が困難であり、より優�
   <refentry id="function.unpack">
    <refnamediv>
     <refname>unpack</refname>
-    <refpurpose>バイナリ懥?列からデータを切出します</refpurpose>
+    <refpurpose>バイナリ文字列からデータを切出します</refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
@@ -1065,6 +1588,36 @@ if (!odbc_execute($stmt, &$sqldata) || !odbc_fetch_into($stmt, &$tmp)) {
    </refsect1>
   </refentry>
 
+  <refentry id="function.user-error">
+   <refnamediv>
+    <refname>user_error</refname>
+    <refpurpose>
+     ユーザレベルのエラー/警告/通知メッセージを発生する
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>void <function>user_error</function></funcdef>
+      <paramdef>string <parameter>error_msg</parameter></paramdef>
+      <paramdef>int
+       <parameter><optional>error_type</optional></parameter>
+      </paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     これは、<function>trigger_error</function>へのエイリアスです。
+    </para>
+    <para>
+     <function>error_reporting</function>,
+     <function>set_error_handler</function>,
+     <function>restore_error_handler</function>, 
+     <function>trigger_error</function>も参照下さい。
+    </para>
+   </refsect1>
+  </refentry>
+
   <refentry id="function.usleep">
    <refnamediv>
     <refname>usleep</refname>
@@ -1091,151 +1644,6 @@ if (!odbc_execute($stmt, &$sqldata) || !odbc_fetch_into($stmt, &$tmp)) {
       この関数はWindowsシステムでは動作しません。
      </simpara>
     </note>
-   </refsect1>
-  </refentry>
-
-  <refentry id="function.highlight-string">
-   <refnamediv>
-    <refname>highlight_string</refname>
-    <refpurpose>文字列の構文ハイライト表示</refpurpose>
-   </refnamediv>
-   <refsect1>
-    <title>説明</title>
-    <funcsynopsis>
-     <funcprototype>
-      <funcdef>void <function>highlight_string</function></funcdef>
-      <paramdef>string <parameter>str</parameter></paramdef>
-     </funcprototype>
-    </funcsynopsis>
-    <simpara>
-     <function>highlight_string</function>関数は、組込みのPHP用構文ハイライ
-     ト表示用に定義された色を使用して<parameter>str</parameter>の構文ハイ
-     ライト表示を出力します。
-    </simpara>
-    <simpara>
-     <function>highlight_file</function>,
-     <function>show_source</function>も参照下さい。
-    </simpara>
-   </refsect1>
-  </refentry>
-
-  <refentry id="function.highlight-file">
-   <refnamediv>
-    <refname>highlight_file</refname>
-    <refpurpose>ファイルの構文ハイライト表示</refpurpose>
-   </refnamediv>
-   <refsect1>
-    <title>説明</title>
-    <funcsynopsis>
-     <funcprototype>
-      <funcdef>void <function>highlight_file</function></funcdef>
-      <paramdef>string <parameter>filename</parameter></paramdef>
-     </funcprototype>
-    </funcsynopsis>
-    <simpara>
-     <function>highlight_file</function>関数は、組込みのPHP用構文ハイライ
-     ト表示用に定義された色を使用して<parameter>filename</parameter>の
-     構文ハイライト表示を出力します。
-    </simpara>
-    <para>
-     <example>
-      <title>ソースハイライト表示用URLを作成する</title>
-      <simpara>
-       URLに渡した全てのスクリプトのコードをハイライト表示できるように
-       設定するために、素晴らしいURLパターンを生成するApacheの
-       &quot;ForceType&quot; ディレクティブを使用し、コードリストを格好
-       良く表示するために関数 <function>highlight_file</function> を使用
-       します。
-      </simpara>
-      <simpara>
-       httpd.confに以下の定義を追加します。
-      </simpara>
-      <para>
-       <informalexample>
-	<programlisting>
-&lt;Location /source&gt;
-    ForceType application/x-httpd-php
-&lt;/Location&gt;
-	</programlisting>
-       </informalexample>
-      </para>
-      <simpara>
-       &quot;source&quot;という名前のファイルを作成し、Webのルートディ
-       レクトリに置きます。
-      </simpara>
-      <para>
-       <programlisting role="php">
-&lt;HTML&gt;
-&lt;HEAD&gt;
-&lt;TITLE&gt;Source Display&lt;/TITLE&gt;
-&lt;/HEAD&gt;
-&lt;BODY BGCOLOR=&quot;white&quot;&gt;
-&lt;?php
-    $script = getenv (&quot;PATH_TRANSLATED&quot;);
-    if(!$script) {
-        echo &quot;&lt;BR&gt;&lt;B&gt;ERROR: Script Name needed&lt;/B&gt;&lt;BR&gt;&quot;;
-    } else {
-        if (ereg(&quot;(\.php|\.inc)$&quot;,$script)) {
-            echo &quot;&lt;H1&gt;Source of: $PATH_INFO&lt;/H1&gt;\n&lt;HR&gt;\n&quot;;
-            highlight_file($script);
-        } else {
-            echo &quot;&lt;H1&gt;ERROR: Only PHP or include script names are allowed&lt;/H1&gt;&quot;; 
-        }
-    }
-    echo &quot;&lt;HR&gt;Processed: &quot;.date(&quot;Y/M/d H:i:s&quot;,time());
-?&gt;
-&lt;/BODY&gt;
-&lt;/HTML&gt;
-       </programlisting>
-      </para>
-      <simpara>
-       以下のようなURLによりWebサイトの &quot;/path/to/script.php&quot;
-       にあるスクリプトをカラー表示できます。
-      </simpara>
-      <para>
-       <informalexample>
-	<programlisting>
-	 http://your.server.com/source/path/to/script.php
-	</programlisting>
-       </informalexample>
-      </para>
-     </example>
-    </para>
-    <simpara>
-     <function>highlight_string</function>,
-     <function>show_source</function>も参照下さい。
-    </simpara>
-   </refsect1>
-  </refentry>
-
-  <refentry id="function.show-source">
-   <refnamediv>
-    <refname>show_source</refname>
-    <refpurpose>ファイルの構文ハイライト表示</refpurpose>
-   </refnamediv>
-   <refsect1>
-    <title>説明</title>
-    <funcsynopsis>
-     <funcprototype>
-      <funcdef>void <function>show_source</function></funcdef>
-      <paramdef>string <parameter>filename</parameter></paramdef>
-     </funcprototype>
-    </funcsynopsis>
-    <simpara>
-     <function>show_source</function>関数は、組込みのPHP用構文ハイライ
-     ト表示用に定義された色を使用して<parameter>filename</parameter>の
-     構文ハイライト表示を出力します。
-    </simpara>
-    <note>
-     <simpara>
-      この関数は、関数<function>highlight_file</function>のエイリアス
-      です。
-     </simpara>
-    </note>
-    <simpara>
-     <function>highlight_string</function>,
-     <function>highlight_file</function>も参照下さい。
-    </simpara>
    </refsect1>
   </refentry>
 
