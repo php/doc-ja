@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.19 $ -->
+<!-- $Revision: 1.20 $ -->
  <chapter id="security">
   <title>セキュリティ</title>
 
@@ -529,33 +529,31 @@ if (!ereg('^[^./][^/]*$', $username))
       あらゆるクエリーを実行することが出来るからです。
      </simpara>
      <simpara>
-      You may create different database users for every aspect of your
-      application with very limited rights to database objects. The most
-      required privileges should be granted only, and avoid that the same user
-      can interact with the database in different use cases. This means that if
-      intruders gain access to your database using one of these credentials,
-      they can only effect as many changes as your application can.
+      貴方が作成するアプリケーションがデータベースに対して行う操作の各方面ごとに、
+      捜査対象となるオブジェクトに対して、出来る限り少ない権限を持った複数の
+      ユーザを作成した方が良いでしょう。ユーザに対しては、最低限必要な権限のみを
+      与え、関係の無いデータへのアクセスを許可しないようにします。これは、
+      万が一侵入者がそのユーザの権限を以ってデータベースにアクセスした際に、
+      アプリケーションと関係の無いデータにまでアクセスされることを防ぐためです。
      </simpara>
      <simpara>
-      You are encouraged not to implement all the business logic in the web
-      application (i.e. your script), instead to do it in the database schema
-      using views, triggers or rules. If the system evolves, new ports will be
-      intended to open to the database, and you have to reimplement the logic
-      in each separate database client. Over and above, triggers can be used
-      to transparently and automatically handle fields, which often provides
-      insight when debugging problems with your application or tracing back
-      transactions.
+      全てのビジネスロジックをウェブアプリケーション(つまり貴方のスクリプト)
+      で実装することは推奨されません。代わりに、ビュー、トリガー、ルールといった
+      データベースの機能を活用した方が良いでしょう。システムが更新され、
+      新しい機能がデータベースへのアクセスすることになった場合、個々のデータベース
+      クライアントごとに再度同様のロジックを実装しなければならなくなります。
+      さらに、トリガーは透過的に、そして自動的にフィールドを扱うことが出来るので、
+      デバッグ時や、トランザクションのロールバック時に役立ちます。
      </simpara>
    </sect2>
 
    <sect2 id="security.database.connection">
-    <title>Connecting to Database</title>
+    <title>データベースへの接続</title>
     <simpara>
-     You may want to estabilish the connections over SSL to encrypt
-     client/server communications for increased security, or you can use ssh
-     to encrypt the network connection between clients and the database server.
-     If either of them is done, then monitoring your traffic and gaining
-     informations in this way will be a hard work.
+     更なるセキュリティのために、クライアント/サーバ間の通信においてSSLを用いた
+     暗号化を行った方が良いでしょう。もしくはsshを使用することも出来ます。
+     どちらかの手段を講じた後、トラフィックをモニタリングしてみれば
+     ここから何らかの情報を得ることが困難だという事が分かると思います。
     </simpara>
     <!--simpara>
      If your database server native SSL support, consider to use <link
@@ -565,46 +563,43 @@ if (!ereg('^[^./][^/]*$', $username))
    </sect2>
 
    <sect2 id="security.database.storage">
-    <title>Encrypted Storage Model</title>
+    <title>暗号化記憶モデル</title>
     <simpara>
-     SSL/SSH protects data travelling from the client to the server, SSL/SSH
-     does not protect the persistent data stored in a database. SSL is an
-     on-the-wire protocol.
+     SSL/SSHによってクライアント/サーバ間で通信されるデータは保護されますが、
+     データベースに保存されたデータは保護されません。SSLはあくまで通信上の
+     プロトコルなのです。
     </simpara>
     <simpara>
-     Once an attacker gains access to your database directly (bypassing the
-     webserver), the stored sensitive data may be exposed or misused, unless
-     the information is protected by the database itself. Encrypting the data
-     is a good way to mitigate this threat, but very few databases offer this
-     type of data encryption.
+     一旦アタッカーがデータベースへ(ウェブサーバを通さずに)アクセスできてしまうと、
+     そこに格納されているデータ自体が暗号化されていない限り、自由に閲覧され、
+     使用されてしまいます。データを暗号化することによって、この脅威を減らすことが
+     できますが、この機能をサポートしているデータベースは僅かです。
     </simpara>
     <simpara>
-     The easiest way to work around this problem is to first create your own
-     encryption package, and then use it from within your PHP scripts. PHP
-     can assist you in this case with its several extensions, such as <link
-     linkend="ref.mcrypt">Mcrypt</link> and <link
-     linkend="ref.mhash">Mhash</link>, covering a wide variety of encryption
-     algorithms. The script encrypts the data be stored first, and decrypts
-     it when retrieving. See the references for further examples how
-     encryption works.
+     この問題への最も簡単な対応策は、まず自分専用の暗号化パッケージを作成し、
+     それをあなたのPHPスクリプトから使用することです。PHPの<link 
+     linkend="ref.mcrypt">Mcrypt</link>, <link linkend="ref.mhash">Mhash</link>
+     といった幾つかの拡張モジュールは、様々な暗号化アルゴリズムをサポート
+     しているので役に立つでしょう。データ格納時に暗号化を行い、取得時に
+     復号化します。この方法についてはリファレンスを参照してください。
     </simpara>
     <simpara>
-     In case of truly hidden data, if its raw representation is not needed
-     (i.e. not be displayed), hashing may be also taken into consideration.
-     The well-known example for the hashing is storing the MD5 hash of a
-     password in a database, instead of the password itself. See also
-     <function>crypt</function> and <function>md5</function>.
+     もし完全にデータを隠したい場合や、元のデータ自体は必要ない場合(つまり
+     表示されない場合)は、ハッシュも考慮に入れたほうが良いでしょう。
+     ハッシュの良く知られた使用方法は、パスワードをそのまま格納せずに、
+     そのMD5ハッシュ値を格納する方法です。<function>crypt</function>や
+     <function>md5</function>も参照してください。
     </simpara>
     <example>
-     <title>Using hashed password field</title>
+     <title>ハッシュパスワードフィールドを使う</title>
      <programlisting role="php">
 <![CDATA[
-// storing password hash
+// ハッシュされたパスワードを格納する
 $query  = sprintf("INSERT INTO users(name,pwd) VALUES('%s','%s');",
             addslashes($username), md5($password));
 $result = pg_exec($connection, $query);
 
-// querying if user submitted the right password
+// パスワードが正しいかどうか問い合わせる
 $query = sprintf("SELECT 1 FROM users WHERE name='%s' AND pwd='%s';",
             addslashes($username), md5($password));
 $result = pg_exec($connection, $query);
