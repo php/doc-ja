@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.5 $ -->
+<!-- $Revision: 1.6 $ -->
  <reference id="ref.session">
   <title>セッション処理関数(session)</title>
   <titleabbrev>セッション</titleabbrev>
@@ -26,12 +26,22 @@
      セッションサポート機能により、任意の数の変数をリクエスト間で受けわたせる
      ようになります。来訪者がサイトにアクセスした際、
      PHP は特定のセッションIDがリクエストとともに送信されているかどうかを
-     (session.auto_start が 1 の場合は)自動的に、または
+     (<link linkend="ini.session.auto-start">
+      <literal>session.auto_start</literal></link>が1の場合は)自動的に、または
      (<function>session_start</function> により明示的な、あるいは
      <function>session_register</function> により暗黙の)
      要求を受けて確認します。
      このIDが送信されている場合には、以前保存された変数が再現されます。
     </para>
+    <caution>
+     <para>
+      <link linkend="ini.session.auto-start">
+       <literal>session.auto_start</literal></link>をonとした場合、
+      オブジェクトをセッション変数に代入することができなくなります。
+      これは、セッションにおいてオブジェクトを再現するためには、
+      セッション開始前にクラス定義がロードされている必要があるためです。
+     </para>
+    </caution>
     <para>
      全ての登録された変数は、リクエストが終了した後に、シリアル化されます。
      未定義の登録変数は、未定義としてマーク付けされます。
@@ -59,37 +69,33 @@
    <section id="session.security">
     <title>セッションとセキュリティ</title>
     <para>
-     セッションの使用は、セッションデータが対応するユーザのみに見るこ
-     とができることを絶対的に保証できることを意味しません。
-     これは、重要な情報を保存したり表示する場合に留意すべき重要な事
-     実です。データをセッションに保存する場合、
-     この情報を他の誰かが見た場合に発生する損害は何かとか、
-     このセッションが実際には他の誰かの場合に、自分のアプリケーション
-     がどのような影響を受けるかを常に自問する必要があります。
+     外部リンク: <ulink url="&url.session-fixation;">Session fixation</ulink>
     </para>
     <para>
-     例えば、他の誰かがあるセッションを得た場合、そのユーザとして
-     フォーラムにメッセージを投稿することができますが、その問題の大き
-     さはどの程度でしょうか?
-     または、彼は、元のユーザの買いものかごにアクセスできるため、その
-     ユーザが注文しようとしていたものを見ることができるかもしれません。
-     明らかに、薬局よりも花屋の方が問題は小さいでしょう。
+     The session module cannot guarantee that the information you store
+     in a session is only viewed by the user who created the session. You need
+     to take additional measures to actively protect the integrity of the
+     session, depending on the value associated with it.
     </para>
     <para>
-     このため、重要な情報を処理する場合、有効なセッションかどうかを決
-     める他の方法を常に用意する必要があります。セッションはセキュアな
-     認証機構のように信頼できるものではありません。
+     セッションに運ばれるデータの重要性を評価し、必要な保護策を講じて
+     下さい。これには通常、お金があかり、ユーザの利便性を損なうことに
+     なります。例えば、簡単な社会工学的な策略からユーザを守るためには、
+     <literal>session.use_only_cookies</literal>を有効にして下さい。
+     この場合、ユーザ側でクッキーは無条件に有効となっている必要があり
+     ます。そうでない場合、セッションは動作しません。
     </para>
     <para>
-     セッションはセッションIDに基づいており、これは、セッションIDを盗
-     むことにより、セッションを「盗む」ことができることを意味します。
-     これは、セッションCookieを使用することにより困難となりますが、
-     不可能にするわけではなく、依然としてユーザが全てのブラウザウイン
-     ドウを閉じて、セッションCookieを期限切れとすることに依存していま
-     す。また、セッションCookieでさえもネットワークで盗聴されたり、
-     プロキシサーバにより記録されたりします。
+     存在するセッションIDが第三者に洩れる手順は何種類かあります。
+     洩れたセッションIDにより、第三者が特定のIDに関連する全てのリソー
+     スにアクセスできるようになります。まず、セッションIDがURLにより伝
+     送される場合です。外部サイトにリンクを張っている場合、外部サイト
+     のreferrerログにセッションIDを含むURLが保存される可能性があります。
+     第二に、よりアクティブな攻撃者がネットワークのトラフィックをモニ
+     ターしている可能性があります。セッションIDが暗号化されていない場
+     合、セッションIDはネットワーク上を平文テキストで伝送されます。
+     解決策はサーバ上にSSLを実装し、確実にユーザに適用することです。
     </para>
-
    </section>
 
    <section id="session.requirements">
@@ -101,7 +107,11 @@
       存用の共有メモリ(mm)を使用することも可能です。
       <ulink url="&url.mm;">mm</ulink>をダウンロードし、インストールす
       ることができます。このオプションは、Windowsプラットフォームでは
-      利用できません。
+      利用できません。mm用セッション保存モジュールは同一セッションのロッ
+      クに問題があるため、同時アクセスを保証することはできません。
+      ファイルにセッションを保存するためには、
+      (Solaris/LinuxまたはBSD上の/dev/md)ファイルシステムに
+      共有メモリを使用するためにより適当でしょう。
      </para>
     </note>
    </section>
@@ -133,6 +143,9 @@
       所で使用していることに注意して下さい。もし前者を使用したい場合に
       は、<varname>$_SESSION</varname>を
       <varname>$HTTP_SESSION_VARS</varname>で置き換えることができます。
+      また、<varname>$_SESSION</varname>を使用する前に
+      <function>session_start</function> を用いてセッションを開始して
+      おく必要があることに注意して下さい。
      </para>
      <para>
       連想配列<varname>$_SESSION</varname>のキーは、PHPの通常の変数名
@@ -148,7 +161,7 @@
      <link
      linkend="ini.register-globals"><literal>register_globals</literal></link>
      が無効の場合、グローバル連想配列<varname>$_SESSION</varname>のメ
-     ンバのみをセッション変数として登録することができます。
+     ンバーのみがセッション変数として登録されます。
      回復されたセッション変数は、配列<varname>$_SESSION</varname>での
      み利用可能です。
     </para>
@@ -180,28 +193,34 @@ else {
       </programlisting>
      </example>
      <example>
-      <title>$_SESSIONで変数の登録を解除する</title>
+      <title>
+       <link
+        linkend="ini.register-globals"><literal>register_globals</literal></link>
+       が無効な場合に、<varname>$_SESSION</varname>に登録されている変
+       数の登録を解除する
+       </title>
       <programlisting role="php">
 <![CDATA[
 <?php
 session_start();
-// PHP 4.0.6以前の場合は$HTTP_SESSION_VARSを使用して下さい
+// PHP 4.0.6とそれ以前では$HTTP_SESSION_VARSを使用して下さい
 unset($_SESSION['count']);
-
 ?>
 ]]>
       </programlisting>
      </example>
      <example>
       <title>
-       register_globalsが有効な場合に、$_SESSIONを用いて登録した後、
+       <link
+        linkend="ini.register-globals"><literal>register_globals</literal></link>
+       が有効な場合に、<varname>$_SESSION</varname>を用いて登録した後、
        変数の登録を解除する
       </title>
       <programlisting role="php">
 <![CDATA[
 <?php
 session_start();
-// PHP 4.3以降では、前の例を使用することも可能です。
+// PHP 4.3以降では、より簡単に前の例の手法を使用できます
 session_unregister('count');
 ?>
 ]]>
@@ -270,14 +289,14 @@ else {
      の同じ値を参照することになります。
     </para>
     <para>
-     加えて、<function>session_register</function>により新しいセッショ
+     PHP 4.2.3とそれ以前のバージョンのみに関係する問題があります。
+     <function>session_register</function>により新しいセッショ
      ン変数を登録する場合、グローバルスコープのエントリと
      <varname>$_SESSION</varname>のエントリは、次の
      <function>session_start</function>まで同じ値へのリファレンスとは
-     なりません。(これは、PHP 4.2より前のバージョンのみに適用されます。)
+     なりません。
      すなわち、グローバル変数への修正は、<varname>$_SESSION</varname>
-     のエントリには反映されません。これは、実際には問題にはならないと
-     思われますが、PHP 4.3では修正されています。
+     のエントリには反映されません。PHP 4.3では修正されています。
     </para>
    </section>
     
@@ -305,22 +324,30 @@ else {
      法は、セッションIDを直接URLに埋め込みます。
     </para>
     <para>
-     PHP は、<link linkend="install.configure.enable-trans-sid">
-      <literal>--enable-trans-sid</literal></link>を付けてコンパイルされた
-     場合にこの処理を透過的に行います。このオプションは、PHP 4.2以降常
-      に有効となっています。このオプションを有効にした場合、相対 URI
-      はセッションIDを有するように自動的に変更されます。
-     もしくは、クライアントが適当なクッキーを送信しない場合に
-     定義される定数 <literal>SID</literal> を使用することができます。
-     <literal>SID</literal> は、<literal>session_name=session_id</literal> 
-     の形式または空の文字列です。
+     PHPには、透過的にリンクを変換する機能を有しています。
+     PHP 4.2以降を使用していない場合、PHP構築時にこの機能を有効にして
+     おく必要があります。UNIX環境では、
+     <link linkend="install.configure.enable-trans-sid">
+     <literal>--enable-trans-sid</literal></link>をconfigureに指定して
+     下さい。この構築オプションと実行時オプション
+     <literal>session.use_trans_sid</literal>が有効な場合、
+     相対URIは自動的にセッションIDを含むように変換されます。
      <note>
       <para>
-       <link linkend="ini.arg-separator.output">arg_separator.output</link>
-       &php.ini; ディレクティブにより、引数のセパレータをカスタマイズ
-       することが可能です。
+      <link linkend="ini.arg-separator.output">arg_separator.output</link>
+      &php.ini; ディレクティブにより、引数セパレータをカスタマイズする
+      ことができます。XHTMLに完全準拠するためには、ここに
+       &amp;amp; を指定して下さい。
       </para>
      </note> 
+    </para>
+    <para>
+     もしくは、常に定義されている定数<literal>SID</literal>を使用する
+     こともできます。クライアントが適当なセッションクッキーを送信しな
+     かった場合、この定数は<literal>session_name=session_id</literal>
+     の形式となります。他方、送信された場合には、この定数は空の文字列
+     に展開されます。このため、この定数を無条件にURLに埋め込むことがで
+     きます。
     </para>
     <para>
      次の例は、変数の登録法および SID を用いて他のページに正しくリンク
