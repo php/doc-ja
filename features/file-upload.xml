@@ -72,13 +72,35 @@ Send this file: &lt;INPUT NAME=&quot;userfile&quot; TYPE=&quot;file&quot;&gt;
     いては、その NAME フィールドの値を &quot;userfile&quot; としていま
     す。
    </para>
-   <simpara>
+   <para>
     ファイルは、デフォルトでサーバーにおけるデフォルトのテンポラリディ
     レクトリに保存されます。このディレクトリは、PHP を実行する環境にお
     いて環境変数 <envar>TMPDIR</envar>を設定することにより変更すること
     ができます。しかし、PHP スクリプトの内部から
     <function>putenv</function> 関数により設定しても上手くいきません。
-   </simpara>
+    この環境変数は、アップロードされたファイルに他の処理を行う際にも同
+    様に使用することが可能です。
+    <example>
+     <title>ファイルのアップロードを検証する</title>
+     <programlisting role="php">
+&lt?
+// アップロードディレクトリからファイルを取得できるようにする
+$uploadpath = get_cfg_var('upload_tmp_dir') . '/' . basename($userfile);
+
+// php.iniにTMPDIR が設定されていない場合、次の行のコメントをはずし、
+// 上の行の代わりに使用して下さい。
+// $uploadpath = dirname(tempnam('', '')) . '/' . basename($userfile);
+
+if (file_exists($uploadpath)){
+	copy ("$uploadpath", "/place/to/put/uploaded/file");
+	} else {
+	echo "Not an uploaded file!";
+	exit;
+	}
+?>
+     </programlisting>
+    </example>
+   </para>
    <simpara>
     アップロードされたファイルを受け取る PHP スクリプトは、アップロー
     ドされたファイルを用いて何をするべきかを決めるために必要なロジック
@@ -101,6 +123,10 @@ Send this file: &lt;INPUT NAME=&quot;userfile&quot; TYPE=&quot;file&quot;&gt;
     レクティブ php3_upload_max_filesizeで指定されたファイルサイズより
     大きなファイルサイズを指定することはできません。デフォルトは、2メ
     ガバイトです。
+   </simpara>
+   <simpara>
+    処理するファイルを検証しない場合、ユーザーが他のディレクトリにある
+    非公開情報にアクセスできる可能性を生じます。
    </simpara>
    <simpara>
     CERN httpd は、クライアントから得た content-type MIME ヘッダにおい

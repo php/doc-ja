@@ -62,6 +62,11 @@
      されているデスクプリタを閉じます。<function>closelog</function>の
      使用はオプションです。
     </para>
+    <para>
+     <function>define_syslog_variables</function>,
+     <function>syslog</function>,
+     <function>openlog</function>も参照下さい。
+    </para>
    </refsect1>
   </refentry>
 
@@ -104,6 +109,30 @@
    </refsect1>
   </refentry>
 
+  <refentry id="function.define-syslog-variables">
+   <refnamediv>
+    <refname>define_syslog_variables</refname>
+    <refpurpose>syslogに関係する全ての定数を初期化する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>void <function>define_syslog_varaibles</function></funcdef>
+      <paramdef>void</paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     syslog関数で使用される全ての定数を初期化します。
+    </para>
+    <para>
+     <function>openlog</function>,
+     <function>syslog</function>,
+     <function>closelog</function>も参照下さい。
+    </para>
+   </refsect1>
+  </refentry>
+
   <refentry id="function.fsockopen">
    <refnamediv>
     <refname>fsockopen</refname>
@@ -127,8 +156,7 @@
        <parameter><optional>errstr</optional></parameter>
       </paramdef>
       <paramdef>double
-       <parameter>
-        <optional>timeout</optional></parameter>
+       <parameter><optional>timeout</optional></parameter>
       </paramdef>
      </funcprototype>
     </funcsynopsis>
@@ -458,8 +486,8 @@ if (!$fp) {
     </funcsynopsis>
     <para>
      関数 <function>ip2long</function> は、インターネット標準形式(ドッ
-     ト表記の文字列)表現からIPv4 インターネットネット?�クアドレスを
-     生成します。
+     ト表記の文字列)表現からIPv4 インターネットネットアドレスを生成し
+     ます。
      <example>
       <title><function>ip2long</function>の例</title>
       <programlisting role="php">
@@ -524,13 +552,137 @@ echo $out;
      接続をオープンします。
      文字列<parameter>ident</parameter>は、各メッセージに
      追加されます。<parameter>option</parameter>および
-     <parameter>facility</parameter>の値は、次節で説明します。
-     <function>openlog</function>の使用はオ?·ョャg、必要な場合に
-     <function>syslog</function>により自動的に呼び出されます。
-     この場合、<parameter>ident</parameter>のデフォルト値はfalseとなります。
+     <parameter>facility</parameter>の値は、以下で説明します。
+     <parameter>option</parameter> 引数は、ログメッセージの生成時に使
+     用されるロギング用オプションを指定するために使用されます。
+     引数 <parameter>facility</parameter> には、ロギングを行う際のメッ
+     セージ型を指定します。これにより、(使用するシステムのsyslogの設定
+     に関して)異なった facility を有するメッセージをどの程度処理するか
+     を指定することが可能になります。
+     <function>openlog</function>の使用は必須ではありません。この関数
+     は、必要な場合に<function>syslog</function>により自動的に呼び出さ
+     れます。この場合、<parameter>ident</parameter>のデフォルト値は
+     falseとなります。
     </para>
     <para>
-     <function>syslog</function>および<function>closelog</function>も
+     <table>
+      <title><function>openlog</function>のオプション</title>
+      <tgroup cols="2">
+       <thead>
+        <row>
+         <entry>定数</entry>
+         <entry>説明</entry>
+        </row>
+       </thead>
+       <tbody>
+        <row>
+         <entry>LOG_CONS</entry>
+         <entry>
+	  システムログにデータが送信される間にエラーが発生した場合、直
+          接、システムコンソールに書き込まれます。
+         </entry>
+        </row>
+        <row>
+         <entry>LOG_NDELAY</entry>
+         <entry>
+	  直ちにログへの接続をオープンします。
+         </entry>
+        </row>
+        <row>
+         <entry>LOG_ODELAY</entry>
+         <entry>
+          (デフォルト) 最初のメッセージがロギングされるまで接続のオー
+          プンを遅延します。
+         </entry>
+        </row>
+        <row>
+         <entry>LOG_PERROR</entry>
+         <entry>標準エラー出力にもログメッセージを出力します。</entry>
+        </row>
+        <row>
+         <entry>LOG_PID</entry>
+         <entry>各メッセージにPIDをインクルードします</entry>
+        </row>
+       </tbody>
+      </tgroup>
+     </table>
+     このオプションを一つまたは複数設定することが可能です。複数のオプ
+     ションを使用した場合、これらの論理和をとる必要があります。すなわ
+     ち、直ちに接続をオープンし、コンソールに書き込み、各メッセージに
+     PIDをインクルードするには、次のようにします。
+     : <literal>LOG_CONS | LOG_NDELAY | LOG_PID</literal>
+    </para>
+    <para>
+     <table>
+      <title><function>openlog</function> の機能</title>
+      <tgroup cols="2">
+       <thead>
+        <row>
+         <entry>定数</entry>
+         <entry>説明</entry>
+        </row>
+       </thead>
+       <tbody>
+        <row>
+         <entry>LOG_AUTH</entry>
+         <entry>
+	  定数が定義された場所で
+	  セキュリティ/認証用メッセージ
+	  (定数LOG_AUTHPRIVが定義されているシステムでは、代わりにそれ
+	  を使用して下さい。)
+         </entry>
+        </row>
+        <row>
+         <entry>LOG_AUTHPRIV</entry>
+         <entry>セキュリティ/認証 メッセージ(プライベート)</entry>
+        </row>
+        <row>
+         <entry>LOG_CRON</entry>
+         <entry>クロン デーモン(cron およびat)</entry>
+        </row>
+        <row>
+         <entry>LOG_DAEMON</entry>
+         <entry>他のシステムデーモン</entry>
+        </row>
+        <row>
+         <entry>LOG_KERN</entry>
+         <entry>カーネルメッセージ</entry>
+        </row>
+        <row>
+         <entry>LOG_LOCAL0 ... LOG_LOCAL7</entry>
+         <entry>ローカルでの使用のために確保</entry>
+        </row>
+        <row>
+         <entry>LOG_LPR</entry>
+         <entry>ラインプリンタサブシステム</entry>
+        </row>
+        <row>
+         <entry>LOG_MAIL</entry>
+         <entry>メールサブシステム</entry>
+        </row>
+        <row>
+         <entry>LOG_NEWS</entry>
+         <entry>USENET ニュース サブシステム</entry>
+        </row>
+        <row>
+         <entry>LOG_SYSLOG</entry>
+         <entry>syslogd で内部的に生成されたメッセージ</entry>
+        </row>
+        <row>
+         <entry>LOG_USER</entry>
+         <entry>一般的なユーザーレベルのメッセージ</entry>
+        </row>
+        <row>
+         <entry>LOG_UUCP</entry>
+         <entry>UUCP サブシステム</entry>
+        </row>
+       </tbody>
+      </tgroup>
+     </table>
+    </para>
+    <para>
+     <function>define_syslog_variables</function>,
+     <function>syslog</function>,<function>closelog</function>も
      参考にしてください。
     </para>
    </refsect1>
@@ -674,12 +826,92 @@ if(!$fp) {
      対応するエラーメッセージ文字列(strerror)に置換されます。
     </para>
     <para>
-     syslog機能に関するより詳細な情報はUNIX機のsyslogに関する
-     manページにあります。
+     <table>
+      <title><function>syslog</function>の優先順位 (降順)</title>
+      <tgroup cols="2">
+       <thead>
+        <row>
+         <entry>定数</entry>
+         <entry>説明</entry>
+        </row>
+       </thead>
+       <tbody>
+        <row>
+         <entry>LOG_EMERG</entry>
+         <entry>システムは使用不可</entry>
+        </row>
+        <row>
+         <entry>LOG_ALERT</entry>
+         <entry>アクションを直ちにおこす必要がある</entry>
+        </row>
+        <row>
+         <entry>LOG_CRIT</entry>
+         <entry>致命的な条件</entry>
+        </row>
+        <row>
+         <entry>LOG_ERR</entry>
+         <entry>エラーを発生する条件</entry>
+        </row>
+        <row>
+         <entry>LOG_WARNING</entry>
+         <entry>警告を発生する条件</entry>
+        </row>
+        <row>
+         <entry>LOG_NOTICE</entry>
+         <entry>通常の動作だが、特徴的な条件</entry>
+        </row>
+        <row>
+         <entry>LOG_INFO</entry>
+         <entry>情報を与えるメッセージ</entry>
+        </row>
+        <row>
+         <entry>LOG_DEBUG</entry>
+         <entry>デバッグ用のメッセージ</entry>
+        </row>
+       </tbody>
+      </tgroup>
+     </table>
     </para>
     <para>
-     Windows NTでは、syslogサービスはイベントログによりエミュレート
-     されます。
+     <example>
+      <title><function>syslog</function>の使用例</title>
+      <programlisting role="php">
+&lt;?php
+define_syslog_variables();
+// syslogをオープンし、プロセスIDをインクルードし、標準エラー出力にも
+// ログを出力します。そして、ユーザ定義のログ記録機構を使用します。
+openlog(&quot;myScripLog&quot;, LOG_PID | LOG_PERROR, LOG_LOCAL0);
+
+// 何らかのコード
+
+if (authorized_client()) {
+    // 何かをする
+} else {
+    // クライアントは未認証!
+    // ログを記録する
+    $access = date(&quot;Y/m/d H:i:s&quot;);
+    syslog(LOG_WARNING,&quot;Unauthorized client: $access $REMOTE_ADDR ($HTTP_USER_AGENT)&quot;);
+}
+
+closelog();
+?&gt;
+      </programlisting>
+     </example>
+     ユーザ定義のログハンドラの設定に関する情報については、UNIXマニュ
+     アルの<citerefentry><refentrytitle>syslog.conf</refentrytitle>
+     <manvolnum>5</manvolnum></citerefentry>を参照下さい。 
+     syslog の facility と option に関するより詳細な情報は、
+     UNIXマシンの<citerefentry><refentrytitle>syslog</refentrytitle>
+     <manvolnum>3</manvolnum></citerefentry>にあります。
+    </para>
+    <para>
+     Windows NTでは、syslog サービスはイベントログを使用してエミュレー
+     トされます。
+    </para>
+    <para>
+     <function>define_syslog_variables</function>,
+     <function>openlog</function>,
+     <function>closelog</function>も参照下さい。
     </para>
    </refsect1>
   </refentry>

@@ -4,16 +4,16 @@
   
   <partintro>
    <simpara>
-    PHPは、Paul Haeberliが作成したlibswfモジュールにより
-    Shockwave Flashファイルを作成する機能を提供します。
-    libswfは<ulink url="&url.swf;">&url.swf;</ulink>からダウンロードすることが
+    PHPは、Paul Haeberliが作成したlibswfモジュールによりShockwave
+    Flashファイルを作成する機能を提供します。libswfは<ulink
+    url="&url.swf;">&url.swf;</ulink>からダウンロードすることが
     可能です。libswfを入手した後にするべきことは、configureに
-    <option role="configure">--with-swf[=DIR]</option>を指定することだけです。
-    ただし、DIRはディレクトリincludeおよびlibを有する場所です。
-    ディレクトリincludeにはファイルswf.hが、ディレクトリlibにはファイルlibswf.a
-    がある必要があります。libswfの配布ファイルを展開した際には、二つのファイルは
-    一つのディレクトリにあります。結果的にファイルを適当な場所に手動でコピー
-    する必要があります。
+    <option role="configure">--with-swf[=DIR]</option>を指定することだ
+    けです。ただし、DIRはディレクトリincludeおよびlibを有する場所です。
+    ディレクトリincludeにはファイルswf.hが、ディレクトリlibにはファイ
+    ルlibswf.aがある必要があります。libswfの配布ファイルを展開した際に
+    は、二つのファイルは一つのディレクトリにあります。結果的にファイル
+    を適当な場所に手動でコピーする必要があります。
    </simpara>
    <para>
     PHPをShockwave Flashサポート付きでインストールした後は、
@@ -72,8 +72,8 @@ swf_closefile ();
 ?>
      </programlisting>
     </example>
-    このコードはアニメーションを生成し、<ulink url="&url.swf.test">url</ulink>で
-    見ることができます。
+    このコードはアニメーションを生成し、<ulink
+    url="&url.swf.test">url</ulink>で見ることができます。
    </para>
    <note>
     <para>
@@ -96,27 +96,13 @@ swf_closefile ();
       <funcdef>void 
        <function>swf_openfile</function>
       </funcdef>
-      <paramdef>string
-       <parameter>filename</parameter>
-      </paramdef>
-      <paramdef>float
-       <parameter>width</parameter>
-      </paramdef>
-      <paramdef>float
-       <parameter>height</parameter>
-      </paramdef>
-      <paramdef>float 
-       <parameter>framerate</parameter>
-      </paramdef>
-      <paramdef>float
-       <parameter>r</parameter>
-      </paramdef>
-      <paramdef>float 
-       <parameter>g</parameter>
-      </paramdef>
-      <paramdef>float 
-       <parameter>b</parameter>
-      </paramdef>
+      <paramdef>string <parameter>filename</parameter></paramdef>
+      <paramdef>float <parameter>width</parameter></paramdef>
+      <paramdef>float <parameter>height</parameter></paramdef>
+      <paramdef>float <parameter>framerate</parameter></paramdef>
+      <paramdef>float <parameter>r</parameter></paramdef>
+      <paramdef>float <parameter>g</parameter></paramdef>
+      <paramdef>float <parameter>b</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
@@ -128,8 +114,8 @@ swf_closefile ();
      青色が<parameter>b</parameter>となります。
     </para>
     <para>
-     <function>swf_openfile</function>は最初にコールする関数である必要があります。
-     さもないと、セグメンテーションフォルトが発生します。
+     <function>swf_openfile</function>は最初にコールする関数である必要
+     があります。さもないと、セグメンテーションフォルトが発生します。
      出力を画面に送りたい場合には、filenameを"php://stdout"にして下さい。
      (この機能は4.0.1以降でサポートされました)
     </para>
@@ -150,12 +136,88 @@ swf_closefile ();
       <funcdef>void 
        <function>swf_closefile</function>
       </funcdef>
-      <void/>
+      <paramdef>int
+       <parameter><optional>return_file</optional></parameter>
+      </paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
      <function>swf_openfile</function>関数によりオープンされたファイルを
-     閉じます。
+     閉じます。パラメータ<parameter>return_file</parameter>が設定され
+     ている場合、SWFファイルの内容が関数から返されます。
+    </para>
+    <para>
+     <example>
+      <title>
+       ユーザの入力に基づき簡単なflashファイルを生成し、出力します。ま
+       た、データベースにこれを保存します。
+      </title>
+      <programlisting role="php">
+&lt;?php
+
+// 変数$textはユーザにより投稿されます。
+
+// データベースアクセス用のグローバル変数
+// (swf_savedata()関数で使用)
+$DBHOST = "localhost";
+$DBUSER = "sterling";
+$DBPASS = "secret";
+
+swf_openfile ("php://stdout", 256, 256, 30, 1, 1, 1);
+
+swf_definefont (10, "Ligon-Bold");
+swf_fontsize (12);
+swf_fontslant (10);
+    
+swf_definetext (11, $text, 1);
+    
+swf_pushmatrix ();
+swf_translate (-50, 80, 0);
+swf_placeobject (11, 60);
+swf_popmatrix ();
+
+swf_showframe ();
+  
+swf_startdoaction ();
+swf_actionstop ();
+swf_enddoaction ();
+
+$data = swf_closefile (1);
+
+$data ?
+swf_savedata ($data) :
+die ("Error could not save SWF file");
+
+// void swf_savedata (string data)
+// 後で取得できるように生成されたファイルをデータベースに保存します。
+function swf_savedata ($data)
+{
+    global $DBHOST, 
+           $DBUSER,
+           $DBPASS;
+    
+    $dbh = @mysql_connect ($DBHOST, $DBUSER, $DBPASS);
+
+    if (!$dbh) {
+        die (sprintf ("Error [%d]: %s",
+                      mysql_errno (), mysql_error ()));
+    }
+
+    $stmt = "INSERT INTO swf_files (file) VALUES ('$data')";
+
+    $sth = @mysql_query ($stmt, $dbh);
+
+    if (!$sth) {
+        die (sprintf ("Error [%d]: %s",
+                      mysql_errno (), mysql_error ()));
+    }
+
+    @mysql_free_result ($sth);
+    @mysql_close ($dbh);
+}
+?>
+      </programlisting>
+     </example>
     </para>
    </refsect1>
   </refentry>
