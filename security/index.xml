@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.23 $ -->
- <chapter id="security">
+<!-- $Revision: 1.1 $ -->
+ <chapter id="security.index">
   <title>セキュリティ</title>
 
   <simpara>
@@ -156,10 +156,10 @@
    </sect2>
 
    <sect2 id="security.cgi-bin.default">
-    <title>ケース 1: 公開ファイルのみを配布</title>
+    <title>ケース 1: 配布制限がないファイルのみを配布</title>
     <simpara>
      サーバー上にパスワードまたは IP アドレスを元にしたアクセス制限に
-     よる制約を受けるコンテンツがない場合、この設定オプションを使用す
+     よる制約を課すコンテンツがない場合、この設定オプションを使用す
      る必要はありません。使用する Web サーバーがリダイレクトを許可しな
      い場合やサーバーがリダイレクト要求を安全に処理しつつPHP バイナリ
      と通信できる手段を有していない場合、オプション <link
@@ -276,7 +276,7 @@ AddHandler php-script .php
    </sect2>
    
    <sect2 id="security.cgi-bin.shell">
-    <title>ケース 4: web ツリーの外に PHP パーサを置く</title>
+    <title>ケース 4: Webツリーの外にPHPパーサを置く</title>
     <para>
      非常に安全性の高いオプションとしてPHP パーサのバイナリをファイル
      用 Web ツリーの外側、例えば <filename
@@ -381,10 +381,10 @@ AddHandler php-script .php
 <![CDATA[
 <?php
 // ユーザのホームディレクトリからファイルを削除する
-$username = $HTTP_POST_VARS['user_submitted_name'];
+$username = $_POST['user_submitted_name'];
 $homedir = "/home/$username";
 $file_to_delete = "$userfile";
-unlink ($homedir/$userfile);
+unlink ("$homedir/$userfile");
 echo "$file_to_delete は削除されました!";
 ?>
 ]]>
@@ -432,7 +432,7 @@ echo "/home/../etc/passwd は削除されました!";
 <![CDATA[
 <?php
 // PHPユーザがアクセス可能なハードドライブからファイルを削除する。
-$username = $HTTP_SERVER_VARS['REMOTE_USER']; // 認証機構を使用する
+$username = $_SERVER['REMOTE_USER']; // 認証機構を使用する
 
 $homedir = "/home/$username";
 
@@ -459,7 +459,7 @@ echo "$file_to_delete は削除されました!";
      <programlisting role="php">
 <![CDATA[
 <?php
-$username = $HTTP_SERVER_VARS['REMOTE_USER'];  // 認証機構を使用する
+$username = $_SERVER['REMOTE_USER'];  // 認証機構を使用する
 $homedir = "/home/$username";
 
 if (!ereg('^[^./][^/]*$', $userfile))
@@ -778,13 +778,15 @@ $result = mssql_query($query);
       </programlisting>
      </example>
      攻撃者が、値
-     <literal>a%' exec master..xp_cmdshell 'net user test testpass
-     /ADD' --</literal>を<varname>$prod</varname>, then the
-     <varname>$query</varname> に投稿した場合、以下のようになります。
+     <literal>a%' exec master..xp_cmdshell 'net user test testpass /ADD' --</literal>
+     を<varname>$prod</varname>に投稿した場合、
+     <varname>$query</varname> は以下のようになります。
      <informalexample>
       <programlisting role="php">
 <![CDATA[
-$query  = "SELECT * FROM products WHERE id LIKE '%a%' exec master..xp_cmdshell 'net user test testpass /ADD'--";
+$query  = "SELECT * FROM products
+                    WHERE id LIKE '%a%'
+                    exec master..xp_cmdshell 'net user test testpass /ADD'--";
 $result = mssql_query($query);
 ]]>
       </programlisting>
@@ -860,7 +862,8 @@ settype($order, 'integer');
 $query  = "SELECT id, name FROM products ORDER BY name LIMIT 20 OFFSET $offset;";
 
 // フォーマット文字列の%dに注意して下さい。%sを使用しても意味がありません。
-$query  = sprintf("SELECT id, name FROM products ORDER BY name LIMIT 20 OFFSET %d;", $offset);
+$query = sprintf("SELECT id, name FROM products ORDER BY name LIMIT 20 OFFSET %d;",
+                 $offset);
 ]]>
          </programlisting>
         </example>
@@ -926,7 +929,7 @@ $query  = sprintf("SELECT id, name FROM products ORDER BY name LIMIT 20 OFFSET %
      <title>カスタムHTMLページにより変数を攻撃する</title>
      <programlisting role="php">
 <![CDATA[
-<form method="post" action="attacktarget?username=badfoo&password=badfoo">
+<form method="POST" action="attacktarget?username=badfoo&password=badfoo">
 <input type="hidden" name="username" value="badfoo">
 <input type="hidden" name="password" value="badfoo">
 </form>
@@ -953,7 +956,7 @@ $query  = sprintf("SELECT id, name FROM products ORDER BY name LIMIT 20 OFFSET %
      <title>一般的なデバッグ変数を探す</title>
      <programlisting role="php">
 <![CDATA[
-<form method="post" action="attacktarget?errors=Y&showerrors=1"&debug=1">
+<form method="POST" action="attacktarget?errors=Y&amp;showerrors=1"&debug=1">
 <input type="hidden" name="errors" value="Y">
 <input type="hidden" name="showerrors" value="1">
 <input type="hidden" name="debug" value="1">
@@ -997,8 +1000,8 @@ $query  = sprintf("SELECT id, name FROM products ORDER BY name LIMIT 20 OFFSET %
     の対策が適用可能かどうかを判定します。
    </para>
    <para>
-    この問題を事前に防止する手段の一つは、PHPの
-    <function>error_reporting</function>を使用することです。これにより、
+    この問題を事前に防止する手段の一つは、PHPに組み込まれている
+    <function>error_reporting</function>機能を使用することです。これにより、
     コードを安全にするための手がかりが得られ、危険と思われる変数が使用
     されている部分をみつけることが可能です。実使用の前にE_ALLを指定して
     コードをテストすることにより、変数が他の手段で汚染されたり、修正さ
@@ -1014,7 +1017,7 @@ if ($username) {  // 使用前に初期化または確認されていない変�
     $good_login = 1; 
 }
 if ($good_login == 1) { // 上のテストが失敗した場合、使用前に初期化または確認されていない
-    fpassthru ("/highly/sensitive/data/index.html");
+    readfile ("/highly/sensitive/data/index.html");
 }
 ?>
 ]]>
@@ -1024,83 +1027,148 @@ if ($good_login == 1) { // 上のテストが失敗した場合、使用前に�
   </sect1>
 
   <sect1 id="security.registerglobals">
-   <title>グローバル変数への登録を使用</title>
+   <title>グローバル変数の登録機能の使用法</title>
    <para>
-    セキュリティを向上させるために使用可能なPHPの機能の一つは、
-    PHPでregister_globals = offを指定して設定を行なうことです。
-    ユーザが投稿した変数が全てPHPコードに導入されるこの機能を
-    オフにすることにより、潜在的な攻撃者が攻撃できる変数の数を
-    減らすことが可能となります。これにより、投稿を作成するため
-    により多くの時間を要し、内部変数はユーザにより投稿されたデ
-    ータから効率的に隔離することが可能となります。
+    PHPの変更点で最も議論の対象となったのは、おそらく、PHP
+    <ulink url="&url.php.release4.2.0;">4.2.0</ulink>において
+    PHPのディレクティブ
+    <link linkend="ini.register-globals">register_globals</link>が
+    デフォルトでONからOFFに変更された時でしょう。
+    当時、このディレクティブに依存することが一般的であり、多くの人は、
+    このパラメータの存在すら知らず、PHPの動作そのものであるというよう
+    に考えていました。このページは、このディレクティブにより安全でな
+    いコードを書く可能性があるということをこのページで説明しますが、
+    このディレクティブそのものが安全でないわけではなく、これを誤って使
+    用することが安全でないということを念頭においていて下さい。
    </para>
    <para>
-    この場合、PHPで動作させるために必要なコードの量は若干増加
-    しますが、その利益は努力を上回ると議論されています。
+    When on, register_globals will inject (poison) your scripts will all
+    sorts of variables, like request variables from html forms.  This
+    coupled with the fact that PHP doesn't require variable initialization
+    means writing insecure code is that much easier.  It was a difficult
+    decision, but the PHP community decided to disable this directive by 
+    default.  When on, people use variables yet really don't know for sure
+    where they come from and can only assume.  Internal variables that are
+    defined in the script itself get mixed up with request data sent by
+    users and disabling register_globals changes this.  Let's demonstrate
+    with an example misuse of register_globals: 
+   </para>
+   <para>
     <example>
-     <title>register_globals=offを指定しない場合の動作</title>
+     <title>register_globals = on の誤った使用例</title>
      <programlisting role="php">
 <![CDATA[
 <?php
-if ($username) {  // get/post/cookiesで上書きされる可能性がある
-    $good_login = 1; 
+// ユーザが認証された場合のみ $authorized = true を定義する
+if (authenticated_user()) {
+    $authorized = true;
 }
 
-if ($good_login == 1) { // get/post/cookiesで上書きされる可能性がある
-    fpassthru ("/highly/sensitive/data/index.html");
+// 最初に$authorizedをfalseとして初期化していないため、
+// 以下のコードにより、GET auth.php?authorized=1 のように
+// register_globals機能により定義される可能性があります。
+// このため、誰でも認証されたようにみせることができます!
+if ($authorized) {
+    include "/highly/sensitive/data.php";
 }
 ?>
 ]]>
      </programlisting>
     </example>
-    <example>
-     <title>register_globals = offを指定した場合の動作</title>
-     <programlisting role="php">
-<![CDATA[
-<?php
-if($HTTP_COOKIE_VARS['username']){ 
-    // クッキーから来るもののみ
-    $good_login = 1;
-    fpassthru ("/highly/sensitive/data/index.html");
-}
-?>
-]]>
-     </programlisting>
-    </example>
-    これを賢く使用することにより、偽の入力が試みされた際に警告を
-    発生する防止策をとることさえ可能になります。変数が入力される
-    場所を事前に正しく知っている場合、投稿されたデータが適当な場
-    所からのものであるかを調べることが可能です。これは、データが
-    偽造されていないことを保証するものではありませんが、攻撃者に
-    正しい偽造の方法を推定することを強いることになります。
-    <example>
-     <title>簡単な変数の汚染の有無の検出</title>
-     <programlisting role="php">
-<![CDATA[
-<?php
-if ($HTTP_COOKIE_VARS['username'] &&
-    !$HTTP_POST_VARS['username'] &&
-    !$HTTP_GET_VARS['username'] ) { 
-    // ユーザ名を認証する他の手段を実行する
-    $good_login = 1;
-    fpassthru ("/highly/sensitive/data/index.html");
-} else {
-   mail("admin@example.com", "侵入が試みられました", $HTTP_SERVER_VARS['REMOTE_ADDR']);
-   echo "管理者による警告：セキュリティ違反です。";
-   exit;
-}
-?>
-]]>
-     </programlisting>
-    </example>
-    もちろん、register_globalsをoffに変えただけでは、コードが安全である
-    ことを意味しません。投稿されたデータのあらゆる部分について、他の
-    手段でも確認する必要がありません。
    </para>
+   <para>
+    When register_globals = on, our logic above may be compromised.  When
+    off, <varname>$authorized</varname> can't be set via request so it'll
+    be fine, although it really is generally a good programming practice to 
+    initialize variables first.  For example, in our example above we might
+    have first done <literal>$authorized = false</literal>.  Doing this
+    first means our above code would work with register_globals on or off as 
+    users by default would be unauthorized.
+   </para>
+   <para>
+    Another example is that of <link linkend="ref.session">sessions</link>.
+    When register_globals = on, we could also use
+    <varname>$username</varname> in our example below but again you must
+    realize that <varname>$username</varname> could also come from other
+    means, such as GET (through the URL).  
+   </para>
+   <para>
+    <example>
+     <title>Example use of sessions with register_globals on or off</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+// We wouldn't know where $username came from but do know $_SESSION is 
+// for session data 
+if (isset($_SESSION['username'])) {
+    
+    echo "Hello <b>{$_SESSION['username']}</b>";
+
+} else {
+    
+    echo "Hello <b>Guest</b><br />";
+    echo "Would you like to login?";
+
+}
+?>
+]]>
+     </programlisting>
+    </example>
+   </para>
+   <para>
+    It's even possible to take preventative measures to warn when forging is
+    being attempted. If you know ahead of time exactly where a variable
+    should be coming from, you can check to see if the submitted data is
+    coming from an inappropriate kind of submission.  While it doesn't
+    guarantee that data has not been forged, it does require an attacker to
+    guess the right kind of forging.  If you don't care where the request
+    data comes from, you can use <varname>$_REQUEST</varname> as it contains
+    a mix of GET, POST and COOKIE data.  See also the manual section on
+    using <link linkend="language.variables.external">variables from outside
+    of PHP</link>. 
+   </para>
+   <para>
+    <example>
+     <title>Detecting simple variable poisoning</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+if (isset($_COOKIE['MAGIC_COOKIE'])) {
+    
+    // MAGIC_COOKIE comes from a cookie.
+    // Be sure to validate the cookie data!
+
+} elseif (isset($_GET['MAGIC_COOKIE']) || isset($_POST['MAGIC_COOKIE'])) {
+   
+   mail("admin@example.com", "Possible breakin attempt", $_SERVER['REMOTE_ADDR']);
+   echo "Security violation, admin has been alerted.";
+   exit;
+
+} else {
+   
+   // MAGIC_COOKIE isn't set through this REQUEST
+
+}
+?>
+]]>
+     </programlisting>
+    </example>
+   </para>
+   <para>
+    Of course, simply turning off register_globals does not mean your code
+    is secure.  For every piece of data that is submitted, it should also be
+    checked in other ways.  Always validate your user data and initialize
+    your variables!  To check for unitialized variables you may turn up
+    <function>error_reporting</function> to show
+    <constant>E_NOTICE</constant> level errors.
+   </para>
+   
+   &note.superglobals;
+
   </sect1>
 
   <sect1 id="security.variables">
-   <title>ユーザが送信したデータ</title>
+   <title>ユーザが投稿したデータ</title>
    <para>
     多くのPHPで最も脆弱な部分は、言語自体に起因するものではなく、単に
     セキュリティを考慮して書かれていないコードの問題です。この原因につ
