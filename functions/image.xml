@@ -1019,11 +1019,60 @@ function LoadPNG ($imgname)
      画像を出力するPHPスクリプトを作成することができます。
      <note>
       <para>
-       <acronym>GD</acronym>ライブラリバージョン1.6以降で<acronym>GIF</acronym>
-       サポートが完全に削除されたので、該当する版の<acronym>GD</acronym>ライブラリ
-       ではこの関数を使用することはできません。
+       <acronym>GD</acronym>ライブラリバージョン1.6以降で
+       <acronym>GIF</acronym>サポートが完全に削除されたので、該当する
+       版の<acronym>GD</acronym>ライブラリではこの関数を使用することは
+       できません。
+      </para>
+      <para>
+       以下の短いコードにより利用可能なGDサポートの型を自動検出し、
+       汎用性のあるPHPアプリケーションを書くことが可能です。
+       <literal>Header("Content-type:
+       image/gif");ImageGif($im);</literal>の部分をこのより柔軟性のあ
+       るコードに置換して下さい。
+       <informalexample>
+	<programlisting role="php">
+&lt;?php
+  if (function_exists("imagegif")) {
+    Header("Content-type: image/gif");
+    ImageGif($im);
+  }
+  elseif (function_exists("imageJpeg")) {
+    Header("Content-type: image/jpeg");
+    ImageJpeg($im, "", 0.5);
+  }
+  elseif (function_exists("imagePng")) {
+    Header("Content-type: image/png");
+    ImagePng($im);
+  }
+  else
+    die("このPHPサーバーではイメージはサポートされていません");
+?&gt;
+	</programlisting>
+       </informalexample>
       </para>
      </note>
+     <note>
+      <para>
+       バージョン4.0.2以降の PHP4 では、種々のイメージ関数のサポートを
+       調べるために <function>function_exists</function> の代わりに関
+       数 <function>imagetypes</function> を使用することが可能です。
+       <informalexample>
+        <programlisting role="php">
+if (ImageTypes() &amp; IMG_GIF) {
+    Header ("Content-type: image/gif");
+    ImageGif ($im);
+}
+elseif (ImageTypes() &amp; IMG_JPG) {
+... 等。
+	</programlisting>
+       </informalexample>
+      </para>
+     </note>
+    </para>
+    <para>
+     <function>ImagePng</function>, <function>ImageJpeg</function>,
+     <function>ImageTypes</function> も参照下さい。
     </para>
    </refsect1>
   </refentry>
@@ -1043,21 +1092,26 @@ function LoadPNG ($imgname)
        <function>imagepng</function>
       </funcdef>
       <paramdef>int <parameter>im</parameter></paramdef>
-      <paramdef>string <parameter><optional>filename</optional></parameter></paramdef>
+      <paramdef>string 
+       <parameter><optional>filename</optional></parameter>
+      </paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
-     <function>ImagePng</function>は、GDイメージストリーム(
-     <parameter>im</parameter>)をPNGフォーマットで標準出力(通常はブラウザ)に
-     出力します。
-     <parameter>filename</parameter>を指定した場合はそのファイルにイメージを
-     出力します。
+     <function>ImagePng</function>は、GDイメージストリーム
+     (<parameter>im</parameter>)をPNGフォーマットで標準出力(通常はブラ
+     ウザ)に出力します。<parameter>filename</parameter>を指定した場合
+     はそのファイルにイメージを出力します。
      <informalexample>
       <programlisting role="php">
 $im = ImageCreateFromPng("test.png");
 ImagePng($im);
       </programlisting>
      </informalexample>
+    </para>
+    <para>
+     <function>ImageGif</function>, <function>ImageJpeg</function>,
+     <function>ImageTypes</function> も参照下さい。
     </para>
    </refsect1>
   </refentry>
@@ -1083,21 +1137,27 @@ ImagePng($im);
     </funcsynopsis>
     <para>
      <function>ImageJPEG</function>は画像<parameter>im</parameter>から
-     <acronym>JPEG</acronym>ファイルfilenameを作成します。
-     引数<parameter>im</parameter>は関数<function>imagecreate</function>
-     の返り値です?   </para>
+     <acronym>JPEG</acronym>ファイルfilenameを作成します。引数
+     <parameter>im</parameter>は関数<function>imagecreate</function>
+     の返り値です。
+    </para>
     <para>
-     引数filenameはオプションで、指定を省略した場合、画像は標準出力にそのまま
-     出力されます。引数qualityを指定する際に引数filenameの指定を省略するには、
-     単に空の文字列''を指定して下さい。
-     <function>header</function>関数でimage/jpeg content-typeを送信すること
-     により、JPEG画像を直接出力するPHPスクリプトを作成することが可能です。
+     引数filenameはオプションで、指定を省略した場合、画像は標準出力に
+     そのまま出力されます。引数qualityを指定する際に引数filenameの指定
+     を省略するには、単に空の文字列''を指定して下さい。
+     <function>header</function>関数でimage/jpeg content-typeを送信す
+     ることにより、JPEG画像を直接出力するPHPスクリプトを作成することが
+     可能です。
      <note>
       <para>
        JPEGサポートはPHPがGD-1.8以降を用いてコンパイルされた場合のみ
        利用可能です。
       </para>
      </note>
+    </para>
+    <para>
+     <function>ImagePng</function>, <function>ImageGif</function>,
+     <function>ImageTypes</function> も参照下さい。
     </para>
    </refsect1>
   </refentry> 
@@ -1113,17 +1173,19 @@ ImagePng($im);
      <funcprototype>
       <funcdef>int <function>imageinterlace</function></funcdef>
       <paramdef>int <parameter>im</parameter></paramdef>
-      <paramdef>int <parameter><optional>interlace</optional></parameter></paramdef>
+      <paramdef>int 
+       <parameter><optional>interlace</optional></parameter>
+      </paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
-      ImageInterlaceは、インターレースビットのオンオフを切り替えます。
-      interlaceが1の場合に画像 im はインターレースとなり、0 であれば
-      インターレースビットは消えます。
+     ImageInterlaceは、インターレースビットのオンオフを切り替えます。
+     interlaceが1の場合に画像 im はインターレースとなり、0 であればイ
+     ンターレースビットは消えます。
     </para>
     <para>
-      この関数は、その画像のインタレースビットがセットされているかどうかを
-      返します。
+     この関数は、その画像のインタレースビットがセットされているかどう
+     かを返します。
     </para>
    </refsect1>
   </refentry>
@@ -1283,41 +1345,50 @@ ImagePng($im);
       <paramdef>string <parameter>text</parameter></paramdef>
       <paramdef>int <parameter>font</parameter></paramdef>
       <paramdef>int <parameter>size</parameter></paramdef>
-      <paramdef>int <parameter><optional>space</optional></parameter></paramdef>
-      <paramdef>int <parameter><optional>tightness</optional></parameter></paramdef>
-      <paramdef>float <parameter><optional>angle</optional></parameter></paramdef>
+      <paramdef>int 
+       <parameter><optional>space</optional></parameter>
+      </paramdef>
+      <paramdef>int 
+       <parameter><optional>tightness</optional></parameter>
+      </paramdef>
+      <paramdef>float 
+       <parameter><optional>angle</optional></parameter>
+      </paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
      <parameter>size</parameter> はピクセル単位で表されます。
     </para>
     <para>
-     <parameter>space</parameter> によりフォントが占める空間のデフォルト値を変更することが
-     可能です。
-     この値が元の値に付加されます。また、負の値とすることも可能です。
+     <parameter>space</parameter> によりフォントが占める空間のデフォル
+     ト値を変更することが可能です。この値が元の値に付加されます。また、
+     負の値とすることも可能です。
     </para>
     <para>
-     <parameter>tightness</parameter> により文字間の空白の量を制御できます。
-     この量は元の文字幅に追加され、負の値とすることも可能です。
+     <parameter>tightness</parameter> により文字間の空白の量を制御でき
+     ます。この量は元の文字幅に追加され、負の値とすることも可能です。
     </para>
     <para>
      <parameter>angle</parameter> は度で表されます。
     </para>
     <para>
-     パラメータ <parameter>space</parameter> および <parameter>tightness</parameter>
-     は文字間隔の単位、つまり、1単位が文字矩形の 1/1000 で表されます。
+     パラメータ <parameter>space</parameter> および
+     <parameter>tightness</parameter> は文字間隔の単位、つまり、1単位
+     が文字矩形の 1/1000 で表されます。
     </para>
     <para>
-     パラメータ <parameter>space</parameter>, <parameter>tightness</parameter>,
-     <parameter>angle</parameter>  はオプションです。
+     パラメータ <parameter>space</parameter>,
+     <parameter>tightness</parameter>, <parameter>angle</parameter>
+     はオプションです。
     </para>
     <para>
-     バウンディングボックスは文字メトリックスから得られる情報を用いて計算されますが、
-     残念なことに実際に描画される文字列の描画結果とはわずかに異なる傾向があります。
-     角度が0度の場合、全ての方向に1ピクセル分多く必要であると予想することができます。
+     バウンディングボックスは文字メトリックスから得られる情報を用いて
+     計算されますが、残念なことに実際に描画される文字列の描画結果とは
+     わずかに異なる傾向があります。角度が0度の場合、全ての方向に1ピク
+     セル分多く必要であると予想することができます。
     </para>
     <para>
-     この関毦̡の要素を有する配列を返します。
+     この関数は、次の要素を有する配列を返します。
      <informaltable>
       <tgroup cols="2">
        <tbody>
@@ -1369,18 +1440,21 @@ ImagePng($im);
     </funcsynopsis>
     <para>
     拡大・縮小、傾斜、文字エンコードベクトルの変更のようにフォントを
-    後で修正する必要があるが、同時に元のフォントも保存しておく必要がある場合には、
-    この関数を使用して下さい。
-    コピーするフォントは、コピーされたフォントではなく、<function>imagepsloadfont</function> 
-    を用いて得られたフォントである必要があることに注意してくだ?D。
-    コピーする前に元のフォントの修正を行うことが可能です。
-    </para>
-    <para>
-    この関数を使用する場合、この手法で得たフォントを逆順に解放する必要があります。
+    後で修正する必要があるが、同時に元のフォントも保存しておく必要があ
+    る場合には、この関数を使用して下さい。
+    コピーするフォントは、コピーされたフォントではなく、
+    <function>imagepsloadfont</function> を用いて得られたフォントであ
+    る必要があることに注意してください。コピーする前に元のフォントの修
+    正を行うことが可能です。
+   </para>
+   <para>
+    この関数を使用する場合、この手法で得たフォントを逆順に解放する必要
+    があります。
     さもないとスクリプトはハングする可能性があります。
     </para>
     <para>
-    全てが正常に動作した場合、有効なフォントIDが返され、後で使用することが可能です。
+    全てが正常に動作した場合、有効なフォントIDが返され、後で使用するこ
+    とが可能です。
     それ以外の場合はFALSEを返し、エラー個所を示すメッセージが出力されます。
     </para>
     <para>
@@ -1403,22 +1477,21 @@ ImagePng($im);
       <paramdef>string <parameter>encodingfile</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
-    
     <para>
-    ファイルから文字エンコードベクトルをロードし、変更します。
-    PostScript フォントのデフォルトベクトルは、127以上の位置には文字がほとんど
-    ないので、英語以外の言語を使用する場合には恐らくこの部分を変更したいと
-    思うことでしょう。
-    このファイルの正しいフォーマットは、T1libs のドキュメントに記述されています。
-    T1libs にはすぐに使用できるファイルとして IsoLatin1.enc および IsoLatin2.enc が
-    含まれています。
+     ファイルから文字エンコードベクトルをロードし、変更します。
+     PostScript フォントのデフォルトベクトルは、127以上の位置には文字
+     がほとんどないので、英語以外の言語を使用する場合には恐らくこの部
+     分を変更したいと思うことでしょう。このファイルの正しいフォーマッ
+     トは、T1libs のドキュメントに記述されています。T1libs にはすぐに
+     使用できるファイルとして IsoLatin1.enc および IsoLatin2.enc が
+     含まれています。
     </para>
     <para>
-    この関数を頻繁に用いている場合には、ずっと優れた方法として
+     この関数を頻繁に用いている場合には、ずっと優れた方法として
      <link linkend="configuration.file">設定ファイル</link> で
-    ps.default_encoding が正しいエンコードファイルを指すようにして
-    エンコード法を定義する方法があります。
-    この場合、自動的にロードされる全てのフォントは、正しいエンコードとなります。
+     ps.default_encoding が正しいエンコードファイルを指すようにして
+     エンコード法を定義する方法があります。この場合、自動的にロードさ
+     れる全てのフォントは、正しいエンコードとなります。
     </para>
    </refsect1>
   </refentry>
@@ -1456,9 +1529,9 @@ ImagePng($im);
      </funcprototype>
     </funcsynopsis>
     <para>
-    全て正常に処理された場合、有効なフォントIDが返され、後で使用することが
-    できます。
-    それ以外の場合、この関数はFALSEを返し、問題のある部分を示すメッセージを出力します。
+     全て正常に処理された場合、有効なフォントIDが返され、後で使用するこ
+     とができます。それ以外の場合、この関数はFALSEを返し、問題のある部
+     分を示すメッセージを出力します。
     </para>
     <para>
      <function>imagepsfreefont</function> も参照下さい。
@@ -1469,23 +1542,15 @@ ImagePng($im);
   <refentry id="function.imagepsextendfont">
    <refnamediv>
     <refname>ImagePsExtendFont</refname>
-    <refpurpose>
-     フォントを展開または圧縮する
-    </refpurpose>
+    <refpurpose>フォントを展開または圧縮する</refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>bool
-       <function>imagepsextendfont</function>
-      </funcdef>
-         <paramdef>int 
-       <parameter>font_index</parameter>
-         </paramdef>
-      <paramdef>double 
-       <parameter>extend</parameter>
-      </paramdef>
+      <funcdef>bool <function>imagepsextendfont</function> </funcdef>
+      <paramdef>int <parameter>font_index</parameter></paramdef>
+      <paramdef>double <parameter>extend</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
@@ -1499,23 +1564,15 @@ ImagePng($im);
   <refentry id="function.imagepsslantfont">
    <refnamediv>
     <refname>ImagePsSlantFont</refname>
-    <refpurpose>
-     フォントを傾ける
-    </refpurpose>
+    <refpurpose>フォントを傾ける</refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>bool 
-       <function>imagepsslantfont</function>
-      </funcdef>
-      <paramdef>int 
-       <parameter>font_index</parameter>
-      </paramdef>
-      <paramdef>double 
-       <parameter>slant</parameter>
-      </paramdef>
+      <funcdef>bool <function>imagepsslantfont</function></funcdef>
+      <paramdef>int <parameter>font_index</parameter></paramdef>
+      <paramdef>double <parameter>slant</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
@@ -1556,46 +1613,49 @@ ImagePng($im);
     </para>
     <para>
      <parameter>foreground</parameter> は、テキストが描画される色です。
-     <parameter>background</parameter> は、アンチエイリアス時にフェードアウトする
-     色です。
-     <parameter>background</parameter> 色のピクセルは描画されないので、
-     背景画像が無地である必要はありません。</para>
-    <para>
-    <parameter>x</parameter>, <parameter>y</parameter> で指定される座標は、
-    最初の文字の原点(または参照点)を定義します(おおよそ文字の左下隅)。
-    これは、<function>ImageString</function> 関数で、
-    x,y が最初の文字の右上隅を定義するのとは異なっています。
-    動作に関して不明な場合は、フォント及びその測り方に関する PostScipt ドキュメントを
-    参照下さい。
+     <parameter>background</parameter> は、アンチエイリアス時にフェー
+     ドアウトする色です。<parameter>background</parameter> 色のピクセ
+     ルは描画されないので、背景画像が無地である必要はありません。
     </para>
     <para>
-     <parameter>space</parameter> によりフォントが占める空間のデフォルト値を変更することが
-     可能です。
-     この値が元の値に付加されます。また、負の値とすることも可能です。
+     <parameter>x</parameter>, <parameter>y</parameter> で指定される座
+     標は、最初の文字の原点(または参照点)を定義します(おおよそ文字の左
+     下隅)。これは、<function>ImageString</function> 関数で、x,y が最
+     初の文字の右上隅を定義するのとは異なっています。動作に関して不明
+     な場合は、フォント及びその測り方に関する PostScipt ドキュメントを
+     参照下さい。
     </para>
     <para>
-     <parameter>tightness</parameter> により文字間の空白の量を制御できます。
-     この量は元の文字幅に追加され、負の値とすることも可能です。
+     <parameter>space</parameter> によりフォントが占める空間のデフォル
+     ト値を変更することが可能です。この値が元の値に付加されます。また、
+     負の値とすることも可能です。
+    </para>
+    <para>
+     <parameter>tightness</parameter> により文字間の空白の量を制御でき
+     ます。この量は元の文字幅に追加され、負の値とすることも可能です。
     </para>
     <para>
      <parameter>angle</parameter> は度で表されます。
     </para>
     <para>
-     <parameter>antialias_steps</parameter> によりアンチエイリアスを行うテキスト
-     の色数を制御することが可能です。指定できるのは 4 および 16 です。 
-     20 より小さな大きさのテキストには、見易くするために大きい方を推奨します。
-     より大きなフォントでは、計算負荷がより少ない 4 を使用して下さい。
+     <parameter>antialias_steps</parameter> によりアンチエイリアスを行
+     うテキストの色数を制御することが可能です。指定できるのは 4 および
+     16 です。 20 より小さな大きさのテキストには、見易くするために大き
+     い方を推奨します。より大きなフォントでは、計算負荷がより少ない 4
+     を使用して下さい。
     </para>
     <para>
-     パラメータ <parameter>space</parameter> および <parameter>tightness</parameter>
-     は文字間隔の単位、つまり、1単位が文字矩形の 1/1000 で表されます。
+     パラメータ <parameter>space</parameter> および
+     <parameter>tightness</parameter> は文字間隔の単位、つまり、1単位
+     が文字矩形の 1/1000 で表されます。
     </para>
     <para>
-     パラメータ <parameter>space</parameter>, <parameter>tightness</parameter>,
-     <parameter>angle</parameter> ,<parameter>antialias</parameter> はオプションです。
+     パラメータ <parameter>space</parameter>,
+     <parameter>tightness</parameter>, <parameter>angle</parameter>
+     ,<parameter>antialias</parameter> はオプションです。
     </para>
     <para>
-    この関数は次の要素を有する配列を返します。
+     この関数は次の要素を有する配列を返します。
      <informaltable>
       <tgroup cols="2">
        <tbody>
@@ -1618,13 +1678,13 @@ ImagePng($im);
        </tbody>
       </tgroup>
      </informaltable>
-     </para>
-     <para>
-      <function>imagepsbbox</function>も参照下さい。
-     </para>
-    </refsect1>
-   </refentry>
- 
+    </para>
+    <para>
+     <function>imagepsbbox</function>も参照下さい。
+    </para>
+   </refsect1>
+  </refentry>
+  
   <refentry id="function.imagerectangle">
    <refnamediv>
     <refname>ImageRectangle</refname>
@@ -1644,10 +1704,11 @@ ImagePng($im);
      </funcprototype>
     </funcsynopsis>
     <para>
-     <function>ImageRectangle</function>は、画像<parameter>im</parameter>上に
-     <parameter>col</parameter>色で左上を(<parameter>x1</parameter>,<parameter>y1</parameter>)、
-     右下を(<parameter>x2</parameter>,<parameter>y2</parameter>)とする
-     矩形を描画します。画像の左上角は(0,0)です。
+     <function>ImageRectangle</function>は、画像
+     <parameter>im</parameter>上に<parameter>col</parameter>色で左上を
+     (<parameter>x1</parameter>,<parameter>y1</parameter>)、右下を
+     (<parameter>x2</parameter>,<parameter>y2</parameter>)とする矩形を
+     描画します。画像の左上角は(0,0)です。
     </para>
    </refsect1>
   </refentry>
@@ -1669,9 +1730,10 @@ ImagePng($im);
      </funcprototype>
     </funcsynopsis>
     <para>
-     <function>ImageSetPixel</function>は画像<parameter>im</parameter>上に
-     <parameter>col</parameter>色で座標(<parameter>x</parameter>,<parameter>y</parameter>)
-     (左上が0, 0)に点を描画します。
+     <function>ImageSetPixel</function>は画像<parameter>im</parameter>
+     上に <parameter>col</parameter>色で座標
+     (<parameter>x</parameter>,<parameter>y</parameter>) (左上が0, 0)
+     に点を描画します。
     </para>
     <para>  
      <function>imagecreate</function>および
@@ -1699,10 +1761,11 @@ ImagePng($im);
      </funcprototype>
     </funcsynopsis>
     <para>
-     <function>ImageString</function>は、画像<parameter>im</parameter>に
-     <parameter>col</parameter>色で座標(<parameter>x</parameter>, <parameter>y</parameter>)
-     (左上が0, 0)に文字列<parameter>s</parameter>を描画します。
-     <parameter>font</parameter>が1, 2, 3, 4, 5 の場合、組込みフォントが使用されます。
+     <function>ImageString</function>は、画像<parameter>im</parameter>
+     に <parameter>col</parameter>色で座標(<parameter>x</parameter>,
+     <parameter>y</parameter>) (左上が0, 0)に文字列
+     <parameter>s</parameter>を描画します。<parameter>font</parameter>
+     が1, 2, 3, 4, 5 の場合、組込みフォントが使用されます。
     </para>
     <para>
      <function>imageloadfont</function>も参考にしてください。
@@ -1729,12 +1792,13 @@ ImagePng($im);
      </funcprototype>
     </funcsynopsis>
     <para>
-     <function>ImageStringUp</function>は、画像<parameter>im</parameter>上に
-     座標(<parameter>x</parameter>, <parameter>y</parameter>)から
-     (左上が0, 0)、<parameter>col</parameter>色で垂直に文字列<parameter>s</parameter>
-     を描画します。
-     <parameter>font</parameter>が1, 2, 3, 4, 5の場合は組込みフォントが
-     使用されます。
+     <function>ImageStringUp</function>は、画像
+     <parameter>im</parameter>上に座標(<parameter>x</parameter>,
+     <parameter>y</parameter>)から (左上が0, 0)、
+     <parameter>col</parameter>色で垂直に文字列
+     <parameter>s</parameter> を描画します。
+     <parameter>font</parameter>が1, 2, 3, 4, 5の場合は組込みフォント
+     が使用されます。
     </para>
     <para>
      <function>imageloadfont</function>も参考にしてください。
@@ -2007,7 +2071,7 @@ ImageDestroy($im);
       <programlisting role="php">
 &lt;?php
 if(ImageTypes() &amp; IMG_PNG) {
-       echo "PNG Support is enabled";
+       echo "PNG サポートが有効です";
 }
        ?&gt;
       </programlisting>
