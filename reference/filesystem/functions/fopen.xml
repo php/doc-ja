@@ -1,124 +1,229 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- splitted from ./ja/functions/filesystem.xml, last change in rev 1.1 -->
-<!-- last change to 'fopen' in en/ tree in rev 1.2 -->
+<!-- last change to 'fopen' in en/ tree in rev 1.17 -->
   <refentry id="function.fopen">
    <refnamediv>
     <refname>fopen</refname>
     <refpurpose>ファイルまたはURLをオープンする</refpurpose>
    </refnamediv>
    <refsect1>
-    <title>説明</title>
+    <title>Description</title>
      <methodsynopsis>
-      <type>int</type><methodname>fopen</methodname>
+      <type>resource</type><methodname>fopen</methodname>
       <methodparam><type>string</type><parameter>filename</parameter></methodparam>
       <methodparam><type>string</type><parameter>mode</parameter></methodparam>
-      <methodparam><type>int</type><parameter>
-        <replaceable><optional>use_include_path</optional></replaceable>
-       </parameter></methodparam>
+      <methodparam choice="opt"><type>int</type><parameter>use_include_path</parameter></methodparam>
+      <methodparam choice="opt"><type>resource</type><parameter>zcontext</parameter></methodparam>
      </methodsynopsis>
     <simpara>
-     <parameter>filename</parameter>が"http://"(大文字小文字は区別しません)
-     で始まっている場合、指定されたサーバに対するHTTP 1.0コネクションが
-     オープンされ、HTTP　GETメソッドを用いてそのページがリクエストされ、
-     返された応答の本体の先頭を指すファイルポインタが返されます。
-     名前に基づく仮想ホストを処理するために'Host:' ヘッダが、リクエストで
-     送信されます。
+     <function>fopen</function>は<parameter>filename</parameter>で指定された
+     リソースをストリームに結び付けます。
+     <parameter>filename</parameter>が "scheme://..." の形式である場合、
+     それはURLとみなされ、PHPはそのプロトコルのハンドラー
+     （ラッパーとしても知られる）を探します。
+     もしもそのプロトコルに対するラッパーが登録されていない場合、
+     PHPはスクリプトに潜在的な問題があることを示すNOTICEを発行したうえで、
+     <parameter>filename</parameter>を通常のファイルとみなして
+     オープンすることを試みます。
     </simpara>
     <simpara>
-     ファイルポインタによりレスポンスの<emphasis>本体</emphasis>のみを
-     取得することが可能であることに注意して下さい。この関数を用いて
-     HTTPレスポンスにアクセスすることはできません。
+     PHPは、<parameter>filename</parameter>がローカルのファイルを示していると
+     みなすと、そのファイルへのストリームをオープンします。
+     ファイルのパーミッションが許可されているかどうか確認する必要があります。
+     &safemode; を有効にしている場合、
+     <link linkend="ini.open-basedir">open_basedir</link>
+     による更なる制限が加えられます。
     </simpara>
     <simpara>
-     PHP 4.0.5 より前のバージョンは、HTTPリダイレクトを処理しませんでし
-     た。このため、ディレクトリは末尾にスラッシュを含む必要がありました。
+     <parameter>filename</parameter>が登録されているプロトコルを
+     示しているとPHPが判断し、かつそのプロトコルがネットワークURLとして
+     登録されていれば、PHPは<link linkend="ini.allow-url-fopen">allow_url_fopen</link>
+     が有効となっているかどうかチェックします。
+     もしこれがオフになっていると、PHPはwarningを発行しfopenは失敗します。
     </simpara>
-    <simpara>
-     <parameter>filename</parameter>が"ftp://"(大文字小文字は区別しません)
-     で始まっている場合、指定されたサーバに対する
-     FTPコネクションがオープンされ、要求したファイルへのポインタが
-     返されます。そのサーバがパッシブ・モードFTPをサポートして
-     いない場合は、この関数は失敗します。
-     ftp経由で読みこみまたは書きこみのどちらかでファイルオープンする
-     ことが可能です、(しかし、同時に両方を行うことはできません。)
-    </simpara>
-    <simpara>
-     <parameter>filename</parameter>が"php://stdin","php://stdout",
-     "php://stderr"のどれかで始まっている場合、対応するstdioストリームが
-     オープンされます。
-     (この機能はPHP 3.0.13で導入されました。これ以前のバージョンでは、
-     stdioストリームにアクセスするために
-     "/dev/stdin"または"/dev/fd/0"のようなファイル名を使用する必要があります。)
-    </simpara>
-    <simpara>
-     <parameter>filename</parameter>が上記以外の場合、指定された
-     ファイルがファイルシステムよりオープンされ、そのオープンされた
-     ファイルへのファイルポインタが返されます。
-    </simpara>
-    <simpara>
-     オープンに失敗すると、この関数は&false;を返します。
-    </simpara>
+    <note>
+     <simpara>
+      サポートされているプロトコルのリストは<xref linkend="wrappers"/>にあります。
+      いくつかのプロトコル（<literal>wrappers</literal>にも関連する）は
+      <literal>context</literal> かつ/または &php.ini; のオプションをサポートします。
+      使用するプロトコルについてセットされるオプションのリストについては
+      それぞれのページを見てください。（例えば、 &php.ini; 上の
+      <literal>user_agent</literal>の値は<literal>http</literal>ラッパーが使用します）
+      <literal>contexts</literal>と<parameter>zcontext</parameter>引数についての
+      詳細は<xref linkend="ref.stream"/>をご覧ください。
+     </simpara>
+    </note>
     <para>
-     <parameter>mode</parameter>は次のどれかになります。
-     <itemizedlist>
-      <listitem>
-       <simpara>
-	 'r' - 読みこみのみでオープンします。ファイルポインタをファイルの
-	先頭に置きます。
-       </simpara>
-      </listitem>
-      <listitem>
-       <simpara>
-        'r+' - 読みこみ・書きこみ用にオープンします。ファイルポインタを
-	ファイルの先頭に置きます。
-       </simpara>
-      </listitem>
-      <listitem>
-       <simpara>
-        'w' - 書きこみのみでオープンします。ファイルポインタをファイルの
-	先頭に置き、ファイルサイズをゼロにします。ファイルが存在しない
-	場合には、作成を試みます。
-       </simpara>
-      </listitem>
-      <listitem>
-       <simpara>
-        'w+' - 読みこみ・書きこみ用でオープンします。ファイルポインタを
-	ファイルの先頭に置き、ファイルサイズをゼロにします。
-	ファイルが存在しない場合には、作成を試みます。
-       </simpara>
-      </listitem>
-      <listitem>
-       <simpara>
-        'a' - 書きこみのみでオープンします。ファイルポインタをファイルの
-	終端に置きます。ファイルが存在しない場合には、作成を試みます。
-       </simpara>
-      </listitem>
-      <listitem>
-       <simpara>
-        'a+' - 読みこみ・書きこみ用でオープンします。ファイルポインタを
-	ファイルの終端に置きます。ファイルが存在しない場合には、作成を
-	試みます。
-       </simpara>
-      </listitem>
-     </itemizedlist>
-     <parameter>mode</parameter> は文字'b'を指定することもできます。
-     これはバイナリとテキストのファイル形式が異なるシステムでのみ有効です。
-     (Windowsの場合です。UNIXでは不要です。)不要の場合、無視されます。
+     The <parameter>mode</parameter> parameter specifies the type of access
+     you require to the stream.  It may be any of the following:
+     <parameter>mode</parameter>引数はストリームに要求する
+     アクセスのタイプを指定します。
+     <table>
+      <title>
+       <function>fopen</function>で使用可能な
+       <parameter>mode</parameter>のリスト
+      </title>
+      <tgroup cols="2">
+       <thead>
+        <row>
+         <entry><parameter>mode</parameter></entry>
+         <entry>説明</entry>
+        </row>
+       </thead>
+       <tbody>
+        <row>
+         <entry><literal>'r'</literal></entry>
+         <entry>
+          読みこみのみでオープンします。ファイルポインタをファイルの
+          先頭に置きます。
+         </entry>
+        </row>
+        <row>
+         <entry><literal>'r+'</literal></entry>
+         <entry>
+          読みこみ・書きこみ用にオープンします。ファイルポインタを
+          ファイルの先頭に置きます。
+         </entry>
+        </row>
+        <row>
+         <entry><literal>'w'</literal></entry>
+         <entry>
+          書きこみのみでオープンします。ファイルポインタをファイルの
+          先頭に置き、ファイルサイズをゼロにします。ファイルが存在しない
+          場合には、作成を試みます。
+         </entry>
+        </row>
+        <row>
+         <entry><literal>'w+'</literal></entry>
+         <entry>
+          読みこみ・書きこみ用でオープンします。ファイルポインタを
+          ファイルの先頭に置き、ファイルサイズをゼロにします。
+          ファイルが存在しない場合には、作成を試みます。
+         </entry>
+        </row>
+        <row>
+         <entry><literal>'a'</literal></entry>
+         <entry>
+          書きこみのみでオープンします。ファイルポインタをファイルの
+          終端に置きます。ファイルが存在しない場合には、作成を試みます。
+         </entry>
+        </row>
+        <row>
+         <entry><literal>'a+'</literal></entry>
+         <entry>
+          読みこみ・書きこみ用でオープンします。ファイルポインタを
+          ファイルの終端に置きます。ファイルが存在しない場合には、作成を
+          試みます。
+         </entry>
+        </row>
+        <row>
+         <entry><literal>'x'</literal></entry>
+         <entry>
+          書き込みのみでオープンします。ファイルポインタをファイルの先頭に置きます。
+          ファイルが既に存在する場合には<function>fopen</function>は失敗します。
+          これは<literal>open(2)</literal>システムコールにおける
+          <literal>O_EXCL|O_CREAT</literal>フラグの指定と等価です。
+          このオプションはPHP4.3.2以降でサポートされ、また、
+          ローカルファイルに対してのみ有効です。
+         </entry>
+        </row>
+        <row>
+         <entry><literal>'x+'</literal></entry>
+         <entry>
+          読みこみ・書きこみ用でオープンします。ファイルポインタをファイルの先頭に置きます。
+          ファイルが既に存在する場合には<function>fopen</function>は失敗します。
+          これは<literal>open(2)</literal>システムコールにおける
+          <literal>O_EXCL|O_CREAT</literal>フラグの指定と等価です。
+          このオプションはPHP4.3.2以降でサポートされ、また、
+          ローカルファイルに対してのみ有効です。
+         </entry>
+        </row>
+       </tbody>
+      </tgroup>
+     </table>
     </para>
+    <note>
+     <para>
+      オペレーティングシステムファミリが異なると行末も異なります。
+      テキストファイルに書き出し、そこに改行を加えたいとき、
+      オペレーティングシステムにあわせた正しい改行コードを使用する必要があります。
+      UNIXベースのシステムでは改行に<literal>\n</literal>キャラクタを使用します。
+      Windowsベースのシステムでは<literal>\r\n</literal>を使用します。
+      マッキントッシュベースのシステムでは<literal>\r</literal>を使用します。
+     </para>
+     <para>
+      間違った改行コードでファイルに書き込むと、他のアプリケーション上でそのファイルを
+      開いた際に変な風に見えてしまいます。
+     </para>
+     <para>
+      Windows上では、<literal>\n</literal>を<literal>\r\n</literal>に透過的に変換する
+      text-mode変換フラグ(<literal>'t'</literal>)が提供されます。
+      それに対し、<literal>'b'</literal>を使って強制的にバイナリモードにすることもできます。
+      その場合データの変換はされません。
+      このフラグを使用するには、<literal>'b'</literal> または <literal>'t'</literal>を
+      <parameter>mode</parameter>引数の最後に追加してください。
+     </para>
+     <para>
+      デフォルトの変換モードはSAPIと使用しているPHPのバージョンによって異なります。
+      したがって、互換性の意味から、常に適切なフラグを指定することが推奨されます。
+      plain-textファイルを使用する場合には<literal>'t'</literal>モードを指定し、
+      改行に<literal>\n</literal>を使用すると、
+      メモ帳のようなアプリケーションで読めることを期待できます。
+      それ以外のケースでは<literal>'b'</literal>を使うべきです。
+     </para>
+     <para>
+      バイナリファイルを扱っているのに<literal>'b'</literal>フラグを指定しなかった場合、
+      画像ファイルが壊れたり、<literal>\r\n</literal>キャラクタがおかしくなる等の
+      問題を抱えてしまうでしょう。
+     </para>
+     <para>
+      <emphasis>
+       互換性維持のために、<function>fopen</function>でファイルをオープンする際は
+       常に<literal>'b'</literal>フラグを指定することが強く推奨されます。
+      </emphasis>
+     </para>
+     <para>
+      <emphasis>
+       互換性維持のために、<literal>'t'</literal>モードを使用または依存している
+       コードを書き直し、正しい改行コードと<literal>'b'</literal>モードを代わりに
+       使用することが、強く推奨されます。
+      </emphasis>
+     </para>
+     <para>
+      <emphasis>
+       PHP4.3.2以降では、バイナリモードとテキストモードを区別する全ての
+       プラットフォームにおいて、デフォルトのモードはバイナリにセットされます。
+       アップグレード後にスクリプトに問題が起きた場合は、
+       以上に述べたスクリプトの互換性を確保するまでの次善策として、
+       <literal>'t'</literal>フラグを使用してください。
+      </emphasis>
+     </para>
+    </note>
     <para>
-     オプションの2番目の引数を使用して、これに"1"を設定する
-     ことにより、<link linkend="ini.include-path">include_path</link>
+     オプションの３番目の引数<parameter>use_include_path</parameter>に'1'又は
+     &true; を設定することにより、<link linkend="ini.include-path">include_path</link>
      のファイルの検索も行うこともできます。
     </para>
+    <simpara>
+     If the open fails, the function returns &false; and an error of 
+     level <constant>E_WARNING</constant> is generated.  You may use
+     <link linkend="language.operators.errorcontrol">@</link> to 
+     suppress this warning.
+     オープンが失敗すると、関数は &false; を返し、<constant>E_WARNING</constant>
+     レベルのエラーを発行します。<link linkend="language.operators.errorcontrol">@</link>
+     を使ってこのwarningを抑制することもできます。
+    </simpara>
     <para>
      <example>
-      <title><function>fopen</function>の例</title>
+      <title><function>fopen</function> の例</title>
       <programlisting role="php">
 <![CDATA[
-$fp = fopen ("/home/rasmus/file.txt", "r");
-$fp = fopen ("/home/rasmus/file.gif", "wb");
-$fp = fopen ("http://www.php.net/", "r");
-$fp = fopen ("ftp://user:password@example.com/", "w");
+<?php
+$handle = fopen ("/home/rasmus/file.txt", "r");
+$handle = fopen ("/home/rasmus/file.gif", "wb");
+$handle = fopen ("http://www.example.com/", "r");
+$handle = fopen ("ftp://user:password@example.com/somefile.txt", "w");
+?>
 ]]>
       </programlisting>
      </example>
@@ -133,16 +238,27 @@ $fp = fopen ("ftp://user:password@example.com/", "w");
      Windows 環境では、ファイルパスで用いる全てのバックスラッシュを
      エスケープするかフォワードスラッシュを使用することに注意して下さい。
      <informalexample>
-      <programlisting role="php">
+      <programlisting role="php"> 
 <![CDATA[
-$fp = fopen ("c:\\data\\info.txt", "r");
+<?php
+$handle = fopen ("c:\\data\\info.txt", "r");
+?>
 ]]>
       </programlisting>
      </informalexample>
     </para>
     <simpara>
-     <function>fclose</function>,<function>fsockopen</function>, 
-     <function>socket_set_timeout</function>,<function>popen</function>
+     <xref linkend="wrappers"/>,
+     <function>fclose</function>,
+     <function>fgets</function>, 
+     <function>fread</function>,
+     <function>fwrite</function>,
+     <function>fsockopen</function>,
+     <function>file</function>,
+     <function>file_exists</function>,
+     <function>is_readable</function>,
+     <function>stream_set_timeout</function>,
+     <function>popen</function>
      も参照下さい。
     </simpara>
    </refsect1>
