@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.1 $ -->
+<!-- $Revision: 1.2 $ -->
  <chapter id="security.index">
   <title>セキュリティ</title>
 
@@ -1042,16 +1042,17 @@ if ($good_login == 1) { // 上のテストが失敗した場合、使用前に�
     用することが安全でないということを念頭においていて下さい。
    </para>
    <para>
-    When on, register_globals will inject (poison) your scripts will all
-    sorts of variables, like request variables from html forms.  This
-    coupled with the fact that PHP doesn't require variable initialization
-    means writing insecure code is that much easier.  It was a difficult
-    decision, but the PHP community decided to disable this directive by 
-    default.  When on, people use variables yet really don't know for sure
-    where they come from and can only assume.  Internal variables that are
-    defined in the script itself get mixed up with request data sent by
-    users and disabling register_globals changes this.  Let's demonstrate
-    with an example misuse of register_globals: 
+    register_globalsをonとした場合、この機能により、HTMLフォームから投
+    稿される変数と同時に、あらゆる種類の変数がスクリプトに注入される
+    (汚染される)ことになります。これは、PHPにおいては変数の初期化が不
+    要であるということにも関係し、安全でないコードを書くことが極めて容
+    易になるということを意味します。困難な変更でしたが、PHPコミュニティ
+    は、このディレクティブをデフォルトで無効とすることを決定しました。
+    onとした場合、どこから来たのかが不明であり、出処を仮定するしかない
+    変数を使用することになります。スクリプト自体で定義される内部変数は、
+    ユーザにより送信されたリクエストデータと混ざってしまいますが、
+    register_globals を無効とすることでこれを回避することができます。
+    以下にregister_globalsの誤った使用例を示しましょう。
    </para>
    <para>
     <example>
@@ -1077,29 +1078,30 @@ if ($authorized) {
     </example>
    </para>
    <para>
-    When register_globals = on, our logic above may be compromised.  When
-    off, <varname>$authorized</varname> can't be set via request so it'll
-    be fine, although it really is generally a good programming practice to 
-    initialize variables first.  For example, in our example above we might
-    have first done <literal>$authorized = false</literal>.  Doing this
-    first means our above code would work with register_globals on or off as 
-    users by default would be unauthorized.
+    register_globals = onとした場合、上記のロジックは破綻する可能性が
+    あります。offの場合、<varname>$authorized</varname>はリクエストに
+    より設定することはできず、正しく動作します。しかし、一般に良いプロ
+    グラミング法は、変数を最初に初期化することです。例えば、上の例で
+    <literal>$authorized = false</literal>を先頭に置いておくことができ
+    ます。これにより、ユーザはデフォルトで認証されない状態となるため、
+    register_globalsのon/offによらず上記のコードは動作します。
    </para>
    <para>
-    Another example is that of <link linkend="ref.session">sessions</link>.
-    When register_globals = on, we could also use
-    <varname>$username</varname> in our example below but again you must
-    realize that <varname>$username</varname> could also come from other
-    means, such as GET (through the URL).  
+    別の例は、 <link linkend="ref.session">セッション</link>に関するも
+    のです。register_globals = onとした場合、以下の例で
+    <varname>$username</varname>を使用することもできますが、
+    (URLにより)GETのような他の手段によっても
+    <varname>$username</varname> を設定することができることに留意する
+    必要があります。
    </para>
    <para>
     <example>
-     <title>Example use of sessions with register_globals on or off</title>
+     <title>register_globals on またはoffの場合のセッションの使用例</title>
      <programlisting role="php">
 <![CDATA[
 <?php
-// We wouldn't know where $username came from but do know $_SESSION is 
-// for session data 
+// $usernameの出処は不明だが、$_SESSIONがセッションデータであることは
+// 既知です。
 if (isset($_SESSION['username'])) {
     
     echo "Hello <b>{$_SESSION['username']}</b>";
@@ -1116,20 +1118,21 @@ if (isset($_SESSION['username'])) {
     </example>
    </para>
    <para>
-    It's even possible to take preventative measures to warn when forging is
-    being attempted. If you know ahead of time exactly where a variable
-    should be coming from, you can check to see if the submitted data is
-    coming from an inappropriate kind of submission.  While it doesn't
-    guarantee that data has not been forged, it does require an attacker to
-    guess the right kind of forging.  If you don't care where the request
-    data comes from, you can use <varname>$_REQUEST</varname> as it contains
-    a mix of GET, POST and COOKIE data.  See also the manual section on
-    using <link linkend="language.variables.external">variables from outside
-    of PHP</link>. 
+    偽造が試みられた時に警告するために予防的な計測を行うことも可能です。
+    ある変数の出処を前もって正確に知っている場合、
+    投稿されたデータが適切な投稿元からのものであるかを調べることができ
+    ます。これは、データが偽造されたものでないことを保証するわけではあ
+    りませんが、攻撃者による偽造の成立を限定的なものにすることができま
+    す。リクエストデータの出処を気にかけない場合、
+    <varname>$_REQUEST</varname> を使用することができます。
+    この変数には、GET、POST、COOKIEが合わさって含まれています。
+    本マニュアルの
+    <link linkend="language.variables.external">PHPの外部変数</link>の
+    セクションを参照して下さい。
    </para>
    <para>
     <example>
-     <title>Detecting simple variable poisoning</title>
+     <title>簡単に変数汚染を検出する</title>
      <programlisting role="php">
 <![CDATA[
 <?php
@@ -1155,12 +1158,14 @@ if (isset($_COOKIE['MAGIC_COOKIE'])) {
     </example>
    </para>
    <para>
-    Of course, simply turning off register_globals does not mean your code
-    is secure.  For every piece of data that is submitted, it should also be
-    checked in other ways.  Always validate your user data and initialize
-    your variables!  To check for unitialized variables you may turn up
-    <function>error_reporting</function> to show
-    <constant>E_NOTICE</constant> level errors.
+    もちろん、register_globalsをoffにするだけでは、使用するコードが安
+    全であることを意味しません。投稿された全てのデータ毎に
+    他の手段で検証することも必要です。ユーザデータを常に検証し、
+    使用する変数を初期化して下さい!
+    初期化されていない変数を調べるには、
+    <function>error_reporting</function>で
+    <constant>E_NOTICE</constant>レベルのエラーを有効にするように
+    して下さい。
    </para>
    
    &note.superglobals;
