@@ -1,36 +1,37 @@
-<?xml version="1.0" encoding="iso-8859-1"?>
-<!-- $Revision: 1.1 $ -->
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- $Revision: 1.2 $ -->
 <!-- splitted from ./en/functions/filesystem.xml, last change in rev 1.141 -->
 <!-- sync: 1.2 -->
   <refentry id="function.stream-register-wrapper">
    <refnamediv>
     <refname>stream_register_wrapper</refname>
-    <refpurpose>Register a URL wrapper implemented as a PHP class</refpurpose>
+    <refpurpose>PHP のクラスとして実装された URL ラッパーを登録する</refpurpose>
    </refnamediv>
    <refsect1>
-    <title>Description</title>
+    <title>説明</title>
     <methodsynopsis>
      <type>bool</type><methodname>stream_register_wrapper</methodname>
      <methodparam><type>string</type><parameter>protocol</parameter></methodparam>
      <methodparam><type>string</type><parameter>classname</parameter></methodparam>
     </methodsynopsis>
     <para>
-     <function>stream_register_wrapper</function> allows you to implement
-     your own protocol handlers and streams for use with all the other
-     filesystem functions (such as <function>fopen</function>,
-     <function>fread</function> etc.).
+     <function>stream_register_wrapper</function> は、自分で作った
+     プロトコルハンドラとストリームを実装し、それを <function>fopen</function>
+     や <function>fread</function> といったファイルシステムの関数と利用することを可能にします。
     </para>
     <para>
-     To implement a wrapper, you need to define a class with a number of
-     member functions, as defined below. When someone fopens your stream,
-     PHP will create an instance of <parameter>classname</parameter> and
-     then call methods on that instance.  You must implement the methods
-     exactly as described below - doing otherwise will lead to undefined
-     behaviour.
+     ラッパを実装するには、下記のようないくつかのメンバ関数を持った
+     クラスを定義しなくてはなりません。もし、誰かがあなたの作った
+     ストリームを <function>fopen</function> したとき、
+     <literal>PHP</literal> は <parameter>classname</parameter> のインスタンスを作り
+     以後そのインスタンスと共にメソッドを呼び出そうとします。
+     これらのメソッドは、下記に示したとおり、正確に実装されなければなりません。
+     さもないと、定義されていない動作をします。
     </para>
     <para>
-     <function>stream_register_wrapper</function> will return &false; if the
-     <parameter>protocol</parameter> already has a handler.
+     <function>stream_register_wrapper</function> は、
+     <parameter>protocol</parameter> というハンドラが既にある場合、
+     &false; を返します。
     </para>
 
     <methodsynopsis>
@@ -41,43 +42,42 @@
      <methodparam><type>string</type><parameter>opened_path</parameter></methodparam>
     </methodsynopsis>
     <para>
-     This method is called immediately after your stream object is
-     created.  <parameter>path</parameter> specifies the URL that was
-     passed to <function>fopen</function> and that this object is
-     expected to retrieve.  You can use <function>parse_url</function>
-     to break it apart.
+     このメソッドは、ストリームオブジェクトが生成された直後に呼び出されます。
+     <parameter>path</parameter> には、<function>fopen</function> に
+     与えられ、データの取得元となる URL が入ります。
+     <function>parse_url</function> を使えば、この URL を解釈できます。
     </para>
     <para>
-     <parameter>mode</parameter> is the mode used to open the file,
-     as detailed for <function>fopen</function>.  You are responsible
-     for checking that <parameter>mode</parameter> is valid for the
-     <parameter>path</parameter> requested.
+     <parameter>mode</parameter> は、ファイルを開く際に使われるモードです。
+     <function>fopen</function> で詳しく述べられているように、
+     この関数の側で、<parameter>mode</parameter> が要求された
+     <parameter>path</parameter> に適切かどうかを調べなくてはなりません。
     </para>
     <para>
-     <parameter>options</parameter> holds additional flags set
-     by the streams API. It can hold one or more of the following
-     values OR'd together.
+     <parameter>options</parameter> は、ストリーム API によってセットされる
+     付加的なフラグです。この値は次に挙げた値のいずれかか、
+     それらを二つ以上 OR 演算した値となります。
      <informaltable>
       <tgroup cols="2">
        <thead>
         <row>
-         <entry>Flag</entry>
-         <entry>Description</entry>
+         <entry>フラグ</entry>
+         <entry>説明</entry>
         </row>
        </thead>
        <tbody>
         <row>
          <entry>STREAM_USE_PATH</entry>
-         <entry>If <parameter>path</parameter> is relative, search
-          for the resource using the include_path.
+         <entry>もし <parameter>path</parameter> が相対パスだった場合、
+          include_path で指定されたパス内を探索します。
          </entry>
         </row>
         <row>
          <entry>STREAM_REPORT_ERRORS</entry>
-         <entry>If this flag is set, you are responsible for raising
-          errors using <function>trigger_error</function> during
-          opening of the stream.  If this flag is not set, you
-          should not raise any errors.
+         <entry>このフラグがセットされている場合は、ストリームのオープン時に
+          ラッパ側で <function>trigger_error</function> 関数を使い、エラーを
+          発生させる必要があります。逆に、このフラグがセットされていない場合は、
+          ラッパ側でエラーを発生させてはいけません。
          </entry>
         </row>
        </tbody>
@@ -85,14 +85,14 @@
      </informaltable>
     </para>
     <para>
-     If the <parameter>path</parameter> is opened successfully,
-     and STREAM_USE_PATH is set in <parameter>options</parameter>,
-     you should set <parameter>opened_path</parameter> to the full
-     path of the file/resource that was actually opened.
+     もし <parameter>path</parameter> に対するストリームのオープンに成功し、
+     STREAM_USE_PATH が <parameter>options</parameter> にセットされていた
+     際には、<parameter>opened_path</parameter> に、実際に開かれた
+     ファイルまたはリソースへの絶対パスをセットしなくてはなりません。
     </para>
     <para>
-     If the requested resource was opened successfully, you should
-     return &true;, otherwise you should return &false;
+     もし要求されたリソースを正常に開けた場合、&true; を、そうでなければ、
+     &false; を返さなくてはなりません。
     </para>
 
     <methodsynopsis>
@@ -100,9 +100,9 @@
      <methodparam><type>void</type><parameter></parameter></methodparam>
     </methodsynopsis>
     <para>
-     This method is called when the stream is closed, using
-     <function>fclose</function>.  You must release any resources
-     that were locked or allocated by the stream.
+     このメソッドは、<function>fclose</function>によってストリームが閉じられるときに呼び出されます。
+     この時点で、カスタムストリームの中でロックされたか確保されたリソースを
+     開放しなくてはなりません。
     </para>
 
     <methodsynopsis>
@@ -110,16 +110,15 @@
      <methodparam><type>int</type><parameter>count</parameter></methodparam>
     </methodsynopsis>
     <para>
-     This method is called in response to <function>fread</function>
-     and <function>fgets</function> calls on the stream.  You
-     must return up-to <parameter>count</parameter> bytes of data
-     from the current read/write position as a string.
-     If there are less than <parameter>count</parameter>
-     bytes available, return as many as are available.  If no
-     more data is available, return either &false; or an
-     empty string.
-     You must also update the read/write position of the stream
-     by the number of bytes that were successfully read.
+     このメソッドはカスタムストリームに対する <function>fread</function> または
+     <function>fgets</function> に対応して呼び出されます。
+     <parameter>count</parameter> バイトを超えない長さのデータが返される
+     ようにする必要があります。
+     <parameter>count</parameter> バイトよりも少ないデータしか準備できていない
+     場合は、その時点にあるだけを返します。もし渡すべきデータがもうなければ、
+     &false; または空文字列を返してください。
+     また、正常に読み込めた分だけ、ストリームの読み込み/書き出し操作における
+     内部位置を更新しなくてはなりません。
     </para>
 
     <methodsynopsis>
@@ -127,14 +126,15 @@
      <methodparam><type>string</type><parameter>data</parameter></methodparam>
     </methodsynopsis>
     <para>
-     This method is called in response to <function>fwrite</function>
-     calls on the stream.  You should store <parameter>data</parameter>
-     into the underlying storage used by your stream.  If there is not
-     enough room, try to store as many bytes as possible.
-     You should return the number of bytes that were successfully
-     stored in the stream, or 0 if none could be stored.
-     You must also update the read/write position of the stream
-     by the number of bytes that were successfully written.
+     このメソッドは、カスタムストリームに対する <function>fwrite</function> などの
+     書き出し動作に対応して呼び出されます。<parameter>data</parameter> には、
+     カスタムストリームで使われている下層にあるストレージに書き出されるべき
+     データが入っています。渡されたデータをすべて書き出せない場合は、
+     書き出せるだけ書き出します。このとき、正常にデータを書き出せた場合は、
+     その書き出せたバイト数を、書き出せなかった場合は 0 を返さなくては
+     なりません。
+     また、正常に読み込めた分だけ、ストリームの読み込み/書き出し操作における
+     内部位置を更新しなくてはなりません。
     </para>
    
     <methodsynopsis>
@@ -142,10 +142,12 @@
      <methodparam><type>void</type><parameter></parameter></methodparam>
     </methodsynopsis>
     <para>
-     This method is called in response to <function>feof</function>
-     calls on the stream.  You should return &true; if the read/write
-     position is at the end of the stream and if no more data is available
-     to be read, or &false; otherwise.
+     このメソッドは、ストリームに対する <function>feof</function> 関数の実行に
+     対応して呼び出されます。
+     もし、ストリームの読み込み/書き出し操作における内部位置が、
+     ストリームの終端にある場合は、あるいは、もう読み込むべきデータがない
+     場合は &true; を、その他の場合には &false; をそれぞれ返さなくては
+     なりません。
     </para>
 
     <methodsynopsis>
@@ -153,9 +155,9 @@
      <methodparam><type>void</type><parameter></parameter></methodparam>
     </methodsynopsis>
     <para>
-     This method is called in response to <function>ftell</function>
-     calls on the stream.  You should return the current read/write
-     position of the stream.
+     このメソッドは、ストリームに対する <function>ftell</function> 関数の
+     実行に対応して呼び出されます。
+     ストリームの読み込み/書き出し操作における内部位置を返します。
     </para>
 
     <methodsynopsis>
@@ -164,12 +166,14 @@
      <methodparam><type>int</type><parameter>whence</parameter></methodparam>
     </methodsynopsis>
     <para>
-     This method is called in response to <function>fseek</function>
-     calls on the stream.  You should update the read/write position
-     of the stream according to <parameter>offset</parameter> and
-     <parameter>whence</parameter>.  See <function>fseek</function>
-     for more information about these parameters.
-     Return &true; if the position was updated, &false; otherwise.
+     このメソッドは、ストリームに対する <function>fseek</function> 関数の
+     実行に対応して呼び出されます。
+     ストリームの読み込み/書き出し操作における内部位置を、
+     <parameter>offset</parameter> パラメータと <parameter>whence</parameter>
+     パラメータの値に従って更新しなければなりません。
+     なお、これらの値の取り方については、<function>fseek</function> を参照下さい。
+     正常に位置が更新できた場合には &true; を、失敗した場合は &false;
+     を返します。
     </para>
 
     <methodsynopsis>
@@ -177,21 +181,24 @@
      <methodparam><type>void</type><parameter></parameter></methodparam>
     </methodsynopsis>
     <para>
-     This method is called in response to <function>fflush</function>
-     calls on the stream.  If you have cached data in your stream
-     but not yet stored it into the underlying storage, you should
-     do so now.
-     Return &true; if the cached data was successfully stored (or
-     if there was no data to store), or &false; if the data could
-     not be stored.
+     このメソッドは、ストリームに対する <function>fflush</function> 関数の
+     実行に対応して呼び出されます。
+     もしカスタムストリームがデータをキャッシュしていて、
+     それをまだ下層にあるストレージへ記録していない場合は、
+     このメソッドが呼ばれた時に、それを書き出します。
+     もしキャッシュされたデータが正常に書き出された (あるいは、もう書くべきデータ
+     がない) 場合は、&true; を、もしくは、データを書き出すことができなかった
+     場合は &false; を返します。
     </para>
 
     <para>
-     The example below implements a var:// protocol handler that
-     allows read/write access to a named global variable using
-     standard filesystem stream functions such as <function>fread</function>.
-     The var:// protocol implemented below, given the url
-     "var://foo" will read/write data to/from $GLOBALS["foo"].
+     下記の例は、var:// プロトコルハンドラを実装し、
+     <function>fread</function> などの標準のファイルシステム関数
+     を利用して、指定されたグローバル変数に対するアクセスができるように
+     するものです。
+     var:// プロトコルは、"var://foo" として与えられた URL に対応して、
+     $GLOBALS["foo"] からデータを読み込んだり、そこにデータを書き込んだり
+     します。
 
      <example> 
       <title>A Stream for reading/writing global variables</title>
