@@ -1,0 +1,452 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.1 $ -->
+<!-- sync: 1.1 -->
+
+  <sect1 id="security.database">
+   <title>データベースのセキュリティ</title>
+
+   <simpara>
+    今日、ダイナミックなコンテンツを提供するウェブアプリケーションに
+    おいてはデータベースは欠く事のできなコンポーネントとなっています。
+    そういったデータベースには重要な、そして秘密にすべき情報が格納
+    されることになるので、それらをいかにして保護するかについて十分に
+    考慮する必要があります。
+   </simpara>
+   <simpara>
+    情報を取り出したり格納するためにはデータベースに接続する必要があります。
+    そして適切なクエリを送信し、結果を受け取り、切断します。クエリに
+    使用される言語はStructured Query Language (SQL)が一般的です。アタッカー
+    がどのように<link linkend="security.database.sql-injection">SQLに
+    干渉する</link>かについて参照してください。
+   </simpara>
+   <simpara>
+    皆さんがお気づきの様に、PHPそれ自体は貴方のデータベースを保護することは
+    ありません。以下のセクションはPHPスクリプトからどのようにデータベースに
+    アクセスし操作すればいいのか、とういことに関する非常に基本的な導入です。
+   </simpara>
+   <simpara>
+   このシンプルなルールを覚えて置いてください：それは「多重防衛」です。
+   より多くの箇所で、より多くの保護を行うことにより、アタッカーが攻撃に
+   成功して機密情報が漏洩する可能性は減っていきます。データベースと
+   アプリケーションを正しくデザインすることで貴方の心配を取り除くことが
+   できます。
+   </simpara>
+
+   <sect2 id="security.database.design">
+    <title>データベースのデザイン</title>
+     <simpara>
+      他人が用意した既存のものを使用するのでない限り、最初に行うのはデータベースの作成です。
+      データベースが作成されると、そのデータベースのオーナーは作成コマンドを
+      実行したユーザになります。通常、オーナー(とスーパーユーザー)のみが
+      そのデータベースに対して操作を行うことが出来ます。他のユーザがデータベースを
+      使用するには適切な権利が与えられている必要があります。
+     </simpara>
+     <simpara>
+      アプリケーションはデータベースにオーナー、もしくはスーパーユーザーとして
+      接続しては絶対にいけません。なぜならこれらのユーザは
+      例えばスキーマの変更(テーブルの削除等)や全コンテンツの削除、といった
+      あらゆるクエリーを実行することが出来るからです。
+     </simpara>
+     <simpara>
+      貴方が作成するアプリケーションがデータベースに対して行う操作の各方面ごとに、
+      捜査対象となるオブジェクトに対して、出来る限り少ない権限を持った複数の
+      ユーザを作成した方が良いでしょう。ユーザに対しては、最低限必要な権限のみを
+      与え、関係の無いデータへのアクセスを許可しないようにします。これは、
+      万が一侵入者がそのユーザの権限を以ってデータベースにアクセスした際に、
+      アプリケーションと関係の無いデータにまでアクセスされることを防ぐためです。
+     </simpara>
+     <simpara>
+      全てのビジネスロジックをウェブアプリケーション(つまり貴方のスクリプト)
+      で実装することは推奨されません。代わりに、ビュー、トリガー、ルールといった
+      データベースの機能を活用した方が良いでしょう。システムが更新され、
+      新しい機能がデータベースへのアクセスすることになった場合、個々のデータベース
+      クライアントごとに再度同様のロジックを実装しなければならなくなります。
+      さらに、トリガーは透過的に、そして自動的にフィールドを扱うことが出来るので、
+      デバッグ時や、トランザクションのロールバック時に役立ちます。
+     </simpara>
+   </sect2>
+
+   <sect2 id="security.database.connection">
+    <title>データベースへの接続</title>
+    <simpara>
+     更なるセキュリティのために、クライアント/サーバ間の通信においてSSLを用いた
+     暗号化を行った方が良いでしょう。もしくはsshを使用することも出来ます。
+     どちらかの手段を講じた後、トラフィックをモニタリングしてみれば
+     ここから何らかの情報を得ることが困難だという事が分かると思います。
+    </simpara>
+    <!--simpara>
+     If your database server native SSL support, consider to use <link
+     linkend="ref.openssl">OpenSSL functions</link> in communication between
+     PHP and database via SSL.
+    </simpara-->
+   </sect2>
+
+   <sect2 id="security.database.storage">
+    <title>ストレージの暗号化</title>
+    <simpara>
+     SSL/SSHによってクライアント/サーバ間で通信されるデータは保護されますが、
+     データベースに保存されたデータは保護されません。SSLはあくまで通信上の
+     プロトコルなのです。
+    </simpara>
+    <simpara>
+     一旦アタッカーがデータベースへ(ウェブサーバを通さずに)アクセスできてしまうと、
+     そこに格納されているデータ自体が暗号化されていない限り、自由に閲覧され、
+     使用されてしまいます。データを暗号化することによって、この脅威を減らすことが
+     できますが、この機能をサポートしているデータベースは僅かです。
+    </simpara>
+    <simpara>
+     この問題への最も簡単な対応策は、まず自分専用の暗号化パッケージを作成し、
+     それをあなたのPHPスクリプトから使用することです。PHPの<link 
+     linkend="ref.mcrypt">Mcrypt</link>, <link linkend="ref.mhash">Mhash</link>
+     といった幾つかの拡張モジュールは、様々な暗号化アルゴリズムをサポート
+     しているので役に立つでしょう。データ格納時に暗号化を行い、取得時に
+     復号化します。この方法についてはリファレンスを参照してください。
+    </simpara>
+    <simpara>
+     もし完全にデータを隠したい場合や、元のデータ自体は必要ない場合(つまり
+     表示されない場合)は、ハッシュも考慮に入れたほうが良いでしょう。
+     ハッシュの良く知られた使用方法は、パスワードをそのまま格納せずに、
+     そのMD5ハッシュ値を格納する方法です。<function>crypt</function>や
+     <function>md5</function>も参照してください。
+    </simpara>
+    <example>
+     <title>ハッシュパスワードフィールドを使う</title>
+     <programlisting role="php">
+<![CDATA[
+// ハッシュされたパスワードを格納する
+$query  = sprintf("INSERT INTO users(name,pwd) VALUES('%s','%s');",
+            addslashes($username), md5($password));
+$result = pg_exec($connection, $query);
+
+// パスワードが正しいかどうか問い合わせる
+$query = sprintf("SELECT 1 FROM users WHERE name='%s' AND pwd='%s';",
+            addslashes($username), md5($password));
+$result = pg_exec($connection, $query);
+
+if (pg_numrows($result) > 0) {
+    echo "ようこそ、$username さん!";
+}
+else {
+    echo "$username の認証が失敗しました。";
+}
+]]>
+     </programlisting>
+    </example>
+   </sect2>
+
+   <sect2 id="security.database.sql-injection">
+    <title>SQLの発行</title>
+    <simpara>
+     多くの開発者はSQLクエリがどのように改竄されるかということを余り
+     気にかけておらず、またSQLクエリは信用できるものと考えているようです。
+     実際にはSQLクエリはアクセス制限を回避することが可能で、従って
+     通常の認証や権限のチェックを無視することができます。時には、
+     OSレベルのコマンドを実行できてしまうこともあります。
+    </simpara>
+    <simpara>
+     Direct SQL Command Injection(SQLコマンドの直接実行)という手法は、
+     攻撃者がSQLコマンドを生成もしくは既存のコマンドを変更することで
+     隠蔽すべきデータを公開したり、重要なデータを書き換えたり、データベース
+     ホストで危険なシステムレベルのコマンドを実行したりするものの事です。
+     この手法は、ユーザからの入力をスタティックなパラメータと組み合わせて
+     SQLクエリを生成するアプリケーションにおいて使用されます。以下の例は
+     不幸なことに実際の事例に基づいたものです。
+    </simpara>
+    <para>
+     入力のチェックを怠っており、スーパーユーザもしくはデータベース作成権限を
+     持つユーザ以外のユーザでデータベースに接続<emphasis>していない</emphasis>
+     ために、攻撃者はデータベースにスーパーユーザを作成することが出来ます。
+     <example>
+      <title>
+       表示するデータを分割し ... そしてスーパーユーザを作成します。
+       (PostgreSQLとMySQLの例)
+      </title>
+      <programlisting role="php">
+<![CDATA[
+$offset = argv[0]; // 入力チェックが行われていません！
+$query  = "SELECT id, name FROM products ORDER BY name LIMIT 20 OFFSET $offset;";
+// PostgreSQLの場合
+$result = pg_exec($conn, $query);
+// MySQLの場合
+$result = mysql_query($query);
+]]>
+      </programlisting>
+     </example>
+      通常のユーザは、<varname>$offset</varname>がURL埋め込まれている
+      '次へ'または'前へ'リンクをクリックします。スクリプトは、受け取った
+      <varname>$offset</varname>が数字であることを期待します。しかしながら、
+      攻撃者は<function>urlencode</function>された以下のようなURLを追加
+      することで攻撃を試みます。
+      <informalexample>
+       <programlisting>
+<![CDATA[
+// PostgreSQLの場合
+0;
+insert into pg_shadow(usename,usesysid,usesuper,usecatupd,passwd)
+    select 'crack', usesysid, 't','t','crack'
+    from pg_shadow where usename='postgres';
+--
+
+// MySQLの場合
+0;
+UPDATE user SET Password=PASSWORD('crack') WHERE user='root';
+FLUSH PRIVILEGES;
+]]>
+       </programlisting>
+      </informalexample>
+      このようなことが行われると、スクリプトは攻撃者にスーパーユーザ権限での
+      アクセスを提供してしまいます。<literal>0;</literal>が正しいオフセット
+      指していると同時に、クエリをそこで終端させていることに気をつけて下さい。
+    </para>
+    <note>
+     <para>
+      SQLパーサにクエリの残りの部分を無視させるために開発者によく使わ
+      れる技法として、SQLのコメント符合である<literal>--</literal>があ
+      ります。
+     </para>
+    </note>
+    <para>
+    パスワードを取得する恐るべき手段に、サイトの検索結果のページを欺く
+    というものがあります。攻撃する者が必要とするものは、投稿された変数
+    の中でSQL命令で使用される際に正しく扱われていないものがあるかどう
+    かを確かめるだけです。これらのフィルタは、通常、
+    <literal>SELECT</literal>文の<literal>WHERE, ORDER BY,
+    LIMIT</literal>及び<literal>OFFSET</literal>句をカスタマイズするた
+    めに前に置かれる形で設定されます。使用するデータベースが
+    <literal>UNION</literal>構造をサポートしている場合、
+    攻撃者は元のクエリに任意のテーブルからパスワードのリストを取得する
+    クエリを追加しようとするかもしれません。
+    暗号化されたパスワードフィールドを使用することが強く推奨されます。
+     <example>
+      <title>
+      記事...そして(全てのデータベースサーバーの)いくつかのパスワード
+       のリストを表示する
+      </title>
+      <programlisting role="php">
+<![CDATA[
+$query  = "SELECT id, name, inserted, size FROM products
+                  WHERE size = '$size'
+                  ORDER BY $order LIMIT $limit, $offset;";
+$result = odbc_exec($conn, $query);
+]]>
+      </programlisting>
+     </example>
+     クエリの静的な部分は、以下のように全てのパスワードを外部にもらす別の
+     <literal>SELECT</literal>文と組み合わせることができます。
+     <informalexample>
+      <programlisting>
+<![CDATA[
+'
+union select '1', concat(uname||'-'||passwd) as name, '1971-01-01', '0' from usertable;
+--
+]]>
+      </programlisting>
+     </informalexample>
+     (<literal>'</literal>及び<literal>--</literal>を使用する) 
+     このクエリが<varname>$query</varname>で使用される変数の１つに代入
+     された場合、この悪意のあるクエリが実行されることになります。
+    </para>
+    <para>
+     SQL UPDATE もデータベースを攻撃するために使用されます。これらのク
+     エリも切捨てたり新しいクエリを元のクエリに追加することによる攻撃
+     を受けます。しかし、攻撃者は<literal>SET</literal>句を使用する可
+     能性があります。この場合、クエリを成功させるためにいくつかのスキー
+     マ情報を保有する必要があります。これは、フォームの変数名や総当た
+     り法により調べることができます。パスワードまたはユーザ名を保存す
+     るフィールド用の命名記法はそう多くはありません。
+     <example>
+     <title>
+     パスワードのリセットから ... (全てのデータベースサーバーで)より多
+     くの権限を得るまで
+     </title>
+      <programlisting role="php">
+<![CDATA[
+$query = "UPDATE usertable SET pwd='$pwd' WHERE uid='$uid';";
+]]>
+      </programlisting>
+     </example>
+     しかし、悪意のあるユーザは、管理者のパスワードを変更するために
+     値 <literal>' or uid like'%admin%'; --</literal> を
+     <varname>$uid</varname> に代入するか、または、より多くの権限を得
+     るために、単純に<varname>$pwd</varname> に(後ろに空白を付けて)
+     <literal>"hehehe', admin='yes', trusted=100 "</literal>と設定する
+     可能性があります。この場合、このクエリは以下のように改謬されてし
+     まいます。
+     <informalexample>
+      <programlisting role="php">
+<![CDATA[
+// $uid == ' or uid like'%admin%'; --
+$query = "UPDATE usertable SET pwd='...' WHERE uid='' or uid like '%admin%'; --";
+
+// $pwd == "hehehe', admin='yes', trusted=100 "
+$query = "UPDATE usertable SET pwd='hehehe', admin='yes', trusted=100 WHERE ...;"
+]]>
+      </programlisting>
+     </informalexample>
+    </para>
+    <para>
+    恐ろしい例として、いくつかのデータベースホストのオペレーティン
+    グシステムレベルのコマンドがアクセス可能となる方法を示します。
+     <example>
+     <title>データベースホストのオペレーティングシステムを攻撃する
+     (MSSQLサーバー)</title>
+      <programlisting role="php">
+<![CDATA[
+$query  = "SELECT * FROM products WHERE id LIKE '%$prod%'";
+$result = mssql_query($query);
+]]>
+      </programlisting>
+     </example>
+     攻撃者が、値
+     <literal>a%' exec master..xp_cmdshell 'net user test testpass /ADD' --</literal>
+     を<varname>$prod</varname>に投稿した場合、
+     <varname>$query</varname> は以下のようになります。
+     <informalexample>
+      <programlisting role="php">
+<![CDATA[
+$query  = "SELECT * FROM products
+                    WHERE id LIKE '%a%'
+                    exec master..xp_cmdshell 'net user test testpass /ADD'--";
+$result = mssql_query($query);
+]]>
+      </programlisting>
+     </informalexample>
+     MSSQLサーバ−は、新規ユーザをローカルアカウント用データベースに追
+     加するコマンドを含むSQL命令をバッチ実行します。
+     このアプリケーションが<literal>sa</literal>で実行され、
+     MSSQLSERVERサービスが充分な権限で実行されている場合、攻撃者は
+     このマシンにアクセスする権限を有することになります。
+    </para>
+    <note>
+     <para>
+     上記のいくつかの例は、データベースサーバの種類に依存しています。
+      これは、他の製品に対して同様な攻撃ができないことを意味するもので
+      はありません。使用しているデータベースが他の手段で攻撃可能である
+      可能性もあります。
+     </para>
+    </note>
+
+    <sect3 id="security.database.avoiding">
+     <title>回避する方法</title>
+     <simpara>
+     ほとんどの例では攻撃する者は特定のデータベースのスキーマに関して
+     若干の情報を保有している必要があると弁解されるかもしれません。
+     これは正しいですが、いつ何時これが外部にもれうるかを知ることはで
+     きませんし、いったんこの情報がもれると、データベースが外部に開示
+     される可能性があります。オープンソースまたは一般的に入手可能なデー
+     タベース処理パッケージを使用している場合(これはコンテンツ監理シス
+     テムまたはフォーラムに含まれている可能性があります)、侵入者は簡単
+     に使用されているコードの一部を入手することができます。そのコード
+     の設計が悪い場合にもセキュリティリスクを生じる可能性があります。
+     </simpara>
+     <simpara>
+     これらの攻撃は、セキュリティを考慮して書かれていないコードを攻撃
+     する方法です。特にクライアント側から入力されるあらゆる種類の入力
+     を決して信用しないで下さい。これは、selectボックスやhidden input
+     フィールド、Cookieの場合も同様です。最初の例は、このような欠点の
+     ないクエリが破滅をもたらしうることを示すものです。
+     </simpara>
+
+     <itemizedlist>
+      <listitem>
+       <simpara>
+       データベースにスーパーユーザーまたはデータベースの所有者として
+        接続しないで下さい。 非常に制限された権限を有するカスタマイズ
+        されたユーザを常に使用して下さい。
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+       指定された入力が期待するデータ型であることを確認して下さい。
+       PHPは、多くの種類の入力検証用関数を有しており、
+        <link linkend="ref.variables">変数関連の関数</link>や
+        <link linkend="ref.ctype">文字型関数</link>にある簡単な関数
+        (例: それぞれ、<function>is_numeric</function>,
+       <function>ctype_digit</function>) や、
+        <link linkend="ref.pcre">Perl互換の正規表現</link>のサポートま
+       であります。
+       </simpara>
+      </listitem>
+      <listitem>
+       <para>
+       アプリケーションが、数値入力を期待している場合、データを
+       <function>is_numeric</function>で検証するか、
+       <function>settype</function>により暗黙の型変換を行うか、
+       <function>sprintf</function>により数値表現を使用することを検討
+       してみて下さい。
+        <example>
+         <title>ページング用のクエリを構築するためのより安全な方法</title>
+         <programlisting role="php">
+<![CDATA[
+settype($order, 'integer');
+$query  = "SELECT id, name FROM products ORDER BY name LIMIT 20 OFFSET $offset;";
+
+// フォーマット文字列の%dに注意して下さい。%sを使用しても意味がありません。
+$query = sprintf("SELECT id, name FROM products ORDER BY name LIMIT 20 OFFSET %d;",
+                 $offset);
+]]>
+         </programlisting>
+        </example>
+       </para>
+      </listitem>
+      <listitem>
+       <simpara>
+       データベースに渡す数値以外のユーザ入力を
+       <function>addslashes</function> または
+       <function>addcslashes</function>でクオートして下さい。
+       <link linkend="security.database.storage">最初の例</link>を参照
+       して下さい。前期の例が示すように、クエリの静的な部分をクオート
+       するだけでは充分ではなく、簡単にクラックされてしまう可能性があ
+       ります。
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+       データベース固有の情報、特にスキーマに関する情報は出力してはい
+       きません。<link linkend="security.errors">エラー出力</link>およ
+       び<link linkend="ref.errorfunc">エラー処理およびログ関数</link>
+       も参照下さい。
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+       ユーザがテーブルまたはビューに直接アクセスできないように、
+       データアクセスを抽象化することを目的としてストアドプロシージャ
+       及び事前に定義したカーソルを使用することもできますが、このソリュー
+       ションには、副作用があります。
+       </simpara>
+      </listitem>
+     </itemizedlist>
+
+     <simpara>
+     これらのケースにおいて、スクリプトまたはサポートされている場合は
+     データベース自体でクエリのログをとることが有益です。
+     明らかにログは破壊的な行為を防止することはできませんが、攻撃され
+     たアプリケーションを追跡する際には有効です。ログ自体は有益ではあ
+     りませんが、含まれている情報は有益です。通常、より詳細なログをと
+     る方が良いでしょう。
+     </simpara>
+    </sect3>
+   </sect2>
+  </sect1>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"../../manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
