@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.2 $ -->
+<!-- $Revision: 1.3 $ -->
+<!-- EN-Revision: 1.17 Maintainer: hirokawa Status: ready -->
+
 <refentry id="function.fsockopen">
  <refnamediv>
   <refname>fsockopen</refname>
@@ -10,30 +12,25 @@
  <refsect1>
   <title>説明</title>
   <methodsynopsis>
-   <type>int</type><methodname>fsockopen</methodname>
-   <methodparam><type>string</type><parameter>hostname</parameter></methodparam>
+   <type>resource</type><methodname>fsockopen</methodname>
+   <methodparam><type>string</type><parameter>target</parameter></methodparam>
    <methodparam><type>int</type><parameter>port</parameter></methodparam>
-   <methodparam choice="opt"><type>int</type><parameter>errno</parameter></methodparam>
-   <methodparam choice="opt"><type>string</type><parameter>errstr</parameter></methodparam>
+   <methodparam choice="opt"><type>int</type><parameter>&amp;errno</parameter></methodparam>
+   <methodparam choice="opt"><type>string</type><parameter>&amp;errstr</parameter></methodparam>
    <methodparam choice="opt"><type>float</type><parameter>timeout</parameter></methodparam>
   </methodsynopsis>
   <para>
-   Internetドメイン(AF_INET)または Unixドメイン(AF_UNIX、TCPまたは
-   UDPを使用)にてストリーム接続を初期化します。Internetドメインの場合、
-   <parameter>hostname</parameter>のポート<parameter>port</parameter>
-   へのTCPソケット接続がオープンされます。
-   UDP接続を行う際には、<parameter>udp://hostname</parameter>のよう
-   に明示的にプロトコルを指定する必要があります。Unixドメインの場合、
-   <parameter>hostname</parameter>はソケットへのパスとして使用され、
-   <parameter>port</parameter> はこの場合0とする必要があります。
-   オプションの<parameter>timeout</parameter>により接続システムコール
-   がタイムアウトするまでの秒数を指定することが可能です。
+   <parameter>target</parameter>に指定されたリソースへのソケット接続を初期化します。
+   PHPは<xref linkend="transports"/>に記述されているように
+   Internetドメインまたは Unixドメインの中のターゲットをサポートします。
+   サポートされるトランスポートのリストは、<function>stream_get_transports</function>
+   を使って取得することもできます。
   </para>
   <note>
    <simpara>
     ソケット経由でデータを読み書きする際のタイムアウトを設定する必要がある場合、
     <function>fsockopen</function> の <parameter>timeout</parameter> パラメータは、
-    ソケットに接続する間のみ適用されるため、
+    ソケットに接続する間にだけ適用されるため、
     <function>socket_set_timeout</function>を使用してください。
    </simpara>
   </note>
@@ -76,15 +73,19 @@
     <programlisting role="php">
 <![CDATA[
 <?php
-$fp = fsockopen ("www.php.net", 80, $errno, $errstr, 30);
+$fp = fsockopen("www.example.com", 80, $errno, $errstr, 30);
 if (!$fp) {
-    echo "$errstr ($errno)<br>\n";
+    echo "$errstr ($errno)<br />\n";
 } else {
-    fputs ($fp, "GET / HTTP/1.0\r\nHost: www.php.net\r\n\r\n");
+    $out = "GET / HTTP/1.1\r\n";
+    $out .= "Host: www.example.com\r\n";
+    $out .= "Connection: Close\r\n\r\n";
+
+    fwrite($fp, $out);
     while (!feof($fp)) {
-        echo fgets ($fp,128);
+        echo fgets($fp, 128);
     }
-    fclose ($fp);
+    fclose($fp);
 }
 ?>
 ]]>
@@ -99,9 +100,9 @@ if (!$fp) {
 <?php
 $fp = fsockopen("udp://127.0.0.1", 13, $errno, $errstr);
 if (!$fp) {
-    echo "ERROR: $errno - $errstr<br>\n";
+    echo "ERROR: $errno - $errstr<br />\n";
 } else {
-    fwrite($fp,"\n");
+    fwrite($fp, "\n");
     echo fread($fp, 26);
     fclose($fp);
 }
