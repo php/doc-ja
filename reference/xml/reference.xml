@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.4 $ -->
+<!-- $Revision: 1.5 $ -->
+<!-- EN-Revision: 1.17 Maintainer: hirokawa Status: ready -->
  <reference id="ref.xml">
   <title>XML パーサ関数</title>
   <titleabbrev>XML</titleabbrev>
@@ -16,7 +17,7 @@
      で参照することができます。
     </para>
      <para>
-      このPHP拡張機能は、James Clark氏の
+      このPHPエクステンションは、James Clark氏の
       <productname>expat</productname>のサポートをPHPに付加します。
       このツールキットは、XML ドキュメントの構文解析をしますが、
       検証は行いません。3種類のソース
@@ -39,8 +40,8 @@
    <section id="xml.requirements">
     &reftitle.required;
     <para>
-     この拡張機能は、<productname>expat</productname> を使用します。こ
-     れは、<ulink url="&url.expat;">&url.expat;</ulink>にあります。
+     このエクステンションは、<productname>expat</productname> を使用します。
+     これは、<ulink url="&url.expat;">&url.expat;</ulink>にあります。
      expatに付属のMakefileは、デフォルトでライブラリを構築しません。こ
      れを行うmakeルールを次のように指定できます。
      <programlisting role="makefile">
@@ -64,7 +65,16 @@ libexpat.a: $(OBJS)
 
    <section id="xml.resources">
     &reftitle.resources;
-    &no.resource;
+    <section id="xml.resources.xml">
+     <title><literal>xml</literal></title>
+     <para>
+      <function>xml_parser_create</function>および
+      <function>xml_parser_create_ns</function> により返された
+      <literal>xml</literal>リソースは、
+      このエクステンションにより提供された関数で使用される
+      XMLパーサのインスタンスを参照します。
+     </para>
+    </section>
    </section>
 
    &reference.xml.constants;
@@ -116,9 +126,7 @@ libexpat.a: $(OBJS)
          </entry>
         </row>
         <row>
-         <entry>
-          <function>xml_set_default_handler</function>
-         </entry>
+         <entry><function>xml_set_default_handler</function></entry>
          <entry>
           別のハンドラでしないことをデフォルトのハンドラで行います。
           XML およびドキュメント型の宣言のようなことをデフォルトハンドラで
@@ -135,9 +143,7 @@ libexpat.a: $(OBJS)
          </entry>
         </row>
         <row>
-         <entry>
-          <function>xml_set_notation_decl_handler</function>
-         </entry>
+         <entry><function>xml_set_notation_decl_handler</function></entry>
          <entry>
           このハンドラは、表記の宣言用にコールされます。
          </entry>
@@ -256,10 +262,9 @@ libexpat.a: $(OBJS)
    </section>
 
    <section id="xml.examples">
-    <title>いくつかの例</title>
+    &reftitle.examples;
     <para>
-     以下にXMLドキュメントを処理するPHPスクリプトの例をいくつか示しま
-     す。
+     以下にXMLドキュメントを処理するPHPスクリプトの例をいくつか示します。
     </para>
     <section id="example.xml-structure">
      <title>XML エレメント構造の例</title>
@@ -270,10 +275,12 @@ libexpat.a: $(OBJS)
        <title>XML エレメント構造を表示</title>
        <programlisting role="php">
 <![CDATA[
+<?php
 $file = "data.xml";
 $depth = array();
 
-function startElement($parser, $name, $attrs){
+function startElement($parser, $name, $attrs)
+{
     global $depth;
     for ($i = 0; $i < $depth[$parser]; $i++) {
         print "  ";
@@ -282,7 +289,8 @@ function startElement($parser, $name, $attrs){
     $depth[$parser]++;
 }
 
-function endElement($parser, $name){
+function endElement($parser, $name)
+{
     global $depth;
     $depth[$parser]--;
 }
@@ -300,6 +308,7 @@ while ($data = fread($fp, 4096)) {
     }
 }
 xml_parser_free($xml_parser);
+?>
 ]]>
        </programlisting>
       </example>
@@ -315,8 +324,11 @@ xml_parser_free($xml_parser);
 	この例は、XMLドキュメントのタグを直接HTMLタグにマップします。
 	"map array" にないエレメントは無視されます。もちろん、この例は、
 	特定の XML ドキュメント型を有する場合のみ動作します。
+       </para>
+       <para>
 	<programlisting role="php">
 <![CDATA[
+<?php
 $file = "data.xml";
 $map_array = array(
     "BOLD"     => "B",
@@ -324,32 +336,36 @@ $map_array = array(
     "LITERAL"  => "TT"
 );
 
-function startElement($parser, $name, $attrs){
+function startElement($parser, $name, $attrs) 
+{
     global $map_array;
-    if ($htmltag = $map_array[$name]) {
-        print "<$htmltag>";
+    if (isset($map_array[$name])) {
+        echo "<$map_array[$name]>";
     }
 }
 
- function endElement($parser, $name){
+function endElement($parser, $name) 
+{
     global $map_array;
-    if ($htmltag = $map_array[$name]) {
-        print "</$htmltag>";
+    if (isset($map_array[$name])) {
+        echo "</$map_array[$name]>";
     }
 }
 
-function characterData($parser, $data){
-    print $data;
+function characterData($parser, $data) 
+{
+    echo $data;
 }
 
 $xml_parser = xml_parser_create();
-// $map_array の中のタグをみつけられるように大文字変換を行う
+// use case-folding so we are sure to find the tag in $map_array
 xml_parser_set_option($xml_parser, XML_OPTION_CASE_FOLDING, true);
 xml_set_element_handler($xml_parser, "startElement", "endElement");
 xml_set_character_data_handler($xml_parser, "characterData");
 if (!($fp = fopen($file, "r"))) {
     die("could not open XML input");
 }
+
 while ($data = fread($fp, 4096)) {
     if (!xml_parse($xml_parser, $data, feof($fp))) {
         die(sprintf("XML error: %s at line %d",
@@ -358,6 +374,7 @@ while ($data = fread($fp, 4096)) {
     }
 }
 xml_parser_free($xml_parser);
+?>
 ]]>
 	</programlisting>
        </para>
@@ -383,43 +400,49 @@ xml_parser_free($xml_parser);
        <title>外部エンティティの例</title>
        <programlisting role="php">
 <![CDATA[
+<?php
 $file = "xmltest.xml";
 
-function trustedFile($file){
-    // 自己所有のローカルファイルのみを信頼する
+function trustedFile($file) 
+{
+    // only trust local files owned by ourselves
     if (!eregi("^([a-z]+)://", $file) 
         && fileowner($file) == getmyuid()) {
-        return true;
+            return true;
     }
     return false;
 }
 
-function startElement($parser, $name, $attribs){
-    print "&lt;<font color=\"#0000cc\">$name</font>";
+function startElement($parser, $name, $attribs) 
+{
+    echo "&lt;<font color=\"#0000cc\">$name</font>";
     if (sizeof($attribs)) {
         while (list($k, $v) = each($attribs)) {
-            print " <font color=\"#009900\">$k</font>=\"<font
-	           color=\"#990000\">$v</font>\"";
+            echo " <font color=\"#009900\">$k</font>=\"<font 
+                   color=\"#990000\">$v</font>\"";
         }
     }
-    print "&gt;";
+    echo "&gt;";
 }
 
-function endElement($parser, $name){
-    print "&lt;/<font color=\"#0000cc\">$name</font>&gt;";
+function endElement($parser, $name) 
+{
+    echo "&lt;/<font color=\"#0000cc\">$name</font>&gt;";
 }
 
-function characterData($parser, $data){
-    print "<b>$data</b>";
+function characterData($parser, $data) 
+{
+    echo "<b>$data</b>";
 }
 
-function PIHandler($parser, $target, $data){
+function PIHandler($parser, $target, $data) 
+{
     switch (strtolower($target)) {
         case "php":
             global $parser_file;
-            // 処理されるドキュメントが "信頼されている" 場合、
-	    // PHP コードをその内部で実行します。
-	    // そうでない場合、そのコードが代わりに表示されます。
+            // If the parsed document is "trusted", we say it is safe
+            // to execute PHP code inside it.  If not, display the code
+            // instead.
             if (trustedFile($parser_file[$parser])) {
                 eval($data);
             } else {
@@ -430,7 +453,8 @@ function PIHandler($parser, $target, $data){
     }
 }
 
-function defaultHandler($parser, $data){
+function defaultHandler($parser, $data) 
+{
     if (substr($data, 0, 1) == "&" && substr($data, -1, 1) == ";") {
         printf('<font color="#aa00aa">%s</font>', 
                 htmlspecialchars($data));
@@ -441,7 +465,7 @@ function defaultHandler($parser, $data){
 }
 
 function externalEntityRefHandler($parser, $openEntityNames, $base, $systemId,
-                                  $publicId){
+                                  $publicId) {
     if ($systemId) {
         if (!list($parser, $fp) = new_xml_parser($systemId)) {
             printf("Could not open entity %s at %s\n", $openEntityNames,
@@ -463,7 +487,8 @@ function externalEntityRefHandler($parser, $openEntityNames, $base, $systemId,
     return false;
 }
 
-function new_xml_parser($file) {
+function new_xml_parser($file) 
+{
     global $parser_file;
 
     $xml_parser = xml_parser_create();
@@ -488,7 +513,7 @@ if (!(list($xml_parser, $fp) = new_xml_parser($file))) {
     die("could not open XML input");
 }
 
-print "<pre>";
+echo "<pre>";
 while ($data = fread($fp, 4096)) {
     if (!xml_parse($xml_parser, $data, feof($fp))) {
         die(sprintf("XML error: %s at line %d\n",
@@ -496,8 +521,8 @@ while ($data = fread($fp, 4096)) {
                     xml_get_current_line_number($xml_parser)));
     }
 }
-print "</pre>";
-print "parse complete\n";
+echo "</pre>";
+echo "parse complete\n";
 xml_parser_free($xml_parser);
 
 ?>
@@ -505,7 +530,7 @@ xml_parser_free($xml_parser);
         </programlisting>
       </example>
      </para>
-     <para id="example.xml-xmltest.xml">
+     <para>
       <example>
        <title>xmltest.xml</title>
        <programlisting role="xml">
@@ -541,7 +566,7 @@ xml_parser_free($xml_parser);
        </programlisting>
       </example>
      </para>
-     <para id="example.xml-xmltest2.xml">
+     <para>
       This file is included from <filename>xmltest.xml</filename>:
       <example>
        <title>xmltest2.xml</title>
