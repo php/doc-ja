@@ -1,22 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.8 $ -->
  <chapter id="features.remote-files">
   <title>リモートファイルの使用</title>
 
   <para>
-   PHPを設定する際に &quot;URL fopen wrapper&quot; に関するサポートを
-   有効にした場合(つまり、<option>--disable-url-fopen-wrapper</option>
-   フラグを configure に明示的に渡した場合(4.0.3までのバージョン)、ま
-   たは、php.ini で <parameter>allow_url_fopen</parameter> を off に設
-   定した場合(より新しいバージョン)を除いて)、
-   <function>require</function> および <function>include</function> 文を
-   含むファイル名をパラメータとして受ける多くの関数
-   においてHTTPおよびFTP URLを使用することができます。
+   php.iniで<parameter>allow_url_fopen</parameter>を有効にした場合、
+   パラメータとしてファイル名をとる関数の多くでHTTPおよびFTPのURL
+   を使用することができます。加えて、<function>include</function>,
+   <function>include_once</function>, <function>require</function>,
+   <function>require_once</function> 命令でURLを使用することができます。
   </para>
-  <para>
   <note>
    <para>
-   Windows上では、リモートファイルに <function>include</function> および
-    <function>require</function> 文を使用することはできません。
+    In PHP 4.0.3 and older, in order to use URL wrappers, you were required
+    to configure PHP using the configure option
+    <option>--enable-url-fopen-wrapper</option>.
+   </para>
+  </note>
+  <para>
+   <note>
+    <para>
+     Windows上では、リモートファイルに <function>include</function> および
+     <function>require</function> 文を使用することはできません。
     </para>
    </note>
   </para>
@@ -27,7 +32,7 @@
   </para>
   <para>
    <example>
-    <title>リモートページのタイトルを得ます</title>
+    <title>リモートページのタイトルを得る</title>
     <programlisting role="php">
 <![CDATA[
 <?php
@@ -51,8 +56,13 @@ fclose($file);
    </example>
   </para>
   <para>
-   適当なアクセス権を持ったユーザーで接続を行い、書きこもうとするファ
-   イルがまだ存在しない場合、FTPでファイルを書きこむことも可能です。
+   You can also write to files on an FTP server (provided that you
+   have connected as a user with the correct access rights). You
+   can only create new files using this method; if you try to overwrite
+   a file that already exists, the <function>fopen</function> will
+   fail.
+  </para>
+  <para>
    'anonymous'以外のユーザーで接続を行う場合、URLの中で
    'ftp://user:password@ftp.example.com/path/to/file' のように
    ユーザー名(そして多分パスワードも)指定する必要があります。
@@ -65,14 +75,14 @@ fclose($file);
     <programlisting role="php">
 <![CDATA[
 <?php
-  $file = fopen("ftp://ftp.php.net/incoming/outputfile", "w");
-  if (!$file) {
+$file = fopen ("ftp://ftp.example.com/incoming/outputfile", "w");
+if (!$file) {
     echo "<p>Unable to open remote file for writing.\n";
     exit;
-  }
-  /* データをここに書きます。 */
-  fputs($file, "$HTTP_USER_AGENT\n");
-  fclose($file);
+}
+/* データをここに書きます。 */
+fputs ($file, $_SERVER['HTTP_USER_AGENT'] . "\n");
+fclose ($file);
 ?>
 ]]>
     </programlisting>
@@ -83,9 +93,10 @@ fclose($file);
     <para>
      上の例からリモートログに書きこむためにこの手法を使用することを考えるかも
      しれません。
-     しかし、上に述べたように、URL fopen() ラッパーを使って書きこめるのは
-     新規のファイルのみです。
-     ログのようなことを行うには、
+     Unfortunately
+     that would not work because the <function>fopen</function> call will
+     fail if the remote file already exists.
+     分散ロギングのようなことを行うには、
      <function>syslog</function> の使用を考えてみて下さい。
     </para>
    </note>

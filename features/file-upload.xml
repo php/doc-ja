@@ -16,6 +16,17 @@
     ユーザーとアップロード後にそのファイルを使用して行う動作を完全に制御する
     ことが可能です。
    </simpara>
+   <note>
+    <title>関係する設定に関する注記</title>
+    <para>
+     &php.ini;の
+     <link linkend="ini.file-uploads">file_uploads</link>, 
+     <link linkend="ini.upload-max-filesize">upload_max_filesize</link>,
+     <link linkend="ini.upload-tmp-dir">upload_tmp_dir</link>
+     <link linkend="ini.post-max-size">post_max_size</link> ディレクティブ
+     も参照下さい。
+    </para>
+   </note>
    <para>
     PHPはNetscape ComposerおよびW3CのAmayaクライアントにより使用される
     PUTメソッドによるファイルアップロードもサポートしていることに注意
@@ -52,35 +63,25 @@ Send this file: <input name="userfile" type="file">
    </para>
 
    <para>
-    ファイルのアップロードに際して定義さっる変数はPHPのバージョン及び
-    設定により異なります。以下の変数は、アップロードが行われた際に実行
-    されるスクリプト側で定義されます。
-    <link linkend="ini.track-vars">track_vars</link>が有効な場合、
-    配列$HTTP_POST_FILES/$_FILESが初期化されます。
-    最後に、<link
-    linkend="ini.register-globals">register_globals</link>が有効な場合
-    には、関連する変数がグローバル変数として定義することができます。
-    しかし、グローバル変数の使用はもはや推奨されていません。
+    ファイルのアップロードに際して定義される変数はPHPのバージョン及び
+    設定により異なります。
+    オートグローバル<link linkend="reserved.variables.files">$_FILES</link>
+    は、PHP 4.1.0以降に存在します。
+    <varname>$HTTP_POST_FILES</varname>は、PHP 4.0.0以降に存在します。
+    これらの配列には、全てアップロードされたファイルの情報が
+    含まれています。<varname>$_FILES</varname>の使用が推奨されています。
+    PHPディレクティブ
+    <link linkend="ini.register-globals">register_globals</link> が
+    <emphasis>on</emphasis>の場合、関係する変数名も存在します。
+    <link linkend="ini.register-globals">register_globals</link>
+    は、PHP <ulink url="&url.php.release4.2.0;">4.2.0</ulink>
+    以降、<emphasis>off</emphasis>がデフォルトとなっています。
    </para>
-   <note>
-    <para>
-     PHP 4.0.3以降、<link linkend="ini.track-vars">track_vars</link>は
-    常にonです。PHP 4.1.0以降では、$_FILESを
-    <varname>$HTTP_POST_FILES</varname>の代わりに使用することができま
-    す。. <varname>$_FILES</varname> は常にグローバルです。このため、
-     $_FILESを関数スコープの中で使用する場合でも
-    <literal>global</literal>は不要です。
-    </para>
-   </note>
    <para>
-    <varname>$HTTP_POST_FILES</varname>/<varname>$_FILES</varname>には、
-    アップロードされたファイルに関する情報が含まれています。
-   </para>
-
-   <para>
-    <varname>$_FILES</varname>の内容は次のようになります。ここでは、
-    上の例のスクリプトで使われたように、アップロードファイルの名前とし
-    て'userfile'を使用することを仮定していることに注意して下さい。
+    <link linkend="reserved.variables.files">$_FILES</link>
+    の内容は次のようになります。ここでは、上の例のスクリプトで使われたように、
+    アップロードファイルの名前として<emphasis>userfile</emphasis>を使用する
+    ことを仮定していることに注意して下さい。
     <variablelist>
      <varlistentry>
       <term><varname>$_FILES['userfile']['name']</varname></term>
@@ -116,12 +117,24 @@ Send this file: <input name="userfile" type="file">
        </para>
       </listitem>
      </varlistentry>
+     <varlistentry>
+      <term><varname>$_FILES['userfile']['error']</varname></term>
+      <listitem>
+       <para>
+        このファイルアップロードに関する
+        <link linkend="features.file-upload.errors">エラーコード</link>
+        <emphasis>['error']</emphasis>は、PHP 4.2.0で追加されました。
+       </para>
+      </listitem>
+     </varlistentry>
     </variablelist>
    </para>
    <note>
     <para>
      4.1.0より前のバージョンのPHPでは、この変数は
-     <varname>$HTTP_POST_FILES</varname>で、自動グローバル(autoglobal)
+     <varname>$HTTP_POST_FILES</varname>で、<varname>$_FILES</varname>の
+     ような
+     <link linkend="language.variables.superglobals">オートグローバル</link>
      変数ではありませんでした。PHP 3は、
      <varname>$HTTP_POST_FILES</varname>をサポートしていません。
     </para>
@@ -129,52 +142,17 @@ Send this file: <input name="userfile" type="file">
 
    <para>
     &php.ini;で <link
-    linkend="ini.register-globals">register_globals</link>がonとなって
-    いる場合、以下の変数が利用可能となります。
-    以下の変数名は、上の例で使用されているようにアップロードされたファ
-    イルの名前として'userfile'を使用していることを仮定していることに注
-    意して下さい。
-
-    <itemizedlist>
-     <listitem>
-      <simpara>
-       <varname>$userfile</varname> - サーバーマシンにアップロードされ
-       たファイルが保存されているテンポラリファイルの名前
-      </simpara>
-     </listitem>
-     <listitem>
-      <simpara>
-      <varname>$userfile_name</varname> - 送信元のシステムにおける元の
-      ファイルの名前またはパス。
-      </simpara>
-     </listitem>
-     <listitem>
-      <simpara>
-       <varname>$userfile_size</varname> - アップロードされたファイルの
-       サイズ(バイト数)
-      </simpara>
-     </listitem>
-     <listitem>
-      <simpara>
-       <varname>$userfile_type</varname> - ファイルの MIME 型。ただし、
-       ブラウザがこの情報を提供した場合のみ。例えば、
-       &quot;image/gif&quot;のようになります。
-      </simpara>
-     </listitem>
-    </itemizedlist>
-    上記の変数のうち、"<varname>$userfile</varname>" は、アップロードフォームの
-    type="file"を有する&lt;input&gt; フィールドのnameの値と関連すること
-    に注意して下さい。上のアップロード用フォームの例においては、その値
-    を"userfile" としています。
+    linkend="ini.register-globals">register_globals</link>が
+    <emphasis>on</emphasis>となっている場合、追加の変数が利用可能となります。
+    例えば、<varname>$userfile_name</varname>は、
+    <varname>$_FILES['userfile']['name']</varname>と同じで、
+    <varname>$userfile_type</varname>は、
+    <varname>$_FILES['userfile']['type']</varname>と同じといったようになります。
+    PHP 4.2.0以降は、register_globalsのデフォルトはoffであることを
+    留意下さい。このディレクティブに依存しないことが推奨されます。
    </para>
-   <note>
-    <para>
-     <literal>register_globals = On</literal>は、セキュリティ及び性能
-     上の理由により推奨されません。
-    </para>
-   </note>
    <para>
-    <filename>php.ini</filename>の <link
+    &php.ini; の <link
     linkend="ini.upload-tmp-dir">upload_tmp_dir</link>ディレクティブで
     他の場所を指定しない限り、ファイルはサーバーにおけるデフォルトのテ
     ンポラリディレクトリに保存されます。サーバーのデフォルトディレクト
@@ -216,7 +194,12 @@ move_uploaded_file($_FILES['userfile']['tmp_name'], "/place/to/put/uploaded/file
     たり、大きすぎたりするファイルを捨てることができます。指定した型以
     外のファイルを全て捨てるために変数
     <varname>$_FILES['userfile']['type']</varname>を用いることができま
-    す。何らかの方法により、テンポラリディレクトリからファイルを削除し
+    す。
+    PHP 4.2.0以降、
+    <varname>$_FILES['userfile']['error']</varname> を使用することができ、
+    <link linkend="features.file-upload.errors">エラーコード</link>
+    に基づき、ロジックを構成することができます。
+    何らかの方法により、テンポラリディレクトリからファイルを削除し
     たり、他の場所に移動したりする必要があります。
    </simpara>
    <simpara>
@@ -225,6 +208,69 @@ move_uploaded_file($_FILES['userfile']['tmp_name'], "/place/to/put/uploaded/file
    </simpara>
   </sect1>
  
+  <sect1 id="features.file-upload.errors">
+   <title>エラーメッセージの説明</title>
+   <simpara>
+    PHP 4.2.0以降、PHPはファイル配列とともに適当なエラーコードを返します。
+    エラーコードは、PHPによるファイルアップロードの間に生成され、
+    ファイル配列の<emphasis>['error']</emphasis>要素で
+    アクセス可能です。言い換えると、エラーは、
+    <varname>$_FILES['userfile']['error']</varname>でアクセス可能でしょう。
+   </simpara>
+   <para>
+    <variablelist>
+     <varlistentry>
+      <term><varname>UPLOAD_ERR_OK</varname></term>
+      <listitem>
+       <para>
+        値: 0; エラーはなく、ファイルアップロードは成功しています。
+       </para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term><varname>UPLOAD_ERR_INI_SIZE</varname></term>
+      <listitem>
+       <para>
+        値: 1; アップロードされたファイルは、&php.ini; の
+        <link linkend="ini.upload-max-filesize">upload_max_filesize</link> 
+        ディレクティブの値を超えています。
+       </para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term><varname>UPLOAD_ERR_FORM_SIZE</varname></term>
+      <listitem>
+       <para>
+        値: 2; アップロードされたファイルは、HTMLフォームで指定された
+        <emphasis>MAX_FILE_SIZE</emphasis> を超えています。
+       </para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term><varname>UPLOAD_ERR_PARTIAL</varname></term>
+      <listitem>
+       <para>
+        値: 3; アップロードされたファイルは一部のみしかアップロードされていません。
+       </para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term><varname>UPLOAD_ERR_NO_FILE</varname></term>
+      <listitem>
+       <para>
+        値: 4; ファイルはアップロードされませんでした。
+       </para>
+      </listitem>
+     </varlistentry>
+    </variablelist>
+   </para>
+   <note>
+    <para>
+     これらはPHP 4.3.0でPHP定数となりました。
+    </para>
+   </note>
+  </sect1>
+
   <sect1 id="features.file-upload.common-pitfalls">
    <title>陥りやすい落とし穴</title>
    <simpara>

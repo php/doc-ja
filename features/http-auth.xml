@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.14 $ -->
+<!-- $Revision: 1.15 $ -->
  <chapter id="features.http-auth">
   <title>PHP による HTTP 認証</title>
 
@@ -11,11 +11,28 @@
    これにより、クライアントブラウザにユーザー名とパスワードを入力する
    ウインドウがポップアップ表示されます。一度、ユーザーがユーザー名と
    パスワードを入力すると、PHP スクリプトを含むその URL は、次回以降、
-   $PHP_AUTH_USER、$PHP_AUTH_PW、$PHP_AUTH_TYPE にそれぞれユーザー名、
-   パスワード、認証型を入力してコールされます。現在、"Basic" 認証のみ
-   がサポートされています。詳細は、<function>header</function>を参照下
-   さい。
+   <link linkend="reserved.variables">定義済みの変数</link> 
+   <varname>PHP_AUTH_USER</varname>, <varname>PHP_AUTH_PW</varname>, 
+   and <varname>PHP_AUTH_TYPE</varname>にそれぞれユーザー名、
+   パスワード、認証型を入力してコールされます。
+   定義済みの変数は、配列
+   <link linkend="reserved.variables.server">$_SERVER</link> および 
+   <varname>$HTTP_SERVER_VARS</varname>　でアクセス可能です。
+   "Basic" 認証のみがサポートされています。詳細は、
+   <function>header</function>を参照下さい。
   </simpara>
+
+  <note>
+   <title>PHP バージョンに関する注意</title>
+   <para>
+    <link linkend="reserved.variables.server">$_SERVER</link>のような
+    <link linkend="language.variables.superglobals">オートグローバル</link>は、
+    PHPバージョン <ulink url="&url.php.release4.1.0;">4.1.0</ulink>
+    で利用可能です。
+    <varname>$HTTP_SERVER_VARS</varname>は、PHP 3以降で利用可能です。
+   </para>
+  </note>
+
   <para>   
    ページ上でクライアント認証を強制するスクリプトの例を以下に示します。
    <example>
@@ -23,14 +40,14 @@
     <programlisting role="php">
 <![CDATA[
 <?php
-  if (!isset($PHP_AUTH_USER)) {
+  if (!isset($_SERVER['PHP_AUTH_USER'])) {
     header("WWW-Authenticate: Basic realm=\"My Realm\"");
     header("HTTP/1.0 401 Unauthorized");
     echo "ユーザーがキャンセルボタンを押した時に送信されるテキスト\n";
     exit;
   } else {
-    echo "<p>こんにちは、$PHP_AUTH_USER さん。</p>";
-	echo "<p>あなたは、$PHP_AUTH_PW をパスワードとして入力しました。</p>";
+    echo "<p>こんにちは、{$_SERVER['PHP_AUTH_USER']} さん。</p>";
+	echo "<p>あなたは、{$_SERVER['PHP_AUTH_PW']} をパスワードとして入力しました。</p>";
   }
 ?>
 ]]>
@@ -39,7 +56,7 @@
   </para>
 
   <note>
-   <title>注意</title>
+   <title>互換製に関する注意</title>
    <para>
     HTTPヘッダ行をコーディングする際には注意を要します。全てのクライア
     ントへの互換性を最大限に保証するために、キーワード "Basic" には、
@@ -50,11 +67,13 @@
   </note>
 
   <para>
-   単に $PHP_AUTH_USER、$PHP_AUTH_PW を出力するのではなく、ユーザー名
-   とパスワードの有効性をチェックしたいと思うかもしれません。
+   単に <varname>PHP_AUTH_USER</varname>および<varname>PHP_AUTH_PW</varname>
+   を出力するのではなく、ユーザー名とパスワードの有効性をチェックしたいと
+   思うかもしれません。
    その場合、クエリーをデータベースに送るか、ある dbm ファイル中の
    ユーザーを調べるといったことをすることになるでしょう。
   </para>
+
   <para>
    バグのある Internet Explorer ブラウザには注意してください。このブラ
    ウザは、ヘッダの順序に関してとてもうるさいようです。今のところ、
@@ -62,12 +81,14 @@
    <emphasis>WWW-Authenticate</emphasis> ヘッダを送るのが効果があるよ
    うです。
   </para>
+
   <simpara>
    誰かが従来の外部機構による認証を行ってきたページのパスワードを暴く
    ようなスクリプトを書くことを防ぐために、特定のページに関して外部認
    証が可能である場合、PHP_AUTH 変数はセットされません。この場合、外部
-   認証されたユーザーかどうかを確認するために $REMOTE_USER 変数を使用
-   することができます。
+   認証されたユーザーかどうかを確認するために 
+   <varname>REMOTE_USER</varname>変数、すなわち、
+   <varname>$_SERVER['REMOTE_USER']</varname>を使用することができます。
   </simpara>
 
   <note>
@@ -98,23 +119,23 @@
    <programlisting role="php">
 <![CDATA[
 <?php
-  function  authenticate()  {
-    header( "WWW-Authenticate: Basic realm=\"Test Authentication System\"");
-    header( "HTTP/1.0 401 Unauthorized");
-    echo  &quot;このリソースにアクセスする際には有効なログインIDとパスワードを入力する必要があります。\n";
+  function  authenticate() {
+    header('WWW-Authenticate: Basic realm="Test Authentication System"');
+    header('HTTP/1.0 401 Unauthorized');
+    echo "このリソースにアクセスする際には有効なログインIDとパスワードを入力する必要があります。\n";
     exit;
   }
 
-  if (!isset($PHP_AUTH_USER) || ($SeenBefore == 1 && !strcmp($OldAuth, $PHP_AUTH_USER))) {
+  if (!isset($_SERVER['PHP_AUTH_USER']) || ($_POST['SeenBefore'] == 1 && $_POST['OldAuth'] == $_SERVER['PHP_AUTH_USER'])) {
     authenticate();
   }  
   else  {
-   echo "<p>Welcome: $PHP_AUTH_USER<br>";
-   echo "Old: $OldAuth";
-   echo "<form action=\"$PHP_SELF\" METHOD='POST'>\n";
-   echo "<input type=\"hidden\" name=\"SeenBefore\" value=\"1\">\n";
-   echo "<input type=\"hidden\" name=\"OldAuth\" value=\"$PHP_AUTH_USER\">\n";
-   echo "<input type=\"submit\" value=\"Re Authenticate\">\n";
+   echo "<p>Welcome: {$_SERVER['PHP_AUTH_USER']}<br>";
+   echo "Old: {$_REQUEST['OldAuth']}";
+   echo "<form action='{$_SERVER['PHP_SELF']}' METHOD='POST'>\n";
+   echo "<input type='hidden' name='SeenBefore' value='1'>\n";
+   echo "<input type='hidden' name='OldAuth' value='{$_SERVER['PHP_AUTH_USER']}'>\n";
+   echo "<input type='submit' value='Re Authenticate'>\n";
    echo "</form></p>\n";
   }
 ?>
@@ -134,6 +155,14 @@
    MicrosoftのIISサーバーとCGI版のPHPの組み合わせでは、この機能は、IIS
    の制約により使用することができないということにも注意して下さい。
   </simpara>
+
+  <note>
+   <para>
+    <link linkend="ini.safe-mode">セーフモード</link> が有効の場合、
+    <literal>WWW-Authenticate</literal>ヘッダの
+    <literal>realm</literal>部にスクリプトのuidが追加されます。
+   </para>
+  </note>
 
  </chapter>
 
