@@ -937,7 +937,7 @@ print_r (profile (TRUE));
    </sect2>
   </sect1>
 
-  <sect1 id="functions.return">
+  <sect1 id="function.return">
    <title>return</title>
    <simpara>
     関数内で呼び出されると、<function>return</function>文は即座に
@@ -974,487 +974,333 @@ print_r (profile (TRUE));
  
   <sect1 id="function.require">
    <title><function>require</function></title>
+
    <simpara>
-    <literal>require</literal>文は、C言語のプリプロセッサの
-    #include文の動作と非常に似ており、自分自身を指定したファイルの内容
-    に置換します。
+    <function>require</function>文は指定されたファイルを読み込み、評価します。
    </simpara>
    <simpara>
-    "URL fopen ラッパー"がPHPで有効な場合(デフォルト設定では有効です)、
-    ローカルなパス名の代わりにURLを用いて<function>require</function>
-    されるファイルを指定することが可能です。詳細な情報については、
-    <link linkend="features.remote-files">リモートファイル</link>と
-    <function>fopen</function>を参照下さい。 
+    ファイルが読み込まれ評価される際の詳細な情報に関しては
+    <function>include</function>に記述されています。
    </simpara>
    <simpara>
-    ファイルの読み込みに関して注意すべき点としては、ファイルが
-    <function>include</function>または<function>require</function>
-    される際には、読み込まれるファイルの先頭でPHPモードから抜け
-    HTMLモードになること、読み込み完了時にPHPモードに戻ることがあります。
-    このため、読み込むファイル中のPHPコードとして実行する必要がある
-    コードは、<link linkend="language.basic-syntax.phpmode">
-     有効なPHPの開始タグおよび終了タグ </link>で括る必要があります。
-   </simpara>
-   <simpara>
-    <function>require</function>は、実際にはPHPの関数ではなく、
-    むしろ言語構造です。この文は、関数とは異なる規則に従っています。
-    例えば、<function>require</function>はファイル内にある制御構造には影響
-    を受けません。また、この文は値を返しません。
-    よって、<function>require</function>コールから返り値を取得しようとすると
-    パース時にエラーとなります。
-   </simpara>
-   <simpara>
-    <function>include</function>と異なり、<function>require</function>は
-    <emphasis>その行が実行されない場合でも</emphasis>
-    <emphasis>常に</emphasis>指定されたファイルを読み込みます。
-    条件に応じてファイルを読み込みたい場合には、<function>include</function>
-    を使用して下さい。条件文は、<function>require</function>には
-    影響しません。しかし、<function>require</function>がある行が実行
-    されない場合、読み込まれるファイル内のコードは実行されません。
-   </simpara>
-   <simpara>
-    同様に、ループ構造は<function>require</function>の動作には影響
-    しません。読み込まれるファイル内のコードがループに依存している場合でも
-    <function>require</function>は読み込みを一回しか行いません。
+    <function>require</function>と<function>include</function>は
+    エラーの扱い方を除けば全く同様に振舞います。エラーが発生すると
+    <function>include</function>は<link linkend="internal.e-warning">Warning
+    </link>を出力しますが<function>require</function>を使用している場合は
+    <link linkend="internal.e-error">Fatal Error</link>となります。
+    言い換えると、指定されたファイルが無い場合に処理を停止したい場合は
+    <function>require</function>を使用した方が良い、ということになります。
+    <function>include</function>を使用すると、読み込むべきファイルが存在しない
+    場合も処理が続行されます。<link linkend="ini.include-path">include_path
+    </link>を適切に設定することも忘れないで下さい。
    </simpara>
    <para>
-    これは、ループ構造の中に<literal>require</literal>文を置き、
-    各ループ毎に別のファイルの内容を読み込むことができないことを意味します。
-    これを行うには、<literal>include</literal>文を使用して下さい。
-     <informalexample>
-      <programlisting role="php">
-<![CDATA[
-require ('header.php');
-]]>
-     </programlisting>
-    </informalexample>
-   </para>
-   <simpara>
-    ファイルが<function>require</function>で読み込まれる際、そのファイ
-    ルに含まれるコードは、<function>require</function>を実行する行の変
-    数スコープを継承します。コールする側のファイルのその行で利用可能な
-    全ての変数が、読み込まれたファイル内で利用可能です。コールする側の
-    ファイルの関数内で<function>require</function>を行う場合、コールさ
-    れるファイルに含まれる全てのコードは、その関数内で定義されているも
-    のとして動作します。
-   </simpara>
-   <para>
-    <function>require</function>で読み込まれたファイルが、fopen ラッパー
-    を用いてHTTP経由でコールされた場合、そして、ターゲットのサーバーが
-    そのターゲットファイルをPHPコードとして解釈する場合、変数は、
-    HTTP GETを使用している場合と同様にURLリクエストとして
-    <function>require</function>されたファイルに渡すことが可能です。
-    直接的な記述ではありませんが、<function>require</function>でファイル
-    を読み込むのと同様に親ファイルの変数スコープを継承します。
-    スクリプトは、実際にはリモートサーバーで実行された後、結果はローカ
-    ルスクリプトに読み込まれます。
-    <informalexample>
+    <example>
+     <title>基本的な<function>require</function>の例</title>
      <programlisting role="php">
 <![CDATA[
-/* この例は、someserverで .php を処理するように設定されており、.txt に
- * ついては設定されていないことを仮定しています。また、ここでの'動作す
- * る'という意味は、変数 $varoneと$vartwoがrequire()で読み込まれたファ
- * イルで利用であることを意味します。*/
+<?php
 
-/* 動作しない; file.txt は、someserverで処理されない。 */
-require ("http://someserver/file.txt?varone=1&vartwo=2");
+require 'prepend.php';
 
-/* 動作しない; ローカルファイルシステムの'file.php?varone=1&vartwo=2'
- *  という名前のファイルを探す。 */
-require ("file.php?varone=1&vartwo=2");               
+require $somefile;
 
-/* 動作する。 */
-require ("http://someserver/file.php?varone=1&vartwo=2"); 
+require ('somefile.txt');
 
-$varone = 1;
-$vartwo = 2;
-require ("file.txt");  /* 動作する。 */
-require ("file.php");  /* 動作する。 */
+?>
 ]]>
      </programlisting>
-    </informalexample>
+   </example>
    </para>
    <simpara>
-    PHP 3では、<function>require</function>されたファイルのグローバルス
-    コープでのみ<function>require</function>されたファイル内で
-    <literal>return</literal>文を実行することが可能です。
-    ブロック内(括弧{}の中を意味します)では使用することはできません。
-    しかし、PHP 4では、この機能は廃止されました。この機能が必要な場合、
-    <function>include</function>を参照下さい。
+    <function>include</function>のドキュメントにはさらに多くの例がありますので
+    参照してください。
    </simpara>
+   <note>
+    <simpara>
+     PHP 4.0.2以前での挙動は以下の様になっています: <function>require</function>は
+     その行が実行される/されないにかかわらず常に指定されたファイルを読み込もうと
+     します。従って条件文は<function>require</function>には影響を与えません。
+     しかしながら、<function>require</function>がある行が実行されない場合、
+     読み込まれるファイル内のコードは実行されません。同様に、ループ構造は
+     <function>require</function>の動作には影響しません。読み込まれるファイル内の
+     コードがループに依存している場合でも <function>require</function>は
+     読み込みを一回しか行いません。 
+    </simpara>
+   </note>
    <simpara>
     <function>include</function>, <function>require_once</function>,
-    <function>include_once</function>, <function>readfile</function>,
-    <function>virtual</function>も参照下さい。
+    <function>include_once</function>, <function>eval</function>, 
+    <function>file</function>, <function>readfile</function>, 
+    <function>virtual</function>, <link linkend="ini.include-path">include_path</link>
+    も参照してください。
    </simpara>
   </sect1>
- 
-  <sect1 id="function.include">
-   <title><literal>include</literal></title>
+
+ <sect1 id="function.include">
+   <title><function>include</function></title>
    <simpara>
-    <literal>include</literal>文は指定されたファイルを読み込み、
-    評価します。
+    <function>include</function>文は指定されたファイルを読み込み、評価します。
    </simpara>
    <simpara>
-    "URL fopen ラッパー"がPHPで有効な場合(デフォルト設定では有効です)、
-    ローカルなパス名の代わりにURLを用いて<function>include</function>
-    されるファイルを指定することが可能です。詳細な情報については、
-    <link linkend="features.remote-files">リモートファイル</link>と
-    <function>fopen</function>を参照下さい。 
+    以下の記述内容は<function>require</function>にも当てはまります。これら2つの
+    構文はエラーの扱い方を除けば、その振る舞いは全く同じです。エラーが発生すると
+    <function>include</function>は<link linkend="internal.e-warning">Warning
+    </link>を出力しますが<function>require</function>を使用している場合は
+    <link linkend="internal.e-error">Fatal Error</link>となります。
+    言い換えると、指定されたファイルが無い場合に処理を停止したい場合は
+    <function>require</function>を使用した方が良い、ということになります。
+    <function>include</function>を使用すると、読み込むべきファイルが存在しない
+    場合も処理が続行されます。<link linkend="ini.include-path">include_path
+    </link>を適切に設定することも忘れないで下さい。
    </simpara>
    <simpara>
-    ファイルの読み込みに関して注意すべき点としては、ファイルが
-    <function>include</function>または<function>require</function>
-    される際には、読み込まれるファイルの先頭でPHPモードから抜けてHTML
-    モードになること、読み込み完了時にPHPモードに戻ることがあります。
+    ファイルが読み込まれるとそのファイルに含まれるコードは、
+    <function>include</function>もしくは<function>require</function>が実行された
+    行の<link linkend="language.variables.scope">変数スコープ</link>を継承します。
+    呼び出し側の行で利用可能である全ての変数は、読み込まれたファイル内で利用可能です。
+   </simpara>
+   <para>
+     <example>
+      <title>基本的な<function>include</function>の例</title>
+      <programlisting role="php">
+<![CDATA[
+vars.php
+<?php
+
+$color = 'green';
+$fruit = 'apple';
+
+?>
+
+test.php
+<?php
+
+echo "A $color $fruit"; // A
+
+include 'vars.php';
+
+echo "A $color $fruit"; // A green apple
+
+?>
+]]>
+      </programlisting>
+     </example>
+   </para>
+   <simpara>
+    呼び出し側のファイルの関数定義の中で読み込みが行われ場合は、読み込まれる
+    ファイルに含まれる全てのコードは、その関数内で定義されているものとして
+    動作します。従って変数スコープのその関数のものが継承されます。
+   </simpara>
+   <para>
+     <example>
+     <title>関数内での読み込み</title>
+      <programlisting role="php">
+<![CDATA[
+<?php
+
+function foo()
+{
+global $color;
+
+    include 'vars.php';
+
+    echo "A $color $fruit";
+}
+
+/* vars.php は foo() のスコープを継承するため *
+ * $fruit はこの関数の外では無効となります。  *
+ * $color はglobalとして宣言されているため    *
+ * 有効です。                                 */
+
+foo();                    // A green apple
+echo "A $color $fruit";   // A green
+
+?>
+]]>
+     </programlisting>
+    </example>
+   </para>
+   <simpara>
+    ファイルが読み込まれるときには、読み込まれるファイルの先頭で
+    PHPモードを抜けてHTMLモードになり、最後に再びPHPモードに戻ります。
     このため、読み込むファイル中のPHPコードとして実行する必要がある
-    コードは、<link linkend="language.basic-syntax.phpmode">有効なPHP
-    の開始タグおよび終了タグ </link>で括る必要があります。
+    コードは、<link linkend="language.basic-syntax.phpmode">
+    有効なPHPの開始タグおよび終了タグ</link>で括る必要があります。
+   </simpara>
+   <simpara>
+    "<link linkend="ini.allow-url-fopen">URL fopenラッパー</link>"が
+    有効になっている場合(デフォルト設定では有効です)、ローカルなパス名
+    の代わりにURL(HTTP経由)を用いて読み込むファイルを指定することが可能です。
+    URLで指定されたサーバがファイルをPHPコードとして解釈することが
+    出来る場合には、HTTP GETを使用してURLリクエストに引数を指定することが
+    出来ます。これはファイルの読み込み云々やスコープの継承とは関係なく、
+    ただ単純にスクリプトがリモートのサーバで実行されて結果がローカルの
+    スクリプトに読み込まれる、というだけのことです。
    </simpara>
    <para>
-    読み込み処理は<literal>include</literal>文を処理する度に行われます。
-    このため、異なった複数のファイルを読み込むためにループ構造の中で
-    <literal>include</literal>を使用することができます。
-    <informalexample>
+    <example>
+     <title>HTTP経由の<function>include</function></title>
      <programlisting role="php">
 <![CDATA[
-$files = array ('first.php', 'second.php', 'third.php');
-for ($i = 0; $i < count($files); $i++) {
-    include $files[$i];
-}
+<?php
+
+/* この例は www.example.com が.phpはPHPスクリプトとして扱い、.txtは通常の *
+ * ファイルとして扱うように設定されていると仮定しています。また、ここでの *
+ * '動作します'という言葉の意味は、変数$fooと$barが読み込まれる側のファイ *
+ * ルで使用可能である、ということです。                                   */
+
+// 動作しません: www.example.com では file.txt はPHPコードとして解釈されません。
+include 'http://www.example.com/file.txt?foo=1&bar=2';
+
+// 動作しません: 'file.php?foo=1&bar=2' という名前のファイルをローカルファイル
+// システム上から探し出そうとします。
+include 'file.php?foo=1&bar=2';
+
+// 動作します。
+include 'http://www.example.com/file.php?foo=1&bar=2';
+
+$foo = 1;
+$bar = 2;
+include 'file.txt';  // Works.
+include 'file.php';  // Works.
+
+?>
 ]]>
      </programlisting>
-    </informalexample>
+    </example>
+     <link linkend="features.remote-files">リモートファイル</link>,
+     <function>fopen</function>, <function>file</function>も参照してください。
    </para>
    <para>
-    <function>include</function>は<function>require</function>と異なり、
-    include文が実行される度に再度評価されます。(そして、実行時に初めて
-    評価されます。)一方、<function>require</function>文は、(条件式が
-    &false;である<link linkend="control-structures.if">if</link>文の中に
-    ある場合のように)読み込まれるファイルの内容が評価されるかによらず最
-    初に処理された際に読み込まれるファイルで置換されます。
+    <function>include</function>と<function>require</function>は特殊な
+    言語構造であるため、条件構造内にある場合は命令ブロックとして
+    括っておく必要があります。 
    </para>
    <para>
-    <function>include</function>は特殊な言語構造なので、if構造内
-    にある時には、命令ブロックとして括っておく必要があります。
-    <informalexample>
+    <example>
+     <title>include() と 条件ブロック</title>
      <programlisting role="php">
 <![CDATA[
-/* 以下は誤っており、希望通りに動作しません。 */
- 
+<?php
+
+// これは誤っており希望した通りには動作しません。
 if ($condition)
-    include($file);
+    include $file;
 else
-    include($other);
- 
-/* 以下が正解です。 */
- 
+    include $other;
+
+
+// これが正解です。
 if ($condition) {
-    include($file);
+    include $file;
 } else {
-    include($other);
+    include $other;
 }
+
+?>
 ]]>
      </programlisting>
-    </informalexample>
+    </example>
    </para>
    <simpara>
-    PHP 3およびPHP 4では共に<function>include</function>されたファイル内で
-    ファイルの実行処理を終了し呼出側のスクリプトに戻るために
-    <literal>return</literal>文を実行することが可能です。
-    しかし、動作にはいくつかの違いがあります。まず、PHP 3では
-    関数ブロック以外のブロック内で<literal>return</literal>を
-    使用することはできません。PHP 3では、<literal>return</literal>
-    が適用っMるのは関数であり、ファイル全体には適用できません。
-    しかし、PHP 4ではこの制限はありません。また、PHP 4では
-    <function>include</function>されたファイルから値を返すことが可能です。
-    通常の関数と同様に<function>include</function>コールの値を
-    取得できます。これは、PHP 3ではパース時にエラーとなります。
+    値の返し方: 読み込まれたファイル内では、ファイルの実行処理を終了し呼出側の
+    スクリプトに戻るために<function>return</function>文を実行することが可能です。 
+    同時に値を返すことや、通常の関数と同様に呼び出しの値を取得することも出来ます。
    </simpara>
-   <example>
-    <title>PHP 3とPHP 4における<function>include</function></title>
-    <para>
-     メインファイルと同じディレクトリに(<filename>test.php</filename>
-     という名前の)以下のファイルが存在すると仮定します。
-     <programlisting role="php">
-<![CDATA[
-<?php
-echo "Before the return <br>\n";
-if (1) {
-    return 27;
-}
-echo "After the return <br>\n";
-?>
-]]>
-     </programlisting>
-    </para>
-    <para>
-     メインファイル(<filename>main.html</filename>)に以下の文が含まれている
-     仮定します。
-     <programlisting role="php">
-<![CDATA[
-<?php
-$retval = include ('test.php');
-echo "File returned: '$retval'<br>\n";
-?>
-]]>
-     </programlisting>
-    </para>
-    <para>
-     <filename>main.html</filename>がPHP 3でコールされた場合、
-     2行目でパースエラーとなります。つまり、PHP 3では
-     <function>include</function>の値を取得できないのです。
-     しかし、PHP 4では、以下のような結果となります。
-     <screen>
-Before the return
-File returned: '27'
-     </screen>
-    </para>
-    <para>
-     ここで、<filename>main.html</filename>を以下のように変えたと
-     仮定しましょう。
-     <programlisting role="php">
-<![CDATA[
-<?php
-include ('test.php');
-echo "Back in main.html<br>\n";
-?>
-]]>
-     </programlisting>
-    </para>
-    <para>
-     PHP 4では、出力は次のようになります。
-     <screen>
-Before the return
-Back in main.html
-     </screen>
-     しかし、PHP 3では出力は以下となります。
-     <screen>
-Before the return 
-27Back in main.html
-
-Parse error: parse error in /home/torben/public_html/phptest/main.html on line 5
-     </screen>
-    </para>
-    <para>
-     上のパースエラーは、<filename>test.php</filename>内で
-     <literal>return</literal>文が関数以外のブロックで括られている
-     ためです。returnをブロックの外に移動すると、出力は次のようになります。
-     <screen>
-Before the return
-27Back in main.html
-     </screen>
-    </para>
-    <para>
-     スプリアス'27'はPHP 3がファイルから<literal>return</literal>により
-     値を返すことをサポートしていないことによるものです。
-    </para>
-   </example>
-   <simpara>
-    ファイルが<function>include</function>で読み込まれる際、そのファイ
-    ルに含まれるコードは、<function>include</function>を実行する行の変
-    数スコープを継承します。コールする側のファイルのその行で利用可能な
-    全ての変数が、読み込まれたファイル内で利用可能です。コールする側の
-    ファイルの関数内で<function>include</function>を行う場合、コールさ
-    れるファイルに含まれる全てのコードは、その関数内で定義されているも
-    のとして動作します。
-   </simpara>
+   <note>
+    <simpara>
+     PHP 3では関数ブロック以外のブロック内でreturnを 使用することはできません。
+     <function>return</function>が適用されるのは関数であり、ファイル全体ではありません。 
+    </simpara>
+   </note>
    <para>
-    <function>include</function>で読み込まれたファイルが、fopen ラッパー
-    を用いてHTTP経由でコールされた場合、そして、ターゲットのサーバーが
-    そのターゲットファイルをPHPコードとして解釈する場合、変数は、
-    HTTP GETを使用している場合と同様にURLリクエストとして
-    <function>include</function>されたファイルに渡すことが可能です。
-    直接的な記述ではありませんが、<function>include</function>でファイル
-    を読み込むのと同様に親ファイルの変数スコープを継承します。
-    スクリプトは、実際にはリモートサーバーで実行された後、結果はローカ
-    ルスクリプトに読み込まれます。
-    <informalexample>
-     <programlisting role="php">
+    <example>
+     <title><function>include</function>と<function>return</function>文</title>
+      <programlisting role="php">
 <![CDATA[
-/* この例は、someserverで .php を処理するように設定されており、.txt に
- * ついては設定されていないことを仮定しています。また、ここでの'動作す
- * る'という意味は、変数 $varoneと$vartwoがinclude()で読み込まれたファ
- * イルで利用であることを意味します。*/
+return.php
+<?php
 
-/* 動作せず; file.txt は someserverで処理されない。 */
-include ("http://someserver/file.txt?varone=1&amp;vartwo=2");
+$var = 'PHP';
 
-/* 動作せず; ローカルファイルシステムの'file.php?varone=1&vartwo=2'
- * という名前のファイルを探す。 */
-include ("file.php?varone=1&vartwo=2");               
+return $var;
 
-/* 動作する。 */
-include ("http://someserver/file.php?varone=1&vartwo=2"); 
+?>
 
-$varone = 1;
-$vartwo = 2;
-include ("file.txt");  /* 動作する。 */
-include ("file.php");  /* 動作する。 */
+noreturn.php
+<?php
+
+$var = 'PHP';
+
+?>
+
+testreturns.php
+<?php
+
+$foo = include 'return.php';
+
+echo $foo; // 'PHP'と出力されます
+
+$bar = include 'noreturn.php';
+
+echo $bar; // 1が出力されます
+
+?>
 ]]>
-     </programlisting>
-    </informalexample>
+      </programlisting>
+    </example>
    </para>
+   <simpara>
+    読み込みが成功すると<literal>$bar</literal>の値は1となります。上の2つの例の違いに
+    注目してください。最初の例では読み込まれるファイル側で<function>return</function>
+    を使用し、もう一方では使用していません。ファイルを"読み込む"ための他の方法としては
+    <function>fopen</function>や<function>file</function>、そして
+    <function>include</function>を<link linkend="ref.outcontrol">出力制御関数</link>
+    と共に使用する方法があります。
+   </simpara>
+
    <simpara>
     <function>require</function>, <function>require_once</function>,
     <function>include_once</function>, <function>readfile</function>,
-    <function>virtual</function>も参照下さい。
+    <function>virtual</function>,
+    <link linkend="ini.include-path">include_path</link>も参照してください。
    </simpara>
+
   </sect1>
 
   <sect1 id="function.require-once">
    <title><function>require_once</function></title>
    <para>
-    <function>require_once</function>命令は、C言語のプリプロセッサ
-    <literal>#include</literal>の動作と全く同様にこの部分を指定したファ
-    イルで置換し、この面では、<function>require</function>命令に似てい
-    ます。主な違いは、読み込みの連鎖です。
-    <function>require_once</function>を使用した場合、そのコードがスク
-    リプトに読み込まれるのが一回だけであることが保証され、変数の値また
-    は定義した関数の名前が壊されるのを回避します。
+    <function>require_once</function>文は、スクリプトの実行中に指定された
+    ファイルを読み込み、評価します。この振る舞いは<function>require</function>
+    文と似ていて、唯一の違いは既にコードが読み込まれている場合には再度読み込まれる
+    ことがないことです。この文がどのように動作するかについては
+    <function>require</function>を参照してください。
    </para>
    <para>
-    例えば、<literal>utils.php</literal>と
-    <literal>foolib.php</literal>という2つのファイルを作成するとしましょ
-    う。
-    <example>
-     <title>utils.php</title>
-     <programlisting role="php">
-<![CDATA[
-<?php
-define("PHPVERSION", floor(phpversion()));
-echo "GLOBALS ARE NICE\n";
-function goodTea() {
-	return "Oolong tea tastes good!";
-}
-?>
-]]>
-     </programlisting>
-    </example>
-    <example>
-     <title>foolib.php</title>
-     <programlisting role="php">
-<![CDATA[
-<?php
-require ("utils.php");
-function showVar($var) {
-	if (PHPVERSION == 4) {
-		print_r($var);
-	} else {
-		var_dump($var);
-	}
-}
-
-// 他の関数の定義 ...
-?>
-]]>
-     </programlisting>
-    </example>
-    そして、この後、スクリプト
-    <literal>cause_error_require.php</literal>を書いて下さい。
-    <example>
-     <title>cause_error_require.php</title>
-     <programlisting role="php">
-<![CDATA[
-<?php
-require("foolib.php");
-/* 以下の処理は、エラーを発生します。 */
-require("utils.php");
-$foo = array("1",array("complex","quaternion"));
-echo "this is requiring utils.php again which is also\n";
-echo "required in foolib.php\n";
-echo "Running goodTea: ".goodTea()."\n";
-echo "Printing foo: \n";
-showVar($foo);
-?>
-]]>
-     </programlisting>
-    </example>
-    後の例を実行した場合、( PHP 4.01pl2を用いた)結果の出力は次のように
-    なります。
-	 <informalexample>
-     <screen>
-<![CDATA[
-GLOBALS ARE NICE
-GLOBALS ARE NICE
-
-Fatal error:  Cannot redeclare goodTea() in utils.php on line 5
-]]>
-</screen>
-    </informalexample>
-    <literal>foolib.php</literal>および
-    <literal>cause_errror_require.php</literal>を
-    <function>require</function>の代わりに
-    <function>require_once</function>を使用するように修正し、
-    後の例のファイル名を
-    <literal>avoid_error_require_once.php</literal>に変更すると
-    次のようになります。
-    <example>
-     <title>foolib.php (修正済み)</title>
-     <programlisting role="php">
-<![CDATA[
-...
-require_once("utils.php");
-function showVar($var) {
-...
-]]>
-     </programlisting>
-    </example>
-    <example>
-     <title>avoid_error_require_once.php</title>
-     <programlisting role="php">
-<![CDATA[
-...
-require_once("foolib.php");
-require_once("utils.php");
-$foo = array("1",array("complex","quaternion"));
-...
-]]>
-     </programlisting>
-    </example>
-    これを実行すると、(PHP 4.0.1pl2を用いた)出力は次のようになります。
-    <informalexample>
-    <screen>
-<![CDATA[
-GLOBALS ARE NICE
-this is requiring globals.php again which is also
-required in foolib.php
-Running goodTea: Oolong tea tastes good!
-Printing foo:
-Array
-(
-    [0] => 1
-    [1] => Array
-        (
-            [0] => complex
-            [1] => quaternion
-        )
-
-)
-]]>
-     </screen>
-    </informalexample>
-   </para>
-   <para>
-    また、Cプリプロセッサの動作との類似にも注意して下さい。この命令は、
-    "コンパイル時"、つまり、スクリプトがパースされた後で実行される前に
-    実行され、実行時に動的に挿入される必要があるスクリプトの部分に使用
-    するべきではありません。このような場合は、
-    <function>include_once</function>または
-    <function>include</function>を使用して下さい。
+    <function>require_once</function>は、スクリプトの実行時に同じファイ
+    ルが複数回読み込まれ、評価される可能性がある場合に、関数の再定義や
+    変数値の再代入といった問題を回避するために一回だけ読み込ませるため
+    に使用します。
    </para>
    <para>
     <function>require_once</function>および
-    <function>include_once</function>の他の例については、最新のPHPソー
-    スコード配布ファイルに含まれるPEARのコードを参照下さい。
+    <function>include_once</function>の使用例に関する他の例については、
+    最新のPHPソースコード配布ファイルに含まれるPEARのコードを参照下さ
+    い。
    </para>
+   <note>
+    <para>
+     <function>require_once</function>はPHP 4.0.1pl2で追加されました。
+    </para>
+   </note>
    <para>
-    <function>require</function>、<function>include</function>、
-    <function>include_once</function>、
-    <function>get_required_files</function>、
-    <function>get_included_files</function>、
-    <function>readfile</function>、<function>virtual</function>も参照
-    下さい。
+    <function>require</function>,
+    <function>include</function>, <function>include_once</function>,
+    <function>get_required_files</function>,
+    <function>get_included_files</function>, <function>readfile</function>,
+    <function>virtual</function>も参照してください。
    </para>
   </sect1>
   
@@ -1465,11 +1311,10 @@ Array
     したファイルを読み込み評価します。この動作は、
     <function>include</function>命令と似ていますが、ファイルからのコー
     ドが既に読み込まれている場合は、再度読み込まれないという重要な違い
-    があります。
+    があります。その名が示す通り、ファイルは一度しか読み込まれません。
    </para>
    <para>
-    <function>require_once</function>の説明で述べたように、
-    <function>include_once</function>は、クリプトの実行時に同じファイ
+    <function>include_once</function>は、スクリプトの実行時に同じファイ
     ルが複数回読み込まれ、評価される可能性がある場合に、関数の再定義や
     変数値の再代入といった問題を回避するために一回だけ読み込ませるため
     に使用します。
@@ -1485,12 +1330,12 @@ Array
      た。
    </para>
    <para>
-    <function>require</function>、<function>include</function>、
+    <function>include</function>、<function>require</function>、
     <function>require_once</function>、
     <function>get_required_files</function>、
     <function>get_included_files</function>、
-    <function>readfile</function>、<function>virtual</function>も参照
-    下さい。
+    <function>readfile</function>、<function>virtual</function>
+    も参照して下さい。
    </para>
   </sect1>
  
