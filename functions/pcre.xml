@@ -98,6 +98,18 @@ if (preg_match ("/page\s+#(\d+)/i", "Go to page #9.", $parts)) {
 }
       </programlisting>
      </example>
+     <example>
+      <title>URLからドメイン名を得る</title>
+      <programlisting role="php">
+	preg_match("/^(.*)([^\.]+\.[^\.]+)(\/.*)?/U",
+"http://www.php.net/index.html", $matches);
+ 	echo "domain name is: ".$matches[2]."\n";
+      </programlisting>
+     </example>
+     この例の出力は以下となります。
+     <programlisting>
+      domain name is: php.net
+     </programlisting>
      <function>preg_match_all</function>, 
      <function>preg_replace</function>, 
      <function>preg_split</function>も参照下さい。
@@ -146,7 +158,7 @@ if (preg_match ("/page\s+#(\d+)/i", "Go to page #9.", $parts)) {
 	 <informalexample>
 	  <programlisting role="php">
 preg_match_all ("|&lt;[^>]+>(.*)&lt;/[^>]+>|U", 
-    "&lt;b>example: &lt;/b>&lt;div align=left>a test&lt;/div>", 
+    "&lt;b>example: &lt;/b>&lt;div align=left>this a test&lt;/div>", 
     $out, PREG_PATTERN_ORDER);
 print $out[0][0].", ".$out[0][1]."\n";
 print $out[1][0].", ".$out[1][1]."\n"
@@ -174,7 +186,7 @@ example: , this is a test
 	 <informalexample>
 	  <programlisting role="php">
 preg_match_all ("|&lt;[^>]+>(.*)&lt;/[^>]+>|U",
-    "&lt;b>example: &lt;/b>&lt;div align=left>a test&lt;/div>", 
+    "&lt;b>example: &lt;/b>&lt;div align=left>this a test&lt;/div>", 
     $out, PREG_SET_ORDER);
 print $out[0][0].", ".$out[0][1]."\n";
 print $out[1][0].", ".$out[1][1]."\n"
@@ -214,6 +226,35 @@ preg_match_all ("/\(?  (\d{3})?  \)?  (?(1)  [\-\s] ) \d{3}-\d{4}/x",
                "Call 555-1212 or 1-800-555-1212", $phones);
       </programlisting>
      </example>
+    </para>
+    <para>
+     <example>
+      <title>HTMLタグにマッチするものを見付ける(greedy)</title>
+      <programlisting role="php">
+$html = "&lt;b&gt;bold text&lt;b&gt;lt;a href=howdy.html&gt;click me&lt;a&gt;
+
+preg_match_all("/(&lt;w]+)[^&gt;lt;2&gt; $html, $matches);
+
+for($i=0; $i&lt; count($matches[0]); $i++) {
+echo "matched: ".$matches[0][$i]."\n";
+echo "part 1: ".$matches[1][$i]."\n";
+echo "part 2: ".$matches[3][$i]."\n";
+echo "part 3: ".$matches[4][$i]."\n\n";
+}
+      </programlisting>
+     </example>
+     この例の出力は以下となります。
+     <programlisting>
+matched: &lt;b&gt;bold text&lt;b&gt;
+part 1: &lt;b&gt;
+part 2: bold text
+part 3: &lt;b&gt;
+
+matched: &lt;a href=howdy.html&gt;click me&lt;a&gt;
+part 1: &lt;a href=howdy.html&gt;
+part 2: click me
+part 3: &lt;a&gt;
+     </programlisting>
     </para>
     <simpara>
      <function>preg_match</function>,
@@ -395,6 +436,9 @@ $keywords = preg_split ("/[\s,]+/", "hypertext language, programming");
      <funcprototype>
       <funcdef>string <function>preg_quote</function></funcdef>
       <paramdef>string <parameter>str</parameter></paramdef>
+      <paramdef>string 
+       <parameter><optional>delimiter</optional></parameter>
+      </paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
@@ -406,8 +450,24 @@ $keywords = preg_split ("/[\s,]+/", "hypertext language, programming");
      便利です。
     </para>
     <para>
+     オプションの<parameter>delimiter</parameter>が指定された場合、こ
+     こで指定した文字もエスケープされます。これは、PCRE関数が使用する
+     デリミタをエスケープする場合に便利です。'/'がデリミタとしては最も
+     一般的に使用されています。
+    </para>
+    <para>
      正規表現の特殊文字は、次のようなものです。
      <screen>. \\ + * ? [ ^ ] $ ( ) { } = ! < > | :</screen>
+    </para>
+    <para>
+     <example>
+      <title>例:</title>
+      <programlisting role="php">
+$keywords="$40 for a g3/400";
+$keywords = preg_quote ($keywords, "/");
+echo $keywords; // \$40 for a g3\/400 を返します。
+      </programlisting>
+     </example>
     </para>
    </refsect1>
   </refentry>
@@ -849,7 +909,7 @@ preg_grep ("/^(\d+)?\.\d+$/", $array); // 配列の全ての浮動少数点数�
        \W     単語構成文字以外
 
      エスケープシーケンスの各組は、全文字の集合を2つの集合に
-     分割します。全ての文字は、各組のうち、片方だけにマッチします。
+     分割します。全ての文字は、各組のうち、片方だ�にマッチします。
 
      単語構成文字とは英字または数字またはアンダースコア文字であり、
      Perl の "単語" と成り得る文字のことです。
@@ -1105,7 +1165,7 @@ preg_grep ("/^(\d+)?\.\d+$/", $array); // 配列の全ての浮動少数点数�
      "erpillar" または空の文字列にマッチしてしまいます。
 
      2. 括弧は、サブパターンを(以下で定義する)値を取得するサブパ
-     ターンとして設定します。パターン全体がマッチした時、
+     ターンとして設定します。パターン全体がマッチした�、
      サブパターンにマッチした対象文字列の一部は、
      <function>pcre_exec</function> の <emphasis>ovector</emphasis> 
      引数によりコールした側に返されます。値を取得するサブパターンの
