@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- splitted from ./ja/functions/info.xml, last change in rev 1.15 -->
-<!-- sync: 1.29 -->
+<!-- sync: 1.13 -->
   <refentry id="function.dl">
    <refnamediv>
     <refname>dl</refname>
@@ -12,10 +11,116 @@
       <type>int</type><methodname>dl</methodname>
       <methodparam><type>string</type><parameter>library</parameter></methodparam>
      </methodsynopsis>
+
     <para>
-     <parameter>library</parameter>にあるPHP拡張モジュールをロードしま
-     す。設定ディレクティブ<link
-     linkend="ini.extension-dir">extension_dir</link>も参照下さい。
+     <parameter>library</parameter>で指定されたPHP拡張モジュールを
+     ロードします。 <parameter>library</parameter>に指定できるのは拡張モジュール
+     のファイル名<emphasis>だけ</emphasis>であり、それはプラットフォーム
+     に依存します。例えば、Unixプラットフォームでは
+     <link linkend="ref.sockets">sockets</link>拡張モジュール
+     (共有モジュールとしてコンパイルされていれば。デフォルトでは有りません!)
+     は<filename>sockets.so</filename>と呼ばれていますし、一方Windows
+     プラットフォームでは<filename>php_sockets.dll</filename>と呼ばれます。
+    </para>
+    <para>
+     &return.success; 
+     拡張モジュールのロード機能が無効(注意書き参照)だったり、あるいは
+     無効化されている(<literal>enable_dl</literal>でオフにされているか
+     または&php.ini;で&safemode;が有効になっている)場合は、
+     <constant>E_ERROR</constant>を発行して実行は停止されます。
+     指定されたライブラリをロードできず<function>dl</function>が
+     失敗した場合、&false;に加えて<constant>E_WARNING</constant>メッセージが
+     発行されます。
+    </para>
+    <para>
+     <function>extension_loaded</function>で、指定された拡張モジュールが
+     既に有効かどうか調べることができます。ビルトインの拡張モジュールと
+     動的なものと両方を調べることができます。(&php.ini;で指定されたものも
+     <function>dl</function>でロードされたものも)
+    </para>
+    <example>
+     <title><function>dl</function> examples</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+// Example loading an extension based on OS
+if (!extension_loaded('sqlite')) {
+    if (strtoupper(substr(PHP_OS, 0,3) == 'WIN')) {
+        dl('php_sqlite.dll');
+    } else {
+        dl('sqlite.so');
+    }
+}
+
+// Or, the PHP_SHLIB_SUFFIX constant is available as of PHP 4.3.0
+if (!extension_loaded('sqlite')) {
+    $prefix = (PHP_SHLIB_SUFFIX == 'dll') ? 'php_' : '';
+    dl($prefix . 'sqlite.' . PHP_SHLIB_SUFFIX);
+}
+?>
+]]>
+     </programlisting>
+    </example>
+    <para>
+     The directory where the extension is loaded from depends on your
+     platform:
+     拡張モジュールがロードされるディレクトリはプラットフォームによって
+     違います:
+    </para>
+    <para>
+     Windows - &php.ini;に明記されていない場合、デフォルトでは
+     拡張モジュールは<filename>c:\php4\extensions\</filename>から
+     ロードされます。
+    </para>
+    <para>
+     Unix - &php.ini;に明記されていない場合、デフォルトでは
+     以下に依存します。
+     <itemizedlist>
+      <listitem>
+       <simpara>
+        PHPをビルドする際に<literal>--enable-debug</literal>を指定しているか否か
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+        PHPをビルドする際に(実験段階の)ZTS (Zend Thread Safety)サポートを
+        有効にしているか否か
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+        現在の<literal>ZEND_MODULE_API_NO</literal>(Zend 内部モジュール
+        API番号。基本的にはメジャーモジュールAPIの変更が発生した日時。
+        例:<literal>20010901</literal>)
+       </simpara>
+      </listitem>
+     </itemizedlist>
+     上記を考慮して、ディレクトリのデフォルトは
+     <literal>&lt;install-dir&gt;/lib/php/extensions/ &lt;debug-or-not&gt;-&lt;zts-or-not&gt;-ZEND_MODULE_API_NO</literal>となる。
+     例:
+     <filename>/usr/local/php/lib/php/extensions/debug-non-zts-20010901</filename>
+     または
+     <filename>/usr/local/php/lib/php/extensions/no-debug-zts-20010901</filename>.
+    </para>
+    <note>
+     <para>
+      <function>dl</function>はマルチスレッドWebサーバ上では
+      サポート<emphasis>されません</emphasis>。
+      そのような環境の場合には&php.ini;上で<literal>extensions</literal>
+      命令を使用するようにしてください。しかし、<literal>CGI</literal>や
+      <literal>CLI</literal>には
+      <emphasis role="strong">影響しません</emphasis>!
+     </para>
+    </note>
+    <note>
+     <para>
+      <function>dl</function>はUNIXプラットフォーム上では
+      大文字小文字を区別します。
+     </para>
+    </note>
+    <para>
+     <link linkend="ini.extension">Extension Loading Directives</link>
+     <function>extension_loaded</function>も参照してください。
     </para>
    </refsect1>
   </refentry>
