@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- splitted from ./ja/functions/pcre.xml, last change in rev 1.1 -->
-<!-- EN-Revision: 1.2 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.7 $ -->
+<!-- EN-Revision: 1.18 Maintainer: hirokawa Status: ready -->
 <refentry id="function.preg-match">
  <refnamediv>
   <refname>preg_match</refname>
@@ -9,11 +9,12 @@
  <refsect1>
   <title>説明</title>
   <methodsynopsis>
-   <type>int</type><methodname>preg_match</methodname>
+   <type>mixed</type><methodname>preg_match</methodname>
    <methodparam><type>string</type><parameter>pattern</parameter></methodparam>
    <methodparam><type>string</type><parameter>subject</parameter></methodparam>
-   <methodparam choice="opt"><type>array</type><parameter>matches</parameter></methodparam>
+   <methodparam choice="opt"><type>array</type><parameter role="reference">matches</parameter></methodparam>
    <methodparam choice="opt"><type>int</type><parameter>flags</parameter></methodparam>
+   <methodparam choice="opt"><type>int</type><parameter>offset</parameter></methodparam>
   </methodsynopsis>
   <para>
    <parameter>pattern</parameter>で指定した正規表現により
@@ -45,6 +46,78 @@
    <parameter>flags</parameter>パラメータは、<literal>PHP</literal>
    4.3.0 以降で利用可能です。
   </para>
+
+  <para>
+   通常、探索は対象文字列の先頭から開始されます。
+   オプションのパラメータ<parameter>offset</parameter>は、検索の開始を始める
+   場所として別の位置を指定するために使用けいます。
+   <parameter>offset</parameter>パラメータは、
+   PHP 4.3.3以降で使用可能です。
+  </para>
+
+  <note>
+   <para>
+    <parameter>offset</parameter> は、
+    <literal>substr($subject, $offset)</literal> を
+    <function>preg_match_all</function>の対象文字列の場所に指定するのと
+    等価ではありません。
+    これは、<parameter>pattern</parameter> には、
+    <emphasis>^</emphasis>, <emphasis>$</emphasis> または
+    <emphasis>(?&lt;=x)</emphasis>のようなアサーションを含めることができる
+    ためです。
+    以下の比較を行ってみてください。
+   </para>
+   <informalexample>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$subject = "abcdef";
+$pattern = '/^def/';
+preg_match($pattern, $subject, $matches, PREG_OFFSET_CAPTURE, 3);
+print_r($matches);
+?>
+]]>
+      </programlisting>
+      &example.outputs;
+      <screen>
+<![CDATA[
+Array
+(
+)
+]]>
+    </screen>
+    <para>
+     一方、この例では、
+    </para>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$subject = "abcdef";
+$pattern = '/^def/';
+preg_match($pattern, substr($subject,3), $matches, PREG_OFFSET_CAPTURE);
+print_r($matches);
+?>
+]]>
+    </programlisting>
+    <para>
+     出力は以下のようになります。
+    </para>
+    <screen>
+<![CDATA[
+Array
+(
+    [0] => Array
+        (
+            [0] => def
+            [1] => 0
+        )
+
+)
+]]>
+    </screen>
+   </informalexample>
+  </note>
+
   <para>
    <function>preg_match</function>は、<parameter>pattern</parameter>
    がマッチした回数を返します。これは、0回(マッチせず)または1回となり
@@ -54,66 +127,89 @@
    <function>preg_match</function>は、エラーが発生した場合に&false;を
    返します。
   </para>
+  <tip>
+   <para>
+    Do not use <function>preg_match</function> if you only want to check if
+    one string is contained in another string. Use
+    <function>strpos</function> or <function>strstr</function> instead as
+    they will be faster.
+   </para>
+  </tip>
   <para>
    <example>
     <title>文字列"php"を探す</title>
     <programlisting role="php">
 <![CDATA[
+<?php
 // パラメータのデリミタの後の"i"は大文字小文字を区別しない検索を示します
-if (preg_match ("/php/i", "PHP is the web scripting language of choice.")) {
-    print "A match was found.";
+if (preg_match("/php/i", "PHP is the web scripting language of choice.")) {
+    echo "A match was found.";
 } else {
-    print "A match was not found.";
+    echo "A match was not found.";
 }
+?>
 ]]>
-      </programlisting>
-     </example>
-     <example>
-      <title>単語"web"を探す</title>
-      <programlisting role="php">
+    </programlisting>
+   </example>
+  </para>
+  <para>
+   <example>
+    <title>単語"web"を探す</title>
+    <programlisting role="php">
 <![CDATA[
-// パターン内の\bは単語の境界を示します。このため、独立した単語の
-// "web"にのみマッチし、"webbing" または "cobweb"のような単語の一
-//  部にはマッチしません
-if (preg_match ("/\bweb\b/i", "PHP is the web scripting language of choice.")) {
-    print "マッチするものが一つみつかりました。";
+<?php
+/* パターン内の\bは単語の境界を示します。このため、独立した単語の
+ *  "web"にのみマッチし、"webbing" または "cobweb"のような単語の一部にはマッチしません */
+if (preg_match("/\bweb\b/i", "PHP is the web scripting language of choice.")) {
+    echo "A match was found.";
 } else {
-    print "マッチするものはみつかりませんでした。";
+    echo "A match was not found.";
 }
-if (preg_match ("/\bweb\b/i", "PHP is the website scripting language of choice.")) {
-    print "マッチするものが一つみつかりました。";
+
+if (preg_match("/\bweb\b/i", "PHP is the website scripting language of choice.")) {
+    echo "A match was found.";
 } else {
-    print "マッチするものはみつかりませんでした。";
+    echo "A match was not found.";
 }
+?>
 ]]>
       </programlisting>
      </example>
+    </para>
+    <para>
      <example>
       <title>URLからドメイン名を得る</title>
       <programlisting role="php">
 <![CDATA[
-// URLからホスト名を得る
+<?php
+// get host name from URL
 preg_match("/^(http:\/\/)?([^\/]+)/i",
-"http://www.php.net/index.html", $matches);
+    "http://www.php.net/index.html", $matches);
 $host = $matches[2];
-// ホスト名の最後の二つを得る
-preg_match("/[^\.\/]+\.[^\.\/]+$/",$host,$matches);
-echo "ドメイン名: ".$matches[0]."\n";
+
+// get last two segments of host name
+preg_match("/[^\.\/]+\.[^\.\/]+$/", $host, $matches);
+echo "domain name is: {$matches[0]}\n";
+?>
 ]]>
-      </programlisting>
-     </example>
+    </programlisting>
+    <para>
      この例の出力は以下となります。
-     <programlisting>
+    </para>
+    <screen>
 <![CDATA[
 domain name is: php.net
 ]]>
-     </programlisting>
-     <function>preg_match_all</function>, 
-     <function>preg_replace</function>, 
-     <function>preg_split</function>も参照ください。
-    </para>
-   </refsect1>
-  </refentry>
+    </screen>
+   </example>
+  </para>
+  <para>
+   <function>preg_match_all</function>, 
+   <function>preg_replace</function>,
+   <function>preg_split</function>も参照ください。
+  </para>
+ </refsect1>
+</refentry>
 
 <!-- Keep this comment at the end of the file
 Local variables:
