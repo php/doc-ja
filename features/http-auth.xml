@@ -21,18 +21,30 @@
     <programlisting role="php">
 &lt;?php
   if(!isset($PHP_AUTH_USER)) {
-    Header(&quot;WWW-Authenticate: Basic realm=\&quot;My Realm\&quot;&quot;);
-    Header(&quot;HTTP/1.0 401 Unauthorized&quot;);
+    header(&quot;WWW-Authenticate: Basic realm=\&quot;My Realm\&quot;&quot;);
+    header(&quot;HTTP/1.0 401 Unauthorized&quot;);
     echo &quot;ユーザーがキャンセルボタンを押した時に送信されるテキスト\n&quot;;
     exit;
   } else {
-    echo &quot;Hello $PHP_AUTH_USER.&lt;P&gt;&quot;;
-    echo &quot;あなたは $PHP_AUTH_PW をパスワードとして入力しました。&lt;P&gt;&quot;;
+    echo &quot;&lt;p&gt;こんにちは、$PHP_AUTH_USER さん。&lt;/p&gt;&quot;;
+    echo &quot;&lt;p&gt;あなたは、$PHP_AUTH_PW をパスワードとして入力しました。&lt;/p&gt;&quot;;
   }
 ?>
     </programlisting>
    </example>
   </para>
+
+  <note>
+   <title>注意</title>
+   <para>
+    HTTPヘッダ行をコーディングする際には注意を要します。全てのクライア
+    ントへの互換性を最大限に保証するために、キーワード "Basic" には、
+    大文字の"B"を使用して書くべきです。realm文字列は(一重引用符ではな
+    く)二重引用符で括る必要があります。また、"HTTP/1.0 401"ヘッダ行の
+    コード"401"の前には、1つだけ空白を置く必要があります。
+   </para>
+  </note>
+
   <para>
    単に $PHP_AUTH_USER、$PHP_AUTH_PW を出力するのではなく、ユーザー名
    とパスワードの有効性をチェックしたいと思うかもしれません。
@@ -53,6 +65,17 @@
    認証されたユーザーかどうかを確認するために $REMOTE_USER 変数を使用
    することができます。
   </simpara>
+
+  <note>
+   <title>設定上の注意</title>
+   <para>
+    PHP は、外部認証が動作しているかどうかの判定を
+    <literal>AuthType</literal>ディレクティブの有無で行います。
+    PHP認証を使用するコンテキストについてこのディレクティブを避けるよ
+    うにして下さい。(さもないと、各認証は失敗します。)
+   </para>
+  </note>
+
   <simpara>
    しかし、上記の機能も、認証を要求されないURLを管理する人が同じサーバー
    にある認証を要するURLからパスワードを盗むことを防ぐわけではありませ
@@ -71,25 +94,24 @@
    <programlisting role="php">
 &lt;?php
   function  authenticate()  {
-      Header( &quot;WWW-Authenticate: Basic realm=\&quot;Test  Authentication  System\&quot;&quot;);
-      Header( &quot;HTTP/1.0 401 Unauthorized&quot;);
-      echo  &quot;このリソースにアクセスする際には有効なログインIDとパスワードを入力する必要があります。\n&quot;;
-      exit;
+    header( &quot;WWW-Authenticate: Basic realm=\&quot;Test Authentication System\&quot;&quot;);
+    header( &quot;HTTP/1.0 401 Unauthorized&quot;);
+    echo  &quot;このリソースにアクセスする際には有効なログインIDとパスワードを入力する必要があります。\n&quot;;
+    exit;
   }
 
   if(!isset($PHP_AUTH_USER)  ||  ($SeenBefore ==  1  &amp;&amp;  !strcmp($OldAuth,  $PHP_AUTH_USER))  )  {
     authenticate();
   }  
   else  {
-    echo  &quot;Welcome:  $PHP_AUTH_USER&lt;BR&gt;&quot;;
-    echo  &quot;Old:  $OldAuth&quot;;
-    echo  &quot;&lt;FORM  ACTION=\&quot;$PHP_SELF\&quot;  METHOD=POST&gt;\n&quot;;
-    echo  &quot;&lt;INPUT  TYPE=HIDDEN  NAME=\&quot;SeenBefore\&quot;  VALUE=\&quot;1\&quot;&gt;\n&quot;;
-    echo  &quot;&lt;INPUT  TYPE=HIDDEN  NAME=\&quot;OldAuth\&quot;  VALUE=\&quot;$PHP_AUTH_USER\&quot;&gt;\n&quot;;
-    echo  &quot;&lt;INPUT  TYPE=Submit  VALUE=\&quot;Re  Authenticate\&quot;&gt;\n&quot;;
-    echo  &quot;&lt;/FORM&gt;\n&quot;;
-
-}
+   echo &quot;&lt;/p&gt;Welcome: $PHP_AUTH_USER&lt;br&gt;&quot;;
+   echo &quot;Old: $OldAuth&quot;;
+   echo &quot;&lt;form action=\&quot;$PHP_SELF\&quot; METHOD=POST&gt;\n&quot;;
+   echo &quot;&lt;input type=\&quot;hidden\&quot; name=\&quot;SeenBefore\&quot; value=\&quot;1\&quot;&gt;\n&quot;;
+   echo &quot;&lt;input type=\&quot;hidden\&quot; name=\&quot;OldAuth\&quot; value=\&quot;$PHP_AUTH_USER\&quot;&gt;\n&quot;;
+   echo &quot;&lt;input type=\&quot;submit\&quot; value=\&quot;Re Authenticate\&quot;&gt;\n&quot;;
+   echo &quot;&lt;/form&gt;&lt;/p&gt;\n&quot;;
+  }
 ?>
    </programlisting>
   </example>
