@@ -1,0 +1,344 @@
+  <chapter id="functions">
+   <title>関数</title>
+
+   <sect1 id="functions.user-defined">
+    <title>ユーザー定義関数</title>
+ 
+    <para>
+    関数は次のような構文で定義されます。
+ 
+     <informalexample>
+      <programlisting role="php">
+function foo ($arg_1, $arg_2, ..., $arg_n) {
+    echo "関数の例\n";
+    return $retval;
+}
+      </programlisting>
+     </informalexample>
+    </para>
+     
+    <simpara>
+    関数の中では、他の関数や <link linkend="keyword.class">クラス</link> 定義
+    を含む PHP のあらゆる有効なコードを使用することができます。
+    </simpara>     
+    <simpara>
+     PHP3 では、関数は参照される前に定義されている必要がありました。
+     PHP4ではそのような制限はありません。
+    </simpara>
+   <simpara>
+     PHP は関数のオーバーロードをサポートしていません。
+     また、宣言された関数の定義を取り消したり再定義することも
+     できません。
+   </simpara>
+  
+   <simpara>
+	PHP3 では、引数のデフォルト値
+	(詳細は、<link linkend="functions.arguments.default">引数のデフォルト値
+	</link>を参照下さい)はサポートしていますが、
+	関数の引数を可変とすることはできません。
+	PHP4 は両方ともサポートしています。
+	詳細は、
+	<link linkend="functions.variable-arg-list">可変長引数リスト</link>
+	および <function>func_num_args</function>,
+	<function>func_get_arg</function>, 
+	<function>func_get_args</function> に関する関数リファレンスを
+	参照下さい。
+    </simpara>
+
+   </sect1>
+ 
+   <sect1 id="functions.arguments">
+    <title>関数の引数</title>
+ 
+    <simpara>
+    引数のリストにより関数へ情報を渡すことができます。
+    このリストは、カンマで区切られた変数や定数のリストです。</simpara>
+ 
+    <para>
+    PHP は、値渡し(デフォルト)、
+    <link linkend="functions.arguments.by-reference">参照渡し</link>、
+    <link linkend="functions.arguments.default">デフォルト引数値</link>
+     をサポートしています。可変長引数リストは、PHP4以降でのみサポート
+     されています。
+	詳細は、
+	<link linkend="functions.variable-arg-list">可変長引数リスト</link>
+	および <function>func_num_args</function>,
+	<function>func_get_arg</function>, 
+	<function>func_get_args</function> に関する関数リファレンスを
+	参照下さい。PHP3でも関数に引数の配列を渡すことにより
+	同様の効果を得ることができます。
+ 
+     <informalexample>
+      <programlisting role="php">
+function takes_array($input) {
+    echo "$input[0] + $input[1] = ", $input[0]+$input[1];
+}
+      </programlisting>
+     </informalexample>
+    </para>
+ 
+    <sect2 id="functions.arguments.by-reference">
+     <title>参照渡し</title>
+ 
+     <simpara>
+     デフォルトで、関数の引数は値で渡されます。(このため、関数の内部で引数の値を
+     変更しても関数の外側では値は変化しません。)
+     関数がその引数を修正できるようにするには、その引数を参照渡しと
+     する必要があります。
+     </simpara>
+     <para>
+     関数の引数を常に参照渡しとしたい場合には、関数定義において
+     アンパサンド(&amp;) を引数名の前に付加することができます。    
+ 
+       <informalexample>
+       <programlisting role="php">
+function add_some_extra(&amp;$string) {
+    $string .= 'and something extra.';
+}
+$str = 'This is a string, ';
+add_some_extra($str);
+echo $str;    // 'This is a string, and something extra.' を出力します
+       </programlisting>
+      </informalexample></para>
+ 
+     <para>
+     変数へある変数を参照渡しとしたいが、デフォルトでは参照渡しではない
+     場合、関数コール時に引数名の前にアンパサンドを付加することができます。
+ 
+      <informalexample>
+       <programlisting role="php">
+function foo ($bar) {
+    $bar .= ' and something extra.';
+}
+$str = 'This is a string, ';
+foo ($str);
+echo $str;    // 'This is a string, ' を出力します。
+foo (&amp;$str);
+echo $str;    // 'This is a string, and something extra.' を出力します。
+       </programlisting>
+      </informalexample>
+     </para>
+
+    </sect2>
+ 
+    <sect2 id="functions.arguments.default">
+     <title>デフォルト引数値</title>
+ 
+     <para>
+     関数は、スカラー引数に関して次のように C++ スタイルのデフォルト値を
+     定義することができます。
+ 
+      <informalexample>
+       <programlisting role="php">
+function makecoffee ($type = "cappucino") {
+    return "一杯の $type を作ります\n";
+}
+echo makecoffee ();
+echo makecoffee ("espresso");
+       </programlisting>
+      </informalexample>
+     </para>
+ 
+     <para>
+    上のコードにより、次のような出力が行われます。
+ 
+      <screen>
+一杯の cappucino を作ります
+一杯の espresso を作ります
+      </screen>
+     </para>
+ 
+     <simpara>
+     デフォルト値は、定数式である必要があり、
+     (例えば、)変数やクラスのメンバーであってはなりません。
+     </simpara>
+
+     <para>
+     PHP 4.0 においては、デフォルト引数に <literal>unset</literal> を
+     指定することも可能です。これは、値が指定されない場合、
+     その引数が全く設定されないことを意味します。</para>
+ 
+     <para>
+     デフォルト引数を使用する場合、全てのデフォルト値は、
+     デフォルト値としない引数の右側にある必要があります。
+     そうしないと、期待通りの動作は得られないでしょう。
+     次の短いコードを見てみましょう。
+ 
+      <informalexample>
+       <programlisting role="php">
+function makeyogurt ($type = "acidophilus", $flavour) {
+    return "Making a bowl of $type $flavour.\n";
+}
+ 
+echo makeyogurt ("raspberry");   // 期待通りには動作しません
+       </programlisting>
+      </informalexample>
+     </para>
+ 
+     <para>
+     上記の例の出力は次のようになります。
+ 
+      <screen>
+Warning: Missing argument 2 in call to makeyogurt() in 
+/usr/local/etc/httpd/htdocs/php3test/functest.html on line 41
+Making a bowl of raspberry .
+      </screen></para>
+ 
+     <para>
+     ここで、上の例を次のコードと比べてみましょう。
+ 
+      <informalexample>
+       <programlisting role="php">
+function makeyogurt ($flavour, $type = "acidophilus") {
+    return "Making a bowl of $type $flavour.\n";
+}
+ 
+echo makeyogurt ("raspberry");   // 期待通りに動作します
+       </programlisting>
+      </informalexample>
+     </para>
+ 
+     <para>
+      この例の出力は、次のようになります。
+ 
+      <screen>
+Making a bowl of acidophilus raspberry.
+     </screen>
+      </para>
+     </sect2>
+
+     <sect2 id="functions.variable-arg-list">
+	<title>可変長引数リスト</title>
+	
+	<simpara>
+	 PHP4 は、可変長引数をユーザー定義関数でサポートしています。
+	 可変長引数の使用法は非常に簡単で、
+	 <function>func_num_args</function>,
+	 <function>func_get_arg</function>, 
+	 <function>func_get_args</function> 関数を使用します。
+	</simpara>
+
+	<simpara>
+	可変長引数に関して特別な構文は必要としません。
+	引数リストは従来と同様に関数定義で明示的に指定することができ、
+	動作も従来と変わりません。
+	</simpara>
+
+   </sect2>
+
+  </sect1>
+ 
+   <sect1 id="functions.returning-values">
+    <title>返り値</title>
+ 
+    <para>
+   オプションの return 文により値を返すことができます。
+    リストやオブジェクトを含むあらゆる型を返すことができます。
+ 
+     <informalexample>
+      <programlisting role="php">
+function square ($num) {
+    return $num * $num;
+}
+echo square (4);   // '16' を出力します。
+      </programlisting>
+     </informalexample>
+    </para>
+      
+    <para>
+   複数の値を返すことはできませんが、リストを返すことにより
+    同じ効果を得ることができます。
+ 
+     <informalexample>
+      <programlisting role="php">
+function square ($num) {
+    return $num * $num;>
+function small_numbers() {
+   return array (0, 1, 2);
+}
+list ($zero, $one, $two) = small_numbers();
+      </programlisting>
+     </informalexample>
+    </para>
+   </sect1>
+
+   <sect1 id="functions.old-syntax">
+    <title><literal>old_function</literal></title>
+ 
+    <simpara>
+     <literal>old_function</literal> 文は、
+     ('function' を 'old_function' で置き換えなければなりませんが、) 
+     PHP/FI2 と同じ構文を用いている関数を定義することを 
+     可能にします。
+    </simpara>
+    <simpara>
+    この機能は推奨されない機能であり、
+    PHP/FI2->PHP3 コンバーターのみで使用されるべきです。
+    </simpara>
+    <warning>
+     <para>
+     <literal>old_function</literal> として宣言された関数は、PHP の内部コードから
+     コールすることはできません。
+     つまり、このことは、<function>usort</function>,
+     <function>array_walk</function>, 
+     <function>register_shutdown_function</function> のような
+     関数においてこの関数を使用することができないことを意味します。
+     (通常の PHP3 形式で)ラッパー関数を書くことによりこの制約を
+     取り除き、<literal>old_function</literal> をコールすることができます。
+     </para>
+    </warning>
+
+   </sect1>
+
+   <sect1 id="functions.variable-functions">
+    <title>可変関数</title>
+ 
+    <para>
+ 	PHP は可変関数(variable functions)の概念をサポートします。
+	これにより、変数名の後に括弧が付いている場合、その値が何であろうと
+	PHPは、同名の関数を探し実行を試みます。
+	この機能は、コールバック、関数テーブル等を実装するために使用可能です。
+    </para>
+ 
+    <para>
+ 	<example>
+ 	 <title>可変関数の例</title>
+ 	 <programlisting role="php">
+ &lt;?php
+ function foo() {
+    echo "In foo()&lt;br>\n";
+ }
+ 
+ function bar( $arg = '' ) {
+    echo "In bar(); argument was '$arg'.&lt;br>\n";
+ }
+ 
+ $func = 'foo';
+ $func();
+ $func = 'bar';
+ $func( 'test' );
+ ?>
+ 	 </programlisting>
+ 	</example>
+    </para>
+ 
+   </sect1>
+ 
+  </chapter>
+ 
+ <!-- Keep this comment at the end of the file
+ Local variables:
+ mode: sgml
+ sgml-omittag:t
+ sgml-shorttag:t
+ sgml-minimize-attributes:nil
+ sgml-always-quote-attributes:t
+ sgml-indent-step:1
+ sgml-indent-data:t
+ sgml-parent-document:nil
+ sgml-default-dtd-file:"../../manual.ced"
+ sgml-exposed-tags:nil
+ sgml-local-catalogs:nil
+ sgml-local-ecat-files:nil
+ End:
+ -->

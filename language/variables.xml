@@ -1,0 +1,922 @@
+  <chapter id="language.variables">
+   <title>変数</title>
+
+   <sect1 id="language.variables.basics">
+    <title>基本的な事</title>
+
+  <para>
+   PHP の変数はドル記号の後に変数名が続く形式で表されます。
+   変数名は大文字小文字を区別します。
+   <informalexample>
+	<programlisting> 
+$var = "Bob";
+$Var = "Joe";
+echo "$var, $Var"; // "Bob, Joe" を出力します。
+	</programlisting>
+   </informalexample>
+  </para>
+  <para>
+    PHP3 では、変数はその常に値により代入されていました。
+    これは、つまり、ある変数にある式を代入する際、元の式の
+    値全体がコピーされる側の変数にコピーされるということです。
+    これは、例えば、ある変数の値を他の変数に代入した後で、
+    これらの変数の1つを変更しても他の変数には影響を与えないという
+    ことを意味します。この種の代入に関するより詳細な情報については、
+    <link linkend="language.expressions">式</link> を参照下さい。
+   </para>
+   <para>
+    PHP4 は変数に値の代入を行う別の方法を提供します。それは、
+    <emphasis>参照による代入</emphasis> です。
+    この場合、新規の変数は元の変数を参照するだけです。
+    (言いかえると、元の変数の"エイリアスを作る"または元の変数を"指す")
+    新規の変数への代入は、元の変数に影響し、その逆も同様となります。
+    この手法ではコピーは行われないため、代入はより速やかに行われます。
+    しかし、速度の向上が体感できるのは、重いループや大きな配列または
+    オブジェクトを割り付ける場合に限られるものと思われます。
+   </para>
+   <para>
+   参照により代入を行うには、代入する変数(ソース変数)の先頭に
+   アンパサンドを加えます。たとえば、次の簡単なコードは
+   'My name is Bob'を二度出力します。
+
+    <informalexample>
+     <programlisting role="php">
+&lt;?php
+$foo = 'Bob';              // 値'Bob'を$fooに代入する。
+$bar = &amp;$foo;              // $fooを$barにより参照
+$bar = "My name is $bar";  // $barを変更...
+echo $foo;                 // $fooも変更される。
+echo $bar;
+?&gt;
+     </programlisting>
+    </informalexample>
+   </para>
+
+   <para>
+   注意すべき重要な点として、名前のある変数のみが参照により代入できる
+   ということがあります。
+    <informalexample>
+     <programlisting role="php">
+&lt;?php
+$foo = 25;
+$bar = &amp;$foo;      // これは有効な代入です。
+$bar = &amp;(24 * 7);  // 無効です。名前のない式を参照しています。
+
+function test() {
+   return 25;
+}
+
+$bar = &amp;test();    // 無効。
+?&gt;
+     </programlisting>
+    </informalexample>
+   </para>
+
+  </sect1>
+
+  <sect1 id="language.variables.predefined">
+   <title>定義済みの変数</title>
+   
+   <simpara>
+    PHPは、実行する全てのスクリプトに定義済みの多くの変数を
+    提供します。しかし、これらの変数の多くは、
+    実行するサーバーの種類、サーバーのバージョンおよび設定、
+    その他の要素に依存しており、完全に記述することはできません。
+    これらの変数のいくつかはPHPをコマンドラインで実行した場合には
+    利用できません。
+   </simpara>
+   <simpara>
+   これらの要因はあるものの、<ulink
+    url="&url.apache;">Apache</ulink> 1.3.6のデフォルトインストールを
+    行い、PHP3をモジュールとしてデフォルトインストールを行った状態で
+    定義済みの変数のリストを以下に示します。
+   </simpara>
+   <simpara>
+   全ての定義済み変数のリスト(そして他の多くの有益な情報)については、
+   <function>phpinfo</function>を参照(および使用)ください。
+   </simpara>
+
+   <note>
+    <simpara>
+    このリストは、網羅的なものでも網羅的にしようとするものでもありません。
+    どんな定義済みの変数に自分のスクリプトからアクセス可能と期待できる
+    のかに関するガイドラインであるに過ぎません。
+    </simpara>
+   </note>
+
+   <sect2 id="language.variables.predefined.apache">
+    <title>Apache により設定される変数</title>
+
+    <simpara>
+    これらの変数は、<ulink
+     url="&url.apache;">Apache</ulink> Webサーバーにより
+     作成されるものです。他のWebサーバーを実行している場合には、
+     同じ変数が提供される保証はありません。いくつかの変数が
+     省略されたり、このリストにない別の変数が提供されている
+     可能性があります。
+     このリストにある変数の多くは、 <ulink url="&url.cgispec;">CGI 1.1 の規約</ulink>に
+     記述されており、他のWebサーバーでも利用可能であると期待することができます。
+    </simpara>
+    <simpara>
+     数は少ないですが、これらの変数のいくつかはPHPをコマンドラインで実行している時のみ
+     利用可能(または意味がある)であるということに注意して下さい。
+    </simpara>
+
+    <para>
+     <variablelist>
+      <varlistentry>
+       <term>GATEWAY_INTERFACE</term>
+       <listitem>
+	<simpara>
+	 サーバーが使用するCGI 規約のリビジョン。例えば、'CGI/1.1'。
+	</simpara>
+       </listitem>
+      </varlistentry>
+
+      <varlistentry>
+       <term>SERVER_NAME</term>
+       <listitem>
+	<simpara>
+	 現在のスクリプトが実行されているサーバーホストの名前。
+	 スクリプトが仮想ホストで実行されている場合、その仮想ホストに関して
+	 定義された値となります。
+	</simpara>
+       </listitem>
+      </varlistentry>
+
+      <varlistentry>
+       <term>SERVER_SOFTWARE</term>
+       <listitem>
+	<simpara>
+	 
+	 サーバーのIDを表す文字列。リクエストに応答する際に、ヘッダに表示されます。
+	</simpara>
+       </listitem>
+      </varlistentry>
+
+      <varlistentry>
+       <term>SERVER_PROTOCOL</term>
+       <listitem>
+	<simpara>
+	 リクエストされたページを送信する際のプロトコルの名前及びリビジョン。
+	 例えば、'HTTP/1.0'。
+	</simpara>
+       </listitem>
+      </varlistentry>
+      
+      <varlistentry>
+       <term>REQUEST_METHOD</term>
+       <listitem>
+	<simpara>
+	 ページにアクセスする際に使用されるリクエストメソッドの種類。
+	 例えば、'HEAD', 'POST', 'PUT'。
+	</simpara>
+       </listitem>
+      </varlistentry>
+	  
+      <varlistentry>
+       <term>QUERY_STRING</term>
+       <listitem>
+	<simpara>
+	クエリー文字列。または、ページがアクセスされたパス。
+	</simpara>
+       </listitem>
+      </varlistentry>
+
+      <varlistentry>
+       <term>DOCUMENT_ROOT</term>
+       <listitem>
+	<simpara>
+	現在のスクリプトが実行されているサーバーのドキュメントルートディレクトリ。
+	サーバーの設定ファイルで定義されています。
+	</simpara>
+       </listitem>
+      </varlistentry>
+
+      <varlistentry>
+       <term>HTTP_ACCEPT</term>
+       <listitem>
+	<simpara>
+	現在のリクエストにおける<literal>Accept:</literal>ヘッダーの内容。
+	ただし、該当するヘッダーがある場合のみ定義されます。
+	</simpara>
+       </listitem>
+      </varlistentry>
+
+      <varlistentry>
+       <term>HTTP_ACCEPT_CHARSET</term>
+       <listitem>
+	<simpara>
+	 現在のリクエストにおける<literal>Accept-Charset:</literal>ヘッダーの内容。
+	ただし、該当するヘッダーがある場合のみ定義されます。例えば、
+	 'iso-8859-1,*,utf-8'。
+	</simpara>
+       </listitem>
+      </varlistentry>
+
+      <varlistentry>
+       <term>HTTP_ENCODING</term>
+       <listitem>
+	<simpara>
+	 現在のリクエストにおける<literal>Accept-Encoding:</literal>ヘッダーの内容。
+	ただし、該当するヘッダーがある場合のみ定義されます。例えば、'gzip'。
+	</simpara>
+       </listitem>
+      </varlistentry>
+      
+      <varlistentry>
+       <term>HTTP_ACCEPT_LANGUAGE</term>
+       <listitem>
+	<simpara>
+	 現在のリクエストにおける<literal>Accept-Language:</literal>ヘッダーの内容。
+	ただし、該当するヘッダーがある場合のみ定義されます。例えば、'en'。
+	</simpara>
+       </listitem>
+      </varlistentry>
+      
+      <varlistentry>
+       <term>HTTP_CONNECTION</term>
+       <listitem>
+	<simpara>
+	 現在のリクエストにおける<literal>Connection:</literal>ヘッダーの内容。
+	ただし、該当するヘッダーがある場合のみ定義されます。例えば、'Keep-Alive'。
+	</simpara>
+       </listitem>
+      </varlistentry>
+
+      <varlistentry>
+       <term>HTTP_HOST</term>
+       <listitem>
+	<simpara>
+	 現在のリクエストにおける<literal>Host:</literal>ヘッダーの内容。
+	ただし、該当するヘッダーがある場合のみ定義されます。
+	</simpara>
+       </listitem>
+      </varlistentry>
+
+      <varlistentry>
+       <term>HTTP_REFERER</term>
+       <listitem>
+	<simpara>
+	ブラウザから現在のページを参照する際のページアドレス。
+	この変数は、ユーザーのブラウザにより設定されます。全てのブラウザが
+	この変数を設定するわけではありません。
+	</simpara>
+       </listitem>
+      </varlistentry>
+
+      <varlistentry>
+       <term>HTTP_USER_AGENT</term>
+       <listitem>
+	<simpara>
+	 現在のリクエストにおいて<literal>User_Agent:</literal>ヘッダーが
+	 定義されている場合にはその内容。
+	 これは、現在のページを見るために使用されているブラウザソフトウエアを示す
+	 文字列です。例えば、
+	 <computeroutput>Mozilla/4.5 [en] (X11; U; Linux 2.2.9 i586)</computeroutput>
+	 となります。
+	 特に、ページの機能をユーザーのブラウザの能力に合わせるために
+	 <function>get_browser</function>にこの値を指定することも可能です。
+	</simpara>
+       </listitem>
+      </varlistentry>
+
+      <varlistentry>
+       <term>REMOTE_ADDR</term>
+       <listitem>
+	<simpara>
+	 現在のページを見ているユーザーのIPアドレス。
+	</simpara>
+       </listitem>
+      </varlistentry>
+
+      <varlistentry>
+       <term>REMOTE_PORT</term>
+       <listitem>
+	<simpara>
+	 Webサーバーと通信するユーザーのマシンで使用されているポート。
+	</simpara>
+       </listitem>
+      </varlistentry>
+
+      <varlistentry>
+       <term>SCRIPT_FILENAME</term>
+       <listitem>
+	<simpara>
+	 現在実行中のスクリプトの絶対パス。
+	</simpara>
+       </listitem>
+      </varlistentry>
+
+      <varlistentry>
+       <term>SERVER_ADMIN</term>
+       <listitem>
+	<simpara>
+	 (Apacheの場合、)Webサーバーの設定ファイルでSERVER_ADMIN
+	 ディレクティブに指定された値。
+	 スクリプトが仮想ホストで実行されている場合、その仮想ホストに関して
+	 値が定義されます。
+	</simpara>
+       </listitem>
+      </varlistentry>
+      
+      <varlistentry>
+       <term>SERVER_PORT</term>
+       <listitem>
+	<simpara>
+	 Webサーバーで使用されているサーバーマシンの通信用ポート。
+	 デフォルトの設定では、'80'となります。
+	 例えば、SSLを使用している場合、セキュアHTTPポートの番号により
+	 この値は変化します。
+	</simpara>
+       </listitem>
+      </varlistentry>
+
+      <varlistentry>
+       <term>SERVER_SIGNATURE</term>
+       <listitem>
+	<simpara>
+	 サーバーのバージョンおよび仮想ホスト名を含む文字列。
+	 この文字列は、サーバーが生成したページに追加されます。ただし、
+	 これが行われるのは、この機能を有効にした場合です。
+	</simpara>
+       </listitem>
+      </varlistentry>
+
+      <varlistentry>
+       <term>PATH_TRANSLATED</term>
+       <listitem>
+	<simpara>
+	サーバーが仮想的なパスを実際のパスへ変換した後で、
+	現在のスクリプトの(ドキュメントルートではなく)ファイルシステムに
+	基づくパス。
+	</simpara>
+       </listitem>
+      </varlistentry>
+
+      <varlistentry>
+       <term>SCRIPT_NAME</term>
+       <listitem>
+	<simpara>
+	現在のスクリプトのパスを有します。自分自身を指す必要があるページ
+	では便利です。
+	</simpara>
+       </listitem>
+      </varlistentry>
+
+      <varlistentry>
+       <term>REQUEST_URI</term>
+       <listitem>
+	<simpara>
+	 このページにアクセスするために指定されたURI。
+	 例えば、'/index.html'。
+	</simpara>
+       </listitem>
+      </varlistentry>
+     </variablelist>
+    </para>
+
+   </sect2>
+
+   <sect2 id="language.variables.predefined.environment">
+    <title>環境変数</title>
+
+    <simpara>
+     これらの変数は、PHPパーサが実行されている環境から
+     PHP のグローバル変数領域にインポートされます。
+     その多くは、PHPを実行したシェルにより提供されたものであり、
+     システムが異なると恐らくシェルの種類も異なるので、固定したリストを
+     示すことはできません。定義済みの環境変数のリストについては、
+     使用するシェルのドキュメントを参照下さい。
+    </simpara>
+    <simpara>
+     CGI変数を含む他の環境変数は、PHPがサーバーモジュールとして実行
+     されているのか、CGIプロセッサとして実行されているのかに
+     よらず設定されます。
+    </simpara>
+	
+   </sect2>
+
+   <sect2 id="language.variables.predefined.php">
+    <title>PHP により定義される変数</title>
+
+    <simpara>
+     これらの変数は、PHP自体により作成されます。
+    </simpara>
+
+    <para>
+     <variablelist>
+      <varlistentry>
+       <term>argv</term>
+       <listitem>
+	<simpara>
+	 スクリプトに渡される引数の配列。
+	 スクリプトがコマンドラインで実行された場合、これにより、
+	 C言語の形式でコマンドラインのパラメータにアクセスすることができます。
+	 GETメソッドでコールされた場合、この配列にはクエリー文字列が含まれます。
+	</simpara>
+       </listitem>
+      </varlistentry>
+
+      <varlistentry>
+       <term>argc</term>
+       <listitem>
+	<simpara>
+	スクリプトに渡されたコマンドラインパラメータの数を有しています。
+	(コマンドラインで実行された場合)
+	</simpara>
+       </listitem>
+      </varlistentry>
+
+      <varlistentry>
+       <term>PHP_SELF</term>
+       <listitem>
+	<simpara>
+	現在実行しているスクリプトのドキュメントルートに相対パスで表したファイル名。
+	PHPがコマンドラインプロセッサとして実行されている場合、
+	この変数は利用できません。
+	</simpara>
+       </listitem>
+      </varlistentry>
+	  
+      <varlistentry>
+       <term>HTTP_COOKIE_VARS</term>
+       <listitem>
+	<simpara>
+	HTTPクッキーにより現在のスクリプトに渡された変数を有する連想配列。
+	 設定ディレクティブ <link linkend="ini.track-vars">track_vars</link>
+	 または	 <computeroutput>&lt;?php_track_vars?&gt;</computeroutput>
+	 ディレクティブのどちらかにより変数の追跡機能が有効の場合のみ利用可能です。
+	</simpara>
+       </listitem>
+      </varlistentry>
+      
+      <varlistentry>
+       <term>HTTP_GET_VARS</term>
+       <listitem>
+	<simpara>
+	HTTP GETメソッドにより現在のスクリプトに渡された変数を有する連想配列。
+	 設定ディレクティブ <link linkend="ini.track-vars">track_vars</link>
+	 または	 <computeroutput>&lt;?php_track_vars?&gt;</computeroutput>
+	 ディレクティブのどちらかにより変数の追跡機能が有効の場合のみ利用可能です。
+	</simpara>
+       </listitem>
+      </varlistentry>
+	 
+      <varlistentry>
+       <term>HTTP_POST_VARS</term>
+       <listitem>
+	<simpara>
+	HTTP POSTメソッドにより現在のスクリプトに渡された変数を有する連想配列。
+	 設定ディレクティブ <link linkend="ini.track-vars">track_vars</link>
+	 または	 <computeroutput>&lt;?php_track_vars?&gt;</computeroutput>
+	 ディレクティブのどちらかにより変数の追跡機能が有効の場合のみ利用可能です。
+	</simpara>
+       </listitem>
+      </varlistentry>
+     </variablelist>
+    </para>
+	
+   </sect2>
+
+  </sect1>
+
+   <sect1 id="language.variables.scope">
+    <title>変数のスコープ</title>
+
+    <simpara>
+   変数のスコープは、その変数が定義されたコンテキストです。
+   ほとんどの PHP 変数は、スコープを1つだけ有しています。
+   このスコープの範囲は、includeやrequireにより読みこまれたファイルも
+   含みます。例えば、
+  </simpara>
+  <informalexample>
+    <programlisting role="php">
+$a = 1;
+include "b.inc";
+    </programlisting>
+   </informalexample>
+   <simpara>
+   
+   この例で、変数$aはインクルードされた b.inc スクリプトの中でも
+   利用可能です。
+   しかし、ユーザー定義の関数の中では変数の有効範囲はローカル関数の中となります。
+   関数の中で使用された変数はデフォルトで有効範囲が関数内部に制限されます。
+   例えば、
+   </simpara>    
+
+    <informalexample>
+     <programlisting role="php"> 
+$a = 1; /* グローバルスコープ */ 
+
+Function Test () { 
+    echo $a; /* ローカルスコープ変数の参照 */ 
+} 
+
+Test ();
+     </programlisting>
+    </informalexample>
+
+    <simpara>
+   このスクリプトは、出力を全く行いません。
+   これは、echo 命令がローカル版の $a 変数を参照しているにもかかわらず、
+   このスコープでは値が代入されていないからです。
+   この動作は、特にローカルな定義で上書きしない限りグローバル変数が
+   自動的に関数で使用可能である C 言語と少々異なっていると気がつかれる
+   かもしれません。
+   C 言語のような場合、グローバル変数を不注意で変更してしまう
+   という問題を生じる可能性があります。
+   PHP では、グローバル変数は、関数の内部で使用する場合、
+   関数の内部でグローバルとして宣言する必要があります。
+   例を以下に示します。</simpara>
+
+    <informalexample>
+     <programlisting role="php">
+$a = 1;
+$b = 2;
+
+Function Sum () {
+    global $a, $b;
+
+    $b = $a + $b;
+} 
+
+Sum ();
+echo $b;
+     </programlisting>
+    </informalexample>
+
+    <simpara>
+    上のスクリプトは、&quot;3&quot; を出力します。
+    関数の内部で $a、$b をグローバル宣言を行うことにより、
+    両変数への参照は、グローバル変数の方を参照することになります。
+    ある関数により操作できるグローバル変数の数は無制限です。
+    </simpara>
+
+    <simpara>
+    グローバルスコープから変数をアクセスする2番目の方法は、
+    PHP が定義する $GLOBALS 配列を使用することです。
+    先の例は、次のように書き換えることができます。</simpara>
+
+    <informalexample>
+     <programlisting role="php">
+$a = 1;
+$b = 2;
+
+Function Sum () {
+    $GLOBALS["b"] = $GLOBALS["a"] + $GLOBALS["b"];
+} 
+
+Sum ();
+echo $b;
+     </programlisting>
+    </informalexample>
+
+    <simpara>
+    $GLOBALS 配列は連想配列であり、グローバル変数の名前がキー、その変数の内容が
+    配列要素の値となっています。
+   </simpara>
+
+    <simpara>
+    変数のスコープに関する別の重要な機能は、
+    <emphasis>静的(static)</emphasis> 変数です。
+    静的変数はローカル関数スコープのみに存在しますが、
+    プログラム実行がこのスコープの外で行われるようになっても
+    その値を失わないません。
+    次の例を見てください。</simpara>
+
+    <informalexample>
+     <programlisting>
+Function Test () {
+    $a = 0;
+    echo $a;
+    $a++;
+}
+     </programlisting>
+    </informalexample>
+
+    <simpara>
+    この関数は、コールされる度に $a を 0 にセットし、&quot;0&quot; を出力するので
+    ほとんど役にたちません。
+    変数を1 増やす $a++ は、関数から外に出ると $a 変数が消えてしまうために
+    目的を達成しません。
+    現在のカウントの追跡ができるようにカウント関数を使用できるようにするためには、
+    $a 変数を静的に宣言します。</simpara>
+
+    <informalexample>
+     <programlisting role="php">
+Function Test () {
+    static $a = 0;
+    echo $a;
+    $a++;
+}
+     </programlisting>
+    </informalexample>
+
+    <simpara>
+     こうすると、Test() 関数が呼ばれる度に、$a の値を出力し、
+     その値を増加させます。
+    </simpara>
+
+    <simpara>
+    静的変数は、再帰関数を実現する1つの手段としても使用されます。
+    再帰関数は、自分自身をコールする関数です。
+    再帰関数を書くときには、無限に再帰を行う可能性があるため、
+    注意する必要があります。
+    適当な方法により再帰を確実に終了させる必要があります。
+    次の簡単な関数は、中止するタイミングを知るために静的変数 $count を用いて、
+    10 回まで再帰を行います。
+    </simpara>
+
+    <informalexample>
+     <programlisting role="php">
+Function Test () {
+    static $count = 0;
+
+    $count++;
+    echo $count;
+    if ($count < 10) {
+        Test ();
+    }
+    $count--;
+}
+     </programlisting>
+    </informalexample>
+
+   </sect1>
+
+   <sect1 id="language.variables.variable">
+    <title>可変変数</title>
+
+    <simpara>
+  変数名を可変にできると便利なことが時々あります。
+   可変変数では、変数名を動的にセットし使用できます。
+   通常の変数は、次のような命令でセットします。
+   </simpara>
+
+    <informalexample>
+     <programlisting role="php">
+$a = "hello";
+     </programlisting>
+    </informalexample>
+
+    <simpara>
+    可変変数は、変数の値をとり、変数の名前として扱います。
+    上の例では、<emphasis>hello</emphasis> は、ドル記号を
+    二つ使用することにより、変数の名前として使用することができます。
+    つまり、
+    </simpara>
+
+    <informalexample>
+     <programlisting role="php">
+$$a = "world";
+     </programlisting>
+    </informalexample>
+
+    <simpara>
+    ここまでで、二つの変数が定義され、PHP シンボルツリーに定義されています。
+    これらは、"hello" を値とする $a と "world" を値とする $hello です。
+    そこで、次の命令、
+    </simpara>
+
+    <informalexample>
+     <programlisting>
+echo "$a ${$a}";
+     </programlisting>
+    </informalexample>
+
+    <simpara>
+   の出力は、次の命令と全く同じとなります。</simpara>
+
+    <informalexample>
+     <programlisting>
+echo "$a $hello";
+     </programlisting>
+    </informalexample>
+
+    <simpara>
+    すなわち、両方共、<emphasis>hello world</emphasis>
+    を出力します。
+    </simpara>
+
+    <simpara>
+     可変変数を配列で使用する際には、曖昧さの問題を解決する必要があります。
+     つまり、$$a[1] と書いた場合、$a[1] を変数として使用したいのか、
+     $$a を変数とし [1] を変数の添え字としたいのかを、パーサが知る必要が
+     あるのです。
+     この曖昧さを解決するには、前者では ${$a[1]} とし、
+     後者では ${$a}[1] とする構文を用います。
+    </simpara>
+
+   </sect1>
+
+   <sect1 id="language.variables.external">
+    <title>PHPの外部から来る変数</title>
+
+    <sect2 id="language.variables.external.form">
+     <title>HTML フォーム (GET と POST)</title>
+
+     <simpara>
+      フォームが PHP スクリプトに投稿された時、フォームから渡された
+      全ての変数は PHP により自動的にスクリプトから使用可能となります。
+      例えば、次のフォームを見てみましょう。
+     </simpara>
+
+     <para>
+      <example>
+       <title>単なフォーム変数</title>
+       <programlisting role="php">
+&lt;form action="foo.php3" method="post">
+    Name: &lt;input type="text" name="name">&lt;br>
+    &lt;input type="submit">
+&lt;/form>
+       </programlisting>
+      </example>
+     </para>
+
+     <simpara>
+     投稿された際、PHP は変数
+      <computeroutput>$name</computeroutput> を作成します。
+      この変数の値は、フォーム上で <emphasis>Name:</emphasis> フィールドに
+      入力されたものとなっています。
+     </simpara>
+
+     <simpara>
+     PHP は、フォーム変数における配列も解釈しますが、
+     一次元のみとなります。
+     この機能は、例えば、関連する変数をグループ化したり、複数の入力値が
+     選択された際に値を取り出すために使用します。</simpara>
+
+     <para>
+     <example>
+      <title>より複雑なフォーム変数</title>
+       <programlisting>
+&lt;form action="array.php" method="post">
+    Name: &lt;input type="text" name="personal[name]">&lt;br>
+    Email: &lt;input type="text" name="personal[email]">&lt;br>
+    Beer: &lt;br>
+    &lt;select multiple name="beer[]">
+        &lt;option value="warthog">Warthog
+        &lt;option value="guinness">Guinness
+        &lt;option value="stuttgarter">Stuttgarter Schwabenbr&auml;u
+        &lt;/select>
+    &lt;input type="submit">
+&lt;/form>
+       </programlisting>
+      </example>
+     </para>
+
+      <simpara>
+	<link linkend="ini.track-vars">track_vars</link> の設定または
+	<computeroutput>&lt;?php_track_vars?&gt;</computeroutput> 命令により
+       PHP の track_vars 機能がオンにされた場合、POST または GET
+	メソッドにより投稿された変数は、それぞれグローバル連想配列
+	$HTTP_POST_VARS および $HTTP_GET_VARS よりアクセスできます。
+     </simpara>
+ 
+     <sect3>
+      <title>IMAGE SUBMIT 変数名</title>
+
+      <simpara>
+      フォームを投稿する際、次のタグのように標準の投稿ボタンの代わりに
+      画像を使用することができます。</simpara>
+
+      <informalexample>
+       <programlisting role="php">
+&lt;input type=image src="image.gif" name="sub">
+       </programlisting>
+      </informalexample>
+
+      <simpara>
+      画像のどこかがクリックされた場合、二つの変数 sub_x および sub_y が
+      付け加えられてこのフォームはサーバーに転送されます。
+      これらの変数は、ユーザーがこの画像をクリックした座標を示しています。
+      経験のある人は、ブラウザにより送られた変数の名前においてアンダースコアが
+      ピリオドになってしまっていることに注意するかもしれません。
+      しかし、PHP はピリオドをアンダースコアに自動的に変換します。</simpara></sect3></sect2>
+
+    <sect2 id="language.variables.external.cookies">
+     <title>HTTP クッキー</title>
+
+     <simpara>
+    PHP は、<ulink url="&spec.cookies;">
+     Netscape の規約</ulink> に定義されたHTTP クッキーを完全に
+     サポートします。
+     クッキーは、リモートブラウザにデータを保持し、再訪するユーザーを追跡し、
+     特定する機構です。
+     <function>SetCookie</function> 関数によりクッキーをセットすることが
+     できます。クッキーは、HTTP ヘッダの一部なので、
+     SetCookie 関数をブラウザに何かを出力する前にコールする必要が
+     あります。
+     この制約は、<function>Header</function> 関数のものと同じです。
+     クライアントから送られる全てのクッキーは、GET や POST メソッドの
+     データと全く同じように自動的に PHP 変数に変換されます。</simpara>
+
+     <simpara>
+     単一のクッキーに複数の値を代入したい場合は、
+     <emphasis>[]</emphasis> をクッキー名に付けてください。
+     以下に例を示します。
+     </simpara>
+
+     <informalexample>
+      <programlisting role="php">
+SetCookie ("MyCookie[]", "Testing", time()+3600);
+      </programlisting>
+     </informalexample>
+
+     <simpara>
+    クッキーは、パスまたはドメインが異ならない限り、
+    以前のクッキーをブラウザ上の同じ名前の変数に置き換えることに
+    注意してください。
+    さて、買い物篭(Shopping Cart) プログラムの場合、カウンタを保持し、
+    受け渡したいと思うかもしれません。
+    これは、次のようになります。</simpara>
+
+     <example>
+      <title>SetCookie の例</title>
+      <programlisting role="php">
+$Count++;
+SetCookie ("Count", $Count, time()+3600);
+SetCookie ("Cart[$Count]", $item, time()+3600);
+      </programlisting>
+     </example></sect2>
+
+    <sect2 id="language.variables.external.environment">
+     <title>環境変数</title>
+
+     <para>
+     PHP は、環境変数を自動的に通常の PHP 変数として使用可能とします。
+     
+     <informalexample>
+      <programlisting>
+echo $HOME;  /* 環境変数 HOME が設定されている場合、表示します。 */
+      </programlisting>
+     </informalexample></para>
+
+     <para>
+   情報は、GET、POST、Cookie からも自動的に来るため、
+    意図した種類の変数を確実に得るために環境変数から変数を明示的に
+    取得する方が好ましいということが時々あります。
+    <function>getenv</function> 関数をこのために使用することができます。
+    環境変数を <function>putenv</function> 関数でセットすることもできます。
+     </para>
+    </sect2>
+
+    <sect2>
+    <title>外部変数名のドット</title>
+ 
+    <para>
+        通常、PHP はスクリプトに渡された変数の名前を変更しません。
+	しかし、ドット(ピリオド、終止符)はPHPの変数名で有効な文字ではないということに
+	注意する必要があります。次の例を見てみましょう。
+ 	<programlisting role="php">
+ $varname.ext;  /* 無効な変数名 */
+ 	</programlisting>
+	ここで、パーサは、 $varname という名前の変数の後に文字列結合演算子があり、
+	その後に、裸の文字列(すなわち、既知のキーまたは予約語にマッチしない
+	引用符無しの文字列) 'ext' が続くとして解釈します。この場合、明らかに
+	意図する結果にはなりません。
+    </para>
+ 
+    <para>
+        重要なことを記述しておくと、このため、外部変数に含まれるドットを PHP は自動的に
+	アンダースコアに変換します。
+    </para>
+
+   </sect2>
+ 
+   <sect2>
+     <title>変数の型の定義</title>
+
+     <para>
+     PHP は、変数の型を定義し、必要に応じて変換します。
+     このため、ある変数の型がある時点で常に明らかであるわけではありません。
+     PHPは、変数の型を調べる複数の関数をサポートしています。
+     それらは、
+      <function>gettype</function>, <function>is_long</function>,
+      <function>is_double</function>, <function>is_string</function>,
+      <function>is_array</function>, 
+      <function>is_object</function> です。
+      </para>
+     </sect2>
+
+    </sect1>
+     
+  </chapter>
+ 
+ <!-- Keep this comment at the end of the file
+ Local variables:
+ mode: sgml
+ sgml-omittag:t
+ sgml-shorttag:t
+ sgml-minimize-attributes:nil
+ sgml-always-quote-attributes:t
+ sgml-indent-step:1
+ sgml-indent-data:t
+ sgml-parent-document:nil
+ sgml-default-dtd-file:"../../manual.ced"
+ sgml-exposed-tags:nil
+ sgml-local-catalogs:nil
+ sgml-local-ecat-files:nil
+ End:
+ -->
