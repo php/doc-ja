@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.1 $ -->
+ <chapter id="faq.html">
+  <title>PHPとHTML</title>
+  <titleabbrev>PHPとHTML</titleabbrev>
+  
+  <para>
+   PHPとHTMLは深く関係しています：PHPはHTMLを生成し、HTMLにはPHPに送信
+   される情報が記述されています。
+  </para>
+
+  <qandaset>
+   <qandaentry id="faq.html.encoding">
+    <question>
+     <para>
+      フォームから、もしくはURLから値を渡す場合にはどういったエンコー
+      ド/デコードが必要なのですか？
+     </para>
+    </question>
+    <answer>
+     <para>
+      エンコードが重要になる場面はいくつかあります。
+      <type>string</type> <varname>$data</varname>というエンコードされ
+      ていない文字列データを渡す場合について考えてみると：
+      <itemizedlist>
+       <listitem>
+        <para>
+         HTMLを通じて渡す場合： 文字列にはどのような値が含まれるか分か
+         らないので、データは<emphasis>必ず</emphasis>htmlescapeを行い、
+         ダブルクオートで囲まなければなりません。
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         URLを通じて渡す場合: URLはいくつかのパーツから成り立ちます。
+         このデータをそのパーツのうちの一つであると解釈させたいならば、
+         <function>urlencode</function>でエンコード<emphasis>しなけれ
+         ばなりません。</emphasis>
+        </para>
+       </listitem>
+      </itemizedlist>
+     </para>
+     <para>
+      <example>
+       <title>HTMLのhidden要素</title>
+        <programlisting role="php">
+<![CDATA[
+<?php
+    echo "<input type=hidden value=\"" . htmlescape($data) . "\">\n";
+?>
+]]>
+       </programlisting>
+      </example>
+      <note>
+       <simpara>
+        <varname>$data</varname>を<function>urlencode</function>をして
+        はいけません。なぜなら、その作業はブラウザに任されているからで
+        す。一般に普及している全てのブラウザは正しくこの処理を行ってく
+        れます。ただ、この処理はメソッド(GETやPOST)が何であるかにかか
+        わらずに行われる、ということに気をつけてください。この処理に気
+        づくのはGETリクエストのときだけになるでしょう。なぜならPOSTリ
+        クエストの内容は通常目に触れることは無いからです。
+       </simpara>
+      </note>
+      <example>
+       <title>ユーザによって編集するデータ</title>
+       <programlisting role="php">
+<![CDATA[
+<?php
+    echo "<textarea name=mydata>\n";
+    echo htmlescape($data)."\n";
+    echo "</textarea>";
+?>
+]]>
+       </programlisting>
+      </example>
+      <note>
+       <simpara>
+        ブラウザはエスケープされたシンボルを解釈するので、dataは意図し
+        たとおりに表示されます。
+       </simpara>
+       <simpara>
+        フォームの内容を送信するとき、GETかPOSTかにかかわらずdataはブ
+        ラウザによってURLエンコードされ、PHPによってURLデコードされま
+        す。要は、URLエンコード/デコードを自分で行う必要はなく、これら
+        の処理は全て自動的に行われる、と言うことです。
+       </simpara>
+      </note>
+      <example>
+       <title>URL中の場合</title>
+       <programlisting role="php">
+<![CDATA[
+<?php
+    echo "<a href=\"" . htmlescape("/nexpage.php?stage=23&data=" .
+        urlencode($data)) . "\">\n";
+?>
+]]>
+       </programlisting>
+      </example>
+      <note>
+       <simpara>
+	この例では、実はGETリクエストを摸擬しています。このため、data
+	を手動で<function>urlencode</function>する必要があります。
+       </simpara>
+      </note>
+      <note>
+       <simpara>
+        全てのURLを<function>htmlescape</function>する必要があります。
+        なぜなら、このURLはHTMLのvalue属性として扱われるからです。この
+        場合は、ブラウザはまず<function>htmlescape</function>されたデー
+        タを元に戻し、それからURLを渡します。URLは
+        <function>urlencode</function>されているので、PHPはこれを正し
+        く解釈することができます。
+       </simpara>
+       <simpara>
+        URL中の<literal>&amp;</literal>が<literal>&amp;amp;</literal>
+        に置き換えられていることに気づくでしょう。もしあなたがこれを忘
+        れても、ほとんどのブラウザは元に戻してくれますが、必ずそうして
+        くれるとは限りませんので、URLが動的に変更されるものでなくても
+        URLは<function>htmlescape</function>される<emphasis>べき
+        </emphasis>です。
+       </simpara>
+      </note>
+     </para>
+     <!-- TODO: a note about addgpcslashes? -->
+    </answer>
+   </qandaentry>
+
+   <qandaentry id="faq.html.form-image">
+    <question>
+     <para>
+      &lt;input type="image"&gt;タグを使おうとしているのですが、変数
+      $foo.xと$foo.yが使えません。どうすればよいのですか？
+     </para>
+    </question>
+    <answer>
+     <para>
+      以下のようなタグを使えば、標準のボタンの代わりに画像を使用して
+      フォームを送信することができます：
+      <programlisting role="html">
+<![CDATA[
+<input type="image" src="image.gif" name="foo">
+]]>
+      </programlisting>
+      ユーザが画像のどこかをクリックすると、そのフォームの内容にfoo.x
+      とfoo.yという2つの変数が追加され、サーバに送信されます。
+     </para>
+     <para>
+      PHPでは$foo.xと$foo.yという名前は変数名として正しくないので、自
+      動的に$foo_xと$foo_yという名前に変換されます。要は、ピリオドがア
+      ンダースコアに置き換えられる、と言うことです。
+     </para>
+    </answer>
+   </qandaentry>
+
+   <qandaentry id="faq.html.arrays">
+    <question>
+     <para>HTMLフォームで配列を使用するにはどうすればよいですか？</para>
+    </question>
+    <answer>
+     <para>
+      フォームの内容をPHPスクリプトで<link
+      linkend="language.types.array">配列</link>として受け取るには、
+      &lt;input&gt;, &lt;select&gt; or &lt;textarea&gt;といった要素のnameを以
+      下のように指定します：
+      <programlisting role="html">
+<![CDATA[
+<input name="MyArray[]">
+<input name="MyArray[]">
+<input name="MyArray[]">
+<input name="MyArray[]">
+]]>
+      </programlisting>
+      変数名の最後にあるブラケットに注意してください。これにより、フォー
+      ムの内容が配列として扱われます。異なる要素に同じ名前をつけること
+      で要素を配列にグループ分けすることができます。
+      <programlisting role="html">
+<![CDATA[
+<input name="MyArray[]">
+<input name="MyArray[]">
+<input name="MyOtherArray[]">
+<input name="MyOtherArray[]">
+]]>
+      </programlisting>
+      上記のHTMLの場合、MyArrayとMyOtherArrayという2つの配列が生成され、
+      PHPスクリプトに送信されます。また、配列に特定のキーを設定するこ
+      ともできます。
+      <programlisting role="html">
+<![CDATA[
+<input name="AnotherArray[]">
+<input name="AnotherArray[]">
+<input name="AnotherArray[email]">
+<input name="AnotherArray[phone]">
+]]>
+      </programlisting>
+      この場合、配列AnotherArrayのキーは0, 1, emailそしてphoneとなります。
+     </para>
+     <para>
+      <note>
+       <para>
+	HTMLに配列のキーを指定するかどうかは自由です。キーを指定しなかっ
+	た場合はフォームに現れる順番に番号がつけられます。最初の例だと、
+	キーは0, 1, 2, 3となります。
+       </para>
+      </note>
+     </para>
+     <para>
+      <link linkend="ref.array">配列関数</link>と
+      <link linkend="language.variables.external">PHPの外部から来る変数
+      </link>も参照して下さい。
+     </para>
+    </answer>
+   </qandaentry>
+   
+   <qandaentry id="faq.html.select-multiple">
+    <question>
+     <para>
+      "select multiple"タグで選択された全ての結果を取得するにはどうす
+      ればよいですか？
+     </para>
+    </question>
+    <answer>
+     <para>
+      "select multiple"タグを使うと、ユーザはリストから複数の項目を選
+      択することができるようになります。選択された項目はフォームの
+      actionで指定されたハンドラに渡されます。問題は、これらの値が全て
+      同じ名前で渡されることです。つまり、
+      <programlisting role="html">
+<![CDATA[
+<select name="var" multiple>
+]]>
+      </programlisting>
+      選択されたそれぞれの項目はactionのハンドラに次のように渡されます：
+      <programlisting>
+var=option1
+var=option2
+var=option3
+      </programlisting>
+      それぞれの項目は前の変数<varname>$var</varname>の値を上書きして
+      しまいます。この問題を解決するには、PHPの"フォームの値を配列にす
+      る"機能を使います。以下のようにするとよいでしょう。
+      <programlisting role="html">
+<![CDATA[
+<select name="var[]" multiple>
+]]>
+      </programlisting>
+      こうすればPHPに<varname>$var</varname>を配列として扱うように知ら
+      せることができ、各項目のvalueの値は配列の要素としてvar[]に追加さ
+      れます。最初の項目は<varname>$var[0]</varname>になり、次の項目は
+      <varname>$var[1]</varname>...というようになります。
+      <function>count</function>関数を使えば選択された項目の数を知るこ
+      とができます。またもし必要なら<function>sort</function>関数を使っ
+      てソートを行うこともできます。
+     </para>
+     <para>
+      JavaScriptを使っている場合、フォーム要素に要素名を使って(訳注：
+      document.myform.myelement.value等の様に)アクセスしようとすると、
+      要素名に含まれる<literal>[]</literal>が問題となることがあるので
+      気をつけてください。この場合は、数字で表されるフォーム要素のIDを
+      使用するか、シングルクオートで要素名を囲んでフォーム要素の配列の
+      インデックスとしてアクセスして下さい。例えば、以下のようにします：
+      <programlisting>
+variable = documents.forms[0].elements['var[]'];
+      </programlisting>
+     </para>
+    </answer>
+   </qandaentry>
+  </qandaset>
+ </chapter>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+sgml-parent-document:nil
+sgml-default-dtd-file:"../../manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
