@@ -12,9 +12,10 @@
 
   <sect1 id="install.unix">
    <title>UNIX システムにおけるインストール</title>
-
    <para>
-    本節においては、PHP のインストールと設定に関する手引きを示します。
+    本節においては、UNIXシステム上でのPHP のインストールと設定に関する
+    手引きを示します。読み進む前に使用するプラットフォームまたはWebサー
+    バについて必要な部分を調べるようにして下さい。
    </para>
    <para>
     事前に必要な知識とソフトウエアを以下に示します。
@@ -26,24 +27,46 @@
      </listitem>
      <listitem>
       <simpara>
-       ANSI C コンパイラ
+       ANSI C コンパイラ(コンパイルする場合)
       </simpara>
      </listitem>
      <listitem>
       <simpara>
-       Web サーバー
+       flex(コンパイル用)
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       bison (コンパイル用)
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       Web サーバ
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       (gd、pdfライブラリ等のような)モジュール用のコンポーネント
       </simpara>
      </listitem>
     </itemizedlist>
    </para>
+
    <para>
-    UNIXプラットフォームでPHPをコンパイルおよび設定する方法は複数あり
-    ます。設定処理は、<filename>configure</filename>スクリプトでコマン
-    ドラインのオプションを使用することにより制御されます。このページは、
-    最も一般的なオプションの使用法を概説するものですが、この他にも多く
-    の設定方法があります。詳細については、<link
+    UNIXプラットフォームで様々なパッケージを使用してPHPのコンパイルお
+    よび設定を行う方法は複数あります。ユーザ自身によるコンパイルおよび
+    設定の処理はより複雑です。このため、この文書ではこれらの手順につい
+    てより詳細に説明します。
+   </para>
+   
+   <para>
+    PHPの初期設定および設定処理は、<filename>configure</filename>スク
+    リプトでコマンドラインのオプションを使用することにより制御されます。
+    このページは、最も一般的なオプションの使用法を概説するものですが、
+    この他にも多くの設定方法があります。詳細については、<link
     linkend="install.configure">configureオプションの完全なリスト
-    </link> を参照下さい。
+    </link> を参照下さい。PHPをインストールする方法は複数あります。
     <itemizedlist>
      <listitem>
       <simpara>
@@ -53,20 +76,20 @@
      </listitem>
      <listitem>
       <simpara>
-       <link linkend="install.unix.fhttpd">fhttpdモジュール</link>とし
+       <link linkend="install.fhttpd">fhttpdモジュール</link>とし
        て
       </simpara>
      </listitem>
      <listitem>
       <simpara>
        <link
-       linkend="install.unix.otherhttpd">AOLServer, NSAPI,
+       linkend="install.otherhttpd">AOLServer, NSAPI,
        phttpd, Pi3Web, Roxen, thttpd, Zeus</link>として使用する
       </simpara>
      </listitem>
      <listitem>
       <simpara>
-       <link linkend="install.unix.commandline">CGI実行ファイル</link>
+       <link linkend="install.commandline">CGI実行ファイル</link>
        として
       </simpara>
      </listitem>
@@ -74,24 +97,16 @@
    </para>
    
    <sect2 id="install.unix.apache-module">
-    <title>Apacheモジュール</title>
+    <title>Apacheモジュール クイックリファレンス</title>
 
     <para>
      PHPは、Apacheモジュールとしてコンパイルする方法には異なった複数の
-     方法があります。まず始めに簡単なインストール手順を示します。続い
-     て、特定の目的に即した様々な例を解説付きで示します。
-    </para>
-    
-    <para>
-     以下の手順の8行目で<command>configure</command>に追加する引数を
-     <link
-     linkend="install.configure">configureのオプションの完全なリスト
-     </link>から選択することが可能です。
+     方法があります。まず始めに簡単なインストール手順を示します。
     </para>
 
     <example id="install.unix.apache-module.quick">
      <title>
-      簡単なインストール手順 (Apache モジュール版)
+      PHP 4 の簡単なインストール手順 (Apache モジュール版)
      </title>
      <programlisting>
 1.  gunzip apache_1.3.x.tar.gz
@@ -105,211 +120,329 @@
 9.  make
 10. make install
 11. cd ../apache_1.3.x
-12. PHP 3の場合: ./configure --activate-module=src/modules/php3/libphp3.a
-    PHP 4の場合: ./configure --activate-module=src/modules/php4/libphp4.a
+12. ./configure --activate-module=src/modules/php4/libphp4.a
 13. make
 14. make install
-
-  このステップの代わりに、httpd バイナリを現在のバイナリに上書きする方法を
-  望まれるかもしれません。この場合、サーバーをシャットダウンすることを忘れない
-  ようにしてください。
- 
 15. cd ../php-x.x.x
-16. PHP 3の場合: cp php3.ini-dist /usr/local/lib/php3.ini
-    PHP 4の場合: cp php.ini-dist /usr/local/lib/php.ini
+16. cp php.ini-dist /usr/local/lib/php.ini
+17. httpd.conf または srm.conf ファイルを編集し、以下を追加: 
+      AddType application/x-httpd-php .php
 
-  PHPオプションをセットするために .ini ファイルを編集すること
-  ができます。
-  このファイルを別の場所に置きたい場合、ステップ8で
-  --with-config-file-path=/pathオプションを使用して下さい。
- 
-17. httpd.conf または srm.conf ファイルを編集し、次の文を加えてください。
-       
-     PHP 3の場合:   AddType application/x-httpd-php3 .php3
-     PHP 4の場合:   AddType application/x-httpd-php .php
-  
-  ここで設定する拡張子は、任意です。.php は、単に推奨されるというだけ
-  のものです。.html を使うことさえ可能です。
-
-18. Apache サーバーを起動する通常の手順を行ってください。
-      (HUPまたはUSR1シグナルによりサーバーをリロードするのではなく、
-      サーバーをストップしリスタートする必要があります。)
+18. 通常の手順でApacheサーバを再起動して下さい。(再起動するためにHUPま
+    たはUSR1シグナルを使用するのではなく、サーバを停止し、再起動する必
+    要があります。)
      </programlisting>
     </example>
-    <para>
-     <informalexample>
-      <programlisting>
-./configure --with-apxs --with-pgsql
-      </programlisting>
-     </informalexample>
-    </para>
-    <para>
-     これにより、共有ライブラリ <filename>libphp4.so</filename>が作成
-     されます。このライブラリは、Apacheの設定ファイル
-     <filename>httpd.conf</filename>のLoadModuleによりApacheにロードさ
-     れます。PostgreSQLサポートは、このライブラリ
-     <filename>libphp4.so</filename>に組み込まれます。
-    </para>
-    <para>
-     <informalexample>
-      <programlisting>
-./configure --with-apxs --with-pgsql=shared
-      </programlisting>
-     </informalexample>
-    </para>
-    <para>
-     これによりApacheの共有ライブラリ<filename>libphp4.so</filename>が
-     再度作成されます。また、共有ライブラリ
-     <filename>pgsql.so</filename>も作成されます。このライブラリは、
-     <filename>php.ini</filename>の extension 命令またはスクリプトの中
-     で関数<function>dl</function>を明示的に使用することによりロードす
-     ることが可能です。
-    </para>
-    <para>
-     <informalexample>
-      <programlisting>
-./configure --with-apache=/path/to/apache_source --with-pgsql
-      </programlisting>
-     </informalexample>
-    </para>
-    <para>
-     これにより、ライブラリ<filename>libmodphp4.a</filename>、
-     <filename>mod_php4.c</filename>およびいくつかの関連ファイルが
-     Apacheソースツリーの<literal>src/modules/php4</literal>ディレクト
-     リにコピーされます。この後、Apacheを
-     <literal>--activate-module=src/modules/php4/libphp4.a</literal>
-     を指定してコンパイルすると、Apacheは
-     <filename>libphp4.a</filename>を<filename>httpd</filename>バイナ
-     リに静的にリンクします。PostgreSQLサポートは、
-     <filename>httpd</filename>バイナリに直接インクルードされ、
-     最終的な結果としては、Apache全体とPHP全体を含む単一の
-     <filename>httpd</filename>バイナリとなります。
-    </para>
-    <para>
-     <informalexample>
-      <programlisting>
-./configure --with-apache=/path/to/apache_source --with-pgsql=shared
-      </programlisting>
-     </informalexample>
-    </para>
-    <para>
-     上と同じですが、最終的な<filename>httpd</filename>に
-     PostgreSQLサポートを直接インクルードする代わりに、共有ライブラリ
-     <filename>pgsql.so</filename>をファイル
-     <filename>php.ini</filename>または<function>dl</function>により直
-     接的にPHPにロードすることが可能です。
-    </para>
-    <para>
-     異なったPHPの構築法を選択する際、各方法の利点と欠点を考慮する必要
-     があります。共有オブジェクトとして構築する場合、Apacheと分割して
-     コンパイルすることが可能で、PHPを追加または変更する際に全体を再コ
-     ンパイルする必要がありません。PHPをApacheに(静的に)組み込む場合に
-     は、PHPはより高速にロード/実行することが可能です。詳細な情報につ
-     いては、Apacheの<ulink url="&url.apachedso;">DSOサポートのWebペー
-     ジ</ulink>を参照下さい。
-    </para>
    </sect2>
-
-   <sect2 id="install.unix.fhttpd">
-    <title>fhttpd モジュール</title>
-    <para>
-     PHPをfhttpdモジュールとして作成するには、
-     "Build as an fhttpd module?" に対して、"yes" と答えてください。
-     (configure の オプション
-     <link linkend="install.configure.with-fhttpd">
-      <option>--with-fhttpd=<replaceable>DIR</replaceable></option>
-     </link>) 
-     そして、fhttpd ソースのベースディレクトリを指定してください。
-     デフォルトディレクトリは、<filename class="directory">
-      /usr/local/src/fhttpd</filename>です。
-     fhttpd を使用している場合には、PHP をモジュールとして作成した方が、
-     より優れた性能、より高度な制御/遠隔実行能力を得ることができます。
-    </para>
-   </sect2>
-      
-   <sect2 id="install.unix.otherhttpd">
-    <title>他のWebサーバー</title>
-    <para>
-     PHPは、多くのWebサーバーをサポートするように構築することが可能で
-     す。サーバーに関係する設定オプションの完全なリストについては、
-     <link linkend="install.configure.servers">サーバーに関係した
-     オプション</link> を参照下さい。
-    </para>
-   </sect2>
-
-   <sect2 id="install.unix.commandline">
-    <title>CGI/コマンドライン バージョン</title>
-    <para>
-     デフォルトで、PHPはCGIプログラムとして作成されます。これにより、
-     コマンドラインインタプリタが作成され、CGI処理またはWeb以外のPHPス
-     クリプト実行に使用することが可能です。PHPモジュールをサポートする
-     Webサーバーを実行する場合、一般に性能面からモジュールの方を選択す
-     るべきです。しかし、CGIバージョンでは、Apacheユーザーが異なった
-     PHP対応ページを異なったユーザーIDで実行することが可能です。PHPを
-     CGIとして実行しようとする場合には、<link linkend="security">セキュ
-     リティの章</link>を一読するようにしてください。
-    </para>
-   </sect2>
-
-   <sect2 id="database-support-options">
-    <title>データベースサポートオプション</title>
-    <para>
-     PHPは、以下に示す多くのデータベース(とODBC)をネーティブでサポート
-     しています。コンパイル時に様々なデータベースのサポートを有効にす
-     るために、<filename>configure</filename>スクリプトに指定するオプ
-     ションが指定されています。詳細については、<link
-     linkend="install.configure.databases">データベースに関係する全オ
-     プションのリスト</link>を参照下さい。
-    </para>
-
-    <para>
-     <filename>configure</filename>へ指定可能なオプションの完全なリス
-     トについては、<link linkend="install.configure">設定オプションの
-     完全なリスト</link>を参照下さい。
-    </para>
-   </sect2>
-
+    
    <sect2 id="install.building">
     <title>構築</title>
     <simpara>
-     PHPのconfigureを実行した後は、既にCGI実行ファイルまたはPHPライブラリ
-     を構築する準備ができています。コマンド<command>make</command> に
-     は注意して下さい。構築に失敗し、原因が不明な場合、
-     <link linkend="install-problems">問題の節</link>を参照下さい。
+     PHPを設定した後では、CGI実行バイナリまたはPHPライブラリを構築する
+     準備ができています。コマンド <command>make</command> を実行する場
+     合には注意を要します。このコマンドの実行が失敗し、その原因が不明
+     な場合には、<link linkend="install-problems">問題に関するセクショ
+     ン</link>を参照下さい。
     </simpara>
    </sect2>
+  </sect1>
 
-   <sect2 id="install.testing">
-    <title>試験</title>
+  <sect1 id="install.linux">
+   <title>Linux インストール</title>
+   <para>
+    本節では、PHPをLinuxにインストールする場合の注意とコツについて説明
+    します。
+   </para>
+   <sect2 id="install.linux.packages">
+    <title>パッケージの使用法</title>
     <simpara>
-     PHPをCGIプログラムとして実行した場合、<command>make
-     test</command>と入力することにより構築したものをテストすることが
-     可能です。構築したものをテストすることは良い考えです。これにより、
-     早期に使用する環境でのPHPの問題に対して後でその問題と格闘するので
-     はなく、早期に見付けることが可能となります。
+     多くのLinuxディストリビューションではrpmファイルのようなパッケー
+     ジインストール機能がサポートされています。これにより、標準設定の
+     構築はかなり簡単になりますが、(セキュアサーバや標準以外のデータベー
+     スドライバのような)標準以外の機能を必要とする場合には、PHPやWebサー
+     バを再構築する必要があります。ソフトウエアの構築およびコンパイル
+     に不慣れな場合には、必要とする機能を有するPHPが既にパッケージ化さ
+     れていないかどうかを調べてみる価値はあります。
     </simpara>
    </sect2>
+  </sect1>
 
-   <sect2 id="install.benchmarking">
-    <title>ベンチマーク</title>
+  <sect1 id="install.hpux">
+   <title>HP-UX インストール</title>
+   <para>
+    本節では、HP-UXへのインストールに固有の注意とコツについて説明しま
+    す。
+   </para>
+   <example id="install.hpux.example">
+    <title>
+     HP-UX 10 へのインストール手順
+    </title>
+    <programlisting>
+From: paul_mckay@clearwater-it.co.uk
+04-Jan-2001 09:49
+(この手順は、php v4.0.4 および apache v1.3.9 用です) 
+
+PHPとApacheをHP-UX 10.20にインストールしたい?
+
+1. gzipが必要です。
+     http://hpux.connect.org.uk/ftp/hpux/Gnu/gzip-1.2.4a/gzip-1.2.4a-sd-10.20.depot.Z
+     からバイナリファイルをダウンロード、ファイルを解凍し、swinstallを使用
+     してインストールして下さい。
+
+
+2. gccが必要です。
+     http://gatekeep.cs.utah.edu/ftp/hpux/Gnu/gcc-2.95.2/gcc-2.95.2-sd-10.20.depot.gzからバイナリをダウンロードし、このファイルをgunzipにより解凍、swinstallによりインストールして下さい。
+
+
+3. gnu binutilsが必要です。
+     http://hpux.connect.org.uk/ftp/hpux/Gnu/binutils-2.9.1/binutils-2.9.1-sd-10.20.depot.gz
+     からバイナリ配布ファイルをダウンロード可能で、gunzipにより解凍し、
+     swinstallによりインストールして下さい。
+
+
+4. bisonが必要です。バイナリ配布ファイルを
+     http://hpux.connect.org.uk/ftp/hpux/Gnu/bison-1.28/bison-1.28-sd-10.20.depot.gz 
+     からダウンロード可能で、インストールして下さい。
+
+5. flexが必要です。http://www.gnu.org のミラーサイトのどれかからソース
+   コードをダウンロードする必要があります。ftpサイトのnon-gnuディレク
+   トリにあります。このファイルをダウンロードし、gunzipの後、tar -xvf
+   を実行して下さい。新規に作成されたflexディレクトリに移動し、
+     ./configure を実行し、makeを実行します。この後、make installを実
+   行します。
+
+     ここでエラーが発生した場合は、おそらくgcc等がPATHにはないためです
+     ので、PATHにこれらを追加して下さい。
+
+ここで、難しい手順を行います。
+
+6.PHPとApacheのソースをダウンロードして下さい。
+
+7.このファイルにgunzipとtar -xvfを実行して下さい。
+
+コンパイルが通るようにいくつかのファイルを修正する必要があります。
+
+8. まず、hpuxシステムの場合は、設定が認識できないようなので修正を要し
+     ます。より良い方法があるかもしれませんが、手っ取り早く簡単な方法は、
+     configureスクリプトの47286行目に次の行を追加することです。
+    lt_target=hpux10.20 
+
+9. 次の、apache GuessOS ファイルも修正を要します。
+apache_1.3.9/src/helpers の89行目を
+    "echo "hp${HPUXMACH}-hpux${HPUXVER}"; exit 0" 
+から
+    "echo "hp${HPUXMACH}-hp-hpux${HPUXVER}"; exit 0" 
+に変更して下さい。
+    
+10. HP-UXではPHPを共有オブジェクトとしてインストールすることはできませ
+     ん。このため、Apacheページの手順に従って静的にコンパイルする必要
+     があります。
+
+11. PHP および apache のコンパイルに成功しても、apache は起動しません。
+     Apache用に wwwまたはapacheのような新規ユーザを作成する必要があり
+     ます。Apacheのconf/httpd.confの252行目と253行目を
+    User nobody 
+    Group nogroup 
+から例えば
+    User www 
+    Group sys 
+に変更して下さい。
+
+     これは、hp-uxではApacheをnobodyとして実行できないためです。Apache
+     とPHPはこれにより動作するようになります。
+
+
+この手引が手助けになることを願いつつ、
+Paul Mckay
+  </programlisting>
+ </example>
+
+</sect1>
+
+<sect1 id="install.solaris">
+<title>Solaris へのインストール</title>
+   <para>
+    本節は、SolaricにPHPをインストールする際の注意とコツを説明します。
+   </para>
+   <sect2 id="install.solaris.required">
+    <title>必要なソフトウエア</title>
+    <para>
+     Solaris インストールは、Cコンパイラおよび関連するツールを欠いてい
+     ることが多いです。必要なソフトウエアは次のようになります。
+     <itemizedlist>
+      <listitem>
+       <simpara>
+	gcc (推奨されますが、他のC コンパイラも動作するかもしれません)
+       </simpara>
+      </listitem> 
+      <listitem>
+       <simpara>
+	make
+       </simpara>
+      </listitem> 
+      <listitem>
+       <simpara>
+	flex
+       </simpara>
+      </listitem> 
+      <listitem>
+       <simpara>
+	bison
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+	m4
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+	autoconf
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+        automake
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+        perl
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+        gzip
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+        tar
+       </simpara>
+      </listitem>
+     </itemizedlist>
+     加えて、(OracleまたはMySQLのような)使用する設定に応じた追加ソフト
+     ウエアをインストール(おそらくはコンパイルも)する必要があります。
+    </para>     
+   </sect2>
+
+   <sect2 id="install.solaris.packages">
+    <title>パッケージの使用</title>
     <simpara>
-     PHPをCGIプログラムとして構築した場合には、
-     <command>make bench</command>とすることにより、ベンチマークを実行
-     することが可能です。セーフモードがデフォルトでオンの場合、30秒以
-     上かかるベンチマークは完了させることができません。これは、セーフ
-     モードでは、<function>set_time_limit</function> を使用することが
-     できないためです。スクリプト用にこの時間を設定するには、設定
-     <link linkend="ini.max-execution-time">max_execution_time</link>
-     を使用して設定して下さい。<command>make bench</command> は、<link
-      linkend="configuration.file">設定ファイル</link>を無視します。
+     必要なコンポーネントのほとんどをインストールする際にpkgaddにより
+     solarisインストール処理を簡単に行うことが可能です。
     </simpara>
-    <note>
-     <simpara>
-      <command>make bench</command> は、PHP 3 でのみ利用可能です。
-     </simpara>
-    </note>
    </sect2>
+  </sect1>
 
+  <sect1 id="install.macosx">
+   <title>Mac OS X へのインストール</title>
+   <para>
+    本節は、PHPをMac OS Xをインストールする際の注意事項とコツを説明し
+    ます。
+   </para>
+   <sect2 id="install.macosx.packages">
+    <title>パッケージの使用法</title>
+    <simpara>
+     There are a few pre-packaged and pre-compiled versions of PHP for
+     Mac OS X. This can greatly assist in building a standard
+     configuration, but if you need to have a different set of features
+     (such as a secure server, or a different database driver), you may
+     need to build php and/or your webserver. If you are unfamiliar
+     with building and compiling your own software, it's worth
+     investigating whether or not somebody has already built a packaged
+     version of PHP with the features you need.
+     <ulink url="&url.lightyear;">Lightyear Design</ulink> offers a
+     pre-built version of PHP for OS X, as does
+     <ulink url="&url.tenon;">Tenon Intersystems</ulink>
+    </simpara>
+   </sect2>
+   <sect2 id="install.macosx.compile">
+    <title>Compiling for OS X server</title>
+    <simpara>
+     There are two slightly different versions of Mac OS X, client and
+     server. The following is for OS X server.
+    </simpara>
+    <example id="install.macosx.compile.example">
+     <title>
+      Mac OS X server install
+     </title>
+     <programlisting>
+1. Get the latest distributions of Apache and PHP
+2. Untar them, and run the configure program on Apache like so.
+    ./configure --exec-prefix=/usr \ 
+    --localstatedir=/var \ 
+    --mandir=/usr/share/man \ 
+    --libexecdir=/System/Library/Apache/Modules \ 
+    --iconsdir=/System/Library/Apache/Icons \ 
+    --includedir=/System/Library/Frameworks/Apache.framework/Versions/1.3/Headers \ 
+    --enable-shared=max \ 
+    --enable-module=most \ 
+    --target=apache 
+
+4. You may also want to add this line: 
+    setenv OPTIM=-O2 
+    If you want the compiler to do some optimization. 
+    
+5. Next, go to the php4 source directory and configure it. 
+    ./configure --prefix=/usr \ 
+    --sysconfdir=/etc \ 
+    --localstatedir=/var \ 
+    --mandir=/usr/share/man \ 
+    --with-xml \ 
+    --with-apache=/src/apache_1.3.12 
+
+    If you have any other addiitons (MySQL, GD, etc.), be sure to add
+    them here. For the --with-apache string, put in the path to your 
+    apache source directory, for example "/src/apache_1.3.12". 
+6. make
+7. make install    
+    This will add a directory to your Apache source directory under
+    src/modules/php4.
+    
+8. Now, reconfigure Apache to build in PHP4.
+    ./configure --exec-prefix=/usr \ 
+    --localstatedir=/var \ 
+    --mandir=/usr/share/man \ 
+    --libexecdir=/System/Library/Apache/Modules \ 
+    --iconsdir=/System/Library/Apache/Icons \ 
+    --includedir=/System/Library/Frameworks/Apache.framework/Versions/1.3/Headers \ 
+    --enable-shared=max \ 
+    --enable-module=most \ 
+    --target=apache \ 
+    --activate-module=src/modules/php4/libphp4.a 
+
+    You may get a message telling you that libmodphp4.a is out of date.
+    If so, go to the src/modules/php4 directory inside your apache
+    source directory and run this command: 
+
+    ranlib libmodphp4.a 
+
+    Then go back to the root of the apache source directory and run the
+    above configure command again. That'll bring the link table up to
+    date. 
+
+9. make
+10. make install
+
+11. copy and rename the php.ini-dist file to your "bin" directory from your
+    php4 source directory:
+    cp php.ini-dist /usr/local/bin/php.ini 
+
+    or (if your don't have a local directory) 
+
+    cp php.ini-dist /usr/bin/php.ini 
+      </programlisting>
+     </example>
+     
+    <simpara>
+     Other examples for
+     <ulink url="&url.stepwise.macosx-client;">Mac OS X client</ulink>
+     and
+     <ulink url="&url.stepwise.macosx-client;">Mac OS X server</ulink>
+     are available at <ulink url="&url.stepwise;">Stepwise</ulink>.
+    </simpara>
+   </sect2>
   </sect1>
 
   <sect1 id="install.configure">
@@ -1281,9 +1414,8 @@
     <title>その他</title>
 
     <para>
-     These are being classified over time, where appropriate.
+     どの場所が適当か不明なのをここに示します。
     </para>
-
 
     <variablelist>
      <varlistentry id="install.configure.disable-bcmath">
@@ -1344,7 +1476,7 @@
         PHP 3: PHP 3で利用できないオプション
        </para>
        <para>
-        PHP 4: Do not install PEAR
+        PHP 4: PEARをインストールしない
        </para>
       </listitem>
      </varlistentry>
@@ -1358,7 +1490,7 @@
         PHP 3: PHP 3で利用できないオプション
        </para>
        <para>
-        PHP 4: Disable PIC for shared objects
+        PHP 4: 共有オブジェクトでPICを無効にする
        </para>
       </listitem>
      </varlistentry>
@@ -1374,7 +1506,7 @@
         instead.
        </para>
        <para>
-        PHP 4: Disable POSIX-like functions
+        PHP 4: POSIX互換関数を無効にする
        </para>
       </listitem>
      </varlistentry>
@@ -1388,7 +1520,7 @@
         PHP 3: PHP 3で利用できないオプション
        </para>
        <para>
-        PHP 4: Disable passing additional runtime library search paths
+        PHP 4: 実行ライブラリ検索パスの追加を無効にする
        </para>
       </listitem>
      </varlistentry>
@@ -1402,7 +1534,7 @@
         PHP 3: PHP 3で利用できないオプション
        </para>
        <para>
-        PHP 4: Disable session support
+        PHP 4: セッションサポートを無効にする
        </para>
       </listitem>
      </varlistentry>
@@ -2717,25 +2849,80 @@
   </sect1>
 
   <sect1 id="install-windows95-nt">
-   <title>Windows 95/98/NT システムにおけるインストール</title>
-
-   <simpara>
-    このインストールガイドは、Windows 9x/NT 上の Web サーバー用に PHP
-    をインストールし、設定する手助けとなるものです。このガイドは、
-    &link.bob; によりまとめられたものです。最新版は、<ulink
-    url="&url.win32install;">&url.win32install;</ulink>にて手に入れる
-    ことができます。
-   </simpara>
+   <title>Windows 95/98/NT システムへのインストール</title>
    <para>
-    このガイドは、以下のWebィüバーへのインストールを
-    サポートしています。
+    PHPをWindowsにインストールするには、マニュアルインストールと
+    installshieldインストールによる方法の2種類があります。
     <itemizedlist>
      <listitem>
-      <para>
-       Personal Web Server (最新版が推奨されます)
-      </para>
+      <simpara>
+       <link linkend="install.windows.installer">Installshield</link>
+       に関する手順はこちらを参照下さい。
+      </simpara>
      </listitem>
      <listitem>
+      <simpara>
+       <link linkend="install.windows.manual">マニュアル設定</link>
+       に関する手順はこちらを参照下さい。
+      </simpara>
+     </listitem>
+    </itemizedlist>
+   </para>
+   
+   <sect2 id="install.windows.installer">
+    <title>Windows Installshield</title>
+
+    <para>
+     CGIバージョンのPHPをインストールする Windows 用 PHPインストーラが、
+     <ulink url="&url.php;">&url.php;</ulink> から取得可能で、IIS、PWS、
+     Xitami の場合、Web サーバーの設定も同時に行われます。
+    </para>
+    
+    <simpara>
+     使用するHTTPサーバーをシステムにインストールし、完全に動作するよ
+     うにして下さい。
+    </simpara>
+    
+    <simpara>
+     インストーラを実行し、インストールウイザードの指示に従って下さい。
+     2種類のインストール方法がサポートされています。一つ目は standard
+     で、設定の選択肢についてデフォルト値が示されます。もう一つは
+     advanced で、選択肢について質問が行われます。
+    </simpara>
+    
+    <simpara>
+     インストールウイザードは、<filename>php.ini</filename> ファイルを
+     設定し、Web サーバーでPHPを使用するように設定するに必要な情報を集
+     めます。IIS と NTワークステーションにおける PWS の場合、スクリプ
+     トマップ設定を有するサーバーの全ノードのリストが表示され、PHPスク
+     リプト用マッピングを追加したいと思う場所のノードを選択することが
+     可能です。
+    </simpara>
+
+    <simpara>
+     インストールが一旦完了すると、インストーラはシステムを再起動する
+     か、または、単にPHPの使用を開始するかを聞いてきます。
+    </simpara>
+   
+   </sect2>
+
+   <sect2 id="install.windows.manual">
+    <title>一般的なインストール手順</title>
+   <simpara>
+     このインストール手順は、Windows 9x/NT WebサーバについてPHPを手動
+    でインストールし、設定を際の手助けとなるものです。この手引は、
+     &link.bob;により書かれたものです。オリジナル版は、<ulink
+     url="&url.win32install;">&url.win32install;</ulink>にあります。
+   </simpara>
+   <para>
+     この手引は、以下の環境へのマニュアルインストールをサポートします。
+     <itemizedlist>
+      <listitem>
+       <para>
+	Personal Web Server (最新版を推奨)
+       </para>
+      </listitem>
+      <listitem>
       <para>
        Internet Information Server 3 または 4
       </para>
@@ -2752,10 +2939,6 @@
      </listitem>
     </itemizedlist>
    </para>
-   
-   <sect2>
-    <title>通常のインストール手順</title>
-
     <para>
      以下の手順は、個々のサーバーに関する手順の前に行う全てのインストー
      ルに共通する必須のものです。
@@ -2837,16 +3020,385 @@
 
    </sect2>
 
-   <sect2>
-    <title>Windows 95/98/NT と PWS/IIS 3</title>
+   </sect1>
+
+  <sect1 id="install-windows-modules">
+   <title>Windows モジュールのインストール</title>
+   <para>
+    PHPおよびWebサーバをWindowsにインストールした後、特定のモジュール
+    を使用したくなる場合もあるでしょう。以下の表に現在のWindowモジュー
+    ルを示します。マニュアルインストール手順で説明したように、PHPを起
+    動する際に 'extension=php_*.dll' の行のコメントを外すことにより、
+    ロードするモジュールを選択することが可能です。いくつかのモジュール
+    は、正しく動作させるためにシステムに別のライブラリをインストールし
+    ておく必要があります。PHP <ulink url="&url.php.faq;">FAQ</ulink>
+    には、サポートするライブラリの取得場所に関する詳しい情報があります。
+    スクリプトに次のように書くことにより、モジュールを動的にロードする
+    ことも可能です。
+    <command>dl("php_*.dll");</command>
+   </para>  
+   <sect2 id="install.windows.modules">
+    <title>PHP モジュール</title>
+    <para>
+     <table>
+      <title>PHP モジュール</title>
+      <tgroup cols="2">
+       <tbody>
+        <row>
+         <entry>php_calendar.dll</entry>
+         <entry>カレンダ変換関数</entry>
+        </row>
+        <row>
+         <entry>php_crypt.dll</entry>
+         <entry>暗号化関数</entry>
+        </row>
+        <row>
+         <entry>php_dbase.dll</entry>
+         <entry>DBase 関数</entry>
+        </row>
+        <row>
+         <entry>php_dbm.dll</entry>
+         <entry>バークレーDB2ライブラリによるGDBM エミュレーション</entry>
+        </row>
+        <row>
+         <entry>php_filepro.dll</entry>
+         <entry>filepro データベースへのアクセス(読込みのみ)</entry>
+        </row>
+        <row>
+         <entry>php_gd.dll</entry>
+         <entry>イメージ処理用のGD ライブラリ関数</entry>
+        </row>
+        <row>
+         <entry>php_hyperwave.dll</entry>
+         <entry>HyperWave 関数</entry>
+        </row>
+        <row>
+         <entry>php_imap4r2.dll</entry>
+         <entry>IMAP 4 関数</entry>
+        </row>
+        <row>
+         <entry>php_ldap.dll</entry>
+         <entry>LDAP 関数</entry>
+        </row>
+        <row>
+         <entry>php_msql1.dll</entry>
+         <entry>mSQL 1 クライアント</entry>
+        </row>
+        <row>
+         <entry>php_msql2.dll</entry>
+         <entry>mSQL 2 クライアント</entry>
+        </row>
+        <row>
+         <entry>php_mssql.dll</entry>
+         <entry>MSSQL クライアント (MSSQL DBライブラリが必要</entry>
+        </row>
+        <row>
+         <entry>php3_mysql.dll (PHP 4に組込み)</entry>
+         <entry>MySQL 関数</entry>
+        </row>
+        <row>
+         <entry>php_nsmail.dll</entry>
+         <entry>Netscape メール関数</entry>
+        </row>
+        <row>
+         <entry>php_oci73.dll</entry>
+         <entry>Oracle 関数</entry>
+        </row>
+        <row>
+         <entry>php_snmp.dll</entry>
+         <entry>SNMP get および walk 関数 (NT のみ!)</entry>
+        </row>
+        <row>
+         <entry>php_zlib.dll</entry>
+         <entry>ZLib 関数</entry>
+        </row>
+       </tbody>
+      </tgroup>
+     </table>
+    </para>
+    
+   </sect2>
+   
+  </sect1>
+
+    <sect1 id="install.apache">
+   <title>Apache サーバへのインストール</title>
+   <para>
+    本節では、PHPをApacheにインストールする際の注意事項とコツについて
+    説明します。<link linkend="install.apache.unix">Unix</link> 版と
+    <link linkend="install.apache.windows">Windows</link> 版の両方につ
+    いて説明します。
+   </para>   
+   <sect2 id="install.apache.unix">
+    <title>Unix上でApacheにPHPをインストールする手順</title>
+    <para>
+     以下の手順の8行目で<command>configure</command> に追加する引数を
+     <link linkend="install.configure">configureのオプションの全て
+     </link>から選択可能です。
+    </para>
+
+    <example id="install.apache.unix.longer">
+     <title>
+      インストール手順 (Apache モジュール版)
+     </title>
+     <programlisting>
+1.  gunzip apache_1.3.x.tar.gz
+2.  tar xvf apache_1.3.x.tar
+3.  gunzip php-x.x.x.tar.gz
+4.  tar xvf php-x.x.x.tar
+5.  cd apache_1.3.x
+6.  ./configure --prefix=/www
+7.  cd ../php-x.x.x
+8.  ./configure --with-mysql --with-apache=../apache_1.3.x --enable-track-vars
+9.  make
+10. make install
+11. cd ../apache_1.3.x
+12. for PHP 3: ./configure --activate-module=src/modules/php3/libphp3.a
+    for PHP 4: ./configure --activate-module=src/modules/php4/libphp4.a
+13. make
+14. make install
+
+  この手順の代わりに、単に既存バイナリにhttpdバイナリを上書きコピーす
+  ることも可能です。この場合には、必ずWebサーバをまずシャットダウンさ
+  せておいて下さい。
+
+15. cd ../php-x.x.x
+16. for PHP 3: cp php3.ini-dist /usr/local/lib/php3.ini
+    for PHP 4: cp php.ini-dist /usr/local/lib/php.ini
+
+  PHPオプションを設定するために.iniファイルを編集して下さい。このファ
+ イルを他の場所に置きたい場合は、手順8でオプション
+  --with-config-file-path=/path を使用して下さい。
+
+17. httpd.conf または srm.conf ファイルを編集し、以下を追加して下さい。
+      
+     PHP 3の場合:   AddType application/x-httpd-php3 .php3
+     PHP 4の場合:   AddType application/x-httpd-php .php
+ 
+  ここで好きな拡張子を選択できます。.php は単に推奨されるだけです。
+  .htmlを選択することも可能です。
+
+18. 通常の手順により Apache サーバを起動して下さい。(HUPまたはUSR1シグ
+    ナルを使用してリロードするのではなく)サーバを停止してから再起動す
+    る必要があります。
+     </programlisting>
+    </example>
+    
+    <para>
+     PHPをApache用にコンパイルする別の例を以下に示します。
+     <informalexample>
+      <programlisting>
+./configure --with-apxs --with-pgsql
+      </programlisting>
+     </informalexample>
+    </para>
+    <para>
+     これにより、共有ライブラリ <filename>libphp4.so</filename> が作成
+     されます。Apacheの<filename>httpd.conf</filename>ファイルにおいて
+     LoadModuleを使用してApacheにこのライブラリをロードすることが可能
+     です。上の例では、PostgreSQLサポートがこの
+     <filename>libphp4.so</filename>ライブラリに埋め込まれます。
+    </para>
+    <para>
+     <informalexample>
+      <programlisting>
+./configure --with-apxs --with-pgsql=shared
+      </programlisting>
+     </informalexample>
+    </para>
+    <para>
+     この例でも Apache用<filename>libphp4.so</filename> 共有ライブラリ
+     が作成されます。しかし、共有ライブラリ
+     <filename>pgsql.so</filename> も作成されます。この共有ライブラリ
+     は、<filename>php.ini</filename> ファイルのextensionディレクティ
+     ブまたはスクリプト内で<function>dl</function>関数を使用して明示的
+     にロードすることが可能です。
+    </para>
+    <para>
+     <informalexample>
+      <programlisting>
+./configure --with-apache=/path/to/apache_source --with-pgsql
+      </programlisting>
+     </informalexample>
+    </para>
+    <para>
+     This will create a <filename>libmodphp4.a</filename> library, a
+     <filename>mod_php4.c</filename> and some accompanying files and
+     copy this into the <literal>src/modules/php4</literal> directory
+     in the Apache source tree. Then you compile Apache using
+     <literal>--activate-module=src/modules/php4/libphp4.a</literal>
+     and the Apache build system will create
+     <filename>libphp4.a</filename> and link it statically into the
+     <filename>httpd</filename> binary. The PostgreSQL support is
+     included directly into this <filename>httpd</filename> binary,
+     so the final result here is a single <filename>httpd</filename>
+     binary that includes all of Apache and all of PHP.
+    </para>
+    <para>
+     <informalexample>
+      <programlisting>
+./configure --with-apache=/path/to/apache_source --with-pgsql=shared
+      </programlisting>
+     </informalexample>
+    </para>
+    <para>
+     上と同じですが、最終的な<filename>httpd</filename>に
+     PostgreSQLサポートを直接インクルードする代わりに、共有ライブラリ
+     <filename>pgsql.so</filename>をファイル
+     <filename>php.ini</filename>または<function>dl</function>により直
+     接的にPHPにロードすることが可能です。
+    </para>
+    <para>
+     異なったPHPの構築法を選択する際、各方法の利点と欠点を考慮する必要
+     があります。共有オブジェクトとして構築する場合、Apacheと分割して
+     コンパイルすることが可能で、PHPを追加または変更する際に全体を再コ
+     ンパイルする必要がありません。PHPをApacheに(静的に)組み込む場合に
+     は、PHPはより高速にロード/実行することが可能です。詳細な情報につ
+     いては、Apacheの<ulink url="&url.apachedso;">DSOサポートのWebペー
+     ジ</ulink>を参照下さい。
+    </para>
+   </sect2>
+   
+   
+   <sect2 id="install.apache.windows">
+    <title>Windows 9x/NT および Apache 1.3.x インストールの詳細</title>
+    
+    <simpara>
+     ApacheでPHP CGIバイナリを使用するように設定するには、
+     <literal>srm.conf</literal> または <literal>httpd.conf</literal>
+     を編集する必要があります。
+    </simpara>
+    <simpara>
+     Apache用にPHPを設定する手順にはいくつかありますが、この手順は入門
+     者にも使用可能な程簡単です。設定用ディレクティブに関する詳細につ
+     いては、Apacheのドキュメントを参照下さい。
+    </simpara>
+
+    <para>
+     <itemizedlist>
+      <listitem>
+       <simpara>
+        <literal>
+         ScriptAlias /php/ "c:/path-to-php-dir/"
+        </literal>
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+        <literal>
+         AddType application/x-httpd-php .php
+        </literal>
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+        <literal>
+         AddType application/x-httpd-php .phtml
+        </literal>
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+        <literal>
+         Action application/x-httpd-php "/php/php.exe"
+        </literal>
+       </simpara>
+      </listitem>
+     </itemizedlist>
+    </para>
 
     <simpara>
-     これらのサーバーを設定するために推奨される方法は、
-     配布ファイルに含まれる INI ファイル (php_iis_reg.inf) を
-     使用する方法です。
-     このファイルを編集し、拡張機能および PHP インストールディレクトリ
-     を自分用の設定に合わせることが可能です。
-     さもなくば、以下の手順により、手動でこの設定を行うことも可能です。
+     ソースコードハイライト機能を使用するには、PHPスクリプトファイルを
+     作成し、次のようなコードを加えてください。<literal>&lt;?php
+     show_source ("original_php_script.php"); ?></literal>
+     <literal>original_php_script.php</literal> の部分を
+     ソースを見たいと思うファイルの名前に置き換えてください。
+     (これがこの機能を使用するための唯一の手段です。)
+      <emphasis>注意:</emphasis> Windows版のApache においては、
+     "c:\directory\file.ext" のようなパス設定におけるバックスラッシュは、
+     全てスラッシュに変換する必要があります。
+    </simpara>
+   </sect2>
+  </sect1>
+
+  <sect1 id="install.commandline">
+   <title>CGI/コマンドラインサーバインストール</title>
+   <para>
+    デフォルトでは、PHPはCGIプログラムとして構築されます。これにより
+    CGI処理やWeb以外のPHPスクリプトの実行に使用可能なコマンドラインイ
+    ンタプリタが作成されます。PHPのモジュール組込みをサポートしている
+    Webサーバを実行している場合、通常は性能面からこちらを選択するべき
+    です。しかし、CGIバージョンの場合、ApacheユーザがユーザID毎に異なっ
+    たPHPを使用するページを実行することが可能になります。PHPをCGIとし
+    て実行する場合には、<link linkend="security">セキュリティの章
+    </link>全体をよく読んで下さい。
+   </para>
+   
+   <sect2 id="install.commandline.testing">
+    <title>テスト</title>
+    <simpara>
+     PHPをCGIプログラムとして実行した場合、<command>make
+     test</command>と入力することにより構築したものをテストすることが
+     可能です。常に構築後のテストを行うことを推奨します。これにより、
+     使用する環境でのPHPの問題に対して後でその問題と格闘するのではなく、
+     早期に見付けることが可能となります。
+    </simpara>
+   </sect2>
+
+   <sect2 id="install.commandline.benchmarking">
+    <title>ベンチマーク</title>
+    <simpara>
+     PHP 3をCGIプログラムとして構築した場合には、
+     <command>make bench</command>とすることにより、ベンチマークを実行
+     することが可能です。セーフモードがデフォルトでオンの場合、30秒以
+     上かかるベンチマークは完了させることができません。これは、セーフ
+     モードでは、<function>set_time_limit</function> を使用することが
+     できないためです。スクリプト用にこの時間を設定するには、設定
+     <link linkend="ini.max-execution-time">max_execution_time</link>
+     を使用して設定して下さい。<command>make bench</command> は、<link
+      linkend="configuration.file">設定ファイル</link>を無視します。
+    </simpara>
+    <note>
+     <simpara>
+      <command>make bench</command> は PHP 3 でのみ利用可能です。
+     </simpara>
+    </note>
+   </sect2>
+  </sect1>
+
+  <sect1 id="install.fhttpd">
+   <title>fhttpd サーバインストール</title>
+    <para>
+     PHPをfhttpdモジュールとして作成するには、"Build as an fhttpd
+     module?" に対して、"yes" と答えてください。(configure の オプショ
+     ン<link linkend="install.configure.with-fhttpd">
+     <option>--with-fhttpd=<replaceable>DIR</replaceable></option></link>) 
+     そして、fhttpd ソースのベースディレクトリを指定してください。
+     デフォルトディレクトリは、<filename class="directory">
+      /usr/local/src/fhttpd</filename>です。
+     fhttpd を使用している場合には、PHP をモジュールとして作成した方が、
+     より優れた性能、より高度な制御/リモート実行機能を使用することがで
+     きます。
+    </para>
+  </sect1>
+
+  <sect1 id="install.iis">
+   <title>IIS/PWS サーバインストール</title>
+   <para>
+    本節では、PHPをIISにインストールする際の注意およびコツについて説明
+    します。<link linkend="install.iis.iis3">IIS3</link> および
+    <link linkend="install.iis.iis4">IIS4</link> の両方について説明し
+    ます。
+   </para>
+   <sect2 id="install.iis.iis3">
+    <title>Windows 95/98/NT と PWS/IIS 3</title>
+    
+    <simpara>
+     これらのサーバーを設定するために推奨される方法は、配布ファイルに
+     含まれる INI ファイル (php_iis_reg.inf) を使用する方法です。この
+     ファイルを編集し、拡張機能および PHP インストールディレクトリを自
+     分用の設定に調整することが可能です。さもなくば、以下の手順により、
+     手動でこの設定を行うことも可能です。
     </simpara>
     <simpara>
      警告: これらの手順は、windows レジストリに直接修正します。
@@ -2988,15 +3540,15 @@
      すばらしい<ulink url="&url.iiscfg;">ツール</ulink>を使用すること
      ができます。
     </simpara>
-
+    
    </sect2>
 
-   <sect2>
-    <title>Windows NT と IIS 4</title>
+   <sect2 id="install.iis.iis4">
+    <title>Windows NT および IIS 4</title>
 
     <simpara>
-     PHP を IIS 4 が稼動している NT サーバーにインストールするには、
-     以下の手順に従って下さい。
+     IIS 4を実行するNTサーバ上にPHPをインストールする際には、以下の手
+     順に従って下さい。
     </simpara>
 
     <para>
@@ -3041,7 +3593,7 @@
       </listitem>
       <listitem>
        <simpara>
-	適当なセキュリティを設定して下さい。(この作業は、インターネッ
+	セキュリティを適切に設定して下さい。(この作業は、インターネッ
 	トサービスマネージャで行います。)NT サーバーが NTFS ファイルシ
 	ステムを使用している場合、I_USR_ に <literal>php.exe</literal>
 	があるディレクトリの実行権限を与えてください。
@@ -3051,70 +3603,143 @@
     </para>
 
    </sect2>
+   
+  </sect1>
+	
+  <sect1 id="install.netscape-enterprise">
+   <title>Netscape および iPlanet Enterprise サーバのインストール</title>
+   <para>
+    PHPをNESまたはiPlanet Webサーバ用に構築するには、適当なインストー
+    ルディレクトリを付けて<option><link
+    linkend="install.configure.with-nsapi">--with-nsapi</link> =
+    <replaceable>DIR</replaceable></option> オプションを使用して下さい。
+    デフォルトのディレクトリは、通常 <filename
+    class="directory">/opt/netscape/suitespot/</filename>です。
+    <filename>/php-xxx-version/sapi/nsapi/nsapi-readme.txt</filename>
+    も参照下さい。
+   </para>
+   <para>
+    <example id="install.netscape-enterprise.solaris">
+     <title>
+      Solaris 上の Netscape Enterprise へのインストール例
+     </title>
+     <programlisting>
+      Sun Solaris 2.6 上の Netscape Enterprise Server 3.6 へのインストー
+      ル手順
+      from: bhager@invacare.com
 
-   <sect2>
-    <title>Windows 9x/NT と Apache 1.3.x</title>
-    
-    <simpara>
-     Apache を PHP CGI バイナリと共に実行可能とするためには、
-     <literal>srm.conf</literal> または <literal>httpd.conf</literal> 
-     を変数する必要があります。
-    </simpara>
-    <simpara>
-     Apache 用として使う場合、PHP 設定の選択肢は少ないですが、
-     始めての人が使う場合でも問題ない程簡単です。
-     設定用命令に関する詳細は Apache ドキュメントを参照下さい。
-    </simpara>
+      1. www.sunfreeware.com または他の
+      ダウンロードサイトから以下のパッケージをインストールして下さい
 
-    <para>
-     <itemizedlist>
-      <listitem>
-       <simpara>
-        <literal>
-         ScriptAlias /php/ "c:/path-to-php-dir/"
-        </literal>
-       </simpara>
-      </listitem>
-      <listitem>
-       <simpara>
-        <literal>
-         AddType application/x-httpd-php .php
-        </literal>
-       </simpara>
-      </listitem>
-      <listitem>
-       <simpara>
-        <literal>
-         AddType application/x-httpd-php .phtml
-        </literal>
-       </simpara>
-      </listitem>
-      <listitem>
-       <simpara>
-        <literal>
-         Action application/x-httpd-php "/php/php.exe"
-        </literal>
-       </simpara>
-      </listitem>
-     </itemizedlist>
-    </para>
+      flex-2_5_4a-sol26-sparc-local 
+      gcc-2_95_2-sol26-sparc-local 
+      gzip-1.2.4-sol26-sparc-local 
+      perl-5_005_03-sol26-sparc-local 
+      bison-1_25-sol26-sparc-local 
+      make-3_76_1-sol26-sparc-local 
+      m4-1_4-sol26-sparc-local 
+      autoconf-2.13 
+      automake-1.4 
+      mysql-3.23.24-beta (mysql サポートを使用する場合) 
+      tar-1.13 (GNU tar) 
+      
+      2. 適当なディレクトリがパスに含まれているかどうかを確認下さい
+      PATH=.:/usr/local/bin:/usr/sbin:/usr/bin:/usr/ccs/bin 
+      export PATH 
 
-    <simpara>
-     ソースコードハイライト機能を使用するには、PHPスクリプトファイルを
-     作成し、次のようなコードを加えてください。<literal>&lt;?php
-     show_source ("original_php_script.php"); ?></literal>
-     <literal>original_php_script.php</literal> の部分を
-     ソースを見たいと思うファイルの名前に置き換えてください。
-     (これがこの機能を使用するための唯一の手段です。)
-      <emphasis>注意:</emphasis> Win-Apache においては、
-     "c:\directory\file.ext" のようなパス設定におけるバックスラッシュは、
-     全てスラッシュに変換する必要があります。
-    </simpara>
+3. gunzip php-x.x.x.tar.gz (.gz配布の場合、そうでない場合は4へ進む) 
+4. tar xvf php-x.x.x.tar 
+5. cd ../php-x.x.x 
 
-   </sect2>
+6. 以下の手順では、/opt/netscape/suitespot/ にNetscapeサーバがインス
+      トールされたているとします。そうでない場合には、正確なパスに変更
+      して下さい。
+    /configure --with-mysql=/usr/local/mysql --with-nsapi=/opt/netscape/suitespot/ --enable-track-vars --enable-libgcc 
+7. make 
+8. make install
+     </programlisting>
+    </example>
+    baseインストールを実行し、適当なreadmeファイルを読んだ後、いくつか
+    の追加インストール手順を実行する必要があるかもしれません。
+   </para>
+   <para>
+    まず、全ての共有ライブラリを見つけるためにNetscape用の環境変数
+    LD_LIBRARY_PATH にいくつかのパスを追加する必要があります。これらの
+    設定は、Netscapeサーバの開始スクリプトで行うのが最善でしょう。
+    Windows ユーザは、おそらくこの手順をとばすことが可能です。開始スク
+    リプトは、通常以下の場所にあります。
+    <filename
+     class="directory">/path/to/server/https-servername/start</filename> 
+   </para>
+   <para>
+    <filename
+    class="directory">/path/to/server/https-servername/config/</filename>
+    にある設定ファイルを編集することも可能です。
+   </para>
+	 
+   <example id="install.netscape-enterprise.configure">
+    <title>
+     Netscape Enterprise用の設定例
+    </title>
+    <programlisting>
+Netscape Enterprise サーバ用の設定手順
+bhager@invacare.comによる
 
-   <sect2>
-    <title>Windows版のOmni HTTPd 2.0b1</title>
+1. 次の mime.types を追加します
+    type=magnus-internal/x-httpd-php exts=php
+
+2. obj.confに以下を追加して下さい。shlib はシステムにより異なります。
+   使用するOSがUNIXの場合、mime型initの後に次の行を置く必要があります。
+    Init fn="load-modules" funcs="php4_init,php4_close,php4_execute,php4_auth_trans" shlib="/php4/nsapiPHP4.dll"
+    Init fn=php4_init errorString="Failed to initialize PHP!"
+
+    &lt;object name="default"&gt;
+    . 
+    . 
+    . 
+    .#注意 この次の行は全ての'ObjectType'の後で、'AddLog'行の前とする必要があります
+    Service fn="php4_execute" type="magnus-internal/x-httpd-php" 
+    . 
+    . 
+    &lt;/Object&gt;
+
+
+    &lt;Object name="x-httpd-php"&gt; 
+    ObjectType fn="force-type" type="magnus-internal/x-httpd-php" 
+    Service fn=php4_execute 
+    &lt;/Object&gt; 
+
+
+     認証設定
+
+     PHP 認証は他の認証と併用することはできません。全ての認証は、PHPス
+     クリプトに渡されます。サーバ全体についてPHP認証を設定するには、次
+     の行を使用します。
+
+    &lt;Object name="default"&gt; 
+    AuthTrans fn=php4_auth_trans 
+    . 
+    . 
+    . 
+    . 
+    &lt;/Object&gt; 
+
+    PHP 認証を単一のディレクトリで行うには、次の行を追加します。
+
+    &lt;Object ppath="d:\path\to\authenticated\dir\*"&gt; 
+    AuthTrans fn=php4_auth_trans 
+    &lt;/Object&gt;
+     </programlisting>
+    </example>
+  </sect1>
+
+  <sect1 id="install.omnihttpd">
+   <title>Omni HTTPd サーバのインストール</title>
+   <para>
+    本節は、Omni HTTPdを使用する際の注意とコツについて説明します。
+   </para>
+   <sect2 id="install.omnihttpd.windows">
+    <title>Windows用Omni HTTPd 2.0b1</title>
     
     <simpara>
      以下のように設定するのが最も簡単です。
@@ -3154,7 +3779,7 @@
       </listitem>
       <listitem>
        <para>
-        手順 6: <literal>OK</literal>をクリックします。
+        手順 6: <literal>OK</literal>をクリックして下さい
        </para>
       </listitem>
      </itemizedlist>
@@ -3165,127 +3790,17 @@
     </simpara>
 
    </sect2>
-
-   <sect2 id="install.windows.installer">
-    <title>Windows Installshield</title>
-    
-    <para>
-     CGIバージョンのPHPをインストールする Windows 用 PHPインストーラが、
-     <ulink url="&url.php;">&url.php;</ulink> から取得可能で、IIS、PWS、
-     Xitami の場合、Web サーバーの設定も同時に行われます。
-    </para>
-    
-    <simpara>
-     使用するHTTPサーバーをシステムにインストールし、完全に動作するよ
-     うにして下さい。
-    </simpara>
-    
-    <simpara>
-     インストータの実行ファイルを実行し、インストールウイザードの指示
-     に従って下さい。2種類のインストール方法がサポートされています。一
-     つ目は standard で〥Ũて設定の選択肢についてデフォルト値が示され
-     ます。もう一つは、advanced で、選択肢について質問が行われます。
-    </simpara>
-    
-    <simpara>
-     インストールウイザードは、<filename>php.ini</filename> ファイルを
-     設定し、Web サーバーでPHPを使用するように設定するに必要な情報を集
-     めます。IIS と NTワークステーションにおける PWS の場合、スクリプ
-     トマップ設定を有するサーバーの全ノードのリストが表示され、PHPスク
-     リプト用マッピング?追加したいと思う場所のノードを選択することが
-     可能です。
-    </simpara>
-
-    <simpara>
-     インストールが一旦完了すると、インストーラはシステムを再起動する
-     か、または、単にPHPの使用を開始するかを聞いてきます。
-    </simpara>
    
-   </sect2>
+  </sect1>
 
-   <sect2>
-    <title>PHPモジュール</title>
-
-    <para>
-     <table>
-      <title>PHPモジュール </title>
-      <tgroup cols="2">
-       <tbody>
-        <row>
-         <entry>php_calendar.dll</entry>
-         <entry>カレンダー変換関数</entry>
-        </row>
-        <row>
-         <entry>php_crypt.dll</entry>
-         <entry>Crypt 関数</entry>
-        </row>
-        <row>
-         <entry>php_dbase.dll</entry>
-         <entry>DBase 関数</entry>
-        </row>
-        <row>
-         <entry>php_dbm.dll</entry>
-         <entry>Berkely DB2 ライブラリによる GDBM エミュレーション</entry>
-        </row>
-        <row>
-         <entry>php_filepro.dll</entry>
-         <entry>filepro データベースへのアクセス(読込のみ可)</entry>
-        </row>
-        <row>
-         <entry>php_gd.dll</entry>
-         <entry> GIF 加工用 GD ライブラリ関数 </entry>
-        </row>
-        <row>
-         <entry>php_hyperwave.dll</entry>
-         <entry>HyperWave 関数</entry>
-        </row>
-        <row>
-         <entry>php_imap4r2.dll</entry>
-         <entry>IMAP 4 関数</entry>
-        </row>
-        <row>
-         <entry>php_ldap.dll</entry>
-         <entry>LDAP 関数</entry>
-        </row>
-        <row>
-         <entry>php_msql1.dll</entry>
-         <entry>mSQL 1 クライアント</entry>
-        </row>
-        <row>
-         <entry>php_msql2.dll</entry>
-         <entry>mSQL 2 client</entry>
-        </row>
-        <row>
-         <entry>php_mssql.dll</entry>
-         <entry>MSSQL クライアント (MSSQL DBライブラリが必要</entry>
-        </row>
-        <row>
-         <entry>php3_mysql.dll (PHP 4では組み込み)</entry>
-         <entry>MySQL 関数</entry>
-        </row>
-        <row>
-         <entry>php_nsmail.dll</entry>
-         <entry>Netscape メール関数</entry>
-        </row>
-        <row>
-         <entry>php_oci73.dll</entry>
-         <entry>Oracle 関数</entry>
-        </row>
-        <row>
-         <entry>php_snmp.dll</entry>
-         <entry>SNMP get および walk 関数 (NT のみ!)</entry>
-        </row>
-        <row>
-         <entry>php_zlib.dll</entry>
-         <entry>ZLib 関数</entry>
-        </row>
-       </tbody>
-      </tgroup>
-     </table>
-    </para>
-
-   </sect2>
-
+  <sect1 id="install.otherhttpd">
+   <title>その他のWebサーバ</title>
+   <para>
+    PHPは、多くのWebサーバーをサポートするように構築することが可能で
+    す。サーバーに関係する設定オプションの完全なリストについては、
+    <link linkend="install.configure.servers">サーバーに関係した
+     オプション</link> を参照下さい。
+   </para>
   </sect1>
 
   <sect1 id="install-problems">
@@ -3297,22 +3812,22 @@
      幾つかの問題が、その他の問題よりもより一般的に生じています。
      最も一般的な問題は、PHP FAQ に記載されています。
      PHP FAQ は、<ulink url="&url.php.faq;">&url.php.faq;</ulink>
-     にありまY。
+     にあります。
     </simpara>
    </sect2>
 
-   <sect2>
-    <title>バグレポート</title>
+   <sect2 id="install.bugreports">
+    <title>バグの報告</title>
     <simpara>
-     PHPのバグを発見した場合は、レポートして下さい。PHPの開発者は、あ
-     なたがそのバグをレポートしない限り、恐らくそのバグを知ることがな
-     く、修正されることもないでしょう。バグのレポートは、<ulink
+     PHPのバグを発見した場合は報告して下さい。PHPの開発者は、あなたが
+     そのバグをレポートしない限り、恐らくそのバグを知ることがなく、修
+     正されることもないでしょう。バグのレポートは、<ulink
      url="&url.php.bugs;" >&url.php.bugs;</ulink>にあるバグ追跡システ
      ムを使用しても行うことができます。
     </simpara>
    </sect2>
 
-   <sect2>
+   <sect2 id="install.otherproblems">
     <title>その他の問題</title>
 
     <simpara>
@@ -3330,9 +3845,8 @@
      メーリングリストにおいて質問をしたい場合は、正確さを心がけ、
      解答に必要な使用環境に関する事項(オペレーティングシステムの種類、
      PHP のバージョン、Webサーバーの種類、PHP を CGI として使用しているのか
-     サーバーモジュールとして使用しているのか、等)を
-     明らかにするようにして下さい。
-     他の人が問題を再現し、テストできるのに充分なコードを
+     サーバーモジュールとして使用しているのか、等)を明らかにするように
+     して下さい。他の人が問題を再現し、テストできるのに充分なコードを
      示すことが好ましいです。
     </simpara>
    </sect2>
@@ -3363,8 +3877,8 @@
      <para>
       <informalexample>
        <programlisting>
-	% tar xvzf php-3.0.12jp-beta4.tar.gz
-	% cd php-3.0.12jp-beta4
+	% tar xvzf php-3.0.18-i18n-ja-2.tar.gz
+	% cd php-3.0.18-i18n-ja-2
 	% ./configure --enable-i18n --enable-mbregex
 	% make
        </programlisting>
@@ -3377,11 +3891,11 @@
      <para>
       <informalexample>
        <programlisting>
-% tar xvzf php-3.0.12jp-beta4.tar.gz
+% tar xvzf php-3.0.18-i18n-ja-2.tar.gz
 % tar xvzf apache_1.3.x.tar.gz
 % cd apache_1.3.x
 % ./configure
-% cd ../php-3.0.12jp-beta4
+% cd ../php-3.0.18-i18n-ja-2
 % ./configure --with-apache=../apache_1.3.x --enable-i18n --enable-mbregex
 % make
 % make install
@@ -3407,7 +3921,7 @@
 	% make install
 
 	ここからがPHP3
-	% cd php-3.0.12jp-beta4
+	% cd php-3.0.18-i18n-ja-2
 	% ./configure --with-apxs=/usr/local/apache/bin/apxs --enable-i18n \
         --enable-mbregex
 	% make
