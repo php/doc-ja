@@ -1,0 +1,320 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.1 $ -->
+  <sect1 id="install.netscape-enterprise">
+   <title>Netscape および iPlanet Enterprise サーバ</title>
+   <para>
+    本節は、NetscapeまたはiPlanetにPHPをインストールする際に固有な
+    注意とヒントについて、<link linkend="install.netscape.sun">Sun
+    Solaris</link>と<link linkend="install.netscape.windows">Windows
+    </link>両方のプラットホームで説明します。
+   </para>
+   <para>
+    PHPをNetscape Enterprise Serverで使用するための設定については
+    <ulink url="&url.netscape.nsapi;">&url.netscape.nsapi;</ulink>
+    でさらに詳しい情報を得ることが出来ます。
+   </para>
+   <sect2 id="install.netscape.sun">
+   <title>Sun SolarisのNetscapeにPHPをインストールする</title>
+   <para>
+    PHPをNESまたはiPlanet Webサーバ用に構築するには、適当なインストー
+    ルディレクトリを付けて<option><link
+    linkend="install.configure.with-nsapi">--with-nsapi</link> =
+    <replaceable>DIR</replaceable></option> オプションを使用して下さい。
+    デフォルトのディレクトリは、通常 <filename
+    class="directory">/opt/netscape/suitespot/</filename>です。
+    <filename>/php-xxx-version/sapi/nsapi/nsapi-readme.txt</filename>
+    も参照下さい。
+   </para>
+   <para>
+    <example id="install.netscape-enterprise.solaris">
+     <title>
+      Solaris 上の Netscape Enterprise へのインストール例
+     </title>
+     <screen>
+<![CDATA[
+Sun Solaris 2.6 上の Netscape Enterprise Server 3.6 へのインストール手順
+From: bhager@invacare.com
+
+1. www.sunfreeware.com または他のダウンロードサイトから以下のパッケー
+   ジをインストールして下さい
+
+      flex-2_5_4a-sol26-sparc-local 
+      gcc-2_95_2-sol26-sparc-local 
+      gzip-1.2.4-sol26-sparc-local 
+      perl-5_005_03-sol26-sparc-local 
+      bison-1_25-sol26-sparc-local 
+      make-3_76_1-sol26-sparc-local 
+      m4-1_4-sol26-sparc-local 
+      autoconf-2.13 
+      automake-1.4 
+      mysql-3.23.24-beta (mysql サポートを使用する場合) 
+      tar-1.13 (GNU tar) 
+      
+2. 適当なディレクトリがパスに含まれているかどうかを確認下さい
+    PATH=.:/usr/local/bin:/usr/sbin:/usr/bin:/usr/ccs/bin 
+    export PATH 
+
+3. gunzip php-x.x.x.tar.gz (.gz配布の場合、そうでない場合は4へ進む) 
+4. tar xvf php-x.x.x.tar 
+5. cd ../php-x.x.x 
+
+6. 以下の手順では、/opt/netscape/suitespot/ にNetscapeサーバがインス
+      トールされたているとします。そうでない場合には、正確なパスに変更
+      して下さい。
+    /configure --with-mysql=/usr/local/mysql --with-nsapi=/opt/netscape/suitespot/ --enable-track-vars --enable-libgcc 
+7. make 
+8. make install
+]]>
+     </screen>
+    </example>
+    baseインストールを実行し、適当なreadmeファイルを読んだ後、いくつか
+    の追加インストール手順を実行する必要があるかもしれません。
+   </para>
+   <para>
+    まず、全ての共有ライブラリを見つけるためにNetscape用の環境変数
+    LD_LIBRARY_PATH にいくつかのパスを追加する必要があります。これらの
+    設定は、Netscapeサーバの開始スクリプトで行うのが最善でしょう。
+    Windows ユーザは、おそらくこの手順をとばすことが可能です。開始スク
+    リプトは、通常以下の場所にあります。
+    <filename
+     class="directory">/path/to/server/https-servername/start</filename> 
+   </para>
+   <para>
+    <filename
+    class="directory">/path/to/server/https-servername/config/</filename>
+    にある設定ファイルを編集することも可能です。
+   </para>
+	 
+   <example id="install.netscape-enterprise.configure">
+    <title>
+     Netscape Enterprise用の設定例
+    </title>
+    <screen>
+<![CDATA[
+Netscape Enterprise サーバ用の設定手順
+From: bhager@invacare.com
+
+1. 次の mime.types を追加します
+    type=magnus-internal/x-httpd-php exts=php
+
+2. obj.confに以下を追加して下さい。shlib はシステムにより異なります。
+   使用するOSがUNIXの場合、mime型initの後に次の行を置く必要があります。
+    Init fn="load-modules" funcs="php4_init,php4_close,php4_execute,php4_auth_trans" shlib="/php4/nsapiPHP4.dll"
+    Init fn=php4_init errorString="Failed to initialize PHP!"
+
+    <Object name="default">
+    . 
+    . 
+    . 
+    .// 注意 この次の行は全ての'ObjectType'の後で、'AddLog'行の前とする必要があります
+    Service fn="php4_execute" type="magnus-internal/x-httpd-php" 
+    . 
+    . 
+    </Object>
+
+
+    <Object name="x-httpd-php">
+    ObjectType fn="force-type" type="magnus-internal/x-httpd-php" 
+    Service fn=php4_execute 
+    </Object>
+
+
+     認証設定
+
+     PHP 認証は他の認証と併用することはできません。全ての認証は、PHPス
+     クリプトに渡されます。サーバ全体についてPHP認証を設定するには、次
+     の行を使用します。
+
+     <Object name="default">
+    AuthTrans fn=php4_auth_trans 
+    . 
+    . 
+    . 
+    . 
+    </Object>
+
+    PHP 認証を単一のディレクトリで行うには、次の行を追加します。
+
+    <Object ppath="d:\path\to\authenticated\dir\*">
+    AuthTrans fn=php4_auth_trans 
+    </Object>
+]]>
+     </screen>
+    </example>
+    <para>
+     もしNetscape Enterprise 4.xを使用している場合は以下の様にします:
+    </para>
+    <example>
+     <title>Netscape Enterprise 4.xでの設定例</title>
+     <programlisting>
+<![CDATA[
+以下の行をmime types initの後に追加します。他の設定に関しては上記の例と同様
+です。
+From: Graeme Hoose (GraemeHoose@BrightStation.com)
+
+Init fn="load-modules" shlib="/path/to/server4/bin/libphp4.so" funcs="php4_init,php4_close,php4_execute,php4_auth_trans"
+Init fn="php4_init" LateInit="yes"
+]]>
+     </programlisting>
+    </example>
+   </sect2>
+   <sect2 id="install.netscape.windows">
+    <title>Windows上のNetscapeにPHPをインストールする</title>
+    <para>
+     (Netscape Enterprise Server, iPlanetもしくはFastrackに)
+     PHPをCGIとしてインストールするには以下の様にします:
+    </para>
+    <itemizedlist>
+     <listitem>
+      <simpara>
+       <filename>php4ts.dll</filename>をWindowsシステムディレクトリ
+       (Windowsをインストールしたディレクトリ)にコピーします。
+      </simpara>
+     </listitem>
+     <listitem>
+      <para>
+       コマンドラインからファイルの関連付けを行います。
+       以下の様にタイプしてください:
+       <programlisting>
+<![CDATA[
+assoc .php=PHPScript
+ftype PHPScript=c:\php\php.exe %1 %*
+]]>
+       </programlisting>
+      </para>
+     </listitem>
+     <listitem>
+      <simpara>
+       Netscape Enterprise Administration ServerでダミーにシェルCGI
+       ディレクトリを作成し、すぐに削除します(この手順によりobj.conf
+       に重要な5行が追加され、ウェブサーバがシェルCGIスクリプトを
+       扱えるようになります)。
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       Netscape Enterprise Administration Serverで新規にmime typeを
+       作成します(カテゴリ: タイプ、Content-Type: 
+       magnus-internal/shellcgi、拡張子: php)。
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       PHPを実行したいウェブサーバのインスタンスごとに上記の手順を
+       実行します。
+      </simpara>
+     </listitem>
+    </itemizedlist>
+    <para>
+     PHPを実行可能なCGIとして設定するための詳細な情報が
+     <ulink url="&url.netscape.cgi;">&url.netscape.cgi;</ulink>
+     にあります。
+    </para>
+    <para>
+     PHPをNSAPIとして(Netscape Enterprise Server, iPlanet
+     もしくはFastrackに)インストールするには以下の様にします:
+    </para>
+    <itemizedlist>
+     <listitem>
+      <simpara>
+       <filename>php4ts.dll</filename>をWindowsシステムディレクトリ
+       (Windowsをインストールしたディレクトリ)にコピーします。
+      </simpara>
+     </listitem>
+     <listitem>
+      <para>
+       コマンドラインからファイルの関連付けを行います。
+       以下の様にタイプしてください:
+       <programlisting>
+<![CDATA[
+assoc .php=PHPScript
+ftype PHPScript=c:\php\php.exe %1 %*
+]]>
+       </programlisting>
+      </para>
+     </listitem>
+     <listitem>
+      <simpara>
+       Netscape Enterprise Administration Serverで新規にmime typeを
+       作成します(カテゴリ: タイプ、Content-Type: 
+       Content-Type: magnus-internal/x-httpd-php、拡張子: php)。
+      </simpara>
+     </listitem>
+     <listitem>
+      <para>
+       ウェブサービスを停止して<filename>obj.conf</filename>を編集します。
+       Initセクションの最後に以下の2行を追加します。(必ずmime type init
+       の後ろに記述してください!):
+       <programlisting>
+<![CDATA[
+Init fn="load-modules" funcs="php4_init,php4_close,php4_execute,php4_auth_trans" shlib="c:/php/sapi/php4nsapi.dll"
+Init fn="php4_init" errorString="Failed to initialise PHP!"
+]]>
+       </programlisting>
+      </para>
+     </listitem>
+     <listitem>
+      <para>
+       <literal>&lt; Object name="default" &gt;</literal>セクションの
+       'ObjectType'以降で'AddLog'より前の箇所に以下の1行を追加します:
+       <programlisting>
+<![CDATA[
+Service fn="php4_execute" type="magnus-internal/x-httpd-php"
+]]>
+       </programlisting>
+      </para>
+     </listitem>
+     <listitem>
+      <para>
+       ファイルの終端に以下の行を追加して<literal>x-httpd-php</literal>
+       オブジェクトを新規作成します。
+       <programlisting>
+<![CDATA[
+<Object name="x-httpd-php">
+ObjectType fn="force-type" type="magnus-internal/x-httpd-php"
+Service fn=php4_execute
+</Object>
+]]>
+       </programlisting>
+      </para>
+     </listitem>
+     <listitem>
+      <simpara>
+       ウェブサーバを再起動して設定を反映してください。
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       PHPを実行したいウェブサーバのインスタンスごとに上記の手順を
+       実行します。
+      </simpara>
+     </listitem>
+    </itemizedlist>
+    <para>
+     PHPをNSAPIフィルタとして設定するための詳細な情報が
+     <ulink url="&url.netscape.nsapi;">&url.netscape.nsapi;</ulink>
+     にあります。
+    </para>
+   </sect2>
+  </sect1>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"../../manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
