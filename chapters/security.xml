@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.21 $ -->
+<!-- $Revision: 1.22 $ -->
  <chapter id="security">
   <title>セキュリティ</title>
 
@@ -459,7 +459,6 @@ echo "$file_to_delete は削除されました!";
 <![CDATA[
 <?php
 $username = $HTTP_SERVER_VARS['REMOTE_USER'];  // 認証機構を使用する
-
 $homedir = "/home/$username";
 
 if (!ereg('^[^./][^/]*$', $userfile))
@@ -467,7 +466,6 @@ if (!ereg('^[^./][^/]*$', $userfile))
 
 if (!ereg('^[^./][^/]*$', $username))
      die('bad username'); // 処理せず、終了。
-
 //etc...
 ?>
 ]]>
@@ -563,7 +561,7 @@ if (!ereg('^[^./][^/]*$', $username))
    </sect2>
 
    <sect2 id="security.database.storage">
-    <title>暗号化記憶モデル</title>
+    <title>ストレージの暗号化</title>
     <simpara>
      SSL/SSHによってクライアント/サーバ間で通信されるデータは保護されますが、
      データベースに保存されたデータは保護されません。SSLはあくまで通信上の
@@ -605,10 +603,10 @@ $query = sprintf("SELECT 1 FROM users WHERE name='%s' AND pwd='%s';",
 $result = pg_exec($connection, $query);
 
 if (pg_numrows($result) > 0) {
-    echo "Welcome, $username!";
+    echo "ようこそ、$username さん!";
 }
 else {
-    echo "Authentication failed for $username.";
+    echo "$username の認証が失敗しました。";
 }
 ]]>
      </programlisting>
@@ -681,24 +679,27 @@ FLUSH PRIVILEGES;
     </para>
     <note>
      <para>
-      It is common technique to force the SQL parser to ignore the rest of the
-      query written by the developer with <literal>--</literal> which is the
-      comment sign in SQL.
+      SQLパーサにクエリの残りの部分を無視させるために開発者によく使わ
+      れる技法として、SQLのコメント符合である<literal>--</literal>があ
+      ります。
      </para>
     </note>
     <para>
-     A feasible way to gain passwords is to circumvent your search result pages.
-     What the attacker needs only is to try if there is any submitted variable
-     used in SQL statement which is not handled properly. These filters can be set 
-     commonly in a preceding form to customize <literal>WHERE, ORDER BY, 
-     LIMIT</literal> and <literal>OFFSET</literal> clauses in <literal>SELECT</literal>
-     statements. If your database supports the <literal>UNION</literal> construct, 
-     the attacker may try to append an entire query to the original one to list 
-     passwords from an arbitrary table. Using encrypted password fields is 
-     strongly encouraged.
+    パスワードを取得する恐るべき手段に、サイトの検索結果のページを欺く
+    というものがあります。攻撃する者が必要とするものは、投稿された変数
+    の中でSQL命令で使用される際に正しく扱われていないものがあるかどう
+    かを確かめるだけです。これらのフィルタは、通常、
+    <literal>SELECT</literal>文の<literal>WHERE, ORDER BY,
+    LIMIT</literal>及び<literal>OFFSET</literal>句をカスタマイズするた
+    めに前に置かれる形で設定されます。使用するデータベースが
+    <literal>UNION</literal>構造をサポートしている場合、
+    攻撃者は元のクエリに任意のテーブルからパスワードのリストを取得する
+    クエリを追加しようとするかもしれません。
+    暗号化されたパスワードフィールドを使用することが強く推奨されます。
      <example>
       <title>
-       Listing out articles ... and some passwords (any database server)
+      記事...そして(全てのデータベースサーバーの)いくつかのパスワード
+       のリストを表示する
       </title>
       <programlisting role="php">
 <![CDATA[
@@ -709,8 +710,8 @@ $result = odbc_exec($conn, $query);
 ]]>
       </programlisting>
      </example>
-     The static part of the query can be combined with another
-     <literal>SELECT</literal> statement which reveals all passwords:
+     クエリの静的な部分は、以下のように全てのパスワードを外部にもらす別の
+     <literal>SELECT</literal>文と組み合わせることができます。
      <informalexample>
       <programlisting>
 <![CDATA[
@@ -720,21 +721,22 @@ union select '1', concat(uname||'-'||passwd) as name, '1971-01-01', '0' from use
 ]]>
       </programlisting>
      </informalexample>
-     If this query (playing with the <literal>'</literal> and
-     <literal>--</literal>) were assigned to one of the variables used in
-     <varname>$query</varname>, the query beast awakened.
+     (<literal>'</literal>及び<literal>--</literal>を使用する) 
+     このクエリが<varname>$query</varname>で使用される変数の１つに代入
+     された場合、この悪意のあるクエリが実行されることになります。
     </para>
     <para>
-     SQL UPDATEs are also subject to attacking your database. These queries are
-     also threatened by chopping and appending an entirely new query to it. But
-     the attacker might fiddle with the <literal>SET</literal> clause. In this
-     case some schema information must be possessed to manipulate the query
-     successfully. This can be acquired by examing the form variable names, or
-     just simply brute forcing. There are not so many naming convention for
-     fields storing passwords or usernames.
+     SQL UPDATE もデータベースを攻撃するために使用されます。これらのク
+     エリも切捨てたり新しいクエリを元のクエリに追加することによる攻撃
+     を受けます。しかし、攻撃者は<literal>SET</literal>句を使用する可
+     能性があります。この場合、クエリを成功させるためにいくつかのスキー
+     マ情報を保有する必要があります。これは、フォームの変数名や総当た
+     り法により調べることができます。パスワードまたはユーザ名を保存す
+     るフィールド用の命名記法はそう多くはありません。
      <example>
      <title>
-      From resetting a password ... to gaining more privileges (any database server)
+     パスワードのリセットから ... (全てのデータベースサーバーで)より多
+     くの権限を得るまで
      </title>
       <programlisting role="php">
 <![CDATA[
@@ -742,11 +744,13 @@ $query = "UPDATE usertable SET pwd='$pwd' WHERE uid='$uid';";
 ]]>
       </programlisting>
      </example>
-     But a malicious user sumbits the value
-     <literal>' or uid like'%admin%'; --</literal> to <varname>$uid</varname> to
-     change the admin's password, or simply sets <varname>$pwd</varname> to
-     <literal>"hehehe', admin='yes', trusted=100 "</literal> (with a trailing
-     space) to gain more privileges. Then, the query will be twisted:
+     しかし、悪意のあるユーザは、管理者のパスワードを変更するために
+     値 <literal>' or uid like'%admin%'; --</literal> を
+     <varname>$uid</varname> に代入するか、または、より多くの権限を得
+     るために、単純に<varname>$pwd</varname> に(後ろに空白を付けて)
+     <literal>"hehehe', admin='yes', trusted=100 "</literal>と設定する
+     可能性があります。この場合、このクエリは以下のように改謬されてし
+     まいます。
      <informalexample>
       <programlisting role="php">
 <![CDATA[
@@ -760,10 +764,11 @@ $query = "UPDATE usertable SET pwd='hehehe', admin='yes', trusted=100 WHERE ...;
      </informalexample>
     </para>
     <para>
-     A frightening example how operating system level commands can be accessed
-     on some database hosts.
+    恐ろしい例として、いくつかのデータベースホストのオペレーティン
+    グシステムレベルのコマンドがアクセス可能となる方法を示します。
      <example>
-     <title>Attacking the database host's operating system (MSSQL Server)</title>
+     <title>データベースホストのオペレーティングシステムを攻撃する
+     (MSSQLサーバー)</title>
       <programlisting role="php">
 <![CDATA[
 $query  = "SELECT * FROM products WHERE id LIKE '%$prod%'";
@@ -771,9 +776,10 @@ $result = mssql_query($query);
 ]]>
       </programlisting>
      </example>
-     If attacker submits the value
-     <literal>a%' exec master..xp_cmdshell 'net user test testpass /ADD' --</literal>
-     to <varname>$prod</varname>, then the <varname>$query</varname> will be:
+     攻撃者が、値
+     <literal>a%' exec master..xp_cmdshell 'net user test testpass
+     /ADD' --</literal>を<varname>$prod</varname>, then the
+     <varname>$query</varname> に投稿した場合、以下のようになります。
      <informalexample>
       <programlisting role="php">
 <![CDATA[
@@ -782,73 +788,77 @@ $result = mssql_query($query);
 ]]>
       </programlisting>
      </informalexample>
-     MSSQL Server executes the SQL statements in the batch including a command
-     to add a new user to the local accounts database. If this application
-     were running as <literal>sa</literal> and the MSSQLSERVER service is
-     running with sufficient privileges, the attacker would now have an
-     account with which to access this machine.
+     MSSQLサーバ−は、新規ユーザをローカルアカウント用データベースに追
+     加するコマンドを含むSQL命令をバッチ実行します。
+     このアプリケーションが<literal>sa</literal>で実行され、
+     MSSQLSERVERサービスが充分な権限で実行されている場合、攻撃者は
+     このマシンにアクセスする権限を有することになります。
     </para>
     <note>
      <para>
-      Some of the examples above is tied to a specific database server. This
-      does not mean that a similar attack is impossible against other products.
-      Your database server may be so vulnerable in other manner.
+     上記のいくつかの例は、データベースサーバの種類に依存しています。
+      これは、他の製品に対して同様な攻撃ができないことを意味するもので
+      はありません。使用しているデータベースが他の手段で攻撃可能である
+      可能性もあります。
      </para>
     </note>
 
     <sect3 id="security.database.avoiding">
-     <title>Avoiding techniques</title>
+     <title>回避する方法</title>
      <simpara>
-      You may plead that the attacker must possess a piece of information
-      about the database schema in most examples. You are right, but you
-      never know when and how it can be taken out, and if it happens,
-      your database may be exposed. If you are using an open source, or
-      publicly available database handling package, which may belong to a
-      content management system or forum, the intruders easily produce
-      a copy of a piece of your code. It may be also a security risk if it
-      is a poorly designed one.
+     ほとんどの例では攻撃する者は特定のデータベースのスキーマに関して
+     若干の情報を保有している必要があると弁解されるかもしれません。
+     これは正しいですが、いつ何時これが外部にもれうるかを知ることはで
+     きませんし、いったんこの情報がもれると、データベースが外部に開示
+     される可能性があります。オープンソースまたは一般的に入手可能なデー
+     タベース処理パッケージを使用している場合(これはコンテンツ監理シス
+     テムまたはフォーラムに含まれている可能性があります)、侵入者は簡単
+     に使用されているコードの一部を入手することができます。そのコード
+     の設計が悪い場合にもセキュリティリスクを生じる可能性があります。
      </simpara>
      <simpara>
-      These attacks are mainly based on exploiting the code not being written
-      with security in mind. Never trust on any kind of input, especially
-      which comes from the client side, even though it comes from a select box,
-      a hidden input field or a cookie. The first example shows that such a
-      blameless query can cause disasters.
+     これらの攻撃は、セキュリティを考慮して書かれていないコードを攻撃
+     する方法です。特にクライアント側から入力されるあらゆる種類の入力
+     を決して信用しないで下さい。これは、selectボックスやhidden input
+     フィールド、Cookieの場合も同様です。最初の例は、このような欠点の
+     ないクエリが破滅をもたらしうることを示すものです。
      </simpara>
 
      <itemizedlist>
       <listitem>
        <simpara>
-        Never connect to the database as a superuser or as the database owner.
-        Use always customized users with very limited privileges.
+       データベースにスーパーユーザーまたはデータベースの所有者として
+        接続しないで下さい。 非常に制限された権限を有するカスタマイズ
+        されたユーザを常に使用して下さい。
        </simpara>
       </listitem>
       <listitem>
        <simpara>
-        Check if the given input has the expected data type. PHP has
-        a wide range of input validating functions, from the simplest ones
-        found in <link linkend="ref.variables">Variable Functions</link> and
-        in <link linkend="ref.ctype">Character Type Functions</link>
-        (e.g. <function>is_numeric</function>, <function>ctype_digit</function>
-        respectively) onwards the
-        <link linkend="ref.pcre">Perl compatible Regular Expressions</link>
-        support.
+       指定された入力が期待するデータ型であることを確認して下さい。
+       PHPは、多くの種類の入力検証用関数を有しており、
+        <link linkend="ref.variables">変数関連の関数</link>や
+        <link linkend="ref.ctype">文字型関数</link>にある簡単な関数
+        (例: それぞれ、<function>is_numeric</function>,
+       <function>ctype_digit</function>) や、
+        <link linkend="ref.pcre">Perl互換の正規表現</link>のサポートま
+       であります。
        </simpara>
       </listitem>
       <listitem>
        <para>
-        If the application waits for numerical input, consider to verify data
-        with <function>is_numeric</function>, or silently change its type
-        using <function>settype</function>, or use its numeric representation
-        by <function>sprintf</function>.
+       アプリケーションが、数値入力を期待している場合、データを
+       <function>is_numeric</function>で検証するか、
+       <function>settype</function>により暗黙の型変換を行うか、
+       <function>sprintf</function>により数値表現を使用することを検討
+       してみて下さい。
         <example>
-         <title>A more secure way to compose a query for paging</title>
+         <title>ページング用のクエリを構築するためのより安全な方法</title>
          <programlisting role="php">
 <![CDATA[
 settype($order, 'integer');
 $query  = "SELECT id, name FROM products ORDER BY name LIMIT 20 OFFSET $offset;";
 
-// please note %d in the format string, using %s would be meaningless
+// フォーマット文字列の%dに注意して下さい。%sを使用しても意味がありません。
 $query  = sprintf("SELECT id, name FROM products ORDER BY name LIMIT 20 OFFSET %d;", $offset);
 ]]>
          </programlisting>
@@ -857,36 +867,40 @@ $query  = sprintf("SELECT id, name FROM products ORDER BY name LIMIT 20 OFFSET %
       </listitem>
       <listitem>
        <simpara>
-        Quote each non numeric user input which is passed to the database with
-        <function>addslashes</function> or <function>addcslashes</function>.
-        See <link linkend="security.database.storage">the first example</link>.
-        As the examples shows, quotes burnt into the static part of the query
-        is not enough, and can be easily hacked.
+       データベースに渡す数値以外のユーザ入力を
+       <function>addslashes</function> または
+       <function>addcslashes</function>でクオートして下さい。
+       <link linkend="security.database.storage">最初の例</link>を参照
+       して下さい。前期の例が示すように、クエリの静的な部分をクオート
+       するだけでは充分ではなく、簡単にクラックされてしまう可能性があ
+       ります。
        </simpara>
       </listitem>
       <listitem>
        <simpara>
-        Do not print out any database specific information, especially
-        about the schema, by fair means or foul. See also <link
-        linkend="security.errors">Error Reporting</link> and <link
-        linkend="ref.errorfunc">Error Handling and Logging Functions</link>.
+       データベース固有の情報、特にスキーマに関する情報は出力してはい
+       きません。<link linkend="security.errors">エラー出力</link>およ
+       び<link linkend="ref.errorfunc">エラー処理およびログ関数</link>
+       も参照下さい。
        </simpara>
       </listitem>
       <listitem>
        <simpara>
-        You may use stored procedures and previously defined cursors to abstract
-        data access so that users do not directly access tables or views, but
-        this solution has another impacts.
+       ユーザがテーブルまたはビューに直接アクセスできないように、
+       データアクセスを抽象化することを目的としてストアドプロシージャ
+       及び事前に定義したカーソルを使用することもできますが、このソリュー
+       ションには、副作用があります。
        </simpara>
       </listitem>
      </itemizedlist>
 
      <simpara>
-      Besides these, you benefit from logging queries either within your script
-      or by the database itself, if it supports. Obviously, the logging is unable
-      to prevent any harmful attempt, but it can be helpful to trace back which
-      application has been circumvented. The log is not useful by itself, but
-      through the information it contains. The more detail is generally better.
+     これらのケースにおいて、スクリプトまたはサポートされている場合は
+     データベース自体でクエリのログをとることが有益です。
+     明らかにログは破壊的な行為を防止することはできませんが、攻撃され
+     たアプリケーションを追跡する際には有効です。ログ自体は有益ではあ
+     りませんが、含まれている情報は有益です。通常、より詳細なログをと
+     る方が良いでしょう。
      </simpara>
     </sect3>
    </sect2>
@@ -1166,7 +1180,7 @@ exec ($evil_var);
    </para>
    <para>
     PHPを隠すための簡単な技法がいくつかあり、システムの弱点を見つけよ
-    うとする攻撃を遅延させることができる可能性があります。php.iniファ
+    うとする攻撃を遅延させることができる可能性があります。&php.ini;ファ
     イルでexpose_php = offと設定することにより、攻撃者が利用可能な情
     報を減らすことが可能です。
    </para>
