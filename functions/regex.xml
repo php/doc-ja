@@ -1,49 +1,63 @@
 <?xml version="1.0" encoding="utf-8"?>
  <reference id="ref.regex">
-  <title>正規表現関数 (POSIX拡張サポート)</title>
+<!-- $Revision: 1.15 $ -->
+  <title>正規表現(regex)関数 (POSIX拡張サポート)</title>
   <titleabbrev>Regexps</titleabbrev>
   
   <partintro>
+   <note>
+    <para>
+     PHPは、<link linkend="ref.pcre">PCRE関数</link>によりPerl互換の構
+     文を使用する正規表現式もサポートします。これらの関数は、貪欲でな
+     いマッチ、言明、条件付きサブパターン、そしてPOSIX拡張正規表現構文
+     でサポートされていない他の複数の機能をサポートします。
+    </para>
+   </note>
+   <warning>
+    <para>
+     これらの正規表現関数はバイナリセーフではありません。<link
+      linkend="ref.pcre">PCRE関数</link>はバイナリセーフです。
+    </para>
+   </warning>
    <para>
     PHPにおいて正規表現は複雑な文字列操作に使用されます。
     次の正規表現関数がサポートされます。
     <itemizedlist>
+     <listitem>
+      <simpara><function>ereg</function></simpara>
+     </listitem>
+     <listitem>
+      <simpara><function>ereg_replace</function></simpara>
+     </listitem>
       <listitem>
-       <simpara><function>ereg</function></simpara>
-      </listitem>
-      <listitem>
-       <simpara><function>ereg_replace</function></simpara>
-      </listitem>
-      <listitem>
-       <simpara><function>eregi</function></simpara>
-      </listitem>
-      <listitem>
-       <simpara><function>eregi_replace</function></simpara>
-      </listitem>
-      <listitem>
-       <simpara><function>split</function></simpara>
-      </listitem>
-      <listitem>
-       <simpara><function>spliti</function></simpara>
-      </listitem>
-     </itemizedlist>
+      <simpara><function>eregi</function></simpara>
+     </listitem>
+     <listitem>
+      <simpara><function>eregi_replace</function></simpara>
+     </listitem>
+     <listitem>
+      <simpara><function>split</function></simpara>
+     </listitem>
+     <listitem>
+      <simpara><function>spliti</function></simpara>
+     </listitem>
+    </itemizedlist>
     これらの関数は、全て最初の引数に正規表現をとります。
     PHPはPOSIX 1003.2で定義されたPOSIX拡張正規表現を使用します。
     POSIX正規表現に関する詳細については、PHP配布ファイルのregexディレ
     クトリにあるregexのmanページを参照下さい。
     このページはmanpageフォーマットであり、読むには
     <command>man /usr/local/src/regex/regex.7</command>のようにします。
- 
-    <!-- Should add discussion of PCRE functions here. --></para>
- 
+   </para>
    <para>
     <example>
      <title>正規表現の例</title>
      <programlisting role="php">
-ereg (&quot;abc&quot;, $string);            
-/* &quot;abc&quot;が$stringのどこかにある場合にtrueを返す */
+<![CDATA[
+ereg ("abc", $string);            
+/* "abc"が$stringのどこかにある場合にtrueを返す */
  
-ereg (&quot;^abc&quot;, $string);
+ereg ("^abc", $string);
 /* &quot;abc&quot; が$stringの最初にある場合にtrueを返す */
  
 ereg ("abc$", $string);
@@ -56,14 +70,15 @@ ereg ("([[:alnum:]]+) ([[:alnum:]]+) ([[:alnum:]]+)", $string,$regs);
 /* 空白で区切られた3つ単語を
 $regs[1], $regs[2],$regs[3]に代入する */
  
-$string = ereg_replace ("^", "&lt;BR&gt;", $string); 
+$string = ereg_replace ("^", "<br />", $string); 
 /* &lt;BR&gt; タグを $string の先頭に挿入する */
   
-$string = ereg_replace ("$", "&lt;BR&gt;", $string); 
+$string = ereg_replace ("$", "<br />", $string); 
 /* &lt;BR&gt; タグを $string の最後に挿入する */
  
 $string = ereg_replace ("\n", "", $string);
 /* $stringの改行文字を全て取り除く */
+]]>
      </programlisting>
     </example>
    </para>
@@ -101,14 +116,17 @@ $string = ereg_replace ("\n", "", $string);
      といったようになっています。$regs[0]は
      <parameter>string</parameter>のコピーを保持しています。
     </simpara>
-    <simpara>
-     <function>ereg</function>が何かに完全にマッチした場合、$regs には
-     ちょうど10個の要素が代入されます。これは、括弧で括られた部分文字
-     列のうち、実際にマッチしたものが 10 より少なくても多くても同様で
-     す。ただし、<function>ereg</function>にはより多くの部分文字列にマッ
-     チする能力があります。マッチするものが見付からなかった場合、$regs
-     は、<function>ereg</function>により書き換えられません。
-    </simpara>
+    <note>
+     <simpara>
+      PHP 4.1.0より前のバージョンでは、<literal>$regs</literal>にはちょ
+      うど10個の要素が代入されました。これは、実際にマッチした括弧付き
+      のサブ文字列が10より多くても少なくても同じでした。ただし、
+      <function>ereg</function>にはより多くの部分文字列にマッチする能
+      力があります。マッチするものが見付からなかった場合、
+      <literal>$regs</literal>は、<function>ereg</function>により書き
+      換えられません。
+     </simpara>
+    </note>    
     <simpara>
      検索においては、大文字と小文字を区別します。
     </simpara>
@@ -123,17 +141,20 @@ $string = ereg_replace ("\n", "", $string);
      <example>
       <title><function>ereg</function>の例</title>
       <programlisting role="php">
-if ( ereg ("([0-9]{4})-([0-9]{1,2})-([0-9]{1,2})", $date, $regs)) {
+<![CDATA[
+if (ereg ("([0-9]{4})-([0-9]{1,2})-([0-9]{1,2})", $date, $regs)) {
     echo "$regs[3].$regs[2].$regs[1]";
 } else {
-    echo "日付のフォーマットが不正です：$date";
+    echo "Invalid date format: $date";
 }
+]]>
       </programlisting>
      </example>
     </para>
     <simpara>
      <function>eregi</function>,<function>ereg_replace</function>,
-     <function>eregi_replace</function>も参照下さい。
+     <function>eregi_replace</function>,<function>preg_match</function>
+     も参照下さい。
     </simpara>
    </refsect1>
   </refentry>
@@ -153,6 +174,13 @@ if ( ereg ("([0-9]{4})-([0-9]{1,2})-([0-9]{1,2})", $date, $regs)) {
       <paramdef>string <parameter>string</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
+    <note>
+     <para>
+      Perl互換の正規表現構文を使用する
+      <function>preg_replace</function>は、しばしば
+      <function>ereg_replace</function>よりも速い代替関数です。
+     </para>
+    </note>
     <simpara>
      この関数は、<parameter>string</parameter>をスキャンして
      <parameter>pattern</parameter>にマッチするものを探し、
@@ -183,10 +211,12 @@ if ( ereg ("([0-9]{4})-([0-9]{1,2})-([0-9]{1,2})", $date, $regs)) {
      <example>
       <title><function>ereg_replace</function>の例</title>
       <programlisting role="php">
+<![CDATA[
 $string = "This is a test";
-echo ereg_replace ( " is", " was", $string );
-echo ereg_replace ( "( )is", "\\1was", $string );
-echo ereg_replace ( "(( )is)", "\\2was", $string );
+echo ereg_replace (" is", " was", $string);
+echo ereg_replace ("( )is", "\\1was", $string);
+echo ereg_replace ("(( )is)", "\\2was", $string);
+]]>
       </programlisting>
      </example>
     </para>
@@ -199,7 +229,8 @@ echo ereg_replace ( "(( )is)", "\\2was", $string );
      <example>
       <title><function>ereg_replace</function> の例</title>
       <programlisting>
-&lt;?php
+<![CDATA[
+<?php
 /* これは期待した通りに動作しません。 */
 $num = 4;
 $string = "This string has four words.";
@@ -212,16 +243,28 @@ $string = "This string has four words.";
 $string = ereg_replace('four', $num, $string);
 echo $string;   /* 出力: 'This string has 4 words.' */
 ?>
+]]>
+      </programlisting>
+     </example>
+    </para>
+    <para>
+     <example>
+      <title>URLをリンクで置換する</title>
+      <programlisting role="php">
+<![CDATA[
+$text = ereg_replace("[[:alpha:]]+://[^<>[:space:]]+[[:alnum:]/]",
+                     "<a href=\"\\0\">\\0</a>", $text);
+]]>
       </programlisting>
      </example>
     </para>
     <simpara>
      <function>ereg</function>, <function>eregi</function>,
-     <function>eregi_replace</function>も参照下さい。
+     <function>eregi_replace</function>, <function>str_replace</function>,
+     <function>preg_match</function>も参照下さい。
     </simpara>
    </refsect1>
   </refentry>
-
 
   <refentry id="function.eregi">
    <refnamediv>
@@ -248,14 +291,23 @@ echo $string;   /* 出力: 'This string has 4 words.' */
      この関数は、アルファベット文字をマッチングさせる際に
      大文字小文字の区別をしないこと以外は<function>ereg</function>と同
      じです。
+     <example>
+      <title><function>eregi</function>の例</title>
+      <programlisting role="php">
+<![CDATA[
+if (eregi("z", $string)) {
+    echo "'$string' contains a 'z' or 'Z'!";
+}
+]]>
+      </programlisting>
+     </example>
     </para>
     <para>
-     <function>ereg</function>, <function>ereg_replace</function>
-     および<function>eregi_replace</function>も参照下さい。
+     <function>ereg</function>, <function>ereg_replace</function>,
+     <function>eregi_replace</function>も参照下さい。
     </para>
    </refsect1>
   </refentry>
-
 
   <refentry id="function.eregi-replace">
    <refnamediv>
@@ -303,6 +355,13 @@ echo $string;   /* 出力: 'This string has 4 words.' */
       </paramdef>
      </funcprototype>
     </funcsynopsis>
+    <note>
+     <para>
+      Perl互換の正規表現構文を使用する<function>preg_split</function>
+      は、往々にして<function>split</function>よりも速い代替案となりま
+      す。
+     </para>
+    </note>
     <para>
      文字列の配列を返します。配列の各要素は正規表現
      <parameter>pattern</parameter>により区切られた
@@ -319,19 +378,33 @@ echo $string;   /* 出力: 'This string has 4 words.' */
     <example>
       <title><function>split</function>の例</title>
       <programlisting role="php">
-$passwd_list = split ( ":", $passwd_line, 5 );
+<![CDATA[
+list($user,$pass,$uid,$gid,$extra)= split (":", $passwd_line, 5);
+]]>
       </programlisting>
      </example>
     </para>
+    <tip>
+     <simpara>
+      <parameter>pattern</parameter>が<replaceable>n</replaceable>回現
+      れる場合、返される配列には、
+      <literal><replaceable>n</replaceable>+1</literal>個のアイテムが
+      含まれます。例えば、<parameter>pattern</parameter>が現れない場合、
+      1個の要素のみを有する配列が返されます。もちろん、これは
+      <parameter>string</parameter>が空の場合も同様です。
+     </simpara>
+    </tip>
     <para>
      スラッシュ、ドット、ハイフンをデリミタとすると日付を処理する例を
      以下に示します。
      <example>
       <title><function>split</function>の例</title>
       <programlisting role="php">
+<![CDATA[
 $date = "04/30/1973";  // デリミタはスラッシュ、ドット、ハイフンのどれかです。
 list ($month, $day, $year) = split ('[/.-]', $date);
-echo "Month: $month; Day: $day; Year: $year&lt;br&gt;\n";
+echo "Month: $month; Day: $day; Year: $year<br>\n";
+]]>
       </programlisting>
      </example>
     </para>
@@ -361,9 +434,10 @@ echo "Month: $month; Day: $day; Year: $year&lt;br&gt;\n";
      <command>man /usr/local/src/regex/regex.7</command>のようにします。
     </para>
     <para>
-     <function>preg_split</function>,
-     <function>spliti</function>,<function>explode</function>,
-     <function>implode</function>も参照下さい。
+     <function>preg_split</function>, <function>spliti</function>,
+     <function>explode</function>, <function>implode</function>,
+     <function>chunk_split</function>, <function>wordwrap</function>も
+     参照下さい。
     </para>
    </refsect1>
   </refentry>
@@ -425,7 +499,9 @@ echo "Month: $month; Day: $day; Year: $year&lt;br&gt;\n";
      <example>
       <title><function>sql_regcase</function>の例</title>
       <programlisting role="php">
+<![CDATA[
 echo sql_regcase ("Foo bar");
+]]>
       </programlisting>
      </example>
      これは、<screen>[Ff][Oo][Oo] [Bb][Aa][Rr]</screen>と表示します。
@@ -437,7 +513,6 @@ echo sql_regcase ("Foo bar");
     </para>
    </refsect1>
   </refentry>
-  
 
  </reference>
 
@@ -457,4 +532,7 @@ sgml-exposed-tags:nil
 sgml-local-catalogs:nil
 sgml-local-ecat-files:nil
 End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
 -->

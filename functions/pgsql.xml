@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.31 $ -->
+<!-- $Revision: 1.32 $ -->
  <reference id="ref.pgsql">
   <title>PostgreSQL 関数</title>
   <titleabbrev>PostgreSQL</titleabbrev>
@@ -20,6 +20,37 @@
      何回かのリリースでも使用可能ですが、将来的に削除される可能性があ
      ります。CVSバージョンには、新しい関数名が付けられています。
     </para>
+    <example>
+     <title>関数名の変更</title>
+     <programlisting role="php">
+<![CDATA[
+OLD NAME           NEW NAME
+pg_exec            pg_query
+getlastoid         pg_last_oid
+pg_cmdtuples       pg_affected_rows
+pg_errormessage    pg_last_error
+pg_numrows         pg_num_rows
+pg_numfields       pg_num_fields
+pg_fieldname       pg_field_name
+pg_fieldsize       pg_field_size
+pg_fieldtype       pg_field_type
+pg_fieldnum        pg_field_num
+pg_fieldprtlen     pg_field_prtlen
+pg_fieldisnull     pg_field_is_null
+pg_freeresult      pg_free_result
+pg_result          pg_fetch_result
+pg_loreadall       pg_lo_read_all
+pg_locreate        pg_lo_create
+pg_lounlink        pg_lo_unlink
+pg_loopen          pg_lo_open
+pg_loclose         pg_lo_close
+pg_loread          pg_lo_read
+pg_lowrite         pg_lo_write
+pg_loimport        pg_lo_import
+pg_loexport        pg_lo_export
+]]>
+     </programlisting>
+    </example>
     <para>
      従来のpg_connect()/pg_pconnect() は、将来的に同期接続機能をサポー
      トするために過去のものとなる可能性があります。
@@ -398,21 +429,39 @@ $dbconn4 = pg_connect ($conn_string);
      </funcprototype>
     </funcsynopsis>
     <para>
-     クエリーに失敗したり、connectionが有効な接続IDでない場合は&false;を
-     返します。connectionが有効な値であれば、
+     <function>pg_exec</function>は、クエリを実行できた場合、クエリ結
+     果リソースを返します。クエリーに失敗したり、connectionが有効な接
+     続IDでない場合は&false;を返します。connectionが有効な値であれば、
      <function>pg_errormessage</function>関数によりエラーの詳細
      を得ることができます。<function>pg_exec</function>関数は、接続IDにより
      指定されたPostgreSQLデータベースに対してSQLステートメントを送信します。
-     connectionは<function>pg_connect</function>により返された有効なID
-     でなければなりません。この関数の返り値はインデックス値であり、
-     その他のPostgreSQL関数から結果をアクセスする際に使われます。
+     connectionは<function>pg_connect</function>または
+     <function>pg_pconnect</function>により返された有効なIDでなければ
+     なりません。この関数の返り値はクエリ欠課リソースであり、
+     <function>pg_fetch_array</function>のようなその他のPostgreSQL関数
+     が結果にアクセスする際に使われます。
      <note>
       <simpara>
-       PHP/FIでは、クエリーがデータを返すことが期待されない場合
-       (たとえばINSERTやUPDATE)は1を返し、また何も返さなかったSELECTの
-       場合でも1より大きな値を返します。PHPではそのような仮定は行いません。
+       <parameter>connection</parameter>は、
+       <function>pg_exec</function>のオプションのパラメータです。
+       <parameter>connection</parameter>が使用された場合、デフォルトの
+       接続が使用されます。デフォルトの接続は、
+       <function>pg_connect</function>または
+       <function>pg_pconnect</function>により作成された直近の接続です。
+      </simpara>
+      <simpara>
+       <parameter>connection</parameter>は省略できますが、スクリプトの
+       バグが発見しにくくなるため、省略は推奨されません。
       </simpara>
      </note>
+    </para>
+    <para>
+     <function>pg_connect</function>,
+     <function>pg_pconnect</function>,
+     <function>pg_fetch_array</function>,
+     <function>pg_fetch_object</function>,
+     <function>pg_numrows</function>,
+     and <function>pg_cmdtuples</function>も参照下さい。
     </para>
    </refsect1>
   </refentry>
@@ -428,14 +477,17 @@ $dbconn4 = pg_connect ($conn_string);
      <funcprototype>
       <funcdef>array <function>pg_fetch_array</function></funcdef>
       <paramdef>resource <parameter>result</parameter></paramdef>
-      <paramdef>int <parameter>row</parameter></paramdef>
+      <paramdef>int 
+       <parameter><optional>row</optional></parameter>
+      </paramdef>
       <paramdef>int 
        <parameter><optional>result_type</optional></parameter>
       </paramdef>
      </funcprototype>
     </funcsynopsis>
-    <para> 
-     返り値: 取得された行を保持する配列、行がもうない場合は&false;。
+    <para>
+     <function>pg_fetch_array</function>は、取得された行(タプル/レコー
+     ド)を保持する配列を返します。行がもうない場合は&false;を返します。
     </para>
     <para>
      <function>pg_fetch_array</function>は拡張版の
@@ -444,9 +496,18 @@ $dbconn4 = pg_connect ($conn_string);
      フィールド名をキーとしてデータを連想インデックスにも保存します。
     </para>
     <para>
-     <function>pg_fetch_array</function>の
-     3番目の引数(オプション)<parameter>result_type</parameter>は
-     定数であり、PGSQL_ASSOC、PGSQL_NUM、PGSQL_BOTHのどれかとなります。
+     <parameter>row</parameter>は、取得する行(レコード)番号です。最初
+     の行は0です。
+    </para>
+    <para>
+     <parameter>result_type</parameter>は、返り値の初期化方法を制御す
+     るオプションのパラメータです。<parameter>result_type</parameter>
+     は定数であり、次の値のどれかとすることが可能です。: PGSQL_ASSOC,
+     PGSQL_NUM, and PGSQL_BOTH。
+     <function>pg_fetch_array</function>は、PGSQL_ASSOCのキーとしてフィー
+     ルド名がある連想配列を返します。PGSQL_NUMをキーとした場合はフィー
+     ルド添字、PGSQL_BOTHをキーとした場合はフィールド名/添字です。デフォ
+     ルトは、PGSQL_BOTHです。
      <note>
       <para>
        <parameter>result_type</parameter>はPHP4.0で追加されました。
@@ -460,12 +521,15 @@ $dbconn4 = pg_connect ($conn_string);
      極端に遅くなるわけではないということがあげられます。
     </para>
     <para>
-     更に詳細な情報は、<function>pg_fetch_row</function>を参照下さい。
+     <function>pg_fetch_row</function>、
+     <function>pg_fetch_object</function>、
+     <function>pg_result</function>も参照下さい。
     </para>
-    <example>
-     <title>PostgreSQLによる配列の取得</title>
-     <programlisting role="php">
-     <![CDATA[
+    <para>
+     <example>
+      <title>PostgreSQLによる配列の取得</title>
+      <programlisting role="php">
+<![CDATA[
 <?php 
 $conn = pg_pconnect ("dbname=publisher");
 if (!$conn) {
@@ -486,8 +550,14 @@ $arr = pg_fetch_array ($result, 1, PGSQL_ASSOC);
 echo $arr["author"] . " <- array\n";
 ?>
 ]]>
-     </programlisting>
-    </example>
+      </programlisting>
+     </example>
+    </para>
+    <note>
+     <para>
+      4.1.0以降、<parameter>row</parameter>はオプションです。
+     </para>
+    </note>
    </refsect1>
   </refentry>
  
@@ -509,20 +579,28 @@ echo $arr["author"] . " <- array\n";
      </funcprototype>
     </funcsynopsis>
     <para> 
-     返り値: 取得した行に対応するプロパティを有するオブジェクト。
-     行がもうない場合は&false;。
+     <function>pg_fetch_object</function>は、取得した行に対応するプロ
+     パティを有するオブジェクトを返します。この関数は、行がもうない場
+     合またはエラーには&false;を返します。
     </para>
     <para> 
-     <function>pg_fetch_object</function>は<function>pg_fetch_array</function>
-     に似ていますが、配列の代わりにオブジェクトが返されという違いがあります。
-     間接的に、このことはデータがオフセットではなく
-     フィールド名によってのみアクセス可能であることを意味します。
-     (数字はプロパティ名として使用できません。)
+     <function>pg_fetch_object</function>は
+     <function>pg_fetch_array</function>に似ていますが、配列の代わりに
+     オブジェクトが返されという違いがあります。間接的に、このことはデー
+     タがオフセットではなくフィールド名によってのみアクセス可能である
+     ことを意味します。(数字はプロパティ名として使用できません。)
     </para>
     <para>
-     <function>pg_fetch_array</function>の3番目の引数(オプション)
-     <parameter>result_type</parameter>は定数であり、
-     PGSQL_ASSOC、PGSQL_NUM、PGSQL_BOTHのどれかとなります。
+     <parameter>result_type</parameter>は、返り値の初期化方法を制御す
+     るオプションのパラメータです。<parameter>result_type</parameter>
+     は定数であり、次の値のどれかとすることが可能です。: PGSQL_ASSOC,
+     PGSQL_NUM, and PGSQL_BOTH。
+     <function>pg_fetch_array</function>は、PGSQL_ASSOCのキーとしてフィー
+     ルド名がある連想配列を返します。PGSQL_NUMをキーとした場合はフィー
+     ルド添字、PGSQL_BOTHをキーとした場合はフィールド名/添字です。デフォ
+     ルトは、PGSQL_BOTHです。
+    </para>
+    <para>
      <note>
       <para>
        <parameter>result_type</parameter>はPHP4.0で追加されました。
@@ -535,7 +613,8 @@ echo $arr["author"] . " <- array\n";
      (違いはわずかです)
     </para>
     <para>
-     <function>pg_fetch_array</function>、<function>pg_fetch_row</function>
+     <function>pg_exec</function>, <function>pg_fetch_array</function>,
+     <function>pg_fetch_row</function>, <function>pg_result</function>
      も参照下さい。
      <example>
       <title>Postgres によりオブジェクトを取得する</title>
@@ -584,6 +663,11 @@ pg_close ($db_conn);
       </programlisting>
      </example>
     </para>
+    <note>
+     <para>
+      4.1.0以降、<parameter>row</parameter>はオプションです。
+     </para>
+    </note>
    </refsect1>
   </refentry>
  
@@ -601,15 +685,17 @@ pg_close ($db_conn);
       <paramdef>int <parameter>row</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
-    <para> 
-     返り値: 取得された行を有する配列、行がもうない場合に&false;。
-    </para>
     <para>
      <function>pg_fetch_row</function>は指定した結果IDが指す結果から
-     1行分のデータを取得します。行は配列として返されます。
+     1行分のデータを取得します。行(レコード)は配列として返されます。
      各結果カラムは、オフセット値0から始まる配列に保存されます。
     </para>
+    <para> 
+     取得した行に対応する配列を返します。行がもうない場合、&false;を返
+     します。
+    </para>
     <para>
+     <function>pg_exec</function>,
      <function>pg_fetch_array</function>,
      <function>pg_fetch_object</function>,
      <function>pg_result</function> も参照下さい。
@@ -648,12 +734,17 @@ for ($i=0; $i < $num; $i++) {
       </programlisting>
      </example>
     </para>
+    <note>
+     <para>
+      4.1.0以降、<parameter>row</parameter>はオプションとなりました。
+     </para>
+    </note>
    </refsect1>
   </refentry>
   
   <refentry id="function.pg-fieldisnull">
    <refnamediv>
-    <refname>pg_FieldIsNull</refname>
+    <refname>pg_fieldisnull</refname>
     <refpurpose>フィールドが&null;かどうか調べる</refpurpose>
    </refnamediv>
    <refsect1>
@@ -667,9 +758,10 @@ for ($i=0; $i < $num; $i++) {
      </funcprototype>
     </funcsynopsis>
     <para>
-     フィールドが&null;かどうか調べます。rowで指定した行のフィールドが
-     &null;でない場合は0を返し、&null;だった場合は1を返します。fieldは番号
-     またはフィールド名で指定します。rowの番号付けは0から始まります。
+     <function>pg_fieldisnull</function>は、フィールドが&null;かどうか
+     調べます。rowで指定した行のフィールドが&null;でない場合は0を返し、
+     &null;だった場合は1を返します。fieldは番号またはフィールド名で指
+     定します。rowの番号付けは0から始まります。
     </para>
    </refsect1>
   </refentry>
@@ -689,9 +781,13 @@ for ($i=0; $i < $num; $i++) {
      </funcprototype>
     </funcsynopsis>
     <para>
-     <function>pg_fieldname</function>は、指定したPostgreSQL結果IDの中の
-     カラム番号に対応するフィールドの名前を返します。フィールド番号は
-     0から始まります。
+     <function>pg_fieldname</function>は、指定したPostgreSQL
+     <parameter>result</parameter>リソースの指定した
+     <parameter>field_number</parameter>にあるフィールドの名前を返
+     します。フィールド番号は0から始まります。
+    </para>
+    <para>
+     <function>pg_fieldnum</function>も参照下さい。
     </para>
    </refsect1>
   </refentry>
@@ -711,9 +807,14 @@ for ($i=0; $i < $num; $i++) {
      </funcprototype>
     </funcsynopsis>
     <para>
-     <function>pg_fieldnum</function>は、指定したPostgreSQLの結果IDの中の
-     フィールド名に対応するカラム番号を返します。フィールド番号は0から
-     始まります。この関数は、エラーの場合に-1を返します。
+     <function>pg_fieldnum</function>は、指定したPostgreSQL
+     <parameter>result</parameter>リソースの
+     <parameter>field_name</parameter>に対応するカラム(スロット)番号を
+     返します。フィールド番号は0から始まります。この関数は、エラーの場
+     合に-1を返します。
+    </para>
+    <para>
+     <function>pg_fieldname</function>も参照下さい。
     </para>
    </refsect1>
   </refentry>
@@ -734,10 +835,13 @@ for ($i=0; $i < $num; $i++) {
      </funcprototype>
     </funcsynopsis>
     <para>
-     <function>pg_fieldprtlen</function>は、PostgreSQLの結果の
-     指定した値に関して実際に表示した場合の長さ(文字の数)を返します。
-     行番号(row_number)は0から始まります。この関数は、エラーの場合に-1を
-     返します。
+     <function>pg_fieldprtlen</function>は、PostgreSQLの
+     <parameter>result</parameter>の指定した値に関して実際に表示した場
+     合の長さ(文字の数)を返します。行番号(row_number)は0から始まります。
+     この関数は、エラーの場合に-1を返します。
+    </para>
+    <para>
+     <function>pg_fieldsize</function>も参照下さい。
     </para>
    </refsect1>
   </refentry>
@@ -765,6 +869,10 @@ for ($i=0; $i < $num; $i++) {
      フィールドサイズが-1の場合、その項目は可変長フィールドであることを
      示します。この関数は、エラーの場合は&false;を返します。
     </para>
+    <para>
+     <function>pg_fieldlen</function>および
+     <function>pg_fieldtype</function>も参照下さい。
+    </para>
    </refsect1>
   </refentry>
 
@@ -785,9 +893,14 @@ for ($i=0; $i < $num; $i++) {
      </funcprototype>
     </funcsynopsis>
     <para>
-     <function>pg_fieldtype</function>は、指定したPostgreSQLの結果において、
-     指定フィールドの型名を保持する文字列を返します。フィールド番号
-     (field_number)は0から始まります。
+     <function>pg_fieldtype</function>は、指定したPostgreSQLの
+     <parameter>result</parameter>リソースにおいて、指定した
+     <parameter>field_number</parameter>の型名を保持する文字列を返しま
+     す。フィールド番号(field_number)は0から始まります。
+    </para>
+    <para>
+     <function>pg_fieldlen</function>および
+     <function>pg_fieldname</function>も参照下さい。
     </para>
    </refsect1>
   </refentry>
@@ -801,18 +914,22 @@ for ($i=0; $i < $num; $i++) {
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>int <function>pg_freeresult</function></funcdef>
+      <funcdef>bool <function>pg_freeresult</function></funcdef>
       <paramdef>resource <parameter>result</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
-    <function>pg_freeresult</function>は、スクリプト実行中のメモリ使用量
+     <function>pg_freeresult</function>は、スクリプト実行中のメモリ使用量
      を抑制したい場合にのみコールする必要があります。すべての結果保持用
      メモリは、スクリプトが終了する際に自動的に開放されます。
      しかしながら、そのスクリプトにおいて、それ以上の結果データを
-     必要としないことが確実であれば、結果ID(result_id)を引数として
-     <function>pg_freeresult</function>をコールすることが可能です。
-     これにより、関連するメモリは開放されます。
+     必要としないことが確実であれば、<parameter>result</parameter>リソー
+     スを引数として<function>pg_freeresult</function>をコールし、関連
+     するメモリを解放することが可能です。この関数は成功時にtrue、エラー
+     発生時にfalseを返します。
+    </para>
+    <para>
+     <function>pg_exec</function>も参照下さい。
     </para>
    </refsect1>
   </refentry>
@@ -833,10 +950,13 @@ for ($i=0; $i < $num; $i++) {
     <para>
      <function>pg_getlastoid</function>は、<function>pg_Exec</function>で
      実行された直近のコマンドがSQLのINSERTだった場合、挿入されたタプルに割
-     り当てられたoid(オブジェクト ID)を取り出します。有効なoidがあれば、
-     この関数は正の整数を返します。エラーが起こったり、
-     <function>pg_exec</function>で実行された最後のコマンドがSQLの
-     INSERTでなかった場合は-1を返します。
+     り当てられた<varname>oid</varname>を取り出します。有効な
+     <varname>oid</varname>があれば、この関数は正の整数を返します。エ
+     ラーが起こったり、<function>pg_exec</function>で実行された最後の
+     コマンドがSQLのINSERTでなかった場合は-1を返します。
+    </para>
+    <para>
+     <function>pg_exec</function>も参照下さい。
     </para>
    </refsect1>
   </refentry>
@@ -855,8 +975,13 @@ for ($i=0; $i < $num; $i++) {
      </funcprototype>
     </funcsynopsis>
     <para>
-     <function>pg_host</function>は、指定したPostgreSQL接続IDが接続している
-     ホストの名前を返します。
+     <function>pg_host</function>は、指定したPostgreSQL
+     <parameter>connection</parameter>リソースが接続しているホストの名
+     前を返します。
+    </para>
+    <para>
+     <function>pg_connect</function>および
+     <function>pg_pconnect</function>も参照下さい。
     </para>
    </refsect1>
   </refentry>
@@ -1672,7 +1797,7 @@ $dbconn4 = pg_pconnect ($conn_string);
    <refnamediv>
     <refname>pg_get_result</refname>
     <refpurpose>
-     Get asynchronous query result
+     同期クエリ結果を取得する
     </refpurpose>
    </refnamediv>
    <refsect1>
@@ -1680,53 +1805,47 @@ $dbconn4 = pg_pconnect ($conn_string);
     <funcsynopsis>
      <funcprototype>
       <funcdef>resource <function>pg_get_result</function></funcdef>
-      <paramdef>resource <parameter><optional>connection</optional></parameter></paramdef>
+      <paramdef>resource 
+       <parameter><optional>connection</optional></parameter>
+      </paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
-     &warn.undocumented.func;
+     <function>pg_get_result</function>は、
+     <function>pg_send_query</function>で実行した同期クエリから結果リ
+     ソースを取得します。<function>pg_send_query</function>は、複数の
+     クエリをPostgreSQLサーバに送信することが可能です。クエリ結果を1
+     つずつ取得するには、<function>pg_get_result</function>が使用され
+     ます。この関数は結果リソースを返します。結果がもうない場合には、
+      &false;を返します。
     </para>
    </refsect1>
   </refentry>
 
-  <refentry id='function.pg-request-cancel'>
+  <refentry id='function.pg-result-status'>
    <refnamediv>
-    <refname>pg_request_cancel</refname>
+    <refname>pg_result_status</refname>
     <refpurpose>
-     Cancel request
+     クエリ結果のステータスを取得する
     </refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>bool <function>pg_request_cancel</function></funcdef>
-      <paramdef>resource <parameter><optional>connection</optional></parameter></paramdef>
+      <funcdef>int <function>pg_result_status</function></funcdef>
+      <paramdef>resource <parameter>result</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
-     &warn.undocumented.func;
+     <function>pg_result_status</function>は、結果リソースのステータス
+     を返します。返り値は、PGSQL_EMPTY_QUERY,
+     PGSQL_COMMAND_OK, PGSQL_TUPLES_OK, PGSQL_COPY_TO,
+     PGSQL_COPY_FROM, PGSQL_BAD_RESPONSE, PGSQL_NONFATAL_ERROR,
+     PGSQL_FATAL_ERRORのどれかとなります。
     </para>
-   </refsect1>
-  </refentry>
-
-  <refentry id='function.pg-is-busy'>
-   <refnamediv>
-    <refname>pg_is_busy</refname>
-    <refpurpose>
-     Get connection is busy or not
-    </refpurpose>
-   </refnamediv>
-   <refsect1>
-    <title>説明</title>
-    <funcsynopsis>
-     <funcprototype>
-      <funcdef>bool <function>pg_is_busy</function></funcdef>
-      <paramdef>resource <parameter><optional>connection</optional></parameter></paramdef>
-     </funcprototype>
-    </funcsynopsis>
     <para>
-     &warn.undocumented.func;
+     <function>pgsql_connection_status</function>も参照下さい。
     </para>
    </refsect1>
   </refentry>
@@ -1744,15 +1863,35 @@ $dbconn4 = pg_pconnect ($conn_string);
      <funcprototype>
       <funcdef>bool <function>pg_send_query</function></funcdef>
       <paramdef>resource <parameter>connection</parameter></paramdef>
-      <paramdef>string <parameter>qeury</parameter></paramdef>
+      <paramdef>string <parameter>query</parameter></paramdef>
      </funcprototype>
      <funcprototype>
       <funcdef>bool <function>pg_send_query</function></funcdef>
-      <paramdef>string <parameter>qeury</parameter></paramdef>
+      <paramdef>string <parameter>query</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
-     &warn.undocumented.func;
+     <function>pg_send_query</function> send asynchronous query to the
+     <parameter>connection</parameter>. Unlike
+     <function>pg_query</function>, it can send multiple query to
+     PostgreSQL and get the result one by one using
+     <function>pg_get_result</function>. Script execution is not block
+     while query is executing. Use
+     <function>pg_connection_busy</function> to check connection is
+     busy (i.e. query is executing) Query may be canceled by calling
+     <function>pg_cancel_query</function>.
+    </para>
+    <para>
+     Although, user can send multiple query at once. User cannot send
+     multiple query over busy connection. If query is sent while
+     connection is busy, it waits until last query is finished and
+     discards all result.
+    </para>
+    <para>
+     See also <function>pg_query</function>,
+     <function>pg_cancel_query</function>,
+     <function>pg_get_result</function> and
+     <function>pg_connection_busy</function>
     </para>
    </refsect1>
   </refentry>
@@ -1761,7 +1900,7 @@ $dbconn4 = pg_pconnect ($conn_string);
    <refnamediv>
     <refname>pg_cancel_query</refname>
     <refpurpose>
-     リクエストをキャンセルする
+     同期クエリを取り消す
     </refpurpose>
    </refnamediv>
    <refsect1>
@@ -1773,7 +1912,14 @@ $dbconn4 = pg_pconnect ($conn_string);
      </funcprototype>
     </funcsynopsis>
     <para>
-     &warn.undocumented.func;
+     <function>pg_cancel_query</function> cancel asynchronous query sent by 
+     <function>pg_send_query</function>. You cannot cancel query executed by 
+     <function>pg_query</function>.
+    </para>
+    <para>
+     See also <function>pg_send_query</function>,
+     <function>pg_cancel_result</function> and
+     <function>pg_connection_busy</function>
     </para>
    </refsect1>
   </refentry>
@@ -1782,7 +1928,7 @@ $dbconn4 = pg_pconnect ($conn_string);
    <refnamediv>
     <refname>pg_connection_busy</refname>
     <refpurpose>
-     接続がビジーかどうかを調べる
+     接続がビジーかどうか調べる
     </refpurpose>
    </refnamediv>
    <refsect1>
@@ -1794,7 +1940,15 @@ $dbconn4 = pg_pconnect ($conn_string);
      </funcprototype>
     </funcsynopsis>
     <para>
-     &warn.undocumented.func;
+     <function>pg_connection_busy</function> returns &true; if
+     connection busy. If connection is busy, previously sent query to
+     PostgreSQL server is still executing. If
+     <function>pg_get_result</function> is called,
+     <function>pg_get_result</function> will block.
+    </para>
+    <para>
+     See also <function>pg_connection_status</function> and
+     <function>pg_get_result</function>
     </para>
    </refsect1>
   </refentry>
@@ -1815,7 +1969,15 @@ $dbconn4 = pg_pconnect ($conn_string);
      </funcprototype>
     </funcsynopsis>
     <para>
-     &warn.undocumented.func;
+     <function>pg_connection_reset</function> reset connection with
+     the same parameter when connection is made. It is useful for
+     error recovery. It returns &true; if it resets connection
+     successfully, otherwise returns &false;.
+    </para>
+    <para>
+     See also <function>pg_connect</function>,
+     <function>pg_pconnect</function> and
+     <function>pg_connection_status</function>
     </para>
    </refsect1>
   </refentry>
@@ -1832,11 +1994,16 @@ $dbconn4 = pg_pconnect ($conn_string);
     <funcsynopsis>
      <funcprototype>
       <funcdef>int <function>pg_connection_status</function></funcdef>
-      <paramdef>resource <parameter>connnection</parameter></paramdef>
+      <paramdef>resource <parameter>connection</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
-     &warn.undocumented.func;
+     <function>pg_connection_status</function> returns a connection
+     status. Possible status is <literal>PGSQL_CONNECTION_O</literal>
+     or <literal>PGSQL_CONNECTION_BAD</literal>.
+    </para>
+    <para>
+     See also <function>pg_connection_busy</function>
     </para>
    </refsect1>
   </refentry>
@@ -1845,7 +2012,7 @@ $dbconn4 = pg_pconnect ($conn_string);
    <refnamediv>
     <refname>pg_copy_from</refname>
     <refpurpose>
-     No description given yet
+     配列からテーブルをコピーする
     </refpurpose>
    </refnamediv>
    <refsect1>
@@ -1861,7 +2028,11 @@ $dbconn4 = pg_pconnect ($conn_string);
      </funcprototype>
     </funcsynopsis>
     <para>
-     &warn.undocumented.func;
+     <function>pg_copy_from</function> copy table from array. It
+     return &true; for success, otherwise &false;.
+    </para>
+    <para>
+     See also <function>pg_copy_to</function>
     </para>
    </refsect1>
   </refentry>
@@ -1870,7 +2041,7 @@ $dbconn4 = pg_pconnect ($conn_string);
    <refnamediv>
     <refname>pg_copy_to</refname>
     <refpurpose>
-     Send null-terminated string to backend server
+     配列にテーブルをコピーする
     </refpurpose>
    </refnamediv>
    <refsect1>
@@ -1885,7 +2056,12 @@ $dbconn4 = pg_pconnect ($conn_string);
      </funcprototype>
     </funcsynopsis>
     <para>
-     &warn.undocumented.func;
+     <function>pg_copy_to</function> copy table to array. The result
+     array is returned if it success to copy. Otherwise it returns
+     &false;.
+    </para>
+    <para>
+     See also <function>pg_copy_from</function>
     </para>
    </refsect1>
   </refentry>
@@ -1894,7 +2070,7 @@ $dbconn4 = pg_pconnect ($conn_string);
    <refnamediv>
     <refname>pg_escape_bytea</refname>
     <refpurpose>
-     Escape binary for bytea type
+     bytea型にバイナリをエスケープする
     </refpurpose>
    </refnamediv>
    <refsect1>
@@ -1906,7 +2082,16 @@ $dbconn4 = pg_pconnect ($conn_string);
      </funcprototype>
     </funcsynopsis>
     <para>
-     &warn.undocumented.func;
+     <function>pg_escape_string</function>は、byteaデータ型用に文字列
+     をエスケープします。この関数はエスケープされた文字列を返します。
+    </para>
+    <note>
+     <para>
+      この関数は、PostgreSQL 7.2以降を必要とします。
+      </para>
+    </note>
+    <para>
+     <function>pg_escape_string</function>も参照下さい。
     </para>
    </refsect1>
   </refentry>
@@ -1915,7 +2100,7 @@ $dbconn4 = pg_pconnect ($conn_string);
    <refnamediv>
     <refname>pg_escape_string</refname>
     <refpurpose>
-     Escape string for text/char type
+     テキスト/文字型用の文字列をエスケープする
     </refpurpose>
    </refnamediv>
    <refsect1>
@@ -1927,28 +2112,16 @@ $dbconn4 = pg_pconnect ($conn_string);
      </funcprototype>
     </funcsynopsis>
     <para>
-     &warn.undocumented.func;
+     <function>pg_escape_string</function> escapes string for
+     text/char datatype.  It returns escaped string.
     </para>
-   </refsect1>
-  </refentry>
-
-  <refentry id='function.pg-lo-close'>
-   <refnamediv>
-    <refname>pg_lo_close</refname>
-    <refpurpose>
-     Close a large object
-    </refpurpose>
-   </refnamediv>
-   <refsect1>
-    <title>説明</title>
-    <funcsynopsis>
-     <funcprototype>
-      <funcdef>bool <function>pg_lo_close</function></funcdef>
-      <paramdef>resource <parameter>large_object</parameter></paramdef>
-     </funcprototype>
-    </funcsynopsis>
+    <note>
+     <para>
+      This function is requires PostgreSQL 7.2 or later.
+      </para>
+    </note>
     <para>
-     &warn.undocumented.func;
+     See also <function>pg_escape_bytea</function>
     </para>
    </refsect1>
   </refentry>
@@ -1957,7 +2130,7 @@ $dbconn4 = pg_pconnect ($conn_string);
    <refnamediv>
     <refname>pg_lo_seek</refname>
     <refpurpose>
-     Seeks position of large object
+     ラージオブジェクトの位置をシークする
     </refpurpose>
    </refnamediv>
    <refsect1>
@@ -1971,7 +2144,12 @@ $dbconn4 = pg_pconnect ($conn_string);
      </funcprototype>
     </funcsynopsis>
     <para>
-     &warn.undocumented.func;
+     <function>pg_lo_seek</function> seeks position of large object
+     resource. <parameter>whence</parameter> is PGSQL_SEEK_SET,
+     PGSQL_SEEK_CUR or PGSQL_SEEK_END.
+    </para>
+    <para>
+     See also <function>pg_lo_tell</function>.
     </para>
    </refsect1>
   </refentry>
@@ -1980,7 +2158,7 @@ $dbconn4 = pg_pconnect ($conn_string);
    <refnamediv>
     <refname>pg_lo_tell</refname>
     <refpurpose>
-     Returns current position of large object
+     ラージオブジェクトのカレントの位置を返す
     </refpurpose>
    </refnamediv>
    <refsect1>
@@ -1992,7 +2170,11 @@ $dbconn4 = pg_pconnect ($conn_string);
      </funcprototype>
     </funcsynopsis>
     <para>
-     &warn.undocumented.func;
+     <function>pg_lo_tell</function> returns current position (offset
+     from the beginning of large object).
+    </para>
+    <para>
+     See also <function>pg_lo_seek</function>.
     </para>
    </refsect1>
   </refentry>
@@ -2001,7 +2183,7 @@ $dbconn4 = pg_pconnect ($conn_string);
    <refnamediv>
     <refname>pg_result_error</refname>
     <refpurpose>
-     Get error message associated with result
+     結果に関連するエラーメッセージを取得する
     </refpurpose>
    </refnamediv>
    <refsect1>
@@ -2013,29 +2195,18 @@ $dbconn4 = pg_pconnect ($conn_string);
      </funcprototype>
     </funcsynopsis>
     <para>
-     &warn.undocumented.func;
+     <function>pg_result_error</function> returns error message
+     associated with <parameter>result</parameter> resource. Therefore,
+     user has better chance to get better error message than
+     <function>pg_last_error</function>.
     </para>
-   </refsect1>
-  </refentry>
-
-  <refentry id='function.pg-result-status'>
-   <refnamediv>
-    <refname>pg_result_status</refname>
-    <refpurpose>
-     Get status of query result
-    </refpurpose>
-   </refnamediv>
-   <refsect1>
-    <title>説明</title>
-    <funcsynopsis>
-     <funcprototype>
-      <funcdef>int <function>pg_result_status</function></funcdef>
-      <paramdef>resource <parameter>result</parameter></paramdef>
-     </funcprototype>
-    </funcsynopsis>
     <para>
-     &warn.undocumented.func;
-    </para>
+     See also <function>pg_query</function>,
+     <function>pg_send_query</function>,
+     <function>pg_get_result</function>,
+     <function>pg_last_error</function> and
+     <function>pg_last_notice</function>
+    </para>    
    </refsect1>
   </refentry>
 
