@@ -4,8 +4,8 @@
 
   <partintro>
    <para>
-    Postgresは元々UCB(カリフォルニア大学バークレイ校)コンピュータ・サイエンス
-    学部で開発されたものです。このPostgresは、
+    Postgresは元々UCB(カリフォルニア大学バークレイ校)コンピュータ・サ
+    イエンス学部で開発されたものです。このPostgresは、
     いくつかの商用データベースにおいてサポートされつつあるオブジェクト
     リレーショナルデータベース的概念の多くの先駆けでした。
     PostgreSQLは、SQL92/SQL3言語サポート、トランザクション機能、
@@ -18,7 +18,7 @@
     は<ulink url="&url.pgsql;">www.PostgreSQL.org</ulink>で入手可能です。
    </para>
    <para>
-    バージョン6.3(03/02/1998)以降、PostgreSQLはUNIXドメインソケットを
+    バージョン6.3(1998/3/2)以降、PostgreSQLはUNIXドメインソケットを
     使用しています。これらの新しいコネクションの使用例を以下に示す表に
     示します。このソケットは<filename>/tmp/.s.PGSQL.5432</filename>にあります。
     このオプションは<command>postmaster</command>に対して'-i'フラグを
@@ -37,26 +37,27 @@
       <tbody>
        <row>
 	<entry>postmaster &</entry>
-	<entry>pg_connect("", "", "", "", "dbname");</entry>
+	<entry>pg_connect("dbname=MyDbName");</entry>
 	<entry>OK</entry>
        </row>
        <row>
 	<entry>postmaster -i &</entry>
-	<entry>pg_connect("", "", "", "", "dbname");</entry>
+	<entry>pg_connect("dbname=MyDbName");</entry>
 	<entry>OK</entry>
        </row>
        <row>
-	<entry>postmaster &</entry>
-	<entry>pg_connect("localhost", "", "", "", "dbname");</entry>
-	<entry>Unable to connect to PostgreSQL server: connectDB() 
-	 failed: Is the postmaster running and accepting TCP/IP
-	 (with -i) connection at 'localhost' on port '5432'? in 
+	<entry>postmaster &amp;</entry>
+	<entry>pg_connect("host=localhost dbname=MyDbName");</entry>
+	<entry>
+	 Unable to connect to PostgreSQL server: connectDB() failed: 
+	 Is the postmaster running and accepting TCP/IP (with -i) 
+	 connection at 'localhost' on port '5432'? in 
 	 /path/to/file.php3 on line 20.
 	</entry>
        </row>
        <row>
-	<entry>postmaster -i &</entry>
-	<entry>pg_connect("localhost", "", "", "", "dbname");</entry>
+	<entry>postmaster -i &amp;</entry>
+	<entry>pg_connect("host=localhost dbname=MyDbName");</entry>
 	<entry>OK</entry>
        </row>
       </tbody>
@@ -65,8 +66,16 @@
    </para>
    <para>
     次のコマンドでも接続を確立することができます。
-    <command>$conn = pg_Connect("host=localhost port=5432
-    dbname=chris");</command>
+    <command>$conn = pg_Connect("host=myHost port=myPort tty=myTTY
+    options=myOptions user=myUser password=myPassword dbname=myDB");
+    </command>
+   </para>
+   <para>
+    以前の構文:
+    <command>$conn = pg_connect ("host", "port", "options", "tty",
+    "dbname")
+    </command>
+    は推奨されません。
    </para>
    <para>
     ラージオブジェクト(lo)インターフェースを使用するには、そのクエリーを
@@ -75,7 +84,7 @@
     そのトランザクションが有効な場合は<command>commit</command>または
     <command>end</command>で終わります。トランザクションが失敗した場合、
     そのトランザクションは<command>abort</command>または
-    <command>rollback</command>により閉じられなければなりません。
+    <command>rollback</command>により閉じる必要があります。
     <example>
      <title>ラージオブジェクトの使用例</title>
      <programlisting role="php">
@@ -150,7 +159,7 @@
 &lt;?php
 $result = pg_exec ($conn, "INSERT INTO verlag VALUES ('Autor')");
 $cmdtuples = pg_cmdtuples ($result);
-echo $cmdtuples . " <- cmdtuples affected.";
+echo $cmdtuples . " &lt;- cmdtuples affected.";
 ?>
       </programlisting>
      </example>
@@ -168,30 +177,42 @@ echo $cmdtuples . " <- cmdtuples affected.";
     <funcsynopsis>
      <funcprototype>
       <funcdef>int <function>pg_connect</function></funcdef>
-      <paramdef>string <parameter>host</parameter></paramdef>
-      <paramdef>string <parameter>port</parameter></paramdef>
-      <paramdef>string <parameter>options</parameter></paramdef>
-      <paramdef>string <parameter>tty</parameter></paramdef>
-      <paramdef>string <parameter>dbname</parameter></paramdef>
+      <paramdef>string <parameter>conn_string</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
      成功すると接続インデックスを返し、コネクションが生成できなかった場合は
      falseを返します。この関数は PostgreSQLデータベースへのコネクションを
-     オープンします。各々の引数は、ポート番号も含めて、引用符でくくられた
-     文字列です。引数optionsおよびttyはオプションで、指定しなくてもかまい
-     ません。この関数は、他のPostgreSQL関数を発行する際に必要な接続IDを
-     返します。一度に複数のコネクションをオープンすることができます。
+     オープンします。引数は引用符で括った文字列とする必要があります。
+     <example>
+      <title><function>pg_connect</function>の引数の使用法</title>
+      <programlisting role="php">
+&lt;?php
+$dbconn = pg_Connect ("dbname=mary");
+// "mary"という名前のデータベースに接続
+$dbconn2 = pg_Connect ("host=localhost port=5432 dbname=mary");
+// "localhost"のポート"5432"にて"mary"という名前のデータベースに接続
+$dbconn3 = pg_Connect ("user=lamb passwd=baaaa dbname=mary ");
+// ユーザ名とパスワードを指定して "mary" という名前のデータベースに接続
+?>
+      </programlisting>
+     </example>
+     利用可能な引数には、<parameter>dbname</parameter> 
+     <parameter>port</parameter>, <parameter>host</parameter>, 
+     <parameter>tty</parameter>, <parameter>options</parameter>,
+     <parameter>user</parameter>, <parameter>password</parameter>があ
+     ります。
     </para>
     <para>
-     次のコマンドでも接続を確立することができます。
-     <command>$conn = pg_connect("dbname=marliese port=5432");</command>
-     <parameter>dbname</parameter> および
-     <parameter>port</parameter> 以外の他のパラメータは、
-     <parameter>host</parameter>、
-     <parameter>tty</parameter>、<parameter>options</parameter> 
-     <parameter>user</parameter> 、<parameter>password</parameter>
-     です。
+     この関数は、他のPostgreSQL関数を発行する際に必要な接続IDを返しま
+     す。一度に複数のコネクションをオープンすることができます。
+    </para>
+    <para>
+     以前の構文:
+     <command>$conn = pg_connect ("host", "port", "options", "tty",
+    "dbname")
+     </command>
+     は推奨されません。
     </para>
     <para>
      <function>pg_pconnect</function>も参照下さい。
@@ -213,8 +234,37 @@ echo $cmdtuples . " <- cmdtuples affected.";
      </funcprototype>
     </funcsynopsis>
     <para>
-     指定したPostgreSQL接続IDが接続しているデータベースの名前を返します。
-     connectionが有効な接続IDでない場合はfalseを返します。
+     指定したPostgreSQL接続IDが接続しているデータベースの名前を返しま
+     す。connectionが有効な接続IDでない場合はfalseを返します。
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.pg-end-copy">
+   <refnamediv>
+    <refname>pg_end_copy</refname>
+    <refpurpose>PostgreSQLバックエンドに同期する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>bool <function>pg_end_copy</function></funcdef>
+      <paramdef>resource
+       <parameter><optional>connection</optional></parameter>
+      </paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     <function>pg_end_copy</function> は、copy命令を実行した後で、
+     PostgreSQLフロントエンドをバックエンドに同期します。
+     この関数を発行する必要があり、さもなくばそのフロントエンドに関し
+     てバックエンドに"out of sync"が発生する可能性があります。成功時に
+     TRUE、その他の場合にFALSEを返します。
+    </para>
+    <para>
+     詳細な情報と例については、<function>pg_put_line</function>も参照
+     下さい。
     </para>
    </refsect1>
   </refentry>
@@ -233,12 +283,12 @@ echo $cmdtuples . " <- cmdtuples affected.";
      </funcprototype>
     </funcsynopsis>
     <para>
-     エラーメッセージを保持する文字列を返します。失敗するとfalseを返します。
-     有効な接続が存在し、かつその接続において最後のデータベース操作で
-     エラーが発生した場合、そのエラーに関する詳細情報は
-     関数<function>pg_errormessage</function>を使っても取得できない
-     可能性があります。この関数は、バックエンドサーバで生成された
-     エラーメッセージを保持する文字列を返します。
+     エラーメッセージを保持する文字列を返します。失敗するとfalseを返し
+     ます。有効な接続が存在し、かつその接続において最後のデータベース
+     操作でエラーが発生した場合、そのエラーに関する詳細情報は関数
+     <function>pg_errormessage</function>を使っても取得できない可能性
+     があります。この関数は、バックエンドサーバで生成されたエラーメッ
+     セージを保持する文字列を返します。
     </para>
    </refsect1>
   </refentry>
@@ -519,9 +569,9 @@ for ($i=0; $i&lt;$num; $i++) {
      </funcprototype>
     </funcsynopsis>
     <para>
-     フィールドがNULLかどうか調べます。rowで指定した行のフィールドがNULLでない
-     場合は0を返し、NULLだった場合は1を返します。fieldは番号または
-     フィールド名で指定します。rowの番号付けは0から始まります。
+     フィールドがNULLかどうか調べます。rowで指定した行のフィールドが
+     NULLでない場合は0を返し、NULLだった場合は1を返します。fieldは番号
+     またはフィールド名で指定します。rowの番号付けは0から始まります。
     </para>
    </refsect1>
   </refentry>
@@ -611,7 +661,7 @@ for ($i=0; $i&lt;$num; $i++) {
      </funcprototype>
     </funcsynopsis>
     <para>
-     <function>pg_fieldsize</function>は、指定したPostgreSQLの結果において、
+     <function>pg_fieldsize</function>は、指定したPostgreSQLの結果におい�、
      指定したフィールド番号の内部記憶領域のサイズを(バイト数で)返します。
      フィールド番号は0から始まります。
      フィールドサイズが-1の場合、その項目は可変長フィールドであることを
@@ -953,7 +1003,7 @@ for ($i=0; $i&lt;$num; $i++) {
     </funcsynopsis>
     <para>
      <function>pg_numfields</function>は、PostgreSQLの結果におけるフィールド
-     (カラム)数を返します。引数は、<function>pg_Exec</function>で返された
+     (カラム)数を返します。引数は、<function>pg_exec</function>で返された
      有効な結果IDです。この関数はエラーの場合-1を返します。
     </para>
    </refsect1>
@@ -1011,31 +1061,32 @@ for ($i=0; $i&lt;$num; $i++) {
     <funcsynopsis>
      <funcprototype>
       <funcdef>int <function>pg_pconnect</function></funcdef>
-      <paramdef>string <parameter>host</parameter></paramdef>
-      <paramdef>string <parameter>port</parameter></paramdef>
-      <paramdef>string <parameter>options</parameter></paramdef>
-      <paramdef>string <parameter>tty</parameter></paramdef>
-      <paramdef>string <parameter>dbname</parameter></paramdef>
+      <paramdef>string <parameter>conn_string</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
      成功すると接続IDを返し、接続ができなかった場合はfalseを返します。
-     この関数は、PostgreSQLデータベースに対する持続的な接続をオープンします。
-     各引数は、ポート番号(<parameter>port</parameter>)も含め、引用符で
-     括った文字列です。<parameter>options</parameter>および
-     <parameter>tty</parameter>はオプションで、指定しなくてもかまいません。
-     この関数は接続IDを返します。このIDは、その他のPostgreSQL関数で必要です。
-     一度に複数の持続的な接続を行うことも可能です。
-     <function>pg_connect</function>も参照下さい。
+     この関数は、PostgreSQLデータベースに対する持続的な接続をオープン
+     します。引数は、引用符で括った文字列とする必要があります。
+     引数としては、<parameter>dbname</parameter> 
+     <parameter>port</parameter>, <parameter>host</parameter>, 
+     <parameter>tty</parameter>, <parameter>options</parameter>,
+     <parameter>user</parameter>, <parameter>password</parameter>が使
+     用可能です。
     </para>
     <para>
-     次のコマンドによっても接続を確立することができます。
-     <command>$conn = pg_pconnect("dbname=marliese port=5432");</command>
-     <parameter>dbname</parameter>と<parameter>port</parameter>以外の
-     他のパラメータには、<parameter>host</parameter>、 
-     <parameter>tty</parameter>、<parameter>options</parameter> 
-     <parameter>user</parameter>、<parameter>password</parameter>
-     があります。
+     この関数は接続IDを返します。このIDは、その他のPostgreSQL関数で必要です。
+     一度に複数の持続的な接続を行うことも可能です。
+    </para>
+    <para>
+     以前の構文:
+     <command>$conn = pg_pconnect ("host", "port", "options", "tty",
+      "dbname")
+     </command>
+     は推奨されません。
+    </para>
+    <para>
+     <function>pg_connect</function>も参照下さい。
     </para>
    </refsect1>
   </refentry>
@@ -1054,8 +1105,60 @@ for ($i=0; $i&lt;$num; $i++) {
      </funcprototype>
     </funcsynopsis>
     <para>
-     <function>pg_port</function>は、指定したPostgreSQL接続IDが接続している
-     ポートの番号を返します。
+     <function>pg_port</function>は、指定したPostgreSQL接続IDが接続し
+     ているポートの番号を返します。
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.pg-put-line">
+   <refnamediv>
+    <refname>pg_put_line</refname>
+    <refpurpose>
+     NULLで終る文字列をPostgreSQLバックエンドに送信する
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>bool <function>pg_put_line</function></funcdef>
+      <paramdef>resource
+       <parameter><optional>connection_id</optional></parameter>
+      </paramdef>
+      <paramdef>string <parameter>data</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     <function>pg_put_line</function> は、NULLで終る文字列をPostgreSQL
+     バックエンドサーバーに送信します。この関数は、例えば、PostgreSQL
+     のcopy命令を開始することにより開始されたデータのテーブルへの高速
+     挿入の際に有用です。最後のNULL文字は自動的に追加されます。成功時
+     にTRUE、その他の場合にFALSEを返します。
+    </para>
+    <note>
+     <para> 
+      アプリケーションは、データの送信が終了したことをバックエンドに知
+      らせるために最後の行に明示的に2つの文字"\."を送信する必要があり
+      ます。
+     </para>
+    </note>
+    <para>
+     <function>pg_end_copy</function>も参照下さい。
+     <example>
+      <title>データのテーブルへの高速挿入</title>
+      <programlisting role="php">
+&lt;?php 
+    $conn = pg_pconnect ("dbname=foo");
+    pg_exec($conn, "create table bar (a int4, b char(16), d float8)");
+    pg_exec($conn, "copy bar from stdin");
+    pg_put_line($conn, "3\thello world\t4.5\n");
+    pg_put_line($conn, "4\tgoodbye world\t7.11\n");
+    pg_put_line($conn, "\\.\n");
+    pg_end_copy($conn);
+?>
+      </programlisting>
+     </example>
     </para>
    </refsect1>
   </refentry>
@@ -1076,12 +1179,13 @@ for ($i=0; $i&lt;$num; $i++) {
      </funcprototype>
     </funcsynopsis>
     <para>
-     <function>pg_result</function>は、<function>pg_exec</function>で返された
-     結果ID(<parameter>result_id</parameter>)から実際の値を返します。
-     <parameter>row_number</parameter>および<parameter>fieldname</parameter>
-     は、結果のテーブルに返すセルを指定します。行(row)番号は0から始まります。
-     フィールドを名前で指定する代わりに、フィールド番号を引用符で括らずに
-     指定することもできます。フィールド番号は0から始まります。
+     <function>pg_result</function>は、<function>pg_exec</function>で
+     返された結果ID(<parameter>result_id</parameter>)から実際の値を返
+     します。<parameter>row_number</parameter>および
+     <parameter>fieldname</parameter>は、結果のテーブルに返すセルを指
+     定します。行(row)番号は0から始まります。フィールドを名前で指定す
+     る代わりに、フィールド番号を引用符で括らずに指定することもできま
+     す。フィールド番号は0から始まります。
     </para>
     <para>
      PostgreSQLには数多くの組込み型がありますが、ここでは直接に
@@ -1120,13 +1224,17 @@ for ($i=0; $i&lt;$num; $i++) {
      <parameter>encoding</parameter>には、設定するクライアントのエンコー
      ディングとして次の中から指定します。:
      SQL_ASCII, EUC_JP, EUC_CN, EUC_KR, EUC_TW, UNICODE,
-     MULE_INTERNAL, LATINX (X=1...9),KOI8, WIN, ALT,
+     MULE_INTERNAL, LATINX (X=1...9), KOI8, WIN, ALT,
      SJIS, BIG5, WIN1250
     </para>
     <note>
      <para>
       この関数を使用するには、PHP-4.0.2以降とPostgreSQL-7.0以降が必要
       です。
+     </para>
+     <para>
+      この関数は、<function>pg_setclientencoding</function>とコールす
+      ることも可能です。
      </para>
     </note>
     <para>
@@ -1156,13 +1264,17 @@ for ($i=0; $i&lt;$num; $i++) {
      この関数は、PostgreSQLクライアントのエンコーディングを文字列とし
      て返します。返り値は、次のどれかとなります。:
      SQL_ASCII, EUC_JP, EUC_CN, EUC_KR, EUC_TW, UNICODE,
-     MULE_INTERNAL, LATINX (X=1...9),KOI8, WIN, ALT,
+     MULE_INTERNAL, LATINX (X=1...9), KOI8, WIN, ALT,
      SJIS, BIG5, WIN1250     
     </para>
     <note>
      <para>
       この関数を使用するには、PHP-4.0.2以降とPostgreSQL-7.0以降が必要
       です。
+     </para>
+     <para>
+      この関数は、<function>pg_clientencoding</function>とコールするこ
+      とも可能です。
      </para>
     </note>
     <para>
@@ -1209,12 +1321,12 @@ for ($i=0; $i&lt;$num; $i++) {
      指定します。デフォルトは最後にオープンされたコネクションです。
     </para>
     <para>
-     <parameter>filename</parameter>をロギング用にオープンできた場合にTRUE、
-     その他の場合にFALSEを返します。
+     <parameter>filename</parameter>をロギング用にオープンできた場合に
+     TRUE、その他の場合にFALSEを返します。
     </para>
     <para>
-     <function>fopen</function>および<function>pg_untrace</function>も参照
-     下さい。
+     <function>fopen</function>および<function>pg_untrace</function>も
+     参照下さい。
     </para>
    </refsect1>
   </refentry>
@@ -1233,8 +1345,8 @@ for ($i=0; $i&lt;$num; $i++) {
      </funcprototype>
     </funcsynopsis>
     <para>
-     <function>pg_tty</function>は、指定したPostgreSQL接続ID上で、サーバ側の
-     デバッグ出力が送られるtty名を返します。
+     <function>pg_tty</function>は、指定したPostgreSQL接続ID上で、サー
+     バ側のデバッグ出力が送られるtty名を返します。
     </para>
    </refsect1>
   </refentry>
@@ -1242,7 +1354,9 @@ for ($i=0; $i&lt;$num; $i++) {
   <refentry id="function.pg-untrace">
    <refnamediv>
     <refname>pg_untrace</refname>
-    <refpurpose>PostgreSQLサーバーへの接続のトレースを無効にする</refpurpose>
+    <refpurpose>
+     PostgreSQLサーバーへの接続のトレースを無効にする
+    </refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>

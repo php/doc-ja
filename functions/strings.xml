@@ -6,6 +6,13 @@
     これらの関数群はすべて、文字列をいろいろな方法で操作します。
     正規表現や URL ハンドリングの節にも関連する記述があります。
    </simpara>
+   <para>
+    文字列の動作に関する情報、特にシングルクオート、ダブルクオート、エ
+    スケープシーケンスについては、マニュアルの
+    <link linkend="language.types">型</link> の節にある
+    <link linkend="language.types.string">文字列</link>エントリを参照
+    下さい。
+   </para>
   </partintro>
   
   <refentry id="function.addcslashes">
@@ -134,7 +141,9 @@ $trimmed = chop ($line);
      </para>
     </note>
     <para>
-     <function>trim</function>も参照下さい。
+     <function>trim</function>, <function>ltrim</function>,
+     <function>rtrim</function>, <function>chop</function>
+     も参照下さい。
     </para>
    </refsect1>
   </refentry>
@@ -464,8 +473,7 @@ $new_string = chunk_split (base64_encode($data));
     </simpara>
     <para>
      <function>echo</function> は実際には関数ではありません。
-     (言語構造です。)このため、使用する際に括弧は必要ありません。	
-     <example>
+     (言語構造です。)このため、使用する際に括弧は必要ありません《     <example>
       <title><function>echo</function> の例</title>
       <programlisting role="php">
 echo "Hello World";
@@ -548,6 +556,9 @@ $pieces = explode(" ", $pizza);
        <function>get_html_translation_table</function>
       </funcdef>
       <paramdef>int <parameter>table</parameter></paramdef>
+      <paramdef>int 
+       <parameter><optional>quote_style</optional></parameter>
+      </paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
@@ -558,6 +569,11 @@ $pieces = explode(" ", $pizza);
      テーブルを指定できるように新規に定義が2つ
      (<parameter>HTML_ENTITIES</parameter>,
      <parameter>HTML_SPECIALCHARS</parameter>)追加されました。
+     <function>htmlspecialchars</function> および
+     <function>htmlentities</function> 関数と同様にオプションで
+     処理するquote_styleを指定することが可能です。デフォルトは、
+     ENT_COMPATモードです。これらのモードに関する説明は、
+     <function>htmlspecialchars</function>を参照下さい。
      <example>
       <title>変換テーブルの例</title>
       <programlisting role="php">
@@ -717,11 +733,21 @@ $original = strtr ($str, $trans);
      <funcprototype>
       <funcdef>string <function>htmlentities</function></funcdef>
       <paramdef>string <parameter>string</parameter></paramdef>
+      <paramdef>int 
+       <parameter><optional>quote_style</optional></parameter>
+      </paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
      この関数は<function>htmlspecialchars</function>と同じですが、
-     HTML エンティティと等価な意味を有する文字をHTMLエンティティに変換します。
+     HTML エンティティと等価な意味を有する文字をHTMLエンティティに変換
+     します。<function>htmlspecialchars</function>と同様に、シングルま
+     たはダブルクオートに関する動作を示すオプションの第2の引数をとりま
+     す。<constant>ENT_COMPAT</constant>(デフォルト)の場合は、ダブルク
+     オートのみを変換し、シングルクオートをそのままにします。ダブルお
+     よびシングルクオートを共に変換します。
+     <constant>ENT_NOQUOTES</constant>はダブルクオートおよびシングルク
+     オートを共に変換しません。
     </para>
     <para>
      現在のところ、ISO-8859-1 文字セットが使われます。
@@ -746,21 +772,30 @@ $original = strtr ($str, $trans);
      <funcprototype>
       <funcdef>string <function>htmlspecialchars</function></funcdef>
       <paramdef>string <parameter>string</parameter></paramdef>
+      <paramdef>int 
+       <parameter><optional>quote_style</optional></parameter>
+      </paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
      文字の中には HTML において特殊な意味を持つものがあり、それら
      本来の値を表示したければ HTML の表現形式に変換してやらなければ
      なりません。この関数は、これらの変換を行った結果の文字列を
-     返します。
+     返します。これは、日常的なWebプログラミングにおいて最も有用な
+     変換を行います。全てのHTML文字エンティティを変換する必要
+     がある場合には、代わりに<function>htmlentities</function>を使用し
+     て下さい。
     </para>
     <simpara>
-     メッセージボードやゲストブックのようにユーザーが書きこんだテキス
-     トにおいてHTML のマークアップ用文字を区別する必要がある場合に有用
-     です。
+     この関数は、メッセージボードやゲストブックのようにユーザーが書き
+     こんだテキストにおいてHTML のマークアップ用文字を区別する必要があ
+     る場合に有用です。オプションの2番目の形式、quote_styleは、
+     シングルおよびダブルクオートされた文字で関数が何を行うかを指定し
+     ます。デフォルトのモード(ENT_COMPAT)は下位互換性を有しており、ダ
+     ブルクオートされた文字を変換し、単純な引用のままにします。
     </simpara>
     <para>
-     現在のところ、変換対象となる文字は以下の通りです。
+     変換対象となる文字は以下の通りです。
      <itemizedlist>
       <listitem>
        <simpara>
@@ -911,7 +946,8 @@ $colon_separated = implode (":", $array);
      "\n", "\r", "\t", "\v", "\0"および通常のスペースです。
     </para>
     <para>
-     <function>chop</function> および <function>trim</function> も参照下さい。
+     <function>chop</function>, <function>rtrim</function>,
+     <function>trim</function> も参照下さい。
     </para>
    </refsect1>
   </refentry>
@@ -1044,11 +1080,16 @@ if (ord ($str) == 10) {
      <funcprototype>
       <funcdef>void <function>parse_str</function></funcdef>
       <paramdef>string <parameter>str</parameter></paramdef>
+      <paramdef>array 
+       <parameter><optional>arr</optional></parameter>
+      </paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
      URL経由で渡されるクエリー文字列と同様に<parameter>str</parameter>
-     を処理し、現在のスコープに変数をセットします。
+     を処理し、現在のスコープに変数をセットします。2番目の引数
+     <parameter>arr</parameter> が指定された場合、
+     変数は、代わりに配列の要素としてこの変数に保存されます。
     </para>
     <para>
      <example>
@@ -1062,15 +1103,6 @@ echo $second[1]; /* "another" を出力 */
       </programlisting>
      </example>
     </para>
-    <note>
-     <para>
-      この関数は、現在、<filename>php.ini</filename>において
-      <link linkend="ini.register-globals">register_globals</link>=on 
-      と設定することを要求します。この動作は、将来のバージョン
-      (4.0.2以降)では変更される予定であり、この関数は値を配列でも返す
-      ようになります。
-     </para> 
-    </note>	 
    </refsect1>
   </refentry>
   
@@ -1201,7 +1233,8 @@ $trimmed = rtrim ($line);
      </example>
     </para>
     <para>
-     <function>trim</function>, <function>ltrim</function>も参照下さい。
+     <function>trim</function>, <function>ltrim</function>,
+     <function>rtrim</function>も参照下さい。
     </para>
    </refsect1>
   </refentry>
@@ -1429,13 +1462,13 @@ soundex ("Lukasiewicz") == soundex ("Lissajous") == 'L222';
      構成されます。ディレクティブには、そのまま結果にコピーされる
      (<literal>%</literal>を除く)通常の文字と<emphasis>変換指定子
       (conversion specifications)</emphasis>があり、取り出される際は
-     どちらもそれ自身がパ?áータとなります。このことは<function>
+     どちらもそれ自身がパラメータとなります。このことは<function>
       sprintf</function>の場合だけでなく<function>printf</function>
      の場合も同様です。
     </simpara>
     <para>
-     各変換指定子は3つの要素から成ります。これらを順に説明して
-     いきます。
+     各変換指定子はパーセント記号(<literal>%</literal>)の後に、これら
+     の要素が一つ以上続いたものになります。
      <orderedlist>
       <listitem>
        <simpara>
@@ -1475,7 +1508,6 @@ soundex ("Lukasiewicz") == soundex ("Lissajous") == 'L222';
        <para>
 	<emphasis>型指定子</emphasis>。引数を何の型として扱うかを指定
 	します。指定できる型を以下に示します。
-
 	<simplelist>
 	 <member>
 	  <literal>%</literal> - パーセント文字。引数は不要です。
@@ -1879,7 +1911,7 @@ Array
      <parameter>str1</parameter>が<parameter>str2</parameter>より小さ
      いに場合に &lt; 0、<parameter>str1</parameter>が
      <parameter>str2</parameter>より大きい場合に &gt; 0 、等しい場合に
-     0 を返します。
+     0 を蔣Wます。
     </simpara>
     <simpara>
      この比較は、大文字小文字を区別することに注意して下さい。
@@ -1898,7 +1930,7 @@ Array
    <refnamediv>
     <refname>strnatcasecmp</refname>
     <refpurpose>
-     "自然順"アルゴリズムにより大�字小文字を区別しない文字列比較を行う     
+     "自然順"アルゴリズムにより大懥͗小文字を区別しない文字列比較を行う     
     </refpurpose>
    </refnamediv>
    <refsect1>
@@ -1961,7 +1993,7 @@ Array
     </para>
     <simpara>
      <parameter>str1</parameter>が<parameter>str2</parameter>より小さ
-     いに場合に &lt; 0、<parameter>str1</parameter>が
+     いに場合?&lt; 0、<parameter>str1</parameter>が
      <parameter>str2</parameter>より大きい場合に &gt; 0 、等しい場合に
      0 を返します。
     </simpara>
@@ -2097,7 +2129,7 @@ if (is_string ($pos) && !$pos) {
    <refnamediv>
     <refname>strrchr</refname>
     <refpurpose>
-     文字列中に文字が最後に現れる場所を見つける
+     文字列中に文字が最後に現れる場所を�つける
     </refpurpose>
    </refnamediv>
    <refsect1>
@@ -2611,7 +2643,7 @@ $rest = substr("abcdef", -3, 1); // "d" を返します
     <para>
      <parameter>length</parameter> が指定され、かつ正である
      場合、返される文字列は <parameter>start</parameter> から
-     数えて <parameter>length</parameter> 文字数分となります。
+     հえて <parameter>length</parameter> 文字数分となります。
      負の length が指定された場合、(start は文字列の終端を過ぎているので)
      返される文字列は <parameter>start</parameter> の位置にある
      1文字のみとなります。
@@ -2765,14 +2797,14 @@ echo substr_replace ($var, '', 10, -1) . "&lt;br&gt;\n";
      </funcprototype>
     </funcsynopsis>
     <para>
-     この関数は、文字列の先頭および末尾にあるホワイトスペースを
+     この関数は、文字列の先頭および櫥оにあるホワイトスペースを
      取り除き、その結果の文字列を返します。
      現在のところ取り除かれるホワイトスペース文字は
      "\n"、"\r"、"\t"、"\v"、"\0"および通常のスペース(空白)です。
     </para>
     <para>
-     <function>chop</function> および<function>ltrim</function> も参照
-     下さい。
+     <function>chop</function>, <function>rtrim</function>,
+     <function>ltrim</function>も参照下さい。
     </para>
    </refsect1>
   </refentry>
@@ -2870,6 +2902,9 @@ $text = ucwords($text); // $textは「Mary Had A Little Lamb
       <paramdef>string
        <parameter><optional>break</optional></parameter>
       </paramdef>
+      <paramdef>int
+       <parameter><optional>cut</optional></parameter>
+      </paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
@@ -2882,6 +2917,11 @@ $text = ucwords($text); // $textは「Mary Had A Little Lamb
      <parameter>width</parameter>または<parameter>break</parameter>が
      指定された場合、<function>wordwrap</function>は75カラムで自動的に
      分割し、'\n'(改行)を用いて分割します。
+    </para>
+    <para>
+     <parameter>cut</parameter>が1に設定された場合、文字列は常に指定し
+     た幅でラップされます。このため、指定した幅よりも長い単語がある場
+     合には、分割されます。(2番目の例を参照下さい)
     </para>
     <para>
      <example>
@@ -2901,7 +2941,31 @@ echo "$newtext\n";
      <informalexample>
       <programlisting>
 The quick brown fox
- jumped over the lazy dog.
+jumped over the lazy dog.
+      </programlisting>
+     </informalexample>
+    </para>
+    <para>
+     <example>
+      <title><function>wordwrap</function> の例</title>
+      <programlisting role="php">
+$text = "A very long woooooooooooord.";
+$newtext = wordwrap( $text, 8, "\n", 1);
+
+echo "$newtext\n";
+      </programlisting>
+     </example>
+    </para>
+    <para>
+     この例の出力は次のようになります。
+    </para>
+    <para>
+     <informalexample>
+      <programlisting>
+A very
+long
+wooooooo
+ooooord.
       </programlisting>
      </informalexample>
     </para>

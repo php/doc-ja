@@ -336,6 +336,62 @@
    </refsect1>
   </refentry>
 
+  <refentry id="function.mysql-db-name">
+   <refnamediv>
+    <refname>mysql_db_name</refname>
+    <refpurpose>データベース名を得る</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>int <function>mysql_db_name</function></funcdef>
+      <paramdef>int <parameter>result</parameter></paramdef>
+      <paramdef>int <parameter>row</parameter></paramdef>
+      <paramdef>mixed 
+       <parameter>
+        <optional>field</optional>
+       </parameter>
+      </paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para> 
+     <function>mysql_db_name</function>は、
+     <function>mysql_list_dbs</function>をコールした際に得られた
+     <function>mysql_list_dbs</function>結果ポインタを最初の引数として
+     とり、パラメータ<parameter>row</parameter>は結果セットでの添字と
+     なります。
+    </para>
+    <para>
+     エラーを発生した場合、FALSE が返されます。エラーの発生源を定義す
+     るには、<function>mysql_errno</function>および
+     <function>mysql_error</function>を使用して下さい。
+    </para>
+    <example>
+     <title><function>mysql_db_name</function> の例</title>
+     <programlisting role="php">
+&lt;?php 
+error_reporting(E_ALL);
+
+mysql_connect('dbhost', 'username', 'password');
+$db_list = mysql_list_dbs();
+
+$i = 0;
+$cnt = mysql_numrows($db_list);
+while ($i < $cnt) {
+    echo mysql_db_name($db_list, $i) . "\n";
+    $i++;
+}
+?>
+     </programlisting>
+    </example>
+    <para>
+     推奨されませんが、下位互換性のために
+     <function>mysql_dbname</function>も使用可能です。
+    </para>
+   </refsect1>
+  </refentry>
+
   <refentry id="function.mysql-db-query">
    <refnamediv>
     <refname>mysql_db_query</refname>
@@ -899,7 +955,7 @@ mysql_free_result ($result);
      </funcprototype>
     </funcsynopsis>
     <para>
-     指定したフィールドオフセットに移動します。この関数をコールした後、
+     指定したフィールドオフセットに移動します。こ�֢数をコールした後、
      <function>mysql_fetch_field</function>をフィールドオフセットを
      付けずにコールした場合、このフィールドが返されます。
     </para>
@@ -1090,14 +1146,68 @@ mysql_close();
       </paramdef>
      </funcprototype>
     </funcsynopsis>
-    <para> 
-     <function>mysql_insert_id</function>は、AUTO_INCREMENTEDフィールドにて
-     生成されたIDを返します。
-     この関数は、指定した<parameter>link_identifier</parameter>に関して
-     一番最近にINSERTクエリーが実行された際に自動的に生成されたIDを
-     返します。
+    <para>
+     <function>mysql_insert_id</function>は、指定した
+     <parameter>link_identifier</parameter>を使用した前のINSERTクエリ
+     によりAUTO_INCREMENTEDカラム用に生成されたIDを返します。
      <parameter>link_identifier</parameter>が指定されない場合、
      最後にオープンされた接続が仮定されます。
+    </para>
+    <para>
+     前のクエリがAUTO_INCREMENTの値を生成しない場合には、
+     <function>mysql_insert_id</function>は0を返します。この値を後まで
+     保存する必要がある場合、値を生成するクエリの直後で
+     mysql_insert_id()をコールするようにして下さい。
+    </para>
+    <note>
+     <para>
+      MySQL SQL 関数<literal>LAST_INSERT_ID()</literal>の値には、常に
+      直近のAUTO_INCREMENTの値が含まれており、クエリの間ではリセットさ
+      れません。
+    </para>
+    </note>
+    <warning>
+     <para>
+      <function>mysql_insert_id</function> は、元のMySQL C API関数
+      <literal>mysql_insert_id()</literal>の返り値の型を
+      <literal>long</literal>型に変換します。
+      AUTO_INCREMENT カラムがBIGINTのカラム型を有している場合、
+      <function>mysql_insert_id</function>で返される型は不正確になりま
+      す。代わりに、MySQL SQL内部関数
+      <literal>LAST_INSERT_ID()</literal>を使用して下さい。
+     </para>
+    </warning>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.mysql-list-dbs">
+   <refnamediv>
+    <refname>mysql_list_dbs</refname>
+    <refpurpose>
+     MySQLサーバー上で利用可能なデータベースのリストを得る
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>int <function>mysql_list_dbs</function></funcdef>
+      <paramdef>int 
+       <parameter>
+        <optional>link_identifier</optional>
+       </parameter>
+      </paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     <function>mysql_list_dbs</function>は、カレントのmysqlデーモンから
+     利用可能なデータベースを格納した結果ポインタを返します。
+     この結果ポインタを使用して内容を調べる際には、
+     <function>mysql_tablename</function>関数を使用して下さい。
+    </para>
+    <para>
+     下位互換性の位置のため、<function>mysql_listdbs</function>も
+     使用可能です。
     </para>
    </refsect1>
   </refentry>
@@ -1139,38 +1249,6 @@ mysql_close();
     <para>
      下位互換性の維持のため、<function>mysql_listfields</function>
      も使用可能です。
-    </para>
-   </refsect1>
-  </refentry>
-
-  <refentry id="function.mysql-list-dbs">
-   <refnamediv>
-    <refname>mysql_list_dbs</refname>
-    <refpurpose>
-     MySQLサーバー上で利用可能なデータベースのリストを得る
-    </refpurpose>
-   </refnamediv>
-   <refsect1>
-    <title>説明</title>
-    <funcsynopsis>
-     <funcprototype>
-      <funcdef>int <function>mysql_list_dbs</function></funcdef>
-      <paramdef>int 
-       <parameter>
-        <optional>link_identifier</optional>
-       </parameter>
-      </paramdef>
-     </funcprototype>
-    </funcsynopsis>
-    <para>
-     <function>mysql_list_dbs</function>は、カレントのmysqlデーモンから
-     利用可能なデータベースを格納した結果ポインタを返します。
-     この結果ポインタを使用して内容を調べる際には、
-     <function>mysql_tablename</function>関数を使用して下さい。
-    </para>
-    <para>
-     下位互換性の位置のため、<function>mysql_listdbs</function>も
-     使用可能です。
     </para>
    </refsect1>
   </refentry>
@@ -1421,7 +1499,7 @@ $result = mysql_query ("SELECT my_col FROM my_tbl")
      SELECT文については、
      <function>mysql_query</function>は、新規の結果IDを返します。
      このIDは、<function>mysql_result</function>の引数とすることができます。
-     結果の処理を終えた後、結果を�持するリソースを
+     結果の処理を終えた後、結果を俦́するリソースを
      <function>mysql_free_result</function>により解放することが
      可能です。
     </para>
@@ -1445,7 +1523,7 @@ $result = mysql_query ("SELECT my_col FROM my_tbl")
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>int <function>mysql_result</function></funcdef>
+      <funcdef>mixed <function>mysql_result</function></funcdef>
       <paramdef>int <parameter>result</parameter></paramdef>
       <paramdef>int <parameter>row</parameter></paramdef>
       <paramdef>mixed 
