@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- splitted from ./ja/functions/filesystem.xml, last change in rev 1.20 -->
-<!-- last change to 'is-uploaded-file' in en/ tree in rev 1.39 -->
+<!-- last change to 'is-uploaded-file' in en/ tree in rev 1.3 -->
   <refentry id="function.is-uploaded-file">
    <refnamediv>
     <refname>is_uploaded_file</refname>
@@ -15,10 +15,6 @@
       <methodparam><type>string</type><parameter>filename</parameter></methodparam>
      </methodsynopsis>
     <para>
-     この関数は、PHP 3.0.16 より後のバージョンの PHP 3 および 4.0.2 以
-     降のバージョンの PHP 4 でのみ利用可能です。
-    </para>
-    <para>
      <varname>filename</varname>という名前のファイルがHTTP POSTにより
      アップロードされた場合に&true;を返します。この関数は、悪意のあるユー
      ザーがスクリプトをだまして動作しなくなるようなファイル、例えば、
@@ -29,6 +25,42 @@
      この種の確認は、アップロードされたファイルに関して何でもできる場
      合には、その内容をユーザ、または同じシステム上の他のユーザにさえ
      暴かれる可能性があるため、特に重要です。
+    </para>
+    <para>
+     <function>is_uploaded_file</function>は、
+     PHP 3.0.16 より後のバージョンの PHP 3 および 4.0.2 以
+     降のバージョンの PHP 4 でのみ利用可能です。
+     古いバージョンを使っていてつまづいている場合は、
+     自分自身を守るために後述の関数を使用することができます。
+     <note>
+      <para>
+       以下のサンプルはPHP4.0.2以降のPHP4では<emphasis>動きません</emphasis>
+       これはこのバージョン以降でPHPの内部処理が変更されたためです。
+      </para>
+     </note>
+     <programlisting role="php">
+<![CDATA[
+<?php
+/* Userland test for uploaded file. */
+function is_uploaded_file($filename) {
+    if (!$tmp_file = get_cfg_var('upload_tmp_dir')) {
+        $tmp_file = dirname(tempnam('', ''));
+    }
+    $tmp_file .= '/' . basename($filename);
+    /* User might have trailing slash in php.ini... */
+    return (ereg_replace('/+', '/', $tmp_file) == $filename);
+}
+
+/* This is how to use it, since you also don't have
+ * move_uploaded_file() in these older versions: */
+if (is_uploaded_file($HTTP_POST_FILES['userfile'])) {
+    copy($HTTP_POST_FILES['userfile'], "/place/to/put/uploaded/file");
+} else {
+    echo "Possible file upload attack: filename '$HTTP_POST_FILES[userfile]'.";
+}
+?>
+]]>
+     </programlisting>
     </para>
     <para>
      簡単な使用例に関しては、<function>move_uploaded_file</function>お
