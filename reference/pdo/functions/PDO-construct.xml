@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
-<!-- $Revision: 1.2 $ -->
-<!-- EN-Revision: 1.7 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.3 $ -->
+<!-- EN-Revision: 1.11 Maintainer: hirokawa Status: ready -->
 <refentry id="function.PDO-construct">
  <refnamediv>
   <refname>PDO::__construct</refname>
@@ -13,9 +13,9 @@
   <methodsynopsis>
    <type>PDO</type><methodname>PDO::__construct</methodname>
    <methodparam><type>string</type><parameter>dsn</parameter></methodparam>
-   <methodparam><type>string</type><parameter>username</parameter></methodparam>
-   <methodparam><type>string</type><parameter>password</parameter></methodparam>
-   <methodparam choice="opt"><type>array</type><parameter>driver_opts</parameter></methodparam>
+   <methodparam choice="opt"><type>string</type><parameter>username</parameter></methodparam>
+   <methodparam choice="opt"><type>string</type><parameter>password</parameter></methodparam>
+   <methodparam choice="opt"><type>array</type><parameter>driver_options</parameter></methodparam>
   </methodsynopsis>
   &warn.experimental.func;
   <para>
@@ -29,18 +29,90 @@
     <varlistentry><term>dsn</term>
      <listitem>
       <para>
+       データソース名(Data Source Name)またはDSN。データベースに接続するために
+       必要な情報が含まれます。
+      </para>
+      <para>
+       一般に、DSNはPDOドライバ名の後にコロンが続き、
+       各PDOドライバに固有の接続構文が続きます。
+       各ドライバの例を以下に示します。
+      </para>
+      <para>
+       <variablelist>
+        <varlistentry>
+         <term><constant>PDO_DBLIB</constant></term>
+         <listitem>
+          <para>
+           DSN接頭時は、コンパイル時にリンクされたライブラリの種類により
+           <userinput>sybase:</userinput>または
+           <userinput>mssql:</userinput>となります。
+          </para>
+          <para><userinput>sybase:host=localhost; dbname=testdb</userinput></para>
+          <para><userinput>mssql:host=localhost; dbname=testdb</userinput></para>
+         </listitem>
+        </varlistentry>
+        <varlistentry>
+         <term><constant>PDO_FIREBIRD</constant></term>
+         <listitem>
+          <para><userinput>firebird:User=john;Password=mypass;Database=DATABASE.GDE;DataSource=localhost;Port=3050</userinput></para>
+         </listitem>
+        </varlistentry>
+        <varlistentry>
+         <term><constant>PDO_MYSQL</constant></term>
+         <listitem>
+          <para><userinput>mysql:host=localhost;dbname=testdb</userinput></para>
+         </listitem>
+        </varlistentry>
+        <varlistentry>
+         <term><constant>PDO_OCI</constant></term>
+         <listitem>
+          <para><filename>tnsnames.ora</filename>を使用するには、以下のようにします:</para>
+          <para><userinput>oci:mydb</userinput></para>
+          <para>instantclientを使用するには、以下のようにします:</para>
+          <para><userinput>oci:dbname=//localhost:1521/testdb</userinput></para>
+         </listitem>
+        </varlistentry>
+        <varlistentry>
+         <term><constant>PDO_ODBC</constant></term>
+         <listitem>
+          <para><userinput>odbc:DSN=SAMPLE;UID=john;PWD=mypass</userinput></para>
+          <para>DSN=SAMPLE は ODBCドライバマネージャで設定されたSAMPLE データソースを参照します
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry>
+         <term><constant>PDO_PGSQL</constant></term>
+         <listitem>
+          <para><userinput>pgsql:host=localhost port=5432 dbname=testdb user=john password=mypass</userinput></para>
+          <para>
+           <varname>user</varname> と <varname>password</varname> をDSNで指定した場合、
+           <parameter>username</parameter>および
+           <parameter>password</parameter>パラメータはオプションとなることに注意して
+           ください。
+           これらを指定した場合、接続文字列の最後に追加されます。
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry>
+         <term><constant>PDO_SQLITE</constant></term>
+         <listitem>
+          <para><userinput>sqlite:/path/to/database</userinput></para>
+          <para>データベースをメモリ上に作成する場合は、以下のようにしてください:</para>
+          <para><userinput>sqlite::memory:</userinput></para>
+         </listitem>
+        </varlistentry>
+       </variablelist>
+      </para>
+      <para>
        <parameter>dsn</parameter> パラメータは、データベースへの接続を生成する
        ために必要な引数を指定する方法として、3種類の方法をサポートします。
+      </para>
+      <para>
        <variablelist>
         <varlistentry><term>ドライバ呼び出し</term>
          <listitem>
           <para>
-           <parameter>dsn</parameter> は、PDOドライバ名の後にコロンを付け、
-           各PDOドライバに依存した接続構文が続く構成となります。
-           例えば、<userinput>'odbc:DSN=SAMPLE;UID=db2inst1;PWD=ibmdb2'</userinput>
-           はあうODBCデータベースの PDO_ODBC 接続を生成します。一方、
-           <userinput>'mysql:host=127.0.0.1;dbname=testdb'</userinput> は、
-           MySQLデータベースへのPDO_MYSQL接続を生成します。
+           <parameter>dsn</parameter> contains the full DSN.
           </para>
          </listitem>
         </varlistentry>
@@ -51,6 +123,7 @@
            DSN文字列を含むファイルの位置を定義するURIが続く形式となります。
            このURIには、ローカルファイルまたはリモートURLを指定することができます。
           </para>
+          <para><userinput>uri:file:///path/to/dsnfile</userinput></para>
          </listitem>
         </varlistentry>
         <varlistentry><term>エイリアス</term>
@@ -59,8 +132,13 @@
            <parameter>dsn</parameter> は、DSN文字列を定義する
            &php.ini;の<literal>pdo.dsn.<parameter>name</parameter></literal>へ
            マップする名前<parameter>name</parameter> からなります。
-           <parameter>name</parameter> にはコロンを含めることはできません。
           </para>
+          <note>
+           <para>
+            エイリアスは、&htaccess; や &httpd.conf;ではなく、
+            &php.ini;で定義する必要があります。
+           </para>
+          </note>
          </listitem>
         </varlistentry>
        </variablelist>
@@ -70,7 +148,7 @@
     <varlistentry><term>username</term>
      <listitem>
       <para>
-       ユーザ名。DSN文字列で必要とされる場合に指定。
+       DSN文字列のユーザ名。このパラメータは、いくつかのPDOドライバではオプションです。
       </para>
      </listitem>
     </varlistentry>
@@ -81,10 +159,10 @@
       </para>
      </listitem>
     </varlistentry>
-    <varlistentry><term>driver_opts</term>
+    <varlistentry><term>driver_options</term>
      <listitem>
       <para>
-       ドライバ固有の接続オプションを指定するキー =&gt; 値の配列。
+       ドライバ固有の接続オプションを指定するキー=&gt; 値の配列。
       </para>
      </listitem>
     </varlistentry>
@@ -115,17 +193,17 @@
     <programlisting role="php">
 <![CDATA[
 <?php
-/* Connect to an ODBC database using driver invocation */
-
+// Connect to an ODBC database using driver invocation
 $dsn = 'mysql:dbname=testdb;host=127.0.0.1';
 $user = 'dbuser';
 $password = 'dbpass';
+
 try {
     $dbh = new PDO($dsn, $user, $password);
-}
-catch (PDOException $e) {
+} catch (PDOException $e) {
     echo 'Connection failed: ' . $e->getMessage();
 }
+
 ?>
 ]]>
     </programlisting>
@@ -137,11 +215,11 @@ catch (PDOException $e) {
      このファイルには、 PDO_ODBCによりDB2データベースに接続するためのPDO DSNが
      含まれています。
     </para>
-    <programlisting>
+    <screen>
 <![CDATA[
-odbc:DSN=SAMPLE;UID=db2inst1;PWD=password
+odbc:DSN=SAMPLE;UID=john;PWD=mypass
 ]]>
-    </programlisting>
+    </screen>
     <para>
      これにより、PHPスクリプトでは、単に<literal>uri:</literal> パラメータを渡し、
      ファイルのURIを示すだけでデータベース接続を作成することができるようになります。
@@ -149,17 +227,17 @@ odbc:DSN=SAMPLE;UID=db2inst1;PWD=password
     <programlisting role="php">
 <![CDATA[
 <?php
-/* Connect to an ODBC database using driver invocation */
-
+// Connect to an ODBC database using driver invocation
 $dsn = 'uri:file:///usr/local/dbconnect';
 $user = '';
 $password = '';
+
 try {
     $dbh = new PDO($dsn, $user, $password);
-}
-catch (PDOException $e) {
+} catch (PDOException $e) {
     echo 'Connection failed: ' . $e->getMessage();
 }
+
 ?>
 ]]>
     </programlisting>
@@ -169,22 +247,25 @@ catch (PDOException $e) {
      以下の例では、&php.ini; にエイリアス<literal>mydb</literal>のみで
      MySQLデータベースに接続できるようにするための以下のエントリが含まれることを
      仮定します。
-     <screen>pdo.dsn.mydb=mysql:dbname=testdb;host=127.0.0.1</screen>
+     <programlisting role="ini">
+[PDO]
+pdo.dsn.mydb="mysql:dbname=testdb;host=localhost"
+     </programlisting>
     </para>
     <programlisting role="php">
 <![CDATA[
 <?php
-/* Connect to an ODBC database using an alias */
-
+// Connect to an ODBC database using an alias
 $dsn = 'mydb';
 $user = '';
 $password = '';
+
 try {
     $dbh = new PDO($dsn, $user, $password);
-}
-catch (PDOException $e) {
+}catch (PDOException $e) {
     echo 'Connection failed: ' . $e->getMessage();
 }
+
 ?>
 ]]>
     </programlisting>
