@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.6 $ -->
+<!-- $Revision: 1.7 $ -->
+<!-- sync: 1.26 -->
 <chapter id="faq.using">
   <title>PHPを使う</title>
   <titleabbrev>PHPを使う</titleabbrev>
@@ -20,22 +21,42 @@
     </question>
     <answer>
      <para>
-     まず、<filename>php.ini</filename>で<link
-     linkend="ini.track-vars">track_vars</link>が有効になっていること
-     を確認してください。PHP 4.0.3以降ではこの設定値は常にonです。
-     <literal>track_vars</literal>がonになっているとPHPはいくつかの連
-     想配列を生成します。このうち最も重要なのが
-     <literal>$HTTP_POST_VARS</literal>です。と言うわけで、POSTメソッ
-     ドにより送信されたデータを扱う汎用的なスクリプトを書くには、以下
-     のようにします。
+      PHPは<varname>$_POST</varname>のような
+      <link linkend="language.variables.predefined">定義済みの変数</link>
+      を沢山提供しています。<varname>$_POST</varname>を連想配列として
+      ループすることでPOSTされた全ての値にアクセスできます。例えば、
+      <link linkend="control-structures.foreach">foreach</link>で
+      単純にループして<function>empty</function>で値をチェックし、
+      結果を出力します。
       <programlisting role="php">
 <![CDATA[
-foreach ($HTTP_POST_VARS as $var => $value) {
-    echo "$var = $value<br>\n";
+<?php
+$empty = $post = array();
+foreach ($_POST as $varname => $varvalue) {
+    if (empty($varvalue)) {
+        $empty[$varname] = $varvalue;
+    } else {
+        $post[$varname] = $varvalue;
+    }
 }
+
+print "<pre>";
+if (empty($empty)) {
+    print "None of the POSTed values are empty, posted:\n";
+    var_dump($post);
+} else {
+    print "We have " . count($empty) . " empty values\n";
+    print "Posted:\n"; var_dump($post);
+    print "Empty:\n";  var_dump($empty);
+    exit;
+}
+?>
 ]]>
       </programlisting>
      </para>
+
+     &note.superglobals;
+
     </answer>
    </qandaentry>
 
@@ -45,18 +66,43 @@ foreach ($HTTP_POST_VARS as $var => $value) {
       シングルクオート(')をバックスラッシュでエスケープされた
       シングルクオート(\')に変換しなければならないのですが、
       正規表現を用いてこれを行うにはどの様にするのですか？
+      同様に " を \" に、\ を \\ に変換したいのです。
      </para>
     </question>
     <answer>
      <para>
-      まずはじめに、<function>addslashes</function>を見てみてください。
-      この関数はまさにこの通りのことを行ってくれます。それと、
-      <filename>php.ini</filename>ファイルの設定値<link
-      linkend="ini.magic-quotes-gpc">magic_quotes_gpc</link> も参照し
-      てください。
+      <function>addslashes</function>がこれを行ってくれます。
+      <function>mysql_escape_string</function>も見てください。
+      <function>stripslashes</function>によって
+      バックスラッシュを除去することもできます。
      </para>
+
+     &note.magicquotes.gpc;
+
     </answer>
    </qandaentry>
+
+   <qandaentry id="faq.using.stripslashes">
+    <question>
+     <para>
+      " は \" に、また ' は \' に全て変換されているのですが、
+      これら無用なバックスラッシュを除去するにはどうしたらよいですか？
+      どうやって、そしてなぜ、こんなことになっているのでしょう？
+     </para>
+    </question>
+    <answer>
+     <para>
+      <function>stripslashes</function>関数によって<type>string</type>から
+      バックスラッシュを取り除くことができます。
+      このような奇妙なバックスラッシュは、ほとんどの場合、PHPの
+      <link linkend="ini.magic-quotes-gpc">magic_quotes_gpc</link>
+      ディレクティブがオンになっていることによって付加されています。
+     </para>
+     
+     &note.magicquotes.gpc;
+     
+    </answer>
+   </qandaentry>   
 
    <qandaentry id="faq.using.wrong-order">
     <question>
@@ -129,18 +175,11 @@ echo "myfunc($variable) = " . myfunc($variable);
     <answer>
      <para>
       <function>header</function>, <function>set_cookie</function>や
-      セッション関数は出力ストリームにヘッダを付加する関数で、ヘッダを
-      送信できるのは本文の出力を開始する前のみです。これはApacheモジュール
-      版のPHPを実行している場合は以下のようなコードで貴方が送信している
-      全てのリクエストヘッダを表示することが出来ます。
-      <programlisting role="php">
-<![CDATA[
-$headers = getallheaders();
-foreach ($headers as $name => $content) {
-    echo "headers[$name] = $content<br>\n";
-}
-]]>
-      </programlisting>
+      <link linkend="ref.session">セッション関数</link>は出力ストリームに
+      ヘッダを付加する関数で、ヘッダを送信できるのは本文の出力を
+      開始する前のみです。<function>headers_sent</function>を使って
+      既にヘッダが送信済みでないかチェックすることができます。
+      <link linkend="ref.outcontrol">出力制御関数</link>もご覧ください。
      </para>
     </answer>
    </qandaentry>
@@ -166,7 +205,12 @@ foreach ($headers as $name => $content) {
 ]]>
       </programlisting>
      </para>
-    </answer>
+      <para>
+      <function>apache_lookup_uri</function>,
+      <function>apache_response_headers</function>,
+      <function>fsockopen</function>も参照してください。
+     </para>
+   </answer>
    </qandaentry>
 
    <qandaentry id="faq.using.authentication">
@@ -184,8 +228,9 @@ foreach ($headers as $name => $content) {
       を使用したページにリダイレクトするか、リンクを張ります。こうすれ
       ばPHPは認証済みかどうかを正しく認識することが出来ます。ISAPIモジュー
       ルの場合はこの問題は起きません。また、これは他のNTウェブサーバに
-      は影響ありません。詳しくは<ulink
-       url="&url.iis;">&url.iis;</ulink>を参照してください。
+      は影響ありません。詳しくは<ulink url="&url.iis;">&url.iis;</ulink>
+      と<link linkend="features.http-auth">HTTP 認証</link>を
+      参照してください。
      </para>
     </answer>
    </qandaentry>
@@ -210,7 +255,7 @@ foreach ($headers as $name => $content) {
       無視しますがNetscapeは無視しません。この問題をチェックする一番の方法
       は<link linkend="features.commandline">コマンドライン版</link>の
       PHP(つまりCGIバージョン)をコンパイルして、コマンドラインからその
-      スクリプトを実行することです。その出力を <literal>od
+      スクリプトを実行することです。*nix上では、その出力を <literal>od
       -c</literal> にパイプして<literal>\0</literal>があるかどうかを
       チェックしてください。もしWindowsを使っている場合は、バイナリファ
       イルを扱えるエディタかそれに類するソフトウェアが必要です。IEや
@@ -229,11 +274,14 @@ foreach ($headers as $name => $content) {
     </question>
     <answer>
      <para>
-      <filename>php.ini</filename>ファイルの<link
-      linkend="ini.short-open-tag">short_tags</link>を0に設定するか、
-      Apacheディレクティブを使ってショートタグを無効にしなければなりま
-      せん。また、&lt;File&gt;セクションを使ってファイルごとに選択的に
-      設定を行うことも出来ます。
+      &lt;?xml を直接PHPコードに埋め込むには、
+      PHPディレクティブの<link linkend="ini.short-open-tag">short_tags</link>
+      を0に設定しなければなりません。
+      このディレクティブは<function>ini_set</function>でセットすることは
+      できません。<link linkend="ini.short-open-tag">short_open_tags</link>
+      のオン/オフに関わらず、次のようにもできます: 
+      <literal>&lt;?php echo '&lt;?xml'; ?&gt;</literal>
+      このディレクティブはデフォルトでオンです。
      </para>
     </answer>
    </qandaentry>
@@ -251,7 +299,7 @@ foreach ($headers as $name => $content) {
       %&gt;をコード区切りとして使用することが出来ます。有名なHTMLエディ
       タは(今のところ)ASPタグを賢く扱ってくれます。ASPスタイルのタグを
       有効にするには<filename>php.ini</filename>ファイルで<link
-	linkend="ini.asp-tags">asp_tags</link>を設定するか、Apacheディレ
+    linkend="ini.asp-tags">asp_tags</link>を設定するか、適切なApacheディレ
       クティブを使用します。
      </para>
     </answer>
@@ -266,11 +314,41 @@ foreach ($headers as $name => $content) {
     </question>
     <answer>
      <para>
-      一番良い方法はHTMLに<literal>&lt;?php phpinfo(); ?&gt;</literal>
-      と書いてそのページをロードすることです。そこには環境変数やウェブ
-      サーバが設定した特殊な変数の一覧を含む、PHPの設定に関するあらゆ
-      る情報が表示されます。こうしたリストがPHPのドキュメントに無いの
-      は、各々のサーバによりその項目と内容が異なるからです。
+      マニュアルの
+      <link linkend="language.variables.predefined">定義済みの変数</link>
+      のページを読んで下さい。スクリプト上で有効な定義済み変数のリストの
+      一部があります。有効な変数の完全なリスト（とその詳しい情報）は
+      <function>phpinfo</function>をコールすることで見ることができます。
+      マニュアルの
+      <link linkend="language.variables.external">PHPの外部から来る変数</link>
+      のセクションも読んで下さい。HTMLフォームやCookie、URL等から
+      来る外部変数に関するシナリオが説明されています。
+     </para>
+     
+     &note.registerglobals;
+
+    </answer>
+   </qandaentry>
+
+   <qandaentry id="faq.using.freepdf">
+    <question>
+     <para>
+      フリーではない商用ライブラリである
+      <link linkend="ref.cpdf">ClibPDF</link>や
+      <link linkend="ref.pdf">PDFLib</link>を使わずに
+      PDFファイルを生成するにはどうしたらよいでしょうか？
+      フリーのもので、外部のPDFライブラリを必要としない
+      ものがいいのです。
+     </para>
+    </question>
+    <answer>
+     <para>
+      PHPで書かれている代替手段がいくつかあります。
+      <ulink url="&url.pdf.ros;">&url.pdf.ros;</ulink>, 
+      <ulink url="&url.pdf.fpdf;">&url.pdf.fpdf;</ulink>, 
+      <ulink url="&url.pdf.pdf4php;">&url.pdf.pdf4php;</ulink>,
+      <ulink url="&url.pdf.phppdflib;">&url.pdf.phppdflib;</ulink>等です。
+      <ulink url="&url.pdf.panda;">Panda</ulink>モジュールもあります。
      </para>
     </answer>
    </qandaentry>
@@ -285,12 +363,18 @@ foreach ($headers as $name => $content) {
     </question>
     <answer>
      <para>
-      環境変数は通常のグローバル変数と同じ様に扱われるので、(例えば
-      <literal>global $DOCUMENT_ROOT;</literal>のように)ユーザ定義関数
-      の中でグローバル変数として宣言するか、グローバル変数の配列を使っ
-      て(つまり、<literal>$GLOBALS["DOCUMENT_ROOT"]</literal>として)ア
-      クセスしてください。
+      PHPディレクティブの
+      <link linkend="ini.register-globals">register_globals</link>
+      がサーバと環境変数に与える影響を認識することは重要なことです。
+      register_globals = off (PHP4.2.0以降デフォルトでoff)の場合、
+      <varname>$DOCUMENT_ROOT</varname>は存在しません。代わりに
+      <varname>$_SERVER['DOCUMENT_ROOT']</varname>を使用してください。
+      register_globals = on の場合は <varname>$DOCUMENT_ROOT</varname>も
+      <varname>$GLOBALS['DOCUMENT_ROOT']</varname>も存在します。
      </para>
+     
+     &note.superglobals;
+
     </answer>
    </qandaentry>
 

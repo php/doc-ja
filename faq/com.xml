@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.4 $ -->
+<!-- $Revision: 1.5 $ -->
+<!-- sync: 1.10 -->
  <chapter id="faq.com">
   <title>PHPとCOM</title>
   <titleabbrev>PHPとCOM</titleabbrev>
@@ -213,7 +214,44 @@
     </question>
     <answer>
      <para>
-      現在のところ、ありません。
+      PHP 4.3.0から、イベントシンクを定義してそれにバインドすることが
+      できるようになりました。以下の例を見てください。イベントシンククラス
+      のスケルトンをPHPに生成させるためには<function>com_print_typeinfo</function>
+      を利用できます。
+      <example>
+       <title>COM event sink example</title>
+       <programlisting role="php">
+<![CDATA[
+<?php
+class IEEventSinker {
+  var $terminated = false;
+
+  function ProgressChange($progress, $progressmax) {
+    echo "Download progress: $progress / $progressmax\n";
+  }
+
+  function DocumentComplete(&$dom, $url) {
+    echo "Document $url complete\n";
+  }
+
+  function OnQuit() {
+    echo "Quit!\n";
+    $this->terminated = true;
+  }
+}
+$ie = new COM("InternetExplorer.Application");
+$sink =& new IEEventSinker();
+com_event_sink($ie, $sink, "DWebBrowserEvents2");
+$ie->Visible = true;
+$ie->Navigate("http://www.php.net");
+while(!$sink->terminated) {
+  com_message_pump(4000);
+}
+$ie = null;
+?>
+]]>
+       </programlisting>
+      </example>
      </para>
     </answer>
    </qandaentry>
@@ -229,7 +267,7 @@
      <para>
       この問題に対する答えは、簡単ですが残念なものです。正確にはわかり
       ませんが、おそらく打つ手はありません。もしこの問題に関する具体的
-      な情報があったら<ulink url="mailto:harald.radi@nme.at">私
+      な情報があったら<ulink url="mailto:&email.harald;">私
       </ulink>に教えて下さい。
      </para>
     </answer>
