@@ -305,6 +305,12 @@ error_reporting(E_ALL); // PHP 3/4の新しい構文
     </para>
     <para>
      ユーザ関数の引数は2つ、エラーコードとエラーを記述する文字列です。
+     PHP 4.0.2 からオプションのパラメータが3つ追加されています。これら
+     は、エラーが発生したファイル名、エラーが発生した行、発生したエラー
+     のコンテキスト(エラーが発生した場所でのアクティブなシンボルテーブ
+     ルを指す配列)です。
+    </para>
+    <para>
      以下の例では、エラーを発生することにより内部例外の処理を表示し、
      ユーザ定義関数によりこれを処理します。
      <example>
@@ -321,46 +327,46 @@ define(ERROR,E_USER_WARNING);
 define(WARNING,E_USER_NOTICE);
 
 // このスクリプトのエラー出力レベルを設定
-error_reporting(FATAL + ERROR + WARNING);
+error_reporting(FATAL | ERROR | WARNING);
 
 // エラーハンドラ関数
-function myErrorHandler ($errno, $errstr) {
-    switch ($errno) {
-    case FATAL:
-	echo &quot;&lt;b&gt;FATAL&lt;/b&gt; [$errno] $errstr&lt;br&gt;\n&quot;;
-	echo &quot;  Fatal error in line &quot;.__LINE__.&quot; of file &quot;.__FILE__;
-	echo &quot;, PHP &quot;.PHP_VERSION.&quot; (&quot;.PHP_OS.&quot;)&lt;br&gt;\n&quot;;
-	echo &quot;Aborting...&lt;br&gt;\n&quot;;
-	exit -1;
-	break;
-    case ERROR:
-	echo &quot;&lt;b&gt;ERROR&lt;/b&gt; [$errno] $errstr&lt;br&gt;\n&quot;;
-	break;
-    case WARNING:
-	echo &quot;&lt;b&gt;WARNING&lt;/b&gt; [$errno] $errstr&lt;br&gt;\n&quot;;
-	break;
+function myErrorHandler ($errno, $errstr, $errfile, $errline) {
+  switch ($errno) {
+  case FATAL:
+    echo &quot;&lt;b&gt;FATAL&lt;/b&gt; [$errno] $errstr&lt;br&gt;\n&quot;;
+    echo &quot;  Fatal error in line &quot;.$errline.&quot; of file &quot;.$errfile;
+    echo &quot;, PHP &quot;.PHP_VERSION.&quot; (&quot;.PHP_OS.&quot;)&lt;br&gt;\n&quot;;
+    echo &quot;Aborting...&lt;br&gt;\n&quot;;
+    exit -1;
+    break;
+  case ERROR:
+    echo &quot;&lt;b&gt;ERROR&lt;/b&gt; [$errno] $errstr&lt;br&gt;\n&quot;;
+    break;
+  case WARNING:
+    echo &quot;&lt;b&gt;WARNING&lt;/b&gt; [$errno] $errstr&lt;br&gt;\n&quot;;
+    break;
     default:
-	echo &quot;Unkown error type: [$errno] $errstr&lt;br&gt;\n&quot;;
-	break;
-    }
+    echo &quot;Unkown error type: [$errno] $errstr&lt;br&gt;\n&quot;;
+    break;
+  }
 }
 
 // エラー処理のテスト用関数
 function scale_by_log ($vect, $scale) {
-    if ( !is_numeric($scale) || $scale &lt;= 0 )
-    trigger_error(&quot;log(x) for x &lt;= 0 is undefined, you used: scale = $scale&quot;, 
-	      FATAL);
-    if (!is_array($vect)) {
+  if ( !is_numeric($scale) || $scale &lt;= 0 )
+    trigger_error(&quot;log(x) for x &lt;= 0 is undefined, you used: scale = $scale&quot;,
+      FATAL);
+  if (!is_array($vect)) {
     trigger_error(&quot;Incorrect input vector, array of values expected&quot;, ERROR);
     return null;
-    }
-    for ($i=0; $i&lt;count($vect); $i++) {
+  }
+  for ($i=0; $i&lt;count($vect); $i++) {
     if (!is_numeric($vect[$i]))
-	trigger_error(&quot;Value at position $i is not a number, using 0 (zero)&quot;, 
-	      WARNING);
+      trigger_error(&quot;Value at position $i is not a number, using 0 (zero)&quot;, 
+        WARNING);
     $temp[$i] = log($scale) * $vect[$i];
-    }
-    return $temp;
+  }
+  return $temp;
 }
 
 // 定義したエラーハンドラを設定する
@@ -420,10 +426,27 @@ NULL
 ----
 vector d - fatal error
 &lt;b&gt;FATAL&lt;/b&gt; [256] log(x) for x &lt;= 0 is undefined, you used: scale = -2.5&lt;br&gt;
-  Fatal error in line 16 of file trigger_error.php, PHP 4.0.1pl2 (Linux)&lt;br&gt;
+  Fatal error in line 36 of file trigger_error.php, PHP 4.0.2 (Linux)&lt;br&gt;
 Aborting...&lt;br&gt;
       </programlisting>
      </informalexample>
+    </para>
+    <para>
+     PHP の標準のエラーハンドラは完全にバイパスされることに注意して下
+     さい。<function>error_reporting</function> の設定は影響せず、どの
+     ような場合でもユーザが設定したエラーハンドラがコールされます。た
+     だし、この場合でもハンドラで <function>error_reporting</function>
+     のカレントの値を読み、適当に動作させることは可能です。エラーを発
+     生した命令の前に <link
+     linkend="language.operators.errorcontrol">@ エラー制御演算子
+     </link> が付加されている場合、この値は 0 となることには注意を要し
+     ます。
+    </para>
+    <para>
+     ユーザハンドラ関数は、要すれば <function>die</function> をコール
+     する責任があることにも注意を要します。エラーハンドラ関数がリター
+     ンした場合、スク��プトの実行は、エラーを発生した命令の次の命令に
+     継続されます。
     </para>
     <para>
      <function>error_reporting</function>,
