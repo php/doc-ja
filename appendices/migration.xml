@@ -1,92 +1,269 @@
+ <appendix id="migration">
+  <title>古いバージョンのPHPからの移行</title>
+  
+  <sect1 id="migration.php4">
+   <title>PHP 3 から PHP 4 への移行</title>
+   <simpara>
+    PHP 3 から PHP 4への移行は相対的に簡単で、コードの変更は全く必要あ
+    りません。二つのバージョン間には、若干の非互換性があります。これら
+    の非互換性により影響を受けないことを確認するために非互換性の一覧を
+    確認することが望まれる可能性があります。(これらの非互換性により影
+    響を受ける可能性は極めて少ないです)
+   </simpara>
+   
+   <sect2 id="migration.php4.with-php3">
+    <title>PHP 3 と PHP 4 の同時実行</title>
+    <simpara>
+     最近のオペレーティングシステムは、バージョン認識と変数のスコープ
+     設定を行う機能を有しています。この機能によりPHP 3とPHP 4をApache
+     サーバ上で同時に実行することが可能です。
+    </simpara>
+    <simpara>
+     この機能は、次のプラットフォームで動作することが知られています。
+    </simpara>
+    <itemizedlist>
+     <listitem>
+      <simpara>
+       最近のbinutilsを有するLinux (binutils 2.9.1.0.25 でテスト) 
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       Solaris 2.5 以降
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       FreeBSD (3.2, 4.0 でテスト)
+      </simpara>
+     </listitem>
+    </itemizedlist>
+    <para>
+     この機能を有効にするには、PHP3 および PHP4 を APXS を使用するよう
+     に設定(--with-apxs)し、必要なリンクオプション
+     (--enable-versioning)を指定して configure を行います。その他は、
+     通常のインストール手順を行います。例えば、次のようにします。
+     <informalexample>
+      <programlisting>
+$ ./configure \
+  --with-apxs=/apache/bin/apxs \
+  --enable-versioning \
+  --with-mysql \
+  --enable-track-vars
+      </programlisting>
+     </informalexample>
+    </para>
+   </sect2>
 
-<appendix id="migration">
- <title>PHP/FI 2.0 から PHP 3.0 への移行</title>
+   <sect2 id="migration.php4.configuration">
+    <title>設定ファイルの移行</title>
+    <sect3 id="migration.php4.configuration.global">
+    <title>グローバル設定ファイル</title>
+     <simpara>
+      グローバル設定ファイル、php3.iniはphp.iniに名前が変更になりまし
+      た。
+     </simpara>
+    </sect3>
+    <sect3 id="migration.php4.configuration.apache">
+     <title>Apache 設定ファイル</title>
+     <para>
+      PHPモジュールにより認識されるMIME 型が変更になりました。
+      <informalexample>
+       <programlisting>
+application/x-httpd-php3        --&gt;    application/x-httpd-php
+application/x-httpd-php3-source --&gt;    application/x-httpd-php-source
+       </programlisting>
+      </informalexample>
+     </para>
+     <para>
+      次のような構文を使用することにより、(両方のバージョンがサーバに
+      インストールされている場合に)両方のバージョンのPHPで動作する設定
+      ファイルを作成可能です。
+      <informalexample>
+       <programlisting>
+AddType  application/x-httpd-php3        .php3
+AddType  application/x-httpd-php3-source .php3s
 
- <sect1 id="migration-about">
-  <title>3.0 における互換性</title>
-  <simpara>
-   PHP 3.0 は 1 から書き直されました。これには 2.0 のパーサに比べて
-   より堅牢で一貫性のある適切なパーサが内蔵されています。3.0 はまた、
-   劇的に速くなり、メモリ消費量も少なくなっています。しかしながら、
-   これらの改善事項のうちのいくつかは、書式と機能の両面において
-   互換性を欠いた変更になってしまっています。</simpara>
+AddType  application/x-httpd-php         .php
+AddType  application/x-httpd-php-source  .phps
+       </programlisting>
+      </informalexample>
+     </para>
+     <simpara>
+      加えて、Apache用のPHPディレクティブ名が変更されました。
+     </simpara>
+     <para>
+      PHP 4.0 では、PHPに関連するApacheディレクティブは以下の4つのみで
+      す。
+      <informalexample>
+       <programlisting>
+php_value [PHPディレクティブ名] [value]
+php_flag [PHPディレクティブ名] [On|Off]
+php_admin_value [PHPディレクティブ名] [value]
+php_admin_flag [PHPディレクティブ名] [On|Off]
+       </programlisting>
+      </informalexample>
+     </para>
+     <simpara>
+      adminがついた値とadminが付いていない値では、違いが二つあります。
+     </simpara>
+     <itemizedlist>
+      <listitem>
+       <simpara>
+	adminが付いた値(またはフラグ)はサーバ全体のApache設定ファイル
+	(例えば、httpd.conf)でのみ使用可能です。
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+	通常の値(またはフラグ)はある種のPHPディレクティブ、例えば、セー
+	フモードを制御できません。(セーフモードの設定を.htaccessファイ
+	ルで上書きできるとしたら、セーフモードの目的に反します)逆に、
+	adminが付いた値は、全てのPHPディレクティブの値を修正可能です。
+       </simpara>
+      </listitem>
+     </itemizedlist>
+     <simpara>
+      移行の過程をより簡単にするために、PHP 4.0 には、Apache設定ファイ
+      ルと .htaccess ファイルをPHP 3.0 と PHP 4.0の両方で動作するよう
+      自動的に変換するスクリプトが付属しています。これらのスクリプトは、
+      MIME型の行を変換しません!これらは、使用者自身で変換する必要があ
+      ります。
+     </simpara>
+     <para>
+      Apache設定ファイルを変換するには、(scripts/apache/ ディレクトリ
+      にあります。)apconf-conv.sh スクリプトを実行して下さい。例えば、
+      <informalexample>
+       <programlisting>
+	~/php4/scripts/apache:#  ./apconf-conv.sh /usr/local/apache/conf/httpd.conf
+       </programlisting>
+      </informalexample>
+     </para>
+     <simpara>
+      元の設定ファイルは、httpd.conf.orig に保存されます。
+     </simpara>
+     <para>
+      .htaccess ファイルを変換するには、(同じくscripts/apache/ ディレ
+      クトリにある)aphtaccess-conv.sh スクリプトを実行して下さい。
+      <informalexample>
+       <programlisting>
+~/php4/scripts/apache:#  find / -name .htaccess -exec ./aphtaccess-conv.sh {} \;
+       </programlisting>
+      </informalexample>
+     </para>
+     <simpara>
+      同様に、元の .htaccess ファイルは、.orig が後ろについてファイル
+      に保存されます。
+     </simpara>
+     <simpara>
+      変換スクリプトは、awkがインストールされていることを必要とします。
+     </simpara>
+    </sect3>
 
-  <simpara>
-   加えて、PHP の開発者は、PHP 3.0 における書式と意味の双方をきれいに
-   し直そうとしましたが、これも互換性を欠く要因となっています。長い目
-   で見れば、これらの変更はより良いものであると私たちは信じています。</simpara>
+   </sect2> 
+  </sect1>
+  
+  <sect1 id="migration.php3">
+   <title>PHP/FI 2.0 から PHP 3.0 への移行</title>
 
-  <simpara>
-   この章では、あなたが PHP/FI 2.0 から PHP 3.0 へ移行する際に遭遇
-   するであろう非互換性と、それらへの解決策についてのガイドを提供
-   しようと思います。必要でない限り、新しい機能については述べられて
-   いません。</simpara>
+   <sect2 id="migration-about">
+    <title>3.0 における互換性</title>
+    <simpara>
+     PHP 3.0 は 1 から書き直されました。これには 2.0 のパーサに比べて
+     より堅牢で一貫性のある適切なパーサが内蔵されています。3.0 はまた、
+     劇的に速くなり、メモリ消費量も少なくなっています。しかしながら、
+     これらの改善事項のうちのいくつかは、書式と機能の両面において
+     互換性を欠いた変更になってしまっています。
+    </simpara>
+    
+    <simpara>
+     加えて、PHP の開発者は、PHP 3.0 における書式と意味の双方をきれいに
+     し直そうとしましたが、これも互換性を欠く要因となっています。長い目
+     で見れば、これらの変更はより良いものであると私たちは信じています。
+    </simpara>
+    
+    <simpara>
+     この章では、あなたが PHP/FI 2.0 から PHP 3.0 へ移行する際に遭遇
+     するであろう非互換性と、それらへの解決策についてのガイドを提供
+     しようと思います。必要でない限り、新しい機能については述べられて
+     いません。
+    </simpara>
+    
+    <simpara>
+     あなたの古い PHP/FI 2.0 スクリプトを自動的に変換できる変換プログラム
+     があります。これは PHP 3.0 ディストリビューションの 
+     <filename class="directory">convertor</filename> サブディレクトリ
+     にあります。このプログラムは文法的な変更を捕らえるだけですので、
+     どちらにしてもこの章を注意深く読む必要があるでしょう。
+    </simpara>
+   </sect2>
 
-  <simpara>
-   あなたの古い PHP/FI 2.0 スクリプトを自動的に変換できる変換プログラム
-   があります。これは PHP 3.0 ディストリビューションの <filename
-    class="directory">convertor</filename> サブディレクトリにあります。
-   このプログラムは文法的な変更を捕らえるだけですので、どちらにしても
-   この章を注意深く読む必要があるでしょう。</simpara></sect1>
+   <sect2 id="migration-startendtags">
+    <title>開始／終了タグ</title>
 
- <sect1 id="migration-startendtags">
-  <title>開始／終了タグ</title>
-
-  <para>
-   PHP の開始と終了のタグが変わっていることに、おそらく最初に気付かれる
-   でしょう。古い <literal>&lt;? &gt;</literal> 形式は、3 つの新しい
-   形式に置き換えられました。
-   <example>
-    <title>移行：古い開始／終了タグ</title>
-    <programlisting>
+    <para>
+     PHP の開始と終了のタグが変わっていることに、おそらく最初に気付かれる
+     でしょう。古い <literal>&lt;? &gt;</literal> 形式は、3 つの新しい
+     形式に置き換えられました。
+     <example>
+      <title>移行：古い開始／終了タグ</title>
+      <programlisting>
 &lt;? echo "これは PHP/FI 2.0 のコードです。\n"; &gt;
-</programlisting></example>
+      </programlisting>
+     </example>
 
-   バージョン 2.0 で、PHP/FI は次のバリエーションもサポートするように
-   なりました。
+     バージョン 2.0 で、PHP/FI は次のバリエーションもサポートするように
+     なりました。
 
-   <example><title>移行：最初の新しい開始／終了タグ</title>
-    <programlisting>
+     <example>
+      <title>移行：最初の新しい開始／終了タグ</title>
+      <programlisting>
 &lt;? echo "これは PHP 3.0 のコードです!\n"; ?&gt;
-</programlisting></example>
+      </programlisting>
+     </example>
 
-   終了タグは、単なる '&gt;' に代わり '?&gt;' で構成されます。しかし
-   ながら、サーバ上で XML を使いたい場合は、この最初の形式では不具合
-   が生じるでしょう。なぜなら、PHP は XML ドキュメントの中の XML
-   マークアップを PHP コードとして実行しようとするかもしれないからです。
-   このため、以下のバリエーションが導入されました。
+     終了タグは、単なる '&gt;' に代わり '?&gt;' で構成されます。しかし
+     ながら、サーバ上で XML を使いたい場合は、この最初の形式では不具合
+     が生じるでしょう。なぜなら、PHP は XML ドキュメントの中の XML
+     マークアップを PHP コードとして実行しようとするかもしれないからです。
+     このため、以下のバリエーションが導入されました。
 
-   <example><title>移行：2 番目の新しい開始／終了タグ</title>
-    <programlisting>
+     <example>
+      <title>移行：2 番目の新しい開始／終了タグ</title>
+      <programlisting>
 &lt;?php echo "これは PHP 3.0 のコードです!\n"; ?&gt;
-</programlisting></example>
+      </programlisting>
+     </example>
 
-   エディタ上で、処理している命令タグが全く認識されないという問題が
-   発生した方がいました。Microsoft FrontPage はそんなエディタのうちの
-   1 つです。これらを回避するため、さらに以下のバリエーションが導入
-   されました。
+     エディタ上で、処理している命令タグが全く認識されないという問題が
+     発生した方がいました。Microsoft FrontPage はそんなエディタのうちの
+     1 つです。これらを回避するため、さらに以下のバリエーションが導入
+     されました。
 
-   <example><title>移行：3 番目の新しい開始／終了タグ</title>
-    <programlisting>
+     <example>
+      <title>移行：3 番目の新しい開始／終了タグ</title>
+      <programlisting>
 &lt;script language="php"&gt;
 
   echo "これは PHP 3.0 のコードです!\n";
 
 &lt;/script&gt;
-</programlisting></example></para></sect1>
+      </programlisting>
+     </example>
+    </para>
+  </sect2>
 
+  <sect2 id="migration-if-endif">
+    <title>if..endif の文法</title>
 
- <sect1 id="migration-if-endif">
-  <title>if..endif の文法</title>
-
-  <para>
-   if(); elseif(); else; endif; を使って if/elseif/else ステートメントを
-   記述するための '選択肢' については、3.0 パーサに対してかなり複雑な処理
-   を追加してやらないと、効率的な実装を行うことができません。このため、
-   文法が変更されました。
-   <example>
-    <title>移行：古い if..endif の文法</title>
-    <programlisting>
+    <para>
+     if(); elseif(); else; endif; を使って if/elseif/else ステートメントを
+     記述するための '選択肢' については、3.0 パーサに対してかなり複雑な処理
+     を追加してやらないと、効率的な実装を行うことができません。このため、
+     文法が変更されました。
+     <example>
+      <title>移行：古い if..endif の文法</title>
+      <programlisting>
 if ($foo);
     echo "はい\n";
 elseif ($bar);
@@ -94,10 +271,11 @@ elseif ($bar);
 else;
     echo "いいえ\n";
 endif;
-</programlisting></example>
-   <example>
-    <title>移行：新しい if..endif の文法</title>
-    <programlisting>
+      </programlisting>
+     </example>
+     <example>
+      <title>移行：新しい if..endif の文法</title>
+      <programlisting>
 if ($foo):
     echo "はい\n";
 elseif ($bar):
@@ -105,47 +283,56 @@ elseif ($bar):
 else:
     echo "いいえ\n";
 endif;
-</programlisting></example>
+      </programlisting>
+     </example>
 
-   評価式を終了させるもの(endif)を除き、すべてのステートメントにおいて
-   セミコロンはコロンに変更されました。</para></sect1>
+     評価式を終了させるもの(endif)を除き、すべてのステートメントにおいて
+     セミコロンはコロンに変更されました。
+    </para>
+  </sect2>
 
- <sect1 id="migration-while">
-  <title>while の文法</title>
-  <para>
-   if..endif と同様に、while..endwhile の文法も変更されました。
-   <example><title>移行：古い while..endwhile の文法</title>
-   <programlisting>
+  <sect2 id="migration-while">
+    <title>while の文法</title>
+    <para>
+     if..endif と同様に、while..endwhile の文法も変更されました。
+     <example>
+      <title>移行：古い while..endwhile の文法</title>
+      <programlisting>
 while ($more_to_come);
     ...
 endwhile;
-</programlisting></example>
-   <example><title>移行：新しい while..endwhile の文法</title>
-   <programlisting>
+      </programlisting>
+     </example>
+     <example>
+      <title>移行：新しい while..endwhile の文法</title>
+      <programlisting>
 while ($more_to_come):
     ...
 endwhile;
-</programlisting></example>
-  </para>
-  <warning>
-   <simpara>
-    PHP 3.0 で古い形式の while..endwhile を使った場合は、永久ループ
-    になってしまいます。
-   </simpara>
-  </warning></sect1>
+      </programlisting>
+     </example>
+    </para>
+    <warning>
+     <simpara>
+      PHP 3.0 で古い形式の while..endwhile を使った場合は、無限ループ
+      になってしまいます。
+     </simpara>
+    </warning>
+   </sect2>
 
- <sect1 id="migration-expr">
-  <title>式の型</title>
-  <simpara>
-   PHP/FI 2.0 では、結果の型を決めるのに左辺式を使っていました。
-   PHP 3.0 では、結果の型を決めるのに両辺を使うようになったので、
-   3.0 環境の元で 2.0 のスクリプトを実行すると、予期しない結果になる
-   場合があります。</simpara>
-  <simpara></simpara>
+  <sect2 id="migration-expr">
+    <title>式の型</title>
+    <simpara>
+     PHP/FI 2.0 では、結果の型を決めるのに左辺式を使っていました。
+     PHP 3.0 では、結果の型を決めるのに両辺を使うようになったので、
+     3.0 環境の元で 2.0 のスクリプトを実行すると、予期しない結果になる
+     場合があります。
+    </simpara>
 
-  <para>
-   以下の例を考えてみましょう。
-   <informalexample><programlisting>
+    <para>
+     以下の例を考えてみましょう。
+     <informalexample>
+      <programlisting>
 $a[0]=5;
 $a[1]=7;
 
@@ -154,154 +341,175 @@ while ("" != $key) {
     echo "$keyn";
     next($a);
 }
-</programlisting></informalexample>
+      </programlisting>
+     </informalexample>
 
-   PHP/FI 2.0 では、この例は $a の 2 つのインデックス双方を表示します。
-   一方、PHP 3.0 ではなにも表示されません。この理由は、PHP 2.0 では、
-   左側の引数が文字列なので文字列の比較が行われますが、もちろん
-   <literal>""</literal> は <literal>"0"</literal> とは等しくならない
-   ためです。一方 PHP 3.0 では、文字列が数字と比較されると、（文字列
-   が数字に変換され、）数字による比較が行われます。<literal>0</literal>
-   は <literal>atoi("")</literal> で比較され、さらに<literal>変数リスト
-   </literal> の方も <literal>0</literal> と評価され、<literal>0==0
-   </literal> なので、その結果ループは 1 度も実行されないということに
-   なります。
-
-  </para>
-  <para>
-   これを解決するのは簡単です。while ステートメントを以下のように変更
-   します。
-   <informalexample><programlisting>
+     PHP/FI 2.0 では、この例は $a の 2 つのインデックス双方を表示します。
+     一方、PHP 3.0 ではなにも表示されません。この理由は、PHP 2.0 では、
+     左側の引数が文字列なので文字列の比較が行われますが、もちろん
+     <literal>""</literal> は <literal>"0"</literal> とは等しくならない
+     ためです。一方 PHP 3.0 では、文字列が数字と比較されると、（文字列
+     が数字に変換され、）数字による比較が行われます。<literal>0</literal>
+     は <literal>atoi("")</literal> で比較され、さらに<literal>変数リスト
+     </literal> の方も <literal>0</literal> と評価され、<literal>0==0
+     </literal> なので、その結果ループは 1 度も実行されないということに
+     なります。
+     
+    </para>
+    <para>
+     これを解決するのは簡単です。while ステートメントを以下のように変更
+     します。
+     <informalexample>
+      <programlisting>
 while ((string)$key != "") {
-</programlisting></informalexample></para></sect1>
+      </programlisting>
+     </informalexample>
+    </para>
+  </sect2>
 
+  <sect2 id="migration-errors">
+    <title>エラーメッセージの変更</title>
+    <simpara>
+     PHP 3.0 のエラーメッセージは、2.0 よりも通常の場合正確になりました。
+     しかし、もはやソースコードのうちエラー原因となった部分は表示されません。
+     そのかわり、エラーの原因となったファイル名と行番号が表示されるので、
+     驚くかもしれません。
+    </simpara>
+  </sect2>
 
- <sect1 id="migration-errors">
-  <title>エラーメッセージの変更</title>
-  <simpara>
-   PHP 3.0 のエラーメッセージは、2.0 よりも通常の場合正確になりました。
-   しかし、もはやソースコードのうちエラー原因となった部分は表示されません。
-   そのかわり、エラーの原因となったファイル名と行番号が表示されるので、
-   驚くかもしれません。
-  </simpara></sect1>
+  <sect2 id="migration-booleval">
+    <title>短絡的なブール評価</title>
+    <simpara>
+     PHP 3.0 におけるブール評価は短絡的です。というのは、<literal>
+      (1 || test_me())</literal> のような評価式があるとすると、関数
+     <function>test_me</function> は実行されないということです。これは、
+     <literal>1</literal> を評価した後は、最終的な評価結果を変えることは
+     できないと分かっているからです。
+    </simpara>
+    <simpara>
+     これは互換性の問題としては些細なことかもしれませんが、思わぬ副作用
+     があるかもしれません。
+    </simpara>
+  </sect2>
 
-
- <sect1 id="migration-booleval">
-  <title>短絡的なブール評価</title>
-  <simpara>
-   PHP 3.0 におけるブール評価は短絡的です。というのは、<literal>
-   (1 || test_me())</literal> のような評価式があるとすると、関数
-   <function>test_me</function> は実行されないということです。これは、
-   <literal>1</literal> を評価した後は、最終的な評価結果を変えることは
-   できないと分かっているからです。</simpara>
-    
-  <simpara>
-   これは互換性の問題としては些細なことかもしれませんが、思わぬ副作用
-   があるかもしれません。</simpara></sect1>
-
- <sect1 id="migration-truefalse">
-  <title>関数の true/false 返り値</title>
-  <simpara>
-   ほとんどの内部関数が書き直されたのに伴い、PHP/FI 2.0 では成功時に
-   0 、失敗時に -1 を返していたのが、それぞれ TRUE と FALSE を返す
-   ように変更されました。この新しい振る舞いにより、<literal>
-   $fp = fopen("/your/file") だとか fail("darn!");</literal> のような
-   より論理的なコードを書く事ができるようになりました。PHP/FI 2.0 
-   には、関数がその実行に失敗した時に何を返すべきかという明瞭な
-   ルールがなかったので、そのようなスクリプトのほとんどは、2.0 から
-   3.0 のコンバータを使った後に、手作業でチェックしなければならないと
-   思います。</simpara>
-  <para>
-   <example>
-    <title>2.0 からの移行：返り値、古いコード</title>
-    <programlisting>
+  <sect2 id="migration-truefalse">
+   <title>関数の true/false 返り値</title>
+    <simpara>
+     ほとんどの内部関数が書き直されたのに伴い、PHP/FI 2.0 では成功時に
+     0 、失敗時に -1 を返していたのが、それぞれ TRUE と FALSE を返す
+     ように変更されました。この新しい振る舞いにより、<literal>
+      $fp = fopen("/your/file") だとか fail("darn!");</literal> のような
+     より論理的なコードを書く事ができるようになりました。PHP/FI 2.0 
+     には、関数がその実行に失敗した時に何を返すべきかという明瞭な
+     ルールがなかったので、そのようなスクリプトのほとんどは、2.0 から
+     3.0 のコンバータを使った後に、手作業でチェックしなければならないと
+     思います。
+    </simpara>
+    <para>
+     <example>
+      <title>2.0 からの移行：返り値、古いコード</title>
+      <programlisting>
 $fp = fopen($file, "r");
 if ($fp == -1);
     echo("$file を読み込み用として開くことができませんでした&lt;br&gt;\n");
 endif;
-</programlisting>
-   </example>
-   <example>
-    <title>2.0 からの移行：返り値、新しいコード</title>
-    <programlisting>
+      </programlisting>
+     </example>
+     <example>
+      <title>2.0 からの移行：返り値、新しいコード</title>
+      <programlisting>
 $fp = @fopen($file, "r") or 
   print("$file を読み込み用として開くことができませんでした&lt;br&gt;\n");
-</programlisting>
-   </example></para></sect1>
-
+      </programlisting>
+     </example>
+    </para>
+   </sect2>
    
- <sect1 id="migration-other">
-  <title>その他の互換性</title>
+  <sect2 id="migration-other">
+    <title>その他の互換性</title>
 
-   <itemizedlist>
-    <listitem><simpara>
-    PHP 3.0 の Apache モジュールは、もはや バージョン 1.2 以前の
-    Apache をサポートしません。Apache 1.2 以降が必要となります。</simpara></listitem>
-
-    <listitem><simpara> 
-    <function>echo</function> はもはやフォーマット文字列をサポート
-    しません。<function>printf</function> 関数を使って下さい。</simpara></listitem>
-
-    <listitem><simpara>
-    PHP/FI 2.0 では、実装面に起因する副作用として、<literal>$foo[0]
-    </literal> が <literal>$foo</literal> と同じ値になるということ
-    がありました。これは PHP 3.0 では等しくなくなりました。</simpara></listitem>
-
-    <listitem><simpara>
-    <literal>$array[]</literal> で配列を読み込む機能は、もはや
-    サポートされません。</simpara>
-
+    <itemizedlist>
+     <listitem>
+      <simpara>
+       PHP 3.0 の Apache モジュールは、もはや バージョン 1.2 以前の
+       Apache をサポートしません。Apache 1.2 以降が必要となります。
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara> 
+       <function>echo</function> はもはやフォーマット文字列をサポート
+       しません。<function>printf</function> 関数を使って下さい。
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       PHP/FI 2.0 では、実装面に起因する副作用として、<literal>$foo[0]
+       </literal> が <literal>$foo</literal> と同じ値になるということ
+       がありました。これは PHP 3.0 では等しくなくなりました。
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       <literal>$array[]</literal> で配列を読み込む機能は、もはや
+       サポートされません。
+      </simpara>
      <simpara>
-     すなわち、<literal>$data = $array[]</literal> といったループで
-     配列の中身を取り出すことはできないということです。この代わりに
-     <function>current</function> と <function>next</function> を
-     使って下さい。</simpara>
-     <simpara>
-     また、<literal>$array1[] = $array2</literal> では <literal>
-     $array2</literal> の値を <literal>$array1</literal> に追加すること
-     にはならず、<literal>$array1</literal> の最後のエントリに
-     <literal>$array2</literal> を追加することになってしまいます。
-     多次元配列のサポートを参照してください。</simpara></listitem>
+       すなわち、<literal>$data = $array[]</literal> といったループで
+       配列の中身を取り出すことはできないということです。この代わりに
+       <function>current</function> と <function>next</function> を
+       使って下さい。
+      </simpara>
+      <simpara>
+       また、<literal>$array1[] = $array2</literal> では <literal>
+	$array2</literal> の値を <literal>$array1</literal> に追加すること
+       にはならず、<literal>$array1</literal> の最後のエントリに
+       <literal>$array2</literal> を追加することになってしまいます。
+       多次元配列のサポートを参照してください。
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       <literal>"+"</literal> は、もはや文字列の連結演算子にはならず、
+       その代わりにその引数を数値に変換して数値の加算を行ってしまいます。
+       <literal>"."</literal> を使用してください。
+      </simpara>
+     </listitem>
+    </itemizedlist>
 
-    <listitem>
-    <simpara>
-    <literal>"+"</literal> は、もはや文字列の連結演算子にはならず、
-    その代わりにその引数を数値に変換して数値の加算を行ってしまいます。
-    <literal>"."</literal> を使用してください。</simpara></listitem>
-   </itemizedlist>
-
-        <example>
-          <title>2.0 からの移行：文字列の連結</title>
-          <programlisting>
+    <example>
+     <title>2.0 からの移行：文字列の連結</title>
+     <programlisting>
 echo "1" + "1";
-</programlisting>
+     </programlisting>
 
-         <para> 
-          PHP 2.0 ではこれで 11 が表示されますが、PHP 3.0 ではこれは
-          2 になります。代わりに
-
-          <programlisting>
+     <para> 
+      PHP 2.0 ではこれで 11 が表示されますが、PHP 3.0 ではこれは
+      2 になります。代わりに次のようにして下さい。
+      
+      <programlisting>
 echo "1"."1";
-</programlisting>
+      </programlisting>
 
-          を使用してください。
-
-          <programlisting>
+      <programlisting>
 $a = 1;
 $b = 1;
 echo $a + $b;
-</programlisting></para>
-
-         <para>  
-          これは PHP 2.0 でも 3.0 でも 2 になります。
-
-          <programlisting>
+      </programlisting>
+     </para>
+     
+     <para>  
+      これは PHP 2.0 でも 3.0 でも 2 になります。
+      
+      <programlisting>
 $a = 1;
 $b = 1;
 echo $a.$b;
-</programlisting>
-          これは PHP 3.0 では 11 になります。</para>
-    </example></sect1>
+      </programlisting>
+      これは PHP 3.0 では 11 になります。
+     </para>
+    </example>
+   </sect2>
+  </sect1>
 
  </appendix>
 
@@ -315,7 +523,7 @@ sgml-always-quote-attributes:t
 sgml-indent-step:1
 sgml-indent-data:t
 sgml-parent-document:nil
-sgml-default-dtd-file:"../manual.ced"
+sgml-default-dtd-file:"../../manual.ced"
 sgml-exposed-tags:nil
 sgml-local-catalogs:nil
 sgml-local-ecat-files:nil
