@@ -1,4 +1,3 @@
-
  <reference id="ref.pdf">
   <title>PDF 関数</title>
   <titleabbrev>PDF</titleabbrev>
@@ -6,8 +5,7 @@
   <partintro>
 
    <simpara>
-   Thomas Merz による PDF ライブラリ
-   をインストールしている場合、
+   Thomas MerzによるPDFライブラリをインストールしている場合、
    PHP で PDF ファイルを作成するために PDF 関数を使用することができます。
    (<ulink url = "&url.pdf;">&url.pdf;</ulink> で取得可能です。コンパイルには、 
    <ulink url="&url.jpeg;">the JPEG library</ulink>および
@@ -44,7 +42,7 @@
     これは、出力解像度に依存します。
    </simpara>
    <simpara> 
-   <ulink url="&url.cpdf;">FastIO</ulink>が作成した
+   <ulink url="&url.fastio;">FastIO</ulink>が作成した
    ClibPDF を使用したpdf ドキュメント作成用の別のPHP モジュールがあります。
    このライブラリのAPIは、やや異なっています。詳細は、
      <link linkend="ref.cpdf">ClibPDF 関数</link> の節をご覧下さい。 
@@ -694,10 +692,49 @@
 
     <para>
      <function>PDF_show_xy</function>,
-              <function>PDF_set_text_pos</function>,
-			<function>PDF_set_font</function>
-	も参照下さい。</para>
+     <function>PDF_set_text_pos</function>,
+     <function>PDF_set_font</function>
+     も参照下さい。</para>
 
+   </refsect1>
+  </refentry>
+
+
+  <refentry id="function.pdf-show-boxed">
+   <refnamediv>
+    <refname>PDF_show_boxed</refname>
+    <refpurpose>箱の中にテキストを出力する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>pdf_show_boxed</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+     <paramdef>string <parameter>text</parameter></paramdef>
+     <paramdef>double <parameter>x-coor</parameter></paramdef>
+     <paramdef>double <parameter>y-coor</parameter></paramdef>
+     <paramdef>double <parameter>width</parameter></paramdef>
+     <paramdef>double <parameter>height</parameter></paramdef>
+     <paramdef>string <parameter>mode</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>PDF_show_boxed</function>関数は文字列<parameter>text</parameter>
+     を左下隅の座標を(<parameter>x-coor</parameter>, <parameter>y-coor</parameter>)
+     とする箱の内に出力します。箱の大きさは、<parameter>height</parameter>
+     ×<parameter>width</parameter>となります。
+     パラメータ<parameter>mode</parameter>によりテキストがどのようにタイプセット
+     されるかを指定します。
+     <parameter>width</parameter>と<parameter>height</parameter>がゼロの場合、
+     <parameter>mode</parameter>には"left"、"right"、"center"を指定可能です。
+     <parameter>width</parameter>または<parameter>height</parameter>がゼロでない場合、
+     "justify"および"fulljustify"を指定可能です。
+    </para>
+    <para>
+     箱の中に収まらずに処理できなかった文字の数を返します。
+    </para>
+    <para>
+     <function>PDF_show</function>,<function>PDF_show_xy</function>も参照下さい。
+    </para>
    </refsect1>
   </refentry>
 
@@ -758,19 +795,32 @@
      フォントが一般に普及しておらず、自分の文書を見る人がその文書内のフォントに
      アクセスできる保証がない場合、そのフォントを埋め込むというのは一般的に
      良い考えです。
+     フォントが埋め込まれるのは、<function>PDF_set_font</function>を複数回コールした場合でも
+     一回だけです。
     </para>
+
     <note>
      <simpara>(訳注)埋め込みフォントはCJKフォントではサポートされていません。
      このため、CJKフォントを使用する場合は、
      <parameter>embed</parameter>には0を指定する必要があります。
      </simpara>
     </note>
+
     <note>
-     <simpara>有効なPDFドキュメントを作成するために
-     この関数は、<function>PDF_begin_page</function> の後に
-     コールする必要があります。
+     <simpara>
+      有効なPDFドキュメントを作成するために、
+      この関数は、<function>PDF_begin_page</function>の後にコールする必要があります。
      </simpara>
     </note>
+
+    <note>
+     <simpara>
+      .uprファイルの中のフォントを参照する場合、afmファイルの名前とフォント名が
+      同じになるようにして下さい。さもないと、このフォントは複数回埋め込まれる
+      ことになります。(Paul Haddonがこのことを見付けてくれました)
+     </simpara>
+    </note>
+
    </refsect1>
   </refentry>
 
@@ -809,7 +859,7 @@
      <paramdef>int <parameter>mode</parameter></paramdef>
     </funcsynopsis>
     <para>
-     <function>PDF_set_text_rendering</function> 関数はテキストの描画法を定義します。
+     <function>PDF_set_text_rendering</function> 関数はテキストの描画法を宧?します。
      <parameter>mode</parameter> の値は、
      0=fill text, 1=stroke text, 2=fill and stroke text, 3=invisible,
      4=fill text and add it to cliping path, 5=stroke text and add it to
@@ -1875,45 +1925,95 @@ PDF_restore($pdf) ?>
     </refsect1>
    </refentry>
  
-   <refentry id="function.pdf-open-memory-image">
+  <refentry id="function.pdf-open-png">
     <refnamediv>
-     <refname>PDF_open_memory_image</refname>
-     <refpurpose>PHP の画像関数により作成された画像をオープンする</refpurpose>
+      <refname>PDF_open_png</refname>
+      <refpurpose>
+        Opens a PNG image
+      </refpurpose>
     </refnamediv>
     <refsect1>
-     <title>説明</title>
-     <funcsynopsis>
-      <funcdef>int <function>pdf_open_memory_image</function></funcdef>
-      <paramdef>int <parameter>pdf document</parameter></paramdef>
+      <title>Description</title>
+      <funcsynopsis>
+        <funcdef>int 
+          <function>pdf_open_png</function>
+        </funcdef>
+        <paramdef>int 
+          <parameter>pdf</parameter>
+        </paramdef>
+        <paramdef>string 
+          <parameter>png_file</parameter>
+        </paramdef>
+      </funcsynopsis>
+      <para>    
+        The <function>PDF_open_png</function> function opens an image stored
+        in the file with the name <parameter>filename</parameter>.
+        The format of the image has to be png. The function returns a pdf
+        image identifier.
+        <example>
+          <title>Including a PNG image</title>
+          <programlisting>
+&lt;?php
+$im = PDF_open_gif($pdf, "test.png");
+pdf_place_image($pdf, $im, 100, 100, 1);
+pdf_close_image($pdf, $im);
+?>
+          </programlisting>
+        </example>
+      </para>
+      <para>
+        See also <function>PDF_close_image</function>,
+                 <function>PDF_open_jpeg</function>,
+                 <function>PDF_open_gif</function>,
+                 <function>PDF_open_memory_image</function>,
+                 <function>PDF_execute_image</function>,
+                 <function>PDF_place_image</function>,
+                 <function>PDF_put_image</function>.
+      </para>
+    </refsect1>
+  </refentry>
+  
+  <refentry id="function.pdf-open-memory-image">
+   <refnamediv>
+    <refname>PDF_open_memory_image</refname>
+    <refpurpose>PHP の画像関数により作成された画像をオープンする</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>pdf_open_memory_image</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
       <paramdef>int <parameter>image</parameter></paramdef>
-     </funcsynopsis>
-     <para>
-      <function>PDF_open_memory_image</function> 関数は、PHP の画像関数により作成された
-      image を引数としてとり、pdf ドキュメントで利用できるようにします。
-      この関数は、pdf 画像 ID を返します。
- 
-      <example>
-       <title>メモリー上の画像を取り込む</title>
-       <programlisting role="php">
- &lt;?php
- $im = ImageCreate(100, 100);
- $col = ImageColorAllocate($im, 80, 45, 190);
- ImageFill($im, 10, 10, $col);
- $pim = PDF_open_memory_image($pdf, $im);
- ImageDestroy($im);
- pdf_place_image($pdf, $pim, 100, 100, 1);
- pdf_close_image($pdf, $pim);
- ?>
+    </funcsynopsis>
+    <para>
+     <function>PDF_open_memory_image</function> 関数は、PHP の画像関数により作成された
+     image を引数としてとり、pdf ドキュメントで利用できるようにします。
+     この関数は、pdf 画像 ID を返します。
+     
+     <example>
+      <title>メモリー上の画像を取り込む</title>
+      <programlisting role="php">
+&lt;?php
+$im = ImageCreate(100, 100);
+$col = ImageColorAllocate($im, 80, 45, 190);
+ImageFill($im, 10, 10, $col);
+$pim = PDF_open_memory_image($pdf, $im);
+ImageDestroy($im);
+pdf_place_image($pdf, $pim, 100, 100, 1);
+pdf_close_image($pdf, $pim);
+?>
       </programlisting>
-     </example></para>
- 
-     <para>
-      <function>PDF_close_image</function>,
-               <function>PDF_open_jpeg</function>,
-               <function>PDF_open_gif</function>,
-               <function>PDF_execute_image</function>,
-               <function>PDF_place_image</function>,
-               <function>PDF_put_image</function> も参照下さい。</para>
+     </example>
+    </para>
+    
+    <para>
+     <function>PDF_close_image</function>,
+     <function>PDF_open_jpeg</function>,
+     <function>PDF_open_gif</function>,
+     <function>PDF_open_png</function>,
+     <function>PDF_execute_image</function>,
+     <function>PDF_place_image</function>,
+     <function>PDF_put_image</function> も参照下さい。</para>
    </refsect1>
   </refentry>
 
@@ -1936,12 +2036,13 @@ PDF_restore($pdf) ?>
       この関数は、pdf 画像 ID を返します。</para>
     <para>
      <function>PDF_close_image</function>,
-               <function>PDF_open_gif</function>,
-               <function>PDF_open_memory_image</function>,
-               <function>PDF_execute_image</function>,
-               <function>PDF_place_image</function>,
-               <function>PDF_put_image</function>
- も参照下さい。</para>
+     <function>PDF_open_gif</function>,
+     <function>PDF_open_png</function>,
+     <function>PDF_open_memory_image</function>,
+     <function>PDF_execute_image</function>,
+     <function>PDF_place_image</function>,
+     <function>PDF_put_image</function>
+     も参照下さい。</para>
    </refsect1>
   </refentry>
 

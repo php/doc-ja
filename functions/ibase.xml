@@ -9,6 +9,11 @@
     <ulink url="&url.ibase;">&url.ibase;</ulink>から得ることができます。
     ところで、InterBaseはオープンソース運動に加わりました！
    </para>
+   <note>
+    <para>
+     InterBase 6の完全なサポートがPHP 4.0で追加されました。
+    </para>
+   </note>
   </partintro>
   
   <refentry id="function.ibase-connect">
@@ -58,10 +63,10 @@
      サーバー側のキャッシュに確保されるデータベースバッファの数です。
      0または省略された場合、サーバーはデフォルト値を用います。
      <parameter>dialect</parameter>は、接続時に実行される全ての命令に関する
-     SQL方言のデフォルト値を選択します。
-     (現在は機能しておらず、将来的なInterBase 6 SQL方言のサポート待ちです)
-     </para>
-     <para>
+     SQL方言のデフォルト値を選択し、デフォルトではクライアントライブラリでサポート
+     される方言のうち、最高位のものになります。
+    </para>
+    <para>
      同じ引数で<function>ibase_connect</function>が再度コールされた場合、
      新規のリンクは作成されず、代わりに既にオープンされているリンクの
      リンクIDが返されます。
@@ -70,13 +75,15 @@
      <example>
       <title><function>ibase_connect</function>の例</title>
       <programlisting role="php">
-$dbh = ibase_connect ($host, $username, $password);
-$stmt = 'SELECT * FROM tblname';
-$sth = ibase_query ($dbh, $stmt);
-while ($row = ibase_fetch_object ($sth)) {
-    print $row->email . "\n";
-}
-ibase_close ($dbh);
+&lt;?php
+       $dbh = ibase_connect ($host, $username, $password);
+       $stmt = 'SELECT * FROM tblname';
+       $sth = ibase_query ($dbh, $stmt);
+       while ($row = ibase_fetch_object ($sth)) {
+       print $row->email . "\n";
+       }
+       ibase_close ($dbh);
+?>
       </programlisting>
      </example>
     </para>
@@ -186,7 +193,9 @@ ibase_close ($dbh);
      <paramdef>int 
       <parameter><optional>link_identifier</optional></parameter>
      </paramdef>
-     <paramdef>string <parameter>query</parameter> </paramdef>
+     <paramdef>string 
+      <parameter>query</parameter> 
+     </paramdef>
      <paramdef>int 
       <parameter><optional>bind_args</optional></parameter> 
      </paramdef>
@@ -194,6 +203,7 @@ ibase_close ($dbh);
     <simpara>
      InterBaseデータベース上でクエリーを実行し、結果IDを返します。
      このIDは、<function>ibase_fetch_row</function>,
+     <function>ibase_fetch_object</function>,
      <function>ibase_free_result</function>,
      <function>ibase_free_query</function>で使用されます。
     </simpara>
@@ -217,7 +227,9 @@ ibase_close ($dbh);
     <title>説明</title>
     <funcsynopsis>
      <funcdef>int <function>ibase_fetch_row</function></funcdef>
-     <paramdef>int <parameter>result_identifier</parameter></paramdef>
+     <paramdef>int 
+      <parameter>result_identifier</parameter>
+     </paramdef>
     </funcsynopsis>
     <simpara>
      <function>ibase_query</function>を実行して得られた結果IDが指す結果から
@@ -234,8 +246,10 @@ ibase_close ($dbh);
    <refsect1>
     <title>説明</title>
     <funcsynopsis>
-     <funcdef>int <function>ibase_fetch_object</function></funcdef>
-     <paramdef>int <parameter>result_id</parameter></paramdef>
+     <funcdef>object <function>ibase_fetch_object</function></funcdef>
+     <paramdef>int 
+      <parameter>result_id</parameter>
+     </paramdef>
     </funcsynopsis>
     <para>
      <function>ibase_query</function>または<function>ibase_execute
@@ -243,13 +257,15 @@ ibase_close ($dbh);
      擬似オブジェクトとして1行分の結果を取得します。
      <informalexample>
       <programlisting role="php">
-$dbh = ibase_connect ($host, $username, $password);
-$stmt = 'SELECT * FROM tblname';
-$sth = ibase_query($dbh, $stmt);
-while ($row = ibase_fetch_object($sth)) {
-    print $row->email . "\n";
-}
-ibase_close($dbh);
+&lt;?php
+       $dbh = ibase_connect ($host, $username, $password);
+       $stmt = 'SELECT * FROM tblname';
+       $sth = ibase_query ($dbh, $stmt);
+       while ($row = ibase_fetch_object ($sth)) {
+       print $row->email . "\n";
+       }
+       ibase_close ($dbh);
+?>
       </programlisting>
      </informalexample>
     </para>
@@ -268,7 +284,9 @@ ibase_close($dbh);
     <title>説明</title>
     <funcsynopsis>
      <funcdef>int <function>ibase_free_result</function></funcdef>
-     <paramdef>int <parameter>result_identifier</parameter></paramdef>
+     <paramdef>int 
+      <parameter>result_identifier</parameter>
+     </paramdef>
     </funcsynopsis>
     <simpara>
      <function>ibase_query</function>により作成された結果保持用メモリを
@@ -318,20 +336,24 @@ ibase_close($dbh);
     </funcsynopsis>
     <para>
      <function>ibase_prepare</function>により事前に準備されたクエリを
-     実行します。
+     実行します。いくつかのパラメータが変わるだけで同じクエリーを
+     複数回実行する場合には、この関数は<function>ibase_query</function>を使用するよりも
+     ずっと効率的です。
      <informalexample>
       <programlisting role="php">
-$updates = array(
-    1 => 'Eric',
-    5 => 'Filip',
-    7 => 'Larry'
-);
+&lt;?php
+       $updates = array(
+           1 => 'Eric',
+           5 => 'Filip',
+           7 => 'Larry'
+       );
 
-$query = ibase_prepare("UPDATE FOO SET BAR = ? WHERE BAZ = ?");
+       $query = ibase_prepare("UPDATE FOO SET BAR = ? WHERE BAZ = ?");
 
-while (list($baz, $bar) = each($updates)) {
-    ibase_execute($query, $bar, $baz);
-}
+       while (list($baz, $bar) = each($updates)) {
+       ibase_execute($query, $bar, $baz);
+       }
+?>
       </programlisting>
      </informalexample>
     </para>
@@ -349,7 +371,9 @@ while (list($baz, $bar) = each($updates)) {
     <title>説明</title>
     <funcsynopsis>
      <funcdef>int <function>ibase_free_query</function></funcdef>
-     <paramdef>int <parameter>query</parameter></paramdef>
+     <paramdef>int 
+      <parameter>query</parameter>
+     </paramdef>
     </funcsynopsis>
     <simpara>
      <function>ibase_prepare</function>により準備されたクエリを解放します。
@@ -361,20 +385,56 @@ while (list($baz, $bar) = each($updates)) {
    <refnamediv>
     <refname>ibase_timefmt</refname>
     <refpurpose>
-     クエリから返されるdatetimeカラムのフォーマットを設定する
+     クエリーから返されるtimestamp、data、time型カラムのフォーマットを設定する
     </refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
     <funcsynopsis>
      <funcdef>int <function>ibase_timefmt</function></funcdef>
-     <paramdef>string <parameter>format</parameter></paramdef>
+     <paramdef>string 
+      <parameter>format</parameter>
+     </paramdef>
+     <paramdef>int
+      <parameter><optional>columntype</optional></parameter>
+     </paramdef>
     </funcsynopsis>
-    <simpara>
-     クエリから返されるdatetimeカラムのフォーマットを設定します。
-     内部的にC言語の関数strftime()を使用しています。このため、
+    <para>
+     クエリーから返されるtimestamp、data,time型カラムのフォーマットを設定します。
+     内部的にこれらのカラムはC言語の関数strftime()によりフォーマットされます。このため、
      文字列のフォーマットについてはこのC言語の関数ドキュメントを参照下さい。
-    </simpara>
+     <parameter>columntype</parameter>には定数IBASE_TIMESTAMP、IBASE_DATE、IBASE_TIME
+     のどれかを指定します。省略した場合には、下位互換性を保つため     
+     IBASE_TIMESTAMPがデフォルト値となります。
+     <informalexample>
+      <programlisting role="php">
+&lt;?php
+    // InterBase 6 TIME型カラムが
+    // '05 hours 37 minutes'の形式で返されます 
+    ibase_timefmt("%H hours %M minutes", IBASE_TIME);
+?>
+      </programlisting>
+     </informalexample>
+    </para>
+    <para>
+     PHP設定ディレクティブibase.timestampformat、ibase.dateformat、ibase.timeformat
+     によりこれらのフォーマットのデフォルト値を設定することが可能です。
+    </para>
+    <note>
+     <para>
+      <parameter>columntype</parameter>はPHP 4.0で追加されました。
+      このパラメータはInterBaseバージョン6以降でしか意味を持ちません。
+     </para>
+    </note>
+    <note>
+     <para>
+      PHP4.0では、PHP設定ディレクティブibase.timeformatがibase.timestampformatに
+      名前が変更され、ディレクティブibase.dateformatとibase.timeformatが
+      追加され、過去のバージョンとの互換性がない変更が行われています。
+      この変更は、ディレクティブの名前がそれ自体の機能により一致するように
+      行われたものです。
+     </para>
+    </note>
    </refsect1>
   </refentry>
 
@@ -395,19 +455,21 @@ while (list($baz, $bar) = each($updates)) {
      結果セットにおけるフィールド数を整数として返します。
      <informalexample>
       <programlisting role="php">
-$dbh = ibase_connect ($host, $username, $password);
-$stmt = 'SELECT * FROM tblname';
-$sth = ibase_query ($dbh, $stmt);
+&lt;?php
+    $dbh = ibase_connect ($host, $username, $password);
+    $stmt = 'SELECT * FROM tblname';
+    $sth = ibase_query ($dbh, $stmt);
 
-if ( ibase_num_fields($sth) > 0 ) {
-    while ($row = ibase_fetch_object ($sth)) {
-        print $row->email . "\n";
+    if (ibase_num_fields($sth) > 0) {
+        while ($row = ibase_fetch_object ($sth)) {
+            print $row->email . "\n";
+       }
+    } else {
+        die("No Results were found for your query");
     }
-} else {
-    die("No Results were found for your query");
-}
 
-ibase_close ($dbh);
+    ibase_close ($dbh);
+?>
       </programlisting>
      </informalexample>
     </para>
