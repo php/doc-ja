@@ -28,9 +28,8 @@
      </para>
      <para>
       UNIXでは、オプション <option
-      role="configure">--with-sablot</option> と <option
-      role="configure">--enable-sablot-errors-descriptive</option>を指
-      定して <command>configure</command> を実行します。ライブラリ
+      role="configure">--with-sablot</option> を指定して
+      <command>configure</command> を実行します。ライブラリ
       <productname>Sablotron</productname> をコンパイラが見付けられる
       場所にインストールする必要があります。
      </para>
@@ -227,20 +226,53 @@
   <refentry id="function.xslt-output-begintransform">
    <refnamediv>
     <refname>xslt_output_begintransform</refname>
-    <refpurpose>unknown</refpurpose>
+    <refpurpose>出力の XSLT 変換を開始する</refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>unknown <function>xslt_output_begintransform</function></funcdef>
-       <paramdef>
-        <parameter>unknown</parameter>
-       </paramdef>
+      <funcdef>void 
+       <function>xslt_output_begintransform</function>
+      </funcdef>
+      <paramdef>
+       <parameter>string xslt_filename</parameter>
+      </paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
-     この関数には、プロトタイプがありません。
+     この関数は、データ出力の変換を開始します。
+     <function>xslt_output_begintransform</function> をコールした場所
+     から、<function>xslt_output_endtransform</function> をコールした
+     場所まで、最初の引数で指定したXSLTスタイルシートにより全ての出力
+     は変換されます。
+    </para>
+    <para>
+     <example>
+      <title>
+       XSLTスタイルシートによる出力の変換、xml 生成用にDOM-XML関数を使
+       用する
+      </title>
+      <programlisting role="php">
+&lt;?php
+
+$xsl_file = "article.xsl";
+xslt_output_begintransform($xsl_file);
+
+$doc = new_xmldoc('1.0');
+$article = $doc->new_root('article');
+
+$article->new_child('title', 'The History of South Tyrol');
+$article->new_child('author', 'Sterling Hughes');
+$article->new_child('body', 'Back after WWI, Italy gained South Tyrol from 
+                             Austria.  Since that point nothing interesting has
+                             happened');
+
+echo $doc->dumpmem();
+
+xslt_output_endtransform();
+      </programlisting>
+     </example>
     </para>
    </refsect1>
   </refentry>
@@ -248,41 +280,122 @@
   <refentry id="function.xslt-output-endtransform">
    <refnamediv>
     <refname>xslt_output_endtransform</refname>
-    <refpurpose>unknown</refpurpose>
+    <refpurpose>
+     xslt_output_begintransformで開始した出力の変換を終了する
+    </refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>unknown <function>xslt_output_endtransform</function></funcdef>
-       <paramdef>
-        <parameter>unknown</parameter>
-       </paramdef>
+      <funcdef>void
+       <function>xslt_output_endtransform</function>
+      </funcdef>
+      <void/>
      </funcprototype>
     </funcsynopsis>
     <para>
-     この関数には、プロトタイプがありません。
+     <function>xslt_output_endtransform</function> は、
+     <function>xslt_output_begintransform</function> 関数で開始した出力の変換を
+     終了します。出力の変換の結果を見るためには、この関数をコールする
+     必要があります。
     </para>
    </refsect1>
   </refentry>
 
   <refentry id="function.xslt-process">
    <refnamediv>
-    <refname>xslt_output_process</refname>
-    <refpurpose>unknown</refpurpose>
+    <refname>xslt_process</refname>
+    <refpurpose>XSLデータを有する文字列によりXMLデータを変換する</refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>unknown <function>xslt_process</function></funcdef>
+      <funcdef>bool 
+       <function>xslt_process</function>
+      </funcdef>
        <paramdef>
-        <parameter>unknown</parameter>
+        <parameter>string xsl_data</parameter>
+        <parameter>string xml_data</parameter>
+        <parameter>string result</parameter>
        </paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
-     この関数には、プロトタイプがありません。
+     <function>xslt_process</function> は、XSLT スタイルシートを有する
+     文字列を最初の引数、変換したいXMLデータを有する文字列を2番目の引
+     数、変換結果を有する文字列を3番目の引数とします。
+     <function>xslt_process</function> は、成功時に true、失敗時に
+     false を返します。エラーが発生した場合にエラー番号とエラー文字列
+     を得るには、関数 <function>xslt_errno</function> および
+     <function>xslt_error</function> を使用して下さい。
+    </para>
+    <para>
+     <example>
+      <title>
+       3つの文字列を変換するために <function>xslt_process</function>
+       を使用する
+      </title>
+      <programlisting role="php">
+&lt;?php
+
+$xslData = '
+&lt;xsl:stylesheet
+  version="1.0"
+  xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+&lt;xsl:template match="article">
+    &lt;table border="1" cellpadding="2" cellspacing="1">
+        &lt;tr>
+            &lt;td width="20%">
+             &nbsp;
+            &lt;/title>
+            &lt;td width="80%">
+                &lt;h2>&lt;xsl:value-of select="title">&lt;/h2>
+                &lt;h3>&lt;xsl:value-of select="author">&lt;/h3>
+                &lt;br>
+                
+                &lt;xsl:value-of select="body">
+            &lt;/td>
+        &lt;/tr>
+    &lt;/table>
+&lt;/xsl:template>
+
+&lt;/xsl:stylesheet>';
+
+$xmlData = '
+&lt;?xml version="1.0"?>
+&lt;article>
+    &lt;title>Learning German&lt;/title>
+    &lt;author>Sterling Hughes&lt;/author>
+    &lt;body>
+      Essential phrases:
+      &lt;br>
+      &lt;br>
+      Komme sie mir sagen, woe die toilette es?&lt;br>
+      Eine grande beer bitte!&lt;br>
+      Noch einem bitte.&lt;br>
+    &lt;/body>
+&lt;/article>';
+
+if (xslt_process($xslData, $xmlData, $result))
+{
+    echo "Here is the brilliant in-depth article on learning"
+    echo " German: ";
+    echo "&lt;br>\n&lt;br>";
+    echo $result;
+}
+else
+{
+    echo "There was an error that occurred in the XSL transformation...\n";
+    echo "\tError number: " . xslt_errno() . "\n";
+    echo "\tError string: " . xslt_error() . "\n";
+    exit;
+}
+?>
+      </programlisting>
+     </example>
     </para>
    </refsect1>
   </refentry>
@@ -341,20 +454,28 @@
   <refentry id="function.xslt-transform">
    <refnamediv>
     <refname>xslt_transform</refname>
-    <refpurpose>unknown</refpurpose>
+    <refpurpose>XSLT 変換を実行する</refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>unknown <function>xslt_transform</function></funcdef>
-       <paramdef>
-        <parameter>unknown</parameter>
+      <funcdef>bool
+       <function>xslt_transform</function>
+      </funcdef>
+      <paramdef>
+        <parameter>string xsl</parameter>
+        <parameter>string xml</parameter>
+        <parameter>string result</parameter>
+        <parameter>string params</parameter>
+        <parameter>string args</parameter>
+        <parameter>string resultBuffer</parameter>
        </paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
-     この関数には、プロトタイプがありません。
+     <function>xslt_transform</function> は、リソースAPIを使用すること
+     なく、Sablotron のより高度な機能へのインターフェースを提供します。
     </para>
    </refsect1>
   </refentry>
