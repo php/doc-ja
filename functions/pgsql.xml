@@ -1,22 +1,67 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.29 $ -->
  <reference id="ref.pgsql">
   <title>PostgreSQL 関数</title>
   <titleabbrev>PostgreSQL</titleabbrev>
 
   <partintro>
+   <warning>
+    <para>
+     PHP 4.0.6の通知メッセージ処理にはバグがあるため、PHP 4.0.6で
+     PostgreSQLモジュールを使用することは推奨されません。
+    </para>
+   </warning>
+   <warning>
+    <para>
+     PostgreSQLの関数名は、現在のコード規約に沿うようにバージョン4.2.0
+     で変更されます。新しい名前の多くにはアンダースコアが追加されます。
+     例えば、pg_exec()からpg_query()のようにいくつかの関数は、統一性を
+     持たせるために異なる名前に変更されます。以前の名前は、4.2.0以降の
+     何回かのリリースでも使用可能ですが、将来的に削除される可能性があ
+     ります。CVSバージョンには、新しい関数名が付けられています。
+    </para>
+    <para>
+     従来のpg_connect()/pg_pconnect() は、将来的に同期接続機能をサポー
+     トするために過去のものとなる可能性があります。
+    </para>
+   </warning>
    <para>
     Postgresは元々UCB(カリフォルニア大学バークレイ校)コンピュータ・サ
-    イエンス学部で開発されたものです。このPostgresは、
-    いくつかの商用データベースにおいてサポートされつつあるオブジェクト
-    リレーショナルデータベース的概念の多くの先駆けでした。
-    PostgreSQLは、SQL92/SQL3言語サポート、トランザクション機能、
-    拡張可能な型を提供しています。
+    イエンス学部で開発されたものです。このPostgresは、いくつかの商用デー
+    タベースにおいてサポートされつつあるオブジェクトリレーショナルデー
+    タベース的概念の多くの先駆けでした。PostgreSQLは、SQL92/SQL3言語サ
+    ポート、トランザクション機能、拡張可能な型を提供しています。
     PostgreSQLは、パブリック・ドメイン、オープンソースで、オリジナルの
     バークレイ・コードから発展してきた子孫にあたります。
    </para>
    <para>
-    PostgreSQLは無料で利用できます。現在のバージョン
-    は<ulink url="&url.pgsql;">www.PostgreSQL.org</ulink>で入手可能です。
+    PostgreSQLデータベースはオープンソースのプロダクツであり、無料で使
+    用可能できます。PostgreSQLサポートを使用するには、PostgreSQL 6.5以
+    降が必要です。PostgreSQL 7.0以降ではPostgreSQLモジュールの全ての機
+    能が使用可能です。PostgreSQLは、マルチバイト文字エンコーディングを
+    含む多くの文字エンコーディングをサポートしています。現在のバージョ
+    ン及びPostgreSQLに関するより詳細な情報は、<ulink
+    url="&url.pgsql;">www.postgresqlL.org</ulink>で入手可能です。
+   </para>
+   <para>
+    PostgreSQLサポートを利用可能とするには、PHPコンパイル時に
+    &quot;--enable-pgsql[=DIR]&quot; を指定することが必要です。共有オ
+    ブジェクトモジュールが利用可能な場合、PostgreSQLはphp.iniの
+    <link linkend="ini.extension">extension</link>または
+    <function>dl</function>関数を使用してロードすることが可能です。
+    サポートされるini命令は、配布ソースに付属するphp.ini-distファイル
+    に記述されています。
+   </para>
+   <para>
+    全ての関数が全ての構築環境でサポートされるわけではありません。サポー
+    トされる関数は、使用するlibpq(PostgreSQLのCクライアントインターフェ
+    イス)のバージョンとlibpqのコンパイル方法に依存します。足りない関数
+    がある場合、libpqはその関数を必要とする機能をサポートしません。
+   </para>
+   <para>
+    接続するPostgreSQLサーバーよりも新しいlibpqを使用することも重要で
+    す。使用するlibpqのバージョンがPostgreSQLサーバが期待するよりも古
+    い場合、問題を生じる可能性があります。
    </para>
    <para>
     バージョン6.3(1998/3/2)以降、PostgreSQLはUNIXドメインソケットを
@@ -26,11 +71,11 @@
     指定することで有効となります。これは "Unixドメインソケット以外のTCP/IP
     ソケットもlisten する"という意味です。
     <table>
-     <title>PostmasterとPHP</title>
+     <title>postmasterとPHP</title>
      <tgroup cols="3">
       <thead>
        <row>
-	<entry>Postmaster</entry>
+	<entry>postmaster</entry>
 	<entry>PHP</entry>
 	<entry>ステータス</entry>
        </row>
@@ -74,10 +119,22 @@
    </para>
    <para>
     以前の構文:
-    <command>$conn = pg_connect ("host", "port", "options", "tty",
-    "dbname")
+    <command>
+     $conn = pg_connect ("host", "port", "options", "tty", "dbname")
     </command>
     は推奨されません。
+   </para>
+   <para>
+    環境変数は、PostgreSQLサーバ/クライアントの動作に影響を与えます。
+    例えば、PostgreSQLモジュールは、ホスト名が接続文字列で省略された場
+    合、環境変数PGHOSTを探します。サポートされる環境変数は、バージョン
+    毎に異なります。詳細は、PostgreSQLプログラマ用マニュアル(libpq -
+    環境変数)を参照下さい。
+   </para>
+   <para>
+    PostgreSQL 7.1.0から、textデータ型の最大サイズは1GBとなっています。
+    古いPostgreSQLのtextデータ型はブロックサイズ(デフォルトは8KB、最大
+    32KBをコンパイル時に定義可能)の制限を受けていました。
    </para>
    <para>
     ラージオブジェクト(lo)インターフェースを使用するには、そのクエリーを
@@ -85,84 +142,90 @@
     トランザクション・ブロックは<command>begin</command>で始まり、
     そのトランザクションが有効な場合は<command>commit</command>または
     <command>end</command>で終わります。トランザクションが失敗した場合、
-    そのトランザクションは<command>abort</command>または
-    <command>rollback</command>により閉じる必要があります。
+    そのトランザクションは<command>rollback</command>または
+    <command>abort</command>により閉じる必要があります。
     <example>
      <title>ラージオブジェクトの使用例</title>
      <programlisting role="php">
-&lt;?php
-    $database = pg_Connect ("", "", "", "", "jacarta");
+<![CDATA[
+<?php
+   $database = pg_connect ("dbname=jacarta");
     pg_exec ($database, "begin");
     $oid = pg_locreate ($database);
     echo ("$oid\n");
     $handle = pg_loopen ($database, $oid, "w");
     echo ("$handle\n");
-    pg_lowrite ($handle, "gaga");
+    pg_lowrite ($handle, "large object data");
     pg_loclose ($handle);
-    pg_exec ($database, "commit")
+    pg_exec ($database, "commit");
 ?>
+]]>
      </programlisting>
     </example>
+    ラージオブジェクトリソースを閉じる前に接続リソースを閉じないように
+    して下さい。
    </para>
   </partintro>
 
   <refentry id="function.pg-close">
    <refnamediv>
     <refname>pg_close</refname>
-    <refpurpose>PostgreSQLコネクションを閉じる</refpurpose>
+    <refpurpose>PostgreSQL接続を閉じる</refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
       <funcdef>bool <function>pg_close</function></funcdef>
-      <paramdef>int <parameter>connection</parameter></paramdef>
+      <paramdef>resource <parameter>connection</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
-     connectionが有効なコネクションでない場合は&false;を返し、そうでなければ
-     &true;を返します。この関数は、指定した接続IDに関連するPostgreSQL
-     データベースへのコネクションを閉じます。
+     <function>pg_close</function> は、
+     <parameter>connection</parameter>リソースで指定したPostgreSQLデー
+     タベースへの持続的でない接続を閉じます。
+     <parameter>connection</parameter>が有効な接続リソースの場合、この
+     関数は、&true;を返し、そうでない場合は &false;を返します。
     </para>
     <note>
      <para>
       持続的でない接続はスクリプトの実行終了時に時動的にクローズされる
-      ため、この関数は通常は必要ありません。
+      ため、<function>pg_close</function>は通常は必要ありません。
+      <function>pg_close</function> は、
+      <function>pg_pconnect</function>で生成された持続的なリンクは閉じ
+      ません。
      </para>
     </note>
-    <para> 
-     <function>pg_close</function> は、
-     <function>pg_pconnect</function>で生成された持続的なリンクは閉じ
-     ません。
-    </para>	 
    </refsect1>
   </refentry>
 
   <refentry id="function.pg-cmdtuples">
    <refnamediv>
     <refname>pg_cmdtuples</refname>
-    <refpurpose>影響を受けたタプルの数を返す</refpurpose>
+    <refpurpose>影響を受けたタプル(レコード)数を返す</refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
       <funcdef>int <function>pg_cmdtuples</function></funcdef>
-      <paramdef>int <parameter>result_id</parameter></paramdef>
+      <paramdef>resource <parameter>result</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
      <function>pg_cmdtuples</function>は、INSERT, UPDATE,DELETEクエリー
-     により影響を受けたタプル(インスタンス)の数を返します。影響を
-     受けたタプルがない場合は0を返します。
+     により影響を受けたタプル(インスタンス/レコード/行)の数を返します。
+     影響を受けたタプルがない場合は0を返します。
      <example>
       <title>pg_cmdtuples</title>
       <programlisting role="php">
-&lt;?php
+<![CDATA[
+<?php
 $result = pg_exec ($conn, "INSERT INTO verlag VALUES ('Autor')");
 $cmdtuples = pg_cmdtuples ($result);
-echo $cmdtuples . " &lt;- cmdtuples affected.";
+echo $cmdtuples . " <- タプルが影響を受けました。";
 ?>
+]]>
       </programlisting>
      </example>
     </para>
@@ -176,76 +239,73 @@ echo $cmdtuples . " &lt;- cmdtuples affected.";
   <refentry id="function.pg-connect">
    <refnamediv>
     <refname>pg_connect</refname>
-    <refpurpose>PostgreSQLコネクションを開く</refpurpose>
+    <refpurpose>PostgreSQL接続を開く</refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>int <function>pg_connect</function></funcdef>
-      <paramdef>string <parameter>host</parameter></paramdef>
-      <paramdef>string <parameter>port</parameter></paramdef>
-      <paramdef>string <parameter>dbname</parameter></paramdef>
-     </funcprototype>
-     <funcprototype>
-      <funcdef>int <function>pg_connect</function></funcdef>
-      <paramdef>string <parameter>host</parameter></paramdef>
-      <paramdef>string <parameter>port</parameter></paramdef>
-      <paramdef>string <parameter>options</parameter></paramdef>
-      <paramdef>string <parameter>dbname</parameter></paramdef>
-     </funcprototype>
-     <funcprototype>
-      <funcdef>int <function>pg_connect</function></funcdef>
-      <paramdef>string <parameter>host</parameter></paramdef>
-      <paramdef>string <parameter>port</parameter></paramdef>
-      <paramdef>string <parameter>options</parameter></paramdef>
-      <paramdef>string <parameter>tty</parameter></paramdef>
-      <paramdef>string <parameter>dbname</parameter></paramdef>
-     </funcprototype>
-     <funcprototype>
-      <funcdef>int <function>pg_connect</function></funcdef>
-      <paramdef>string <parameter>conn_string</parameter></paramdef>
+      <funcdef>resource <function>pg_connect</function></funcdef>
+      <paramdef>string <parameter>connection_string</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
-     成功すると接続インデックスを返し、コネクションが生成できなかった場合は
-     &false;を返します。この関数は PostgreSQLデータベースへのコネクションを
-     オープンします。引数は引用符で括った文字列とする必要があります。
+     <function>pg_connect</function> は、他のPostgreSQL関数で必要とさ
+     れる接続リソースを返します。
+    </para>
+    <para>
+     <function>pg_connect</function>は、
+     <parameter>connection_string</parameter>で指定したPostgreSQLデー
+     タベースへの接続をオープンします。この関数は、成功時に接続リソー
+     スを返します。接続できなかった場合には、&false;が返されます。
+     <parameter>connection_string</parameter>は、引用符で括った文字列
+     とする必要があります。
      <example>
-      <title><function>pg_connect</function>の引数の使用法</title>
+      <title><function>pg_connect</function>の使用法</title>
       <programlisting role="php">
-&lt;?php
-$dbconn = pg_Connect ("dbname=mary");
+<![CDATA[
+<?php
+$dbconn = pg_connect ("dbname=mary");
 // "mary"という名前のデータベースに接続
-$dbconn2 = pg_Connect ("host=localhost port=5432 dbname=mary");
+$dbconn2 = pg_connect ("host=localhost port=5432 dbname=mary");
 // "localhost"のポート"5432"にて"mary"という名前のデータベースに接続
-$dbconn3 = pg_Connect ("host=sheep port=5432 dbname=mary user=lamb password=baaaa");
-// ユーザ名とパスワードを指定して "mary" という名前のデータベースに接続
-// ホストで"sheep" でユーザ名とパスワードを入れて接続し、
-// "mary" という名前のデータベースに接続。
-
+$dbconn3 = pg_connect ("host=sheep port=5432 dbname=mary user=lamb password=baaaa");
+// ユーザ名とパスワードを指定してホスト"sheep"上の"mary"という名前のデー
+// タベースに接続
+$conn_string = "host=sheep port=5432 dbname=test user=lamb password=bar";
+$dbconn4 = pg_connect ($conn_string);
+// ユーザ名とパスワードを指定してホスト"sheep"上の"test"という名前のデー
+// タベースへ接続
 ?>
-      </programlisting>
+]]>
+     </programlisting>
      </example>
-     利用可能な引数には、<parameter>dbname</parameter> 
-     <parameter>port</parameter>, <parameter>host</parameter>, 
-     <parameter>tty</parameter>, <parameter>options</parameter>,
-     <parameter>user</parameter>, <parameter>password</parameter>があ
-     ります。
+      <parameter>connection_string</parameter>で利用可能な引数には、
+      <parameter>dbname</parameter>, <parameter>port</parameter>,
+      <parameter>host</parameter>, <parameter>tty</parameter>,
+      <parameter>options</parameter>, <parameter>user</parameter>,
+      <parameter>password</parameter>が含まれます。
     </para>
     <para>
-     この関数は、他のPostgreSQL関数を発行する際に必要な接続IDを返しま
-     す。一度に複数のコネクションをオープンすることができます。
+     同じ<parameter>connection_string</parameter>引数で2回
+     <function>pg_connect</function>関数がコールされた場合、新規の接続
+     はオープンされません。代わりに既にオープンされている接続リソース
+     が返されます。異なる接続パラメータ(すなわち別のユーザ名)を使用す
+     る場合には、同じデータベースに対して複数の接続をオープンすること
+     が可能です。
     </para>
     <para>
-     以前の構文:
-     <command>$conn = pg_connect ("host", "port", "options", "tty",
-    "dbname")
+     複数のパラメータをサポートする構文:
+     <command>$conn = pg_connect ("host", "port", "options", "tty", "dbname")
      </command>
-     は推奨されません。
+     は過去のものであり、推奨されません。
     </para>
     <para>
-     <function>pg_pconnect</function>も参照下さい。
+     <function>pg_pconnect</function>,
+     <function>pg_close</function>, <function>pg_host</function>,
+     <function>pg_port</function>, <function>pg_tty</function>,
+     <function>pg_options</function>, <function>pg_dbname</function>
+     も参照下さい。
     </para>
    </refsect1>
   </refentry>
@@ -260,7 +320,7 @@ $dbconn3 = pg_Connect ("host=sheep port=5432 dbname=mary user=lamb password=baaa
     <funcsynopsis>
      <funcprototype>
       <funcdef>string <function>pg_dbname</function></funcdef>
-      <paramdef>int <parameter>connection</parameter></paramdef>
+      <paramdef>resource <parameter>connection</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
@@ -281,9 +341,7 @@ $dbconn3 = pg_Connect ("host=sheep port=5432 dbname=mary user=lamb password=baaa
      <funcprototype>
       <funcdef>bool <function>pg_end_copy</function></funcdef>
       <paramdef>resource
-       <parameter>
-	<replaceable><optional>connection</optional></replaceable>
-       </parameter>
+       <parameter><optional>connection</optional></parameter>
       </paramdef>
      </funcprototype>
     </funcsynopsis>
@@ -304,14 +362,14 @@ $dbconn3 = pg_Connect ("host=sheep port=5432 dbname=mary user=lamb password=baaa
   <refentry id="function.pg-errormessage">
    <refnamediv>
     <refname>pg_errormessage</refname>
-    <refpurpose>エラーメッセージの取得</refpurpose>
+    <refpurpose>直近のエラーメッセージ文字列を取得する</refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
       <funcdef>string <function>pg_errormessage</function></funcdef>
-      <paramdef>int <parameter>connection</parameter></paramdef>
+      <paramdef>resource <parameter>connection</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
@@ -334,8 +392,8 @@ $dbconn3 = pg_Connect ("host=sheep port=5432 dbname=mary user=lamb password=baaa
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>int <function>pg_exec</function></funcdef>
-      <paramdef>int <parameter>connection</parameter></paramdef>
+      <funcdef>resource <function>pg_exec</function></funcdef>
+      <paramdef>resource <parameter>connection</parameter></paramdef>
       <paramdef>string <parameter>query</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
@@ -369,12 +427,10 @@ $dbconn3 = pg_Connect ("host=sheep port=5432 dbname=mary user=lamb password=baaa
     <funcsynopsis>
      <funcprototype>
       <funcdef>array <function>pg_fetch_array</function></funcdef>
-      <paramdef>int <parameter>result</parameter></paramdef>
+      <paramdef>resource <parameter>result</parameter></paramdef>
       <paramdef>int <parameter>row</parameter></paramdef>
       <paramdef>int 
-       <parameter>
-	<replaceable><optional>result_type</optional></replaceable>
-       </parameter>
+       <parameter><optional>result_type</optional></parameter>
       </paramdef>
      </funcprototype>
     </funcsynopsis>
@@ -409,25 +465,27 @@ $dbconn3 = pg_Connect ("host=sheep port=5432 dbname=mary user=lamb password=baaa
     <example>
      <title>PostgreSQLによる配列の取得</title>
      <programlisting role="php">
-&lt;?php 
-$conn = pg_pconnect ("","","","","publisher");
+     <![CDATA[
+<?php 
+$conn = pg_pconnect ("dbname=publisher");
 if (!$conn) {
-    echo "An error occured.\n";
+    echo "エラーが発生しました。\n";
     exit;
 }
  
 $result = pg_exec ($conn, "SELECT * FROM authors");
 if (!$result) {
-    echo "An error occured.\n";
+    echo "エラーが発生しました。\n";
     exit;
 }
  
-$arr = pg_fetch_array ($result, 0);
-echo $arr[0] . " &lt;- array\n";
+$arr = pg_fetch_array ($result, 0, PGSQL_NUM);
+echo $arr[0] . " <- array\n";
  
-$arr = pg_fetch_array ($result, 1);
-echo $arr["author"] . " &lt;- array\n";
+$arr = pg_fetch_array ($result, 1, PGSQL_ASSOC);
+echo $arr["author"] . " <- array\n";
 ?>
+]]>
      </programlisting>
     </example>
    </refsect1>
@@ -443,12 +501,10 @@ echo $arr["author"] . " &lt;- array\n";
     <funcsynopsis>
      <funcprototype>
       <funcdef>object <function>pg_fetch_object</function></funcdef>
-      <paramdef>int <parameter>result</parameter></paramdef>
+      <paramdef>resource <parameter>result</parameter></paramdef>
       <paramdef>int <parameter>row</parameter></paramdef>
       <paramdef>int 
-       <parameter>
-	<replaceable><optional>result_type</optional></replaceable>
-       </parameter>
+       <parameter><optional>result_type</optional></parameter>
       </paramdef>
      </funcprototype>
     </funcsynopsis>
@@ -484,43 +540,47 @@ echo $arr["author"] . " &lt;- array\n";
      <example>
       <title>Postgres によりオブジェクトを取得する</title>
       <programlisting role="php">
-&lt;?php 
+<![CDATA[
+<?php 
 $database = "verlag";
-$db_conn = pg_connect ("localhost", "5432", "", "", $database);
+$db_conn = pg_connect ("host=localhost port=5432 dbname=$database");
 if (!$db_conn): ?>
-    &lt;H1>Failed connecting to postgres database &lt;? echo $database ?>&lt;/H1> &lt;?php
+    <H1>Failed connecting to postgres database <? echo $database ?></H1> <?php
     exit;
 endif;
  
 $qu = pg_exec ($db_conn, "SELECT * FROM verlag ORDER BY autor");
 $row = 0; // Postgresでは他のデータベースと異なり、行カウンタが必要
  
-while ($data = pg_fetch_object ($qu, $row)):
+while ($data = pg_fetch_object ($qu, $row)) {
     echo $data->autor." (";
     echo $data->jahr ."): ";
-    echo $data->titel."&lt;BR>";
+    echo $data->titel."<BR>";
     $row++;
-endwhile; ?>
- 
-&lt;PRE>&lt;?php
+}
+?>
+<PRE>
+<?php
 $fields[] = Array ("autor", "Author");
 $fields[] = Array ("jahr",  "  Year");
 $fields[] = Array ("titel", " Title");
  
 $row= 0; // Postgresでは他のデータベースと異なり、行カウンタが必要
-while ($data = pg_fetch_object ($qu, $row)):
+while ($data = pg_fetch_object ($qu, $row)) {
     echo "----------\n";
     reset ($fields);
     while (list (,$item) = each ($fields)):
         echo $item[1].": ".$data->$item[0]."\n";
     endwhile;
     $row++;
-endwhile;
+}
 echo "----------\n"; ?>
-&lt;/PRE> &lt;?php
-pg_freeResult ($qu);
+</PRE> 
+<?php
+pg_freeresult ($qu);
 pg_close ($db_conn);
 ?>
+]]>
       </programlisting>
      </example>
     </para>
@@ -537,7 +597,7 @@ pg_close ($db_conn);
     <funcsynopsis>
      <funcprototype>
       <funcdef>array <function>pg_fetch_row</function></funcdef>
-      <paramdef>int <parameter>result</parameter></paramdef>
+      <paramdef>resource <parameter>result</parameter></paramdef>
       <paramdef>int <parameter>row</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
@@ -556,8 +616,9 @@ pg_close ($db_conn);
      <example>
       <title>Postgresにより行を取得する</title>
       <programlisting role="php">
-&lt;?php 
-$conn = pg_pconnect("","","","","publisher");
+<![CDATA[
+<?php 
+$conn = pg_pconnect ("dbname=publisher");
 if (!$conn) {
     echo "An error occured.\n";
     exit;
@@ -571,18 +632,19 @@ if (!$result) {
  
 $num = pg_numrows($result); 
  
-for ($i=0; $i&lt;$num; $i++) {
+for ($i=0; $i < $num; $i++) {
   $r = pg_fetch_row($result, $i);
 
-  for ($j=0; $j&lt;count($r); $j++) {
-    echo "$r[$j]&amp;nbsp;";
+  for ($j=0; $j < count($r); $j++) {
+    echo "$r[$j]&nbsp;";
   }
 
-  echo "&lt;BR>";
+  echo "<BR>";
 
 }
  
 ?>
+]]>
       </programlisting>
      </example>
     </para>
@@ -599,7 +661,7 @@ for ($i=0; $i&lt;$num; $i++) {
     <funcsynopsis>
      <funcprototype>
       <funcdef>int <function>pg_fieldisnull</function></funcdef>
-      <paramdef>int <parameter>result_id</parameter></paramdef>
+      <paramdef>resource <parameter>result</parameter></paramdef>
       <paramdef>int <parameter>row</parameter></paramdef>
       <paramdef>mixed <parameter>field</parameter></paramdef>
      </funcprototype>
@@ -622,7 +684,7 @@ for ($i=0; $i&lt;$num; $i++) {
     <funcsynopsis>
      <funcprototype>
       <funcdef>string <function>pg_fieldname</function></funcdef>
-      <paramdef>int <parameter>result_id</parameter></paramdef>
+      <paramdef>resource <parameter>result</parameter></paramdef>
       <paramdef>int <parameter>field_number</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
@@ -644,7 +706,7 @@ for ($i=0; $i&lt;$num; $i++) {
     <funcsynopsis>
      <funcprototype>
       <funcdef>int <function>pg_fieldnum</function></funcdef>
-      <paramdef>int <parameter>result_id</parameter></paramdef>
+      <paramdef>resource <parameter>result</parameter></paramdef>
       <paramdef>string <parameter>field_name</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
@@ -666,7 +728,7 @@ for ($i=0; $i&lt;$num; $i++) {
     <funcsynopsis>
      <funcprototype>
       <funcdef>int <function>pg_fieldprtlen</function></funcdef>
-      <paramdef>int <parameter>result_id</parameter></paramdef>
+      <paramdef>resource <parameter>result</parameter></paramdef>
       <paramdef>int <parameter>row_number</parameter></paramdef>
       <paramdef>string <parameter>field_name</parameter></paramdef>
      </funcprototype>
@@ -692,7 +754,7 @@ for ($i=0; $i&lt;$num; $i++) {
     <funcsynopsis>
      <funcprototype>
       <funcdef>int <function>pg_fieldsize</function></funcdef>
-      <paramdef>int <parameter>result_id</parameter></paramdef>
+      <paramdef>resource <parameter>result</parameter></paramdef>
       <paramdef>int <parameter>field_number</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
@@ -718,7 +780,7 @@ for ($i=0; $i&lt;$num; $i++) {
     <funcsynopsis>
      <funcprototype>
       <funcdef>string <function>pg_fieldtype</function></funcdef>
-      <paramdef>int <parameter>result_id</parameter></paramdef>
+      <paramdef>resource <parameter>result</parameter></paramdef>
       <paramdef>int <parameter>field_number</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
@@ -740,7 +802,7 @@ for ($i=0; $i&lt;$num; $i++) {
     <funcsynopsis>
      <funcprototype>
       <funcdef>int <function>pg_freeresult</function></funcdef>
-      <paramdef>int <parameter>result_id</parameter></paramdef>
+      <paramdef>resource <parameter>result</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
@@ -765,7 +827,7 @@ for ($i=0; $i&lt;$num; $i++) {
     <funcsynopsis>
      <funcprototype>
       <funcdef>int <function>pg_getlastoid</function></funcdef>
-      <paramdef>int <parameter>result_id</parameter></paramdef>
+      <paramdef>resource <parameter>result</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
@@ -789,12 +851,55 @@ for ($i=0; $i&lt;$num; $i++) {
     <funcsynopsis>
      <funcprototype>
       <funcdef>string <function>pg_host</function></funcdef>
-      <paramdef>int <parameter>connection_id</parameter></paramdef>
+      <paramdef>resource <parameter>connection</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
      <function>pg_host</function>は、指定したPostgreSQL接続IDが接続している
      ホストの名前を返します。
+    </para>
+   </refsect1>
+  </refentry>
+
+
+  <refentry id="function.pg-last-notice">
+   <refnamediv>
+    <refname>pg_last_notice</refname> 
+    <refpurpose>
+     PostgreSQLサーバからの直近の通知メッセージを返す
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>string <function>pg_last_notice</function></funcdef>
+      <paramdef>resource <parameter>connection</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     <function>pg_last_notice</function> returns the last notice
+     message from PostgreSQL server specified by
+     <parameter>connection</parameter>. PostgreSQL server set notice
+     message when transaction cannot be continued. There one can avoid
+     issuing useless SQL using <function>pg_exec</function> using
+     <function>pg_last_notice</function>. There are other cases that
+     PostgreSQL server sets notice message. Programmer must check
+     contents of notice message if it is related to transaction or
+     not.
+    </para>
+    <warning>
+     <para>
+      This function is EXPERIMENTAL and it is not fully implemented
+      yet. <function>pg_last_notice</function> is added form PHP
+      4.0.6. However, PHP 4.0.6 has problem with notice message
+      handling. Use of PostgreSQL module with PHP 4.0.6 is not
+      recommended even if you are not using
+      <function>pg_last_notice</function>.
+     </para>
+    </warning>
+    <para>
+     See also <function>pg_exec</function> and <function>pg_errormessage</function>.
     </para>
    </refsect1>
   </refentry>
@@ -808,14 +913,15 @@ for ($i=0; $i&lt;$num; $i++) {
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>void <function>pg_loclose</function></funcdef>
-      <paramdef>int <parameter>fd</parameter></paramdef>
+      <funcdef>bool <function>pg_loclose</function></funcdef>
+      <paramdef>resource <parameter>large_object</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
      <function>pg_loclose</function>は転置ラージオブジェクトをクローズします。
-     <parameter>fd</parameter>は、<function>pg_loopen</function>でオープン
-     されたラージオブジェクトのファイル識別子です。
+     <parameter>large_object</parameter>は、
+     <function>pg_loopen</function>でオープンされたラージオブジェクト
+     のリソースです。
     </para>
    </refsect1>
   </refentry>
@@ -830,7 +936,7 @@ for ($i=0; $i&lt;$num; $i++) {
     <funcsynopsis>
      <funcprototype>
       <funcdef>int <function>pg_locreate</function></funcdef>
-      <paramdef>int <parameter>conn</parameter></paramdef>
+      <paramdef>resource <parameter>connection</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
@@ -856,11 +962,9 @@ for ($i=0; $i&lt;$num; $i++) {
      <funcprototype>
       <funcdef>bool <function>pg_loexport</function></funcdef>
       <paramdef>int <parameter>oid</parameter></paramdef>
-      <paramdef>int <parameter>file</parameter></paramdef>
-      <paramdef>int
-       <parameter>
-	<replaceable><optional>connection_id</optional></replaceable>
-       </parameter>
+      <paramdef>string <parameter>pathname</parameter></paramdef>
+      <paramdef>resource
+       <parameter><optional>connection</optional></parameter>
       </paramdef>
      </funcprototype>
     </funcsynopsis>
@@ -884,13 +988,9 @@ for ($i=0; $i&lt;$num; $i++) {
     <funcsynopsis>
      <funcprototype>
       <funcdef>int <function>pg_loimport</function></funcdef>
-      <paramdef>int
-       <parameter>file</parameter>
-      </paramdef>
-      <paramdef>int
-       <parameter>
-	<replaceable><optional>connection_id</optional></replaceable>
-       </parameter>
+      <paramdef>string <parameter>pathname</parameter></paramdef>
+      <paramdef>resource
+       <parameter><optional>connection</optional></parameter>
       </paramdef>
      </funcprototype>
     </funcsynopsis>
@@ -914,9 +1014,9 @@ for ($i=0; $i&lt;$num; $i++) {
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>int <function>pg_loopen</function></funcdef>
-      <paramdef>int <parameter>conn</parameter></paramdef>
-      <paramdef>int <parameter>objoid</parameter></paramdef>
+      <funcdef>resource <function>pg_loopen</function></funcdef>
+      <paramdef>resource <parameter>connection</parameter></paramdef>
+      <paramdef>int <parameter>oid</parameter></paramdef>
       <paramdef>string <parameter>mode</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
@@ -943,7 +1043,7 @@ for ($i=0; $i&lt;$num; $i++) {
     <funcsynopsis>
      <funcprototype>
       <funcdef>string <function>pg_loread</function></funcdef>
-      <paramdef>int <parameter>fd</parameter></paramdef>
+      <paramdef>resource <parameter>large_object</parameter></paramdef>
       <paramdef>int <parameter>len</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
@@ -966,8 +1066,8 @@ for ($i=0; $i&lt;$num; $i++) {
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>void <function>pg_loreadall</function></funcdef>
-      <paramdef>int <parameter>fd</parameter></paramdef>
+      <funcdef>int <function>pg_loreadall</function></funcdef>
+      <paramdef>resource <parameter>large_object</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
@@ -988,9 +1088,9 @@ for ($i=0; $i&lt;$num; $i++) {
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>void <function>pg_lounlink</function></funcdef>
-      <paramdef>int <parameter>conn</parameter></paramdef>
-      <paramdef>int <parameter>lobjid</parameter></paramdef>
+      <funcdef>bool <function>pg_lounlink</function></funcdef>
+      <paramdef>resource <parameter>connection</parameter></paramdef>
+      <paramdef>int <parameter>oid</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
@@ -1011,8 +1111,8 @@ for ($i=0; $i&lt;$num; $i++) {
     <funcsynopsis>
      <funcprototype>
       <funcdef>int <function>pg_lowrite</function></funcdef>
-      <paramdef>int <parameter>fd</parameter></paramdef>
-      <paramdef>string <parameter>buf</parameter></paramdef>
+      <paramdef>resource <parameter>large_object</parameter></paramdef>
+      <paramdef>string <parameter>data</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
@@ -1035,7 +1135,7 @@ for ($i=0; $i&lt;$num; $i++) {
     <funcsynopsis>
      <funcprototype>
       <funcdef>int <function>pg_numfields</function></funcdef>
-      <paramdef>int <parameter>result_id</parameter></paramdef>
+      <paramdef>resource <parameter>result</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
@@ -1060,7 +1160,7 @@ for ($i=0; $i&lt;$num; $i++) {
     <funcsynopsis>
      <funcprototype>
       <funcdef>int <function>pg_numrows</function></funcdef>
-      <paramdef>int <parameter>result_id</parameter></paramdef>
+      <paramdef>resource <parameter>result</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
@@ -1085,7 +1185,7 @@ for ($i=0; $i&lt;$num; $i++) {
     <funcsynopsis>
      <funcprototype>
       <funcdef>string <function>pg_options</function></funcdef>
-      <paramdef>int <parameter>connection_id</parameter></paramdef>
+      <paramdef>resource <parameter>connection</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
@@ -1105,8 +1205,8 @@ for ($i=0; $i&lt;$num; $i++) {
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>int <function>pg_pconnect</function></funcdef>
-      <paramdef>string <parameter>conn_string</parameter></paramdef>
+      <funcdef>resource <function>pg_pconnect</function></funcdef>
+      <paramdef>string <parameter>connection_string</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
@@ -1146,7 +1246,7 @@ for ($i=0; $i&lt;$num; $i++) {
     <funcsynopsis>
      <funcprototype>
       <funcdef>int <function>pg_port</function></funcdef>
-      <paramdef>int <parameter>connection_id</parameter></paramdef>
+      <paramdef>resource <parameter>connection</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
@@ -1169,9 +1269,7 @@ for ($i=0; $i&lt;$num; $i++) {
      <funcprototype>
       <funcdef>bool <function>pg_put_line</function></funcdef>
       <paramdef>resource
-       <parameter>
-	<replaceable><optional>connection_id</optional></replaceable>
-       </parameter>
+       <parameter><optional>connection</optional></parameter>
       </paramdef>
       <paramdef>string <parameter>data</parameter></paramdef>
      </funcprototype>
@@ -1220,9 +1318,9 @@ for ($i=0; $i&lt;$num; $i++) {
     <funcsynopsis>
      <funcprototype>
       <funcdef>mixed <function>pg_result</function></funcdef>
-      <paramdef>int <parameter>result_id</parameter></paramdef>
+      <paramdef>resource <parameter>result</parameter></paramdef>
       <paramdef>int <parameter>row_number</parameter></paramdef>
-      <paramdef>mixed <parameter>fieldname</parameter></paramdef>
+      <paramdef>mixed <parameter>field</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
@@ -1257,10 +1355,8 @@ for ($i=0; $i&lt;$num; $i++) {
     <funcsynopsis>
      <funcprototype>
       <funcdef>int <function>pg_set_client_encoding</function></funcdef>
-      <paramdef>int 
-       <parameter>
-	<replaceable><optional>connection</optional></replaceable>
-       </parameter>
+      <paramdef>resource 
+       <parameter><optional>connection</optional></parameter>
       </paramdef>
       <paramdef>string <parameter>encoding</parameter></paramdef>
      </funcprototype>
@@ -1304,10 +1400,8 @@ for ($i=0; $i&lt;$num; $i++) {
     <funcsynopsis>
      <funcprototype>
       <funcdef>string <function>pg_client_encoding</function></funcdef>
-      <paramdef>int 
-       <parameter>
-	<replaceable><optional>connection</optional></replaceable>
-       </parameter>
+      <paramdef>resource 
+       <parameter><optional>connection</optional></parameter>
       </paramdef>
      </funcprototype>
     </funcsynopsis>
@@ -1352,10 +1446,8 @@ for ($i=0; $i&lt;$num; $i++) {
 	<replaceable><optional>mode</optional></replaceable>
        </parameter>
       </paramdef>
-      <paramdef>int
-       <parameter>
-	<replaceable><optional>connection</optional></replaceable>
-       </parameter>
+      <paramdef>resource
+       <parameter><optional>connection</optional></parameter>
       </paramdef>
      </funcprototype>
     </funcsynopsis>
@@ -1396,7 +1488,7 @@ for ($i=0; $i&lt;$num; $i++) {
     <funcsynopsis>
      <funcprototype>
       <funcdef>string <function>pg_tty</function></funcdef>
-      <paramdef>int <parameter>connection_id</parameter></paramdef>
+      <paramdef>resource <parameter>connection</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
@@ -1418,10 +1510,8 @@ for ($i=0; $i&lt;$num; $i++) {
     <funcsynopsis>
      <funcprototype>
       <funcdef>bool <function>pg_untrace</function></funcdef>
-      <paramdef>int
-       <parameter>
-	<replaceable><optional>connection</optional></replaceable>
-       </parameter>
+      <paramdef>resource
+       <parameter><optional>connection</optional></parameter>
       </paramdef>
      </funcprototype>
     </funcsynopsis>
