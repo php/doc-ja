@@ -1,38 +1,52 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- splitted from ./ja/functions/strings.xml, last change in rev 1.4 -->
-<!-- EN-Revision: 1.2 Maintainer: hirokawa Status: ready -->
-  <refentry id="function.str-replace">
-   <refnamediv>
-    <refname>str_replace</refname>
-    <refpurpose>
-     文字列 subject 中の文字列 search を全て文字列replaceに置換する
-    </refpurpose>
-   </refnamediv>
-    <refsect1>
-    <title>説明</title>
-     <methodsynopsis>
-      <type>mixed</type><methodname>str_replace</methodname>
-      <methodparam><type>mixed</type><parameter>search</parameter></methodparam>
-      <methodparam><type>mixed</type><parameter>replace</parameter></methodparam>
-      <methodparam><type>mixed</type><parameter>subject</parameter></methodparam>
-     </methodsynopsis>
-    <para>
-     この関数は、<parameter>subject</parameter> の中の
-     <parameter>search</parameter> を全て
-     <parameter>replace</parameter> に置換します。技巧的な置換ルールを
-     必要としない場合、<function>ereg_replace</function> または
-     <function>preg_replace</function>の替わりにこの関数を常用するべき
-     です。
-    </para>
-    <para>
-     PHP 4.0.5 以降では、<function>str_replace</function> への全てのパ
-     ラメータは配列とすることが可能です。
-    </para>
-    <para>
-     <parameter>subject</parameter> が配列の場合、
-     <parameter>subject</parameter> の各エントリについて検索と置換が行
-     われ、返り値は同様に配列となります。
-    </para>
+<!-- $Revision: 1.4 $ -->
+<!-- EN-Revision: 1.17 Maintainer: hirokawa Status: ready -->
+<refentry id="function.str-replace">
+ <refnamediv>
+  <refname>str_replace</refname>
+  <refpurpose>
+   文字列 subject 中の文字列 search を全て文字列replaceに置換する
+  </refpurpose>
+ </refnamediv>
+ <refsect1>
+  <title>説明</title>
+  <methodsynopsis>
+   <type>mixed</type><methodname>str_replace</methodname>
+   <methodparam><type>mixed</type><parameter>search</parameter></methodparam>
+   <methodparam><type>mixed</type><parameter>replace</parameter></methodparam>
+   <methodparam><type>mixed</type><parameter>subject</parameter></methodparam>
+   <methodparam choice="opt"><type>int</type><parameter role="reference">count</parameter></methodparam>
+  </methodsynopsis>
+  <para>
+   この関数は、<parameter>subject</parameter> の中の
+   <parameter>search</parameter> を全て
+   <parameter>replace</parameter> に置換します。(正規表現んような)技巧的な置換ルールを
+   必要としない場合、<function>ereg_replace</function> または
+   <function>preg_replace</function>の替わりにこの関数を常用するべきです。
+  </para>
+  <para>
+   PHP 4.0.5以降、<function>str_replace</function>の全てのパラメータを
+   配列(<type>array</type>)とすることが可能です。
+  </para>
+  <warning>
+   <simpara>
+    PHP 4.3.3より前のバージョンには、
+    <parameter>search</parameter> と <parameter>replace</parameter>の
+    両方に配列を指定した場合に発生する、
+    空の<parameter>search</parameter>添字をスキップする際に
+    <parameter>replace</parameter>配列上の内部ポインタを進めないという
+    バグがあります。
+    このバグは、PHP 4.3.3で修正されており、
+    このバグに基づくスクリプトは、空の検索値をこの関数をコールする前に
+    削除しておく必要があります。
+   </simpara>
+  </warning>
+
+  <para>
+   <parameter>subject</parameter> が配列の場合、
+   <parameter>subject</parameter> の各エントリについて検索と置換が行
+   われ、返り値は同様に配列となります。
+  </para>
     <para>
      <parameter>search</parameter> と <parameter>replace</parameter>
      が配列の場合、<function>str_replace</function> は各配列から値を一
@@ -50,25 +64,50 @@
       <title><function>str_replace</function>の例</title>
       <programlisting role="php">
 <![CDATA[
-$bodytag = str_replace ("%body%", "black", "<body text=%body%>");
+<?php
+// Provides: <body text='black'>
+$bodytag = str_replace("%body%", "black", "<body text='%body%'>");
+
+// Provides: Hll Wrld f PHP
+$vowels = array("a", "e", "i", "o", "u", "A", "E", "I", "O", "U");
+$onlyconsonants = str_replace($vowels, "", "Hello World of PHP");
+
+// Provides: You should eat pizza, beer, and ice cream every day
+$phrase  = "You should eat fruits, vegetables, and fiber every day.";
+$healthy = array("fruits", "vegetables", "fiber");
+$yummy   = array("pizza", "beer", "ice cream");
+
+$newphrase = str_replace($healthy, $yummy, $phrase);
+
+// Use of the count parameter is available as of PHP 5.0.0
+$str = str_replace("ll", "", "good golly miss molly!", $count);
+echo $count; // 2
+?>
 ]]>
-      </programlisting>
-     </example>
-    </para>
-    <para>
-     この関数はバイナリでも使用可能です。
-    </para>
-    <para>
-     <function>str_replace</function> は PHP 3.0.6 で追加されましたが、
-     PHP 3.0.8 まではバグがありました。
-    </para>
-    <para>
-     <function>ereg_replace</function>、
-     <function>preg_replace</function>、<function>strtr</function> も
-     参照下さい。
-    </para>
-   </refsect1>
-  </refentry>
+    </programlisting>
+   </example>
+  </para>
+
+  &note.bin-safe;
+  
+  <note>
+   <simpara>
+    PHP 5.0.0以降、一致および置換された対象文字列
+    (<parameter>search</parameter>)の数が参照渡しされた
+    <parameter>count</parameter>に返されます。
+    PHP 5.0.0より前のバージョンでは、このパラメータは利用できません。
+   </simpara>
+  </note>
+  <para>
+    <function>str_ireplace</function>,
+   <function>substr_replace</function>,
+   <function>ereg_replace</function>,
+   <function>preg_replace</function>,
+   <function>strtr</function>
+   も参照下さい。
+  </para>
+ </refsect1>
+</refentry>
 
 <!-- Keep this comment at the end of the file
 Local variables:
