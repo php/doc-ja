@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.1 $ -->
+<!-- EN-Revision: 1.4 Maintainer: hirokawa Status: ready -->
+
+<sect1 id="language.oop5.cloning">
+ <title>オブジェクトのクローン作成</title>
+ 
+ <para>
+  オブジェクトのコピーを作成する際、そのプロパティも全て二重化することが、
+  常に望ましい動作であるわけではありません。
+  コピーコンストラクタが必要となる例として、
+  GTKウインドウを表すオブジェクトを有しており、
+  そのオブジェクトがGTKウインドウのリソースを保持している際、
+  コピーを作成する時に、同じプロパティを有するウインドウを作成し、
+  その新しいオブジェクトがその新しいウインドウのリソースを保持する
+  ようにしたい場合が考えられます。  
+  他の例としては、
+  オブジェクトがそのオブジェクトが使用する他のオブジェクトへのリファレンスを
+  保持しており、親オブジェクトをコピーする際に、そのコピーが独立したオブジェクトの
+  コピーを有するように、そのオブジェクトのインスタンスを新たに作成したい場合が
+  考えられます。
+ </para>
+ 
+ <para>
+  オブジェクトのコピーは、clone キーワード (これは、そのオブジェクトの
+  __clone()メソッドがある場合にこれをコールします)により作成されます。
+  オブジェクトの__clone()メソッドを直接コールすることはできません。
+ </para>
+
+ <informalexample>
+  <programlisting>
+<![CDATA[
+$copy_of_object = clone $object;
+]]>
+  </programlisting>
+ </informalexample>
+ 
+ <para>
+  オブジェクトのクローンが作成される際、PHP 5 は、そのオブジェクトのプロパティを
+  全てシャローコピーします。他の変数へのリファレンスを保持する全てのプロパティは、
+  リファレンスのままとなります。
+  __clone() メソッドが定義された場合、新規の作成されたオブジェクトの
+  __clone() メソッドがコールされるため、この中で、プロパティに
+  必要な変更を行うことができます。
+ </para>
+ 
+ <example>
+  <title>オブジェクトのクローン作成</title>
+  <programlisting role="php">
+<![CDATA[
+<?php
+class SubObject
+{
+    static $instances = 0;
+    public $instance;
+
+    public function __construct() {
+        $this->instance = ++self::$instances;
+    }
+
+    public function __clone() {
+        $this->instance = ++self::$instances;
+    }
+}
+
+class MyCloneable
+{
+    public $object1;
+    public $object2;
+
+    function __clone()
+    {
+        // Force a copy of this->object, otherwise
+        // it will point to same object.
+        $this->object1 = clone($this->object1);
+    }
+}
+
+$obj = new MyCloneable();
+
+$obj->object1 = new SubObject();
+$obj->object2 = new SubObject();
+
+$obj2 = clone $obj;
+
+
+print("Original Object:\n");
+print_r($obj);
+
+print("Cloned Object:\n");
+print_r($obj2);
+
+?> 
+]]>
+  </programlisting>
+  &example.outputs;
+  <screen role="php">
+<![CDATA[
+Original Object:
+MyCloneable Object
+(
+    [object1] => SubObject Object
+        (
+            [instance] => 1
+        )
+
+    [object2] => SubObject Object
+        (
+            [instance] => 2
+        )
+
+)
+Cloned Object:
+MyCloneable Object
+(
+    [object1] => SubObject Object
+        (
+            [instance] => 3
+        )
+
+    [object2] => SubObject Object
+        (
+            [instance] => 2
+        )
+
+)
+]]>
+
+  </screen>
+
+ </example>
+ 
+</sect1>
+ 
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"../../../manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
