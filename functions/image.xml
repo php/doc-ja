@@ -788,6 +788,77 @@ function LoadPNG ($imgname)
    </refsect1>
   </refentry>
 
+  <refentry id="function.imagecreatefromwbmp">
+   <refnamediv>
+    <refname>ImageCreateFromWBMP</refname>
+    <refpurpose>
+     ファイルまたはURLから新規イメージをWindowsビットマップ形式のイメー
+     ジを作成する
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>int <function>imagecreatefromwbmp</function></funcdef>
+      <paramdef>string <parameter>filename</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     <function>ImageCreateFromWBMP</function> は、指定したファイル名か
+     ら得られたイメージを表すイメージIDを返します。
+    </para>
+    <para> 
+     <function>ImageCreateFromWBMP</function> は、エラー時に空の文字列
+     を返します。エラーメッセージも出力しますが、不幸にしてブラウザに
+     壊れたリンクとして表示されてしまいます。デバッグを容易にするため
+     に次の例ではエラーを表示する <acronym>WBMP</acronym> を作成してい
+     ます。
+     <example>
+      <title>
+       作成時のエラーを処理する例 (vic@zymsys.com による)
+      </title>
+      <programlisting role="php">
+function LoadWBMP ($imgname) {
+    $im = @ImageCreateFromWBMP ($imgname); /* オープンする */
+    if (!$im) { /* 失敗したかどうか判定 */
+        $im  = ImageCreate (20, 20); /* 空のイメージを作成する */
+        $bgc = ImageColorAllocate ($im, 255, 255, 255);
+        $tc  = ImageColorAllocate ($im, 0, 0, 0);
+        ImageFilledRectangle ($im, 0, 0, 10, 10, $bgc);
+        /* errmsg を出力する */
+        ImageString ($im, 1, 5, 5, "Error loading $imgname", $tc); 
+    }
+    return $im;
+}
+      </programlisting>
+     </example>
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.imagecreatefromstring">
+   <refnamediv>
+    <refname>ImageCreateFromString</refname>
+    <refpurpose>
+     文字列の中のイメージストリームから新規イメージを作成する
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>int <function>imagecreatefromstring</function></funcdef>
+      <paramdef>string <parameter>image</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     <function>ImageCreateFromString</function> は、指定した文字列から
+     得られたイメージを表すイメージIDを返します。
+    </para>
+   </refsect1>
+  </refentry>
+
   <refentry id="function.imagedashedline">
    <refnamediv>
     <refname>ImageDashedLine</refname>
@@ -1034,25 +1105,30 @@ function LoadPNG ($imgname)
        以下の短いコードにより利用可能なGDサポートの型を自動検出し、
        汎用性のあるPHPアプリケーションを書くことが可能です。
        <literal>Header("Content-type:
-       image/gif");ImageGif($im);</literal>の部分をこのより柔軟性のあ
+       image/gif");ImageGIF($im);</literal>の部分をこのより柔軟性のあ
        るコードに置換して下さい。
        <informalexample>
 	<programlisting role="php">
 &lt;?php
   if (function_exists("imagegif")) {
     Header("Content-type: image/gif");
-    ImageGif($im);
+    ImageGIF($im);
   }
   elseif (function_exists("imageJpeg")) {
     Header("Content-type: image/jpeg");
-    ImageJpeg($im, "", 0.5);
+    ImageJPEG($im, "", 0.5);
   }
   elseif (function_exists("imagePng")) {
     Header("Content-type: image/png");
-    ImagePng($im);
+    ImagePNG($im);
   }
-  else
+  elseif (function_exists("imagewbmp")) {
+    Header("Content-type: image/vnd.wap.wbmp");
+    ImageWBMP($im);
+  }
+  else {
     die("このPHPサーバーではイメージはサポートされていません");
+  }
 ?&gt;
 	</programlisting>
        </informalexample>
@@ -1078,15 +1154,16 @@ elseif (ImageTypes() &amp; IMG_JPG) {
      </note>
     </para>
     <para>
-     <function>ImagePng</function>, <function>ImageJpeg</function>,
-     <function>ImageTypes</function> も参照下さい。
+     <function>ImagePNG</function>, <function>ImageWBMP</function>,
+     <function>ImageJPEG</function>, <function>ImageTypes</function>
+     も参照下さい。
     </para>
    </refsect1>
   </refentry>
 
   <refentry id="function.imagepng">
    <refnamediv>
-    <refname>ImagePng</refname>
+    <refname>ImagePNG</refname>
     <refpurpose>
      PNGイメージをブラウザまたはファイルに出力する
     </refpurpose>
@@ -1107,7 +1184,7 @@ elseif (ImageTypes() &amp; IMG_JPG) {
      </funcprototype>
     </funcsynopsis>
     <para>
-     <function>ImagePng</function>は、GDイメージストリーム
+     <function>ImagePNG</function>は、GDイメージストリーム
      (<parameter>im</parameter>)をPNGフォーマットで標準出力(通常はブラ
      ウザ)に出力します。<parameter>filename</parameter>を指定した場合
      はそのファイルにイメージを出力します。
@@ -1119,8 +1196,9 @@ ImagePng($im);
      </informalexample>
     </para>
     <para>
-     <function>ImageGif</function>, <function>ImageJpeg</function>,
-     <function>ImageTypes</function> も参照下さい。
+     <function>ImageGIF</function>, <function>ImageWBMP</function>,
+     <function>ImageJPEG</function>, <function>ImageTypes</function>
+     も参照下さい。
     </para>
    </refsect1>
   </refentry>
@@ -1169,11 +1247,58 @@ ImagePng($im);
      </note>
     </para>
     <para>
-     <function>ImagePng</function>, <function>ImageGif</function>,
-     <function>ImageTypes</function> も参照下さい。
+     <function>ImagePNG</function>, <function>ImageGIF</function>,
+     <function>ImageWBMP</function>, <function>ImageTypes</function>
+     も参照下さい。
     </para>
    </refsect1>
   </refentry> 
+
+  <refentry id="function.imagewbmp">
+   <refnamediv>
+    <refname>ImageWBMP</refname>
+    <refpurpose>ブラウザまたはファイルにイメージを出力する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>int <function>imageWBMP</function></funcdef>
+      <paramdef>int <parameter>im</parameter></paramdef>
+      <paramdef>string 
+       <parameter>
+	<replaceable><optional>filename</optional></replaceable>
+       </parameter>
+      </paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     <function>ImageWBMP</function> は、イメージ
+     <parameter>im</parameter>から filename に
+     <acronym>WBMP</acronym> ファイルを作成します。引数
+     <parameter>im</parameter> は、<function>ImageCreate</function> 関
+     数の返り値です。
+    </para>
+    <para>
+     引数 filename はオプションであり、省略された場合には、イメージス
+     トリームがそのまま直接出力されます。<function>header</function>
+     関数により、content-type <acronym>image/vnd.wap.wbmp</acronym> を
+     送信することにより、WBMPイメージを直接出力するPHPスクリプトを作成
+     することが可能です。
+     <note>
+      <para>
+       WBMP サポートは、PHPをGD-1.8以降と組み合わせてコンパイルした場
+       合にのみ利用可能です。
+      </para> 
+     </note>
+    </para>
+    <para>
+     <function>ImagePNG</function>, <function>ImageGIF</function>, 
+     <function>ImageJPEG</function>, <function>ImageTypes</function>
+     も参照下さい。
+    </para>
+   </refsect1>
+  </refentry>
 
   <refentry id="function.imageinterlace">
    <refnamediv>
