@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- splitted from ./ja/functions/mail.xml, last change in rev 1.4 -->
-<!-- last change to 'mail' in en/ tree in rev 1.2 -->
+<!-- last change to 'mail' in en/ tree in rev 1.17 -->
   <refentry id="function.mail">
    <refnamediv>
     <refname>mail</refname>
@@ -13,12 +12,8 @@
       <methodparam><type>string</type><parameter>to</parameter></methodparam>
       <methodparam><type>string</type><parameter>subject</parameter></methodparam>
       <methodparam><type>string</type><parameter>message</parameter></methodparam>
-      <methodparam><type>string</type><parameter>
-	<replaceable><optional>additional_headers</optional></replaceable>
-       </parameter></methodparam>
-      <methodparam><type>string</type><parameter>
-	<replaceable><optional>additional_parameters</optional></replaceable>
-       </parameter></methodparam>
+      <methodparam choice="opt"><type>string</type><parameter>additional_headers</parameter></methodparam>
+      <methodparam choice="opt"><type>string</type><parameter>additional_parameters</parameter></methodparam>
      </methodsynopsis>
     <simpara>
      <function>mail</function>は<parameter>message</parameter>で
@@ -44,12 +39,34 @@
      <function>mail</function> は、メール送信に成功した場合に &true; 、
      それ以外の場合に &false; を返します。
     </para>
+    <warning>
+     <para>
+      <function>mail</function>のWindows版実装は、UNIX版実装とは
+      多くの点で違います。
+      第一に、メッセージの生成にローカルのバイナリは使用せず、
+      ソケットを通じて直接操作するだけです。
+      これは<literal>MTA</literal>がネットワークソケットをlistenしている
+      必要があるということを意味します（ローカルホスト、リモートマシン
+      どちらでもかまいません）。
+      第二に、<literal>From:</literal>, <literal>Cc:</literal>,
+      <literal>Bcc:</literal>, <literal>Date:</literal>のようなカスタムヘッダは
+      <literal>MTA</literal>が初期段階で解釈するの
+      <emphasis role="strong">ではなく</emphasis>、
+      <literal>PHP</literal>によってパースされます。
+      <literal>PHP</literal> &lt; 4.3 では <literal>Cc:</literal>
+      （大文字小文字は区別されます）ヘッダ要素だけがサポートされていました。
+      <literal>PHP</literal> &gt;= 4.3 では全てヘッダ要素をサポートし、
+      もはやcase-sensitive（大文字小文字を区別する）ではありません。
+     </para>
+    </warning>
     <para>
      <example>
       <title>メールを送信する</title>
       <programlisting>
 <![CDATA[
+<?php
 mail("joecool@example.com", "My Subject", "Line 1\nLine 2\nLine 3");
+?>
 ]]>
       </programlisting>
      </example>
@@ -74,10 +91,12 @@ mail("joecool@example.com", "My Subject", "Line 1\nLine 2\nLine 3");
       <title>追加ヘッダを付加してメールを送信する</title>
       <programlisting>
 <![CDATA[
+<?php
 mail("nobody@example.com", "the subject", $message,
-     "From: webmaster@$SERVER_NAME\r\n"
-    ."Reply-To: webmaster@$SERVER_NAME\r\n"
+     "From: webmaster@{$_SERVER['SERVER_NAME']}\r\n"
+    ."Reply-To: webmaster@{$_SERVER['SERVER_NAME']}\r\n"
     ."X-Mailer: PHP/" . phpversion());
+?>
 ]]>
       </programlisting>
      </example>
@@ -87,8 +106,9 @@ mail("nobody@example.com", "the subject", $message,
      パラメータをメール送信プログラムに渡す際に使用可能です。
      メール送信プログラムは、設定オプション
      <literal>sendmail_path</literal>により設定されます。例えば、
-     sendmailを使用する際にエンベロープのsenderアドレスを設定する際に
-     使用することが可能です。この方法でエンベロープのsenderヘッダを設
+     sendmailを使用する際に<literal>-f</literal>オプションを使って
+     エンベロープのsenderアドレスを設定する際に
+     使用できます。この方法でエンベロープのsenderヘッダを設
      定する際、'X-Warning'ヘッダが付加されないようにWebサーバを実行し
      ているユーザをsendmail設定に追加しておく必要があるかもしれません。
      <example>
@@ -97,8 +117,10 @@ mail("nobody@example.com", "the subject", $message,
       </title>
       <programlisting>
 <![CDATA[
+<?php
 mail("nobody@example.com", "the subject", $message,
-     "From: webmaster@$SERVER_NAME", "-fwebmaster@$SERVER_NAME");
+     "From: webmaster@{$_SERVER['SERVER_NAME']}", "-fwebmaster@{$_SERVER['SERVER_NAME']}");
+?>
 ]]>
       </programlisting>
      </example>
@@ -106,6 +128,9 @@ mail("nobody@example.com", "the subject", $message,
     <note>
      <para>
       この5番目のパラメータは、PHP 4.0.5で追加されました。
+      PHP4.2.3以降、<link linkend="ini.safe-mode">セーフモード</link>
+      の場合このパラメータは無効です。もし使用しようとすると、
+      <function>mail</function>はwarningメッセージを発行して &false; を返します。
      </para>
     </note>
     <para>
@@ -136,6 +161,8 @@ $message = '
  </tr>
  <tr>
   <td>Joe</td><td>3rd</td><td>August</td><td>1970</td>
+ </tr>
+ <tr>
   <td>Sally</td><td>17th</td><td>August</td><td>1973</td>
  </tr>
 </table>
@@ -166,6 +193,17 @@ mail($to, $subject, $message, $headers);
       可能性があります。
      </para>
     </note>
+    <note>
+     <para>
+      <parameter>to</parameter>引数には
+      &quot;Something &lt;someone@example.com&gt;&quot; の形式の
+      メールアドレスを与えることはできません。
+      MTAと通信する際にmail関数はこれを適切にパースできません。
+     </para>
+    </note>
+    <para>
+     See also <function>imap_mail</function>.
+    </para>
    </refsect1>
   </refentry>
 
