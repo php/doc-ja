@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.8 $ -->
-<!-- sync: 1.18 -->
+<!-- $Revision: 1.9 $ -->
+<!-- EN-Revision: 1.23 Maintainer: hirokawa Status: ready -->
+
   <sect1 id="install.apache">
    <title>Apacheサーバ</title>
    <para>
@@ -23,7 +24,7 @@
 
     <example id="install.apache.unix.longer">
      <title>
-      PHP 4インストール手順 (Apache共有モジュール版)
+      PHPインストール手順 (Apache共有モジュール版)
      </title>
      <screen>
 <![CDATA[
@@ -37,52 +38,90 @@
 7.  make
 8.  make install
 9.  cd ../php-xxx
-10. ./configure --with-mysql --with-apxs=/www/bin/apxs
+10. 次にPHPのconfigureを実行します。ここでは、特定の拡張モジュールを有効に
+    するといった様々なオプションを指定してカスタマイズを行います。指定可能な
+    オプションの一覧については、./configure --help を実行して下さい。以下に
+    Apache 1 および MySQL のサポートを有効にする簡単な設定例を示します。
+
+        ./configure --with-mysql --with-apxs=/www/bin/apxs
+
 11. make
 12. make install
 
-  インストール後にconfigureオプションを変更したくなった場合は
-  最後の3つの手順を繰り返してください。新しいモジュールを有効
-  にするにはapacheを再起動するだけです。apacheの再コンパイルは
-  必要ありません。
+    インストール後にconfigureオプションを変更したくなった場合は
+    最後の3つの手順を繰り返してください。新しいモジュールを有効
+    にするにはapacheを再起動するだけです。apacheの再コンパイルは
+    必要ありません。
+    
+    特に断りがない限り、'make install' は、PEAR、
+    phpizeのような様々なPHP関連ツール、CLI版PHPなどもインストールする
+    ことに注意して下さい。
 
-13. cp php.ini-dist /usr/local/lib/php.ini
+13. php.iniファイルを設定します。
 
-  PHPオプションを設定するために.iniファイルを編集して下さい。このファ
- イルを他の場所に置きたい場合は、手順10でオプション
-  --with-config-file-path=/path を使用して下さい。
+    cp php.ini-dist /usr/local/lib/php.ini
 
-14. httpd.conf または srm.conf ファイルで以下の行がコメントアウト
-    されていないかどうか(つまり有効になっているかどうか)確認して
-    ください。
+    PHPオプションを設定するために.iniファイルを編集することになります。このファ
+    イルを他の場所に置きたい場合は、手順10でオプション
+    --with-config-file-path=/path を使用して下さい。
 
-    AddType application/x-httpd-php .php
+    php.ini-recommended を選んだ場合には、中に記載されている変更点の一覧を
+    読み、PHPの動作に与える影響についてよく理解するようにして下さい。
 
-    LoadModule php4_module        libexec/libphp4.so
- 
-  ここで好きな拡張子を選択できます。.php は単に推奨されるだけです。
-  .htmlを選択することも可能でし、旧バージョンとの互換のために.php3
-  を使用することも出来ます。
+14. httpd.conf を編集し、PHPモジュールをロードするようにして下さい。
+    LoadModule命令の右側に記述するパスは、システムのPHPモジュールを
+    指している必要があります。
+    上記の make install により既にこの設定は追加されていますが、確認が必要です。
 
-  LoadModule文に記述されているパスはあなたのシステムにインストール
-  されているPHPモジュールを指している必要があります。上記の例はこの
-  手順に沿ってインストールを行った場合のパスです。
+    PHP 4の場合:
+            
+      LoadModule php4_module libexec/libphp4.so
 
-15. 通常の手順により Apache サーバを起動して下さい。(HUPまたはUSR1シグ
+    PHP 5の場合:
+                      
+      LoadModule php5_module libexec/libphp5.so
+      
+15. そして、httpd.confのAddModuleセクションにおいて、
+    ClearModuleListの下あたりに以下を追加して下さい。
+    
+    PHP 4の場合:
+    
+      AddModule mod_php4.c
+      
+    PHP 5の場合:
+    
+      AddModule mod_php5.c
+
+16. Apacheに特定の拡張子をPHPとしてパースするよう指示します。
+    例えば、Apacheが拡張子.phpをPHPとしてパースするようにしてみましょう。
+    他のあらゆる拡張子も単に空白で区切って追加するだけで、PHPとしてパース
+    させることができます。ここでは、例として .phtmlを追加してみます。
+
+      AddType application/x-httpd-php .php .phtml
+
+    PHPのソースをハイライト表示するために、拡張子.phpsを設定することも
+    よく行われます。
+    
+      AddType application/x-httpd-php-source .phps
+
+17. 通常の手順により Apache サーバを起動して下さい。(HUPまたはUSR1シグ
     ナルを使用してリロードするのではなく)サーバを停止してから再起動す
     る必要があります。
 ]]>
      </screen>
     </example>
    
-    <para>
-     Apache のインストールやUNIXの種類によりサーバを停止し、再起動する
-     方法はいくつもあります。複数のApache/UNIXの組合せについてサーバを
-     再起動する際に使用される典型的な方法を以下に示します。
-     <literal>/path/to/</literal> を使用するシステムのアプリケーション
-     へのパスに置き換えて読んで下さい。
-     <informalexample>
-      <screen>
+  <para>
+   Apache のインストールやUNIXの種類によりサーバを停止し、再起動する
+   方法はいくつもあります。複数のApache/UNIXの組合せについてサーバを
+   再起動する際に使用される典型的な方法を以下に示します。
+   <literal>/path/to/</literal> を使用するシステムのアプリケーション
+   へのパスに置き換えて読んで下さい。
+  </para>
+  <para>
+   <example>
+    <title>Apacheを再起動するためのコマンドの例</title>
+    <programlisting role="shell">
 <![CDATA[
 1. 複数の Linux および SysV から派生したもの:
 /etc/rc.d/init.d/httpd restart
@@ -101,16 +140,18 @@
 /path/to/apachectl stop
 /path/to/apachectl startssl
 ]]>
-      </screen>
-     </informalexample>
-     apachectl および http(s)dctl の実行ファイルの位置はシステムにより
-     異なります。システムが <literal>locate</literal> または
-     <literal>whereis</literal> または <literal>which</literal> をサポー
-     トしている場合、サーバ制御用プログラムを見つけるために使用するこ
-     とが可能です。
-    </para>
-    
-    <para>
+    </programlisting>
+   </example>
+  </para>
+  <para>
+   apachectl および http(s)dctl の実行ファイルの位置はシステムにより
+   異なります。システムが <literal>locate</literal> または
+   <literal>whereis</literal> または <literal>which</literal> を
+   サポートしている場合、サーバ制御用プログラムを見つけるために使用するこ
+   とが可能です。
+  </para>
+  
+  <para>
      PHPをApache用にコンパイルする別の例を以下に示します。
      <informalexample>
        <programlisting role="shell">
@@ -282,48 +323,52 @@ Group "#-1"
      </para>
     </warning>
 
-    <para>
-     PHPをApacheのモジュールとして使用したい場合、必ず
-     <filename>php4ts.dll</filename>をwindows/system (Windows 9x/Meの場
-     合)またはwinnt/system32 (Windows NT/2000/XPの場合)ディレクトリに移
-     動し、以前のファイルを上書きするようにして下さい。
-     次に以下の行をApacheの&httpd.conf;ファイルに追加して下さい。
-     <itemizedlist>
-      <listitem>
-       <simpara>
-         &httpd.conf;をエディタで開き、<literal>LoadModule</literal>
-         ディレクティブのリストの<emphasis>最後に</emphasis>以下のように追加
-         してください。
-         <literal>LoadModule php4_module c:/php/sapi/php4apache.dll</literal>
-       </simpara>
-      </listitem>
-      <listitem>
-       <simpara>
-        ApacheのWindows用インストーラーを使用した場合には
-        <literal>AddModule</literal>ディレクティブに
-        <filename>mod_php4.c</filename>を定義する必要があります。
-        これは<literal>ClearModuleList</literal>ディレクティブが定義されて
-        いる場合においては重要なことです。
-        (少し行スクロールすると見つかるでしょう)
-        <literal>AddModule</literal>のエントリのリストを探して、
-        そのリストの<emphasis>最後</emphasis>に次のように追加します。
-        <literal>AddModule mod_php4.c</literal>
-        </simpara>
-      </listitem>
-      <listitem>
-       <simpara>
-         <literal># AddType allows you to tweak mime.types</literal>のような
-         フレーズを探してください。<literal>AddType</literal>エントリが
-         いくつか見つかるでしょう。そのリストの最後に次のように
-         追加してください。
-         <literal>AddType application/x-httpd-php .php</literal>.
-         PHPにパースさせたい拡張子を好きなように設定できます。
-         .php は単に推奨されるだけです。.htmlを選択することも可能ですし、
-         旧バージョンとの互換のために .php3 を使用することも出来ます。
-       </simpara>
-      </listitem>
-     </itemizedlist>
-    </para>
+  <para>
+   PHPをApacheのモジュールとして使用したい場合、必ず
+   <filename>php4ts.dll</filename>をwindows/system (Windows 9x/Meの場
+   合)またはwinnt/system32 (Windows NT/2000/XPの場合)ディレクトリに移
+   動し、以前のファイルを上書きするようにして下さい。
+   次に以下の行をApacheの&httpd.conf;ファイルに追加して下さい。
+   <itemizedlist>
+    <listitem>
+     <simpara>
+      
+      PHP 4の場合、&httpd.conf;をエディタで開き、<literal>LoadModule</literal>
+      ディレクティブのリストの<emphasis>最後に</emphasis>以下のように追加
+      してください。
+      <literal>LoadModule php4_module "c:/php/sapi/php4apache.dll"</literal>
+      そして、PHP 5の場合は以下のようにして下さい。
+      <literal>LoadModule php5_module "c:/php/sapi/php5apache.dll"</literal>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      ApacheのWindows用インストーラーを使用した場合には
+      <literal>AddModule</literal>ディレクティブに
+      <filename>mod_php4.c</filename>を定義する必要があります。
+      これは<literal>ClearModuleList</literal>ディレクティブが定義されて
+      いる場合においては重要なことです。
+      (少し行スクロールすると見つかるでしょう)
+      <literal>AddModule</literal>のエントリのリストを探して、
+      そのリストの<emphasis>最後</emphasis>に次のように追加します。
+      <literal>AddModule mod_php4.c</literal>
+      PHP 5の場合には、<literal>AddModule mod_php5.c</literal> とします。
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <literal># AddType allows you to tweak mime.types</literal>のような
+      フレーズを探してください。<literal>AddType</literal>エントリが
+      いくつか見つかるでしょう。そのリストの最後に次のように
+      追加してください。
+      <literal>AddType application/x-httpd-php .php</literal>.
+      PHPにパースさせたい拡張子を好きなように設定できます。
+      .php は単に推奨されるだけです。.htmlを選択することも可能ですし、
+      旧バージョンとの互換のために .php3 を使用することも出来ます。
+     </simpara>
+    </listitem>
+   </itemizedlist>
+  </para>
   
     <simpara>
      設定ファイルを変更した後、サーバーを再起動することを忘れないで
