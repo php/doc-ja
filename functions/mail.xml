@@ -5,6 +5,61 @@
    <simpara>
     <function>mail</function>関数によりメールを送ることができます。
    </simpara>
+
+   <variablelist>
+    <title>Mail設定ディレクティブ</title>
+
+    <varlistentry id="ini.smtp">
+     <term>
+      <parameter>SMTP</parameter>
+      <type>string</type>
+     </term>
+     <listitem>
+      <para>
+       SMTPサーバのDNS名またはIPアドレス。Windows環境で動作するPHPは、
+       <function>mail</function>巻数で送信するメールに関してこの設定値
+       を使用します。
+      </para>
+     </listitem>
+    </varlistentry>
+
+    <varlistentry id="ini.sendmail-from">
+     <term>
+      <parameter>sendmail_from</parameter>
+      <type>string</type>
+     </term>
+     <listitem>
+      <para>
+       Windows環境でPHPから送信されるメールにおいて "From:" に使用する
+       メールアドレスを指定します。
+      </para>
+     </listitem>
+    </varlistentry>
+
+    <varlistentry id="ini.sendmail-path">
+     <term>
+      <parameter>sendmail_path</parameter>
+      <type>string</type>
+     </term>
+     <listitem>
+      <para>
+       <command>sendmail</command> プログラムを探すパスを指定します。
+       通常、<filename>/usr/sbin/sendmail</filename> または
+       <filename>/usr/lib/sendmail</filename>です。
+       <command>configure</command> は、このパスを探し、デフォルト値と
+       して設定しますが、これで上手くいかない場合にはこのオプションで
+       設定する必要があります。
+      </para>
+      <para>
+       sendmailを使用していないシステムは、必要に応じてこのディレクティ
+       ブに使用するメールシステムが提供するsendmailのラッパー/代替品を
+       設定する必要があります。例えば、<ulink
+       url="&url.qmail;">Qmail</ulink>ユーザは、通常、
+       <filename>/var/qmail/bin/sendmail</filename>に設定します。
+      </para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
   </partintro>
 
   <refentry id="function.mail">
@@ -42,8 +97,7 @@
      情報については、
      <ulink url="http://www.zend.com/zend/spotlight/sendmimeemailpart1.php"
       >http://www.zend.com/zend/spotlight/sendmimeemailpart1.php</ulink> 
-     または RFC 1896 (<ulink url="http://www.rfc-editor.org/">
-      http://www.rfc-editor.org/</ulink>を参照)を参照下さい。
+     または <ulink url="&url.rfc1896;">RFC 1896</ulink>を参照下さい。
     </simpara>
     <para>
      <function>mail</function> は、メール送信に成功した場合に &true; 、
@@ -53,7 +107,7 @@
      <example>
       <title>メールを送信する</title>
       <programlisting role="php">
-mail ("rasmus@lerdorf.on.ca", "My Subject", "Line 1\nLine 2\nLine 3");
+mail("joecool@example.com", "My Subject", "Line 1\nLine 2\nLine 3");
       </programlisting>
      </example>
     </para>
@@ -64,32 +118,43 @@ mail ("rasmus@lerdorf.on.ca", "My Subject", "Line 1\nLine 2\nLine 3");
     </simpara>
     <note>
      <para>
-      Win32システムでは、ヘッダを分割するために<literal>\r\n</literal>
-      を使用する必要があります。Win32システムでは、cc: および bcc: ヘッ
-      ダは大文字小文字を区別し、<literal>Cc:</literal>および
-      <literal>Bcc:</literal>と書く必要があることに注意して下さい。
+      複数のヘッダを区切る場合、<literal>\r\n</literal>を使用する必要
+      があります。ただし、いくつかのUnix MTA(Mail transfer agents)では
+      改行文字(<literal>\n</literal>)だけでも動作します。
+      Win32システムでは、Cc: ヘッダは大文字小文字を区別し、
+      <literal>Cc:</literal>と書く必要があります。Bcc:ヘッダはWin32シ
+      ステムではサポートされていません。
      </para>
     </note>
-    <simpara>
-     5番目のパラメータを指定した場合、PHPはこのデータをメーラをコール
-     際に追加します。この機能は、sendmailを使用する際に正しい
-     Return-Pathヘッダを設定したい場合に便利です。
-    </simpara>
     <para>
      <example>
-      <title>追加ヘッダを指定してメールを送信</title>
+      <title>追加ヘッダを付加してメールを送信する</title>
       <programlisting role="php">
-mail("nobody@aol.com", "the subject", $message,
-     "From: webmaster@$SERVER_NAME\nReply-To: webmaster@$SERVER_NAME\nX-Mailer: PHP/" . phpversion());
+mail("nobody@example.com", "the subject", $message,
+     "From: webmaster@$SERVER_NAME\r\n"
+    ."Reply-To: webmaster@$SERVER_NAME\r\n"
+    ."X-Mailer: PHP/" . phpversion());
       </programlisting>
      </example>
-     5番目のパラメータを指定するとこれが使用するメーラのコマンドライン
-     パラメータに追加されます。以下の例では、sendmailに正しい
-     Return-Pathを設定しています。通常、sendmailは-fパラメータを使用し
-     た場合にX-Authentication-Warningヘッダを追加します。これは、通常、
-     Webサーバのユーザが認証済のユーザのメンバではないことが多いからで
-     す。この警告をなくすには、Webサーバのユーザを使用するsendmailの設
-     定ファイルの認証済のユーザ(trusted users)に追加する必要があります。
+    </para>
+    <para>
+     パラメータ<parameter>additional_parameters</parameter>は、追加の
+     パラメータをメール送信プログラムに渡す際に使用可能です。
+     メール送信プログラムは、設定オプション
+     <literal>sendmail_path</literal>により設定されます。例えば、
+     sendmailを使用する際にエンベロープのsenderアドレスを設定する際に
+     使用することが可能です。この方法でエンベロープのsenderヘッダを設
+     定する際、'X-Warning'ヘッダが付加されないようにWebサーバを実行し
+     ているユーザをsendmail設定に追加しておく必要があるかもしれません。
+     <example>
+      <title>
+       追加ヘッダ及び追加コマンドラインパラメータを指定してメールを送信
+      </title>
+      <programlisting role="php">
+mail("nobody@example.com", "the subject", $message,
+     "From: webmaster@$SERVER_NAME", "-fwebmaster@$SERVER_NAME");
+      </programlisting>
+     </example>
     </para>
     <note>
      <para>
@@ -97,62 +162,59 @@ mail("nobody@aol.com", "the subject", $message,
      </para>
     </note>
     <para>
-     <example>
-      <title>
-       ヘッダおよびコマンドラインパラメータを追加してメールを送信
-      </title>
-      <programlisting role="php">
-mail("nobody@aol.com", "the subject", $message,
-     "From: webmaster@$SERVER_NAME", "-fwebmaster@$SERVERNAME");
-      </programlisting>
-     </example>
-     複雑なemailメッセージを作成する際に単純な文字列結合を使用すること
+     複雑なemailメッセージを作成する際に簡単な文字列結合を使用すること
      も可能です。
      <example>
       <title>複雑なemailを送信する</title>
       <programlisting role="php">
-/* recipients */
-$recipient .= "Mary &lt;mary@u.college.edu>" . ", " ; //コンマで区切る
-$recipient .= "Kelly &lt;kelly@u.college.edu> . ", ";
-$recipient .= "ronabop@php.net";
+/* 送信先 */
+$to  = "Mary &lt;mary@example.com&gt;" . ", " ; // カンマで区切る
+$to .= "Kelly &lt;kelly@example.com&gt;";
 
 /* 題名 */
 $subject = "Birthday Reminders for August";
 
 /* メッセージ */
-$message .= "The following email includes a formatted ASCII table\n";
-$message .= "Day \t\tMonth \t\tYear\n";
-$message .= "3rd \t\tAug \t\t1970\n";
-$message .= "17rd\t\tAug \t\t1973\n";
+$message = '
+&lt;html&gt;
+&lt;head&gt;
+ &lt;title&gt;Birthday Reminders for August&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;p&gt;Here are the birthdays upcoming in August!&lt;/p&gt;
+&lt;table&gt;
+ &lt;tr&gt;
+  &lt;th&gt;Person&lt;/th&gt;&lt;th&gt;Day&lt;/th&gt;&lt;th&gt;Month&lt;/th&gt;&lt;th&gt;Year&lt;/th&gt;
+ &lt;/tr&gt;
+ &lt;tr&gt;
+  &lt;td&gt;Joe&lt;/td&gt;&lt;td&gt;3rd&lt;/td&gt;&lt;td&gt;August&lt;/td&gt;&lt;td&gt;1970&lt;/td&gt;
+  &lt;td&gt;Sally&lt;/td&gt;&lt;td&gt;17th&lt;/td&gt;&lt;td&gt;August&lt;/td&gt;&lt;td&gt;1973&lt;/td&gt;
+ &lt;/tr&gt;
+&lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+';
 
-/* 保存されたsigunatureを追加できます */ 
-$message .= "--\r\n"; // signatureの区切り
-$message .= "Birthday reminder copylefted by public domain";
+/* HTMLメールを送信する場合、Content-typeヘッダを指定可能です。 */
+$headers  = "MIME-Version: 1.0\r\n";
+$headers .= "Content-type: text/html; charset=iso-8859-1\r\n";
 
-/* エラー用、From、cc、bcc、等の追加ヘッダ */
+/* 追加ヘッダ */
+$headers .= "From: Birthday Reminder &lt;birthday@example.com&gt;\r\n";
 
-$headers .= "From: Birthday Reminder &lt;birthday@php.net>\n";
-$headers .= "X-Sender: &lt;birthday@php.net>\n"; 
-$headers .= "X-Mailer: PHP\n"; // メイラー
-$headers .= "X-Priority: 1\n"; // 緊急メッセージ!
-$headers .= "Return-Path: &lt;birthday@php.net>\n";  // エラー時の返信先
-
-/* HTMLメールを送信したい場合、次の行のコメントを外して下さい */
-// $headers .= "Content-Type: text/html; charset=iso-8859-1\n" // MIME型
-
-$headers .= "cc:birthdayarchive@php.net\n"; // CCの宛先
-$headers .= "bcc:birthdaycheck@php.net, birthdaygifts@php.net"; // BCCの宛先
+$headers .= "Cc: birthdayarchive@example.com\r\n";
+$headers .= "Bcc: birthdaycheck@example.com\r\n";
 
 /* ここでメールを送信する */
-mail($recipient, $subject, $message, $headers);
+mail($to, $subject, $message, $headers);
       </programlisting>
      </example>
     </para>
     <note>
      <para>
-      追加したパラメータあるいはsubjectパラメータの後に改行(または他の
-      空白文字)を付加しないようにして下さい。この場合、おかしな結果に
-      なってしまう可能性があります。
+      <parameter>to</parameter>または<parameter>subject</parameter>に
+      改行文字を含まないようにして下さい。さもないと、正常に動作しない
+      可能性があります。
      </para>
     </note>
    </refsect1>
@@ -179,13 +241,10 @@ mail($recipient, $subject, $message, $headers);
      <example>
       <title>ハッシュ値を計算し、ユーザを登録する</title>
       <programlisting role="php">
-$user = "kris@koehntopp.de";
+$user = "joecool@example.com";
 $hash = ezmlm_hash ($user);
-$query = sprintf ("INSERT INTO sample VALUES (%s,'%s')",
-       $hash,
-       $user
-       );
-$db->query ($query); // PHPLIB dbインターフェースを使用します
+$query = sprintf ("INSERT INTO sample VALUES (%s, '%s')", $hash, $user);
+$db->query($query); // PHPLIB dbインターフェースを使用します
       </programlisting>
      </example>
     </para>

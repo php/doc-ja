@@ -1,7 +1,7 @@
  <appendix id="migration4">
   <title>PHP 3.0からPHP 4.0への移行</title>
 	
-  <section>
+  <section id='migration4.changes'>
    <title>PHP 4.0での変更点</title>
    <para>
     PHP 4.0 とこれに組み込まれた Zend エンジンは、PHPの性能と機能を大
@@ -15,7 +15,150 @@
    </para>
   </section>
 
-  <section>
+  <section id="migration4.php4.with.php3">
+   <title>PHP 3とPHP 4を同時に実行する</title>
+   <simpara>
+    最近のオペレーティングシステムでは、バージョン管理及びスコープ監理
+    を行う機能が提供されています。この機能により、１つのApacheサーバ上
+    のモジュールとしてPHP 3とPHP 4を同時に実行することが可能です。
+   </simpara>
+   <simpara>
+    この機能は、以下のプラットフォーム上での動作が確認されています。
+   </simpara>
+   <itemizedlist>
+     <listitem>
+     <simpara>
+      最近のbinutils (binutils 2.9.1.0.25 でテスト済み) を備えたLinux
+     </simpara>
+    </listitem>
+     <listitem>
+     <simpara>
+      Solaris 2.5以降
+     </simpara>
+    </listitem>
+     <listitem>
+     <simpara>
+      FreeBSD (3.2, 4.0 でテスト済み)
+     </simpara>
+    </listitem>
+   </itemizedlist>
+   <para>
+    この機能を使用するには、PHP3 および PHP4 でAPXS(--with-apxs)および
+    必要なリンク拡張(--enable-versioning)を指定します。それ以外の場合、
+    通常の命令が使用されます。例えば、
+    <informalexample>
+     <programlisting>
+$ ./configure \
+  --with-apxs=/apache/bin/apxs \
+  --enable-versioning \
+  --with-mysql \
+  --enable-track-vars
+     </programlisting>
+    </informalexample>
+   </para>
+  </section>
+
+  <section id="migration4.configuration">
+   <title>設定ファイルの移行</title>
+   <para>
+    グローバル設定ファイル<filename>php3.ini</filename>は、名前が
+    <filename>php.ini</filename>に変更となりました。
+   </para>
+   <para>
+    Apache設定ファイルの場合、変更点はやや多くなっています。PHPモジュー
+  ルにより認識されるMIME型が変更となりました。
+    <informalexample>
+     <programlisting>
+application/x-httpd-php3        --&gt;    application/x-httpd-php
+application/x-httpd-php3-source --&gt;    application/x-httpd-php-source
+     </programlisting>
+    </informalexample>
+   </para>
+   <para>
+    以下の構文を使用することにより、(サーバに組み込まれているバージョ
+    ンに基づき)両方のバージョンで動作する設定ファイルを作成することが
+    可能です。
+    <informalexample>
+     <programlisting>
+AddType  application/x-httpd-php3        .php3
+AddType  application/x-httpd-php3-source .php3s
+
+AddType  application/x-httpd-php         .php
+AddType  application/x-httpd-php-source  .phps
+     </programlisting>
+    </informalexample>
+   </para>
+   <simpara>
+    加えて、Apache用のPHPディレクティブが変更となっています。
+   </simpara>
+   <para>
+    PHP 4.0以降、PHPに関連するApacheディレクティブは以下の4種類のみと
+    なっています。
+    <informalexample>
+     <programlisting>
+php_value [PHPディレクティブ名] [値]
+php_flag [PHPディレクティブ名] [On|Off]
+php_admin_value [PHPディレクティブ名] [値]
+php_admin_flag [PHPディレクティブ名] [On|Off]
+     </programlisting>
+    </informalexample>
+   </para>
+   <simpara>
+    Adminの値とそれ以外の値には次の2つの違いがあります。
+   </simpara>
+   <itemizedlist>
+    <listitem>
+     <simpara>
+      Admin の値(またはフラグ)は、サーバ全体のApache設定ファイル(すな
+      わちhttpd.conf)でのみ設定可能です。
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      通常の値(またはフラグ)はセーフモードのようなある種のPHPディレク
+      ティブを制御できません(セーフモードの設定を.htaccessで上書きで
+      きるとしたら、セーフモードの目的は達成されなくなります)。逆に
+      Admin値では全てのPHPディレクティブの値を修整可能です。
+     </simpara>
+    </listitem>
+   </itemizedlist>
+   <simpara>
+    移行の過程をより容易にするために、PHP 4.0 にはApache設定命令と.
+    htaccessファイルをPHP 3.0とPHP 4.0の両方で動作するように変換するス
+    クリプトがバンドルされています。これらのスクリプトは、MIME型の行を
+    変換しません。これらは自分で変更を行う必要があります。
+   </simpara>
+   <para>
+    Apache設定ファイルを変換するために、(scripts/apache/ディレクトリに
+    ある)apconf-conv.sh スクリプトを実行して下さい。 例えば、
+    <informalexample>
+     <programlisting>
+~/php4/scripts/apache:#  ./apconf-conv.sh /usr/local/apache/conf/httpd.conf
+     </programlisting>
+    </informalexample>
+   </para>
+   <simpara>
+    元の設定ファイルは、httpd.conf.origに保存されます。
+   </simpara>
+   <para>
+    .htaccess ファイルを変換するには、(同じくscripts/apache/ディレクト
+    リにある)aphtaccess-conv.sh スクリプトを実行して下さい。
+    <informalexample>
+     <programlisting>
+~/php4/scripts/apache:#  find / -name .htaccess -exec ./aphtaccess-conv.sh {} \;
+     </programlisting>
+    </informalexample>
+   </para>
+   <simpara>
+    同様に古い.htaccessファイルには.origが付加されて保存されます。
+   </simpara>
+   <simpara>
+    この変換スクリプトは、awkがインストールされていることを必要としま
+    す。
+   </simpara>
+  </section>
+
+  <section id='migration4.parser'>
    <title>パーサの動作</title>
    <para>
     パーサと実行は、二つの完全に分割されたステップになりました。ファイ
@@ -51,10 +194,10 @@
    </para>
   </section>
 
-  <section>
+  <section id='migration4.error-reporting'>
    <title>エラー出力</title>
 	 
-   <section>
+   <section id='migration4.error-reporting.config'>
     <title>設定変更</title>
     <para>
      PHP 3.0 では、エラー出力レベルは異なったエラーレベルを意味する数
@@ -104,7 +247,7 @@
     </warning>
    </section>
 
-   <section>
+   <section id='migration4.error-reporting.additions'>
     <title>追加された警告メッセージ</title>
     <para>
      既存のPHP 3.0コードの多くは、このコードのように非常に悪いスタイル
@@ -139,7 +282,7 @@
    
   </section>
 
-  <section>
+  <section id='migration4.initializers'>
    <title>イニシャライザ</title>
    <para>
     静的変数とクラスメンバのイニシャライザは、PHP 3.0では有効な式なら
@@ -154,7 +297,7 @@
    </para>
   </section>
 
-  <section>
+  <section id='migration4.empty'>
    <title><literal>empty("0")</literal></title>
    <para>
     恐らく最も動作上の問題のある変更は、<function>empty</function>の動
@@ -170,7 +313,7 @@
    </para>
   </section>
 
-  <section>
+  <section id='migration4.missing'>
    <title>廃止された関数</title>
    <para>
     PHP 4.0 は多くの新しい機能と拡張を導入していますが、同時にいくつか
@@ -183,7 +326,7 @@
     止されています。
    </para>
 
-   <section>
+   <section id='migration4.missing.concept'>
     <title>コンセプトの変更により廃止された関数</title>
     <para>
      PHP 4.0 ではパースと実行が分割されており、実行時に(現在、Zendエン
@@ -201,7 +344,7 @@
     </para>
    </section>
 
-   <section>
+   <section id='migration4.deprecate'>
     <title>推奨されない関数と拡張</title>
     <para>
      Adabas および Solid データベース拡張は、もはや推奨されません。
@@ -209,7 +352,7 @@
     </para>
    </section>
 
-   <section>
+   <section id='migration4.unset'>
     <title><function>unset</function>のステータスの変更</title>
     <para>
      <function>unset</function>はまだ使用可能ですが、PHP 4.0ではリテラ
@@ -232,7 +375,7 @@
    </section>
   </section>
 
-  <section>
+  <section id='migration4.extensions'>
    <title>PHP 3.0 拡張機能</title>
    <para>
     PHP 3.0 用に描かれた拡張は、PHP 4.0 ではバイナリレベルでもソースレ
@@ -242,7 +385,7 @@
    </para>
   </section>
 
-  <section>
+  <section id='migration4.strings'>
    <title>文字列中の変数置換</title>
    <para>
     PHP 4.0 では文字列中の新しい変数置換の機構が追加されています。文字
@@ -269,7 +412,7 @@
    </para>
   </section>
 
-  <section>
+  <section id='migration4.cookies'>
    <title>クッキー</title>
    <para>
     PHP 3.0 は、コード中の<function>setcookie</function>のコールとは逆
