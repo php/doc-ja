@@ -1,53 +1,176 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- splitted from ./ja/functions/dba.xml, last change in rev 1.1 -->
-<!-- EN-Revision: 1.2 Maintainer: hirokawa Status: ready -->
-  <refentry id="function.dba-open">
-   <refnamediv>
-    <refname>dba_open</refname>
-    <refpurpose>データベースをオープンする</refpurpose>
-   </refnamediv>
-   <refsect1>
-    <title>説明</title>
-     <methodsynopsis>
-      <type>int</type><methodname>dba_open</methodname>
-      <methodparam><type>string</type><parameter>path</parameter></methodparam>
-      <methodparam><type>string</type><parameter>mode</parameter></methodparam>
-      <methodparam><type>string</type><parameter>handler</parameter></methodparam>
-      <methodparam><type></type><parameter>
-	<replaceable><optional>...</optional></replaceable>
-       </parameter></methodparam>
-     </methodsynopsis>
-    <para>
-     <function>dba_open</function>は、<parameter>handler</parameter>を用いて
-     <parameter>mode</parameter>を指定し、<parameter>path</parameter> 
-     へのデータベースインスタンスを確立します。
-    </para>
-    <para>
-     <parameter>path</parameter>は、ファイルシステムの通常のパスです。
-    </para>
-    <para>
-     <parameter>mode</parameter>には、既存のデータベースにアクセスする
-     際に読み込みアクセス用に "r"、読込み/書き込みアクセス用に"w"を、
-     読み込み/書き込みアクセスおよび存在しない場合にデータベースの作成をする
-     ために"c"を、作成、上書き、読込み/書き込みアクセス用に "n" を指定
-     します。
-    </para>
-    <para>
-     <parameter>handler</parameter> は、<parameter>path</parameter>を
-     アクセスするために使用するハンドルの名前です。
-     <function>dba_open</function> に指定した全てのオプションパラメータを
-     渡し、そのオプションの機能を用いることができます。
-    </para>
-    <para>
-     <function>dba_open</function> は、オープンに成功した場合に正の
-     ハンドラID、失敗した場合に&false;を返します。
-    </para>
-    <para>
-     <function>dba_popen</function>、
-     <function>dba_close</function>も参照ください。
-    </para>
-   </refsect1>
-  </refentry>
+<!-- $Revision: 1.5 $ -->
+<!-- EN-Revision: 1.12 Maintainer: hirokawa Status: ready -->
+<refentry id="function.dba-open">
+ <refnamediv>
+  <refname>dba_open</refname>
+  <refpurpose>データベースをオープンする</refpurpose>
+ </refnamediv>
+ <refsect1>
+  <title>説明</title>
+  <methodsynopsis>
+   <type>resource</type><methodname>dba_open</methodname>
+   <methodparam><type>string</type><parameter>path</parameter></methodparam>
+   <methodparam><type>string</type><parameter>mode</parameter></methodparam>
+   <methodparam><type>string</type><parameter>handler</parameter></methodparam>
+   <methodparam choice="opt"><parameter>...</parameter></methodparam>
+  </methodsynopsis>
+  <para>
+   <function>dba_open</function>は、<parameter>handler</parameter>を用いて
+   <parameter>mode</parameter>を指定し、<parameter>path</parameter> への
+   データベースインスタンスを生成します。
+  </para>
+  <para>
+   <parameter>path</parameter>は、ファイルシステムの通常のパスです。
+  </para>
+  <para>
+   <parameter>mode</parameter>には、既存のデータベースにアクセスする
+   際に読み込みアクセス用に "r"、読込み/書き込みアクセス用に"w"を、
+   読み込み/書き込みアクセスおよび存在しない場合にデータベースの作成をする
+   ために"c"を、作成、上書き、読込み/書き込みアクセス用に "n" を指定
+   します。さらに次の文字でデータベースをロックする方法を指定することができます。
+   <filename>.lck</filename>でデータベースをロックする場合には"l"、
+   データベースファイル自体をロックする場合は"d"を使用してください。
+   全てのアプリケーションで統一した方法を用いることが重要です。
+   アクセスのテストを行う際にロックのために待ちたくない場合、"t"を3番目の文字に追加する
+   ことができます。明らかにデータベースのロックが不要な場合には、"l"や"d"の代わりに
+   "-"を使用してロックを行わないことができます。
+   "d"、"l"または"-"のどれも指定されない場合、"d"が指定されたものとして
+   データベースファイルをロックします。
+  </para>
+  <para>
+   <parameter>handler</parameter> は、
+   <link linkend="dba.requirements">ハンドラ名</link>で、
+   <parameter>path</parameter>をアクセスする際に使用することができます。
+   このハンドラには、<function>dba_open</function> に指定した全てのオプション
+   パラメータが渡され、そのオプションの機能を用いることができます。
+  </para>
+  <para>
+   <function>dba_open</function> は、オープンに成功した場合に正の
+   ハンドラID、失敗した場合に&false;を返します。
+  </para>
+  <note>
+   <para>
+    特定のデータベースファイルに同時に書き込めるのは、一つだけです。
+    dbaをWebサーバで使用している際に複数のリクエストが書き込み処理を
+    行う必要がある場合、他の書き込みが終わってからでないと次の書き込みを行うことが
+    できません。また、書き込み時に読み込むことはできません。
+    dbaエクステンションは、このようなことを防止するためにロックを使用します。
+    以下の表を参照してください:
+    <table>
+     <title>DBAのロック処理</title>
+     <tgroup cols="9">
+      <thead>
+       <row>
+        <entry>already open</entry>
+        <entry><parameter>mode</parameter> = "rl"</entry>
+        <entry><parameter>mode</parameter> = "rlt"</entry>
+        <entry><parameter>mode</parameter> = "wl"</entry>
+        <entry><parameter>mode</parameter> = "wlt"</entry>
+        <entry><parameter>mode</parameter> = "rd"</entry>
+        <entry><parameter>mode</parameter> = "rdt"</entry>
+        <entry><parameter>mode</parameter> = "wd"</entry>
+        <entry><parameter>mode</parameter> = "wdt"</entry>
+       </row>
+      </thead>
+      <tbody>
+       <row>
+        <entry>not open</entry>
+        <entry>ok</entry>
+        <entry>ok</entry>
+        <entry>ok</entry>
+        <entry>ok</entry>
+        <entry>ok</entry>
+        <entry>ok</entry>
+        <entry>ok</entry>
+        <entry>ok</entry>
+       </row>
+       <row>
+        <entry><parameter>mode</parameter> = "rl"</entry>
+        <entry>ok</entry>
+        <entry>ok</entry>
+        <entry>wait</entry>
+        <entry>false</entry>
+        <entry>illegal</entry>
+        <entry>illegal</entry>
+        <entry>illegal</entry>
+        <entry>illegal</entry>
+       </row>
+       <row>
+        <entry><parameter>mode</parameter> = "wl"</entry>
+        <entry>wait</entry>
+        <entry>false</entry>
+        <entry>wait</entry>
+        <entry>false</entry>
+        <entry>illegal</entry>
+        <entry>illegal</entry>
+        <entry>illegal</entry>
+        <entry>illegal</entry>
+       </row>
+       <row>
+        <entry><parameter>mode</parameter> = "rd"</entry>
+        <entry>illegal</entry>
+        <entry>illegal</entry>
+        <entry>illegal</entry>
+        <entry>illegal</entry>
+        <entry>ok</entry>
+        <entry>ok</entry>
+        <entry>wait</entry>
+        <entry>false</entry>
+       </row>
+       <row>
+        <entry><parameter>mode</parameter> = "wd"</entry>
+        <entry>illegal</entry>
+        <entry>illegal</entry>
+        <entry>illegal</entry>
+        <entry>illegal</entry>
+        <entry>wait</entry>
+        <entry>false</entry>
+        <entry>wait</entry>
+        <entry>false</entry>
+       </row>
+      </tbody>
+     </tgroup>
+    </table>
+    <simplelist>
+     <member>ok: 2番目のコールに成功します。</member>
+     <member>wait: 2番目のコールは、最初のコールで<function>dba_close</function>がコールされるまで待ちます。</member>
+     <member>false: 2番目のコールは、falseを返します。</member>
+     <member>illegal: <parameter>mode</parameter>パラメータで"l" および "d" 修正子を混用することはできません。</member>
+    </simplelist>
+   </para>
+  </note>
+  <note>
+   <para>
+    PHP 4.3.0以降、ネットワーク接続されたデータベースファイルをオープンすることができます。
+    しかし、(httpまたはftpのような)ソケット接続が使用された場合、リソース自体ではなくこの接続が
+    ロックされます。このような場合、このリソースに関してロック処理は単に無視されることになり、
+    他の解決策を見付ける必要があることに留意する必要があります。
+   </para>
+  </note>
+  <note>
+   <para>
+    ロック処理と<parameter>mode</parameter>修正子 "l", "d", "-" および "t" は、
+    PHP 4.3.0で追加されました。
+    PHP 4.3.0より前のバージョンのPHPでは、 GDBMを除くデータベースハンドラで
+    同時データベースアクセスに対する保護を行うためには、セマフォを使用する必要がありました。
+    <link linkend="ref.sem">System V セマフォサポート</link>を参照してください。
+   </para>
+  </note>
+  <note>
+   <para>
+    PHP 4.3.5までは、オープンモード'c'は、いくつかの内部ハンドラでは正常に動作せず、
+    既存のデータベースにデータを追加するのではなく、データベースを切り捨ててしまっていました。
+    また、dbm と ndbm は典型的な設定でモード'c'の処理が正常に動作しません。
+    (これは修正できません)
+   </para>
+  </note>
+  <para>
+   <function>dba_popen</function>、
+   <function>dba_close</function>も参照ください。
+  </para>
+ </refsect1>
+</refentry>
 
 <!-- Keep this comment at the end of the file
 Local variables:
