@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- $Revision: 1.1 $ -->
+<!-- EN-Revision: 1.4 Maintainer: haruki Status: ready -->
+<!-- Credits: haruki -->
+<sect1 id="install.unix.gentoo">
+ <title>Gentoo へのインストール</title>
+ <para>
+  このセクションでは、<ulink url="&url.gentoo;">Gentoo Linux</ulink> に
+  PHP をインストールする際の注意事項とヒントについて説明します。
+ </para>
+ <sect2 id="install.unix.gentoo.portage">
+  <title>Portage (emerge) の使用</title>
+   <simpara>
+    PHP ソースをダウンロードし独自でコンパイルすることも可能ですが、
+    Gentoo のパッケージシステムを使用することが、もっとも簡単でクリーンな
+    インストール方法です。Linux でのソフトウエアのビルドに詳しく無いならば、
+    パッケージを使うと良いでしょう。
+   </simpara>
+   <simpara>
+    Gentoo システムのビルドをこれまでに行っていれば、Portage は
+    既に使用したことがあると思います。Apache と PHP のインストールは、
+    他のシステムツールのインストールと何ら変わる所はありません。
+   </simpara>
+   <simpara>
+    最初に、Apache 1.3.x をインストールするか Apache 2.x をインストールするか
+    を決める必要があります。どちらでも PHP を使えます。ただし、以下に示すのは
+    Apache 1.3.x を使う場合です。次に、Portage ツリーが最新かどうか
+    チェックする必要があります。最近アップデートしていないなら、
+    まず <command>emerge sync</command> を実行します。これにより、
+    最新の安定版の Apache と PHP を使用できるようになります。
+   </simpara>
+   <simpara>
+    すべての用意が整ったら、以下の例のようにして、Apache と PHP を
+    インストールできます。
+   </simpara>
+   <example id="install.unix.gentoo.portage.example">
+    <title>Gentoo へのインストール例 (Apache 1.3 使用)</title>
+    <programlisting role="shell">
+<![CDATA[
+# emerge \<apache-2
+# USE="-*" emerge php mod_php
+# ebuild /var/db/pkg/dev-php/mod_php-<your PHP version>/mod_php-<your PHP version>.ebuild config
+# nano /etc/conf.d/apache
+  Add "-D PHP4" to APACHE_OPTS
+  
+# rc-update add apache default
+# /etc/init.d/apache start
+]]>
+    </programlisting>
+   </example>
+   <simpara>
+    Gentoo のサイトには Portage についてのすばらしい
+    <ulink url="&url.gentoo.portage;">マニュアル</ulink>
+    がありますので、参照してください。
+   </simpara>
+   <simpara>
+    Apache 2 を使う場合は、上記の例で、<command>emerge apache</command>
+    とします。
+   </simpara>
+ </sect2>
+ <sect2 id="install.unix.gentoo.config">
+  <title>設定の方法</title>
+   <simpara>
+    上記では、PHP 拡張モジュールを有効にしないで emerge しました。
+    このマニュアルが書かれた時点で、Portage のデフォルトでは、
+    <ulink url="&url.php.pear;">PEAR</ulink> が必要とする XML 拡張モジュールだけが
+    有効とされます。
+    これでは不足の場合も、簡単に、MySQL, gettext, GD などの適当な拡張モジュールを
+    有効にすることができます。
+   </simpara>
+   <simpara>
+    PHP をソースからコンパイルする場合は、拡張モジュールを有効にするのに
+    <command>configure</command> コマンドを使用しました。Gentoo
+    では、「USE フラグ」を使って、configure スクリプトを自動的に設定します。
+    使用可能な USE フラグは、以下のようにすると表示されます。
+   </simpara>
+   <example id="install.unix.gentoo.config.example">
+    <title>使用可能 USE フラグの一覧</title>
+    <programlisting role="shell">
+<![CDATA[
+# USE="-*" emerge -pv php
+
+[ebuild  N    ] dev-php/php-4.3.6-r1  -X -berkdb -crypt -curl -debug -doc 
+-fdftk -firebird -flash -freetds -gd -gd-external -gdbm -gmp -hardenedphp 
+-imap -informix -ipv6 -java -jpeg -kerberos -ldap -mcal -memlimit -mssql 
+-mysql -ncurses -nls -oci8 -odbc -pam -pdflib -png -postgres -qt -readline 
+-snmp -spell -ssl -tiff -truetype -xml2 -yaz  3,876 kB
+]]>
+    </programlisting>
+   </example>
+   <simpara>
+    この出力から解る通り、多くの USE フラグが PHP に対して使用可能です。
+    よく見て、必要なものを選択してください。
+    選択したフラグに必要なライブラリがインストールされていない場合は、
+    Portage により適切にコンパイルされます。
+    <command>emerge -pv</command> をもう一度使用して、設定した USE フラグに応じて
+    Portage が何をコンパイルするか確認してみるのも良いでしょう。
+    たとえば、X がインストールされていない場合に、X が必要となるような
+    USE フラグを設定すると、PHP の前に X がコンパイルされます。このとき、
+    X のコンパイルには数時間もかかってしまいます。
+   </simpara>
+   <simpara>
+    MySQL, cURL および GD サポートを有効にして PHP をコンパイルする場合の
+    コマンドは以下のようになります。
+   </simpara>  
+   <example id="install.unix.gentoo.config.example2">
+    <title>USE フラグを指定して PHP をインストールする</title>
+    <programlisting role="shell">
+<![CDATA[
+# USE="-* curl mysql gd" emerge php mod_php
+]]>
+    </programlisting>
+   </example>
+   <simpara>
+    この例で、php だけでなく mod_php も emerge することを忘れないようにしてください。
+    php はコマンドライン版の PHP に対応し、mod_php は Apache モジュール版の PHP
+    に対応しています。
+   </simpara>
+ </sect2>
+ <sect2 id="install.unix.gentoo.faq">
+  <title>一般的な問題点</title>
+  <itemizedlist>
+   <listitem>
+    <simpara>
+     PHP スクリプトが実行されず、PHP のソースがそのまま表示される場合は、
+     <filename>/etc/conf.d/apache</filename> の編集を忘れているのかもしれません。
+     Apache を -D PHP4 フラグを付けて起動する必要があります。
+     このフラグが付いているかどうか確認するには、Apache が動作している時に、
+     <command>ps ax | grep apache</command> を行います。
+    </simpara>
+   </listitem>
+   <listitem>
+    <simpara>
+     まれに、複数のバージョンの PHP がインストールされてしまう場合があるかもしれません。
+     そうなった場合は、古いバージョンを、以下のようにして、unmerge する必要があります。
+     <command>emerge unmerge mod_php-&lt;old version&gt;</command>
+    </simpara>
+   </listitem>
+   <listitem>
+    <simpara>
+     Java のために PHP を emerge できない場合は、先述の例のように USE フラグの先頭に
+     <command>-*</command> としてください。
+    </simpara>
+   </listitem>
+   <listitem>
+    <simpara>
+     Apache や PHP の設定について何か問題がある場合は、
+     <ulink url="&url.gentoo.forums;">Gentoo Forums</ulink> も参照してください。
+     "Apache PHP" というキーワードで検索してみると良いでしょう。
+    </simpara>
+   </listitem>
+  </itemizedlist>
+ </sect2>
+</sect1>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"../../manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
