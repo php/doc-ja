@@ -89,26 +89,46 @@
     </para>
     <para>
      <example>
-      <title>文字列からページ番号を得る</title>
+      <title>文字列"php"を探す</title>
       <programlisting role="php">
-if (preg_match ("/page\s+#(\d+)/i", "Go to page #9.", $parts)) {
-    print "次のページは $parts[1] です。";
+// パラメータのデリミタの後の"i"は大文字小文字を区別しない検索を示します
+if (preg_match ("/php/i", "PHP is the web scripting language of choice.")) {
+    print "A match was found.";
 } else {
-    print "ページが見つかりません。";
+    print "A match was not found.";
+}
+      </programlisting>
+     </example>
+     <example>
+      <title>単語"web"を探す</title>
+      <programlisting role="php">
+// パターン内の\bは単語の境界を示します。このため、独立した単語の
+// "web"にのみマッチし、"webbing" または "cobweb"のような単語の一
+//  部にはマッチしません
+if (preg_match ("/\bweb\b/i", "PHP is the web scripting language of choice.")) {
+    print "A match was found.";
+} else {
+    print "A match was not found.";
+}
+if (preg_match ("/\bweb\b/i", "PHP is the website scripting language of choice.")) {
+    print "A match was found.";
+} else {
+    print "A match was not found.";
 }
       </programlisting>
      </example>
      <example>
       <title>URLからドメイン名を得る</title>
       <programlisting role="php">
-	preg_match("/^(.*)([^\.]+\.[^\.]+)(\/.*)?/U",
-"http://www.php.net/index.html", $matches);
- 	echo "domain name is: ".$matches[2]."\n";
+preg_match("/^(.*)([^\.]+\.[^\.]+)(\/.*)?/U",
+       "http://www.php.net/index.html", $matches);
+// 2番目の括弧内のパターンを表示
+echo "domain name is: ".$matches[2]."\n"; 
       </programlisting>
      </example>
      この例の出力は以下となります。
      <programlisting>
-      domain name is: php.net
+domain name is: php.net
      </programlisting>
      <function>preg_match_all</function>, 
      <function>preg_replace</function>, 
@@ -233,13 +253,14 @@ preg_match_all ("/\(?  (\d{3})?  \)?  (?(1)  [\-\s] ) \d{3}-\d{4}/x",
       <programlisting role="php">
 $html = "&lt;b&gt;bold text&lt;b&gt;lt;a href=howdy.html&gt;click me&lt;a&gt;
 
-preg_match_all("/(&lt;w]+)[^&gt;lt;2&gt; $html, $matches);
+preg_match_all ("/(&lt;([\w]+)[^&gt;]*&gt;)(.*)(&lt;\/\\2&gt;)/", 
+                $html, $matches);
 
-for($i=0; $i&lt; count($matches[0]); $i++) {
-echo "matched: ".$matches[0][$i]."\n";
-echo "part 1: ".$matches[1][$i]."\n";
-echo "part 2: ".$matches[3][$i]."\n";
-echo "part 3: ".$matches[4][$i]."\n\n";
+for ($i=0; $i&lt; count($matches[0]); $i++) {
+       echo "matched: ".$matches[0][$i]."\n";
+       echo "part 1: ".$matches[1][$i]."\n";
+       echo "part 2: ".$matches[3][$i]."\n";
+       echo "part 3: ".$matches[4][$i]."\n\n";
 }
       </programlisting>
      </example>
@@ -277,7 +298,9 @@ part 3: &lt;a&gt;
       <paramdef>mixed <parameter>pattern</parameter></paramdef>
       <paramdef>mixed <parameter>replacement</parameter></paramdef>
       <paramdef>mixed <parameter>subject</parameter></paramdef>
-      <paramdef>int <parameter><optional>limit</optional></parameter></paramdef>
+      <paramdef>int 
+       <parameter><optional>limit</optional></parameter>
+      </paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
@@ -368,16 +391,16 @@ preg_replace ("/(<\/?)(\w+)([^>]*>)/e",
      <example>
       <title>HTMLをテキストに変換する</title>
       <programlisting role="php">
+// $document には、HTMLドキュメントが含まれている必要があります。
+// このドキュメントのHTMLタグおよびjavascriptの部分と空白文字を
+// 削除します。また、いくつかのHTMLエンティティを等価なテキストに
+// 変換します。
 	  
-// $document should contain an HTML document.
-// This will remove HTML tags, javascript sections
-// and white space. It will also convert some
-// common HTML entities to their text equivalent.
-	  
-$search = array("'&lt;script[^&gt;]*?&gt;.*?&lt;/script&gt;'si",   // strip out javascript
-"'&lt;[\/\!]*?[^&lt;&gt;]*?&gt;'si",            // strip out html tags
-"'([\r\n])[\s]+'",                  // strip out white space
-"'&amp;(quote|#34);'i",                 // replace html entities
+$search = array ("'&lt;script[^&gt;]*?&gt;.*?&lt;/script&gt;'si",   
+                                                // javascriptを削除
+"'&lt;[\/\!]*?[^&lt;&gt;]*?&gt;'si",            // htmlタグを削除
+"'([\r\n])[\s]+'",                              // 空白を削除
+"'&amp;(quote|#34);'i",                         // htmlエンティティを置換
 "'&amp;(amp|#38);'i",
 "'&amp;(lt|#60);'i",
 "'&amp;(gt|#62);'i",
@@ -389,19 +412,19 @@ $search = array("'&lt;script[^&gt;]*?&gt;.*?&lt;/script&gt;'si",   // strip out 
 );              
 
 $replace = array(   "",
-                			"",
-                    			"\\1",
-                    			"\"",
-                    			"&amp;",
-                    			"&amp;lt;",
-                    			"&amp;gt;",
-                    			" ",
-                    			chr(161),
-                    			chr(162),
-                    			chr(163),
-                    			chr(169));
+                    "",
+                    "\\1",
+                    "\"",
+                    "&amp;",
+                    "&lt;",
+                    "&gt;",
+                    " ",
+                    chr(161),
+                    chr(162),
+                    chr(163),
+                    chr(169));
 
-$text = preg_replace($search,$replace,$document);
+$text = preg_replace ($search,$replace,$document);
       </programlisting>
      </example>
     </para>
@@ -456,6 +479,11 @@ $text = preg_replace($search,$replace,$document);
       <programlisting role="php">
 $keywords = preg_split ("/[\s,]+/", "hypertext language, programming");
       </programlisting>
+      <para>
+       この例は、テキストをスペースまたはカンマで分割します。よって、
+       配列 $keyword は、("hypertext", "language", "programming")とな
+       ります。
+      </para>
      </example>
      <function>preg_match</function>,
      <function>preg_match_all</function>, 
@@ -507,6 +535,21 @@ $keywords = preg_quote ($keywords, "/");
 echo $keywords; // \$40 for a g3\/400 を返します。
       </programlisting>
      </example>
+     <example>
+      <title>テキストの中の単語を置換する</title>
+      <programlisting role="php">
+$textbody = "This book is *very* hard to find.";
+$word = "*very*";
+$textbody = preg_replace("|\b".preg_quote($word)."\b|",
+                         "&lt;i&gt;".$word."&lt;/i&gt;",$textbody);
+      </programlisting>
+      <para>
+       この例では、正規表現における特殊文字であるアスタリスクをエスケー
+       プするために preg_quote($word) を使用しています。付け加えると、
+       \bにより単語の境界を簡単に見付けることができます。これにより、
+       "is*very*big"のようなものにはマッチしません。
+      </para>
+     </example>
     </para>
    </refsect1>
   </refentry>
@@ -514,7 +557,9 @@ echo $keywords; // \$40 for a g3\/400 を返します。
   <refentry id="function.preg-grep">
    <refnamediv>
     <refname>preg_grep</refname>
-    <refpurpose>パターンにマッチする配列の要素を返す</refpurpose>
+    <refpurpose>
+     パターンにマッチする配列の要素を返す
+    </refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
@@ -777,7 +822,7 @@ preg_grep ("/^(\d+)?\.\d+$/", $array); // 配列の全ての浮動少数点数�
      しかし、パターンを/^(aa(b(b))?)+$/に変えると、$2 (および $3)
      が設定されます。
 
-     Perl 5.004 では、$2 はどちらのケースでも設定されます。
+     Perl 5.004 では、$2 はどちら�ケースでも設定されます。
      これは、PCRE でも同様です。将来的に Perl が別の矛盾のない
      状態に変更された場合、PCRE も追従する可能性があります。
 
@@ -861,7 +906,7 @@ preg_grep ("/^(\d+)?\.\d+$/", $array); // 配列の全ての浮動少数点数�
 
 バックスラッシュ
      バックスラッシュには、いくつかの使用法があります。まず、
-     英字でない文字が後に続く場合、その文字が有する
+     英字でない文字が後に続く場合、そてև字が有する
      特別な意味は失われます。このバックスラッシュの使い方は、
      文字クラスの内側と外側の両方で使用可能です。
 
@@ -1043,7 +1088,7 @@ preg_grep ("/^(\d+)?\.\d+$/", $array); // 配列の全ての浮動少数点数�
      文字クラスの外側では、パターンの中のドットは非出力文字を含む
      (デフォルトでは)改行以外の対象の全ての1文字にマッチします。
      PCRE_DOTALL オプションを設定した場合、ドットは改行にもマッチ
-     します。ドットの処理は、ハット記号およびドル記号とは完全に
+     します。ド�トの処理は、ハット記号およびドル記号とは完全に
      独立しています。共通な点は共に改行文字を含むことだけです。
      ドットは、文字クラスの中では特別な意味を持ちません。
 
@@ -1052,7 +1097,7 @@ preg_grep ("/^(\d+)?\.\d+$/", $array); // 配列の全ての浮動少数点数�
      します。右ブラケットは、それ自体特別なものではありません。
      右ブラケットがクラスのメンバーとして必要な場合、(もしあるな
      らば、最初にハット記号を持ってきた後で)クラスの最初の文字デ
-     ー�であるか、バックスラッシュでエスケープする必要があります。
+     ー?gあるか、バックスラッシュでエスケープする必要があります。
 
      文字クラスは、対象の1文字にマッチします。その文字はクラスにより
      定義される文字集合の中にある必要があります。ただし、
@@ -1105,7 +1150,7 @@ preg_grep ("/^(\d+)?\.\d+$/", $array); // 配列の全ての浮動少数点数�
      文字型 \d, \D, \s, \S,  \w,  \W  は文字クラスの中でも指定可能
      であり、クラスにマッチする文字を追加します。例えば、[\dABCDEF]
      は、16進数にマッチします。ハット記号は大文字と組み合わせて
-     小文字にマッチングするより範囲の狭い文字集合を簡便に指定する
+     小文字にマッチング??より範囲の狭い文字集合を簡便に指定する
      ことができます。
      例えば、クラス [^\W_] は文字または数字にマッチしますが、アンダ
      ースコアにはマッチしません。
@@ -1203,9 +1248,9 @@ preg_grep ("/^(\d+)?\.\d+$/", $array); // 配列の全ての浮動少数点数�
      括弧をつけないと、このパターンは、"cataract",
      "erpillar" または空の文字列にマッチしてしまいます。
 
-     2. 括弧は、サブパターンを(以下で定義する)値を取得するサブパ
-     ターンとして設定します。パターン全体がマッチした患
-     サブパターンにマッチした対象文字列の一部は、
+     2. 括弧は、サブパターンを(以下で定義する)値を取得するサブパターン
+     として設定します。パターン全体がマッチしたサブパターンにマッチ
+     した対象文字列の一部は、
      <function>pcre_exec</function> の <emphasis>ovector</emphasis> 
      引数によりコールした側に返されます。値を取得するサブパターンの
      番号を得るために括弧の始まりは(1から始まって)左から右に数えられます。
@@ -1323,7 +1368,7 @@ preg_grep ("/^(\d+)?\.\d+$/", $array); // 配列の全ての浮動少数点数�
 
      はCコメントに正しくマッチします。様々な反復指定子の意味は、
      他には変化せず、好ましいマッチの数だけが変更されます。
-     この疑問符の使用法を反復指定子がその右にある場合の使用法と
+     この疑問符の使用法を反復指定子がその�にある場合の使用法と
      こんなランしないようにして下さい。2種類の使用法があるので、
      時々、次のように2重に使用されることがあります。
 
@@ -1334,7 +1379,7 @@ preg_grep ("/^(\d+)?\.\d+$/", $array); // 配列の全ての浮動少数点数�
      
      PCRE_UNGREEDY オプションが設定された場合(Perl ではこのオプション
      は使用できません)、反復指定子はデフォルトでは貪欲ではありません。
-     しかし、�々の反復指定子は、後ろに疑問符をつけることにより貪欲
+     しかし、この反復指定子は、後ろに疑問符をつけることにより貪欲
      にすることが可能です。言いかえると、疑問符は、デフォルトの動作
      を逆転します。
 
@@ -1400,7 +1445,7 @@ preg_grep ("/^(\d+)?\.\d+$/", $array); // 配列の全ての浮動少数点数�
      元の取得したサブパターンは大文字小文字を区別せずマッチしてい
      るにもかかわらず、"RAH  rah" にはマッチしません。
 
-     同じサブパターンに複数回の後方参照を行うことができます。ある
+     同じサブパターンに複数回の後方参照を行Fことができます。ある
      サブパターンが特定のマッチで実際には使用されていない場合、
      後方参照は常に失敗します。例えば、パターン
 
@@ -1625,7 +1670,7 @@ preg_grep ("/^(\d+)?\.\d+$/", $array); // 配列の全ての浮動少数点数�
      何にもマッチしません。言いかえると、このパターンは、括弧なし
      の並びにマッチし、オプションで括弧で囲まれた並びにマッチします。
 
-     条件が数字の並�で内場合、言明となります。肯定あるいは否定の
+     条件が数字の並っg内��合、言明となります。肯定あるいは否定の
      前方または後方言明となります。次のパターンを見てみましょう。
      このパターンにも意味のないパターンを挿入し、2つの選択肢を2行
      目に置いています。
