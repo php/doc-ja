@@ -1,0 +1,439 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.1 $ -->
+ <reference id="ref.objaggregation">
+  <title>オブジェクトの集約/合成関数</title>
+  <titleabbrev>オブジェクトの集約</titleabbrev>
+  
+  <partintro>
+   &warn.experimental;
+   <section id="objaggregation.intro">
+    &reftitle.intro;
+    <para>
+     オブジェクト指向プログラミングでは、簡単なクラス(またはインスタン
+     ス)を組み合わせてより複雑なクラスを作成するということが一般に行わ
+     れます。これは、複雑なオブジェクトやオブジェクト階層を構築するた
+     めの柔軟な方法であり、多重継承と同等のことを動的に行う機能を有し
+     ます。
+     クラス(またはオブジェクト)を合成するには、合成される要素の間の関
+     係により<emphasis>関連(Association)</emphasis>と
+     <emphasis>集約(Aggregation)</emphasis>の2種類の方法があります。
+    </para>
+    <para>
+     <emphasis>関連</emphasis>は、独立に構築され、外部から
+     可視の部分を合成したものです。クラスまたはオブジェクトを関連づけ
+     る際、各クラスは、関連するクラスへのリファレンスを保持します。
+     複数のクラスを静的に関連づける際、クラスは他のクラスのインスタン
+     スへのリファレンスを含みます。例えば、
+     <example>
+      <title>クラスの関連付け</title>
+      <programlisting role="php">
+<![CDATA[
+class DateTime {
+   
+   function DateTime() {
+       // 空のコンストラクタ
+   }
+
+   function now() {
+       return date("Y-m-d H:i:s");
+   }
+}
+
+class Report {
+   var $_dt = new DateTime();
+   // その他のプロパティ ...
+
+   function Report() {
+       // 初期化コード ...
+   }
+
+   function generateReport() {
+       $dateTime = $_dt->now();
+       // その他のコード ...
+   }
+
+   // その他のメソッド ...
+}
+
+$rep = new Report();
+]]>
+      </programlisting>
+     </example>
+     コンストラクタ(または他のメソッド)にリファレンスを渡すことにより
+     実行時に複数のインスタンスを関連づけることも可能です。
+     これにより、複数のオブジェクト間の関連を動的に変更することが可能
+     です。この例を示すために上の例を変更してみます。
+     <example>
+      <title>オブジェクトの関連</title>
+      <programlisting role="php">
+<![CDATA[
+class DateTime {
+   // 上の例と同じ
+}
+
+class DateTimePlus {
+   var $_format;
+   
+   function DateTimePlus($format="Y-m-d H:i:s") {
+       $this->_format = $format
+   }
+
+   function now() {
+       return date($this->_format);
+   }
+}
+
+class Report {
+   var $_dt;    // DateTimeへのリファレンスをここに保持
+   // その他のプロパティ ...
+
+   function Report() {
+       // 初期化を行う
+   }
+
+   function setDateTime(&$dt) {
+       $this->_dt =& $dt;
+   }
+
+   function generateReport() {
+       $dateTime = $_dt->now();
+       // その他のコード ...
+   }
+
+   // その他のメソッド ...
+}
+
+$rep = new Report();
+$dt = new DateTime();
+$dtp = new DateTimePlus("l, F j, Y (h:i:s a, T)");
+
+// Web表示用に簡単な日付を付けたレポートを生成する
+$rep->setDateTime(&$dt);
+echo $rep->generateReport();
+
+// その他のコード ...
+
+// かっこの良いレポートを生成する
+$rep->setDateTime(&$dtp);
+$output = $rep->generateReport();
+// データベースに$outputを保存
+// ... 等 ... 
+]]>
+      </programlisting>
+     </example>
+    </para>
+    <para>
+     一方、<emphasis>集約</emphasis>では、合成されたパーツのカプセル化
+     (隠蔽)が行われます。(静的な)内部クラス(PHPはまだ内部クラスをサポー
+     トしていません)を使用することにより、クラスを集約することができま
+     す。この場合、このクラスを含むクラスを通じる場合以外、集約された
+     クラスの定義にはアクセスできません。複数のインスタンスの集約(オブ
+     ジェクト集約)は、あるオブジェクトの内部にサブオブジェクトを動的に
+     作成することを意味し、この過程でこのオブジェクトのプロパティとメ
+     ソッドを拡張します。
+    </para>
+    <para>
+     オブジェクトの集約は、(例えば、分子は原子を集約したものであるといっ
+     た)包含関係を表す際の自然な方法であり、サブクラスを複数の親クラス
+     およびそのインターフェイスに永続的にバインドすることなく、
+     多重継承と等価な機能を得るために使用できます。
+     実際、オブジェクトの集約はより柔軟に使用することができ、集約され
+     るオブジェクトで継承するメソッドまたはプロパティを選択することが
+     できます。
+    </para>
+   </section>
+   <section id="objaggregation.examples">
+    &reftitle.examples;
+    <para>
+     3つのクラスを定義し、各々に別々のストレージメソッドを実装します。
+    </para>
+    <para>
+     <example>
+      <title>storage_classes.inc</title>
+      <programlisting role="php">
+<![CDATA[
+<?php
+class FileStorage {
+    var $data;
+
+    function FileStorage($data) {
+        $this->data = $data;
+    }
+    function write($name) {
+        $fp = fopen(name, "w");
+        fwrite($fp, $this->data);
+        fclose($data);
+    }
+}
+
+class WDDXStorage {
+    var $data;
+    var $version = "1.0";
+    var $_id; // "private"変数
+
+    function WDDXStorage($data) {
+        $this->data = $data;
+        $this->_id = $this->_genID();
+    }
+
+    function store() {
+        if ($this->_id) {
+            $pid = wddx_packet_start($this->_id);
+            wddx_add_vars($pid, "this->data");
+            $packet = wddx_packet_end($pid);
+        } else {
+            $packet = wddx_serialize_value($this->data);
+        }
+        $dbh = dba_open("varstore", "w", "gdbm");
+        dba_insert(md5(uniqid("",true)), $packet, $dbh);
+        dba_close($dbh);
+    }
+
+    // privateメソッド
+    function _genID() {
+        return md5(uniqid(rand(),true));
+    }
+}
+
+class DBStorage {
+    var $data;
+    var $dbtype = "mysql";
+
+    function DBStorage($data) {
+        $this->data = $data;
+    }
+
+    function save() {
+        $dbh = mysql_connect();
+        mysql_select_db("storage", $dbh);
+        $serdata = serialize($this->data);
+        mysql_query("insert into vars ('$serdata',now())", $dbh);
+        mysql_close($dbh);
+    }
+}
+
+?>
+]]>
+      </programlisting>
+     </example>
+    </para>
+    <para>
+     We then instantiate a couple of objects from the defined classes, and
+     perform some aggregations and deaggregations, printing some object information
+     along the way:
+    </para>
+    <para>
+     <example>
+      <title>test_aggregation.php</title>
+      <programlisting role="php">
+<![CDATA[
+<?php
+include "storageclasses.inc";
+
+// some utilty functions
+
+function p_arr($arr) {
+    foreach($arr as $k=>$v)
+        $out[] = "\t$k => $v";
+    return implode("\n", $out);
+}
+
+function object_info($obj) {
+    $out[] = "Class: ".get_class($obj);
+    foreach(get_object_vars($obj) as $var=>$val)
+        if (is_array($val))
+            $out[] = "property: $var (array)\n".p_arr($val);
+        else
+            $out[] = "property: $var = $val";
+    foreach(get_class_methods($obj) as $method)
+        $out[] = "method: $method";
+    return implode("\n", $out);
+}
+
+
+$data = array(M_PI, "kludge != cruft");
+
+// we create some basic objects
+$fs = new FileStorage($data);
+$ws = new WDDXStorage($data);
+
+// print information on the objects
+echo "\$fs object\n";
+echo object_info($fs)."\n";
+echo "\n\$ws object\n";
+echo object_info($ws)."\n";
+
+// do some aggregation
+
+echo "\nLet's aggregate \$fs to the WDDXStorage class\n";
+aggregate($fs, "WDDXStorage");
+echo "\$fs object\n";
+echo object_info($fs)."\n";
+
+echo "\nNow let us aggregate it to the DBStorage class\n";
+aggregate($fs, "DBStorage");
+echo "\$fs object\n";
+echo object_info($fs)."\n";
+
+echo "\nAnd finally deaggregate WDDXStorage\n";
+deaggregate($fs, "WDDXStorage");
+echo "\$fs object\n";
+echo object_info($fs)."\n";
+
+?>
+]]>
+      </programlisting>
+     </example>
+    </para>
+    <para>
+     We will now consider the output to understand some of the side-effects
+     and limitation of object aggregation in PHP.
+     First, the newly created <varname>$fs</varname> and <varname>$ws</varname>
+     objects give the expected output (according to their respective class
+     declaration). Note that for the purposes of object aggregation,
+     <emphasis>private elements of a class/object begin with an underscore 
+      character ("_")</emphasis>, even though there is not real distinction between
+     public and private class/object elements in PHP.
+    </para>
+    <para>
+     <informalexample>
+      <programlisting>
+<![CDATA[
+$fs object
+Class: filestorage
+property: data (array)
+    0 => 3.1415926535898
+    1 => kludge != cruft
+method: filestorage
+method: write
+
+$ws object
+Class: wddxstorage
+property: data (array)
+    0 => 3.1415926535898
+    1 => kludge != cruft
+property: version = 1.0
+property: _id = ID::9bb2b640764d4370eb04808af8b076a5
+method: wddxstorage
+method: store
+method: _genid
+]]>
+      </programlisting>
+     </informalexample>
+    </para>
+    <para>
+     We then aggregate <varname>$fs</varname> with the
+     <classname>WDDXStorage</classname> class, and print out the object
+     information. We can see now that even though nominally the
+     <varname>$fs</varname> object is still of
+     <classname>FileStorage</classname>, it now has the property
+     <varname>$version</varname>, and the method <function>store</function>,
+     both defined in <classname>WDDXStorage</classname>. One important thing
+     to note is that it has not aggregated the private elements defined in
+     the class, which are present in the <varname>$ws</varname> object. Also
+     absent is the constructor from <classname>WDDXStorage</classname>, which
+     will not be logical to aggegate.
+    </para>
+    <para>
+     <informalexample>
+      <programlisting>
+<![CDATA[
+Let's aggregate $fs to the WDDXStorage class
+$fs object
+Class: filestorage
+property: data (array)
+    0 => 3.1415926535898
+    1 => kludge != cruft
+property: version = 1.0
+method: filestorage
+method: write
+method: store
+]]>
+      </programlisting>
+     </informalexample>
+    </para>
+    <para>
+     The proccess of aggregation is cummulative, so when we aggregate
+     <varname>$fs</varname> with the class <classname>DBStorage</classname>,
+     generating an object that can use the storage methods of all the
+     defined classes.
+    </para>
+    <para>
+     <informalexample>
+      <programlisting>
+<![CDATA[
+Now let us aggregate it to the DBStorage class
+$fs object
+Class: filestorage
+property: data (array)
+    0 => 3.1415926535898
+    1 => kludge != cruft
+property: version = 1.0
+property: dbtype = mysql
+method: filestorage
+method: write
+method: store
+method: save
+]]>
+      </programlisting>
+     </informalexample>
+    </para>
+    <para>
+     Finally, the same way we aggregated properties and methods dynamically,
+     we can also deaggregate them from the object. So, if we deaggregate the
+     class <classname>WDDXStorage</classname> from <varname>$fs</varname>, we
+     will obtain:
+    </para>
+    <para>
+     <informalexample>
+      <programlisting>
+<![CDATA[
+And deaggregate the WDDXStorage methods and properties
+$fs object
+Class: filestorage
+property: data (array)
+    0 => 3.1415926535898
+    1 => kludge != cruft
+property: dbtype = mysql
+method: filestorage
+method: write
+method: save
+]]>
+      </programlisting>
+     </informalexample>
+    </para>
+    <para>
+     One point that we have not mentioned above, is that the process of
+     aggregation will not override existing properties or methods in the
+     objects. For example, the class <classname>FileStorage</classname> defines a
+     <varname>$data</varname> property, and the class
+     <classname>WDDXStorage</classname> also defines a similar property 
+     which will not override the one in the object acquired during
+     instantiation from the class <classname>FileStorage</classname>.
+    </para>
+   </section>
+  </partintro>
+
+  &reference.objaggregation.functions;
+</reference>
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"../../../manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
+
