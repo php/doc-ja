@@ -2,17 +2,270 @@
   <title>OpenSSL 関数</title>
   <titleabbrev>OpenSSL</titleabbrev>
   <partintro>
-  <para>
-    このモジュールは、署名の生成および認証、そして、データのシール
-    (暗号化)およびオープン(復号化)を行うために、<ulink
-    url="&url.openssl;">OpenSSL</ulink> の関数を使用します。このモジュー
-    ルでは、OpenSSL >= 0.9.6 を使用する必要があります。
-  </para>
-  <para>
-   OpenSSL は多くの機能を提供しますが、これらはまだこのモジュールでは
-   サポートされていません。
-  </para>
+   <sect1 id="openssl.intro">
+    <title>導入</title>
+    <para>
+     このモジュールは、署名の生成および認証、そして、データのシール
+     (暗号化)およびオープン(復号化)を行うために、
+     <ulink url="&url.openssl;">OpenSSL</ulink> の関数を使用します。こ
+     のモジュールでは、PHP 4.0.4pl1 は、OpenSSL >= 0.9.6 を必要としま
+     すが、PHP-4.0.5以降では、OpenSSL &gt;= 0.9.5 でも動作します。
+    </para>
+    <note>
+     <para>
+      この拡張モジュールはまだ実験的なものであることに注意して下さい!
+     </para>
+    </note>
+    <para>
+     OpenSSL は多くの機能を提供しますが、これらはまだこのモジュールでは
+     サポートされていません。
+    </para>
+   </sect1>
+   <sect1 id="openssl.certparams">
+    <title>キー/証明書パラメータ</title>
+    <para>
+     OpenSSL関数のうちごく小数のみがキーまたは証明書パラメータを必要と
+     します。PHP 4.0.5 より以前では、openssl_get_xxx 関数のどれかによ
+     り返されたキーまたは証明書リソースを使用する必要がありました。こ
+     れより後のバージョンでは、次の方法のどれかを使用することが可能と
+     なる予定です。
+     <itemizedlist>
+      <listitem>
+       <para>
+	証明書
+	<orderedlist>
+	 <listitem>
+	  <simpara>
+	   openssl_x509_read から返された X.509リソース
+	  </simpara>
+	 </listitem>
+	 <listitem>
+	  <simpara>
+	   <filename>file://path/to/cert.pem</filename> 形式の文字列。
+	   このファイルは、PEMエンコードの証明書である必要があります。
+	  </simpara>
+	 </listitem>
+	 <listitem>
+	  <simpara>
+	   PEMエンコードされた証明書の内容を含む文字列。
+	  </simpara>
+	 </listitem>
+	</orderedlist>
+       </para>
+      </listitem>
+      <listitem>
+       <para>
+	公開/秘密キー
+	<orderedlist>
+	 <listitem>
+	  <simpara>
+	   <function>openssl_get_publickey</function> または
+	   <function>openssl_get_privatekey</function> から返されたキー
+	   リソース
+	  </simpara>
+	 </listitem>
+	 <listitem>
+	  <simpara>
+	   公開キーのみ: X.509リソース
+	  </simpara>
+	 </listitem>
+	 <listitem>
+	  <simpara>
+	   <filename>file://path/to/file.pem</filename> フォーマットを
+	   有する文字列。このファイルには、PEMエンコードされた証明書/
+	   秘密キーが含まれている必要があります。(両方を含むことも可能
+	   です。)
+	  </simpara>
+	 </listitem>
+	 <listitem>
+	  <simpara>
+	   PEMエンコードされた証明書/キーの内容を含む文字列
+	  </simpara>
+	 </listitem>
+	 <listitem>
+	  <simpara>
+	   秘密キーについては、<emphasis>array($key,
+	   $passphrase)</emphasis> という構文を使用することも可能です。
+	   ただし、$key は、file:// または上記のテキスト表現形式を使用
+	   して指定したキー、$passphrase はその秘密キーに関するパスワー
+	   ドを有する文字列を表します。
+	  </simpara>
+	 </listitem>
+	</orderedlist>
+       </para> 
+      </listitem>
+     </itemizedlist>
+    </para>
+   </sect1>
+
+   <sect1 id="openssl.cert.verification">
+    <title>証明書の認証</title>
+    <para>
+     サイン/証明書を認証する関数をコールする際、
+     <emphasis>cainfo</emphasis> パラメータは、ファイルと認証済みのCA
+     ファイルの場所を指定するファイルディレクトリ名を含む配列です。
+     ディレクトリが指定された場合、<command>openssl</command>コマンド
+     が使用できるような正しい形式にハッシュされたディレクトリである必
+     要があります。
+    </para>
+   </sect1> 
+   <sect1 id="openssl.pkcs7.flags">
+    <title>PKCS7 フラグ/定数</title>
+    <para>
+     S/MIME 関数はビットフィールドを使用して指定したフラグを使用します。
+     このビットフィールドには、以下の値を一つ以上含むことが可能です。
+
+     <table>
+     <title>PKCS7 定数</title>
+      <tgroup cols="2">
+       <thead>
+        <row>
+         <entry>定数</entry>
+         <entry>説明</entry>
+        </row>
+       </thead>
+       <tbody>
+        <row>
+         <entry>PKCS7_TEXT</entry>
+         <entry>
+	  text/plain content type ヘッダを暗号化/サインを行うメッセー
+	  ジに追加します。復号化または認証を行う際には、このヘッダは出
+	  力から取り除かれます。復号化または認証されたメッセージがMIME
+	  型 text/plain でない場合、エラーとなります。
+	 </entry>
+        </row>
+        <row>
+         <entry>PKCS7_BINARY</entry>
+         <entry>
+	  通常、入力されたメッセージは、CRおよびLFを行端として使用した
+	  「正規化」された形式に変換されます。この形式は、S/MIME規格に
+	  基づくものです。このオプションが指定された場合、変換が行われ
+	  ます。この機能は、MIME形式でないバイナリデータを処理する際に
+	  便利です。
+	 </entry>
+        </row>
+        <row>
+         <entry>PKCS7_NOINTERN</entry>
+         <entry>
+	  メッセージを認証する際に、通常、メッセージに含まれる証明書が
+	  証明書にサインする際に検索されます。
+	  このオプションでは、
+	  <function>openssl_pkcs7_verify</function> の
+	  <parameter>extracerts</parameter> パラメータで指定した証明書
+	  のみが使用されます。しかし、指定された証明書を信頼されていな
+	  いCAとして使用することも可能です。
+         </entry>
+        </row>
+        <row>
+         <entry>PKCS7_NOVERIFY</entry>
+         <entry>
+	  サイン済みのメッセージにサインした人の証明書を認証しません。
+	 </entry>
+        </row>
+        <row>
+         <entry>PKCS7_NOCHAIN</entry>
+         <entry>
+	  サインを行った側の証明書の認証の連鎖を行いません。
+	  この場合、サイン付きのメッセージにある証明書を未認証のCAとし
+	  て使用しません。
+         </entry>
+        </row>
+        <row>
+         <entry>PKCS7_NOCERTS</entry>
+         <entry>
+	  メッセージにサインする際、通常サインをする人の証明書が挿入さ
+	  れます。このオプションを指定した場合はそうなりません。これに
+	  より、サイン付きのメッセージのサイズは小さくなりますが、認証
+	  側が、(例えば、<function>openssl_pkcs7_verify</function>の
+	  <parameter>extracerts</parameter>により渡すことにより)サイン
+	  をした人の証明書のコピーをローカルに用意する必要があります。
+         </entry>
+        </row>
+        <row>
+         <entry>PKCS7_NOATTR</entry>
+         <entry>
+	  通常、メッセージがサインされる時、サインした時間やサポートさ
+	  れる対象アルゴリズムを含む一連の属性が付加されます。このオプ
+	  ションを指定した場合、それらの属性は付加されません。
+         </entry>
+        </row>
+        <row>
+         <entry>PKCS7_DETACHED</entry>
+         <entry>
+	  メッセージにサインをする際、MIME型 multipart/signed を指定し
+	  てクリアテキストでサインを行います。これは、
+	  <function>openssl_pkcs7_sign</function> において
+	  フラグを指定しなかった場合の <parameter>flags</parameter> パ
+	  ラメータのデフォルトです。このオプションをオフにした場合、メッ
+	  セージは不透明なサインによりサインされます。これは、メールリ
+	  レイによる変換に対してより耐性がありますが、S/MIMEをサポート
+	  しないメールエージェントでは読むことはできません。
+	 </entry>
+        </row>
+        <row>
+         <entry>PKCS7_NOSIGS</entry>
+         <entry>
+	  メッセージにサインや認証を試みません。
+	 </entry>
+        </row>
+       </tbody>
+      </tgroup>
+     </table>
+    </para>
+    <note>
+     <para>
+      これらの定数は、4.0.6 で追加されました。
+     </para>
+    </note>
+   </sect1>
   </partintro>
+
+  <refentry id="function.openssl-error-string">
+   <refnamediv>
+    <refname>openssl_error_string</refname>
+    <refpurpose>OpenSSL エラーメッセージを返す</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>mixed <function>openssl_error_string</function></funcdef>
+      <paramdef>void<parameter></parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     エラーメッセージ文字列を返します。返すべきエラーメッセージがもう
+     ない場合は、false を返します。
+    </para>
+    <para>
+     <function>openssl_error_string</function> は、OpenSSL ライブラリ
+     から直近のエラーを返します。エラーメッセージはスタックにつまれて
+     おり、全て情報を集めるには、この関数を複数回コールする必要があり
+     ます。
+    </para>
+    <para>
+     <emphasis>
+      この関数のパラメータ/返り値の型は、PHPのリリース版が公開される前
+      に変更される可能性があります。
+     </emphasis>
+    </para>
+    <para>
+     <example>
+      <title><function>openssl_error_string</function> の例</title>
+      <programlisting role="php">
+// ここで処理に失敗するOpenSSL関数をコールしたと仮定します
+while($msg = openssl_error_string)
+    echo $msg . "&lt;br&gt;";
+      </programlisting>
+     </example>
+    </para>
+    <note>
+     <para>
+      これらの定数は、4.0.6 で追加されました。
+     </para>
+    </note>
+   </refsect1>
+  </refentry>
 
   <refentry id="function.openssl-free-key">
    <refnamediv>
@@ -24,7 +277,7 @@
     <funcsynopsis>
      <funcprototype>
       <funcdef>void <function>openssl_free_key</function></funcdef>
-      <paramdef>int <parameter>key_identifier</parameter></paramdef>
+      <paramdef>resource <parameter>key_identifier</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
@@ -44,8 +297,8 @@
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>int <function>openssl_get_privatekey</function></funcdef>
-      <paramdef>string <parameter>key</parameter></paramdef>
+      <funcdef>resource <function>openssl_get_privatekey</function></funcdef>
+      <paramdef>mixed <parameter>key</parameter></paramdef>
       <paramdef>string 
        <parameter>
 	<replaceable><optional>passphrase</optional></replaceable>
@@ -54,7 +307,7 @@
      </funcprototype>
     </funcsynopsis>
     <para>
-     成功時に正のキーID、エラー時にfalseを返します。
+     成功時に正のキーリソースID、エラー時にfalseを返します。
     </para>
     <para>
      <function>openssl_get_privatekey</function> は、
@@ -77,12 +330,12 @@
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>int <function>openssl_get_publickey</function></funcdef>
-      <paramdef>string <parameter>certificate</parameter></paramdef>
+      <funcdef>resource <function>openssl_get_publickey</function></funcdef>
+      <paramdef>mixed <parameter>certificate</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
-     成功時に公開キー、エラー時にfalseを返します。
+     成功時に正のキーリソースID、エラー時にfalseを返します。
     </para>
     <para>
      <function>openssl_get_publickey</function> は、
@@ -105,7 +358,7 @@
       <paramdef>string <parameter>sealed_data</parameter></paramdef>
       <paramdef>string <parameter>open_data</parameter></paramdef>
       <paramdef>string <parameter>env_key</parameter></paramdef>
-      <paramdef>int <parameter>priv_key_id</parameter></paramdef>
+      <paramdef>mixed <parameter>priv_key_id</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
@@ -280,7 +533,7 @@ openssl_free_key($pkeyid);
       <funcdef>int <function>openssl_verify</function></funcdef>
       <paramdef>string <parameter>data</parameter></paramdef>
       <paramdef>string <parameter>signature</parameter></paramdef>
-      <paramdef>int <parameter>pub_key_id</parameter></paramdef>
+      <paramdef>mixed <parameter>pub_key_id</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
@@ -326,6 +579,510 @@ openssl_free_key($pubkeyid);
     </simpara>
    </refsect1>
   </refentry>
+  
+  <refentry id="function.openssl-pkcs7-decrypt">
+   <refnamediv>
+    <refname>openssl_pkcs7_decrypt</refname>
+    <refpurpose>S/MIME 暗号化されたメッセージを復号化する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>bool <function>openssl_pkcs7_decrypt</function></funcdef>
+      <paramdef>string <parameter>infilename</parameter></paramdef>
+      <paramdef>string <parameter>outfilename</parameter></paramdef>
+      <paramdef>mixed <parameter>recipcert</parameter></paramdef>
+      <paramdef>mixed <parameter>recipkey</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     <parameter>infilename</parameter>で指定したファイル中のS/MIME暗号
+     化されたメッセージを、<parameter>recipcert</parameter> および
+     <parameter>recipkey</parameter> で指定した証明書と公開キーを用い
+     て復号化します。
+    </para>
+    <para>
+     復号化されたメッセージは、<parameter>outfilename</parameter>で指
+     定したファイルに出力されます。
+    </para>
+    <para>
+     <emphasis>
+      この関数のパラメータ/返り値は、PHPのリリース版が公開されるまでに
+      変更される可能性があります。
+     </emphasis>
+    </para>
+    <para>
+     <example>
+      <title><function>openssl_pkcs7_decrypt</function> の例</title>
+      <programlisting role="php">
+// $cert および $key にはあなたの個人証明書と公開キーが含まれており、
+// あなたはS/MIMEメッセージの受信者であると仮定します。
+$infilename = "encrypted.msg";  // 暗号化されたメッセージを含むファイル
+$outfilename = "decrypted.msg"; // このファイルへの書き込み権限が必要
+
+if (openssl_pkcs7_decrypt($infilename, $outfilename, $cert, $key))
+    echo "復号化されました!";
+else
+    echo "復号化に失敗しました!";
+
+      </programlisting>
+     </example>
+    </para>
+    <note>
+     <para>
+      この関数は、PHP 4.0.6 で追加されました。
+     </para>
+    </note>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.openssl-pkcs7-encrypt">
+   <refnamediv>
+    <refname>openssl_pkcs7_encrypt</refname>
+    <refpurpose>S/MIME メッセージを暗号化する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>bool <function>openssl_pkcs7_encrypt</function></funcdef>
+      <paramdef>string <parameter>infilename</parameter></paramdef>
+      <paramdef>string <parameter>outfilename</parameter></paramdef>
+      <paramdef>mixed <parameter>recipcerts</parameter></paramdef>
+      <paramdef>array <parameter>headers</parameter></paramdef>
+      <paramdef>long 
+       <parameter><optional>flags</optional></parameter>
+      </paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     <function>openssl_pkcs7_encrypt</function> は、
+     <parameter>infilename</parameter> という名前のファイルの内容を
+     RC2 40ビット暗号により暗号化します。この内容は、
+     <parameter>recipcerts</parameter> で指定した意図する受信者によっ
+     てのみ読むことが可能です。<parameter>recipcerts</parameter> は、
+     X.509 証明書または X.509 証明書の配列です。
+     <parameter>headers</parameter> は、暗号化された後にデータの前に付
+     加されるヘッダの配列です。<parameter>flags</parameter> はオプショ
+     ンとして使用可能であり、エンコード処理を変更するために指定されま
+     す。<link linkend="openssl.pkcs7.flags">PKCS7定数</link>を参照下
+     さい。<parameter>headers</parameter> は、ヘッダ名をキーとする連想
+     配列または添字配列であり、各要素には、各ヘッダ行が一行ずつ含まれ
+     ています。
+    </para>
+    <para>
+     <emphasis>
+      この関数のパラメータ/返り値は、PHPのリリース版が公開されるまでに
+      変更される可能性があります。
+     </emphasis>
+    </para>
+    <para>
+     <example>
+      <title><function>openssl_pkcs7_encrypt</function> の例</title>
+      <programlisting role="php">
+// 暗号化するメッセージを nighthawk という名前の外部の秘密のエー
+// ジェントに送信します。送信先の証明書をファイル nighthawk.pem に有し
+// ています。
+$data = &lt;&lt;&lt;EOD
+Nighthawk,
+
+Top secret, for your eyes only!
+
+The enemy is closing in! Meet me at the cafe at 8.30am
+to collect your forged passport!
+
+HQ
+EOD;
+// ファイルにメッセージを保存
+$fp = fopen("msg.txt", "w");
+fwrite($fp, $data);
+fclose($fp);
+// メッセージを暗号化
+if (openssl_pkcs7_encrypt("msg.txt", "enc.txt", "nighthawk.pem",
+    array("To" =&gt; "nighthawk@agent.com", // 連想配列の構文
+          "From: HQ &lt;hq@cia.com&gt;", // 添字配列の構文
+          "Subject" =&gt; "Eyes only")))
+{
+    // メッセージを暗号化し、送信します!
+    exec(ini_get("sendmail_path") . " &lt; enc.txt");
+}
+      </programlisting>
+     </example>
+    </para>
+    <note>
+     <para>
+      この関数は、PHP 4.0.6 で追加されました。
+     </para>
+    </note>
+   </refsect1>
+  </refentry>
+  
+  <refentry id="function.openssl-pkcs7-sign">
+   <refnamediv>
+    <refname>openssl_pkcs7_sign</refname>
+    <refpurpose>S/MIME メッセージにサインする</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>bool <function>openssl_pkcs7_sign</function></funcdef>
+      <paramdef>string <parameter>infilename</parameter></paramdef>
+      <paramdef>string <parameter>outfilename</parameter></paramdef>
+      <paramdef>mixed <parameter>signcert</parameter></paramdef>
+      <paramdef>mixed <parameter>privkey</parameter></paramdef>
+      <paramdef>array <parameter>headers</parameter></paramdef>
+      <paramdef>long
+       <parameter><optional>flags</optional></parameter></paramdef>
+      <paramdef>string
+       <parameter><optional>extracertsfilename</optional></parameter>
+      </paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     <function>openssl_pkcs7_sign</function> takes the contents of the
+     file named <parameter>infilename</parameter> and signs them using
+     the certificate and it's matching private key specified by
+     <parameter>signcert</parameter> and <parameter>privkey</parameter>
+     parameters.
+    </para>
+    <para>
+     <parameter>headers</parameter> is an array of headers that
+     will be prepended to the data after it has been signed (see
+     <function>openssl_pkcs7_encrypt</function> for more information about
+     the format of this parameter.
+    </para>
+    <para>
+     <parameter>flags</parameter> can be used to alter the output - see <link
+									      linkend="openssl.pkcs7.flags">PKCS7 constants</link> - if not specified,
+     it defaults to PKCS7_DETACHED.
+    </para>
+    <para>
+     <parameter>extracerts</parameter> specifies the name of a file containing
+     a bunch of extra certificates to include in the signature which can for
+     example be used to help the recipient to verify the certificate that you used.
+   </para>
+    <para>
+     <emphasis>
+      The parameters/return type of this function may change before
+      it appears in a release version of PHP
+     </emphasis>
+    </para>
+    
+    <para>
+     <example>
+      <title><function>openssl_pkcs7_sign</function> の例</title>
+      <programlisting role="php">
+// the message you want to sign so that recipient can be sure it was you that
+// sent it
+$data = &lt;&lt;&lt;EOD
+
+You have my authorization to spend $10,000 on dinner expenses.
+
+The CEO
+HQ
+EOD;
+// save message to file
+$fp = fopen("msg.txt", "w");
+fwrite($fp, $data);
+fclose($fp);
+// encrypt it
+if (openssl_pkcs7_sign("msg.txt", "signed.txt", "mycert.pem",
+    array("mycert.pem", "mypassphrase"),
+    array("To" =&gt; "joes@sales.com", // keyed syntax
+          "From: HQ &lt;ceo@sales.com&gt;", // indexed syntax
+          "Subject" =&gt; "Eyes only"))
+{
+    // message signed - send it!
+    exec(ini_get("sendmail_path") . " &lt; signed.txt");
+}
+      </programlisting>
+     </example>
+    </para>
+    <note>
+     <para>
+      この関数は、PHP 4.0.6 で追加されました。
+     </para>
+    </note>
+   </refsect1>
+  </refentry>
+  
+  <refentry id="function.openssl-pkcs7-verify">
+   <refnamediv>
+    <refname>openssl_pkcs7_verify</refname>
+    <refpurpose>S/MIMEサインされたメッセージのサインを確認する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>bool <function>openssl_pkcs7_verify</function></funcdef>
+      <paramdef>string <parameter>filename</parameter></paramdef>
+      <paramdef>int <parameter>flags</parameter></paramdef>
+      <paramdef>string 
+       <parameter><optional>outfilename</optional></parameter>
+      </paramdef>
+      <paramdef>array 
+       <parameter><optional>cainfo</optional></parameter>
+      </paramdef>
+      <paramdef>string 
+       <parameter><optional>extracerts</optional></parameter>
+      </paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     <function>openssl_pkcs7_verify</function> reads the S/MIME message
+     contained in the filename specified by
+     <parameter>filename</parameter> and
+     examines the digital signature.  It returns true if the signature
+     is verified, false if it is not correct (the message has been
+     tampered with,
+     or the signing certificate is invalid), or -1 on error.
+    </para>
+    <para>
+     <parameter>flags</parameter> can be used to affect how the signature is
+     verified - see <link linkend="openssl.pkcs7.flags">PKCS7 constants</link>
+     for more information.
+    </para>
+    <para>
+     If the <parameter>outfilename</parameter> is specified, it should be a
+     string holding the name of a file into which the certificates of the
+     persons that signed the messages will be stored in PEM format.
+    </para>
+    <para>
+     If the <parameter>cainfo</parameter> is specified, it should hold
+     information about the trusted CA certificates to use in the verification
+     process - see <link linkend="openssl.cert.verification">certificate
+      verification</link> for more information about this parameter.
+    </para>
+    <para>
+     If the <parameter>extracerts</parameter> is specified, it is the filename
+     of a file containing a bunch of certificates to use as untrusted CAs.
+    </para>
+    <para>
+     <emphasis>
+      The parameters/return type of this function may change before
+      it appears in a release version of PHP
+     </emphasis>
+    </para>
+    <note>
+     <para>
+      この関数は、PHP 4.0.6 で追加されました。
+     </para>
+    </note>
+   </refsect1>
+  </refentry>
+  
+  <refentry id="function.openssl-x509-checkpurpose">
+   <refnamediv>
+    <refname>openssl_x509_checkpurpose</refname>
+    <refpurpose>
+     証明書が特定の目的に使用可能かどうか確認します。
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>bool <function>openssl_x509_checkpurpose</function></funcdef>
+      <paramdef>mixed <parameter>x509cert</parameter></paramdef>
+      <paramdef>int <parameter>purpose</parameter></paramdef>
+      <paramdef>array <parameter>cainfo</parameter></paramdef>
+      <paramdef>string
+       <parameter><optional>untrustedfile</optional></parameter>
+      </paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     証明書が意図した目的に使用可能である場合に true、使用できない場合
+     に false 、エラーの場合に -1 を返します。
+    </para>
+    <para>
+     <function>openssl_x509_checkpurpose</function> は、証明書
+     <parameter>x509cert</parameter> を調べ、
+     <parameter>purpose</parameter> で指定した目的に使用可能であるかど
+     うかを確認します。
+    </para>
+    <para>
+     <parameter>cainfo</parameter> は、<link
+     linkend="openssl.cert.verification">証明書の認証</link> で説明し
+     たような信頼できるCAファイル/ディレクトリの配列です。
+    </para>
+    <para>
+     <parameter>untrustedfile</parameter>, if specified,
+     is the name of a PEM encoded file holding certificates that can
+     be used to
+     help verify the certificate, although no trust in placed in the
+     certificates that come from that file.
+    </para>
+    <para>
+     <emphasis>
+      The parameters/return type of this function may change before
+      it appears in a release version of PHP
+     </emphasis>
+    </para>
+    <para>
+     <table>
+      <title><function>openssl_x509_checkpurpose</function> の目的</title>
+      <tgroup cols="2">
+       <thead>
+	<row>
+	 <entry>定数</entry>
+	 <entry>説明</entry>
+	</row>
+       </thead>
+       <tbody>
+	<row>
+	 <entry>X509_PURPOSE_SSL_CLIENT</entry>
+	 <entry>
+	  Can the certificate be used for the client side of an SSL
+	  connection?
+	 </entry>
+	</row>
+	<row>
+	 <entry>X509_PURPOSE_SSL_SERVER</entry>
+	 <entry>
+	  Can the certificate be used for the server side of an SSL
+	  connection?
+	 </entry>
+	</row>
+	<row>
+	 <entry>X509_PURPOSE_NS_SSL_SERVER</entry>
+	 <entry>
+	  Can the cert be used for Netscape SSL server?
+	 </entry>
+	</row>
+	<row>
+	 <entry>X509_PURPOSE_SMIME_SIGN</entry>
+	 <entry>
+	  Can the cert be used to sign S/MIME email?
+	 </entry>
+	</row>
+	<row>
+	 <entry>X509_PURPOSE_SMIME_ENCRYPT</entry>
+	 <entry>Can the cert be used to encrypt S/MIME email?</entry>
+	</row>
+	<row>
+	 <entry>X509_PURPOSE_CRL_SIGN</entry>
+	 <entry>
+	  Can the cert be used to sign a certificate revocation list
+	  (CRL)?
+	 </entry>
+	</row>
+	<row>
+	 <entry>X509_PURPOSE_ANY</entry>
+	 <entry>
+	  Can the cert be used for Any/All purposes?
+	 </entry>
+	</row>
+       </tbody>
+      </tgroup>
+     </table>
+     これらのオプションはビットフィールドではありません。一つだけ指定
+     することが可能です!
+    </para>
+    <note>
+     <para>
+      この関数は、PHP 4.0.6 で追加されました。
+     </para>
+    </note>
+  </refsect1>
+ </refentry>
+  
+  <refentry id="function.openssl-x509-free">
+   <refnamediv>
+    <refname>openssl_x509_free</refname>
+    <refpurpose>証明書リソースを開放する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>void <function>openssl_x509_free</function></funcdef>
+      <paramdef>resource <parameter>x509cert</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     <function>openssl_x509_free</function> は、メモリから指定した
+     <parameter>x509cert</parameter> リソースに関連した証明書を開放し
+     ます。
+    </para>
+    <note>
+     <para>
+      この関数は、PHP 4.0.6 で追加されました。
+     </para>
+    </note>
+   </refsect1>
+  </refentry>
+  
+  <refentry id="function.openssl-x509-parse">
+   <refnamediv>
+    <refname>openssl_x509_parse</refname>
+    <refpurpose>
+     Parse an X509 証明書をパースし、配列として情報を返す
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>array <function>openssl_x509_parse</function></funcdef>
+      <paramdef>mixed <parameter>x509cert</parameter></paramdef>
+      <paramdef>bool
+       <parameter><optional>shortnames</optional></parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     <function>openssl_x509_parse</function> returns information about the
+     supplied <parameter>x509cert</parameter>, including fields such as subject
+     name, issuer name, purposes, valid from and valid to dates etc.
+     <parameter>shortnames</parameter> controls how the data is indexed in the
+     array - if <parameter>shortnames</parameter> is true (the default) then
+     fields will be indexed with the short name form, otherwise, the long name
+     form will be used - e.g.: CN is the shortname form of commonName.
+    </para>
+    <para>
+     <emphasis>
+      The structure of the returned data is (deliberately) not
+      yet documented, as it is still subject to change.
+     </emphasis>
+    </para>
+    <note>
+     <para>
+      この関数は、PHP 4.0.6 で追加されました。
+     </para>
+    </note>
+   </refsect1>
+  </refentry>
+  
+  <refentry id="function.openssl-x509-read">
+   <refnamediv>
+    <refname>openssl_x509_read</refname>
+    <refpurpose>
+     Parse an X.509 証明書をパースし、リソースIDを返す
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>resource <function>openssl_x509_read</function></funcdef>
+      <paramdef>mixed <parameter>x509certdata</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     <function>openssl_x509_read</function> は、
+     <parameter>x509certdata</parameter> で指定した証明書をパースし、
+     その証明書用のリソースIDを返します。
+    </para>
+    <note>
+     <para>
+      この関数は、PHP 4.0.6 で追加されました。
+     </para>
+    </note>
+   </refsect1>
+  </refentry>
  </reference>
 
 <!-- Keep this comment at the end of the file
@@ -343,4 +1100,7 @@ sgml-exposed-tags:nil
 sgml-local-catalogs:nil
 sgml-local-ecat-files:nil
 End:
+-->
+<!-- Keep this comment for vi/vim/gvim
+vi: et:ts=1:sw=1:textwidth=78
 -->
