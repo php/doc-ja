@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- splitted from ./ja/functions/filesystem.xml, last change in rev 1.13 -->
-<!-- last change to 'fread' in en/ tree in rev 1.25 -->
+<!-- last change to 'fread' in en/ tree in rev 1.10 -->
   <refentry id="function.fread">
    <refnamediv>
     <refname>fread</refname>
@@ -10,15 +9,15 @@
     <title>説明</title>
      <methodsynopsis>
       <type>string</type><methodname>fread</methodname>
-      <methodparam><type>int</type><parameter>fp</parameter></methodparam>
+      <methodparam><type>resource</type><parameter>handle</parameter></methodparam>
       <methodparam><type>int</type><parameter>length</parameter></methodparam>
      </methodsynopsis>
     <simpara>
-     <function>fread</function>は<parameter>fp</parameter>が指す
+     <function>fread</function>は<parameter>handle</parameter>が指す
      ファイルポインタから最高<parameter>length</parameter>バイト
      読み込みます。読み込みは、<parameter>length</parameter>バイト分
-     読み込まれたか、EOFに達したかのいずれか早い方の事象により中止
-     されます。
+     読み込まれたか、EOF（ファイルの終端）に達したかの
+     いずれか早い方の事象により中止されます。
     </simpara>
     <para>
     <informalexample>
@@ -33,13 +32,13 @@ fclose ($fd);
       </programlisting>
      </informalexample>
     </para>
-    <note>
+    <warning>
      <para>
       バイナリとテキストファイルの形式が異なるシステム(すなわち
       Windows)では、<function>fopen</function>の mode パラメータに'b'
       を指定してファイルをオープンする必要があります。
      </para>
-    </note>
+    </warning>
     <para>
      <informalexample>
       <programlisting role="php">
@@ -52,13 +51,55 @@ fclose ($fd);
       </programlisting>
      </informalexample>
     </para>
+    <note>
+     <para>
+      When reading from network streams or pipes, such as those returned when
+      reading <link linkend="features.remote-files">remote files</link> or from
+      <function>popen</function> and <function>proc_open</function>, reading
+      will stop after a packet is available.  This means that you should
+      collect the data together in chunks as shown in the example below.
+     </para>
+    </note>
+    <para>
+     <informalexample>
+      <programlisting role="php">
+<![CDATA[
+<?php
+$handle = fopen ("http://www.php.net/", "rb");
+$contents = "";
+do {
+    $data = fread($handle, 8192);
+    if (strlen($data) == 0) {
+        break;
+    }
+    $contents .= $data;
+} while(true);
+fclose ($handle);
+?>
+]]>
+      </programlisting>
+     </informalexample>
+    </para>
+    <note>
+     <para>
+      上の例では繰り返し毎に関数をコールしないのでオーバーヘッドが抑制できるため、
+      伝統的な while(!<function>feof</function>) を使うアプローチよりも
+      パフォーマンス的にベターです。
+     </para>
+    </note>
+    <note>
+     <para>
+      文字列にファイルを読み込みたいだけならば、<function>file_get_contents</function>
+      を使うほうが上記の例よりも効率的です。
+     </para>
+    </note>
     <simpara>
      <function>fwrite</function>, <function>fopen</function>,
      <function>fsockopen</function>, <function>popen</function>,
      <function>fgets</function>, <function>fgetss</function>,
-     <function>fscanf</function>,
-     <function>file</function>, <function>fpassthru</function>
-     も参照下さい。
+     <function>fscanf</function>, <function>file</function>, 
+     <function>fpassthru</function>も参照してください。
+    </simpara>
     </simpara>
    </refsect1>
   </refentry>
