@@ -37,6 +37,26 @@ $a =&amp; $b
     </note>
    </para>
    <para>
+    同じ構文は、リファレンスを返す関数や<literal>new</literal>演算子で
+    も使用可能です。(PHP 4.0.4 以降)
+    <informalexample>
+     <programlisting role="php">
+$bar =&amp; new fooclass();
+$foo =&amp; find_var ($bar);
+     </programlisting>
+    </informalexample>
+   </para>
+   <note>
+    <para>
+     上記の構文を使用しない場合、<literal>$bar = new
+     fooclass()</literal> の結果は、コンストラクタの
+     <literal>$this</literal> と同じ変数にはなりません。このため、コン
+     ストラクタで <literal>$this</literal> へのリファレンスを使用する
+     際には、リファレンスによる代入を使用するか、二つの異なったオブジェ
+     クトを取得する必要があります。
+    </para>
+   </note>
+   <para>
     リファレンスの第2の使用法は、変数のリファレンス渡しです。この場合、
     関数でローカル変数が作成され、コール側の変数と同じ内容へのリファレ
     ンスとなります。例を示します。
@@ -53,6 +73,8 @@ foo($a);
     この結果、<varname>$a</varname> は 6となります。これは、関数
     <varname>foo</varname>の中では、変数<varname>$var</varname>は
     <varname>$a</varname>と同じ内容を指しているためです。
+    <link linkend="language.references.pass">リファレンス渡し</link>
+    に関するより詳細な説明も参照下さい。
    </para>
    <simpara>
     リファレンスの第3の使用法は、
@@ -87,8 +109,80 @@ foo($bar);
    </simpara>
   </sect1>
   
+  <sect1 id="language.references.pass">
+   <title>リファレンス渡し</title>
+   <para>
+    リファレンスにより関数に変数を渡すことが可能です。この場合、関数内
+    でその引数を修正可能になります。構文は次のようになります。
+    <informalexample>
+     <programlisting role="php">
+function foo (&amp;$var) {
+    $var++;
+}
+
+$a=5;
+foo ($a);
+// $a はここでは 6 です
+     </programlisting>
+    </informalexample>
+    関数コールの際には、リファレンス記号がないことに注意して下さい。関
+    数定義にのみリファレンス記号があります。リファレンスで正しく引数を
+    渡すには、関数定義のみで十分です。
+  </para>
+  <para>
+    次のものはリファレンスで渡すことが可能です。
+    <itemizedlist>
+     <listitem>
+      <simpara>
+       変数、すなわち、<literal>foo($a)</literal>
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       new 命令、すなわち、<literal>foo(new foobar())</literal>
+      </simpara>
+     </listitem>
+     <listitem>
+      <para>
+       関数から返されるリファレンスは、次のようになります。
+       <informalexample>
+	<programlisting role="php">
+function &amp;bar()
+{
+   $a = 5;
+   return $a;
+}
+foo(bar());
+	</programlisting>
+       </informalexample>
+       <link linkend="language.references.return">リファレンスによる返
+       り値</link> に関する説明も参照下さい。
+      </para>
+     </listitem>
+    </itemizedlist>
+   </para>
+   <para>
+    他の式は、結果が未定義となるため、リファレンスで渡すべきではありま
+    せん。例えば、リファレンスで渡す次の例は、無効です。
+    <informalexample>
+     <programlisting role="php">
+function bar() // &amp; がないことに注意
+{
+        $a = 5;
+        return $a;
+}
+foo(bar);
+
+foo($a = 5) // 式、変数ではない
+foo(5) // 定数、変数ではない
+     </programlisting>
+    </informalexample>
+    以上の説明は、PHP 4.0.4 以降用です。
+  </para>
+  </sect1>
+
   <sect1 id="language.references.return">
-   <title>リファレンスを返す</title>
+   <title>リファレンスによる返り値</title>
    <para>
     リファレンスを返すことは、結合する変数を見付けるために関数を使用し
     たい場合に便利です。リファレンスを返す場合、次の構文を使用して下さ
