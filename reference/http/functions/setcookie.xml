@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- splitted from ./ja/functions/http.xml, last change in rev 1.1 -->
-<!-- last change to 'setcookie' in en/ tree in rev 1.2 -->
+<!-- last change to 'headers-sent' in en/ tree in rev 1.24 -->
   <refentry id="function.setcookie">
    <refnamediv>
     <refname>setcookie</refname>
@@ -9,101 +8,221 @@
    <refsect1>
     <title>説明</title>
      <methodsynopsis>
-      <type>int</type><methodname>setcookie</methodname>
+      <type>bool</type><methodname>setcookie</methodname>
       <methodparam><type>string</type><parameter>name</parameter></methodparam>
-      <methodparam><type>string</type><parameter>
-	<replaceable><optional>value</optional></replaceable>
-       </parameter></methodparam>
-      <methodparam><type>int</type><parameter>
-	<replaceable><optional>expire</optional></replaceable>
-       </parameter></methodparam>
-      <methodparam><type>string</type><parameter>
-	<replaceable><optional>path</optional></replaceable>
-       </parameter></methodparam>
-      <methodparam><type>string</type><parameter>
-	<replaceable><optional>domain</optional></replaceable>
-       </parameter></methodparam>
-      <methodparam><type>int</type><parameter>
-	<replaceable><optional>secure</optional></replaceable>
-       </parameter></methodparam>
+      <methodparam choice="opt"><type>string</type><parameter>value</parameter></methodparam>
+      <methodparam choice="opt"><type>int</type><parameter>expire</parameter></methodparam>
+      <methodparam choice="opt"><type>string</type><parameter>path</parameter></methodparam>
+      <methodparam choice="opt"><type>string</type><parameter>domain</parameter></methodparam>
+      <methodparam choice="opt"><type>int</type><parameter>secure</parameter></methodparam>
      </methodsynopsis>
     <para>
      <function>setcookie</function> は、その他のヘッダ情報と共に
-     送信するクッキーを定義します。<parameter>name</parameter>
-     を除くすべての引数はオプションです。
-     クッキーは他のヘッダーを送信する<emphasis>前に</emphasis>送信
-     される必要があります。(これはクッキーの制約であってPHPの制約では
-     ありません)この制約により<literal>&lt;html></literal>または
-     <literal>&lt;head></literal>タグの前にこの関数をコールする
-     必要があります。
-    </para>
+     送信するクッキーを定義します。 ほかのヘッダ情報と同様に、
+     クッキーは、スクリプトによる他のあらゆる出力よりも<emphasis>前に</emphasis>
+     送信される必要があります（これはHTTPプロトコルの制約です）。
+     <literal>&lt;html&gt;</literal>や<literal>&lt;head&gt;</literal>タグはもちろん
+     空白も含め、あらゆる出力よりも前にこの関数をコールするようにしなければなりません。
+     もしもこの関数をコールする前に何らかの出力がある場合には、
+     <function>setcookie</function>は失敗し &false; を返します。
+     <function>setcookie</function>が正常に実行されると、&true; を返します。
+     この関数はユーザーがクッキーを受け入れたかどうかを示すことはしません。
+   </para>
+    <note>
+     <para>
+      PHP4では、この関数をコールする前でも出力できるように、
+      スクリプトの全ての出力をサーバー内にバッファリングさせることができます。
+      そのためには、<function>ob_start</function>や<function>ob_end_flush</function>
+      を使用するか、あるいは &php.ini; の<literal>output_buffering</literal>設定を
+      使用します。
+     </para>
+    </note>    
     <para>
      引数<parameter>name</parameter>以外の全ての引数はオプションです。
-     name 引数のみが指定された場合、nameという名前のクッキーはリモート
-     クライアントから削除されます。
      全ての引数に関して引数の指定をスキップするために空文字列
      (<emphasis>&quot;&quot;</emphasis>)とすることが可能です。
      <parameter>expire</parameter>および <parameter>secure</parameter> 引数
-     は空文字列でスキップすることはできません。代わりにゼロ
+     は数値なので、空文字列でスキップすることはできません。代わりにゼロ
      (<emphasis>0</emphasis>)を使用してください。
-     <parameter>expire</parameter>引数は、
-     <function>time</function> または <function>mktime</function> 関数により
-     返されたUNIX標準時を現す整数です。
-     <parameter>secure</parameter>は、クッキーがHTTPS接続によってのみ
-     伝送されることを指定します。
+     以下の表は<function>setcookie</function>の引数の説明です。
+     <function>setcookie</function>関数の各引数が
+     どのように作用するかを知るには
+     <ulink url="&spec.cookies;">Netscape cookie specification</ulink>
+     と<ulink url="&url.rfc;2965">RFC 2965</ulink>をご覧ください。
     </para>
-    <para>  
+    <para>
+     <table>
+      <title><function>setcookie</function> 引数の説明</title>
+      <tgroup cols="3">
+       <thead>
+        <row>
+         <entry>引数</entry>
+         <entry>説明</entry>
+         <entry>例</entry>
+        </row>
+       </thead>
+       <tbody>
+        <row>
+         <entry><parameter>name</parameter></entry>
+         <entry>
+          クッキーの名前
+         </entry>
+         <entry>
+          'cookiename' is called as <varname>$_COOKIE['cookiename']</varname>
+         </entry>
+        </row>
+        <row>
+         <entry><parameter>value</parameter></entry>
+         <entry>
+          クッキーの値。この値はクライアントのコンピュータに保存されますので、
+          重要な情報は格納しないでください。
+         </entry>
+         <entry>
+          <parameter>name</parameter> が 'cookiename' だとすると、
+          その値は<varname>$_COOKIE['cookiename']</varname>で取得することができます。
+         </entry>
+        </row>
+        <row>
+         <entry><parameter>expire</parameter></entry>
+         <entry>
+          クッキーの有効期限。これはUNIX標準時、
+          つまりepoch（1970年1月1日）からの秒数です。
+          <function>time</function> または 
+          <function>mktime</function> 関数により
+          返された現在のUNIX標準時に、期限としたい必要な秒数を加算したものを
+          利用することができるでしょう。
+         </entry>
+         <entry>
+          <literal>time()+60*60*24*30</literal>は
+          クッキーの有効期限を30日後にセットします。
+          もしも設定しない場合、クッキーはセッションの最後
+          （つまりブラウザを閉じるとき）が有効期限となります。
+         </entry>
+        </row>
+        <row>
+         <entry><parameter>path</parameter></entry>
+         <entry>
+          サーバー上での、クッキーを有効としたいパス
+         </entry>
+         <entry>
+          <literal>'/'</literal> をセットすると、クッキーは
+          <parameter>domain</parameter>配下の全てで有効となります。
+          <literal>'/foo/'</literal>をセットすると、クッキーは
+          <literal>/foo/</literal>ディレクトリとそのサブディレクトリ配下
+          （例えば<literal>/foo/bar/</literal>）で有効となります。
+          デフォルト値はクッキーがセットされたときのカレントディレクトリです。
+         </entry>
+        </row>
+        <row>
+         <entry><parameter>domain</parameter></entry>
+         <entry>
+          クッキーが有効なドメイン
+         </entry>
+         <entry>
+          exapmle.comの全てのサブドメインでクッキーを有効とするには
+          <literal>'.example.com'</literal>をセットします。
+          <literal>.</literal>は必須ではありませんが多くの
+          ブラウザにおいて互換性があります。
+          <literal>www.example.com</literal>にセットすると、
+          クッキーは<literal>www</literal>サブドメインに
+          おいてのみ有効となります。
+          末尾のマッチングについての詳細は<ulink url="&spec.cookies;">spec</ulink>
+          をご覧ください。
+         </entry>
+        </row>
+        <row>
+         <entry><parameter>secure</parameter></entry>
+         <entry>
+          <literal>1</literal>をセットすると
+          セキュアなHTTPS接続の場合にのみクッキーが送信されるようになります。
+          デフォルトは<literal>0</literal>です。
+         </entry>
+         <entry>
+          <literal>0</literal> or <literal>1</literal>
+         </entry>
+        </row>
+       </tbody>
+      </tgroup>
+     </table>
+    </para>
+    <para>
+     一度クッキーが送信されると、次のページのロードからは
+     <link linkend="reserved.variables.cookies">$_COOKIE</link>や
+     <varname>$HTTP_COOKIE_VARS</varname>配列によってクッキーにアクセスできます。
+     <varname>$_COOKIE</varname>のような
+     <link linkend="language.variables.superglobals">autoglobals</link>は
+     <ulink url="&url.php.release4.1.0;">4.1.0</ulink>以降で有効となることに
+     注意してください。
+     <varname>$HTTP_COOKIE_VARS</varname>はPHP3以降で使用できます。
+     クッキーの値は<link linkend="reserved.variables.request">$_REQUEST</link>
+     配列からもアクセスできます。
+    </para>
+    <note>
+     <para>
+      PHPの<link linkend="ini.register-globals">register_globals</link>ディレクティブが
+      <literal>on</literal>になっている場合、クッキーは変数にも登録されています。
+      以下の例では、<varname>$TextCookie</varname>変数が存在します。
+      <varname>$_COOKIE</varname>の使用が推奨されます。
+     </para>
+    </note>
+    <para>
      陥りやすい失敗:
      <itemizedlist>
       <listitem>
        <simpara>
-	クッキーはクッキーを有効にするためにページを再ロードするまで
-	アクセスすることができません。
+        クッキーはクッキーを有効にするために次にページをロードするまで
+        アクセスすることができません。クッキーが正常にセットされたか
+        テストするために、クッキーの有効期限が切れる前に次のページを
+        ロードしてクッキーをチェックしてください。
+        有効期限は<parameter>expire</parameter>引数でセットされます。
+        クッキーの利用についてデバッグするのに良い方法は
+        <literal>print_r($_COOKIE);</literal>をコールすることです。
        </simpara>
       </listitem>
       <listitem>
        <simpara>
-	クッキーは設定されたものと同じパラメータで削除する必要がありま
-        す。
+        クッキーは設定されたものと同じパラメータで削除する必要があります。
+        値が空文字列("")で、その他の全ての引数が前にsetcookieをコールした時と
+        同じである場合に、指定された名前のクッキーはリモートクライアント上から
+        削除されます。
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+        クッキー名で配列を記述することにより、
+        クッキーの配列を設定することも可能ですが、複数のクッキー
+        がユーザーのシステム上に保存されることになります。
+        <function>explode</function> や
+        <function>serialize</function>を使用することで、
+        ひとつのクッキー上に複数の名前と値をセットすることも
+        考慮してください。
        </simpara>
       </listitem>
      </itemizedlist>
     </para>
     <simpara>
-     PHP 3において同じスクリプトで<function>setcookie</function>を複数
-     回コールした場合、逆の順番で実行されます。他のクッキーを挿入する
-     前にあるクッキーを削除しようとする場合、削除する前に挿入を行う必
-     要があります。PHP 4では、<function>setcookie</function>を複数回コー
-     ルした場合でもコールした順番で実行されます。
+     PHP 3において同じスクリプトで<function>setcookie</function>を
+     複数回コールした場合、逆の順番で実行されます。
+     他のクッキーを挿入する 前にあるクッキーを削除しようとする場合、
+     削除する前に挿入を行う必 要があります。PHP 4では、
+     setcookie()を複数回コー ルした場合でもコールした順番で実行されます。 
     </simpara>
     <para>
-     クッキーを送信するいくつかの例を以下に示します。
+     以下はクッキーを送信する例です:
      <example>
-      <title><function>setcookie</function>による送信の例</title>
+      <title><function>setcookie</function> 送信のサンプル</title>
       <programlisting role="php">
 <![CDATA[
-setcookie ("TestCookie", "Test Value");
-setcookie ("TestCookie", $value,time()+3600);  /* 1時間で期限切れ */
-setcookie ("TestCookie", $value,time()+3600, "/~rasmus/", ".utoronto.ca", 1);
+<?php
+$value = 'something from somewhere';
+
+setcookie ("TestCookie", $value);
+setcookie ("TestCookie", $value,time()+3600);  /* 有効期限は一時間後 */
+setcookie ("TestCookie", $value,time()+3600, "/~rasmus/", ".example.com", 1);
+?>
 ]]>
       </programlisting>
      </example>
-    </para>
-    <para>
-     上記の例で送信したクッキーを削除する方法の例を以下に示します。
-     <example>
-      <title><function>setcookie</function>による削除の例</title>
-      <programlisting role="php">
-<![CDATA[
-setcookie ("TestCookie");
-// 有効期限を1時間前に設定する
-setcookie ("TestCookie", "", time() - 3600);
-setcookie ("TestCookie", "", time() - 3600, "/~rasmus/", ".utoronto.ca", 1);
-]]>
-      </programlisting>
-     </example>
-     クッキーを削除する場合には、ブラウザの削除機構を起動するために必
-     ず有効期限を過去に設定する必要があります。
     </para>
     <para>
      クッキーのvalueの部分は、クッキーの送信を行う際に自動的に
@@ -111,49 +230,108 @@ setcookie ("TestCookie", "", time() - 3600, "/~rasmus/", ".utoronto.ca", 1);
      されてクッキー名と同じ名前の変数に格納されることに注意して下さい。
      すなわち、スクリプト内部でTestCookieの内容を見たい場合は、以下
      の例のうちの一つを使用して下さい。
+    </para>
+    <para>
      <informalexample>
       <programlisting role="php">
 <![CDATA[
-echo $TestCookie;
+<?php
+// Print an individual cookie
+echo $_COOKIE["TestCookie"];
 echo $HTTP_COOKIE_VARS["TestCookie"];
+
+// デバッグ／テストのほかの方法は、全てのクッキーを見ることです。
+print_r($_COOKIE);
+?>
 ]]>
       </programlisting>
      </informalexample>
+    </para>
+    <para>
+     クッキーを削除する場合には、ブラウザの削除機構を起動するために必
+     ず有効期限を過去に設定する必要があります。
+     前の例でクッキーを削除する方法のサンプルです。
+    </para>
+    <para>
+     <example>
+      <title><function>setcookie</function> 削除の例</title>
+      <programlisting role="php">
+<![CDATA[
+<?php
+// 有効期限を一時間前にセットする
+setcookie ("TestCookie", "", time() - 3600);
+setcookie ("TestCookie", "", time() - 3600, "/~rasmus/", ".example.com", 1);
+?>
+]]>
+      </programlisting>
+     </example>
     </para>
     <para>
      クッキー名で配列を記述することにより、クッキーの配列を設定するこ
      とも可能です。これにより配列要素と同数のクッキーを設定されますが、
      クッキーがスクリプトに受信された際に、値はクッキー名を有する配列
      に置きかえられます。
-     <informalexample>
+    </para>
+    <para>
+     <example>
+      <title><function>setcookie</function> と配列</title>
       <programlisting role="php">
 <![CDATA[
+<?php
+// set the cookies
 setcookie ("cookie[three]", "cookiethree");
 setcookie ("cookie[two]", "cookietwo");
 setcookie ("cookie[one]", "cookieone");
-if (isset ($cookie)) {
-    while (list ($name, $value) = each ($cookie)) {
-        echo "$name == $value<br>\n";
-    } 
+
+// ページをリロードした後にprintする
+if (isset($_COOKIE['cookie'])) {
+    foreach ($_COOKIE['cookie'] as $name => $value) {
+        echo "$name : $value <br />\n";
+    }
 }
+
+/* 結果
+
+three : cookiethree
+two : cookietwo
+one : cookieone
+
+*/
+?>
 ]]>
       </programlisting>
-     </informalexample>
+     </example>
     </para>
+    <note>
+     <para>
+      クッキーに関する詳細は、<ulink url="&spec.cookies;">&spec.cookies;</ulink>
+      にあるNetscapeのクッキーに関する仕様と
+      <ulink url="&url.rfc;2965">RFC 2965</ulink> をご覧ください。
+     </para>
+     <para>
+      <parameter>expire</parameter>引数は
+      <literal>Wdy, DD-Mon-YYYY HH:MM:SS GMT</literal>といった
+      日付フォーマットではなく、UNIXタイムスタンプを与えることに注意してください。
+      なぜなら、PHPはこの変換を内部で行うからです。
+     </para>
+    </note>
+    <note>
+     <simpara>
+      サービスパック1を適用したMicrosoftインターネットエクスプローラ4 
+      は、パスに関するパラメータを設定したクッキーを正確に処理することが
+      できません。
+     </simpara>
+     <simpara>
+      Netscape Communicator 4.05およびMicrosoft Internet Explorer 3.x
+      は、pathとtime が設定されていない場合、クッキーを正確に処理する
+      ことができないようです。
+     </simpara>
+    </note>
     <para>
-    クッキーに関する詳細は、<ulink url="&spec.cookies;">&spec.cookies;
-    </ulink> にあるNetscapeのクッキーに関する仕様をご覧ください。
+     <function>header</function>と
+     <link linkend="features.cookies">クッキーのセクション</link>
+     も参照してください。
     </para>
-    <simpara>
-     サービスパック1を適用したMicrosoftインターネットエクスプローラ4 
-     は、パスに関するパラメータを設定したクッキーを正確に処理することが
-     できません。
-    </simpara>
-    <simpara>
-     Netscape Communicator 4.05およびMicrosoft Internet Explorer 3.x
-     は、pathとtime が設定されていない場合、クッキーを正確に処理する
-     ことができないようです。
-    </simpara>
    </refsect1>
   </refentry>
 

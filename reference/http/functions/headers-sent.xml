@@ -1,23 +1,78 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- splitted from ./ja/functions/http.xml, last change in rev 1.1 -->
-<!-- last change to 'headers-sent' in en/ tree in rev 1.7 -->
+<!-- last change to 'headers-sent' in en/ tree in rev 1.13 -->
   <refentry id="function.headers-sent">
    <refnamediv>
     <refname>headers_sent</refname>
-    <refpurpose>ヘッダーが送信されている場合に &true; を返す</refpurpose>
+    <refpurpose>ヘッダーが既に送信されているかどうかチェックする</refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
      <methodsynopsis>
-      <type>boolean</type><methodname>headers_sent</methodname>
-      <void/>
+      <type>bool</type><methodname>headers_sent</methodname>      
+      <methodparam choice="opt"><type>string</type><parameter>&amp;file</parameter></methodparam>
+      <methodparam choice="opt"><type>int</type><parameter>&amp;line</parameter></methodparam>
      </methodsynopsis>
-    <para>
+    <simpara>
      この関数は、HTTPヘッダが既に送信されている場合に &true; 、そうでな
      い場合に &false; を返します。
+     また、オプション引数の<parameter>file</parameter>と
+     <parameter>line</parameter>がセットされている場合、
+     PHPのソースファイル名と、出力が開始された行番号が、それぞれ
+     <parameter>file</parameter>と<parameter>line</parameter>変数に格納されます。
+    </simpara>
+    <simpara>
+     ヘッダーブロックが一旦送信されてしまった後で<function>header</function>関数を
+     使って新たなヘッダ行を送信することはできません。
+     この関数を使うには、少なくともHTTPヘッダ関連のエラーを予防する必要があります。
+     あるいは、<link linkend="ref.outcontrol">Output Buffering</link>を
+     使う方法もあります。
+    </simpara>
+    <note>
+     <simpara>
+      オプション引数<parameter>file</parameter>と<parameter>line</parameter>は
+      PHP4.3.0で追加されました。
+     </simpara>
+    </note>
+    <para>
+     <example>
+      <title><function>headers_sent</function>関数の使用例</title>
+      <programlisting role="php">
+<![CDATA[
+<?php
+
+// ヘッダがまだ何も送信されていない場合送信する
+if (!headers_sent()) {
+    header ('Location: http://www.example.com/');
+    exit;
+}
+  
+// オプションのfileとlineパラメータの使用例（PHP4.3.0以降）
+// $filename と $linenum が後で使用されていることに注目。
+// これらの変数に事前に値を与えたりしてはいけません。
+if (!headers_sent($filename, $linenum)) {
+    header ('Location: http://www.example.com/');
+    exit;
+
+// You would most likely trigger an error here.
+} else {
+
+    print "Headers already sent in $filename on line $linenum\n" .
+          "Cannot redirect, for now please click this <a " .
+          "href=\"http://www.example.com\">link</a> instead\n";
+    exit;
+}
+
+?>
+]]>
+      </programlisting>
+     </example>
     </para>
     <para>
-     <function>header</function>も参照下さい。
+     関連するディスカッションは
+     <function>ob_start</function>, 
+     <function>trigger_error</function>, 
+     <function>header</function>にもありますので参照ください。
     </para>
    </refsect1>
   </refentry>
