@@ -1,103 +1,171 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.3 $ -->
+<!-- $Revision: 1.4 $ -->
  <reference id="ref.session">
   <title>セッション処理関数(session)</title>
   <titleabbrev>セッション</titleabbrev>
 
   <partintro>
-   <para>
-    PHPのセッションサポート機能は、複数回のアクセスを通じて特定のデー
-    タを保持する手段を実現するものです。これにより、よりカスタマイズさ
-    れたアプリケーションを構築し、自分の Web サイトのアピール度を増加
-    させることが可能となります。
-   </para>
-   <para>
-    PHPLIB のセッション管理に精通している場合には、そのコンセプトがPHPの
-    セッションサポートに似ていることに気づくことでしょう。
-   </para>
-   <para>
-    Web サイトの訪問者にはセッションIDというユニークなIDが割りつけられ
-    ます。このIDは、ユーザー側にクッキーとして保存するか、または、URL
-    に埋め込みます。
-   </para>
-   <para>
-    セッションサポート機能により、任意の数の変数をリクエスト間で受けわたせる
-    ようになります。来訪者がサイトにアクセスした際、
-    PHP は特定のセッションIDがリクエストとともに送信されているかどうかを
-    (session.auto_start が 1 の場合は)自動的に、または
-    (<function>session_start</function> により明示的な、あるいは
-    <function>session_register</function> により暗黙の)
-    要求を受けて確認します。
-    このIDが送信されている場合には、以前保存された変数が再現されます。
-   </para>
-   <para>
-    全ての登録された変数は、リクエストが終了した後に、シリアル化されます。
-    未定義の登録変数は、未定義としてマーク付けされます。
-    後でユーザーがこれらの変数を定義しない限り、以降のアクセスにおいて
-    セッションモジュールにより定義されません。
-   </para>
-   <para>
-    設定ファイルの設定値
-    <link linkend="ini.track-vars"><literal>track_vars</literal></link>
-    および <link
-     linkend="ini.register-globals"><literal>register_globals</literal></link>
-    によりセッション変数の回復方法を指定します。
-   </para>
-   <note>
+   <section id="session.intro">
+    &reftitle.intro;
     <para>
-     PHP 4.0.3以降、<link
-     linkend="ini.track-vars"><literal>track_vars</literal></link>は常
-     に on となりました。
+     PHPのセッションサポート機能は、複数回のアクセスを通じて特定のデー
+     タを保持する手段を実現するものです。これにより、よりカスタマイズさ
+     れたアプリケーションを構築し、自分の Web サイトのアピール度を増加
+     させることが可能となります。
     </para>
-   </note>
-   <note>
     <para>
-     PHP 4.1.0以降、$_SESSIONは、$_POST, $_GET, $_REQUEST等のようにグ
-     ローバル変数として利用可能です。$HTTP_SESSION_VARSと異なり、
-     $_SESSIONは常にグローバルです。そこで、
-     <literal>global</literal>は$_SESSIONの場合は不要です。
+     PHPLIB のセッション管理に精通している場合には、そのコンセプトがPHPの
+     セッションサポートに似ていることに気づくことでしょう。
     </para>
-   </note>
-   <para>
-    <link linkend="ini.track-vars"><literal>track_vars</literal></link>
-    が有効で<link linkend="ini.register-globals">
-     <literal>register_globals</literal></link>
-    が無効の場合、グローバル変数配列$HTTP_SESSION_VARSのメンバーのみを
-    セッション変数として登録可能です。回復されたセッション変数は配列
-    $HTTP_SESSION_VARSでのみ利用可能です。
-    <example>
-     <title>
+    <para>
+     Web サイトの訪問者にはセッションIDというユニークなIDが割りつけられ
+     ます。このIDは、ユーザー側にクッキーとして保存するか、または、URL
+     に埋め込みます。
+    </para>
+    <para>
+     セッションサポート機能により、任意の数の変数をリクエスト間で受けわたせる
+     ようになります。来訪者がサイトにアクセスした際、
+     PHP は特定のセッションIDがリクエストとともに送信されているかどうかを
+     (session.auto_start が 1 の場合は)自動的に、または
+     (<function>session_start</function> により明示的な、あるいは
+     <function>session_register</function> により暗黙の)
+     要求を受けて確認します。
+     このIDが送信されている場合には、以前保存された変数が再現されます。
+    </para>
+    <para>
+     全ての登録された変数は、リクエストが終了した後に、シリアル化されます。
+     未定義の登録変数は、未定義としてマーク付けされます。
+     後でユーザーがこれらの変数を定義しない限り、以降のアクセスにおいて
+     セッションモジュールにより定義されません。
+    </para>
+    <note>
+     <para>
+      セッション処理機能は、PHP 4.0 でサポートされました。
+     </para>
+    </note>
+    <note>
+     <para>
+      セッションを処理している時、
+      <function>session_register</function>関数を使用するか
+      スーパーグローバル配列<varname>$_SESSION</varname>へ新しいキーを
+      追加することにより変数が登録されるまで、セッションのレコードは作
+      成されないことに注意して下さい。これは、セッションが
+      <function>session_start</function>関数により開始されている場合で
+      も真です。
+     </para>
+    </note>
+   </section>
+   
+   <section id="session.security">
+    <title>セッションとセキュリティ</title>
+    <para>
+     セッションの使用は、セッションデータが対応するユーザのみに見るこ
+     とができることを絶対的に保証できることを意味しません。
+     これは、重要な情報を保存したり表示する場合に留意すべき重要な事
+     実です。データをセッションに保存する場合、
+     この情報を他の誰かが見た場合に発生する損害は何かとか、
+     このセッションが実際には他の誰かの場合に、自分のアプリケーション
+     がどのような影響を受けるかを常に自問する必要があります。
+    </para>
+    <para>
+     例えば、他の誰かがあるセッションを得た場合、そのユーザとして
+     フォーラムにメッセージを投稿することができますが、その問題の大き
+     さはどの程度でしょうか?
+     または、彼は、元のユーザの買いものかごにアクセスできるため、その
+     ユーザが注文しようとしていたものを見ることができるかもしれません。
+     明らかに、薬局よりも花屋の方が問題は小さいでしょう。
+    </para>
+    <para>
+     このため、重要な情報を処理する場合、有効なセッションかどうかを決
+     める他の方法を常に用意する必要があります。セッションはセキュアな
+     認証機構のように信頼できるものではありません。
+    </para>
+    <para>
+     セッションはセッションIDに基づいており、これは、セッションIDを盗
+     むことにより、セッションを「盗む」ことができることを意味します。
+     これは、セッションCookieを使用することにより困難となりますが、
+     不可能にするわけではなく、依然としてユーザが全てのブラウザウイン
+     ドウを閉じて、セッションCookieを期限切れとすることに依存していま
+     す。また、セッションCookieでさえもネットワークで盗聴されたり、
+     プロキシサーバにより記録されたりします。
+    </para>
+
+   </section>
+
+   <section id="session.requirements">
+    &reftitle.required;
+    &no.requirement;
+    <note>
+     <para>
+      オプションで、Ralf S. Engelschallにより開発されたセッションの保
+      存用の共有メモリ(mm)を使用することも可能です。
+      <ulink url="&url.mm;">mm</ulink>をダウンロードし、インストールす
+      ることができます。このオプションは、Windowsプラットフォームでは
+      利用できません。
+     </para>
+    </note>
+   </section>
+
+   &reference.session.configure;
+
+   &reference.session.ini;
+
+   <section id="session.resources">
+    &reftitle.resources;
+    &no.resource;
+   </section>
+
+   &reference.session.constants;
+
+   <section id="session.examples">
+    &reftitle.examples;
+    <note>
+     <para>
+      PHP 4.1.0以降、<varname>$_SESSION</varname>は、
+      <varname>$_POST</varname>, <varname>$_GET</varname>,
+      <varname>$_REQUEST</varname>等のようにグローバル変数として利用可
+      能です。<varname>$HTTP_SESSION_VARS</varname>と異なり、
+      <varname>$_SESSION</varname>は常にグローバルです。そこで、
       <link
-      linkend="ini.track-vars"><literal>track_vars</literal></link>
-      が有効な時に変数を登録する
-     </title>
-     <programlisting role="php">
-<![CDATA[
-<?php
-session_start();
-if (isset($HTTP_SESSION_VARS['count'])) {
-   $HTTP_SESSION_VARS['count']++;
-}
-else {
-   $HTTP_SESSION_VARS['count'] = 0;
-}
-?>
-]]>
-     </programlisting>
-    </example>
-   </para>
-   <para>
-    セキュリティとコードの可読性のために$_SESSION(またはPHP 4.0.6以前
-    は$HTTP_SESSION_VARS)の使用が推奨されます。$_SESSIONまたは
-    $HTTP_SESSION_VARSの場合、
-    session_register()/session_unregister()/session_is_registered()は
-    不要です。ユーザは、通常の変数と同様にセッション変数にアクセス可能
-    です。
-    <example>
-     <title>
-      $_SESSIONで変数を登録
-     </title>
-     <programlisting role="php">
+      linkend="language.variables.scope"><command>global</command></link>
+      は<varname>$_SESSION</varname>の場合は不要です。
+      このドキュメントでは、<varname>$_SESSION</varname> をあらゆる場
+      所で使用していることに注意して下さい。もし前者を使用したい場合に
+      は、<varname>$_SESSION</varname>を
+      <varname>$HTTP_SESSION_VARS</varname>で置き換えることができます。
+     </para>
+     <para>
+      連想配列<varname>$_SESSION</varname>のキーは、PHPの通常の変数名
+      と同じ制限があります。すなわち、数字で始まることはできず、文字ま
+      たはアンダースコアで始まる必要があります。
+      詳細については、本マニュアルの
+      <link linkend='language.variables'>変数</link>の節を参照して下さ
+      い。
+     </para>
+    </note>
+
+    <para>
+     <link
+     linkend="ini.register-globals"><literal>register_globals</literal></link>
+     が無効の場合、グローバル連想配列<varname>$_SESSION</varname>のメ
+     ンバのみをセッション変数として登録することができます。
+     回復されたセッション変数は、配列<varname>$_SESSION</varname>での
+     み利用可能です。
+    </para>
+    <para>
+     セキュリティとコードの可読性のために<varname>$_SESSION</varname>
+     (またはPHP 4.0.6以前は<varname>$HTTP_SESSION_VARS</varname>)の使用
+     が推奨されます。<varname>$_SESSION</varname>の場合、
+     <function>session_register</function>,
+     <function>session_unregister</function>,
+     <function>session_is_registered</function>は不要です。ユーザは、
+     通常の変数と同様にセッション変数にアクセス可能
+     です。
+     <example>
+      <title>
+       $_SESSIONで変数を登録
+      </title>
+      <programlisting role="php">
 <![CDATA[
 <?php
 session_start();
@@ -109,11 +177,11 @@ else {
     $_SESSION['count']++;
 ?>
 ]]>
-     </programlisting>
-    </example>
-    <example>
-     <title>$_SESSIONで変数の登録を解除する</title>
-     <programlisting role="php">
+      </programlisting>
+     </example>
+     <example>
+      <title>$_SESSIONで変数の登録を解除する</title>
+      <programlisting role="php">
 <![CDATA[
 <?php
 session_start();
@@ -122,48 +190,64 @@ unset($_SESSION['count']);
 
 ?>
 ]]>
-     </programlisting>
-    </example>
-   </para>
-   <para>
-    <link
-    linkend="ini.register-globals"><literal>register_globals</literal></link>
-    が有効な場合、全てのグローバル変数はセッション変数として登録するこ
-    とが可能で、セッション変数は対応するグローバル変数として回復されま
-    す。PHPは、どのグローバル変数がセッション変数として登録されるのか
-    を知る必要があるため、ユーザは、変数をsession_register()関数で登録
-    する必要があります。しかし、
-    <varname>$HTTP_SESSION_VARS</varname>/<varname>$_SESSION</varname>
-    の場合は、session_register()を使用する必要はありません。
-    <caution>
-     <para>
-      <varname>$HTTP_SESSION_VARS</varname>/<varname>$_SESSION</varname>
-      を使用し、<link
+      </programlisting>
+     </example>
+     <example>
+      <title>
+       register_globalsが有効な場合に、$_SESSIONを用いて登録した後、
+       変数の登録を解除する
+      </title>
+      <programlisting role="php">
+<![CDATA[
+<?php
+session_start();
+// PHP 4.3以降では、前の例を使用することも可能です。
+session_unregister('count');
+?>
+]]>
+      </programlisting>
+     </example>
+    </para>
+    <para>
+     <link
       linkend="ini.register-globals"><literal>register_globals</literal></link>
-      を無効とする場合、
-      <function>session_register</function>,
-      <function>session_is_registered</function>,
-      <function>session_unregister</function>を使用しないで下さい。
-     </para>
-     <para>
-      <link
-       linkend="ini.register-globals"><literal>register_globals</literal>
-      </link>を有効にしている場合は、
+     が有効な場合、全てのグローバル変数はセッション変数として登録するこ
+     とが可能で、セッション変数は対応するグローバル変数として回復されま
+     す。PHPは、どのグローバル変数がセッション変数として登録されるのか
+     を知る必要があるため、ユーザは、変数を
+      <function>session_register</function>関数で登録する必要がありま
+      す。しかし、<varname>$_SESSION</varname>の場合は、エントリを設定
+      するだけでこれを行う必要はありません。
+     <caution>
+      <para>
+       <varname>$_SESSION</varname>を使用し、<link
+        linkend="ini.register-globals"><literal>register_globals</literal></link>
+       を無効とする場合、自分のスクリプトをPHP 4.2より以前のバージョン
+        で動作させたい場合は、
+       <function>session_register</function>,
+       <function>session_is_registered</function>,
+       <function>session_unregister</function>を使用しないで下さい。
+       PHP 4.3以降ではこれらの関数を使用することができます。
+      </para>
+      <para>
+       <link
+        linkend="ini.register-globals"><literal>register_globals</literal>
+       </link>を有効にしている場合は、
        <function>session_unregister</function>を使用する必要があります。
-      これは、シリアル化されたセッションデータが戻される時にセッション
-      変数がグローバル変数として登録されるためです。
-      セキュリティ面と性能面の双方より<link
-       linkend="ini.register-globals"><literal>register_globals</literal></link>
-      を無効とすることが推奨されています。
-     </para>
-    </caution>
+       これは、シリアル化されたセッションデータが戻される時にセッション
+       変数がグローバル変数として登録されるためです。
+       セキュリティ面と性能面の双方より<link
+        linkend="ini.register-globals"><literal>register_globals</literal></link>
+       を無効とすることが推奨されています。
+      </para>
+     </caution>
     <example>
-     <title>
-      <link
-      linkend="ini.register-globals"><literal>register_globals</literal></link>
-      が有効な場合に、変数を登録する
-     </title>
-     <programlisting role="php">
+      <title>
+       <link
+        linkend="ini.register-globals"><literal>register_globals</literal></link>
+       が有効な場合に、変数を登録する
+      </title>
+      <progrqamlisting role="php">
 <![CDATA[
 <?php
 if (!session_is_registered('count')) {
@@ -175,63 +259,75 @@ else {
 }
 ?>
 ]]>
-     </programlisting>
-    </example>
-   </para>
-   <para>
-    <link
-    linkend="ini.track-vars"><literal>track_vars</literal></link>と
-    <link
-    linkend="ini.register-globals"><literal>register_globals</literal></link>
-    が共に有効な場合、グローバル変数と
-    <varname>$HTTP_SESSION_VARS</varname>/<varname>$_SESSION</varname>
-    エントリは登録済みの変数の同じ値を参照することになります。
-   </para>
-   <para>
-    ユーザがセッション変数を登録する際にsession_register()を使用する場合、
-    <varname>$HTTP_SESSION_VARS</varname>/<varname>$_SESSION</varname>
-    は、セッションのストレージからロードされるまで(すなわち次のリクエ
-    ストまで)配列内にこれらの変数を有しません。
-   </para>
-   <para>
-    セッションIDの通知を行うためには次の二つの方法があります。
-    <itemizedlist>
-     <listitem>
-      <simpara>
-      クッキー
-      </simpara>
-     </listitem>
-     <listitem>
-      <simpara>
-       URLパラメータ
-      </simpara>
-     </listitem>
-    </itemizedlist>
-   </para>
-   <para>
-    セッションモジュールは、両方の方法をサポートします。
-    クッキーは最適ですが、(クライアントがクッキーを受け入れない可能性が
-    あるため)信頼性がなく、頼ることができません。二番目の方法は、
-    セッションIDを直接URLに埋め込みます。
-   </para>
-   <para>
-    PHP は、
-    <link linkend="install.configure.enable-trans-sid">
-    <literal>--enable-trans-sid</literal></link>を付けてコンパイルされた
-    場合にこの処理を透過的に行います。
-    このオプションを有効にした場合、相対 URI はセッションIDを有するように
-    自動的に変更されます。
-    もしくは、クライアントが適当なクッキーを送信しない場合に
-    定義される定数 <literal>SID</literal> を使用することができます。
-    <literal>SID</literal> は、<literal>session_name=session_id</literal> 
-    の形式または空の文字列です。
-   </para>
-   <para>
-    次の例は、変数の登録法および SID を用いて他のページに正しくリンク
-    する方法のデモです。
-    <example>
-     <title>単一のユーザーに関するヒット数を数える</title>
-     <programlisting role="php">
+      </programlisting>
+     </example>
+    </para>
+    <para>
+     <link
+      linkend="ini.register-globals"><literal>register_globals</literal></link>
+     が有効な場合、グローバル変数と<varname>$_SESSION</varname>の
+     エントリは、前のセッションインスタンスで登録されたセッション変数
+     の同じ値を参照することになります。
+    </para>
+    <para>
+     加えて、<function>session_register</function>により新しいセッショ
+     ン変数を登録する場合、グローバルスコープのエントリと
+     <varname>$_SESSION</varname>のエントリは、次の
+     <function>session_start</function>まで同じ値へのリファレンスとは
+     なりません。(これは、PHP 4.2より前のバージョンのみに適用されます。)
+     すなわち、グローバル変数への修正は、<varname>$_SESSION</varname>
+     のエントリには反映されません。これは、実際には問題にはならないと
+     思われますが、PHP 4.3では修正されています。
+    </para>
+   </section>
+    
+   <section id="session.idpassing">
+    <title>セッションIDの受渡し</title>
+    <para>
+     セッションIDの通知を行うためには次の二つの方法があります。
+     <itemizedlist>
+      <listitem>
+       <simpara>
+        Cookie
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+        URLパラメータ
+       </simpara>
+      </listitem>
+     </itemizedlist>
+    </para>
+    <para>
+     sessionモジュールは、両方の方法をサポートします。
+     Cookieは最適ですが、(クライアントがCookieを受け入れない可能性が
+     あるため)信頼性がなく、これに依存することができません。2番目の方
+     法は、セッションIDを直接URLに埋め込みます。
+    </para>
+    <para>
+     PHP は、<link linkend="install.configure.enable-trans-sid">
+      <literal>--enable-trans-sid</literal></link>を付けてコンパイルされた
+     場合にこの処理を透過的に行います。このオプションは、PHP 4.2以降常
+      に有効となっています。このオプションを有効にした場合、相対 URI
+      はセッションIDを有するように自動的に変更されます。
+     もしくは、クライアントが適当なクッキーを送信しない場合に
+     定義される定数 <literal>SID</literal> を使用することができます。
+     <literal>SID</literal> は、<literal>session_name=session_id</literal> 
+     の形式または空の文字列です。
+     <note>
+      <para>
+       <link linkend="ini.arg-separator.output">arg_separator.output</link>
+       &php.ini; ディレクティブにより、引数のセパレータをカスタマイズ
+       することが可能です。
+      </para>
+     </note> 
+    </para>
+    <para>
+     次の例は、変数の登録法および SID を用いて他のページに正しくリンク
+     する方法のデモです。
+     <example>
+      <title>単一のユーザーに関するヒット数を数える</title>
+      <programlisting role="php">
 <![CDATA[
 <?php
 if (!session_is_registered('count')) {
@@ -245,194 +341,39 @@ else {
 
 こんにちは、あなたがこのページに来たのは<?php echo $count; ?>回目ですね。 <p>
 
-<?php
-# ユーザーがクッキーを使用不可としている場合は、セッションIDを
-# 保持するために<?php echo SID?> (short tagを有効としている場合は
-# <?=SID?>も使用可能です)が必要です。
-?>
-
 続けるには、<A HREF="nextpage.php?<?php echo SID?>">ここをクリック</A>して下さい。
 ]]>
-     </programlisting>
-    </example>
-   </para>
-   <para>
-    PHPのコンパイル時に <link linkend="install.configure.enable-trans-sid">
-    <literal>--enable-trans-sid</literal></link>を指定した場合には、
-    <literal>&lt;?php echo SID?&gt;</literal> は必要ありません。
-   </para>
-   <note>
-    <para>
-     相対URLでないURLは、外部サイトを指していると仮定されSIDが追加
-     されません。これは、SIDを異なったサーバにもらすことはセキュリティ
-     上のリスクとなるためです。
+      </programlisting>
+     </example>
     </para>
-   </note>
-   <para>
-    セッション情報をデータベースに保存する機能か他の保存法を実装するに
-    は、一連のユーザレベルの保存関数を作成し、
-    <function>session_set_save_handler</function>を使用する必要があり
-    ます。
-   </para>
-   <para>
-    セッション管理システムは、php.ini ファイルに記述可能な多くの設定オ
-    プションをサポートします。以下に概要を示します。
-    <itemizedlist>
-     <listitem>
-      <simpara>
-       <literal>session.save_handler</literal> は、セッションに関連す
-       るデータの保存および取得に使用されるハンドル名を定義します。デ
-       フォルトは、<literal>files</literal>です。
-      </simpara>
-     </listitem>
-     <listitem>
-      <simpara>
-       <literal>session.save_path</literal> は、保存ハンドラに渡される
-       引数を定義します。デフォルトのファイルハンドラ選択した場合、
-       ファイルが作成される場所のパスになります。デフォルトは、
-       <literal>/tmp</literal> です。
-       <literal>session.save_path</literal>のパスの深さが2より大きい場
-       合、ガーベッジコレクションは行われません。
-      </simpara>
-      <warning>
-       <para>
-        この設定を<filename>/tmp</filename> (デフォルト)のようにどこか
-        らでも読み込み可能なディレクトリのままにしている場合、サーバ上
-        の他のユーザがこのディレクトリのファイルのリストを取得すること
-        により、セッションをハイジャックをすることが可能となります。
-       </para>
-      </warning>
-     </listitem>
-     <listitem>
-      <simpara>
-       <literal>session.name</literal> はセッション名を指定し、
-       クッキー名として使用されます。
-       アルファベット文字のみで指定する必要があります。
-       デフォルトは、<literal>PHPSESSID</literal> です。
-      </simpara>
-     </listitem>
-     <listitem>
-      <simpara>
-       <literal>session.auto_start</literal> はリクエスト開始時に
-       セッションモジュールがセッションを自動的に開始するかどうかを
-       指定します。デフォルトは、<literal>0</literal>(無効)です。
-      </simpara>
-     </listitem>
-     <listitem>
-      <simpara>
-       <literal>session.cookie_lifetime</literal>は、ブラウザに送信す
-       るクッキーの有効期間を秒数で指定します。値0は、"ブラウザを閉じ
-       るまで"を意味します。デフォルトは、<literal>0</literal>です。
-      </simpara>
-     </listitem>
-     <listitem>
-      <simpara>
-       <literal>session.serialize_handler</literal> は、シリアル化また
-       はシリアル化データを復元するために使用されるハンドラの名前を定
-       義します。現在、( <literal>php</literal>という名前の)PHP 内部
-       フォーマットおよび(<literal>wddx</literal>という名前の)WDDX が
-       サポートされています。WDDXは、PHP が<link
-       linkend="ref.wddx">WDDX サポート</link> を有効にしてコンパイル
-       されている場合のみ使用可能です。デフォルトは、
-       <literal>php</literal> です。
-      </simpara>
-     </listitem>
-     <listitem>
-      <simpara>
-       <literal>session.gc_probability</literal> は、gc (ガーベッジ・
-       コレクション)ルーチンが各リクエストにおいて開始される確率をパー
-       セントで指定します。デフォルトは、<literal>1</literal> です。
-      </simpara>
-     </listitem>
-     <listitem>
-      <simpara>
-       <literal>session.gc_maxlifetime</literal> は、データが'ごみ'と
-       みなされてから消去されるまでの秒数を指定します。
-      </simpara>
-     </listitem>
-     <listitem>
-      <simpara>
-       <literal>session.referer_check</literal> には、HTTP Referer に
-       おいて確認を行う文字列を指定します。Refererがクライアントにより
-       送信されており、かつ、指定した文字列が見付からない場合、埋め込
-       まれたセッションIDは無効となります。デフォルトは空の文字列です。
-      </simpara>
-     </listitem>
-     <listitem>
-      <simpara>
-       <literal>session.entropy_file</literal> は、
-       セッションIDを作成する際の別のエントロピソースとして使用する
-       外部リソースへのパスを指定します。
-       例としては、多くの UNIX で利用可能な <literal>/dev/random</literal> 
-       または <literal>/dev/urandom</literal> があげられます。
-      </simpara>
-     </listitem>
-     <listitem>
-      <simpara>
-       <literal>session.entropy_length</literal> は、前記のファイルから読みこむ
-       バイト数を指定します。デフォルトは、<literal>0</literal> (無効)です。
-      </simpara>
-     </listitem>
-     <listitem>
-      <simpara>
-       <literal>session.use_cookies</literal>によりクライアント側にセッションID
-       を保存する際にクッキーを使用するかどうかを指定します。デフォルトは
-       <literal>1</literal> (有効)です。
-      </simpara>
-     </listitem>
-     <listitem>
-      <simpara>
-       <literal>session.cookie_path</literal>によりsession_cokkieで設定する
-       パスを指定します。デフォルトは<literal>/</literal>です。
-      </simpara>
-     </listitem>
-     <listitem>
-      <simpara>
-       <literal>session.cookie_domain</literal>によりsession_cookieで指定する
-       ドメインを指定します。デフォルトでは指定されません。
-      </simpara>
-     </listitem>
-     <listitem>
-      <simpara>
-       <literal>session.cache_limiter</literal>により
-       セッションページにおけるキャッシュ制御の方法(nocache/private/public)
-       を指定します。デフォルトは、<literal>nocache</literal>です。
-      </simpara>
-     </listitem>
-     <listitem>
-      <simpara>
-       <literal>session.cache_expire</literal>によりキャッシュされた
-       セッションページの生存期間を分単位で指定します。
-       このオプションは、nocacheリミッタに関しては効果がありません。
-       デフォルトは、<literal>180</literal>です。
-      </simpara>
-     </listitem>    
-     <listitem>
-      <simpara>
-       <literal>session.use_trans_sid</literal>は、
-       <link linkend="install.configure.enable-trans-sid">
-       <literal>--enable-trans-sid</literal></link>を指定してコンパイ
-       ルを行うことにより有効となった場合に、透過的なセッション
-       IDの付加をするかどうかを指定します。
-       デフォルトは、<literal>1</literal>(有効)です。
-      </simpara>
-     </listitem>
-     <listitem>
-      <simpara>
-       <literal>url_rewriter.tags</literal>は、透過的なセッションIDの
-       付加機能が有効となった場合に、セッションIDを含めるために書き換
-       えられるHTMLタグを指定します。デフォルトは、
-       <literal>a=href,area=href,frame=src,input=src,form=fakeentry</literal>
-       です。
-      </simpara>
-     </listitem>
-    </itemizedlist>
+    <para>
+     <literal>&lt;?php echo SID?&gt;</literal>
+     (<link linkend="ini.short-open-tag">short_open_tag</link>が有効な
+      場合は<literal>&lt;?=SID?&gt;</literal>を使用できます)は、
+     ユーザがCookieを無効とした場合にセッションIDを保存するために必要
+     です。PHPのコンパイル時に <link
+     linkend="install.configure.enable-trans-sid">
+      <literal>--enable-trans-sid</literal></link>を指定した場合には、
+     <literal>&lt;?php echo SID?&gt;</literal>は不要です。
+    </para>
     <note>
      <para>
-      セッション処理機能は、PHP 4.0 でサポートされました。
+      相対URLでないURLは、外部サイトを指していると仮定されSIDが追加
+      されません。これは、SIDを異なったサーバにもらすことはセキュリティ
+      上のリスクとなるためです。
      </para>
     </note>
-   </para>
+   </section>
+
+   <section id="session.customhandler">
+    <title>カスタムセッションハンドラ</title>
+    <para>
+     セッション情報をデータベースに保存する機能か他の保存法を実装する
+     には、一連のユーザレベルの保存関数を作成し、
+     <function>session_set_save_handler</function>を使用する必要があり
+     ます。
+    </para>
+   </section>
   </partintro>
 
 &reference.session.functions;
