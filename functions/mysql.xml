@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.23 $ -->
  <reference id="ref.mysql">
   <title>MySQL関数</title>
   <titleabbrev>MySQL</titleabbrev>
@@ -25,6 +26,99 @@
     MySQL のドキュメントは、<ulink
     url="&url.mysql.docs;">&url.mysql.docs;</ulink>にあります。
    </simpara>
+   <para>
+    MySQL関数の動作は、グローバルな<link linkend="configuration">設定
+    </link>ファイルの設定の影響を受けます。
+    <table>
+     <title><link linkend="ini.sect.mysql">MySQL設定</link>オプション</title>
+     <tgroup cols="3">
+      <thead>
+       <row>
+        <entry>名前</entry>
+        <entry>デフォルト</entry>
+        <entry>変更の可否</entry>
+       </row>
+      </thead>
+      <tbody>
+       <row>
+        <entry>mysql.allow_persistent</entry>
+        <entry>"On"</entry>
+        <entry>PHP_INI_SYSTEM</entry>
+       </row>
+       <row>
+        <entry>mysql.max_persistent</entry>
+        <entry>"-1"</entry>
+        <entry>PHP_INI_SYSTEM</entry>
+       </row>
+       <row>
+        <entry>mysql.max_links</entry>
+        <entry>"-1"</entry>
+        <entry>PHP_INI_SYSTEM</entry>
+       </row>
+       <row>
+        <entry>mysql.default_port</entry>
+        <entry>NULL</entry>
+        <entry>PHP_INI_ALL</entry>
+       </row>
+       <row>
+        <entry>mysql.default_socket</entry>
+        <entry>NULL</entry>
+        <entry>PHP_INI_ALL</entry>
+       </row>
+       <row>
+        <entry>mysql.default_host</entry>
+        <entry>NULL</entry>
+        <entry>PHP_INI_ALL</entry>
+       </row>
+       <row>
+        <entry>mysql.default_user</entry>
+        <entry>NULL</entry>
+        <entry>PHP_INI_ALL</entry>
+       </row>
+      </tbody>
+     </tgroup>
+    </table>
+    PHP_INI_*定数に関する詳細と定義については、
+    <function>ini_set</function>を参照下さい。
+   </para>
+   <para>
+    以下は、MySQLデータベースに接続し、クエリを実行し、結果レコードを
+    出力、接続を断する例です。
+    <example>
+     <title>MySQL拡張に関する概要の例</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+// データベースに接続し、選択する
+$link = mysql_connect("mysql_host", "mysql_login", "mysql_password")
+    or die("Could not connect");
+print "Connected successfully";
+mysql_select_db("my_database")
+    or die("Could not select database");
+
+// SQLクエリを実行する
+$query = "SELECT * FROM my_table";
+$result = mysql_query($query)
+    or die("Query failed");
+
+// HTMLに結果を出力する
+print "<table>\n";
+while ($line = mysql_fetch_array($result, MYSQL_ASSOC)) {
+    print "\t<tr>\n";
+    foreach ($line as $col_value) {
+        print "\t\t<td>$col_value</td>\n";
+    }
+    print "\t</tr>\n";
+}
+print "</table>\n";
+
+// 接続を閉じる
+mysql_close($link);
+?>
+]]>
+     </programlisting>
+    </example>
+   </para>
   </partintro>
 
   <refentry id="function.mysql-affected-rows">
@@ -107,7 +201,7 @@
 	<replaceable><optional>database</optional></replaceable>
        </parameter>
       </paramdef>
-      <paramdef>int 
+      <paramdef>resource
        <parameter>
 	<replaceable><optional>link_identifier</optional></replaceable>
        </parameter>
@@ -140,8 +234,8 @@
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>int <function>mysql_close</function></funcdef>
-      <paramdef>int 
+      <funcdef>bool <function>mysql_close</function></funcdef>
+      <paramdef>resource 
        <parameter>
         <replaceable><optional>link_identifier</optional></replaceable>
        </parameter>
@@ -149,17 +243,19 @@
      </funcprototype>
     </funcsynopsis>
     <para>
-     成功の場合に&true;、エラーの場合に&false;を返します。
+     &return.success;
     </para>
     <para> 
      <function>mysql_close</function>は、指定したlink_identifierが指す
      MySQLデータベースへのリンクを閉じます。
-     link_identifierが指定されない場合、最後にオープンされたリンクが
-     仮定されます。
+     <parameter>link_identifier</parameter>が指定されない場合、最後に
+     オープンされたリンクが使用されます。
     </para>
     <para> 
-     非持続的リンクはスクリプトの実行終了時に自動的に
-     閉じられるので、この関数は通常の場合必要ありません。
+     持続的でないリンクはスクリプトの実行終了時に自動的に閉じられるの
+     で、この関数は通常の場合必要ありません。<link
+     linkend="language.types.resource.self-destruct">リソースの解放
+     </link>を参照下さい。
     </para>
     <para> 
      <function>mysql_close</function>は、<function>mysql_pconnect</function>
@@ -168,12 +264,14 @@
     <example>
      <title>MySQL 接続をクローズする例</title>
      <programlisting role="php">
-&lt;?php
-    $link = mysql_connect ("kraemer", "marliesle", "secret")
-        or die ("接続できません");
-    print ("接続に成功しました");
-    mysql_close ($link);
+<![CDATA[
+<?php
+    $link = mysql_connect("kraemer", "marliesle", "secret")
+        or exit("Could not connect");
+    print ("Connected successfully");
+    mysql_close($link);
 ?>
+]]>
      </programlisting>
     </example>
     <para> 
@@ -193,24 +291,19 @@
     <funcsynopsis>
      <funcprototype>
       <funcdef>int <function>mysql_connect</function></funcdef>
-      <paramdef>string 
+      <paramdef>string
        <parameter>
-        <replaceable>
-	 <optional>hostname
-	  <optional>:port</optional>
-	  <optional>:/path/to/socket</optional>
-	 </optional>
-	</replaceable>
+        <optional>server</optional>
        </parameter>
       </paramdef>
-      <paramdef>string 
+      <paramdef>string
        <parameter>
-	<replaceable><optional>user_name</optional></replaceable>
+        <optional>username</optional>
        </parameter>
       </paramdef>
-      <paramdef>string 
+      <paramdef>string
        <parameter>
-	<replaceable><optional>password</optional></replaceable>
+        <optional>password</optional>
        </parameter>
       </paramdef>
      </funcprototype>
@@ -220,15 +313,18 @@
      エラーメッセージを発生します。
     </para>
     <para> 
-     <function>mysql_connect</function>は、MySQL サーバーへの
-     接続を確立します。引数は全てオプションで、指定されない場合、
-     デフォルト値 ('localhost'、サーバープロセスの所有者のユーザー名、
-     空のパスワード)が適用されます。
+     <function>mysql_connect</function>は、MySQL サーバーへの接続を確
+     立します。オプションのパラメータが指定されない場合、以下のデフォ
+     ルト値が使用されます。: 
+     <parameter>server</parameter> = 'localhost:3306', 
+     <parameter>username</parameter> = サーバプロセスの所有ユーザ名
+     <parameter>password</parameter> = 空のパスワード
     </para>
     <para>
-     文字列hostnameには、ポート番号も指定することが可能です。
-     例えば、&quot;hostname:port&quot;とします。localhostの場合には、
-     ソケットへのパス &quot;:/path/to/socket&quot;とします。
+     パラメータ<parameter>server</parameter>には、ポート番号も指定する
+     ことが可能です。例えば、&quot;hostname:port&quot;、または、
+     localhostの場合には、ソケットへのパス
+     &quot;:/path/to/socket&quot;とします。
      <note>
       <para>
        &quot;:port&quot;のサポートは3.0B4で追加されました。
@@ -254,14 +350,14 @@
     <example>
      <title>MySQL に接続する例</title>
      <programlisting role="php">
-&lt;?php
-
-    $link = mysql_connect ("localhost", "username", "secret")
-        or die ("接続できませんでした");
-    print ("接続に成功しました");
-    mysql_close ($link);
-
-?&gt;
+<![CDATA[
+<?php
+    $link = mysql_connect("localhost", "username", "secret")
+        or die("Could not connect");
+    print ("Connected successfully");
+    mysql_close($link);
+?>
+]]>
      </programlisting>
     </example>
     <para> 
@@ -280,9 +376,9 @@
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>int <function>mysql_create_db</function></funcdef>
+      <funcdef>bool <function>mysql_create_db</function></funcdef>
       <paramdef>string <parameter>database_name</parameter></paramdef>
-      <paramdef>int 
+      <paramdef>resource 
        <parameter>
         <replaceable><optional>link_identifier</optional></replaceable>
        </parameter>
@@ -296,15 +392,17 @@
     <example>
      <title>MySQLデータベースを作成する例</title>
      <programlisting role="php">
-&lt;?php
-    $link = mysql_pconnect ("kron", "jutta", "geheim")
-        or die ("Could not connect");
-    if (mysql_create_db ("my_db")) {
-        print ("データベースの作成に成功しました\n");
+<![CDATA[
+<?php
+    $link = mysql_pconnect("kron", "jutta", "geheim")
+        or exit("Could not connect");
+    if (mysql_create_db("my_db")) {
+        print ("Database created successfully\n");
     } else {
-        printf ("データベース作成時に次のエラーが発生しました: %s\n", mysql_error ());
+        printf ("Error creating database: %s\n", mysql_error ());
     }
 ?>
+]]>
      </programlisting>
     </example>
     <para> 
@@ -326,13 +424,13 @@
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>int <function>mysql_data_seek</function></funcdef>
-      <paramdef>int <parameter>result_identifier</parameter></paramdef>
+      <funcdef>bool <function>mysql_data_seek</function></funcdef>
+      <paramdef>resource <parameter>result_identifier</parameter></paramdef>
       <paramdef>int <parameter>row_number</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para> 
-     成功した場合に&true;、失敗した場合に&false;を返します。
+     &return.success;
     </para>
     <para> 
      <function>mysql_data_seek</function>は、指定した結果ID 
@@ -344,37 +442,38 @@
     <para>
      <parameter>row_number</parameter> は、0から始まります。
     </para>
-
     <example>
      <title>MySQLデータをシークする例</title>
      <programlisting role="php">
-&lt;?php
-    $link = mysql_pconnect ("kron", "jutta", "geheim")
-        or die ("接続できません");
+<![CDATA[
+<?php
+    $link = mysql_pconnect("kron", "jutta", "geheim")
+        or die("Could not connect");
 
-    mysql_select_db ("samp_db")
-        or die ("データベースを select できません");
+    mysql_select_db("samp_db")
+        or exit("Could not select database");
 
     $query = "SELECT last_name, first_name FROM friends";
-    $result = mysql_query ($query)
-        or die ("クエリが失敗しました");
+    $result = mysql_query($query)
+        or die("Query failed");
 
-    # 行を逆順に取得する
+    // fetch rows in reverse order
 
-    for ($i = mysql_num_rows ($result) - 1; $i >=0; $i--) {
-        if (!mysql_data_seek ($result, $i)) {
-            printf ("行 %d に移動できません\n", $i);
+    for ($i = mysql_num_rows($result) - 1; $i >=0; $i--) {
+        if (!mysql_data_seek($result, $i)) {
+            echo "Cannot seek to row $i\n";
             continue;
         }
 
-        if(!($row = mysql_fetch_object ($result)))
+        if(!($row = mysql_fetch_object($result)))
             continue;
 
-        printf ("%s %s&lt;BR>\n", $row->last_name, $row->first_name);
+        echo "$row->last_name $row->first_name<br />\n";
     }
 
-    mysql_free_result ($result);
+    mysql_free_result($result);
 ?>
+]]>
      </programlisting>
     </example>
    </refsect1>
@@ -389,8 +488,8 @@
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>int <function>mysql_db_name</function></funcdef>
-      <paramdef>int <parameter>result</parameter></paramdef>
+      <funcdef>string <function>mysql_db_name</function></funcdef>
+      <paramdef>resource <parameter>result</parameter></paramdef>
       <paramdef>int <parameter>row</parameter></paramdef>
       <paramdef>mixed 
        <parameter>
@@ -414,7 +513,8 @@
     <example>
      <title><function>mysql_db_name</function> の例</title>
      <programlisting role="php">
-&lt;?php 
+<![CDATA[
+<?php
 error_reporting(E_ALL);
 
 mysql_connect('dbhost', 'username', 'password');
@@ -422,11 +522,12 @@ $db_list = mysql_list_dbs();
 
 $i = 0;
 $cnt = mysql_num_rows($db_list);
-while ($i &lt; $cnt) {
+while ($i < $cnt) {
     echo mysql_db_name($db_list, $i) . "\n";
     $i++;
 }
 ?>
+]]>
      </programlisting>
     </example>
     <para>
@@ -445,10 +546,10 @@ while ($i &lt; $cnt) {
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>int <function>mysql_db_query</function></funcdef>
+      <funcdef>resource <function>mysql_db_query</function></funcdef>
       <paramdef>string <parameter>database</parameter></paramdef>
       <paramdef>string <parameter>query</parameter></paramdef>
-      <paramdef>int 
+      <paramdef>resource
        <parameter>
         <replaceable><optional>link_identifier</optional></replaceable>
        </parameter>
@@ -469,10 +570,17 @@ while ($i &lt; $cnt) {
      同様にリンクを作成しようとします。
     </para>
     <para> 
-     <function>mysql_connect</function>も参照下さい。
+     <function>mysql_connect</function>と
+     <function>mysql_query</function>も参照下さい。
     </para>
-    <para> 
-     下位互換性の維持のために<function>mysql</function>も使用可能です。
+    <para>
+     <note>
+      <simpara>
+       この関数は、PHP 4.0.6以降古い関数となっています。この関数は使用
+       しないで下さい。替わりに<function>mysql_select_db</function>お
+       よび<function>mysql_query</function>を使用して下さい。
+      </simpara>
+     </note>
     </para>
    </refsect1>
   </refentry>
@@ -486,17 +594,17 @@ while ($i &lt; $cnt) {
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>int <function>mysql_drop_db</function></funcdef>
+      <funcdef>bool <function>mysql_drop_db</function></funcdef>
       <paramdef>string <parameter>database_name</parameter></paramdef>
-      <paramdef>int 
+      <paramdef>resource 
        <parameter>
         <replaceable><optional>link_identifier</optional></replaceable>
        </parameter>
       </paramdef>
      </funcprototype>
     </funcsynopsis>
-    <para> 
-     成功した場合に&true;、失敗した場合に&false;を返します。
+    <para>
+     &return.success;
     </para>
     <para> 
      <function>mysql_drop_db</function>は、指定したlink_identifierが指す
@@ -506,6 +614,9 @@ while ($i &lt; $cnt) {
      <function>mysql_create_db</function>も参照下さい。
      下位互換性の維持のため、<function>mysql_dropdb</function>を
      使用することも可能です。
+    </para>
+    <para>
+     <function>mysql_create_db</function>も参照下さい。
     </para>
    </refsect1>
   </refentry>
@@ -522,7 +633,7 @@ while ($i &lt; $cnt) {
     <funcsynopsis>
      <funcprototype>
       <funcdef>int <function>mysql_errno</function></funcdef>
-      <paramdef>int 
+      <paramdef>resource
        <parameter>
         <replaceable><optional>link_identifier</optional></replaceable>
        </parameter>
@@ -546,14 +657,16 @@ while ($i &lt; $cnt) {
      他のMySQL関数をコールする前に値をチェックするようにして下さい。
      <informalexample>
       <programlisting role="php">
-&lt;?php
+<![CDATA[
+<?php
 mysql_connect("marliesle");
-echo mysql_errno().": ".mysql_error()."&lt;BR>";
+echo mysql_errno().": ".mysql_error()."<BR>";
 mysql_select_db("nonexistentdb");
-echo mysql_errno().": ".mysql_error()."&lt;BR>";
+echo mysql_errno().": ".mysql_error()."<BR>";
 $conn = mysql_query("SELECT * FROM nonexistenttable");
-echo mysql_errno().": ".mysql_error()."&lt;BR>";
+echo mysql_errno().": ".mysql_error()."<BR>";
 ?>
+]]>
       </programlisting>
      </informalexample>
     </para>
@@ -575,7 +688,7 @@ echo mysql_errno().": ".mysql_error()."&lt;BR>";
     <funcsynopsis>
      <funcprototype>
       <funcdef>string <function>mysql_error</function></funcdef>
-      <paramdef>int 
+      <paramdef>resource
        <parameter>
         <replaceable><optional>link_identifier</optional></replaceable>
        </parameter>
@@ -596,14 +709,16 @@ echo mysql_errno().": ".mysql_error()."&lt;BR>";
      他のMySQL関数をコールする前にあ値をチェックするようにして下さい。
      <informalexample>
       <programlisting role="php">
-&lt;?php
+<![CDATA[
+<?php
 mysql_connect("marliesle");
-echo mysql_errno().": ".mysql_error()."&lt;BR>";
+echo mysql_errno().": ".mysql_error()."<BR>";
 mysql_select_db("nonexistentdb");
-echo mysql_errno().": ".mysql_error()."&lt;BR>";
+echo mysql_errno().": ".mysql_error()."<BR>";
 $conn = mysql_query("SELECT * FROM nonexistenttable");
-echo mysql_errno().": ".mysql_error()."&lt;BR>";
+echo mysql_errno().": ".mysql_error()."<BR>";
 ?>
+]]>
       </programlisting>
      </informalexample>
     </para>
@@ -653,7 +768,7 @@ echo mysql_errno().": ".mysql_error()."&lt;BR>";
     <funcsynopsis>
      <funcprototype>
       <funcdef>array <function>mysql_fetch_array</function></funcdef>
-      <paramdef>int <parameter>result</parameter></paramdef>
+      <paramdef>resource <parameter>result</parameter></paramdef>
       <paramdef>int 
        <parameter>
         <replaceable><optional>result_type</optional></replaceable>
@@ -677,8 +792,10 @@ echo mysql_errno().": ".mysql_error()."&lt;BR>";
      同名の他のカラムにアクセスするには、そのカラムの数値インデックス
      を使うかまたはカラムの別名を定義する必要があります。
      <informalexample>
-      <programlisting>
-select t1.f1 as foo t2.f1 as bar from t1, t2
+      <programlisting role="sql">
+<![CDATA[
+select tone.field as foo ttwo.field as bar from tone, ttwo
+]]>
       </programlisting>
      </informalexample>
     </para>
@@ -692,7 +809,16 @@ select t1.f1 as foo t2.f1 as bar from t1, t2
      <function>mysql_fetch_array</function>の
      オプションの2番目の引数<parameter>result_type</parameter>は定数であり、
      次の値をとります。: MYSQL_ASSOC, MYSQL_NUM, MYSQL_BOTH
-     (この機能は PHP 3.0.7で追加された機能です)
+     この機能は PHP 3.0.7で追加された機能です。この引数のデフォルト値は、
+     MYSQL_BOTHです。
+    </para>
+    <para>
+     MYSQL_BOTHを使用すると、連想添字と数値添字を共に有する配列を取得
+     します。MYSQL_ASSOCを使用すると、(
+     <function>mysql_fetch_assoc</function>の動作と同様に)連想添字のみ
+     が取得され、MYSQL_NUMを使用すると、
+     (<function>mysql_fetch_row</function>の動作と同様に数値添字のみが
+     取得されます。
     </para>
     <para>
      より詳細な情報については、
@@ -700,19 +826,22 @@ select t1.f1 as foo t2.f1 as bar from t1, t2
      <function>mysql_fetch_assoc</function>も参照下さい。
     </para>
     <example>
-     <title><function>mysql_fetch_array</function></title>
+     <title><function>mysql_fetch_array</function>の例</title>
      <programlisting role="php">
-&lt;?php 
-mysql_connect ($host, $user, $password);
-$result = mysql_db_query ("database","select user_id, fullname from table");
-while ($row = mysql_fetch_array ($result)) {
-    echo "user_id: ".$row["user_id"]."&lt;br>\n";
-    echo "user_id: ".$row[0]."&lt;br>\n";
-    echo "fullname: ".$row["fullname"]."&lt;br>\n";
-    echo "fullname: ".$row[1]."&lt;br>\n";
+<![CDATA[
+<?php
+mysql_connect($host, $user, $password);
+mysql_select_db("database");
+$result = mysql_query("select user_id, fullname from table");
+while ($row = mysql_fetch_array($result)) {
+    echo "user_id: ".$row["user_id"]."<br>\n";
+    echo "user_id: ".$row[0]."<br>\n";
+    echo "fullname: ".$row["fullname"]."<br>\n";
+    echo "fullname: ".$row[1]."<br>\n";
 }
-mysql_free_result ($result);
+mysql_free_result($result);
 ?>
+]]>
      </programlisting>
     </example>
    </refsect1>
@@ -730,7 +859,7 @@ mysql_free_result ($result);
     <funcsynopsis>
      <funcprototype>
       <funcdef>array <function>mysql_fetch_assoc</function></funcdef>
-      <paramdef>int <parameter>result</parameter></paramdef>
+      <paramdef>resource <parameter>result</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
@@ -749,8 +878,9 @@ mysql_free_result ($result);
     <para>
      結果の複数のカラムが同じフィールド名を有している場合、最後のカラ
      ムが優先されます。同じ名前を有する他のカラムにアクセスするには、
-     <function>mysql_fetch_array</function>を使用し、同時に数値添字も
-     返す必要があります。
+     <function>mysql_fetch_row</function>を使用して数値添字を返すか、
+     エイリアス名を追加する必要があります。エイリアスの説明については、
+     <function>mysql_fetch_array</function>の例を参照下さい。
     </para>
     <para>
      <function>mysql_fetch_assoc</function>の使用に関して、著しい付加
@@ -764,15 +894,19 @@ mysql_free_result ($result);
     <example>
      <title><function>mysql_fetch_assoc</function></title>
      <programlisting role="php">
-&lt;?php 
-mysql_connect ($host, $user, $password);
-$result = mysql_db_query ("database","select * from table");
-while ($row = mysql_fetch_assoc ($result)) {
+<![CDATA[
+<?php
+mysql_connect($host, $user, $password);
+mysql_select_db($database);
+$query = "select * from table";
+$result = mysql_query($query);
+while ($row = mysql_fetch_assoc($result)) {
     echo $row["user_id"];
     echo $row["fullname"];
 }
-mysql_free_result ($result);
+mysql_free_result($result);
 ?>
+]]>
      </programlisting>
     </example>
    </refsect1>
@@ -790,7 +924,7 @@ mysql_free_result ($result);
     <funcsynopsis>
      <funcprototype>
       <funcdef>object <function>mysql_fetch_field</function></funcdef>
-      <paramdef>int <parameter>result</parameter></paramdef>
+      <paramdef>resource <parameter>result</parameter></paramdef>
       <paramdef>int 
        <parameter>
         <replaceable><optional>field_offset</optional></replaceable>
@@ -876,20 +1010,22 @@ mysql_free_result ($result);
     <example>
      <title><function>mysql_fetch_field</function></title>
      <programlisting role="php">
-&lt;?php 
-mysql_connect ($host, $user, $password)
-    or die ("接続できません");
-$result = mysql_db_query ("database", "select * from table")
-    or die ("クエリが失敗しました");
+<![CDATA[
+<?php
+mysql_connect('localhost:3306', $user, $password)
+    or die ("Could not connect");
+mysql_select_db("database");
+$result = mysql_query("select * from table")
+    or die("Query failed");
 # get column metadata
 $i = 0;
-while ($i &lt; mysql_num_fields ($result)) {
-    echo "カラム $i の情報 &lt;BR>\n";
-    $meta = mysql_fetch_field ($result);
+while ($i < mysql_num_fields($result)) {
+    echo "Information for column $i:<BR>\n";
+    $meta = mysql_fetch_field($result);
     if (!$meta) {
-        echo "情報を入手できません &lt;BR>\n";
+        echo "No information available<BR>\n";
     }
-    echo "&lt;PRE>
+    echo "<PRE>
 blob:         $meta->blob
 max_length:   $meta->max_length
 multiple_key: $meta->multiple_key
@@ -902,11 +1038,12 @@ type:         $meta->type
 unique_key:   $meta->unique_key
 unsigned:     $meta->unsigned
 zerofill:     $meta->zerofill
-&lt;/PRE>";
+</PRE>";
     $i++;
 }
-mysql_free_result ($result);
+mysql_free_result($result);
 ?>
+]]>
      </programlisting>
     </example>
     <para>
@@ -926,8 +1063,8 @@ mysql_free_result ($result);
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef> <function>mysql_fetch_lengths</function></funcdef>
-      <paramdef>int <parameter>result</parameter></paramdef>
+      <funcdef>array <function>mysql_fetch_lengths</function></funcdef>
+      <paramdef>resource <parameter>result</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para> 
@@ -959,7 +1096,7 @@ mysql_free_result ($result);
     <funcsynopsis>
      <funcprototype>
       <funcdef>object <function>mysql_fetch_object</function></funcdef>
-      <paramdef>int <parameter>result</parameter></paramdef>
+      <paramdef>resource <parameter>result</parameter></paramdef>
       <paramdef>int 
        <parameter>
         <replaceable><optional>result_typ</optional></replaceable>
@@ -987,17 +1124,20 @@ mysql_free_result ($result);
      速度面では、この関数は<function>mysql_fetch_array</function>と同等で、
      <function>mysql_fetch_row</function>とほぼ同等です。(違いはわずかです)
      <example>
-      <title>MySQLオブジェクトの取得</title>
+      <title><function>mysql_fetch_object</function>の例</title>
       <programlisting role="php">
-&lt;?php 
-mysql_connect ($host, $user, $password);
-$result = mysql_db_query ("database", "select * from table");
-while($row = mysql_fetch_object ($result)) {
+<![CDATA[
+<?php
+mysql_connect("hostname", "user", "password");
+mysql_select_db($db);
+$result = mysql_query("select * from table");
+while ($row = mysql_fetch_object($result)) {
     echo $row->user_id;
     echo $row->fullname;
 }
-mysql_free_result ($result);
+mysql_free_result($result);
 ?>
+]]>
       </programlisting>
      </example>
     </para>
@@ -1018,7 +1158,7 @@ mysql_free_result ($result);
     <funcsynopsis>
      <funcprototype>
       <funcdef>array <function>mysql_fetch_row</function></funcdef>
-      <paramdef>int <parameter>result</parameter></paramdef>
+      <paramdef>resource <parameter>result</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para> 
@@ -1057,7 +1197,7 @@ mysql_free_result ($result);
     <funcsynopsis>
      <funcprototype>
       <funcdef>string <function>mysql_field_flags</function></funcdef>
-      <paramdef>string <parameter>result</parameter></paramdef>
+      <paramdef>resource <parameter>result</parameter></paramdef>
       <paramdef>int <parameter>field_offset</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
@@ -1091,18 +1231,53 @@ mysql_free_result ($result);
     <funcsynopsis>
      <funcprototype>
       <funcdef>string <function>mysql_field_name</function></funcdef>
-      <paramdef>int <parameter>result</parameter></paramdef>
+      <paramdef>resource <parameter>result</parameter></paramdef>
       <paramdef>int <parameter>field_index</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
      <function>mysql_field_name</function>は、指定したフィールドの
-     名前を返します。関数の引数は、結果IDとフィールドインデックスです。
-     すなわち、<literal>mysql_field_name($result,2);</literal>
+     名前を返します。<parameter>result</parameter>は有効な結果ID、
+     <parameter>field_index</parameter>はフィールドのオフセット数とす
+     る必要があります。
     </para>
+    <note>
+     <para>
+      <parameter>field_index</parameter>は0から始まります。
+     </para>
+     <para>
+      例えば、3番目のフィールドの添字は2、4番目のフィールドの添字は3と
+      いったようになります。
+     </para>
+    </note>
     <para>
-     <function>mysql_field_name</function>は、結果IDが指す結果において
-     2番目のフィールドの名前を返します。
+     <example>
+      <title><function>mysql_field_name</function>の例</title>
+      <programlisting role="php">
+<![CDATA[
+// The users table consists of three fields:
+//   user_id
+//   username
+//   password.
+$link = mysql_connect('localhost', $user, "secret");
+mysql_select_db($dbname, $link)
+    or die("Could not set $dbname");
+$res = mysql_query("select * from users", $link);
+
+echo mysql_field_name($res, 0) . "\n";
+echo mysql_field_name($res, 2);
+]]>
+      </programlisting>
+      <para>
+       上の例は出力のようになります。
+       <screen>
+<![CDATA[
+user_id
+password
+]]>
+       </screen>
+      </para>
+     </example>
     </para>
     <para>
      下位互換性を維持するため、<function>mysql_fieldname</function>

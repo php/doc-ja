@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-
+<!-- $Revision: 1.12 $ -->
  <reference id="ref.msql">
   <title>mSQL 関数</title>
   <titleabbrev>mSQL</titleabbrev>
@@ -119,7 +119,18 @@
     <funcsynopsis>
      <funcprototype>
       <funcdef>int <function>msql_connect</function></funcdef>
-      <paramdef>string <parameter>host_name</parameter></paramdef>
+      <paramdef>string
+       <parameter><optional>hostname</optional></parameter>
+      </paramdef>
+      <paramdef>string
+       <parameter><optional>server</optional></parameter>
+      </paramdef>
+      <paramdef>string
+       <parameter><optional>username</optional></parameter>
+      </paramdef>
+      <paramdef>string
+       <parameter><optional>password</optional></parameter>
+      </paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
@@ -127,9 +138,10 @@
      &false;を返します。
     </para>
     <para>
-     <function>msql_connect</function>は mSQL サーバーへの接続を確立します。
-     引数host_name はオプションで、これが指定されない場合、
-     localhostが指定されたと仮定します。
+     <function>msql_connect</function>は mSQL サーバーへの接続を確立し
+     ます。パラメータ<parameter>server</parameter>には、
+     &quot;hostname:port&quot;のようにポート番号を含めることも可能です。
+     デフォルトは、'localhost'です。
     </para>
     <para>
      同じ引数で<function>msql_connect</function>が再度コールされた場合、
@@ -215,7 +227,7 @@
      </funcprototype>
     </funcsynopsis>
     <para>
-     成功の場合に&true;、失敗の場合に&false;を返します。
+     &return.success;
     </para>
     <para>
      <function>msql_data_seek</function> は、指定したクエリーID
@@ -240,7 +252,7 @@
     <funcsynopsis>
      <funcprototype>
       <funcdef>string <function>msql_dbname</function></funcdef>
-      <paramdef>string <parameter>query_identifier</parameter></paramdef>
+      <paramdef>int <parameter>query_identifier</parameter></paramdef>
       <paramdef>int <parameter>i</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
@@ -264,12 +276,12 @@
     <funcsynopsis>
      <funcprototype>
       <funcdef>int <function>msql_drop_db</function></funcdef>
-      <paramdef>string <parameter>データベース名</parameter></paramdef>
+      <paramdef>string <parameter>database_name</parameter></paramdef>
       <paramdef>int <parameter>link_identifier</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
-     成功時に&true;、失敗した場合に&false;を返します。
+     &return.success;
     </para>
     <para>
      <function>msql_drop_db</function>は、指定したリンクIDが指す
@@ -306,13 +318,17 @@
     <funcsynopsis>
      <funcprototype>
       <funcdef>string <function>msql_error</function></funcdef>
-      <paramdef> <parameter></parameter></paramdef>
+      <paramdef>int 
+       <parameter>
+	<replaceable><optional>link_identifier</optional></replaceable>
+       </parameter>
+      </paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
-     mSQL データベースのバックエンドからエラーが返されても、
-     もはや警告を発しません。
-     エラー文字列を取り出すためには、替わりにこれらの関数を使用してください。
+     mSQL データベースのバックエンドから返されたエラーは、現在ではもは
+     や警告として出力されません。エラー文字列を取り出すためには、替わ
+     りにこれらの関数を使用してください。
     </para>
    </refsect1>
   </refentry>
@@ -395,25 +411,43 @@
     <para>  
      オブジェクトのプロパティは、次のようになります。
      <itemizedlist>
-      <listitem><simpara>name - カラム名</simpara></listitem>
-      <listitem><simpara>table - カラムが属するテーブルの名前
-      </simpara></listitem>
-      <listitem><simpara>not_null - そのカラムがヌルになることができない場合に
-      1 とする。
-      </simpara></listitem>
-      <listitem><simpara>primary_key - そのカラムがプライマリキー
-      である場合に 1
-      </simpara></listitem>
-      <listitem><simpara>unique - そのカラムがユニークキーである
-      場合に 1</simpara></listitem>
-      <listitem><simpara>type - カラムの型</simpara></listitem>
-     </itemizedlist></para>
+      <listitem>
+       <simpara>
+        name - カラム名
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+        table - カラムが属するテーブルの名前
+      </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+        not_null - そのカラムがヌルになることができない場合に1とする。
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+        primary_key - そのカラムがプライマリキーである場合に1
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+        unique - そのカラムがユニークキーである場合に1
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+        type - カラムの型
+       </simpara>
+      </listitem>
+     </itemizedlist>
+    </para>
     <para>  
      <function>msql_field_seek</function> も参照下さい。
     </para>
    </refsect1>
   </refentry>
-
 
   <refentry id="function.msql-fetch-object">
    <refnamediv>
@@ -434,16 +468,15 @@
      </funcprototype>
     </funcsynopsis>
     <para>
-    得た行に対応するプロパティを有するオブジェクトを返します。
-    もう行がない場合には、&false;を返します。
+     得た行に対応するプロパティを有するオブジェクトを返します。もう行
+     がない場合には、&false;を返します。
     </para>
     <para>
-      <function>msql_fetch_object</function> は、<function>msql_fetch_array
-	</function>
-     に似ていますが、配列の代わりにオブジェクトを返すところだけが
-     異なっています。
-     間接的にというのは、オフセット値によってではなくフィールド名によってのみ
-     データをアクセスすることができることを意味しています。
+     <function>msql_fetch_object</function> は、
+     <function>msql_fetch_array</function>に似ていますが、配列の代わり
+     にオブジェクトを返すところだけが異なっています。間接的にというの
+     は、オフセット値によってではなくフィールド名によってのみデータを
+     アクセスすることができることを意味しています。
      (数字は、プロパティ名として使用できません。)
     </para>
     <para>
@@ -577,7 +610,7 @@
     <funcsynopsis>
      <funcprototype>
       <funcdef>string <function>msql_fieldtype</function></funcdef>
-      <paramdef>string <parameter>query_identifier</parameter></paramdef>
+      <paramdef>int <parameter>query_identifier</parameter></paramdef>
       <paramdef>int <parameter>i</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
@@ -600,7 +633,7 @@
     <funcsynopsis>
      <funcprototype>
       <funcdef>string <function>msql_fieldflags</function></funcdef>
-      <paramdef>string <parameter>query_identifier</parameter></paramdef>
+      <paramdef>int <parameter>query_identifier</parameter></paramdef>
       <paramdef>int <parameter>i</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
@@ -623,7 +656,7 @@
     <funcsynopsis>
      <funcprototype>
       <funcdef>int <function>msql_fieldlen</function></funcdef>
-      <paramdef>string <parameter>query_identifier</parameter></paramdef>
+      <paramdef>int <parameter>query_identifier</parameter></paramdef>
       <paramdef>int <parameter>i</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
@@ -681,8 +714,8 @@
     <funcsynopsis>
      <funcprototype>
       <funcdef>int <function>msql_list_fields</function></funcdef>
-      <paramdef>string <parameter>dデータベース</parameter></paramdef>
-      <paramdef>string <parameter>テーブル名</parameter></paramdef>
+      <paramdef>string <parameter>database</parameter></paramdef>
+      <paramdef>string <parameter>tablename</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
@@ -832,7 +865,7 @@
     <funcsynopsis>
      <funcprototype>
       <funcdef>int <function>msql_num_rows</function></funcdef>
-      <paramdef>string <parameter>query_identifier</parameter></paramdef>
+      <paramdef>int <parameter>query_identifier</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
@@ -865,7 +898,6 @@
    </refsect1>
   </refentry>
 
-
   <refentry id="function.msql-numrows">
    <refnamediv>
     <refname>msql_numrows</refname>
@@ -896,7 +928,15 @@
     <funcsynopsis>
      <funcprototype>
       <funcdef>int <function>msql_pconnect</function></funcdef>
-      <paramdef>string <parameter>ホスト名</parameter></paramdef>
+      <paramdef>string
+       <parameter><optional>server</optional></parameter>
+      </paramdef>
+      <paramdef>string
+       <parameter><optional>username</optional></parameter>
+      </paramdef>
+      <paramdef>string
+       <parameter><optional>password</optional></parameter>
+      </paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
@@ -908,20 +948,20 @@
      <function>msql_connect</function> と全く同様に動作します。
     </para>
     <para> 
-    1番目の差異は、この関数は接続した際に同じホストにおいて
-    すでに確立された(持続的な)リンクを見つけようとすることです。
-    そうしたリンクが見つかった場合、新たな接続を開く代わりに
-    そのリンクへのIDが返されます。
+     1番目の差異は、この関数は接続した際に同じホストにおいてすでに確立
+     された(持続的な)リンクを見つけようとすることです。そうしたリンク
+     が見つかった場合、新たな接続を開く代わりにそのリンクへのIDが返さ
+     れます。
     </para>
     <para> 
-    2 番目は、スクリプトの実行終了時に SQL サーバーへの接続が
-    閉じられないということです。
-    代わりに、リンクは、次に使用するために開かれたままにされます。
-    (<function>msql_close</function> は、<function>msql_pconnect</function>
-    により確立されたリンクを閉じません)
+     2番目は、スクリプトの実行終了時にSQLサーバーへの接続が閉じられな
+     いということです。代わりに、リンクは、次に使用するために開かれた
+     ままにされます。(<function>msql_close</function> は、
+     <function>msql_pconnect</function>により確立されたリンクを閉じま
+     せん)
     </para>
     <para> 
-    このため、この型のリンクは、'持続的' であると呼ばれます。
+     このため、この型のリンクは、'持続的' であると呼ばれます。
     </para>
    </refsect1>
   </refentry>
@@ -936,7 +976,7 @@
     <funcsynopsis>
      <funcprototype>
       <funcdef>int <function>msql_query</function></funcdef>
-      <paramdef>string <parameter>クエリー</parameter></paramdef>
+      <paramdef>string <parameter>query</parameter></paramdef>
       <paramdef>int <parameter>link_identifier</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
@@ -953,6 +993,28 @@
      成功した場合に正のmSQL クエリーIDを返します。エラーの場合に&false;
      を返します。
     </para>
+    <example>
+     <title><function>msql_query</function></title>
+     <programlisting role="php">
+<![CDATA[
+<?php 
+$link = msql_connect("dbserver")
+   or die("unable to connect to msql server: ".msql_error());
+msql_select_db("db", $link)
+   or die("unable to select database 'db': ".msql_error());
+
+$result = msql_query("SELECT * FROM table WHERE id=1", $link);
+if (!$result) {
+   die("query failed: ".msql_error());
+}
+
+while ($row = msql_fetch_array($result)) {
+    echo $row["id"];
+}
+?>
+]]>
+     </programlisting>
+    </example>
     <para>
      <function>msql</function>、
      <function>msql_select_db</function>、
@@ -961,12 +1023,12 @@
    </refsect1>
   </refentry>
 
-
   <refentry id="function.msql-regcase">
    <refnamediv>
     <refname>msql_regcase</refname>
-    <refpurpose>大文字小文字を区別しないマッチング用に正規表現
-    を作成します</refpurpose>
+    <refpurpose>
+     大文字小文字を区別しないマッチング用に正規表現を作成します
+    </refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
@@ -1032,7 +1094,7 @@
     <funcsynopsis>
      <funcprototype>
       <funcdef>int <function>msql_select_db</function></funcdef>
-      <paramdef>string <parameter>データベース名</parameter></paramdef>
+      <paramdef>string <parameter>database_name</parameter></paramdef>
       <paramdef>int <parameter>link_identifier</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
@@ -1073,7 +1135,6 @@
    </refsect1>
   </refentry>
 
-
   <refentry id="function.msql-tablename">
    <refnamediv>
     <refname>msql_tablename</refname>
@@ -1085,7 +1146,7 @@
      <funcprototype>
       <funcdef>string <function>msql_tablename</function></funcdef>
       <paramdef>int <parameter>query_identifier</parameter></paramdef>
-      <paramdef>int <parameter>フィールド</parameter></paramdef>
+      <paramdef>int <parameter>field</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>    
@@ -1097,22 +1158,23 @@
      <example>
      <title><function>msql_tablename</function>の例</title>
       <programlisting role="php">
-&lt;?php 
+<![CDATA[
+<?php 
 msql_connect ("localhost");
-$result = msql_list_tables("wisconsin");
+$result = msql_list_tables ("wisconsin");
 $i = 0;
-while ($i &lt; msql_numrows($result)) {
-    $tb_names[$i] = msql_tablename($result, $i);
-    echo $tb_names[$i] . "&lt;BR>";
+while ($i < msql_numrows ($result)) {
+    $tb_names[$i] = msql_tablename ($result, $i);
+    echo $tb_names[$i] . "<BR>";
     $i++; 
 }
 ?>
-</programlisting>
+]]>
+      </programlisting>
      </example>
     </para>
    </refsect1>
   </refentry>
-
 
  </reference>
 
