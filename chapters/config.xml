@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.28 $ -->
+<!-- $Revision: 1.29 $ -->
+<!-- sync: 1.98 -->
  <chapter id="configuration">
   <title>設定</title>
   
@@ -24,6 +25,19 @@
     <literal>PHP</literal>の使用に関する章を参照下さい。
     &php.ini;を探すパスを追加するために環境変数
     <literal>PHPRC</literal>を使用することもできます。
+   </para>
+   <note>
+    <para>
+     Apache web サーバー は、スタート時に作業ディレクトリをルートディレクトリ
+     に変更するので、PHPは、ルートディレクトリに
+     <filename>php.ini</filename> が存在する場合、それを読もうとします。
+    </para>
+   </note>
+   <para>
+    下記では、必ずしもすべての PHP ディレクティブが説明されているわけでは
+    ありません。すべてのディレクティブについての説明は、&php.ini; ファイル
+    のコメントを参照してください。CVS にある最新の &php.ini; は、
+    <ulink url="&url.php.cvs.phpini;">ここ</ulink> で見ることができます。
    </para>
    <note>
     <para>
@@ -70,15 +84,23 @@ include_path = ".;c:\php\lib"
      が必要)。
     </simpara>
    
-    <simpara>
-     PHP 3.0 においては、<filename>php3.ini</filename>の各ディレクティ
-     ブに対応した Apache 用ディレクティブが存在し、PHP 用のディレクティ
-     ブの前に "php3_" を付けて使用することにより、設定の変更が可能です。
-    </simpara>
-   
     <para>
      PHP 4.0 においては、PHP設定用の複数のApacheディレクティブがあり、
-     Apacheの設定ファイルでPHPの設定を変更可能です。
+     Apacheの設定ファイルでPHPの設定を変更可能です。どのディレクティブが、
+     <constant>PHP_INI_ALL</constant> か, <constant>PHP_INI_PERDIR</constant>,
+     または <constant>PHP_INI_SYSTEM</constant> なのかについてのリストは、
+     <function>ini_set</function> の説明を参照下さい。
+    </para>
+
+    <note>
+     <simpara>
+      PHP 3.0 においては、<filename>php3.ini</filename>の各ディレクティ
+      ブに対応した Apache 用ディレクティブが存在し、PHP 用のディレクティ
+      ブの前に "php3_" を付けて使用することにより、設定の変更が可能です。
+     </simpara>
+    </note>  
+
+    <para>
      <variablelist>
       <varlistentry>
        <term>
@@ -88,7 +110,17 @@ include_path = ".;c:\php\lib"
        </term>
        <listitem>
         <para>
-         指令した変数の値を設定します。
+         指定した変数の値を設定します。<constant>PHP_INI_ALL</constant> と
+         <constant>PHP_INI_PERDIR</constant> ディレクティブでのみ利用可能です。
+         以前にセットされた値をクリアしたい場合は、<literal>none</literal> を
+         値として使用してください。
+         <informalexample>
+          <programlisting role="ini">
+<![CDATA[
+php_value auto_prepend_file none
+]]>
+          </programlisting>
+         </informalexample>
         </para>
        </listitem>
       </varlistentry>
@@ -100,7 +132,9 @@ include_path = ".;c:\php\lib"
        </term>
        <listitem>
         <para>
-         論理値のオプション設定を変更するために使用します。</para>
+         論理値のオプション設定を変更するために使用します。
+         <constant>PHP_INI_PERDIR</constant> ディレクティブでのみ利用可能です。
+        </para>
        </listitem>
       </varlistentry>
       <varlistentry>
@@ -110,10 +144,22 @@ include_path = ".;c:\php\lib"
         <parameter>value</parameter>
        </term>
        <listitem>
-       <para>
+        <para>
          指定した変数の値を設定します。"Admin" は、メインの Apache 用設
-         定ファイルにおいてのみ設定可能で、.htaccess ファイルからは設定
+         定ファイルにおいてのみ設定可能で、&htaccess; ファイルからは設定
          できません。
+         php_admin_value で設定されたディレクティブの値は、&htaccess; や
+         バーチャルホストディレクティブ内から上書きできません。
+         以前にセットされた値をクリアしたい場合は、<literal>none</literal> を
+         値として使用してください。
+         <informalexample>
+          <programlisting role="ini">
+<![CDATA[
+php_admin_value open_basedir none
+]]>
+          </programlisting>
+         </informalexample>
+          
         </para>
        </listitem>
       </varlistentry>
@@ -126,12 +172,16 @@ include_path = ".;c:\php\lib"
        <listitem>
         <para>
          論理値のオプションを設定するために使用されます。
-         (Adminの意味は上記のオプションと同じです。)
+         このディレクティブは、&htaccess; ファイルからは設定できません。
+         php_admin_value で設定されたディレクティブの値は、&htaccess; や
+         バーチャルホストディレクティブ内から上書きできません。
+         以前にセットされた値をクリアしたい場合は、<literal>none</literal> を
+         値として使用してください。
         </para>
        </listitem>
-     </varlistentry>
+      </varlistentry>
      </variablelist>
-   </para>
+    </para>
     <para>
      <example>
       <title>Apache 設定の例</title>
@@ -188,22 +238,20 @@ include_path = ".;c:\php\lib"
         <row>
          <entry>PHP_INI_USER</entry>
          <entry>1</entry>
-         <entry>ユーザスクリプトで設定できるエントリ。</entry>
+         <entry>ユーザスクリプトで設定できるエントリ</entry>
         </row>
         <row>
          <entry>PHP_INI_PERDIR</entry>
          <entry>2</entry>
          <entry>
-          <filename>.htaccess</filename> およびhttpd.confのVHostディレ
-          クティブで設定できるエントリ。
+          &php.ini;, &htaccess; および &httpd.conf; で設定できるエントリ
          </entry>
         </row>
         <row>
          <entry>PHP_INI_SYSTEM</entry>
          <entry>4</entry>
          <entry>
-          &php.ini; または <filename>httpd.conf</filename> (しかし、
-          httpd.confのVHostブロックでは不可) で設定できるエントリ。
+          &php.ini; または &httpd.conf; で設定できるエントリ
          </entry>
         </row>
         <row>
@@ -312,15 +360,15 @@ include_path = ".;c:\php\lib"
        </term>
        <listitem>
         <para>
-	 PHP タグの短縮型 (<userinput>&lt;? ?&gt;</userinput>) を使用
-	 可能にするかどうかを設定します。PHPをXMLと組み合わせて用いる
-	 場合は、<userinput>&lt;?xml ?&gt;</userinput>をファイル中で用
-	 いるためにこのオプションをオフにする必要があります。オンにし
-	 た場合にPHPでXMLを出力するには、例えば、次のようにします。
-	 <userinput>&lt;?php echo '&lt;?xml version="1.0"';
-	 ?&gt;</userinput> これをオフにした場合、長い方の形式のタグ	
-	 (<userinput>&lt;?php ?&gt;</userinput>)を使用する必要がありま
-	 す。
+         PHP タグの短縮型 (<userinput>&lt;? ?&gt;</userinput>) を使用
+         可能にするかどうかを設定します。PHPをXMLと組み合わせて用いる
+         場合は、<userinput>&lt;?xml ?&gt;</userinput>をファイル中で用
+         いるためにこのオプションをオフにする必要があります。オンにし
+         た場合にPHPでXMLを出力するには、例えば、次のようにします。
+         <userinput>&lt;?php echo '&lt;?xml version="1.0"';
+         ?&gt;</userinput> これをオフにした場合、長い方の形式のタグ	
+         (<userinput>&lt;?php ?&gt;</userinput>)を使用する必要がありま
+         す。
         </para>
         <note>
          <para>
@@ -341,12 +389,12 @@ include_path = ".;c:\php\lib"
        </term>
        <listitem>
         <simpara>
-	 ASP 形式のタグ &lt;% %&gt; を通常のタグ &lt;?php ?&gt; 
-	 に加えて使用可能にします。
-	 このスイッチにより、出力の短縮形
-	 &lt;%= $value %&gt; も使用できるようになります。
-	 詳細な情報は、<link linkend="language.basic-syntax.phpmode">
-	  HTML からのエスケープ</link>を参照下さい。
+         ASP 形式のタグ &lt;% %&gt; を通常のタグ &lt;?php ?&gt; 
+         に加えて使用可能にします。
+         このスイッチにより、出力の短縮形 &lt;%= $value %&gt; も
+         使用できるようになります。
+         詳細な情報は、<link linkend="language.basic-syntax.phpmode">
+         HTML からのエスケープ</link>を参照下さい。
         </simpara>
         <note>
          <para>
@@ -375,8 +423,8 @@ include_path = ".;c:\php\lib"
        </term>
        <listitem>
         <simpara>
-         2000年問題対応を強制します。(2000年問題非対応のブラウザに問題
-         を発生する可能性があります。)
+         2000年問題対応を強制します。(2000年問題非対応のブラウザにおいて、問題
+         が発生する可能性があります。)
         </simpara>
        </listitem>
       </varlistentry>
@@ -458,9 +506,14 @@ include_path = ".;c:\php\lib"
        </term>
        <listitem>
         <para>
-	 スクリプトが確保できる最大メモリをバイト数で指定します。この
-	 命令は、正しく書かれていないスクリプトがサーバーのメモリを食
-	 いつぶすことを防止するのに役立ちます。
+         スクリプトが確保できる最大メモリをバイト数で指定します。この
+         命令は、正しく書かれていないスクリプトがサーバーのメモリを食
+         いつぶすことを防止するのに役立ちます。
+         このディレクティブを使うためには、コンパイル時に有効にして
+         おかなくてはなりません。このとき、configure のパラメータには、
+         <literal>--enable-memory-limit</literal> が含まれているはずです。
+         もし、使用可能メモリに制限を設けたくない場合は、-1 を指定して
+         ください。
         </para>
        </listitem>
       </varlistentry>
@@ -493,12 +546,12 @@ include_path = ".;c:\php\lib"
         </row>
         <row>
          <entry>arg_separator.output</entry>
-         <entry>"&"</entry>
+         <entry>"&amp;"</entry>
          <entry>PHP_INI_ALL</entry>
         </row>
         <row>
          <entry>arg_separator.input</entry>
-         <entry>"&"</entry>
+         <entry>"&amp;"</entry>
          <entry>PHP_INI_SYSTEM|PHP_INI_PERDIR</entry>
         </row>
         <row>
@@ -570,8 +623,8 @@ include_path = ".;c:\php\lib"
        </term>
        <listitem>
         <para>
-         このオプションを有効にした場合、環境、GET、POST、クッキー、サー
-         バ変数は、グローバル連想配列
+         このオプションを有効にした場合、環境変数、GET、POST、クッキー、
+         サーバ変数はそれぞれ、グローバル連想配列
          <varname>$_ENV</varname>,
          <varname>$_GET</varname>,
          <varname>$_POST</varname>,
@@ -579,7 +632,7 @@ include_path = ".;c:\php\lib"
          <varname>$_SERVER</varname>で参照することができます。
         </para>
         <para>
-         PHP 4.0.3以降、, <systemitem
+         PHP 4.0.3以降, <systemitem
          role="directive">track_vars</systemitem> は常にonとなっている
          ことに注意して下さい。
         </para>
@@ -644,15 +697,15 @@ include_path = ".;c:\php\lib"
        </term>
        <listitem>
         <para>
-	 EGPCS(Environment, GET, POST, Cookie, Server)変数をグローバル
-	 変数として登録するかどうかを指定します。例えば、
+         EGPCS(Environment, GET, POST, Cookie, Server)変数を
+         グローバル変数として登録するかどうかを指定します。例えば、
          register_globals = onの場合、URL
          <literal>http://www.example.com/test.php?id=3</literal>は、
          <varname>$id</varname>を生成します。また、
          <varname>$_SERVER['DOCUMENT_ROOT']</varname>から
          <varname>$DOCUMENT_ROOT</varname>が生成されます。
          使用するスクリプトのグローバルスコープをユーザのデータで混乱
-         させられたくない場合には、このオプションをoffにすることでしょう。
+         させられたくない場合には、このオプションをoffにするとよいでしょう。
          PHP <ulink url="&url.php.release4.2.0;">4.2.0</ulink>以降、
          このディレクティブのデフォルトは、<emphasis>off</emphasis>となっています。
          <link linkend="language.variables.superglobals">スーパーグローバル</link>: 
@@ -695,7 +748,7 @@ include_path = ".;c:\php\lib"
         </simpara>
         <simpara>
          <link linkend="features.commandline">コマンドライン</link>
-         も参照して下さい。このディレクティブはPHP 4.0.0で
+         も参照下さい。このディレクティブはPHP 4.0.0で
          追加されました。以前のバージョンでは常に"on"です。
         </simpara>
        </listitem>
@@ -716,8 +769,8 @@ include_path = ".;c:\php\lib"
         </simpara>
         <simpara>
          configureスクリプトでメモリ制限を有効とした場合、<link
-         linkend="ini.memory-limit">memory_limit</link>もファイルアッ
-         プロードに影響します。一般的に <link
+         linkend="ini.memory-limit">memory_limit</link>も
+         ファイルアップロードに影響します。一般的に <link
          linkend="ini.memory-limit">memory_limit</link> は、
          <link
          linkend="ini.post-max-size">post_max_size</link>よりも大きく
@@ -733,17 +786,16 @@ include_path = ".;c:\php\lib"
        </term>
        <listitem>
         <para>
-	 GET/POST/COOKIE 変数処理の順番を設定します。この命令のデフォ
-	 ルトの設定は、"GPC"です。例えば、これを"GP"にPHPはクッキーを
-	 完全に無視し、GETメソッド変数を同名のPOSTメソッド変数で上書き
-	 します。
-	</para>
+         GET/POST/COOKIE 変数処理の順番を設定します。この命令の
+         デフォルトの設定は、"GPC"です。例えば、これを"GP"にPHPはクッキーを
+         完全に無視し、GETメソッド変数を同名のPOSTメソッド変数で上書き
+         します。
+        </para>
         <note>
          <para>
           このオプションは、PHP 4では利用できまないことに注意して下さい。
-          代わりに、<link
-           linkend="ini.variables-order">variables_order</link>を使用し
-          て下さい。
+          代わりに、<link linkend="ini.variables-order">variables_order</link>
+          を使用して下さい。
          </para>
         </note>
        </listitem>
@@ -756,16 +808,16 @@ include_path = ".;c:\php\lib"
        </term>
        <listitem>
         <para>
-	 メインファイルの前に自動的に付加されるファイルの名前を
-	 指定します。
-	 このファイルは、<function>include</function> 関数のコール時
-	 と同様に読み込まれます。
-	 このため、<link linkend="ini.include-path">include_path</link> 
-	 が使用されます。
+         メインファイルの前に自動的に付加されるファイルの名前を
+         指定します。
+         このファイルは、<function>include</function> 関数のコール時
+         と同様に読み込まれます。
+         このため、<link linkend="ini.include-path">include_path</link> 
+         が使用されます。
         </para>
         <para>
-	 特別な値 <systemitem class="constant">none</systemitem> を指
-	 定すると、ファイルを前に追加する機能は無効となります。
+         特別な値 <systemitem class="constant">none</systemitem> を指
+         定すると、ファイルを前に追加する機能は無効となります。
         </para>
        </listitem>
       </varlistentry>
@@ -777,20 +829,20 @@ include_path = ".;c:\php\lib"
        </term>
        <listitem>
         <para>
-	 メインファイルの後に自動的に追加されるファイルの
-	 名前を指定します。
-	 このファイルは、<function>include</function> 関数のコール時
-	 と同様に読み込まれます。
-	 このため、<link linkend="ini.include-path">include_path</link> 
-	 が使用されます。
+         メインファイルの後に自動的に追加されるファイルの
+         名前を指定します。
+         このファイルは、<function>include</function> 関数のコール時
+         と同様に読み込まれます。
+         このため、<link linkend="ini.include-path">include_path</link> 
+         が使用されます。
         </para>
         <para>
-	 <systemitem class="constant">none</systemitem> を値として
-	 指定するとこの自動付加機能はオフとなります。		
+         <systemitem class="constant">none</systemitem> を値として
+         指定するとこの自動付加機能はオフとなります。		
          <note>
           <simpara>
-	   スクリプトが <function>exit</function> で終了する場合、
-	   この自動付加機能は使用されません 。
+           スクリプトが <function>exit</function> で終了する場合、
+           この自動付加機能は使用されません 。
           </simpara>
          </note>
         </para>
@@ -925,19 +977,19 @@ include_path = ".;c:\php\lib"
        </term>
        <listitem>
         <para>
-	 <function>require</function>、<function>include</function>、
-	 および <function>fopen_with_path</function> 関数がファイルを
-	 探すディレクトリのリストを指定します。フォーマットは、システ
-	 ムの環境変数 <envar>PATH</envar>と同じです。つまり、UNIXでは
-	 コロンで、Windowsではセミコロンで区切ったディレクトリのリスト
-	 で指定します。
+         <function>require</function>、<function>include</function>、
+         および <function>fopen_with_path</function> 関数がファイルを
+         探すディレクトリのリストを指定します。フォーマットは、システ
+         ムの環境変数 <envar>PATH</envar>と同じです。つまり、UNIXでは
+         コロンで、Windowsではセミコロンで区切ったディレクトリのリスト
+         で指定します。
          <example>
           <title>UNIX include_path</title>
           <programlisting role="php3.ini">
 <![CDATA[
 include_path=.:/home/httpd/php-lib
 ]]>
-                    </programlisting>
+          </programlisting>
          </example>
          <example>
           <title>Windows include_path</title>
@@ -947,8 +999,8 @@ include_path=".;c:\www\phplib"
 ]]>
           </programlisting>
          </example>
-	 このディレクティブのデフォルト値は、<literal>.</literal>(カレ
-	 ントディレクトリのみ)です。
+         このディレクティブのデフォルト値は、<literal>.</literal>(カレ
+         ントディレクトリのみ)です。
         </para>
        </listitem>
       </varlistentry>
@@ -960,10 +1012,9 @@ include_path=".;c:\www\phplib"
        </term>
        <listitem>
         <para>
-	 サーバーにおけるPHPの"ルートディレクトリ"です。この値は空で無
-	 い場合のみ使用されます。PHPが<link linkend="ini.safe-mode">セー
-	 フモード</link>で設定されている場合には、このディレクトリの外
-	 側にあるファイルは使用されません。
+         サーバーにおけるPHPの"ルートディレクトリ"です。この値は空で無
+         い場合のみ使用されます。PHPが &safemode; で設定されている場合には、
+         このディレクトリの外側にあるファイルは使用されません。
          PHPがFORCE_REDIRECTを指定してコンパイルされていない場合、
          (IIS以外の)WebサーバのもとでCGIとしてPHPを実行する際には、
          doc_rootを指定するべきです。
@@ -980,9 +1031,9 @@ include_path=".;c:\www\phplib"
        </term>
        <listitem>
         <para>
-	 <literal>PHP</literal>ファイル用にユーザーのホームディレクト
-	 リとして使用する基本ディレクトリの名前。例えば、
-	 <literal>public_html</literal> となります。
+         <literal>PHP</literal>ファイル用にユーザーのホームディレクトリ
+         として使用する基本ディレクトリの名前。例えば、
+         <literal>public_html</literal> となります。
         </para>
        </listitem>
       </varlistentry>
@@ -996,8 +1047,8 @@ include_path=".;c:\www\phplib"
         <para>
          動的にロード可能な拡張モジュールを置くディレクトリを
          指定します。
-         See also: <link linkend="ini.enable-dl">enable_dl</link>,
-         and <function>dl</function>.
+         <link linkend="ini.enable-dl">enable_dl</link> と
+         <function>dl</function> も参照下さい。
         </para>
        </listitem>
       </varlistentry>
@@ -1009,7 +1060,8 @@ include_path=".;c:\www\phplib"
        </term>
        <listitem>
         <para>
-         PHPの開始時にロードする動的にロード可能な拡張モジュール。
+         PHPの開始時に、どの動的ロード可能な拡張モジュールをロードするかを
+         指定します。
         </para>
        </listitem>
       </varlistentry>
@@ -1040,7 +1092,7 @@ include_path=".;c:\www\phplib"
       
       <varlistentry id="ini.cgi.redirect-status-env">
        <term>
-        <parameter>cgi.cgi.redirect_status_env</parameter>
+        <parameter>cgi.redirect_status_env</parameter>
         <type>string</type>
        </term>
        <listitem>
@@ -1069,9 +1121,9 @@ include_path=".;c:\www\phplib"
          IIS(またはWINNTベースのOS)のもとでのFastCGIは、
          クライアントをコールする際にセキュリティトークンを
          匿名化する機能をサポートしています。
-         これにより、IISが配下でリクエストを実行するセキュリティコンテ
-         キストを定義できるようになります。Apacheのもとで実行される
-         mod_fastcgiは現在この機能をサポートしていません。(03/17/2002)
+         これにより、IISがリクエストを処理するセキュリティコンテキストを
+         定義できるようになります。Apacheのもとで実行される
+         mod_fastcgi は現在この機能をサポートしていません。(03/17/2002)
          IISのもとで実行するには、1に設定して下さい。
          デフォルトは0です。
         </para>
@@ -1124,12 +1176,12 @@ include_path=".;c:\www\phplib"
        </term>
        <listitem>
         <para>
-         HTTP <link linkend="features.file-upload">ファイルアップロー
-         ド</link>を有効とするかどうか。
+         HTTP <link linkend="features.file-upload">ファイルアップロード</link>
+         を有効とするかどうか。
          <link linkend="ini.upload-max-filesize">upload_max_filesize</link>,
          <link linkend="ini.upload-tmp-dir">upload_tmp_dir</link>, 
-         <link linkend="ini.post-max-size">post_max_size</link> ディレ
-         クティブも参照下さい。
+         <link linkend="ini.post-max-size">post_max_size</link>
+         ディレクティブも参照下さい。
         </para>
        </listitem>
       </varlistentry>
@@ -1141,10 +1193,10 @@ include_path=".;c:\www\phplib"
        </term>
        <listitem>
         <para>
-	 ファイルアップロード時にファイル保存に用いるテンポラリディレ
-	 クトリ。<literal>PHP</literal>の実行ユーザーが書きこみ可能で
-	 ある必要があります。指定されない場合、PHPはシステムのデフォル
-	 ト設定を使用します。
+         ファイルアップロード時にファイル保存に用いるテンポラリディレクトリ。
+         <literal>PHP</literal>の実行ユーザーが書きこみ可能である必要が
+         あります。指定されない場合、PHPはシステムのデフォルト設定を
+         使用します。
         </para>
        </listitem>
       </varlistentry>
