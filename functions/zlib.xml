@@ -1,0 +1,556 @@
+
+ <reference id="ref.zlib">
+  <title>圧縮関数</title>
+  <titleabbrev>Zlib</titleabbrev>
+  <partintro>
+  <para>
+  このモジュールは、Jean-loup Gailly および Mark Adler による
+  透過的に gzip (.gz) で圧縮されたファイルを読み書きするための
+  <ulink url="&url.zlib;">zlib</ulink> の関数を使用します。
+  このモジュールを使用するには、zlib バージョン 1.0.9 以上を
+  使用する必要があります。
+   </para>
+   <para>
+   このモジュールは、gzip で圧縮されたファイルで動作する版の多くの
+    <link linkend="ref.filesystem">filesystem</link> 関数を含んでいます。
+    (非圧縮のファイルも使用可能ですが、ソケットは使用できません)
+   </para>
+ 
+    <sect1 id="zlib-example">
+     <title>簡単なコードの例</title>
+      <para>
+      テンポラリファイルをオープンし、テスト用文字列を書きこみ、
+      続いて、このファイルの内容を2回出力します。
+      </para>
+ 
+     <example>
+      <title>簡単な Zlib の例</title>
+ <programlisting role="php">
+ &lt;?php
+   $filename = tempnam('/tmp', 'zlibtest').'.gz';
+   print "&lt;html>\n&lt;head>&lt;/head>\n&lt;body>\n&lt;pre>\n";
+   $s = "Only a test, test, test, test, test, test, test, test!\n";
+   // 最大限の圧縮を指定して書きこみ用にファイルをオープン
+   $zp = gzopen($filename, "w9");
+   // 文字列をファイルに書きこむ
+   gzwrite($zp, $s);
+   // ファイルを閉じる
+   gzclose($zp);
+   // 読みこみ用にファイルをオープン
+   $zp = gzopen($filename, "r");
+   // 3文字読みこむ
+   print gzread($zp, 3);
+   // ファイルの終端まで読み、閉じる
+   gzpassthru($zp);
+   print "\n";
+   // ファイルをオープンし、内容を出力する (2回目)。
+   if (readgzfile($filename) != strlen($s)) {
+           echo "Error with zlib functions!";
+   }
+   unlink($filename);
+   print "&lt;pre>\n&lt;/h1>&lt;/body>\n&lt;/html>\n";
+ ?>
+ </programlisting>
+     </example></sect1>
+ 
+  </partintro>
+
+  <refentry id="function.gzclose">
+   <refnamediv>
+    <refname>gzclose</refname>
+    <refpurpose>開かれた gz ファイルへのポインタを閉じる</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>gzclose</function></funcdef>
+     <paramdef>int <parameter>zp</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    ポインタ zp が指す gz ファイルを閉じます。</para>
+
+    <para>
+    成功の場合に TRUE を失敗の場合に FALSE を返します。</para>
+
+    <para>
+    gz ファイルポインタは、有効なファイルポインタであり、かつ、
+     <function>gzopen</function>
+    によりオープンできたファイルを指している必要があります。</para>
+
+   </refsect1>
+  </refentry>
+
+
+  <refentry id="function.gzeof">
+   <refnamediv>
+    <refname>gzeof</refname>
+    <refpurpose>gz ファイルポインタにおいてファイル終端を調べる</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>gzeof</function></funcdef>
+     <paramdef>int <parameter>zp</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    gz ファイルポインタが EOF を指す時またはエラーが生じた場合に TRUE、
+    その他の場合に FALSE を返します。</para>
+
+    <para>
+    gz ファイルポインタは、有効なファイルポインタであり、かつ、
+     <function>gzopen</function>
+    によりオープンできたファイルを指している必要があります。</para>
+
+   </refsect1>
+  </refentry>
+
+
+  <refentry id="function.gzfile">
+   <refnamediv>
+    <refname>gzfile</refname> 
+    <refpurpose>gz ファイル全体を配列に読み込む</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>array <function>gzfile</function></funcdef>
+     <paramdef>string <parameter>filename</parameter></paramdef>
+     <paramdef>int <parameter><optional>use_include_path</optional></parameter></paramdef>    </funcsynopsis>
+    <para>     gzfile() は、ファイルを配列にして返すことを除き、
+    <function>readgzfile</function> と同じです。</para>
+
+    <para>
+     オプションの 2番目のパラメータを "1" にすることにより、
+     <link linkend="ini.include-path">include_path</link> にあるファイルも
+     検索することができます。</para>
+
+    <para> <function>readgzfile</function> および 
+     <function>gzopen</function> も参照下さい。</para>
+   </refsect1>
+  </refentry>
+
+
+  <refentry id="function.gzgetc">
+   <refnamediv>
+    <refname>gzgetc</refname>
+    <refpurpose>gz ファイルへのポインタから文字を得る</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>string <function>gzgetc</function></funcdef>
+     <paramdef>int <parameter>zp</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    zp が指すファイルの中から (非圧縮の)1 文字を読み込み、これを含む
+    文字列を返します。
+     <function>gzeof</function> と同様に EOF の場合に FALSE を返します)</para>
+    <para>
+    gz ファイルポインタは、有効なファイルポインタであり、かつ、
+     <function>gzopen</function>
+    によりオープンできたファイルを指している必要があります。</para>
+
+    <para> <function>gzopen</function> および
+     <function>gzgets</function>も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+
+  <refentry id="function.gzgets">
+   <refnamediv>
+    <refname>gzgets</refname>
+    <refpurpose>ファイルポインタから 1 行を得る</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>string <function>gzgets</function></funcdef>
+     <paramdef>int <parameter>zp</parameter></paramdef>
+     <paramdef>int <parameter>length</parameter></paramdef>
+    </funcsynopsis>
+
+    <para>
+    fp が指すファイルから最大 length - 1 バイトの文字を読み込み、
+    これを含む (非圧縮の)文字列を返します。
+    length - 1 バイトを読み込むか、改行または EOF になった場合、
+    (どれかが最初にきた時点で) 読み込みを終了します。</para>
+
+    <para> エラーが発生した場合、FALSE を返します。</para>
+
+    <para> 
+    ファイルポインタは、有効なファイルポインタであり、かつ、
+     <function>gzopen</function>
+    によりオープンできたファイルを指している必要があります。</para>
+
+    <para> <function>gzopen</function>,
+     <function>gzgetc</function>, <function>fgets</function>
+     も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+
+  <refentry id="function.gzgetss">
+   <refnamediv>
+    <refname>gzgetss</refname>
+    <refpurpose>gz ファイルへのポインタから 1行を得て、HTML タグを取り除く</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>string <function>gzgetss</function></funcdef>
+     <paramdef>int <parameter>zp</parameter></paramdef>
+     <paramdef>int <parameter>length</parameter></paramdef>
+     <paramdef>string <parameter><optional>allowable_tags</optional></parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    gzgetss は読み込んだテキストから HTML および PHP タグを全て
+    取り除こうとすることを除いて、<function>gzgets</function> と同じです。</para>
+    <para>
+    オプションの3番目のパラメータにより、取り除かないタグを指定することができます。</para>
+  
+    <note>
+    <para>
+      <parameter>allowable_tags</parameter> は PHP 3.0.13, PHP4B3
+      で追加されました。</para>
+    </note>
+
+    <para>
+     <function>gzgets</function>,
+     <function>gzopen</function>, <function>strip_tags</function>
+     も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+
+  <refentry id="function.gzopen">
+   <refnamediv>
+    <refname>gzopen</refname>
+    <refpurpose>gz ファイルを開く</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>gzopen</function></funcdef>
+     <paramdef>string <parameter>filename</parameter></paramdef>
+     <paramdef>string <parameter>mode</parameter></paramdef>
+     <paramdef>int <parameter><optional>use_include_path</optional></parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    読み込みまたは書き込み用に gzip (.gz) ファイルをオープンします。
+    パラメータ mode は、
+    <function>fopen</function> と同じ ("rb" または "wb") ですが、
+    圧縮レベル ("wb9") または圧縮の方策、つまり、"wb6f" のようにフィルターを
+    通したデータを 'f' で指定したり、'h' でハフマン圧縮のみを行うことを
+    指定したりすることができます。
+    (方策に関するパラメータの詳細については、zlib.h の中の deflateInit2 の
+    説明を参照下さい。) </para>
+
+    <para>
+    Gzopen は、gzip フォーマットでないファイルの読み込みについても
+    使用することができます。
+    この場合、<function>gzread</function> は、ファイルを解凍せずに直接読み込まれます。</para>
+    
+    <para>
+    Gzopen は、開いたファイルへのファイルポインタを返します。
+    この後、このファイル記述子から読み込んだデータは全て
+    透過的に解凍され、書き込んだデータは圧縮されます。</para>
+
+    <para>
+    開くことに失敗した場合、この関数は、FALSE を返します。</para>
+
+    <para>
+     オプションの 3番目のパラメータを "1" にすることにより、
+     <link linkend="ini.include-path">include_path</link> にあるファイルも
+     検索することができます。</para>
+
+    <para><example>
+      <title>gzopen() の例</title>
+      <programlisting>
+$fp = gzopen("/tmp/file.gz", "r");
+</programlisting></example></para>
+
+    <para>
+     <function>gzclose</function> も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+
+  <refentry id="function.gzpassthru">
+   <refnamediv>
+    <refname>gzpassthru</refname>
+    <refpurpose>gz ファイルへのポインタから残りのデータ全部を出力する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>gzpassthru</function></funcdef>
+     <paramdef>int <parameter>zp</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    gz ファイルポインタについて EOF までデータを読み込み、
+    標準出力に(解凍された)結果を書き込みます。</para>
+
+    <para>
+    エラーが発生した場合、FALSE を返します。</para>
+
+    <para> 
+    ファイルポインタは、有効なファイルポインタであり、かつ、
+     <function>gzopen</function>
+    によりオープンできたファイルを指している必要があります。</para>
+
+    <para>
+    gz ファイルは、<function>gzpassthru</function> による読込が完了した時点で
+    閉じられます。(<parameter>zp</parameter> は使用されなくなります)</para>
+
+   </refsect1>
+  </refentry>
+
+
+  <refentry id="function.gzputs">
+   <refnamediv>
+    <refname>gzputs</refname>
+    <refpurpose>gz ファイルへのポインタに書き込む</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>gzputs</function></funcdef>
+     <paramdef>int <parameter>zp</parameter></paramdef>
+     <paramdef>string <parameter>str</parameter></paramdef>
+     <paramdef>int <parameter><optional>length</optional></parameter></paramdef>
+    </funcsynopsis>
+
+    <para>
+     <function>gzputs</function> は、
+     <function>gzwrite</function> の別名であり、完全に同じものです。</para>
+
+   </refsect1>
+  </refentry>
+
+
+  <refentry id="function.gzread">
+   <refnamediv>
+    <refname>gzread</refname>
+    <refpurpose>バイナリ対応の gz ファイル読み込み</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>string <function>gzread</function></funcdef>
+     <paramdef>int <parameter>zp</parameter></paramdef>
+     <paramdef>int <parameter>length</parameter></paramdef>
+    </funcsynopsis>
+    <simpara>
+     <function>gzread</function> は、最大 <parameter>length</parameter> 
+     バイトのデータを <parameter>zp</parameter> が指す gz ファイルポインタ
+     から読み込みます。(解凍された) 
+     <parameter>length</parameter> バイトのデータが読み込まれたか、
+     EOF に達したとき、読み込みは終了します。</simpara>
+
+    <para>
+    <informalexample>
+      <programlisting>
+// gz ファイルの内容を文字列に読み込みます
+$filename = "/usr/local/something.txt.gz";
+$zd = gzopen( $filename, "r" );
+$contents = gzread( $zd, 10000 );
+gzclose( $zd );
+      </programlisting>
+     </informalexample></para>
+
+    <simpara>
+     <function>gzwrite</function>、<function>gzopen</function>、
+     <function>gzgets</function>、 <function>gzgetss</function>、
+     <function>gzfile</function>、<function>gzpassthru</function>
+     も参照下さい。</simpara>
+   </refsect1>
+  </refentry>
+
+
+  <refentry id="function.gzrewind">
+   <refnamediv>
+    <refname>gzrewind</refname>
+    <refpurpose>gz ファイルポインタの示す位置を元に戻す</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>gzrewind</function></funcdef>
+     <paramdef>int <parameter>zp</parameter></paramdef>
+    </funcsynopsis>
+<para>    zp が指すファイルのファイル位置記述子をファイルストリームの最初に
+セットします。</para>
+  <para>    エラーが生じた場合、0 を返します。</para>
+
+  <para> 
+    ファイルポインタは、有効なファイルポインタであり、かつ、
+     <function>gzopen</function>
+    によりオープンできたファイルを指している必要があります。</para>
+  <para>
+    <function>gzseek</function> および <function>gztell</function>
+    も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.gzseek">
+   <refnamediv>
+    <refname>gzseek</refname>
+    <refpurpose>gz ファイルポインタの位置を移動する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>gzseek</function></funcdef>
+     <paramdef>int <parameter>zp</parameter></paramdef>
+     <paramdef>int <parameter>offset</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+   zp が指すファイルのファイル位置記述子を
+   ファイルストリームにおいて offset バイトにセットします。
+     <literal>gzseek( zp, offset, SEEK_SET )</literal> を
+     (C 言語において)コールするのと同じです。</para>
+
+    <para>
+    ファイルが読み込み用にオープンされた場合、
+    この関数は、エミュレーションされますが、
+    極端に遅くなる可能性があります。
+    ファイルを書き込み用にオープンした場合、前方への移動のみが
+    サポートされます。この場合、gzipseek は、新しい開始位置まで
+    ゼロの並びのデータを圧縮します。</para>
+
+    <para>
+    成功した場合、0 を返します。それ以外の場合は、-1 を返します。
+    移動が EOF を超える場合にもエラーは発生しないことに注意してください。</para>
+
+    <para>
+     <function>gztell</function> および <function>gzrewind</function>
+     も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+
+  <refentry id="function.gztell">
+   <refnamediv>
+    <refname>gztell</refname>
+    <refpurpose> gz ファイルポインタの読み込み/書き込み位置を返します</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>gztell</function></funcdef>
+     <paramdef>int <parameter>zp</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     zp が指すファイルポインタの位置、つまり、
+     ファイルストリームにおけるオフセット値を返します。</para>
+
+    <para>
+    エラーが発生した場合、FALSE を返します。</para>
+
+    <para> 
+    ファイルポインタは、有効なファイルポインタであり、かつ、
+     <function>gzopen</function>
+    によりオープンできたファイルを指している必要があります。</para>
+
+    <para> <function>gzopen</function> 、
+    <function>gzseek</function> および <function>gzrewind</function>
+    も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+
+  <refentry id="function.gzwrite">
+   <refnamediv>
+    <refname>gzwrite</refname>
+    <refpurpose>バイナリ対応の gz ファイル書き込み</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>gzwrite</function></funcdef>
+     <paramdef>int <parameter>zp</parameter></paramdef>
+     <paramdef>string <parameter>string</parameter></paramdef>
+     <paramdef>int <parameter><optional>length</optional></parameter></paramdef>
+    </funcsynopsis>
+    <simpara>
+     <function>gzwrite</function> は
+     <parameter>string</parameter> の中身を zp が指す
+     gz ファイルストリームに書き込みます。
+     引数 <parameter>length</parameter> が指定され場合、(解凍された)
+      <parameter>length</parameter> バイトのデータが書き込まれたか、
+     <parameter>string</parameter> の終わりに達した時に
+     書き込みは終了します。</simpara>
+
+    <simpara>
+     引数 <parameter>length</parameter> が指定された場合、
+     <link
+     linkend="ini.magic-quotes-runtime">magic_quotes_runtime</link>
+     設定オプションは無視されて <parameter>string</parameter> から
+     スラッシュが取り除かれなくなることに注意してください。</simpara>
+
+    <simpara>
+     <function>gzread</function>、<function>gzopen</function>、
+     および <function>gzputs</function> も参照下さい。</simpara>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.readgzfile">
+   <refnamediv>
+    <refname>readgzfile</refname>
+    <refpurpose>gz ファイルを出力する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>readgzfile</function></funcdef>
+     <paramdef>string <parameter>filename</parameter></paramdef>
+    </funcsynopsis>
+    <para> ファイルを読み込み、解凍し、標準出力に書き込みます。</para>
+
+    <para>
+     Readgzfile() は、gzip フォーマットでないファイルの読込にも
+     使用可能です。
+     この場合、readgzfile() はファイルを解凍せずに直接読込みます。</para>
+
+    <para> ファイルから読み込んだ(解凍された)データのバイト数
+    を返します。エラーが発生した場合、FALSE が返され、
+    @readgzfile としてコールされている場合を除き、エラーメッセージが
+    出力されます。</para>
+
+    <para> ファイル <parameter>filename</parameter> は、
+    ファイルシステムからオープンされ、その内容が標準出力に
+    書き込まれます。</para>
+
+    <para>
+     <function>gzpassthru</function>、
+     <function>gzfile</function> および <function>gzopen</function>
+     も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+ </reference>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+sgml-parent-document:nil
+sgml-default-dtd-file:"../manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->

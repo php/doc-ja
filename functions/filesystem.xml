@@ -1,0 +1,1757 @@
+ <reference id="ref.filesystem">
+  <title>ファイルシステム関数</title>
+  <titleabbrev>ファイルシステム</titleabbrev>
+
+  <refentry id="function.basename">
+   <refnamediv>
+    <refname>basename</refname>
+    <refpurpose>パス中のファイル名の部分を返す</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>string <function>basename</function></funcdef>
+     <paramdef>string <parameter>path</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    この関数は、ファイルへのパス名として与えられた文字列より、
+    ファイルのベース名を返します。</para>
+    <para>
+    Windows では、スラッシュ(<literal>/</literal>)とバックスラッシュ
+    (<literal>\</literal>)の両方がパス区切り文字として使われます。
+    その他の環境ではスラッシュ(<literal>/</literal>)になります。</para>
+    <para>
+     <example><title><function>basename</function> の例</title>
+      <programlisting>
+$path = "/home/httpd/html/index.php3";
+$file = basename($path); // $file は "index.php3" にセットされる
+</programlisting>
+     </example></para>
+
+    <para>
+     参照：
+     <function>dirname</function></para>
+   </refsect1>
+  </refentry>
+
+
+  <refentry id="function.chgrp">
+   <refnamediv>
+    <refname>chgrp</refname>
+    <refpurpose>ファイルのグループを変更する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>chgrp</function></funcdef>
+     <paramdef>string <parameter>filename</parameter></paramdef>
+     <paramdef>mixed <parameter>group</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    ファイル filename のグループを group に変更しようと試みます。
+    スーパーユーザのみがファイルのグループを任意に変更できます。
+    その他のユーザは、
+    ファイルのグループをそのユーザがメンバーとして属している
+    グループに変更できます。</para>
+    <para>
+    成功すると TRUE を返し、そうでなければ FALSE を返します。</para>
+    <para>
+    Windows 環境では、何もせずに TRUE を返します。</para>
+    <para>
+    参照：<function>chown</function>, <function>chmod</function></para>
+   </refsect1>
+  </refentry>
+
+
+  <refentry id="function.chmod">
+   <refnamediv>
+    <refname>chmod</refname>
+    <refpurpose>ファイルのモードを変更する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>chmod</function></funcdef>
+     <paramdef>string <parameter>filename</parameter></paramdef>
+     <paramdef>int <parameter>mode</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    <parameter>filename</parameter>で指定されたファイルのモードを
+    <parameter>mode</parameter>で与えられたものに変更しようと
+    試みます。</para>
+
+    <para>
+    <parameter>mode</parameter>は自動的には 8 進数と見なされないので
+    注意して下さい。正しく指定するためには、<parameter>mode</parameter>
+    の前に 0 を付ける必要があります。
+
+     <informalexample>
+      <programlisting>
+chmod( "/somedir/somefile", 755 );   // 10 進数; おそらく間違い
+chmod( "/somedir/somefile", 0755 );  // 8 進数; 正しいモードの値
+      </programlisting>
+     </informalexample></para>
+
+    <para>
+    成功すると TRUE を返し、そうでなければ FALSE を返します。</para>
+
+    <para>
+参照：<function>chown</function>, <function>chgrp</function></para>
+   </refsect1>
+  </refentry>
+
+
+  <refentry id="function.chown">
+   <refnamediv>
+    <refname>chown</refname>
+    <refpurpose>ファイルの所有者を変更する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>chown</function></funcdef>
+     <paramdef>string <parameter>filename</parameter></paramdef>
+     <paramdef>mixed <parameter>user</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    ファイル filename の所有者をユーザ user に変更しようと試みます。
+    スーパーユーザのみがファイルの所有者を変更できます。</para>
+    <para>
+    成功すると TRUE を返し、そうでなければ FALSE を返します。
+    <note>
+    <simpara>Windows 環境では、何もせずに TRUE を返します。</simpara>
+    </note></para>
+    <para>
+参照：<function>chown</function>, <function>chmod</function></para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.clearstatcache">
+   <refnamediv>
+    <refname>clearstatcache</refname>
+    <refpurpose>ファイルの stat キャッシュをクリアする</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>clearstatcache</function></funcdef>
+     <void/>
+    </funcsynopsis>
+    <para>
+    <systemitem>stat</systemitem> または <systemitem>lstat</systemitem>
+	システムコールは、ほとんどのシステムにおいて
+    かなりのコストがかかるものです。そのため、ステータス関連の関数
+    （後述）への最後のコールの結果はキャッシュされ、同名のファイル
+    に対する同じような関数コールに際してそのキャッシュが使われます。
+    もし新たなステータスチェックを強制したい場合、たとえばファイルが
+    何度もチェックされ、その間に変更されたり消えたりする可能性がある
+    場合、この関数をコールすることにより最後のコールの結果がメモリから
+    クリアされます。</para>
+    <para>
+    単一のリクエストが持続している間のみ、この値のキャッシュが
+    行われます。</para>
+
+    <para>
+     影響を受ける関数を以下に示します。
+     <function>lstat</function>,
+     <function>stat</function>,
+     <function>file_exists</function>,
+     <function>is_writeable</function>,
+     <function>is_readable</function>,
+     <function>is_executable</function>,
+     <function>is_file</function>,
+     <function>is_dir</function>,
+     <function>is_link</function>,
+     <function>filectime</function>,
+     <function>fileatime</function>,
+     <function>filemtime</function>,
+     <function>fileinode</function>,
+     <function>filegroup</function>,
+     <function>fileowner</function>,
+     <function>filesize</function>,
+     <function>filetype</function>,
+     <function>fileperms</function></para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.copy">
+   <refnamediv>
+    <refname>copy</refname>
+    <refpurpose>ファイルをコピーする</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>copy</function></funcdef>
+     <paramdef>string <parameter>source</parameter></paramdef>
+     <paramdef>string <parameter>dest</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    ファイルのコピーを作成します。コピーが成功すると TRUE を返し、
+    そうでなければ FALSE を返します。
+     <example><title><function>copy</function> の例</title>
+      <programlisting>
+if (!copy($file, $file.'.bak')) {
+    print("$file へのコピーに失敗しました...&lt;br>\n");
+}
+</programlisting>
+     </example></para>
+
+    <para>
+     参照：
+     <function>rename</function></para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.delete">
+   <refnamediv>
+    <refname>delete</refname>
+    <refpurpose>ダミーの関数エントリ</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>delete</function></funcdef>
+     <paramdef>string <parameter>file</parameter></paramdef>
+    </funcsynopsis>
+     <para>
+		この関数は、間違った場所で <function>unlink</function> 
+		または<function>unset</function> を求める人の要求を
+		満たすためのダミーの関数エントリです。</para>
+     <para>
+		ファイルを削除するには
+      <function>unlink</function> 、変数を削除するには
+	<function>unset</function>を参照下さい。</para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.dirname">
+   <refnamediv>
+    <refname>dirname</refname>
+    <refpurpose>パス中のディレクトリの部分を返す</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>string <function>dirname</function></funcdef>
+     <paramdef>string <parameter>path</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    この関数は、ファイルへのパス名として与えられた文字列より、
+    ディレクトリの名前を返します。</para>
+    <para>
+    Windows では、スラッシュ(<literal>/</literal>)とバックスラッシュ
+    (<literal>\</literal>)の両方がパス区切り文字として使われます。
+    その他の環境ではスラッシュ(<literal>/</literal>)になります。</para>
+    <para>
+     <example><title><function>dirname</function> の例</title>
+      <programlisting>
+$path = "/etc/passwd";
+$file = dirname($path); // $file は "/etc" にセットされる
+</programlisting>
+     </example></para>
+
+    <para>
+     参照：
+     <function>basename</function></para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.diskfreespace">
+   <refnamediv>
+    <refname>diskfreespace</refname>
+    <refpurpose>ディレクトリの利用可能なスペースを返す</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>float <function>diskfreespace</function></funcdef>
+     <paramdef>string <parameter>directory</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    ディレクトリを文字列で指定すると、この関数は、対応するディスク
+    で利用可能なバイト数を返します。</para>
+    <para>
+     <example><title><function>diskfreespace</function> の例</title>
+      <programlisting>
+$df = diskfreespace("/"); // $df は "/" で利用可能なバイト数となります。
+</programlisting>
+     </example></para>
+   </refsect1>
+  </refentry>
+
+
+  <refentry id="function.fclose">
+   <refnamediv>
+    <refname>fclose</refname>
+    <refpurpose>オープンされたファイルポインタをクローズする</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>fclose</function></funcdef>
+     <paramdef>int <parameter>fp</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    <parameter>fp</parameter>が指しているファイルがクローズされます。</para>
+    <para>
+    成功すると TRUE を返し、そうでなければ FALSE を返します。</para>
+    <para>
+    ファイルポインタは有効なものでなければならず、また
+    <function>fopen</function>または<function>fsockopen</function>
+    で正常にオープンされたファイルを指している必要があります。</para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.feof">
+   <refnamediv>
+    <refname>feof</refname>
+    <refpurpose>ファイルポインタが EOF に達しているかどうか調べる</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>feof</function></funcdef>
+     <paramdef>int <parameter>fp</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    ファイルポインタが EOF に達していれば TRUE を返し、
+    その他の場合やエラーが起こった場合は FALSE を返します。</para>
+    <para>
+    ファイルポインタは有効なものでなければならず、また
+    <function>fopen</function>または<function>fsockopen</function>
+    で正常にオープンされたファイルを指している必要があります。</para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.fgetc">
+   <refnamediv>
+    <refname>fgetc</refname>
+    <refpurpose>ファイルポインタから 1 文字取り出す</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>string <function>fgetc</function></funcdef>
+     <paramdef>int <parameter>fp</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    <parameter>fp</parameter>で指定されたファイルポインタから
+    1 文字読み出し、その文字からなる文字列を返します。</para>
+    <para>
+    ファイルポインタは有効なものでなければならず、また
+    <function>fopen</function>、<function>popen</function>
+    または<function>fsockopen</function>
+    で正常にオープンされたファイルを指している必要があります。</para>
+
+    <para> 参照：<function>fread</function>,<function>fopen</function>,
+    <function>popen</function>, <function>fsockopen</function>,
+    <function>fgets</function></para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.fgetcsv">
+   <refnamediv>
+    <refname>fgetcsv</refname>
+    <refpurpose>ファイルポインタから行を取得し、CSVフィールドを処理する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>array <function>fgetcsv</function></funcdef>
+     <paramdef>int <parameter>fp</parameter></paramdef>
+     <paramdef>int <parameter>length</parameter></paramdef>
+     <paramdef>string <parameter><optional>delimiter</optional></parameter></paramdef>
+    </funcsynopsis>
+    <simpara>
+	fgets() に動作は似ていますが、fgetcsv()は行をCSVフォーマットのフィールド用の	処理を行い、読み込まれたフィールドを含む配列を返すという違いがあります。
+	フィールドのデリミタは、オプションの3番目のパラメータで別のデリミタを指定
+	した場合を除きカンマです。</simpara>
+    <simpara>
+	 fp は、
+	 <function>fopen</function>, <function>popen</function>,  <function>fsockopen</function>で正常にオープンされたファイルへのファイルポインタである必要があります。</simpara>
+	<simpara> 
+	 length は、(行末文字を考慮して)
+	CSVファイルにある最も長い行よりも大きい必要があります。</simpara>
+	<simpara>
+	 fgetcsv() はファイルの終端に達した場合を含み、
+	エラー時にFALSEを返します。</simpara>
+
+	<simpara>
+	CSVファイルの空行は
+	ヌルフィールドを一つだけ含む配列として返され、
+	エラーにはなりません。</simpara>
+	
+	<example>
+      <title>fgetcsv() の例 - CSVファイルの内容全体を読み込み出力します</title>
+      <programlisting>
+$row=1;
+$fp = fopen("test.csv","r");
+while ($data = fgetcsv($fp,1000, ",")) {
+	$num = count($data);
+	print "&lt;p> $num fields in line $row: &lt;br>";
+	$row++;
+	for ( $c=0; $c<$num; $c++ ) print $data[$c] . "&lt;br>";
+}
+fclose($fp);
+      </programlisting></example>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.fgets">
+   <refnamediv>
+    <refname>fgets</refname>
+    <refpurpose>ファイルポインタから 1 行取り出す</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>string <function>fgets</function></funcdef>
+     <paramdef>int <parameter>fp</parameter></paramdef>
+     <paramdef>int <parameter>length</parameter></paramdef>
+    </funcsynopsis>
+
+    <para>
+    fp で指定されたファイルポインタから最大 length - 1 バイト読み出し、
+    その文字列を返します。読み出しは、length
+    - 1 バイト読み出したか、(返り値に含まれる)改行文字を検出したか、
+    EOF に達したかのいずれかが起こった時点で終了します。</para>
+
+    <para> 
+    エラーが起こった場合 FALSE を返します。
+    陥りやすい罠:</para>
+    <simpara>
+		fgets の 'C' と同義に使用する者は、EOFを返す条件の違いについて
+		注意する必要があります。</simpara>
+    <simpara>
+    ファイルポインタは有効なものでなければならず、また
+    <function>fopen</function>, <function>popen</function>
+    または<function>fsockopen</function>
+    で正常にオープンされたファイルを指している必要があります。</simpara>
+
+    <para>
+    簡単な例を以下に示します。
+    <example> 
+      <title>行毎にファイルを読み込む</title>
+      <programlisting role="php">
+$fd = fopen("/tmp/inputfile.txt", "r");
+while (!feof($fd)) {
+  $buffer = fgets($fd, 4096);
+  echo $buffer;
+}
+fclose($fd);
+</programlisting></example></para>
+    
+    <para>参照：<function>fread</function>,
+     <function>fopen</function>, <function>popen</function>, 
+     <function>fgetc</function>, <function>fsockopen</function></para>
+
+   </refsect1>
+  </refentry>
+
+
+  <refentry id="function.fgetss">
+   <refnamediv>
+    <refname>fgetss</refname>
+    <refpurpose>ファイルポインタから 1 行取り出し、HTML タグを取り除く
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>string <function>fgetss</function></funcdef>
+     <paramdef>int <parameter>fp</parameter></paramdef>
+     <paramdef>int <parameter>length</parameter></paramdef>
+     <paramdef>string <parameter><optional>allowable_tags</optional></parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    fgetss は、読み込んだテキストから HTML および PHP のタグを
+    取り除こうとすること以外は<function>fgets</function>と同じです。</para>
+    <para>
+     オプションの 3番目の引数を使用して、取り除く必要がないタグを指定する
+     ことができます。
+
+    <note>
+     <para>
+      <parameter>allowable_tags</parameter> は、PHP 3.0.13, PHP4B3 で追加
+      されました。</para>
+    </note></para>
+    <para><function>fgets</function>, <function>fopen</function>,
+     <function>fsockopen</function>, <function>popen</function>,
+	 <function>strip_tags</function>も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+
+  <refentry id="function.file">
+   <refnamediv>
+    <refname>file</refname> 
+    <refpurpose>ファイル全体を読み込んで配列に格納する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>array <function>file</function></funcdef>
+     <paramdef>string <parameter>filename</parameter></paramdef>
+     <paramdef>int <parameter><optional>use_include_path</optional></parameter></paramdef>
+    </funcsynopsis>
+
+    <para> 
+    <function>readfile</function>と同じですが、file() はファイルを
+    配列に入れて返すところだけが異なります。
+    配列の各要素は、ファイルの各行に対応します。改行記号はついたままと
+    なります。</para>
+
+    <para> 
+     オプションの2番目の引数を使用して、これに "1" を設定する
+     ことにより、<link linkend="ini.include-path">include_path</link>
+     のファイルの検索も行うことができます。</para>
+
+    <para> 
+    参照：<function>readfile</function>,
+     <function>fopen</function>, <function>popen</function></para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.file-exists">
+   <refnamediv>
+    <refname>file_exists</refname>
+    <refpurpose>ファイルの存在をチェックする</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>file_exists</function></funcdef>
+     <paramdef>string <parameter>filename</parameter></paramdef>
+    </funcsynopsis>
+
+    <simpara>
+    <parameter>filename</parameter>で指定したファイルが存在
+    すれば TRUE を返し、そうでなければ FALSE を返します。</simpara>
+    <para>
+	この関数の結果はキャッシュされます。詳細は、
+     <function>clearstatcache</function> を参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.fileatime">
+   <refnamediv>
+    <refname>fileatime</refname>
+    <refpurpose>ファイルの最終アクセス時刻を取得する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>fileatime</function></funcdef>
+     <paramdef>string <parameter>filename</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    ファイルの最終アクセス時刻を返し、エラーの場合は FALSE
+    を返します。</para>
+   <para>
+	この関数の結果はキャッシュされます。詳細は、
+     <function>clearstatcache</function> を参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+
+  <refentry id="function.filectime">
+   <refnamediv>
+    <refname>filectime</refname>
+    <refpurpose>ファイルの inode 変更時刻を取得する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>filectime</function></funcdef>
+     <paramdef>string <parameter>filename</parameter></paramdef>
+    </funcsynopsis>
+    <para>ファイルの最終更新時刻を返し、エラーの場合は FALSE
+    を返します。</para>
+   <para>
+	この関数の結果はキャッシュされます。詳細は、
+     <function>clearstatcache</function> を参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+
+  <refentry id="function.filegroup">
+   <refnamediv>
+    <refname>filegroup</refname>
+    <refpurpose>ファイルのグループを取得する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>filegroup</function></funcdef>
+     <paramdef>string <parameter>filename</parameter></paramdef>
+    </funcsynopsis>
+    <para>ファイルの所有者のグループ ID を返し、エラーの場合は FALSE
+    を返します。</para>
+   <para>
+	この関数の結果はキャッシュされます。詳細は、
+     <function>clearstatcache</function> を参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+
+  <refentry id="function.fileinode">
+   <refnamediv>
+    <refname>fileinode</refname>
+    <refpurpose>ファイルの inode を取得する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>fileinode</function></funcdef>
+     <paramdef>string <parameter>filename</parameter></paramdef>
+    </funcsynopsis>
+    <para>ファイルの inode 番号を返し、エラーの場合は FALSE
+    を返します。</para>
+   <para>
+	この関数の結果はキャッシュされます。詳細は、
+     <function>clearstatcache</function> を参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+
+  <refentry id="function.filemtime">
+   <refnamediv>
+    <refname>filemtime</refname>
+    <refpurpose>ファイルの更新時刻を取得する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>filemtime</function></funcdef>
+     <paramdef>string <parameter>filename</parameter></paramdef>
+    </funcsynopsis>
+    <simpara>
+    ファイルの最終更新時刻を返し、エラーの場合は FALSE
+    を返します。</simpara>
+   <para>
+	この関数の結果はキャッシュされます。詳細は、
+     <function>clearstatcache</function> を参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+
+  <refentry id="function.fileowner">
+   <refnamediv>
+    <refname>fileowner</refname>
+    <refpurpose>ファイルの所有者を取得する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>fileowner</function></funcdef>
+     <paramdef>string <parameter>filename</parameter></paramdef>
+    </funcsynopsis>
+    <para>ファイルの所有者のユーザ ID を返し、エラーの場合は FALSE
+    を返します。</para>
+   <para>
+	この関数の結果はキャッシュされます。詳細は、
+     <function>clearstatcache</function> を参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.fileperms">
+   <refnamediv>
+    <refname>fileperms</refname>
+    <refpurpose>ファイルの許可属性を取得する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>fileperms</function></funcdef>
+     <paramdef>string <parameter>filename</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+	ファイルの許可属性を返し、エラーの場合は FALSE
+    を返します。</para>
+   <para>
+	この関数の結果はキャッシュされます。詳細は、
+     <function>clearstatcache</function> を参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+
+  <refentry id="function.filesize">
+   <refnamediv>
+    <refname>filesize</refname>
+    <refpurpose>ファイルのサイズを取得する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>filesize</function></funcdef>
+     <paramdef>string <parameter>filename</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+	ファイルのサイズを返し、エラーの場合は FALSE を返します。</para>
+   <para>
+	この関数の結果はキャッシュされます。詳細は、
+     <function>clearstatcache</function> を参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+
+  <refentry id="function.filetype">
+   <refnamediv>
+    <refname>filetype</refname>
+    <refpurpose>ファイルタイプの取得</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>string <function>filetype</function></funcdef>
+     <paramdef>string <parameter>filename</parameter></paramdef>
+    </funcsynopsis>
+    <para>ファイルのサイズを返します。返される値は fifo, char, dir,
+        block, link, file, および unknown のいずれかです。</para>
+    <para>
+	エラーが起こった場合 FALSE を返します。</para>
+   <para>
+	この関数の結果はキャッシュされます。詳細は、
+     <function>clearstatcache</function> を参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.flock">
+   <refnamediv>
+    <refname>flock</refname>
+    <refpurpose>汎用のファイルロック</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>bool <function>flock</function></funcdef>
+     <paramdef>int <parameter>fp</parameter></paramdef>
+     <paramdef>int <parameter>operation</parameter></paramdef>
+    </funcsynopsis>
+    <simpara>
+     PHP は、恣意的にファイルをロックする汎用の手段を提供します。
+     (これは、アクセスする全プログラムが同一のロックの方法を使用する
+     必要があり、そうでない場合は動作しないことを意味します)</simpara>
+
+    <simpara>
+	 <function>flock</function> は、<parameter>fp</parameter>を用いて
+	操作を行います。これは、オープンされたファイルポインタである必要があります。
+	<parameter>operation</parameter>は、次の値のどれかとなります。</simpara>
+
+	<para>
+     <itemizedlist>
+      <listitem><simpara>
+       共有ロック(読み手)とするには、<parameter>operation</parameter>に1をセットします。</simpara></listitem>
+
+      <listitem><simpara>
+	   排他的ロック(書き手)とするには、<parameter>operation</parameter>に2
+	をセットします。</simpara></listitem>
+
+      <listitem><simpara>
+	   (共有または排他的)ロックを開放するには、<parameter>operation</parameter>
+	に3をセットします。</simpara></listitem>
+    
+      <listitem><simpara>
+       ロック中に <function>flock</function> でブロックを行いたくない場合は、
+		<parameter>operation</parameter> に4を加えます。</simpara></listitem>
+
+     </itemizedlist>
+    </para>
+
+    <simpara>
+     <function>flock</function> により、(ほとんどのUNIXやWindowsさえ含む)
+	ほとんど全てのプラットフォームで
+	使用可能な簡易な読み手/書き手モデルが実現されます。</simpara>
+    
+    <simpara>
+     <function>flock</function> は成功時にTRUE、エラー時にFALSEを返します。
+     (例えばロックが確保できなかった場合)</simpara>
+
+    <simpara>
+    operation パラメータに 4 を加えた場合、ロックはブロックを行わない
+    手法で行われます。ロックが要求通りに、非ブロックモードになれない場合は、
+    FALSE を返します。その他の場合は、常に TRUE を返します。</simpara>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.fopen">
+   <refnamediv>
+    <refname>fopen</refname>
+    <refpurpose>ファイルまたは URL をオープンする</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>fopen</function></funcdef>
+     <paramdef>string <parameter>filename</parameter></paramdef>
+     <paramdef>string <parameter>mode</parameter></paramdef>
+     <paramdef>int <parameter><optional>use_include_path</optional></parameter></paramdef>
+    </funcsynopsis>
+    <simpara>
+    <parameter>filename</parameter> が "http://" （大文字小文字は
+    区別しません）で始まっている場合、指定されたサーバに対する
+    HTTP 1.0 コネクションがオープンされ、その応答テキストの先頭を
+    指しているファイルポインタが返されます。</simpara>
+
+    <simpara>
+    HTTP リダイレクトは処理されないので、ディレクトリを指定する場合は
+    末尾にスラッシュを付けなければなりません。</simpara>
+
+    <simpara>
+    <parameter>filename</parameter> が "ftp://" （大文字小文字は
+    区別しません）で始まっている場合、指定されたサーバに対する
+    FTP コネクションがオープンされ、要求したファイルへのポインタが
+    返されます。そのサーバがパッシブ・モード FTP をサポートして
+    いない場合は、この関数は失敗します。
+    ftp 経由で読みこみまたは書きこみのどちらかでファイルをオープンする
+    ことが可能です。(しかし、同時に両方を行うことはできません。)</simpara>
+
+    <simpara>
+    <parameter>filename</parameter> が上記以外の場合、指定された
+    ファイルがファイルシステムよりオープンされ、そのオープンされた
+    ファイルへのファイルポインタが返されます。</simpara>
+
+    <simpara>
+    オープンに失敗すると、この関数は FALSE を返します。</simpara>
+
+     <para>
+      <parameter>mode</parameter> は次のどれかになります。
+      <itemizedlist>
+       <listitem><simpara>'r' - 読みこみのみでオープンします。ファイルポインタをファイルの先頭に置きます。</simpara></listitem>
+       <listitem><simpara>
+        'r+' - 読みこみ・書きこみ用にオープンします。ファイルポインタをファイルの先頭に置きます。</simpara></listitem>
+       <listitem><simpara>
+        'w' - 書きこみのみでオープンします。ファイルポインタをファイルの先頭に置き、ファイルサイズをゼロにします。ファイルが存在しない場合には、作成を試みます。</simpara></listitem>
+       <listitem><simpara>
+        'w+' - 読みこみ・書きこみ用でオープンします。ファイルポインタをファイルの先頭に置き、ファイルサイズをゼロにします。ファイルが存在しない場合には、作成を試みます。</simpara></listitem>
+       <listitem><simpara>
+        'a' - 書きこみのみでオープンします。ファイルポインタをファイルの終端に置きます。ファイルが存在しない場合には、作成を試みます。</simpara></listitem>
+       <listitem><simpara>
+        'a+' - 読みこみ・書きこみ用でオープンします。ファイルポインタをファイルの終端に置きます。ファイルが存在しない場合には、作成を試みます。</simpara></listitem>
+      </itemizedlist>
+ 
+ 同時に、<parameter>mode</parameter> は文字 'b' を指定することもできます。
+これはバイナリとテキストのファイル形式が異なるシステムでのみ有効です。
+(つまり、UNIX では不要です。)必要がない場合、無視されます。</para>
+ 
+     <para>
+     オプションの2番目の引数を使用して、これに "1" を設定する
+     ことにより、<link linkend="ini.include-path">include_path</link>
+     のファイルの検索も行うことができます。</para>
+
+     <para>
+      <example>
+      <title>fopen() の例</title>
+      <programlisting>
+$fp = fopen("/home/rasmus/file.txt", "r");
+$fp = fopen("http://www.php.net/", "r");
+$fp = fopen("ftp://user:password@example.com/", "w");
+</programlisting></example></para>
+
+     <simpara>
+     ファイルの読みこみ・書きこみ時に問題が発生し、
+     サーバーモジュール版の PHP を使用している場合、
+     使用するファイル・ディレクトリがサーバープロセスからアクセス可能
+     かどうかを確認してみてください。</simpara>
+ 
+ 	<para>
+	Windows 環境では、ファイルパスで用いる全てのバックスラッシュを
+	エスケープするかフォワードスラッシュを使用することに注意して下さい。
+      <informalexample><programlisting>
+ $fp = fopen("c:\\data\\info.txt", "r");
+ </programlisting></informalexample></para>
+ 
+     <simpara>
+    参照：<function>fclose</function>,
+     <function>fsockopen</function>, <function>popen</function></simpara>
+
+   </refsect1>
+  </refentry>
+
+
+  <refentry id="function.fpassthru">
+   <refnamediv>
+    <refname>fpassthru</refname>
+    <refpurpose>ファイルポインタ上に残っているすべてのデータを出力する
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>fpassthru</function></funcdef>
+     <paramdef>int <parameter>fp</parameter></paramdef>
+    </funcsynopsis>
+    <simpara>
+    与えられたファイルポインタを EOF まで読み、結果を
+    標準出力に書き出します。</simpara>
+
+    <simpara>
+     エラーが起こった場合、<function>fpassthru</function>は
+     FALSE を返します。</simpara>
+
+    <simpara>
+    ファイルポインタは有効なものでなければならず、また
+    <function>fopen</function>, <function>popen</function>
+    または<function>fsockopen</function>
+    で正常にオープンされたファイルを指している必要があります。
+    <function>fpassthru</function>はファイルを読み終えると
+    そのファイルをクローズします（残った<parameter>fp</parameter>
+    はもはや使用できません）。</simpara>
+
+     <simpara>
+     ファイルの内容を標準出力にダンプしたいだけの場合、
+      <function>fopen</function> コールを省く
+      <function>readfile</function> を使用することが可能です。</simpara>
+
+     <simpara>
+      <function>readfile</function>, <function>fopen</function>,
+      <function>popen</function>, <function>fsockopen</function>
+      も参照下さい。</simpara>
+
+   </refsect1>
+  </refentry>
+
+
+  <refentry id="function.fputs">
+   <refnamediv>
+    <refname>fputs</refname>
+    <refpurpose>ファイルポインタに書き込む</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>fputs</function></funcdef>
+     <paramdef>int <parameter>fp</parameter></paramdef>
+     <paramdef>string <parameter>str</parameter></paramdef>
+     <paramdef>int <parameter><optional>length</optional></parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>fputs</function> は<function>fwrite</function>
+     の別名で、すべての面で同一です。
+     
+      <parameter>length</parameter> パラメータはオプションであり、
+	 指定されない場合、文字列全体が書かれることに注意して下さい。</para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.fread">
+   <refnamediv>
+    <refname>fread</refname>
+    <refpurpose>バイナリ・モードでファイルを読み込む</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>string <function>fread</function></funcdef>
+     <paramdef>int <parameter>fp</parameter></paramdef>
+     <paramdef>int <parameter>length</parameter></paramdef>
+    </funcsynopsis>
+    <simpara>
+    <function>fread</function> は <parameter>fp</parameter> で示される
+    ファイルポインタから最高 <parameter>length</parameter> バイト
+    読み込みます。読み込みは、<parameter>length</parameter> バイト分
+    読み込まれたか、EOF に達したかのいずれか早い方の事象により中止
+    されます。</simpara>
+
+    <para>
+    <informalexample>
+      <programlisting>
+// ファイルの中身を読んで文字列に格納する
+$filename = "/usr/local/something.txt";
+$fd = fopen( $filename, "r" );
+$contents = fread( $fd, filesize( $filename ) );
+fclose( $fd );
+      </programlisting>
+     </informalexample></para>
+
+    <simpara>
+    参照：<function>fwrite</function>, <function>fopen</function>,
+     <function>fsockopen</function>, <function>popen</function>,
+     <function>fgets</function>, <function>fgetss</function>,
+     <function>file</function>, <function>fpassthru</function></simpara>
+   </refsect1>
+  </refentry>
+
+
+  <refentry id="function.fseek">
+   <refnamediv>
+    <refname>fseek</refname>
+    <refpurpose>ファイルポインタをシークする</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>fseek</function></funcdef>
+     <paramdef>int <parameter>fp</parameter></paramdef>
+     <paramdef>int <parameter>offset</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    <parameter>fp</parameter>が指しているファイルのファイル位置識別子
+    を、ファイル・ストリーム中の<parameter>offset</parameter>バイト目
+    にセットします。（C 言語において）
+    <literal>fseek( fp, offset, SEEK_SET )</literal>
+    とすることと同じです、</para>
+    <para>
+    成功すると 0 を返し、そうでなければ -1 を返します。EOF より先の
+    位置にシークしてもエラーとはならないので注意して下さい。</para>
+    <para>
+    "http://" または "ftp://" フォーマット指定の<function>fopen
+    </function>により返されたファイルポインタに対しては使わないで下さい。</para>
+    <para>
+    参照：<function>ftell</function> および<function>rewind</function></para>
+   </refsect1>
+  </refentry>
+
+
+  <refentry id="function.ftell">
+   <refnamediv>
+    <refname>ftell</refname>
+    <refpurpose>ファイルポインタから読み書きの位置を取得する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>ftell</function></funcdef>
+     <paramdef>int <parameter>fp</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    <parameter>fp</parameter>が示すファイルポインタの位置、
+    すなわちファイル・ストリーム上のオフセットを返します。</para>
+    <para>
+     エラーが起こった場合 FALSE を返します。</para>
+    <para>
+    ファイルポインタは有効なものでなければならず、また
+    <function>fopen</function>、<function>popen</function>
+    で正常にオープンされたファイルを指している必要があります。</para>
+
+    <para>参照：<function>fopen</function>,
+    <function>popen</function>, <function>fseek</function>,
+    <function>rewind</function></para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.fwrite">
+   <refnamediv>
+    <refname>fwrite</refname>
+    <refpurpose>バイナリ・モードによるファイル書き込み</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>fwrite</function></funcdef>
+     <paramdef>int <parameter>fp</parameter></paramdef>
+     <paramdef>string <parameter>string</parameter></paramdef>
+     <paramdef>int <parameter><optional>length</optional></parameter></paramdef>
+    </funcsynopsis>
+    <simpara>
+    <function>fwrite</function>は<parameter>string</parameter>の内容を
+    <parameter>fp</parameter>が指しているファイル・ストリームに書き込み
+    ます。<parameter>length</parameter>パラメータが与えられている場合、
+    <parameter>length</parameter>バイト数分の書き込みが完了したか、
+    <parameter>string</parameter>が終わりに達したかのいずれか早い方の
+    事象により書き込みは中止されます。</simpara>
+
+    <simpara>
+    注意：<parameter>length</parameter>パラメータが与えられている場合、
+    <link linkend="ini.magic-quotes-runtime">magic_quotes_runtime</link>
+    構成オプションは無視され、<parameter>string</parameter>からの
+    スラッシュ文字の取り除きは行われません。</simpara>
+
+    <simpara>参照：<function>fread</function>, <function>fopen</function>,
+     <function>fsockopen</function>, <function>popen</function>,
+     <function>fputs</function></simpara>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.set-file-buffer">
+   <refnamediv>
+    <refname>set_file_buffer</refname>
+    <refpurpose>指定したファイルポインタのファイルバッファを設定する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>fwrite</function></funcdef>
+     <paramdef>int <parameter>fp</parameter></paramdef>
+     <paramdef>int <parameter>buffer</parameter></paramdef>
+    </funcsynopsis>
+    <simpara>
+     <function>set_file_buffer</function> は、指定したファイルポインタ
+	<parameter>fp</parameter> への書き込み時のバッファを
+	<parameter>buffer</parameter> バイトに設定します。
+	<parameter>buffer</parameter>を0とした場合、書き込み操作は、
+	バッファリングされません。</simpara>
+ 
+     <simpara>
+	この関数は成功時に0、要求が受け入れられない場合にEOFを返します。</simpara>
+     
+     <simpara>
+	set_file_bufferをコールする際に、全ての fopen に関する
+	デフォルト値は 8Kバイトであることに注意してください。</simpara>
+
+    <simpara>
+     <function>fopen</function>も参照下さい。</simpara>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.is-dir">
+   <refnamediv>
+    <refname>is_dir</refname>
+    <refpurpose>ファイルがディレクトリかどうかを知る</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>bool <function>is_dir</function></funcdef>
+     <paramdef>string <parameter>filename</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    <parameter>filename</parameter>が存在して、かつそれが
+    ディレクトリであれば TRUE を返します。</para>
+   <para>
+	この関数の結果はキャッシュされます。詳細は、
+     <function>clearstatcache</function> を参照下さい。</para>
+
+    <para>
+    参照：<function>is_file</function>, <function>is_link</function></para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.is-executable">
+   <refnamediv>
+    <refname>is_executable</refname>
+    <refpurpose>ファイルが実行可能かどうかを知る</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>bool <function>is_executable</function></funcdef>
+     <paramdef>string <parameter>filename</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    <parameter>filename</parameter>が存在して、かつそれが
+    実行可能であれば TRUE を返します。</para>
+   <para>
+	この関数の結果はキャッシュされます。詳細は、
+     <function>clearstatcache</function> を参照下さい。</para>
+
+    <para>
+    参照：<function>is_file</function>, <function>is_link</function></para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.is-file">
+   <refnamediv>
+    <refname>is_file</refname>
+    <refpurpose>通常ファイルかどうかを知る</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>bool <function>is_file</function></funcdef>
+     <paramdef>string <parameter>filename</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    <parameter>filename</parameter>が存在して、かつそれが
+    通常ファイルであれば TRUE を返します。</para>
+   <para>
+	この関数の結果はキャッシュされます。詳細は、
+     <function>clearstatcache</function> を参照下さい。</para>
+    <para>
+    参照：<function>is_dir</function>, <function>is_link</function></para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.is-link">
+   <refnamediv>
+    <refname>is_link</refname>
+    <refpurpose>ファイルがシンボリックリンクかどうかを知る</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>bool <function>is_link</function></funcdef>
+     <paramdef>string <parameter>filename</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    <parameter>filename</parameter>が存在して、かつそれが
+    シンボリックリンクであれば TRUE を返します。</para>
+   <para>
+	この関数の結果はキャッシュされます。詳細は、
+     <function>clearstatcache</function> を参照下さい。</para>
+    <para>
+    参照：<function>is_dir</function>, <function>is_file</function></para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.is-readable">
+   <refnamediv>
+    <refname>is_readable</refname>
+    <refpurpose>ファイルが読み込み可能かどうかを知る</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>bool <function>is_readable</function></funcdef>
+     <paramdef>string <parameter>filename</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    <parameter>filename</parameter>が存在して、かつそれが
+    読み込み可能であれば TRUE を返します。</para>
+    <para>
+    PHP は、Web サーバが実行されているユーザ ID（'nobody' が多い）
+    でファイルにアクセスすることを肝に銘じておいてください。
+    アカウントにはセーフモードの制限は働きません。</para>
+   <para>
+	この関数の結果はキャッシュされます。詳細は、
+     <function>clearstatcache</function> を参照下さい。</para>
+    <para>
+    参照：<function>is_writeable</function></para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.is-writeable">
+   <refnamediv>
+    <refname>is_writeable</refname>
+    <refpurpose>ファイルが書き込み可能かどうかを知る</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>bool <function>is_writeable</function></funcdef>
+     <paramdef>string <parameter>filename</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    <parameter>filename</parameter>が存在して、かつそれが
+    書き込み可能であれば TRUE を返します。引数 filenameは
+	ディレクトリの名前とすることができ、
+	ディレクトリが書き込み可能であることを調べることが
+	可能です。</para>
+    <para>
+    PHP は、Web サーバが実行されているユーザ ID（'nobody' が多い）
+    でファイルにアクセスすることを肝に銘じておいてください。
+    アカウントにはセーフモードの制限は働きません。</para>
+	<para>
+	この関数の結果はキャッシュされます。詳細は、
+     <function>clearstatcache</function> を参照下さい。</para>
+    <para>
+    参照：<function>is_readable</function></para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.link">
+   <refnamediv>
+    <refname>link</refname>
+    <refpurpose>ハードリンクを作る</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>link</function></funcdef>
+     <paramdef>string <parameter>target</parameter></paramdef>
+     <paramdef>string <parameter>link</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    <function>Link</function>はハードリンクを作ります。</para>
+    <para>
+    シンボリックリンクを作る <function>symlink</function> 、
+    また <function>linkinfo</function> と共に <function>readlink</function> 
+    も参照下さい。</para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.linkinfo">
+   <refnamediv>
+    <refname>linkinfo</refname>
+    <refpurpose>リンクに関する情報を取得する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>linkinfo</function></funcdef>
+     <paramdef>string <parameter>path</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    <function>Linkinfo</function>は、lstat システムコールで返された
+    UNIX C の stat 構造体の st_dev フィールドを返します。この関数は、
+    （<parameter>path</parameter>が指している）リンクが実際に存在
+    するかどうかを、（ stat.h で定義されている S_ISLNK マクロと同じ
+    方法で）チェックするために使われます。0 を返し、エラーなら
+    FALSE を返します。</para>
+    <para>
+    参照：<function>symlink</function>, <function>link</function>,
+    <function>readlink</function></para>
+   </refsect1>
+  </refentry>
+
+
+  <refentry id="function.mkdir">
+   <refnamediv>
+    <refname>mkdir</refname>
+    <refpurpose>ディレクトリを作る</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>mkdir</function></funcdef>
+     <paramdef>string <parameter>pathname</parameter></paramdef>
+     <paramdef>int <parameter>mode</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    <parameter>pathname</parameter>で指定されたディレクトリを
+    作成しようと試みます。</para>
+      
+     <para>
+     モードを 8 進数で指定する場合には、先頭にゼロを付ける必要が
+     あることに注意して下さい。
+      <informalexample><programlisting>
+ mkdir("/path/to/my/dir", 0700);
+ </programlisting></informalexample></para>
+
+    <para>
+    成功すると TRUE を返し、失敗すると FALSE を返します。</para>
+    <para>
+    参照：<function>rmdir</function></para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.pclose">
+   <refnamediv>
+    <refname>pclose</refname>
+    <refpurpose>プロセスのファイルポインタをクローズする</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>pclose</function></funcdef>
+     <paramdef>int <parameter>fp</parameter></paramdef>
+    </funcsynopsis>
+    <para><function>popen</function>によってオープンされたパイプへの
+    ファイルポインタをクローズします。</para>
+    <para>
+    ファイルポインタは有効なものでなければならず、また
+    <function>fopen</function>
+    で正常にオープンされたファイルを指している必要があります。</para>
+    <para>実行していたプロセスの終了ステータスを返します。</para>
+    <para>参照：<function>popen</function></para>
+   </refsect1>
+  </refentry>
+
+
+  <refentry id="function.popen">
+   <refnamediv>
+    <refname>popen</refname>
+    <refpurpose>プロセスへのファイルポインタをオープンする</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>popen</function></funcdef>
+     <paramdef>string <parameter>command</parameter></paramdef>
+     <paramdef>string <parameter>mode</parameter></paramdef>
+    </funcsynopsis>
+    <para><parameter>command</parameter>で与えられたコマンドを
+    fork() して実行し、そのプロセスへのパイプをオープンします。</para>
+    <para><function>fopen</function>により返されたファイルポインタ
+    と同様のものを返しますが、それは（読み書きのいずれか一方で
+    のみ使われる）片方向ストリームであり、<function>pclose</function>
+    によりクローズされなければならないところが異なります。この
+    ポインタは、<function>fgets</function>, <function>fgetss</function>
+    および<function>fputs</function>のいずれかで使うことができます。</para>
+    <para>
+     エラーが起こった場合 FALSE を返します。</para>
+
+    <para>
+     <informalexample>
+      <programlisting>
+       $fp = popen( "/bin/ls", "r" );
+      </programlisting></informalexample></para>
+    <para>
+    <function>pclose</function>も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+
+  <refentry id="function.readfile">
+   <refnamediv>
+    <refname>readfile</refname>
+    <refpurpose>ファイルを出力する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>readfile</function></funcdef>
+     <paramdef>string <parameter>filename</parameter></paramdef>
+     <paramdef>int <parameter><optional>use_include_path</optional></parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    ファイルを読んで標準出力に書き出します。</para>
+    <para>
+    ファイルから読み込んだバイト数を返します。エラーが起こると
+    FALSE を返し、また @readfile という名前でコールされない限り、
+    エラーメッセージが表示されます。</para>
+    <para>
+    <parameter>filename</parameter>が "http://" （大文字
+    小文字は区別されません）で始まっている場合、指定されたサーバに
+    対して HTTP 1.0 コネクションがオープンされ、返されたテキストが
+    標準出力に書き出されます。</para>
+    <para>
+    HTTP リダイレクトは処理されないので、ディレクトリ名を
+    指定する場合は末尾にスラッシュを置く必要があります。</para>
+    <para>
+    <parameter>filename</parameter>が "ftp://" （大文字
+    小文字は区別されません）で始まっている場合、指定されたサーバに
+    対して FTP コネクションがオープンされ、要求したファイルが
+    標準出力に書き出されます。サーバがパッシブ・モードをサポート
+    していない場合、これは失敗します。</para>
+    <para>
+    <parameter>filename</parameter>が上記のいずれでもない
+    場合、ファイルはファイルシステムからオープンされ、その内容が
+    標準出力に書き出されます。</para>
+     <para>
+     オプションの2番目の引数を使用して、これに "1" を設定する
+     ことにより、<link linkend="ini.include-path">include_path</link>
+     のファイルの検索も行うことができます。</para>
+    <para>
+    参照：<function>fpassthru</function>, <function>file</function>,
+     <function>fopen</function>, <function>include</function>,
+     <function>require</function>, <function>virtual</function></para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.readlink">
+   <refnamediv>
+    <refname>readlink</refname>
+    <refpurpose>シンボリックリンク先を返す</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>string <function>readlink</function></funcdef>
+     <paramdef>string <parameter>path</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    <function>Readlink</function>は同名の C 関数と同じ働きをして、
+    シンボリックリンク・パスの内容を返し、エラーの場合 0 を
+    返します。</para>
+    <para>
+    参照：<function>symlink</function>,
+    <function>readlink</function>, <function>linkinfo</function></para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.rename">
+   <refnamediv>
+    <refname>rename</refname>
+    <refpurpose>ファイルをリネームする</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>rename</function></funcdef>
+     <paramdef>string <parameter>oldname</parameter></paramdef>
+     <paramdef>string <parameter>newname</parameter></paramdef>
+    </funcsynopsis>
+    <para><parameter>oldname</parameter>を
+    <parameter>newname</parameter>にリネームしようと試みます。</para>
+    <para>成功すると TRUE を返し、失敗すると FALSE を返します。</para>
+   </refsect1>
+  </refentry>
+
+
+  <refentry id="function.rewind">
+   <refnamediv>
+    <refname>rewind</refname>
+    <refpurpose>ファイルポインタの位置を先頭に戻す</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>rewind</function></funcdef>
+     <paramdef>int <parameter>fp</parameter></paramdef>
+    </funcsynopsis>
+    <para><parameter>fp</parameter>のファイル位置指示子をファイル
+    ストリームの先頭にセットします。</para>
+  <para>エラーが起こった場合 0 を返します。</para>
+  <para>ファイルポインタは有効なものでなければならず、また
+    <function>fopen</function>で正常にオープンされたファイルを
+    指している必要があります。</para>
+  <para>参照：<function>fseek</function>, <function>ftell</function></para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.rmdir">
+   <refnamediv>
+    <refname>rmdir</refname>
+    <refpurpose>ディレクトリを削除する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>rmdir</function></funcdef>
+     <paramdef>string <parameter>dirname</parameter></paramdef>
+    </funcsynopsis>
+    <para><parameter>dirname</parameter>で指定されたディレクトリを
+    削除しようと試みます。ディレクトリは空でなくてはならず、また
+    適切なパーミッションが設定されていなければなりません。</para>
+    <para>エラーが起こった場合 0 を返します。</para>
+    <para>参照：<function>mkdir</function></para>
+
+   </refsect1>
+  </refentry>
+
+
+  <refentry id="function.stat">
+   <refnamediv>
+    <refname>stat</refname>
+    <refpurpose>ファイルに関する情報を取得する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>array <function>stat</function></funcdef>
+     <paramdef>string <parameter>filename</parameter></paramdef>
+    </funcsynopsis>
+    <para><parameter>filename</parameter>で指定されたファイルに
+    ついての統計情報を取得します。</para>
+    <para>ファイルの統計情報を、以下の要素を持つ配列として
+    返します。
+     <orderedlist>
+      <listitem><simpara>デバイス</simpara></listitem>
+      <listitem><simpara>inode</simpara></listitem>
+	  <listitem><simpara>inode 保護モード</simpara></listitem>
+      <listitem><simpara>リンクの数</simpara></listitem>
+      <listitem><simpara>所有者のユーザ ID</simpara></listitem>
+      <listitem><simpara>所有者のグループ ID</simpara></listitem>
+      <listitem><simpara>inode デバイスの場合、デバイスタイプ *</simpara>
+      </listitem>
+      <listitem><simpara>サイズ（バイト数）</simpara></listitem>
+      <listitem><simpara>最終アクセス時刻</simpara></listitem>
+      <listitem><simpara>最終更新時刻</simpara></listitem>
+      <listitem><simpara>最終変更時刻</simpara></listitem>
+      <listitem><simpara>ファイルシステム I/O のブロックサイズ *</simpara>
+      </listitem>
+      <listitem><simpara>割り当て済みブロック数</simpara></listitem>
+     </orderedlist>
+     * - st_blksize タイプをサポートしているシステムでのみ有効です。
+     その他のシステム（たとえば Windows など）では -1 を返します。</para>
+	<para>
+	この関数の結果はキャッシュされます。詳細は、
+     <function>clearstatcache</function> を参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+
+   <refentry id="function.lstat">
+    <refnamediv>
+     <refname>lstat</refname>
+     <refpurpose>ファイルまたはシンボリックリンクに関する情報を与えます</refpurpose>
+    </refnamediv>
+    <refsect1>
+     <title>説明</title>
+     <funcsynopsis>
+      <funcdef>array <function>lstat</function></funcdef>
+      <paramdef>string <parameter>filename</parameter></paramdef>
+     </funcsynopsis>
+     <para>
+     filename という名前のファイルまたはシンボリックリンクの情報を得ます。
+     この関数は、<parameter>filename</parameter> パラメータが
+     シンボリックリンクであった場合にシンボリック先のファイルのステータスでは
+     なく、シンボリックリンクのステータスが返されること以外は、
+     <function>stat</function> 関数と同じです。</para>
+     <para>
+     次の要素を有するファイル情報の配列を返します。
+      <orderedlist>
+       <listitem><simpara>device</simpara></listitem>
+       <listitem><simpara>inode</simpara></listitem>
+       <listitem><simpara>リンクの数</simpara></listitem>
+       <listitem><simpara>所有者のユーザー ID</simpara></listitem>
+       <listitem><simpara>所有者のグループ ID</simpara></listitem>
+       <listitem><simpara>inode device * の場合、デバイス型</simpara></listitem>
+       <listitem><simpara>バイト数で表したサイズ</simpara></listitem>
+       <listitem><simpara>最後にアクセスされた時間</simpara></listitem>
+       <listitem><simpara>最後に更新された時間</simpara></listitem>
+       <listitem><simpara>最後に変更された時間</simpara></listitem>
+       <listitem><simpara>ファイルシステム I/O * のブロックサイズ</simpara></listitem>
+       <listitem><simpara>確保されたブロックの数</simpara></listitem>
+      </orderedlist>
+      * - st_blksize 型をサポートしているシステムでのみ有効--他のシステム (例えば、Windows) では -1 を返します。</para>
+		<para>
+	この関数の結果はキャッシュされます。詳細は、
+     <function>clearstatcache</function> を参照下さい。 </para>
+
+    </refsect1>
+   </refentry>
+ 
+ 
+  <refentry id="function.symlink">
+   <refnamediv>
+    <refname>symlink</refname>
+    <refpurpose>シンボリックリンクを作成する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>symlink</function></funcdef>
+     <paramdef>string <parameter>target</parameter></paramdef>
+     <paramdef>string <parameter>link</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+      <function>symlink</function> は、指定されたリンク名  <parameter>link</parameter>
+      で既存のファイル <parameter>target</parameter> へのシンボリックリンクを作成します。</para>
+    <para>
+    参照：ハードリンクを作る：<function>link</function>、
+    <function>readlink</function>と<function>linkinfo</function></para>
+   </refsect1>
+  </refentry>
+
+
+  <refentry id="function.tempnam">
+   <refnamediv>
+    <refname>tempnam</refname>
+    <refpurpose>ユニークなファイル名を生成する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>string <function>tempnam</function></funcdef>
+     <paramdef>string <parameter>dir</parameter></paramdef>
+     <paramdef>string <parameter>prefix</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    ユニークなテンポラリファイル名を指定されたディレクトリに
+    作成します。
+    そのディレクトリが存在しない場合、
+    <function>tempnam</function> は、システムのテンポラリディレクトリの
+    ファイル名を生成します。</para>
+
+    <para>
+     <function>tempnam</function> 関数の動作はシステムに依存します。
+	WindowsにおいてTMP環境変数は<parameter>dir</parameter>パラメータ
+	を上書きします。Linuxにおいては、TMPDIR環境変数が優先されます。
+	一方、SVR4においては指定したディレクトリが存在する場合は、
+	常に<parameter>dir</parameter>パラメータを使用します。
+	疑問がある場合は、tempnam(3)に関するシステムドキュメントを
+	参照下さい。</para>
+
+    <para>
+    新しい中間ファイル名を返し、失敗すると空の文字列を返します。
+
+     <example><title>tempnam() の例</title>
+      <programlisting>
+$tmpfname = tempnam( "/tmp", "FOO" );
+</programlisting></example></para>
+
+   </refsect1>
+  </refentry>
+
+
+  <refentry id="function.touch">
+   <refnamediv>
+    <refname>touch</refname>
+    <refpurpose>ファイルの最終更新日をセットする</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>touch</function></funcdef>
+     <paramdef>string <parameter>filename</parameter></paramdef>
+     <paramdef>int <parameter>time</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    <parameter>filename</parameter>で指定されたファイルの
+    最終更新日を、<parameter>time</parameter>で指定された値に
+    セットしようと試みます。オプションの time が指定されない場合、
+    現在時刻を使用します。</para>
+    <para>
+    ファイルが存在しない場合、ファイルが生成されます。</para>
+    <para>
+    成功すると TRUE を返し、そうでない場合 FALSE を返します。</para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.umask">
+   <refnamediv>
+    <refname>umask</refname>
+    <refpurpose>現在の umask を変更する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>umask</function></funcdef>
+     <paramdef>int <parameter>mask</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    <function>Umask</function>は PHP の umask を mask & 0777 にセットし、
+    元の umask 値を返します。
+    PHP がサーバ・モジュールとして動作中の場合、各リクエストが
+    終了するたびに umask は元の値に戻されます。</para>
+    <para>
+    <function>Umask</function>を引数無しで実行すると、単に現在の
+    umask 値を返します。</para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.unlink">
+   <refnamediv>
+    <refname>unlink</refname>
+    <refpurpose>ファイルを削除する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>unlink</function></funcdef>
+     <paramdef>string <parameter>filename</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    <parameter>filename</parameter>を削除します。Unix C の unlink()
+    関数と同様です。</para>
+    <para>
+    0 を返し、エラーの場合は FALSE を返します。</para>
+    <para>
+    参照：ディレクトリの削除には<function>rmdir</function>を使います。</para>
+
+   </refsect1>
+  </refentry>
+
+ </reference>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+sgml-parent-document:nil
+sgml-default-dtd-file:"../manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->

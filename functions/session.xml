@@ -1,0 +1,567 @@
+ <reference id="ref.session">
+  <title>セッション処理関数</title>
+  <titleabbrev>セッション</titleabbrev>
+  <partintro>
+   <para>
+   PHP のセッションサポート機能は、
+   複数回のアクセスを通じて特定のデータを保持する手段を
+   実現するものです。
+   これにより、よりカスタマイズされたアプリケーションを構築し、
+   自分の Web サイトのアピール度を増加させることが可能となります。
+   </para>
+
+   <para>
+   PHPLIB のセッション管理に精通している場合には、
+   そのコンセプトがPHP のセッションサポートに似ていることに気づくことでしょう。
+   </para>
+
+   <para>
+   Web サイトの訪問者にはセッションIDというユニークなIDが割りつけられます。
+   このIDは、ユーザー側にクッキーとして保存するか、または、URLに埋め込みます。
+   </para>
+
+   <para>
+   セッションサポート機能により、任意の数の変数をリクエスト間で受けわたせる
+   ようになります。来訪者がサイトにアクセスした際、
+   PHP は特定のセッションIDがリクエストとともに送信されているかどうかを
+   (session.auto_start が 1 の場合は)自動的に、または
+   (<function>session_start</function> により明示的な、あるいは
+   <function>session_register</function> により暗黙の)
+   要求を受けて確認します。
+   このIDが送信されている場合には、以前保存された変数が再現されます。
+   </para>
+
+   <para>
+   全ての登録された変数は、リクエストが終了した後に、シリアル化されます。
+   未定義の登録変数は、未定義であるとしてマーク付けされます。
+   後でユーザーがこれらの変数を定義しない限り、以降のアクセスにおいて
+   セッションモジュールにより定義されません。
+   </para>
+
+   <para>
+   セッションIDの通知を行うためには次の二つの方法があります。
+
+    <itemizedlist>
+     <listitem><simpara>
+      クッキー</simpara></listitem>
+     <listitem><simpara>
+      URL パラメータ</simpara></listitem>
+    </itemizedlist></para>
+
+   <para>
+   セッションモジュールは、両方の方法をサポートします。
+   クッキーは最適ですが、(クライアントがクッキーを受け入れない可能性が
+   あるため)信頼性がなく、頼ることができません。二番目の方法は、
+   セッションIDを直接URLに埋め込みます。
+   </para>
+
+   <para>
+    PHP は、<literal>--enable-trans-sid</literal> を付けてコンパイルされた
+    場合にこの処理を透過的に行います。
+    このオプションを有効にした場合、相対 URI はセッションIDを有するように
+    自動的に変更されます。
+    もしくは、クライアントが適当なクッキーを送信しない場合に
+    定義される定数 <literal>SID</literal> を使用することができます。
+    <literal>SID</literal> は、<literal>session_name=session_id</literal> 
+    の形式または空の文字列です。
+   </para>
+
+   <para>
+   次の例は、変数の登録法および SID を用いて他のページに
+   正しくリンクする方法のデモです。
+  
+   <example>
+    <title>単一のユーザーに関するヒット数を数える</title>
+    <programlisting>
+&lt;?php
+
+session_register("count");
+
+$count++;
+
+?&gt;
+
+こんにちは、あなたがこのページに来たのは  &lt;? echo $count; ?&gt; times.&lt;p&gt;
+回目ですね。
+
+&lt;?
+# ユーザーがクッキーを使用不可としている場合は、セッションIDを
+# 保存する必要があります。
+?&gt;
+
+続けるには、
+&lt;A HREF="nextpage.php?&lt;?=SID?&gt;"&gt;ここをクリック&lt;/A&gt;
+して下さい。
+</programlisting></example></para>
+
+   <para>
+    セッション情報をデータベースに保存する機能を実装するには、PHPコードと
+    ユーザ関数 <function>session_set_save_handler</function> が必要です。
+    MySQL やその他のデータベースをサポートするように以下の関数を拡張しておく
+    必要があります。
+   </para>
+   <para>
+    <example>
+     <title>
+      <function>session_set_save_handler の使用法</function>
+     </title>
+     <programlisting role="php">
+&lt;?php
+
+function open ($save_path, $session_name) {
+    echo "open ($save_path, $session_name)\n";
+    return true;
+}
+
+function close () {
+    echo "close\n";
+    return true;
+}
+
+function read ($key) {
+    echo "write ($key, $val)\n";
+    return "foo|i:1;";
+}
+
+function write ($key, $val) {
+    echo "write ($key, $val)\n";
+    return true;
+}
+
+function destroy ($key)
+    return true;
+}
+
+function gc ($maxlifetime) {
+    return true;
+}
+
+session_set_save_handler ("open", "close", "read", "write", "destroy", "gc");
+
+session_start ();
+
+$foo++;
+
+?>
+     </programlisting>
+    </example>
+   </para> 
+
+   <para>
+    上の例により、次のような結果が出力されます。
+   </para>
+
+   <para>
+    <programlisting>
+$ ./php save_handler.php
+Content-Type: text/html
+Set-cookie: PHPSESSID=f08b925af0ecb52bdd2de97d95cdbe6b
+
+open (/tmp, PHPSESSID)
+read (f08b925af0ecb52bdd2de97d95cdbe6b)
+write (f08b925af0ecb52bdd2de97d95cdbe6b, foo|i:2;)
+close
+    </programlisting>
+   </para>
+
+   <para>
+   PHP のコンパイル時に <literal>--enable-trans-sid</literal> を付けた場合、
+    <literal>&lt;?=SID?&gt;</literal> は必要ありません。
+  </para>
+   
+   <para>
+   セッション管理システムは、php.ini ファイルに記述可能な
+   多くの設定オプションをサポートします。
+   以下に概要を示します。
+
+    <itemizedlist>
+     <listitem><simpara>
+      <literal>session.save_handler</literal> は、
+      セッションに関連するデータの保存および取得に使用される
+      ハンドル名を定義します。デフォルトは、
+      <literal>files</literal>です。</simpara></listitem>
+
+     <listitem><simpara>
+      <literal>session.save_path</literal> は、保存ハンドラに渡される
+      引数を定義します。
+      デフォルトのファイルハンドラ選択した場合、
+      ファイルが作成される場所のパスになります。デフォルトは、
+      <literal>/tmp</literal> です。</simpara></listitem>
+
+     <listitem><simpara>
+      <literal>session.name</literal> はセッション名を指定し、
+      クッキー名として使用されます。
+      アルファベット文字のみで指定する必要があります。
+      デフォルトは、<literal>PHPSESSID</literal> です。</simpara></listitem>
+
+     <listitem><simpara>
+      <literal>session.auto_start</literal> はリクエスト開始時に
+      セッションモジュールがセッションを自動的に開始するかどうかを
+      指定します。デフォルトは、
+      <literal>0</literal> (無効) です。</simpara></listitem>
+
+     <listitem><simpara>
+      <literal>session.lifetime</literal> は、ブラウザに送信する
+      クッキーの有効期間を秒数で指定します。
+      値 0 は、"ブラウザを閉じるまで" を意味します。
+      デフォルトは、<literal>0</literal> です。</simpara></listitem>
+
+     <listitem><simpara>
+      <literal>session.serialize_handler</literal> は、
+      シリアル化またはシリアル化データを復元するために使用される
+      ハンドラの名前を定義します。
+      現在、( <literal>php</literal>という名前の)PHP 内部フォーマットおよび
+      (<literal>wddx</literal>という名前の)WDDX がサポートされています。
+      WDDXは、PHP が<link linkend="ref.wddx">WDDX サポート</link> を有効にして
+      コンパイルされている場合のみ使用可能です。
+      デフォルトは、<literal>php</literal> です。</simpara></listitem>
+
+     <listitem><simpara>
+      <literal>session.gc_probability</literal> は、
+      gc (ガーベッジ・コレクション)ルーチンが各リクエストにおいて
+      開始される確率をパーセントで指定します。
+      デフォルトは、<literal>1</literal> です。</simpara></listitem>
+
+     <listitem><simpara>
+      <literal>session.gc_maxlifetime</literal> は、
+      データが'ごみ'とみなされてから消去されるまでの秒数を
+      指定します。</simpara></listitem>
+
+     <listitem><simpara>
+      <literal>session.referer_check</literal> は、外部サイトによると
+      思われるセッションIDを消去するかどうかを定義します。
+      セッションIDをURLによる方法を用いて指定している場合、ユーザーは
+      その影響を知らずにセッションIDを公開してしまうかもしれません。
+      これはセキュリティ上の問題と成り得るため、この確認を行うことにより
+      防止します。デフォルトは、<literal>0</literal>。</simpara></listitem>
+
+     <listitem><simpara>
+      <literal>session.entropy_file</literal> は、
+      セッションIDを作成する際の別のエントロピソースとして使用する
+      外部リソースへのパスを指定します。
+      例としては、多くの UNIX で利用可能な <literal>/dev/random</literal> 
+      または <literal>/dev/urandom</literal> があげられます。</simpara></listitem>
+
+     <listitem><simpara>
+      <literal>session.entropy_length</literal> は、前記のファイルから読みこむ
+      バイト数を指定します。デフォルトは、<literal>0</literal> (無効)です。</simpara></listitem>
+    
+    </itemizedlist>
+
+   <note>
+    <para>
+    セッション処理機能は、PHP 4.0 でサポートされました。</para>
+   </note></para>
+  </partintro>
+
+  <refentry id="function.session-start">
+   <refnamediv>
+    <refname>session_start</refname>
+    <refpurpose>セッションデータを初期化する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>bool <function>session_start</function></funcdef>
+     <void/>
+    </funcsynopsis>
+    <simpara>
+     <function>session_start</function> は、セッションを作成します。
+     (もしくは、GET変数またはクッキーにより渡されたセッションIDセッションに
+     基づき現在のセッションを復帰します)</simpara>
+    <simpara>
+    この関数は常に true を返します。</simpara>
+    <note>
+     <para>
+      この関数は、PHP 4.0 で追加されました。</para>
+    </note>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.session-destroy">
+   <refnamediv>
+    <refname>session_destroy</refname>
+    <refpurpose>セッションに登録されたデータを全て破棄する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>bool <function>session_destroy</function></funcdef>
+     <void/>
+    </funcsynopsis>
+    <simpara>
+     <function>session_destroy</function> は、現在のセッションに
+     関連づけられた全てのデータを破棄します。</simpara>    
+    <simpara>
+    この関数は常に true を返します。</simpara>    
+    <note>
+     <para>
+      この関数は、PHP 4.0 で追加されました。</para>
+    </note>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.session-name">
+   <refnamediv>
+    <refname>session_name</refname>
+    <refpurpose>現在のセッション名を取得または設定する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>string <function>session_name</function></funcdef>
+     <paramdef>string <parameter><optional>name</optional></parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>session_name</function> は、現在のセッション名を返します。
+     <parameter>name</parameter> を指定した場合、現在のセッション名は、
+     その値に変更されます。</para>
+     <para>
+      セッション名は、クッキーおよびURLのセッションIDを参照します。
+      セッション名は、英数字のみで構成されている必要があります。
+      また、短く記述的である必要があります。
+      (これは、クッキー警告を有効にしているユーザー用です。) 
+      リクエストが開始した際にセッション名はデフォルト値でリセットされ、
+      <literal>session.name</literal> に保存されます。
+      よって、各リクエスト毎に(そして <function>session_start</function> または
+      <function>session_register</function> をコールした後に)
+       <function>session_name</function> をコールする必要があります。
+      </para> 
+    <example>
+     <title><function>session_name</function> の例</title>
+     <programlisting>
+ &lt;?php
+
+# set the session name to WebsiteID
+  
+$previous_name = session_name("WebsiteID");
+  
+echo "前回のセッション名は、$previous_name です。&lt;p&gt;";
+     </programlisting>
+    </example>
+    <note>
+     <para>
+      この関数は、PHP 4.0 で追加されました。</para>    
+    </note>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.session-module-name">
+   <refnamediv>
+    <refname>session_module_name</refname>
+    <refpurpose>現在のセッションモジュールを取得または設定する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>string <function>session_module_name</function></funcdef>
+     <paramdef>string <parameter><optional>module</optional></parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>session_module_name</function> は、現在のセッションモジュール
+     の名前を返します。
+     <parameter>module</parameter> が指定された場合、そのモジュール
+     が変わりに使用されます。
+    <note>
+     <para>
+      この関数は、PHP 4.0 で追加されました。</para>    
+    </note></para>    
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.session-save-path">
+   <refnamediv>
+    <refname>session_save_path</refname>
+    <refpurpose>現在のセッションデータ保存パスを取得または設定する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>string <function>session_save_path</function></funcdef>
+     <paramdef>string <parameter><optional>path</optional></parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>session_save_path</function> は、現在のセッションデータ保存
+     パスを返します。
+     <parameter>path</parameter> が指定された場合、データを保存する
+     パスが変更されます。
+    <note>
+     <para>
+     いくつかのオペレーションシステムでは、多くの小さなファイルを効率的に
+     処理するファイルシステム上にパスを指定することが望ましいです。
+     例えば、Linux では ext2fs よりも reiserfs の方が性能面でより
+     優れています。</para>    
+    </note>
+    <note>
+     <para>
+      この関数は、PHP 4.0 で追加されました。</para> 
+    </note></para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.session-id">
+   <refnamediv>
+    <refname>session_id</refname>
+    <refpurpose>現在のセッションIDを取得または設定する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>string <function>session_id</function></funcdef>
+     <paramdef>string <parameter><optional>id</optional></parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>session_id</function> は、現在のセッションのセッションIDを
+     返します。<parameter>id</parameter> が指定された場合、
+     現在のセッションIDセッションを置換します。</para>    
+    <para>
+    セッションデータを保存するためにディレクトリが使用されます。
+    <parameter>path</parameter> が指定された場合、データが保存されるパスが、
+    変更されます。</para>
+    <para>
+    現在の名前とセッションIDを、URLに追加可能な文字列として取得するために
+    定数 <systemitem>SID</systemitem> も使用することが可能です。
+    <note>
+     <para>
+      この関数は、PHP 4.0 で追加されました。</para>
+    </note></para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.session-register">
+   <refnamediv>
+    <refname>session_register</refname>
+    <refpurpose>現在のセッションに1つ以上の変数を登録する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>bool <function>session_register</function></funcdef>
+     <paramdef>mixed <parameter>name</parameter></paramdef>
+     <paramdef>mixed
+      <parameter><optional>...</optional></parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>session_register</function> の引数の数は可変であり、
+     各引数は変数名を保持する文字列または変数名からなる配列
+     とすることが可能です。
+     各変数名が処理される毎に、<function>session_register</function>
+     は、その変数名のグローバル変数を現在のセッションに登録します。</para>
+    <para>
+    この関数は、変数のセッションへの登録が成功した場合にtrueを
+    返します。
+    <note>
+     <para>
+      この関数は、PHP 4.0 で追加されました。</para>
+    </note></para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.session-unregister">
+   <refnamediv>
+    <refname>session_unregister</refname>
+    <refpurpose>現在のセッションから変数の登録を削除する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>bool <function>session_unregister</function></funcdef>
+     <paramdef>string <parameter>name</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>session_unregister</function> は現在のセッションから
+     <parameter>name</parameter> という名前のグローバル変数の登録を
+     削除します。</para>
+    <para>
+    この関数は、セッションからの変数登録の削除が成功した場合にtrueを
+    返します。
+    <note>
+     <para>
+      この関数は、PHP 4.0 で追加されました。</para>
+    </note></para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.session-is-registered">
+   <refnamediv>
+    <refname>session_is_registered</refname>
+    <refpurpose>変数がセッションに登録されているかどうかを調べる</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>bool <function>session_is_registered</function></funcdef>
+     <paramdef>string <parameter>name</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>session_is_registered</function> は、
+     <parameter>name</parameter> という名前の変数が現在のセッションに
+     登録されている場合に true を返します。
+    <note>
+     <para>
+      この関数は、PHP 4.0 で追加されました。</para>
+    </note></para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.session-decode">
+   <refnamediv>
+    <refname>session_decode</refname>
+    <refpurpose>文字列からセッションデータをデコードする</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>bool <function>session_decode</function></funcdef>
+     <paramdef>string <parameter>data</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>session_decode</function> は、
+     <parameter>data</parameter> のセッションデータをデコードし、
+     セッションに保存する変数を設定します。
+    <note>
+     <para>
+      この関数は、PHP 4.0 で追加されました。</para>
+    </note></para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.session-encode">
+   <refnamediv>
+    <refname>session_encode</refname>
+    <refpurpose>現在のセッションデータを文字列としてエンコードする</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>bool <function>session_encode</function></funcdef>
+     <void/>
+    </funcsynopsis>
+    <para>
+     <function>session_encode</function> は、
+     現在のセッションの内容をエンコードした文字列を返します．
+    <note>
+     <para>
+      この関数は、PHP 4.0 で追加されました。</para>
+    </note></para>
+   </refsect1>
+  </refentry>
+
+ </reference>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+sgml-parent-document:nil
+sgml-default-dtd-file:"../manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->

@@ -1,0 +1,1008 @@
+<!--
+対訳集
+    index/indices(単独)         :   インデックス。
+        ※ただし connection/result が省略されていることが
+            明白な場合は ID。
+    connection(単独)            :   コネクション
+    conection index             :   接続 ID 
+    result index                :   結果 ID
+    field index                 :   フィールド番号
+
+    identifier(単独)            :   識別子
+    result identifier           :   結果 ID
+    connection identifier       :   接続 ID 
+    object identifier           :   オブジェクト ID
+    XX(上記以外) identifier     :   XX 識別子
+-->
+ <reference id="ref.pgsql">
+  <title>PostgreSQL 関数</title>
+  <titleabbrev>PostgreSQL</titleabbrev>
+
+  <partintro>
+
+   <para>
+    Postgres は元々 UCB(カリフォルニア大学バークレイ校) コンピュ
+    ータ・サイエンス学部で開発されたものですが、これは、いくつか
+    の商用データベースにおいて現在使えるようになりつつある、多く
+    のオブジェクト関連概念の先駆けとなるものです。Postgres では、
+     SQL92/SQL3 言語サポート、トランザクション機能、および拡張可
+    能な型といったものを提供しています。Postgres はパブリック・
+    ドメインのオープンソースで、オリジナルのバークレイ・コードか
+    ら発展してきた子孫にあたります。</para>
+   <para>
+    PostgreSQL は無料で利用できます。現在のバージョン
+	は<ulink url="http://www.postgresql.org/">www.PostgreSQL.org
+    </ulink>で入手可能です。</para>
+   <para>
+    バージョン 6.3 (03/02/1998) からは、PostgreSQL は UNIX ドメイ
+    ンソケットを使用しており、この新しい将来性に対する調理法が
+    用意されました。
+<!--
+    (??)'table' の意味がよくわからなかったので、超意訳してます(^^;
+    Since version 6.3 (03/02/1998) PostgreSQL use unix domain sockets,
+    a table is given to this new possibilities. 
+-->
+    このソケットは<filename>/tmp/.s.PGSQL.5432</filename>にありま
+    す。このオプションは<command>postmaster</command>に対して '-i'
+    フラグを指定することで有効となります。これは "Unix ドメインソケッ
+    ト以外の TCP/IP ソケットも listen する" という意味です。
+
+   <table>
+    <title>Postmaster と PHP</title>
+    <tgroup cols="3">
+     <thead>
+      <row>
+       <entry>Postmaster</entry>
+       <entry>PHP</entry>
+       <entry>ステータス</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry>postmaster &</entry>
+       <entry>pg_connect("", "", "", "", "dbname");</entry>
+       <entry>OK</entry>
+      </row>
+      <row>
+       <entry>postmaster -i &</entry>
+       <entry>pg_connect("", "", "", "", "dbname");</entry>
+       <entry>OK</entry>
+      </row>
+      <row>
+       <entry>postmaster &</entry>
+       <entry>pg_connect("localhost", "", "", "", "dbname");</entry>
+       <entry>Unable to connect to PostgreSQL server: connectDB() 
+       failed: Is the postmaster running and accepting TCP/IP
+       (with -i) connection at 'localhost' on port '5432'? in 
+       /path/to/file.php3 on line 20.
+       </entry>
+      </row>
+      <row>
+       <entry>postmaster -i &</entry>
+       <entry>pg_connect("localhost", "", "", "", "dbname");</entry>
+       <entry>OK</entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </table></para>
+
+   <para>
+   次のコマンドでも接続を確立することができます。
+     <command>$conn = pg_Connect("host=localhost port=5432 dbname=chris");</command></para>
+    <para>
+    ラージオブジェクト(lo)インターフェースを使用するには、その問
+    い合わせをトランザクション・ブロックの中に入れてやる必要があ
+    ります。トランザクション・ブロックは<command>begin</command>
+    で始まり、そのトランザクションが有効な場合は<command>commit
+    </command>または<command>end</command>で終わります。トランザ
+    クションが失敗した場合は、そのトランザクションは<command>
+    abort</command>または<command>rollback</command>により閉じら
+    れなければなりません。
+
+    <example>
+     <title>ラージオブジェクトを使う</title>
+     <programlisting role="php">
+&lt;?php
+$database = pg_Connect ("", "", "", "", "jacarta");
+pg_exec ($database, "begin");
+    $oid = pg_locreate ($database);
+    echo ("$oid\n");
+    $handle = pg_loopen ($database, $oid, "w");
+    echo ("$handle\n");
+    pg_lowrite ($handle, "gaga");
+    pg_loclose ($handle);
+pg_exec ($database, "commit")
+pg_exec ($database, "end")
+?>
+</programlisting>
+    </example></para>
+
+
+  </partintro>
+
+  <refentry id="function.pg-close">
+   <refnamediv>
+    <refname>pg_Close</refname>
+    <refpurpose>PostgreSQL コネクションを閉じる</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>bool <function>pg_close</function></funcdef>
+     <paramdef>int <parameter>connection</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    connection が有効なコネクションでない場合は false を返し、そ
+    うでなければ true を返します。この関数は、与えられた接続 ID
+    に関連する PostgreSQL データベースへのコネクションを閉じます。</para>
+   </refsect1>
+  </refentry>
+
+
+  <refentry id="function.pg-cmdtuples">
+   <refnamediv>
+    <refname>pg_cmdTuples</refname>
+    <refpurpose>影響を受けたタプルの数を返す</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>pg_cmdtuples</function></funcdef>
+     <paramdef>int <parameter>result_id</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    pg_cmdTuples() は、INSERT, UPDATE, および DELETE 問い合わせ
+    により影響を受けたタプル(インスタンス)の数を返します。影響を
+    受けたタプルがない場合は 0 を返します。
+    <example>
+     <title>pg_cmdtuples</title>
+     <programlisting role="php">
+&lt;?php
+$result = pg_exec($conn, "INSERT INTO verlag VALUES ('Autor')");
+$cmdtuples = pg_cmdtuples($result);
+echo $cmdtuples . " <- cmdtuples affected.";
+?>
+</programlisting>
+    </example></para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.pg-connect">
+   <refnamediv>
+    <refname>pg_Connect</refname>
+    <refpurpose>コネクションを開く</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>pg_connect</function></funcdef>
+     <paramdef>string <parameter>host</parameter></paramdef>
+     <paramdef>string <parameter>port</parameter></paramdef>
+     <paramdef>string <parameter>options</parameter></paramdef>
+     <paramdef>string <parameter>tty</parameter></paramdef>
+     <paramdef>string <parameter>dbname</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    成功すると接続 ID ンデックスを返し、コネクションが生成できな
+    かった場合は FALSE を返します。この関数は PostgreSQL データ
+    ベースへのコネクションをオープンします。各々の引数は、ポート
+    番号も含めて、引用符でくくられた文字列です。options と tty 
+    引数はオプションで、指定しなくてもかまいません。この関数は、
+    他の PostgreSQL 関数を発行する際に必要な接続 ID を返します。
+    一度に複数のコネクションをオープンすることができます。</para>
+    <para>
+    次のコマンドでも接続を確立することができます。
+      <command>$conn = pg_connect("dbname=marliese port=5432");</command>
+      <parameter>dbname</parameter> および
+      <parameter>port</parameter> 以外の他のパラメータは、
+      <parameter>host</parameter>、
+      <parameter>tty</parameter>、<parameter>options</parameter> 
+      <parameter>user</parameter> 、<parameter>password</parameter>
+      です。</para>
+     <para>
+    <function>pg_pConnect</function>も参照下さい。</para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.pg-dbname">
+   <refnamediv>
+    <refname>pg_DBname</refname>
+    <refpurpose>データベース名の取得</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>string <function>pg_dbname</function></funcdef>
+     <paramdef>int <parameter>connection</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    与えられた PostgreSQL 接続 ID が接続しているデータベースの名
+    前を返します。connection が有効な接続 ID でない場合は false 
+    を返します。</para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.pg-errormessage">
+   <refnamediv>
+    <refname>pg_ErrorMessage</refname>
+    <refpurpose>エラーメッセージの取得</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>string <function>pg_errormessage</function></funcdef>
+     <paramdef>int <parameter>connection</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    エラーメッセージを保持する文字列を返します。失敗すると false
+    を返します。有効な接続が存在し、かつその接続において最後のデ
+    ータベース操作でエラーが発生した場合は、そのエラーに関する詳
+    細情報については pg_errormessage() 関数を使っても取得できない
+    かもしれません。この関数は、バックエンドサーバで生成されたエ
+    ラーメッセージを保持する文字列を返します。</para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.pg-exec">
+   <refnamediv>
+    <refname>pg_Exec</refname>
+    <refpurpose>問い合わせを実行する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>pg_exec</function></funcdef>
+     <paramdef>int <parameter>connection</parameter></paramdef>
+     <paramdef>string <parameter>query</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    問い合わせが実行されるであろう場合は結果 ID を返し、
+    問い合わせに失敗したり、connection が有効な接続 ID でない場
+    合は false を返します。connection が有効な値であれば、
+    <function>pg_ErrorMessage</function> 関数によりエラーの詳細
+    を得ることができます。<function>pg_exec</function>関数は、接
+    続 ID により指定された PostgreSQL データベースに対し
+    て SQL ステートメントを送信します。connection は<function>
+    pg_Connect</function>によって返された有効な ID でな
+    ければなりません。この関数の返り値は、その他の PostgreSQL 関
+    数から結果をアクセスするのに使われるインデックス値です。
+    <note><simpara>
+    PHP/FI では、その問い合わせがデータを返すことが期待されない場
+    合(たとえば INSERT や UPDATE)は 1 を返し、また何も返さなかっ
+    た SELECT の場合でも 1 より大きな値を返します。PHPではそ
+    のような仮定は行いません。
+    </simpara></note></para>
+   </refsect1>
+  </refentry>
+
+   <refentry id="function.pg-fetch-array">
+    <refnamediv>
+     <refname>pg_Fetch_Array</refname>
+     <refpurpose>行を配列として取得する</refpurpose>
+    </refnamediv>
+    <refsect1>
+     <title>説明</title>
+     <funcsynopsis>
+      <funcdef>array <function>pg_fetch_array</function></funcdef>
+      <paramdef>int <parameter>result</parameter></paramdef>
+      <paramdef>int <parameter>row</parameter></paramdef>
+      <paramdef>int 
+       <parameter><optional>result_type</optional></parameter>
+      </paramdef>
+     </funcsynopsis>
+     <para> 
+      返り値: 取得された行を保持する配列、行がもうない場合は FALSE。</para>
+     <para>
+      <function>pg_fetch_array</function> は拡張版の
+      <function>pg_fetch_row</function> です。
+      データを結果配列の数値インデックスに保持することに加えて、
+      フィールド名をキーとしてデータを連想インデックスにも保存します。</para>
+     <para>
+	<function>pg_fetch_array</function> の
+	3番目の引数(オプション) <parameter>result_type</parameter>は
+	定数であり、次の値をとります。: 
+	PGSQL_ASSOC, PGSQL_NUM, and PGSQL_BOTH.
+     <note>
+      <para>
+       <parameter>Result_type</parameter> は PHP 4.0 で追加され
+		ました。</para>
+     </note></para>
+     <para>
+     注意すべき重要な点として、
+      <function>pg_fetch_array</function> を使用しても、
+      かなりの付加価値があるにもかかわらず
+      <function>pg_fetch_row</function> を使用した場合に比べて
+      極端に遅くなるわけではないということがあげられます。</para>
+     <para>
+      更に詳細な情報は、
+      <function>pg_fetch_row</function> を参照下さい。
+     </para>
+     <example>
+      <title>PostgreSQL による配列の取得</title>
+      <programlisting role="php">
+ &lt;?php 
+ $conn = pg_pconnect("","","","","publisher");
+ if (!$conn) {
+     echo "An error occured.\n";
+     exit;
+ }
+ 
+ $result = pg_Exec ($conn, "SELECT * FROM authors");
+ if (!$result) {
+     echo "An error occured.\n";
+     exit;
+ }
+ 
+ $arr = pg_fetch_array ($result, 0);
+ echo $arr[0] . " <- array\n";
+ 
+ $arr = pg_fetch_array ($result, 1);
+ echo $arr["author"] . " <- array\n";
+ ?>
+ </programlisting>
+     </example>
+ 
+    </refsect1>
+   </refentry>
+ 
+   <refentry id="function.pg-fetch-object">
+    <refnamediv>
+     <refname>pg_Fetch_Object</refname>
+     <refpurpose>行をオブジェクトとして得る</refpurpose>
+    </refnamediv>
+    <refsect1>
+     <title>説明</title>
+     <funcsynopsis>
+      <funcdef>object <function>pg_fetch_object</function></funcdef>
+      <paramdef>int <parameter>result</parameter></paramdef>
+      <paramdef>int <parameter>row</parameter></paramdef>
+      <paramdef>int 
+       <parameter><optional>result_type</optional></parameter>
+      </paramdef>
+     </funcsynopsis>
+     <para> 
+      返り値: 取得した行に対応するプロパティを有するオブジェクト。
+      行がもうない場合は FALSE。</para>
+     <para> 
+      <function>pg_fetch_object</function> は
+      <function>pg_fetch_array</function> に似ていますが、
+      配列の代わりにオブジェクトが返されという違いがあります。
+      間接的に、このことはデータがオフセットではなく
+      フィールド名によってのみアクセス可能であることを意味します。
+      (数字はプロパティ名として使用できません。)</para>
+     <para>
+	<function>pg_fetch_array</function> の
+	3番目の引数(オプション) <parameter>result_type</parameter>は
+	定数であり、次の値をとります。: 
+	PGSQL_ASSOC, PGSQL_NUM, and PGSQL_BOTH.
+     <note>
+      <para>
+       <parameter>Result_type</parameter> は PHP 4.0 で追加され
+		ました。</para>
+     </note></para>
+     <para>
+     速度面では、この関数は、
+      <function>pg_fetch_array</function> と同じであり、
+      <function>pg_fetch_row</function> 
+      とほとんど同じ程度です。(違いはわずかです) </para>
+     <para> <function>pg_fetch_array</function>、
+                      <function>pg_fetch_row</function>
+		      も参照下さい。
+ 
+     <example>
+      <title>Postgres によりオブジェクトを取得する</title>
+      <programlisting role="php">
+ &lt;?php 
+ $database = "verlag";
+ $db_conn = pg_connect ("localhost", "5432", "", "", $database);
+ if (!$db_conn): ?>
+     &lt;H1>Failed connecting to postgres database &lt;? echo $database ?>&lt;/H1> &lt;?
+     exit;
+ endif;
+ 
+ $qu = pg_exec ($db_conn, "SELECT * FROM verlag ORDER BY autor");
+ $row = 0; // postgres needs a row counter other dbs might not 
+ 
+ while ($data = pg_fetch_object ($qu, $row)):
+     echo $data->autor." (";
+     echo $data->jahr ."): ";
+     echo $data->titel."&lt;BR>";
+     $row++;
+ endwhile; ?>
+ 
+ &lt;PRE>&lt;?php
+ $fields[] = Array ("autor", "Author");
+ $fields[] = Array ("jahr",  "  Year");
+ $fields[] = Array ("titel", " Title");
+ 
+ $row= 0; // postgres needs a row counter other dbs might not
+ while ($data = pg_fetch_object ($qu, $row)):
+     echo "----------\n";
+     reset ($fields);
+     while (list (,$item) = each ($fields)):
+         echo $item[1].": ".$data->$item[0]."\n";
+     endwhile;
+     $row++;
+ endwhile;
+ echo "----------\n"; ?>
+ &lt;/PRE> &lt;?php
+ pg_freeResult ($qu);
+ pg_close ($db_conn);
+ ?>
+ </programlisting>
+     </example></para>
+ 
+    </refsect1>
+   </refentry>
+ 
+   <refentry id="function.pg-fetch-row">
+    <refnamediv>
+     <refname>pg_Fetch_Row</refname>
+     <refpurpose>数字をインデックスとする配列として行を得る</refpurpose>
+    </refnamediv>
+    <refsect1>
+     <title>Description</title>
+     <funcsynopsis>
+      <funcdef>array <function>pg_fetch_row</function></funcdef>
+      <paramdef>int <parameter>result</parameter></paramdef>
+      <paramdef>int <parameter>row</parameter></paramdef>
+     </funcsynopsis>
+     <para> 
+      返り値: 取得された行を有する配列、または、行がもうない場合に FALSE。</para>
+     <para>
+      <function>pg_fetch_row</function> は指定された結果 ID が指す 結果
+      から 1 行分のデータを取得します。
+      行は配列として返されます。
+      各結果カラムは、 オフセット値 0 から始まる配列に保存されます。</para>
+     <para>
+     連続して <function>pg_fetch_row</function> をコールした場合、
+     結果セットの中の次の行を返します。
+     行がもうない場合には FALSE を返します。</para>
+     <para>
+      <function>pg_fetch_array</function>,
+                <function>pg_fetch_object</function>,
+                <function>pg_result</function> も参照下さい。
+ 
+     <example>
+      <title>Postgres により行を取得する</title>
+      <programlisting role="php">
+ &lt;?php 
+ $conn = pg_pconnect("","","","","publisher");
+ if (!$conn) {
+     echo "An error occured.\n";
+     exit;
+ }
+ 
+ $result = pg_Exec ($conn, "SELECT * FROM authors");
+ if (!$result) {
+     echo "An error occured.\n";
+     exit;
+ }
+ 
+ $row = pg_fetch_row ($result, 0);
+ echo $row[0] . " <- row\n";
+ 
+ $row = pg_fetch_row ($result, 1);
+ echo $row[0] . " <- row\n";
+ 
+ $row = pg_fetch_row ($result, 2);
+ echo $row[1] . " <- row\n";
+ ?>
+ </programlisting>
+     </example></para>
+ 
+    </refsect1>
+   </refentry>
+ 
+  <refentry id="function.pg-fieldisnull">
+   <refnamediv>
+    <refname>pg_FieldIsNull</refname>
+    <refpurpose>フィールドが NULL かどうか調べる</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>pg_fieldisnull</function></funcdef>
+     <paramdef>int <parameter>result_id</parameter></paramdef>
+     <paramdef>int <parameter>row</parameter></paramdef>
+     <paramdef>mixed <parameter>field</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    フィールドが NULL かどうか調べます。row で与えられた行のフィ
+    ールドが NULL でない場合は 0 を返し、NULL だった場合は 1 を
+    返します。field は番号またはフィールド名で指定します。row の
+    番号付けは 0 から始まります。</para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.pg-fieldname">
+   <refnamediv>
+    <refname>pg_FieldName</refname>
+    <refpurpose>フィールドの名前を返す</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>string <function>pg_fieldname</function></funcdef>
+     <paramdef>int <parameter>result_id</parameter></paramdef>
+     <paramdef>int <parameter>field_number</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    pg_FieldName() は、与えられた PostgreSQL の結果識別子の中の
+    カラム番号に対応するフィールドの名前を返します。フィールドの
+    番号付けは 0 から始まります。</para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.pg-fieldnum">
+   <refnamediv>
+    <refname>pg_FieldNum</refname>
+    <refpurpose>カラム番号を返す</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>pg_fieldnum</function></funcdef>
+     <paramdef>int <parameter>result_id</parameter></paramdef>
+     <paramdef>string <parameter>field_name</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    pg_FieldNum() は、与えられた PostgreSQL の結果識別子の中のフ
+    ィールド名に対応するカラム番号を返します。フィールドの番号付
+    けは 0 から始まります。この関数は、エラーの場合は -1 を返し
+    ます。</para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.pg-fieldprtlen">
+   <refnamediv>
+    <refname>pg_FieldPrtLen</refname>
+    <refpurpose>表示された長さを返す</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>pg_fieldprtlen</function></funcdef>
+     <paramdef>int <parameter>result_id</parameter></paramdef>
+     <paramdef>int <parameter>row_number</parameter></paramdef>
+     <paramdef>string <parameter>field_name</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    pg_FieldPrtLen() は、与えられた PostgreSQL の結果において、
+    指定された値に関して実際に表示された長さ(文字の数)を返します。
+    行番号(row_number)の番号付けは 0 から始まります。この関数は、
+    エラーの場合は -1 を返します。</para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.pg-fieldsize">
+   <refnamediv>
+    <refname>pg_FieldSize</refname> 
+    <refpurpose>
+    指定フィールドにおける内部記憶領域のサイズを返す
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>pg_fieldsize</function></funcdef>
+     <paramdef>int <parameter>result_id</parameter></paramdef>
+     <paramdef>int <parameter>field_number</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    <function>pg_FieldSize</function>は、指定した PostgreSQL 
+	の結果において、指定したフィールド番号の内部記憶領域の
+	サイズを(バイト数で)返します。フィールド番号は0から始まります。
+	フィールドサイズが -1 の場合、その項目は可変長フィールドで
+	あることを示します。この関数は、エラーの場合は FALSE を返します。</para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.pg-fieldtype">
+   <refnamediv>
+    <refname>pg_FieldType</refname> 
+    <refpurpose>
+    フィールド番号に対応する型名を返す
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>pg_fieldtype</function></funcdef>
+     <paramdef>int <parameter>result_id</parameter></paramdef>
+     <paramdef>int <parameter>field_number</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    pg_FieldType() は、与えられた PostgreSQL の結果において、指
+    定フィールドの型名を保持する文字列を返します。フィールド番号
+    (field_number)は 0 から始まります。</para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.pg-freeresult">
+   <refnamediv>
+    <refname>pg_FreeResult</refname> 
+    <refpurpose>メモリを開放する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>pg_freeresult</function></funcdef>
+     <paramdef>int <parameter>result_id</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    <function>pg_FreeResult()</function> は、
+    スクリプトを実行中にメモリ使用量の増大を
+    防止するためにのみコールする必要があります。すべての結果保持
+    用メモリは、スクリプトが終了する際に自動的に開放されます。し
+    かしながら、そのスクリプトにおいて、それ以上の結果データを必
+    要としないことが確実であれば、結果 ID(result_id) を引数として
+    <function>pg_FreeResult()</function> をコールすることが可能です。
+    これにより、関連するメモリは開放されます。</para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.pg-getlastoid">
+   <refnamediv>
+    <refname>pg_GetLastOid</refname> 
+    <refpurpose>最終オブジェクト ID を返す</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>pg_getlastoid</function></funcdef>
+     <paramdef>int <parameter>result_id</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    <function>pg_GetLastOid()</function> は、
+    <function>pg_Exec</function>で実行された
+    最後のコマンドが SQL INSERT だった場合、挿入されたタプルに割
+    り当てられた oid(オブジェクト ID)を取り出します。有効な oid 
+    があれば、この関数は正の整数を返します。エラーが起こったり、
+    <function>pg_Exec</function>で実行された最後のコマンドが SQL
+    INSERT でなかった場合は -1 を返します。</para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.pg-host">
+   <refnamediv>
+    <refname>pg_Host</refname> 
+    <refpurpose>ホスト名を返す</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>string <function>pg_host</function></funcdef>
+     <paramdef>int <parameter>connection_id</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    pg_Host() は、与えられた PostgreSQL 接続 ID が接続しているホ
+    スト名を返します。</para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.pg-loclose">
+   <refnamediv>
+    <refname>pg_loclose</refname>
+    <refpurpose>ラージオブジェクトをクローズする</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>pg_loclose</function></funcdef>
+     <paramdef>int <parameter>fd</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    <function>pg_loclose</function>は転置ラージオブジェクトをク
+    ローズします。<parameter>fd</parameter>は、<function>pg_loopen
+    </function>でオープンされたラージオブジェクトのファイル識別
+    子です。</para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.pg-locreate">
+   <refnamediv>
+    <refname>pg_locreate</refname>
+    <refpurpose>ラージオブジェクトを生成する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>pg_locreate</function></funcdef>
+     <paramdef>int <parameter>conn</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    <function>pg_locreate</function>は転置ラージオブジェクトを生
+    成し、そのラージオブジェクトの oid を返します。<parameter>
+    conn</parameter>は有効なデータベース接続を指定します。
+    PostgreSQL のアクセスモードである INV_READ, INV_WRITE および
+    INV_ARCHIVE はサポートされておらず、オブジェクトは常に読み書
+    き可能アクセス権で生成されます。INV_ARCHIVE は PostgreSQL 自
+    身(バージョン 6.3 以降)からも削除されました。</para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.pg-loopen">
+   <refnamediv>
+    <refname>pg_loopen</refname>
+    <refpurpose>ラージオブジェクトをオープンする</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>pg_loopen</function></funcdef>
+     <paramdef>int <parameter>conn</parameter></paramdef>
+     <paramdef>int <parameter>objoid</parameter></paramdef>
+     <paramdef>string <parameter>mode</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    <function>pg_loopen</function>は転置ラージオブジェクトをオー
+    プンし、そのラージオブジェクトのファイル識別子を返します。フ
+    ァイル識別子は接続に関する情報をカプセル化します。ラージオブ
+    ジェクトのファイル識別子をクローズする前に接続をクローズする
+    のは避けてください。<parameter>objoid</parameter>は有効なラ
+    ージオブジェクトの oid を指定し、<parameter>mode</parameter>
+    は "r", "w", "rw" のうちのいずれかを指定します。</para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.pg-loread">
+   <refnamediv>
+    <refname>pg_loread</refname>
+    <refpurpose>ラージオブジェクトを読み込み</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>string <function>pg_loread</function></funcdef>
+     <paramdef>int <parameter>fd</parameter></paramdef>
+     <paramdef>int <parameter>len</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    <function>pg_loread</function>は、ラージオブジェクトから最大
+    <parameter>len</parameter>バイト分読み込み、文字列として返します。
+    <parameter>fd</parameter> には有効なラージオブジェクトのファイル識別子
+    を指定し、<parameter>len</parameter> にはラージオブジェクトセグメント
+    の利用可能な最大サイズを指定します。</para>
+   </refsect1>
+  </refentry>
+
+<refentry id="function.pg-loreadall">
+   <refnamediv>
+    <refname>pg_loreadall</refname>
+    <refpurpose>ラージオブジェクト全体を読み込む</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>pg_loreadall</function></funcdef>
+     <paramdef>int <parameter>fd</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    <function>pg_loreadall</function>はラージオブジェクトを読み
+    込み、未送信ヘッダを送信した後、ブラウザを通して直接ラージオ
+    ブジェクトを送信します。これは主に、イメージや音などのバイナ
+    リデータを送信するために使用します。</para>
+   </refsect1>
+  </refentry>
+
+<refentry id="function.pg-lounlink">
+   <refnamediv>
+    <refname>pg_lounlink</refname>
+    <refpurpose>ラージオブジェクトを削除する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>pg_lounlink</function></funcdef>
+     <paramdef>int <parameter>conn</parameter></paramdef>
+     <paramdef>int <parameter>lobjid</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    <function>pg_lounlink</function>は、<parameter>lobjid
+    </parameter>識別子で関連付けられたラージオブジェクトを削除し
+    ます。</para>
+   </refsect1>
+  </refentry>
+
+<refentry id="function.pg-lowrite">
+   <refnamediv>
+    <refname>pg_lowrite</refname>
+    <refpurpose>ラージオブジェクトを書く</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>pg_lowrite</function></funcdef>
+     <paramdef>int <parameter>fd</parameter></paramdef>
+     <paramdef>string <parameter>buf</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    <function>pg_lowrite</function>は、
+    変数 <parameter>buf</parameter>からラージオブジェクトに書き込み、
+    実際に書きこんだバイト数を返します。エラーを生じた場合は FALSE を
+    返します。
+    <parameter>fd</parameter>
+    は、<function>pg_loopen</function>でオープンされたラージオブ
+    ジェクトのファイル識別子です。</para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.pg-numfields">
+   <refnamediv>
+    <refname>pg_NumFields</refname> 
+    <refpurpose>フィールド数を返す</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>pg_numfields</function></funcdef>
+     <paramdef>int <parameter>result_id</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    pg_NumFields() は、PostgreSQL の結果におけるフィールド(カラ
+    ム)数を返します。引数は、<function>pg_Exec</function>で返さ
+    れた有効な結果 ID です。この関数はエラーの場合 -1 を返します。</para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.pg-numrows">
+   <refnamediv>
+    <refname>pg_NumRows</refname> 
+    <refpurpose>行数を返す</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>pg_numrows</function></funcdef>
+     <paramdef>int <parameter>result_id</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    <function>pg_NumRows()</function> は PostgreSQL の結果における行数を返します。
+    引数は、<function>pg_Exec</function>で返された、有効な結果
+    ID です。この関数は、エラーの場合 -1 を返します。</para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.pg-options">
+   <refnamediv>
+    <refname>pg_Options</refname> 
+    <refpurpose>オプションを返す</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>string <function>pg_options</function></funcdef>
+     <paramdef>int <parameter>connection_id</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    pg_Options() は、与えられた PostgreSQL 接続 ID(<parameter>
+    connection_id</parameter>) において指定されたオプションを保
+    持する文字列を返します。</para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.pg-pconnect">
+   <refnamediv>
+    <refname>pg_pConnect</refname>
+    <refpurpose>持続的なデータベース接続を行う</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>pg_pconnect</function></funcdef>
+     <paramdef>string <parameter>host</parameter></paramdef>
+     <paramdef>string <parameter>port</parameter></paramdef>
+     <paramdef>string <parameter>options</parameter></paramdef>
+     <paramdef>string <parameter>tty</parameter></paramdef>
+     <paramdef>string <parameter>dbname</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    成功すると接続 ID を返し、接続ができなかった場合は false を
+    返します。この関数は、PostgreSQL データベースに対する持続的
+    な接続をオープンします。各引数は、ポート番号(<parameter>port
+    </parameter>)も含め、引用符で括った文字列です。<parameter>
+    options</parameter>および<parameter>tty</parameter>はオプシ
+    ョンで、指定しなくてもかまいません。この関数は、その他の 
+    PostgreSQL 関数で必要となる接続 ID を返します。一度に複数の
+    持続的な接続を行うことも可能です。<function>pg_Connect
+    </function>を参照してください。</para>
+     <para>
+     次のコマンドによっても接続を確立することができます。
+      <command>$conn = pg_pconnect("dbname=marliese port=5432");</command>
+      <parameter>dbname</parameter> 、
+      <parameter>port</parameter> 以外の他のパラメータ
+      <parameter>host</parameter> は、
+      <parameter>host</parameter>、 
+      <parameter>tty</parameter> 、<parameter>options</parameter> 
+      <parameter>user</parameter> 、<parameter>password</parameter>
+      です。</para>
+ 
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.pg-port">
+   <refnamediv>
+    <refname>pg_Port</refname>
+    <refpurpose>ポート番号を返す</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>pg_port</function></funcdef>
+     <paramdef>int <parameter>connection_id</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    pg_Port() は、与えられた PostgreSQL 接続 ID が接続しているポ
+    ート番号を返します。</para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.pg-result">
+   <refnamediv>
+    <refname>pg_Result</refname>
+    <refpurpose>結果 ID から実際の値を返す</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>mixed <function>pg_result</function></funcdef>
+     <paramdef>int <parameter>result_id</parameter></paramdef>
+     <paramdef>int <parameter>row_number</parameter></paramdef>
+     <paramdef>mixed <parameter>fieldname</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    pg_Result() は、<function>pg_Exec</function>で返された結果
+    ID(<parameter>result_id</parameter>)から実際の値を返します。
+    <parameter>row_number</parameter>および<parameter>fieldname
+    </parameter>は、結果のテーブルにおけるどのセルを返すのかを指
+    定します。行(row)番号は 0 から始まります。フィールドを名前で
+    指定する代わりに、フィールド番号を引用符で括らずに指定するこ
+    ともできます。フィールド番号は 0 から始まります。</para>
+    <para>
+    PostgreSQL には数多くの組込み型がありますが、ここでは直接に
+    は基本型のみがサポートされます。すべての整数型／ブール型／oid
+    型は整数値として返されます。すべての浮動小数点型と実数型は、
+    倍精度の値として返されます。配列型を含むその他のすべての型は、
+    <command>psql</command>プログラムで出力されるような PostgreSQL
+    のデフォルトの規約によるものと同じ文字列フォーマットで返され
+    ます。</para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.pg-tty">
+   <refnamediv>
+    <refname>pg_tty</refname>
+    <refpurpose>tty 名を返す</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>string <function>pg_tty</function></funcdef>
+     <paramdef>int <parameter>connection_id</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    pg_tty() は、与えられた PostgreSQL 接続 ID 上で、サーバ側の
+    デバッグ出力が送られる tty 名を返します。</para>
+   </refsect1>
+  </refentry>
+
+ </reference>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+sgml-parent-document:nil
+sgml-default-dtd-file:"../manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->

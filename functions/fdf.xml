@@ -1,0 +1,430 @@
+ <reference id="ref.fdf">
+  <title>Forms Data Format 関数</title>
+  <titleabbrev>FDF</titleabbrev>
+
+  <partintro>
+
+   <simpara>
+    Forms Data Format (FDF) は、PDFドキュメント内部のフォームを処理する
+	ためのフォーマットです。
+	FDFの詳細および一般的な用途については、<ulink
+    url="http://partners.adobe.com/asn/developer/acrosdk/forms.html">http://partners.adobe.com/asn/developer/acrosdk/forms.html</ulink>
+	にあるドキュメントを参照下さい。</simpara>
+
+   <note><simpara>
+    現在、Adobe は Linux 用 libc5 互換版のみを提供しています。
+	glibc2 でテストを行うとセグメント例外を生じます。
+	動作させることができた場合は、このページにコメントして下さい。
+   </simpara></note>
+
+   <note><simpara>
+    fdftk サポートを有効にして php の configure を行う際に問題を発生した
+    場合、ヘッダーファイル FdfTk.h およびライブラリ libFdfTk.so が
+    正しい場所にあるかどうかを確認して下さい。これらは、それぞれ    
+    fdftk-dir/include および fdftk-dir/lib にある必要があります。
+    FdfTk の配布ファイルを単に解凍しただけだとしたら、このように
+    はなりません。
+   </simpara></note>
+
+   <simpara>
+	FDFの基本的な考えは、HTMLフォームに似ています。
+	基本的な違いは、投稿ボタンが押された際に
+	フォームに埋められたデータをサーバーに送信する方法の
+	フォーマット(これがForm Data Format そのものです)および
+	フォームのフォーマット自体(これは Portable Document Format、PDFです)
+	です。FDFデータの処理は、fdf関数に提供された機能の一つです。
+	しかし機能は他にもあります。
+	既存のPDFフォームを用いてフォーム自体を修正せずに入力フィールドのデータを
+	入力させることもあるかと思われます、
+	このような場合、FDFドキュメント を作成(<function>fdf_create</function>)、
+	各入力フィールドの値を設定(<function>fdf_set_value</function>)、
+	PDFフォームとそれを関連付け(<function>fdf_set_file</function>)ます。
+	最後にブラウザに MIME型 application/vnd.fdf で送信する必要があります。
+	ブラウザの Acrobat Reader プラグイン がこの MIME 型を認識し、
+	関連する PDF フォームを読み込み、FDF ドキュメントからのデータを
+	書き込みます。</simpara>
+   
+   <simpara>
+	次の例でフォームデータの評価に関して説明します。</simpara>
+   <simpara></simpara>
+    <example>
+     <title>FDF ドキュメントの評価</title>
+     <programlisting>
+&lt;?php
+// Save the FDF データをテンポラリファイルに保存します。
+$fdffp = fopen("test.fdf", "w");
+fwrite($fdffp, $HTTP_FDF_DATA, strlen($HTTP_FDF_DATA));
+fclose($fdffp);
+
+// テンポラリファイルをオープンし、データを評価します。
+// PDF フォームは、volume, date, comment, publisher, preparer という名前の
+//テキスト入力フィールドと show_publisher および show_preparer
+// というチェックボックスを有します。
+$fdf = fdf_open("test.fdf");
+$volume = fdf_get_value($fdf, "volume");
+echo "volume フィールドは次の値を有します。 '&lt;B>$volume&lt;/B>'&lt;BR>";
+
+$date = fdf_get_value($fdf, "date");
+echo "date フィールドは次の値を有します。 '&lt;B>$date&lt;/B>'&lt;BR>";
+
+$comment = fdf_get_value($fdf, "comment");
+echo "comment フィールドは次の値を有します。 '&lt;B>$comment&lt;/B>'&lt;BR>";
+
+if(fdf_get_value($fdf, "show_publisher") == "On") {
+  $publisher = fdf_get_value($fdf, "publisher");
+  echo "publisher フィールドは次の値を有します。 '&lt;B>$publisher&lt;/B>'&lt;BR>";
+} else
+  echo "publisher は、表示されません。&lt;BR>";
+
+if(fdf_get_value($fdf, "show_preparer") == "On") {
+  $preparer = fdf_get_value($fdf, "preparer");
+  echo "preparer フィールドは次の値を有します。  '&lt;B>$preparer&lt;/B>'&lt;BR>";
+} else
+  echo "preparer は、表示されません。&lt;BR>";
+fdf_close($fdf);
+?>
+     </programlisting>
+    </example>
+
+  </partintro>
+
+  <refentry id="function.fdf-open">
+   <refnamediv>
+    <refname>fdf_open</refname>
+    <refpurpose>FDF ドキュメントをオープンする</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>fdf_open</function></funcdef>
+     <paramdef>string <parameter>filename</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>fdf_open</function> 関数はフォームデータを有する
+	ファイルをオープンします。このファイルは、PDFフォームから返されたのと同じ
+	データを有している必要があります。
+	現在、ファイルは <function>fopen</function> を用いて「マニュアル」で
+	作成し、<function>fwrite</function> で HTTP_FDF_DATA の内容をそのファイルに
+	書き込む必要があります。
+	動作はHTMLフォームと似ており、各入力フィールドに関して存在しない変数は
+	作成されます。</para>
+
+    <para>
+    <example>
+     <title>フォームデータをアクセスする</title>
+     <programlisting>
+&lt;?php
+// FDF データをテンポラリファイルに保存します
+$fdffp = fopen("test.fdf", "w");
+fwrite($fdffp, $HTTP_FDF_DATA, strlen($HTTP_FDF_DATA));
+fclose($fdffp);
+
+// テンポラリファイルをオープンし、データを評価します
+$fdf = fdf_open("test.fdf");
+...
+fdf_close($fdf);
+?>
+     </programlisting>
+    </example></para>
+
+    <para>
+      <function>fdf_close</function> も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.fdf-close">
+   <refnamediv>
+    <refname>fdf_close</refname>
+    <refpurpose>FDF ドキュメントを閉じる</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>fdf_close</function></funcdef>
+     <paramdef>int <parameter>fdf_document</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>fdf_close</function> 関数はFDFドキュメントを
+	閉じます。</para>
+
+    <para>
+     <function>fdf_open</function> も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.fdf-create">
+   <refnamediv>
+    <refname>fdf_create</refname>
+    <refpurpose>新規 FDF ドキュメントを作成する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>fdf_create</function></funcdef>
+     <paramdef>void <parameter></parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>fdf_create</function> は新規FDFドキュメント
+	を作成します。
+	この関数は、データを有する PDFドキュメントの入力フィールドを
+	公開したい場合に必要です。</para>
+    <para>
+    <example>
+     <title>PDF ドキュメントを公開する</title>
+     <programlisting>
+&lt;?php
+$outfdf = fdf_create();
+fdf_set_value($outfdf, "volume", $volume, 0);
+
+fdf_set_file($outfdf, "http:/testfdf/resultlabel.pdf");
+fdf_save($outfdf, "outtest.fdf");
+fdf_close($outfdf);
+Header("Content-type: application/vnd.fdf");
+$fp = fopen("outtest.fdf", "r");
+fpassthru($fp);
+unlink("outtest.fdf");
+?>
+     </programlisting>
+    </example></para>
+
+    <para>
+     <function>fdf_close</function>,
+              <function>fdf_save</function>,
+              <function>fdf_open</function>
+	も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.fdf-save">
+   <refnamediv>
+    <refname>fdf_save</refname>
+    <refpurpose>FDF ドキュメントを保存する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>fdf_save</function></funcdef>
+     <paramdef>string <parameter>filename</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>fdf_save</function> 関数はFDFドキュメントを
+	保存します。FDFツールキットは、パラメータ
+	<parameter>filename</parameter> が '.'の場合、標準出力に
+	ドキュメントを出力する機能を提供しています。
+	この機能は、PHPを  Apache モジュールとして
+	使用している場合は使用できません。
+	この場合、ファイルに書き込み、使用する必要があります。
+	例えば、ファイルを出力するには
+	<function>fpassthru</function> を使用します。</para>
+
+    <para>
+      <function>fdf_create</function>の例としては
+	<function>fdf_close</function> も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.fdf-get-value">
+   <refnamediv>
+    <refname>fdf_get_value</refname>
+    <refpurpose>フィールドの値を得る</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>string <function>fdf_get_value</function></funcdef>
+     <paramdef>int <parameter>fdf_document</parameter></paramdef>
+     <paramdef>string <parameter>fieldname</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>fdf_get_value</function> 関数はフィールドの
+	値を得ます。</para>
+
+    <para>
+     <function>fdf_set_value</function> も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.fdf-set-value">
+   <refnamediv>
+    <refname>fdf_set_value</refname>
+    <refpurpose>フィールドの値を設定する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>fdf_set_value</function></funcdef>
+     <paramdef>int <parameter>fdf_document</parameter></paramdef>
+     <paramdef>string <parameter>fieldname</parameter></paramdef>
+     <paramdef>string <parameter>value</parameter></paramdef>
+     <paramdef>int <parameter>isName</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>fdf_set_value</function> 関数は、フィールドの
+	値を設定します。最後のパラメータは、フィールドの値を
+	PDFの名前に変換する(<parameter>isName</parameter> = 1)か、
+	PDF文字列に設定する(<parameter>isName</parameter> = 0)かを定義します。</para>
+
+    <para>
+     <function>fdf_get_value</function>も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.fdf-next-field-name">
+   <refnamediv>
+    <refname>fdf_next_field_name</refname>
+    <refpurpose>次のフィールド名を得る</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>string <function>fdf_next_field_name</function></funcdef>
+     <paramdef>int <parameter>fdf_document</parameter></paramdef>
+     <paramdef>string <parameter>fieldname</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>fdf_next_field_name</function> 関数は
+	<parameter>fieldname</parameter> のフィールドの後の
+	フィールドの名前を返します。二番目のフィールドにNULLを指定した場合、
+	最初のフィールドの名前を返します。</para>
+
+    <para>
+     <function>fdf_set_field</function>,
+              <function>fdf_get_field</function> も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.fdf-set-ap">
+   <refnamediv>
+    <refname>fdf_set_ap</refname>
+    <refpurpose>フィールドの外観を設定する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>fdf_set_ap</function></funcdef>
+     <paramdef>int <parameter>fdf_document</parameter></paramdef>
+     <paramdef>string <parameter>field_name</parameter></paramdef>
+     <paramdef>int <parameter>face</parameter></paramdef>
+     <paramdef>string <parameter>filename</parameter></paramdef>
+     <paramdef>int <parameter>page_number</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>fdf_set_ap</function> 関数はフィールドの外観
+	(すなわち、/AP キーの値)を設定します。
+	<parameter>face</parameter> には、
+	1=FDFNormalAP, 2=FDFRolloverAP, 3=FDFDownAP を
+	設定可能です。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.fdf-set-status">
+   <refnamediv>
+    <refname>fdf_set_status</refname>
+    <refpurpose>/STATUS キーの値を設定する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>fdf_set_status</function></funcdef>
+     <paramdef>int <parameter>fdf_document</parameter></paramdef>
+     <paramdef>string <parameter>status</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+	<function>fdf_set_status</function>は、/STATUS キーの値を設定します。</para>
+
+    <para>
+     <function>fdf_get_status</function> も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.fdf-get-status">
+   <refnamediv>
+    <refname>fdf_get_status</refname>
+    <refpurpose>/STATUS キーの値を得る</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>string <function>fdf_get_status</function></funcdef>
+     <paramdef>int <parameter>fdf_document</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>fdf_get_status</function> は、/STATUS キーの値を返します。</para>
+
+    <para>
+     <function>fdf_set_status</function> も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.fdf-set-file">
+   <refnamediv>
+    <refname>fdf_set_file</refname>
+    <refpurpose>/F キーの値を設定する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>fdf_set_file</function></funcdef>
+     <paramdef>int <parameter>fdf_document</parameter></paramdef>
+     <paramdef>string <parameter>filename</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>fdf_set_file</function> は、/F キーの値を設定します。
+	/F キーは、データを記入するPDFフォームへのリファレンスです。
+	Web 環境では、URL  (例: http:/testfdf/resultlabel.pdf) となります。</para>
+
+    <para>
+     <function>fdf_get_file</function> および
+              <function>fdf_create</function> の例を参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.fdf-get-file">
+   <refnamediv>
+    <refname>fdf_get_file</refname>
+    <refpurpose>/F キーの値を得る</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>string <function>fdf_get_file</function></funcdef>
+     <paramdef>int <parameter>fdf_document</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>fdf_set_file</function> は /F キーの値を返します。</para>
+
+    <para>
+     <function>fdf_set_file</function> も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+ </reference>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+sgml-parent-document:nil
+sgml-default-dtd-file:"../manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->

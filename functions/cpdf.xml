@@ -1,0 +1,1970 @@
+
+ <reference id="ref.cpdf">
+  <title>ClibPDF 関数</title>
+  <titleabbrev>ClibPDF</titleabbrev>
+
+  <partintro>
+
+   <simpara>
+    ClibPDF により、PDF ドキュメントを PHP により作成可能となります。
+    これは、<ulink url="http://www.fastio.com">FastIO</ulink> にありますが、
+    フリーソフトウエアではありません。
+    ClibPDF を使用する前にライセンス規約を詳しく読む必要があります。
+    ライセンス規約を満たせない場合は、同じく非常に強力なライブラリである
+    Thomas Merz が作成した pdflib を使用することを考えてみてください。
+    ClibPDF の機能と API は、Thomas Merz の pdflib に似ていますが、
+    FastIO によれば、ClibPDF はより高速でより小さなドキュメントを
+    生成します。
+    この優劣は、新しいバージョン 2.0 の pdflib と比べた場合、
+    変わる可能性があります。
+    簡単なベンチ―マーク (pdflib 2.0 の例 pdfclock.c を php スクリプトに
+    変換したもの)では、速度に違いは全くありません。ファイルサイズも
+    圧縮をオフにした場合、同程度です。よって、両者を試してどちらが自分の業務
+    に適しているかを判断してください。</simpara>
+
+   <simpara>
+   ClipPDF のマニュアルにはライブラリのより詳細な事項が記述されているため、
+   このドキュメントは ClipPDF のマニュアルを参照しつつ読む必要があります。
+   </simpara>
+
+   <simpara>
+   pdflib と同様に、多くの関数は ClipPDF と PHP モジュールとで
+   同じ名前となっています。
+    <function>cpdf_open</function> を除く全ての関数は、
+    最初の引数としてドキュメントのハンドルを取ります。
+    現在のところ、ClipPDF は複数のPDFドキュメントの同時作成をサポートして
+    いないため、このハンドルは内部的に使用されていません。
+    実際、同時作成時の結果は予想できず、試みるべきではありません。
+    マルチスレッド環境で、その結果を予想することはできません。
+    ClipPDF の作者によれば、
+    将来のリリースではこの点は変更されるとのことです。
+    (このドキュメントを書いている現在でのバージョンは 1.10 です)
+    この機能を必要な場合は、pdflib モジュールを使用してください。</simpara>
+
+   <note><simpara>
+    関数 <function>cpdf_set_font</function> は、PHP3 でアジア用フォント
+    をサポートするために変更されました。
+    パラメータ encoding は、整数ではなく文字列になりました。</simpara></note>
+
+   <simpara>
+   ClipPDF が pdflib に対して大きく優れているのは、
+   テンポラリファイルを使用せずに pdf ドキュメントを
+   完全にメモリー上で作成することが可能であることです。
+   あらかじめ定義された単位長さの座標を渡す機能も有しています。
+   この機能は便利ですが、
+    <function>pdf_translate</function> で模擬することが可能です。</simpara>
+
+   <simpara>
+   多くの機能の使用法は非常に容易です。
+   最も困難なのは、おそらく全く新規に PDF ドキュメントを作成する場合でしょう。
+    次の例は、導入の手助けとなるはずです。
+    この例では、ページを1つ有するドキュメントを作成します。
+    このページは、30pt のアウトラインフォントでテキスト "Times-Roman"
+    により書かれます。テキストには下線が引かれます。</simpara>
+
+    <example>
+     <title>簡単な ClibPDF の例</title>
+     <programlisting>
+&lt;?php
+$cpdf = cpdf_open(0);
+cpdf_page_init($cpdf, 1, 0, 595, 842);
+cpdf_add_outline($cpdf, 0, 0, 0, 1, "Page 1");
+cpdf_set_font($cpdf, "Times-Roman", 30, "WinAnsiEncoding");
+cpdf_set_text_rendering($cpdf, 1);
+cpdf_text($cpdf, "Times Roman outlined", 50, 750);
+cpdf_moveto($cpdf, 50, 740);
+cpdf_lineto($cpdf, 330, 740);
+cpdf_stroke($cpdf);
+cpdf_finalize($cpdf);
+Header("Content-type: application/pdf");
+cpdf_output_buffer($cpdf);
+cpdf_close($cpdf);
+?>
+    </programlisting>
+  </example>
+
+  <simpara>
+  pdflib の配布ファイルには、アナログクロックを有する
+  複数ページを作成するより複雑な例が含まれています。
+  以下に ClipPDF 拡張を使用してこの例を PHP に変換したものを
+  示します。</simpara>
+
+  <example>
+   <title>pdflib 2.0 配布ファイルからの pdfclock の例</title>
+   <programlisting>
+&lt;?php
+$radius = 200;
+$margin = 20;
+$pagecount = 40;
+
+$pdf = cpdf_open(0);
+cpdf_set_creator($pdf, "pdf_clock.php3");
+cpdf_set_title($pdf, "Analog Clock");
+  
+while($pagecount-- > 0) {
+  cpdf_page_init($pdf, $pagecount+1, 0, 2 * ($radius + $margin), 2 * ($radius + $margin), 1.0);
+  
+  cpdf_set_page_animation($pdf, 4, 0.5, 0, 0, 0);  /* wipe */
+  
+  cpdf_translate($pdf, $radius + $margin, $radius + $margin);
+  cpdf_save($pdf);
+  cpdf_setrgbcolor($pdf, 0.0, 0.0, 1.0);
+  
+  /* 1分ずつ進む */
+  cpdf_setlinewidth($pdf, 2.0);
+  for ($alpha = 0; $alpha < 360; $alpha += 6)
+    {
+    cpdf_rotate($pdf, 6.0);
+    cpdf_moveto($pdf, $radius, 0.0);
+    cpdf_lineto($pdf, $radius-$margin/3, 0.0);
+    cpdf_stroke($pdf);
+    }
+  
+  cpdf_restore($pdf);
+  cpdf_save($pdf);
+ 
+  /* 5 分ずつ進む */
+  cpdf_setlinewidth($pdf, 3.0);
+  for ($alpha = 0; $alpha < 360; $alpha += 30)
+  {
+    cpdf_rotate($pdf, 30.0);
+    cpdf_moveto($pdf, $radius, 0.0);
+    cpdf_lineto($pdf, $radius-$margin, 0.0);
+    cpdf_stroke($pdf);
+  }
+
+  $ltime = getdate();
+
+  /* 時針を描く */
+  cpdf_save($pdf);
+  cpdf_rotate($pdf, -(($ltime['minutes']/60.0) + $ltime['hours'] - 3.0) * 30.0);
+  cpdf_moveto($pdf, -$radius/10, -$radius/20);
+  cpdf_lineto($pdf, $radius/2, 0.0);
+  cpdf_lineto($pdf, -$radius/10, $radius/20);
+  cpdf_closepath($pdf);
+  cpdf_fill($pdf);
+  cpdf_restore($pdf);
+
+  /* 分針を描く */
+  cpdf_save($pdf);
+  cpdf_rotate($pdf, -(($ltime['seconds']/60.0) + $ltime['minutes'] - 15.0) * 6.0);
+  cpdf_moveto($pdf, -$radius/10, -$radius/20);
+  cpdf_lineto($pdf, $radius * 0.8, 0.0);
+  cpdf_lineto($pdf, -$radius/10, $radius/20);
+  cpdf_closepath($pdf);
+  cpdf_fill($pdf);
+  cpdf_restore($pdf);
+
+  /* 秒針を描く */
+  cpdf_setrgbcolor($pdf, 1.0, 0.0, 0.0);
+  cpdf_setlinewidth($pdf, 2);
+  cpdf_save($pdf);
+  cpdf_rotate($pdf, -(($ltime['seconds'] - 15.0) * 6.0));
+  cpdf_moveto($pdf, -$radius/5, 0.0);
+  cpdf_lineto($pdf, $radius, 0.0);
+  cpdf_stroke($pdf);
+  cpdf_restore($pdf);
+
+  /* 中心に小さな円を描く */
+  cpdf_circle($pdf, 0, 0, $radius/30);
+  cpdf_fill($pdf);
+
+  cpdf_restore($pdf);
+
+  cpdf_finalize_page($pdf, $pagecount+1);
+}
+
+cpdf_finalize($pdf);
+Header("Content-type: application/pdf");
+cpdf_output_buffer($pdf);
+cpdf_close($pdf);
+?>
+    </programlisting>
+  </example>
+  </partintro>
+
+  <refentry id="function.cpdf-set-creator">
+   <refnamediv>
+    <refname>cpdf_set_creator</refname>
+    <refpurpose>pdf ドキュメントの creator フィールドを設定する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_set_creator</function></funcdef>
+     <paramdef>string <parameter>creator</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_set_creator</function> 関数は、pdf ドキュメントの
+     creator を設定します。</para>
+
+    <para>
+     <function>cpdf_set_subject</function>,
+              <function>cpdf_set_title</function>,
+              <function>cpdf_set_keywords</function>
+	      も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-set-title">
+   <refnamediv>
+    <refname>cpdf_set_title</refname>
+    <refpurpose>pdf ドキュメントの title フィールドを設定する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_set_title</function></funcdef>
+     <paramdef>string <parameter>title</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_set_title</function> 関数は、pdfドキュメントの
+     title を設定します。</para>
+
+    <para>
+     <function>cpdf_set_subject</function>,
+              <function>cpdf_set_creator</function>,
+              <function>cpdf_set_keywords</function>
+	      も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-set-subject">
+   <refnamediv>
+    <refname>cpdf_set_subject</refname>
+    <refpurpose>pdfドキュメントのsubject フィールドを設定する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_set_subject</function></funcdef>
+     <paramdef>string <parameter>subject</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_set_subject</function> 関数は、pdf ドキュメントの
+     subject を設定します。</para>
+
+    <para>
+     <function>cpdf_set_title</function>,
+              <function>cpdf_set_creator</function>,
+              <function>cpdf_set_keywords</function> も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-set-keywords">
+   <refnamediv>
+    <refname>cpdf_set_keywords</refname>
+    <refpurpose>pdfドキュメントのkeywords フィールドを設定する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_set_keywords</function></funcdef>
+     <paramdef>string <parameter>keywords</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_set_keywords</function> 関数は、pdfドキュメントの
+     keywords を設定します。</para>
+    <para>
+     <function>cpdf_set_title</function>,
+              <function>cpdf_set_creator</function>,
+              <function>cpdf_set_subject</function>も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-open">
+   <refnamediv>
+    <refname>cpdf_open</refname>
+    <refpurpose>新規pdfドキュメントをオープンする</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>cpdf_open</function></funcdef>
+     <paramdef>int <parameter>compression</parameter></paramdef>
+     <paramdef>string <parameter>filename</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_open</function> 関数は新規pdfドキュメントをオープン
+     します。最初の引数が0 以外である場合、ドキュメントの圧縮がオンとなります。
+     オプションの2番目のパラメータには、ドキュメントを書きこむファイルを
+     設定します。これを省略した場合、ドキュメントはメモリー上に作成され、
+     <function>cpdf_save_to_file</function> によりファイルに書きこむか、 
+     <function>cpdf_output_buffer</function> により標準出力に書き込むかの
+     どちらかの処理を行うことができます。
+
+     <note><simpara>
+     返り値は、pdfドキュメントを書きこむ他の全ての関数の最初の引数
+     として将来のバージョンの ClipPDF では必要になることでしょう。
+      </simpara><simpara>
+      ClibPDF ライブラリは、stdout を表すファイル名として "-" をとります。
+      ClipPDF の stdout への出力は apache との組み合わせでは動作しないため、
+      PHP が apache モジュールとしてコンパイルされている場合、この指定は
+      動作しません。
+      この問題は、ファイル名の指定をスキップし、pdfドキュメントを
+      出力するために
+       <function>cpdf_output_buffer</function> を使用することにより解決する
+       ことができます。
+      </simpara></note></para>
+
+    <para>
+     <function>cpdf_close</function>,
+              <function>cpdf_output_buffer</function>も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-close">
+   <refnamediv>
+    <refname>cpdf_close</refname>
+    <refpurpose>pdf ドキュメントを閉じる</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_close</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_close</function> 関数は、pdf ドキュメントを閉じます。
+     この関数は、
+     <function>cpdf_finalize</function>, <function>cpdf_output_buffer</function>,
+     <function>cpdf_save_to_file</function>
+     の後で、最後にコールする必要があります。</para>
+
+    <para>
+     <function>cpdf_open</function> も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-page-init">
+   <refnamediv>
+    <refname>cpdf_page_init</refname>
+    <refpurpose>新規ページを開始する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_page_init</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+     <paramdef>int <parameter>page number</parameter></paramdef>
+     <paramdef>int <parameter>orientation</parameter></paramdef>
+     <paramdef>double <parameter>height</parameter></paramdef>
+     <paramdef>double <parameter>width</parameter></paramdef>
+     <paramdef>double <parameter>unit</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_page_init</function> 関数は、
+     高さ <parameter>height</parameter> 、幅 <parameter>width</parameter> の
+     新規ページを開始します。
+     ページは、ページ番号 <parameter>page number</parameter> 及び向き
+     <parameter>orientation</parameter> を有しています。
+     <parameter>orientation</parameter> は縦置きの場合に 0、
+     横置きの場合に 1 とします。
+     最後のオプションのパラメータ
+     <parameter>unit</parameter> は、座標系の単位を指定します。
+     この値は、単位当たりのポストスクリプトのポイント数とする必要が
+     あります。1インチは、72ポイントに等しいので、72という値は、
+     単位をインチに設定します。デフォルト値も72です。</para>
+
+    <para>
+     <function>cpdf_set_current_page</function>も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-finalize-page">
+   <refnamediv>
+    <refname>cpdf_finalize_page</refname>
+    <refpurpose>ページを終了する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_finalize_page</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+     <paramdef>int <parameter>page number</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_finalize_page</function> 関数は、
+     ページ番号 <parameter>page number</parameter> の
+     ページを終了します。
+     この関数は、メモリに節約する意味しかありません。
+     ページを終了することにより、消費メモリは少なくなりますが、
+     修正することはできなくなります。</para>
+
+    <para>
+     <function>cpdf_page_init</function>も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-finalize">
+   <refnamediv>
+    <refname>cpdf_finalize</refname>
+    <refpurpose>ドキュメントを終了する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_finalize</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_finalize</function> 関数はドキュメントを終了します。
+     更に <function>cpdf_close</function> をコールする必要があります。</para>
+
+    <para>
+     <function>cpdf_close</function> も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-output-buffer">
+   <refnamediv>
+    <refname>cpdf_output_buffer</refname>
+    <refpurpose>pdf ドキュメントをメモリバッファに出力する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_output_buffer</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_output_buffer</function> 関数は、pdfドキュメントを
+     標準出力に出力します。ドキュメントは、メモリ上に作成されている必要があります。
+     メモリ上に作成されるのは、<function>cpdf_open</function> を filename 
+     パラメータを指定せずにコールした場合です。</para>
+     
+    <para>
+     <function>cpdf_open</function>も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-save-to-file">
+   <refnamediv>
+    <refname>cpdf_save_to_file</refname>
+    <refpurpose>pdf ドキュメントをファイルに書きこむ</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_save_to_file</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+     <paramdef>string <parameter>filename</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_save_to_file</function> 関数は、
+     メモリ上に作成されたpdfドキュメントをファイルに出力します。
+     この関数は、<function>cpdf_open</function> のパラメータとして
+     filename を指定してオープンした場合にはコールする必要はありません。</para>
+     
+    <para>
+     <function>cpdf_output_buffer</function>,
+              <function>cpdf_open</function> も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-set-current-page">
+   <refnamediv>
+    <refname>cpdf_set_current_page</refname>
+    <refpurpose>カレントページを設定する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_set_current_page</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+     <paramdef>int <parameter>page number</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_set_current_page</function> 関数は、全ての操作を行う
+     ページを設定します。
+     <function>cpdf_finalize_page</function> によりページを終了する
+     までページ間を移動することができます。</para>
+
+    <para>
+     <function>cpdf_finalize_page</function> も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-begin-text">
+   <refnamediv>
+    <refname>cpdf_begin_text</refname>
+    <refpurpose>テキストセクションを開始する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_begin_text</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+    <function>cpdf_begin_text</function> 関数はテキストセクションを
+    開始します。テキストセクションは、<function>cpdf_end_text</function>
+    で終了する必要があります。
+
+     <example>
+      <title>テキスト出力</title>
+      <programlisting>
+&lt;?php cpdf_begin_text($pdf);
+cpdf_set_font($pdf, 16, "Helvetica", "WinAnsiEncoding");
+cpdf_text($pdf, 100, 100, "Some text");
+cpdf_end_text($pdf) ?>
+</programlisting></example></para>
+
+    <para>
+     <function>cpdf_end_text</function> も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-end-text">
+   <refnamediv>
+    <refname>cpdf_end_text</refname>
+    <refpurpose>テキストセクションを終了する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_end_text</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_end_text</function> は、
+     <function>cpdf_begin_text</function> により開始した
+     テキストセクションを終了します。
+
+     <example>
+      <title>テキスト出力</title>
+      <programlisting>
+&lt;?php cpdf_begin_text($pdf);
+cpdf_set_font($pdf, 16, "Helvetica", "WinAnsiEncoding");
+cpdf_text($pdf, 100, 100, "Some text");
+cpdf_end_text($pdf) ?>
+</programlisting></example></para>
+
+    <para>
+     <function>cpdf_begin_text</function> も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-show">
+   <refnamediv>
+    <refname>cpdf_show</refname>
+    <refpurpose>現在位置にテキストを出力する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_show</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+     <paramdef>string <parameter>text</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_show</function> 関数は、現在位置に
+     <parameter>text</parameter> の文字列を出力します。</para>
+
+    <para>
+     <function>cpdf_text</function>,
+              <function>cpdf_begin_text</function>,
+              <function>cpdf_end_text</function> も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-show-xy">
+   <refnamediv>
+    <refname>cpdf_show_xy</refname>
+    <refpurpose>指定位置にテキストを出力する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_show_xy</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+     <paramdef>string <parameter>text</parameter></paramdef>
+     <paramdef>double <parameter>x-coor</parameter></paramdef>
+     <paramdef>double <parameter>y-coor</parameter></paramdef>
+     <paramdef>int <parameter>mode</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_show_xy</function> 関数は、
+     座標 (<parameter>x-coor</parameter>, <parameter>y-coor</parameter>)
+     の位置に文字列 <parameter>text</parameter> を出力します。
+     最後のオプションのパラメータは単位長さを定義します。
+     0 または指定しなかった場合、そのページに指定されたデフォルトの単位が
+     使用されます。
+     デフォルトの単位が指定されていない場合は、座標はポストスクリプト
+     ポイントで計られます。
+
+    <note>
+     <simpara>The function <function>cpdf_show_xy</function> は、オプションの
+     パラメータを除き <function>cpdf_text</function> と同じです。
+     </simpara></note></para>
+
+    <para>
+     <function>cpdf_text</function> も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-text">
+   <refnamediv>
+    <refname>cpdf_text</refname>
+    <refpurpose>テキストをパラメータを元に出力する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_text</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+     <paramdef>string <parameter>text</parameter></paramdef>
+     <paramdef>double <parameter>x-coor</parameter></paramdef>
+     <paramdef>double <parameter>y-coor</parameter></paramdef>
+     <paramdef>int <parameter>mode</parameter></paramdef>
+     <paramdef>double <parameter>orientation</parameter></paramdef>
+     <paramdef>int <parameter>alignmode</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_text</function> 関数は、文字列 
+     <parameter>text</parameter> を座標
+     (<parameter>x-coor</parameter>, <parameter>y-coor</parameter>)
+     の位置に出力します。
+     オプションのパラメータは、単位長さを定義します。
+     0 または指定しなかった場合、そのページに指定されたデフォルトの単位が
+     使用されます。
+     デフォルトの単位が指定されていない場合は、座標はポストスクリプト
+     ポイントで計られます。
+     オプションのパラメータ <parameter>orientation</parameter> は
+     テキストの回転角を度を単位として表したものです。
+     オプションのパラメータ <parameter>alignmode</parameter> 
+     テキストの並べ方を定義します。
+     使用可能な値については、ClibPDF のドキュメントを参照下さい。</para>
+
+    <para>
+     <function>cpdf_show_xy</function> も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-set-font">
+   <refnamediv>
+    <refname>cpdf_set_font</refname>
+    <refpurpose>フォントの種類とサイズを選択する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_set_font</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+     <paramdef>string <parameter>font name</parameter></paramdef>
+     <paramdef>double <parameter>size</parameter></paramdef>
+     <paramdef>string <parameter>encoding</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_set_font</function> 関数は、
+     カレントのフォントの種類とサイズ、エンコード法を設定します。
+     現在は、標準の Postscript フォントのみがサポートされています。
+     最後のパラメータ
+     <parameter>encoding</parameter> には次の値を指定できます。
+     "MacRomanEncoding", "MacExpertEncoding", "WinAnsiEncoding",
+     "NULL" 。
+      "NULL" は、そのフォントの組込みエンコード法を意味します。
+      詳細な情報、特にアジア用フォント(訳注：日本語フォントを含むCJKフォント)の
+      サポートについてはについては、ClibPDF のマニュアルを参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-set-leading">
+   <refnamediv>
+    <refname>cpdf_set_leading</refname>
+    <refpurpose>テキスト行の間隔を設定する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_set leading</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+     <paramdef>double <parameter>distance</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_set_leading</function> 関数はテキストの行間
+     設定します。この関数は、
+     <function>cpdf_continue_text</function> により
+     テキストを出力する場合に使用されます。</para>
+
+    <para>
+     <function>cpdf_continue_text</function> も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-set-text-rendering">
+   <refnamediv>
+    <refname>cpdf_set_text_rendering</refname>
+    <refpurpose>テキストのレンダリング法を定義する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_set_text_rendering</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+     <paramdef>int <parameter>mode</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_set_text_rendering</function> 関数はテキストのレンダリング
+     法を定義します。<parameter>mode</parameter> で使用可能な値は、
+     0=塗りつぶす, 1=輪郭を描く, 2=塗りつぶし輪郭を描く, 3=不可視,
+     4=塗りつぶしクリッピングパスに追加, 5=輪郭を描いてクリッピングパスに追加,
+      6=塗りつぶし輪郭を描いてクリッピングパスに追加, 7=クリッピングパスに追加
+     です。</para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-set-horiz-scaling">
+   <refnamediv>
+    <refname>cpdf_set_horiz_scaling</refname>
+    <refpurpose>テキストの水平方向の倍率を設定する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_set_horiz_scaling</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+     <paramdef>double <parameter>scale</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_set_horiz_scaling</function> 関数は、水平方向の
+     倍率を <parameter>scale</parameter> パーセントに設定します。</para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-set-text-rise">
+   <refnamediv>
+    <refname>cpdf_set_text_rise</refname>
+    <refpurpose>テキストの高さを設定する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_set_text_rise</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+     <paramdef>double <parameter>value</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_set_text_rise</function> 関数は、
+     テキストの高さを <parameter>value</parameter> 単位に設定します。</para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-set-text-matrix">
+   <refnamediv>
+    <refname>cpdf_set_text_matrix</refname>
+    <refpurpose>テキスト行列を設定する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_set_text_matrix</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+     <paramdef>array <parameter>matrix</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_set_text_matrix</function> 関数は、
+     カレントのテキストフォントに適用する変換を記述する行列を
+     設定します。</para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-set-text-pos">
+   <refnamediv>
+    <refname>cpdf_set_text_pos</refname>
+    <refpurpose>テキスト位置を設定する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_set_text_pos</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+     <paramdef>double <parameter>x-coor</parameter></paramdef>
+     <paramdef>double <parameter>y-coor</parameter></paramdef>
+     <paramdef>int <parameter>mode</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_set_text_pos</function> 関数は、
+     次に <function>cpdf_show</function> がコールされた時の
+     テキストの位置を設定します。</para>
+
+    <para>
+    最後のオプションのパラメータ <parameter>mode</parameter> は
+    単位長さを定義します。
+     0 または指定しなかった場合、そのページに指定されたデフォルトの単位が
+     使用されます。
+     デフォルトの単位が指定されていない場合は、座標はポストスクリプト
+     ポイントで計られます。</para>
+
+    <para>
+     <function>cpdf_show</function>,
+              <function>cpdf_text</function> も参照下さい。</para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-set-char-spacing">
+   <refnamediv>
+    <refname>cpdf_set_char_spacing</refname>
+    <refpurpose>文字間隔を設定する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_set_char_spacing</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+     <paramdef>double <parameter>space</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_set_char_spacing</function> 関数は、文字の間隔を
+     設定します。</para>
+    <para>
+     <function>cpdf_set_word_spacing</function>,
+              <function>cpdf_set_leading</function> も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-set-word-spacing">
+   <refnamediv>
+    <refname>cpdf_set_word_spacing</refname>
+    <refpurpose>単語間の間隔を設定する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_set_word_spacing</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+     <paramdef>double <parameter>space</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_set_word_spacing</function> 関数は、単語間の間隔を
+     設定します。</para>
+
+    <para>
+     <function>cpdf_set_char_spacing</function>,
+              <function>cpdf_set_leading</function> も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-continue-text">
+   <refnamediv>
+    <refname>cpdf_continue_text</refname>
+    <refpurpose>次の行にテキストを出力する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_continue_text</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+     <paramdef>string <parameter>text</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_continue_text</function> 関数は次の行に
+     文字列 <parameter>text</parameter> を出力します。</para>
+
+    <para>
+     <function>cpdf_show_xy</function>,
+              <function>cpdf_text</function>,
+              <function>cpdf_set_leading</function>,
+              <function>cpdf_set_text_pos</function> も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-stringwidth">
+   <refnamediv>
+    <refname>cpdf_stringwidth</refname>
+    <refpurpose>カレントフォントのテキストの幅を返す</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>double <function>cpdf_stringwidth</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+     <paramdef>string <parameter>text</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_stringwidth</function> 関数は、
+     文字列 <parameter>text</parameter> の幅を返します。
+     フォントがあらかじめ設定されている必要があります。</para>
+
+    <para>
+     <function>cpdf_set_font</function> も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-save">
+   <refnamediv>
+    <refname>cpdf_save</refname>
+    <refpurpose>現在の環境を保存する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_save</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_save</function> 関数は現在のフォントを保存します。
+     ポストスクリプトのコマンド gsave と同様に動作します。
+     他のオブジェクトに影響を与えずにあるオブジェクトを変換または回転
+     したい場合に非常に便利です。</para>
+
+    <para>
+     <function>cpdf_restore</function> も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-restore">
+   <refnamediv>
+    <refname>cpdf_restore</refname>
+    <refpurpose>以前に保存した環境を回復させる</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_restore</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_restore</function> 関数は、<function>cpdf_save</function>
+     で保存した環境を回復します。
+     この関数は、ポストスクリプトのコマンド grestore と同様に
+     動作します。
+     他のオブジェクトに影響を与えずにあるオブジェクトを変換または回転
+     したい場合に非常に便利です。
+
+     <example>
+      <title>保存/回復</title>
+      <programlisting>
+&lt;?php cpdf_save($pdf);
+// do all kinds of rotations, transformations, ...
+cpdf_restore($pdf) ?>
+</programlisting></example></para>
+
+    <para>
+     <function>cpdf_save</function>も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-translate">
+   <refnamediv>
+    <refname>cpdf_translate</refname>
+    <refpurpose>座標系の原点を設定する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_translate</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+     <paramdef>double <parameter>x-coor</parameter></paramdef>
+     <paramdef>double <parameter>y-coor</parameter></paramdef>
+     <paramdef>int <parameter>mode</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_translate</function> 関数は、
+     座標系の原点を (<parameter>x-coor</parameter>,
+     <parameter>y-coor</parameter>) に設定します。</para>
+
+    <para>
+    最後のオプションのパラメータ <parameter>mode</parameter> は
+    単位長さを定義します。
+     0 または指定しなかった場合、そのページに指定されたデフォルトの単位が
+     使用されます。
+     デフォルトの単位が指定されていない場合は、座標はポストスクリプト
+     ポイントで計られます。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-scale">
+   <refnamediv>
+    <refname>cpdf_scale</refname>
+    <refpurpose>倍率を設定する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_scale</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+     <paramdef>double <parameter>x-scale</parameter></paramdef>
+     <paramdef>double <parameter>y-scale</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_scale</function> 関数は、両方向の倍率を
+     設定します。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-rotate">
+   <refnamediv>
+    <refname>cpdf_rotate</refname>
+    <refpurpose>回転を設定する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_rotate</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+     <paramdef>double <parameter>angle</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_rotate</function> 関数は、回転角を
+     <parameter>angle</parameter> 度に設定します。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-setflat">
+   <refnamediv>
+    <refname>cpdf_setflat</refname>
+    <refpurpose>flatness を設定する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_setflat</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+     <paramdef>double <parameter>value</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_setflat</function> 関数は、flatness を 0から100までの
+     値に設定します。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-setlinejoin">
+   <refnamediv>
+    <refname>cpdf_setlinejoin</refname>
+    <refpurpose>linejoin パラメータを設定するparameter</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_setlinejoin</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+     <paramdef>long <parameter>value</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_setlinejoin</function> 関数は、linejoin
+     パラメータを設定します。
+     パラメータの値は、0から2の間になります。
+     0 = miter, 1 = round, 2 = bevel </para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-setlinecap">
+   <refnamediv>
+    <refname>cpdf_setlinecap</refname>
+    <refpurpose>linecap パラメータを設定する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_setlinecap</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+     <paramdef>int <parameter>value</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_setlinecap</function> 関数は、linecap
+     パラメータを 0 から 2 の範囲で設定します。
+     0 = butt end, 1 = round,
+     2 = projecting square </para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-setmiterlimit">
+   <refnamediv>
+    <refname>cpdf_setmiterlimit</refname>
+    <refpurpose>miter のリミットを設定する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_setmiterlimit</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+     <paramdef>double <parameter>value</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_setmiterlimit</function> 関数は、
+     miter のリミットを1 以上の値に設定します。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-setlinewidth">
+   <refnamediv>
+    <refname>cpdf_setlinewidth</refname>
+    <refpurpose>線幅を設定する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_setlinewidth</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+     <paramdef>double <parameter>width</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_setlinewidth</function> 関数は線幅を
+     <parameter>width</parameter> に設定します。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-setdash">
+   <refnamediv>
+    <refname>cpdf_setdash</refname>
+    <refpurpose>破線のパターンを設定する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_setdash</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+     <paramdef>double <parameter>white</parameter></paramdef>
+     <paramdef>double <parameter>black</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_setdash</function> 関数は、
+     白の長さ <parameter>white</parameter> および黒の長さ
+      <parameter>black</parameter> により
+     破線のパターンを設定します。両方とも0の場合は実線が描かれます。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-moveto">
+   <refnamediv>
+    <refname>cpdf_moveto</refname>
+    <refpurpose>カレントのポイントを設定する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_moveto</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+     <paramdef>double <parameter>x-coor</parameter></paramdef>
+     <paramdef>double <parameter>y-coor</parameter></paramdef>
+     <paramdef>int <parameter>mode</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_moveto</function> 関数は、カレントのポイントを
+     座標 (<parameter>x-coor</parameter> ,<parameter>y-coor</parameter>)
+     に設定します。</para>
+
+    <para>
+    最後のオプションのパラメータ <parameter>mode</parameter> は
+    単位長さを定義します。
+     0 または指定しなかった場合、そのページに指定されたデフォルトの単位が
+     使用されます。
+     デフォルトの単位が指定されていない場合は、座標はポストスクリプト
+     ポイントで計られます。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-rmoveto">
+   <refnamediv>
+    <refname>cpdf_rmoveto</refname>
+    <refpurpose>カレントのポイントを設定する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_rmoveto</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+     <paramdef>double <parameter>x-coor</parameter></paramdef>
+     <paramdef>double <parameter>y-coor</parameter></paramdef>
+     <paramdef>int <parameter>mode</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_rmoveto</function> 関数は、カレントのポイントを
+     座標 (<parameter>x-coor</parameter> ,<parameter>y-coor</parameter>)
+     に対して相対的に設定します。</para>
+
+    <para>
+    最後のオプションのパラメータ <parameter>mode</parameter> は
+    単位長さを定義します。
+     0 または指定しなかった場合、そのページに指定されたデフォルトの単位が
+     使用されます。
+     デフォルトの単位が指定されていない場合は、座標はポストスクリプト
+     ポイントで計られます。</para>
+
+    <para>
+     <function>cpdf_moveto</function> も参照下さい。</para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-curveto">
+   <refnamediv>
+    <refname>cpdf_curveto</refname>
+    <refpurpose>曲線を描く</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_curveto</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+     <paramdef>double <parameter>x1</parameter></paramdef>
+     <paramdef>double <parameter>y1</parameter></paramdef>
+     <paramdef>double <parameter>x2</parameter></paramdef>
+     <paramdef>double <parameter>y2</parameter></paramdef>
+     <paramdef>double <parameter>x3</parameter></paramdef>
+     <paramdef>double <parameter>y3</parameter></paramdef>
+     <paramdef>int <parameter>mode</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_curveto</function> 関数は、
+     (<parameter>x1</parameter>, <parameter>y1</parameter>) および
+     (<parameter>x2</parameter>, <parameter>y2</parameter>) を制御点として
+     カレントの点から
+     (<parameter>x3</parameter>, <parameter>y3</parameter>) にベジエ曲線を
+     描きます。</para>
+
+    <para>
+    最後のオプションのパラメータ <parameter>mode</parameter> は
+    単位長さを定義します。
+     0 または指定しなかった場合、そのページに指定されたデフォルトの単位が
+     使用されます。
+     デフォルトの単位が指定されていない場合は、座標はポストスクリプト
+     ポイントで計られます。</para>
+
+    <para>
+     <function>cpdf_moveto</function>,
+              <function>cpdf_rmoveto</function>,
+              <function>cpdf_rlineto</function>,
+              <function>cpdf_lineto</function> も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-lineto">
+   <refnamediv>
+    <refname>cpdf_lineto</refname>
+    <refpurpose>線を描く</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_lineto</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+     <paramdef>double <parameter>x-coor</parameter></paramdef>
+     <paramdef>double <parameter>y-coor</parameter></paramdef>
+     <paramdef>int <parameter>mode</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_lineto</function> 関数はカレントのポイントから
+     (<parameter>x-coor</parameter>, <parameter>y-coor</parameter>)
+     に線を描きます。</para>
+
+    <para>
+    最後のオプションのパラメータ <parameter>mode</parameter> は
+    単位長さを定義します。
+     0 または指定しなかった場合、そのページに指定されたデフォルトの単位が
+     使用されます。
+     デフォルトの単位が指定されていない場合は、座標はポストスクリプト
+     ポイントで計られます。</para>
+
+    <para>
+     <function>cpdf_moveto</function>,
+              <function>cpdf_rmoveto</function>,
+              <function>cpdf_curveto</function> も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-rlineto">
+   <refnamediv>
+    <refname>cpdf_rlineto</refname>
+    <refpurpose>線を描く</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_rlineto</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+     <paramdef>double <parameter>x-coor</parameter></paramdef>
+     <paramdef>double <parameter>y-coor</parameter></paramdef>
+     <paramdef>int <parameter>mode</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_rlineto</function> 関数はカレントのポイントから
+     相対座標 (<parameter>x-coor</parameter>, <parameter>y-coor</parameter>)
+     に線を描きます。</para>
+
+    <para>
+    最後のオプションのパラメータ <parameter>mode</parameter> は
+    単位長さを定義します。
+     0 または指定しなかった場合、そのページに指定されたデフォルトの単位が
+     使用されます。
+     デフォルトの単位が指定されていない場合は、座標はポストスクリプト
+     ポイントで計られます。</para>
+
+    <para>
+     <function>cpdf_moveto</function>,
+              <function>cpdf_rmoveto</function>,
+              <function>cpdf_curveto</function> も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-circle">
+   <refnamediv>
+    <refname>cpdf_circle</refname>
+    <refpurpose>円を描く</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_circle</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+     <paramdef>double <parameter>x-coor</parameter></paramdef>
+     <paramdef>double <parameter>y-coor</parameter></paramdef>
+     <paramdef>double <parameter>radius</parameter></paramdef>
+     <paramdef>int <parameter>mode</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_circle</function> 関数は、
+     (<parameter>x-coor</parameter>, <parameter>y-coor</parameter>)
+     を中心として半径 <parameter>radius</parameter> の円を描きます。</para>
+
+    <para>
+    最後のオプションのパラメータ <parameter>mode</parameter> は
+    単位長さを定義します。
+     0 または指定しなかった場合、そのページに指定されたデフォルトの単位が
+     使用されます。
+     デフォルトの単位が指定されていない場合は、座標はポストスクリプト
+     ポイントで計られます。</para>
+
+    <para>
+     <function>cpdf_arc</function> も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-arc">
+   <refnamediv>
+    <refname>cpdf_arc</refname>
+    <refpurpose>円弧を描く</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_arc</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+     <paramdef>double <parameter>x-coor</parameter></paramdef>
+     <paramdef>double <parameter>y-coor</parameter></paramdef>
+     <paramdef>double <parameter>radius</parameter></paramdef>
+     <paramdef>double <parameter>start</parameter></paramdef>
+     <paramdef>double <parameter>end</parameter></paramdef>
+     <paramdef>int <parameter>mode</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_arc</function> 関数は、
+     (<parameter>x-coor</parameter>, <parameter>y-coor</parameter>)
+     を中心として半径 <parameter>radius</parameter>、
+     角度 <parameter>start</parameter> から、角度
+     <parameter>end</parameter> までの円弧を描きます。</para>
+
+    <para>
+    最後のオプションのパラメータ <parameter>mode</parameter> は
+    単位長さを定義します。
+     0 または指定しなかった場合、そのページに指定されたデフォルトの単位が
+     使用されます。
+     デフォルトの単位が指定されていない場合は、座標はポストスクリプト
+     ポイントで計られます。</para>
+
+    <para>
+     <function>cpdf_circle</function> も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-rect">
+   <refnamediv>
+    <refname>cpdf_rect</refname>
+    <refpurpose>矩形を描く</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_rect</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+     <paramdef>double <parameter>x-coor</parameter></paramdef>
+     <paramdef>double <parameter>y-coor</parameter></paramdef>
+     <paramdef>double <parameter>width</parameter></paramdef>
+     <paramdef>double <parameter>height</parameter></paramdef>
+     <paramdef>int <parameter>mode</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_rect</function> 関数は、
+     左下隅を (<parameter>x-coor</parameter>, <parameter>y-coor</parameter>)、
+     とする矩形を書きます。
+     矩形の幅を <parameter>widgth</parameter> に、
+     高さを <parameter>height</parameter> に設定します。</para>
+
+    <para>
+    最後のオプションのパラメータ <parameter>mode</parameter> は
+    単位長さを定義します。
+     0 または指定しなかった場合、そのページに指定されたデフォルトの単位が
+     使用されます。
+     デフォルトの単位が指定されていない場合は、座標はポストスクリプト
+     ポイントで計られます。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-closepath">
+   <refnamediv>
+    <refname>cpdf_closepath</refname>
+    <refpurpose>パスを閉じる</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_closepath</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_closepath</function> 関数はカレントのパスを
+     閉じます。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-stroke">
+   <refnamediv>
+    <refname>cpdf_stroke</refname>
+    <refpurpose>パスに沿って線を描く</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_stroke</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_stroke</function> 関数はカレントのパスに沿って」
+     線を描きます。</para>
+
+    <para>
+     <function>cpdf_closepath</function>,
+              <function>cpdf_closepath_stroke</function> 
+	      も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-closepath-stroke">
+   <refnamediv>
+    <refname>cpdf_closepath_stroke</refname>
+    <refpurpose>パスを閉じ、線をパスに沿って描く</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_closepath_stroke</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_closepath_stroke</function> 関数は、
+     <function>cpdf_closepath</function> と
+     <function>cpdf_stroke</function> が合わさったものです。
+     処理語、パスをクリアします。</para>
+
+    <para>
+     <function>cpdf_closepath</function>,
+              <function>cpdf_stroke</function> も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-fill">
+   <refnamediv>
+    <refname>cpdf_fill</refname>
+    <refpurpose>カレントのパスを塗りつぶす</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_fill</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_fill</function> 関数は、カレントの塗りつぶし色で
+     カレントのパスの内部を塗りつぶします。</para>
+
+    <para>
+     <function>cpdf_closepath</function>,
+              <function>cpdf_stroke</function>,
+              <function>cpdf_setgray_fill</function>,
+              <function>cpdf_setgray</function>,
+              <function>cpdf_setrgbcolor_fill</function>,
+              <function>cpdf_setrgbcolor</function> も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-fill-stroke">
+   <refnamediv>
+    <refname>cpdf_fill_stroke</refname>
+    <refpurpose>カレントのパスを塗りつぶし、描く</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_fill_stroke</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_fill_stroke</function> 関数は、カレントのパスの内部を
+     カレントの塗りつぶし色で塗りつぶし、カレントのパスを描きます。</para>
+
+    <para>
+     <function>cpdf_closepath</function>,
+              <function>cpdf_stroke</function>,
+              <function>cpdf_fill</function>,
+              <function>cpdf_setgray_fill</function>,
+              <function>cpdf_setgray</function>,
+              <function>cpdf_setrgbcolor_fill</function>,
+              <function>cpdf_setrgbcolor</function>
+	      も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-closepath-fill-stroke">
+   <refnamediv>
+    <refname>cpdf_closepath_fill_stroke</refname>
+    <refpurpose>パスを閉じ、塗りつぶし、描く</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_closepath_fill_stroke</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_closepath_fill_stroke</function> 関数は、カレントのパスを
+     閉じ、内部をカレントの塗りつぶし色で塗りつぶし、カレントのパスを描きます。</para>
+
+    <para>
+     <function>cpdf_closepath</function>,
+              <function>cpdf_stroke</function>,
+              <function>cpdf_fill</function>,
+              <function>cpdf_setgray_fill</function>,
+              <function>cpdf_setgray</function>,
+              <function>cpdf_setrgbcolor_fill</function>,
+              <function>cpdf_setrgbcolor</function> も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-clip">
+   <refnamediv>
+    <refname>cpdf_clip</refname>
+    <refpurpose>カレントのパスを切り取る</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_clip</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_clip</function> 関数はカレントのパスに描かれたもの
+     を全て切り取ります。</para>
+
+   </refsect1>
+  </refentry>
+  
+  <refentry id="function.cpdf-setgray-fill">
+   <refnamediv>
+    <refname>cpdf_setgray_fill</refname>
+    <refpurpose>塗りつぶし色をグレー値に設定する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_setgray_fill</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+     <paramdef>double <parameter>value</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_setgray_fill</function> 関数は、パスを塗りつぶす色として
+     指定したグレー値を設定します。</para>
+
+    <para>
+     <function>cpdf_setrgbcolor_fill</function> も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+  
+  <refentry id="function.cpdf-setgray-stroke">
+   <refnamediv>
+    <refname>cpdf_setgray_stroke</refname>
+    <refpurpose>描画色をグレー値に設定する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_setgray_stroke</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+     <paramdef>double <parameter>gray value</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_setgray_stroke</function> はカレントの描画色を
+     指定したグレー値に設定します。</para>
+
+    <para>
+     <function>cpdf_setrgbcolor_stroke</function> も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+  
+  <refentry id="function.cpdf-setgray">
+   <refnamediv>
+    <refname>cpdf_setgray</refname>
+    <refpurpose>描画、塗りつぶし色をグレー値に設定する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_setgray</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+     <paramdef>double <parameter>gray value</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_setgray_stroke</function> 関数は、
+     カレントの描画および塗りつぶし色を指定したグレー値に設定します。</para>
+
+    <para>
+     <function>cpdf_setrgbcolor_stroke</function>,
+              <function>cpdf_setrgbcolor_fill</function> も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+  
+  <refentry id="function.cpdf-setrgbcolor-fill">
+   <refnamediv>
+    <refname>cpdf_setrgbcolor_fill</refname>
+    <refpurpose>塗りつぶし色をRGBカラー値に設定する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_setrgbcolor_fill</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+     <paramdef>double <parameter>red value</parameter></paramdef>
+     <paramdef>double <parameter>green value</parameter></paramdef>
+     <paramdef>double <parameter>blue value</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_setrgbcolor_fill</function> 関数は、
+     指定した RGBカラー値をパスを塗りつぶす色として設定します。</para>
+
+    <para>
+     <function>cpdf_setrgbcolor_stroke</function>,
+              <function>cpdf_setrgbcolor</function> も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+  
+  <refentry id="function.cpdf-setrgbcolor-stroke">
+   <refnamediv>
+    <refname>cpdf_setrgbcolor_stroke</refname>
+    <refpurpose>描画色をRGBカラー値に設定する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_setrgbcolor_stroke</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+     <paramdef>double <parameter>red value</parameter></paramdef>
+     <paramdef>double <parameter>green value</parameter></paramdef>
+     <paramdef>double <parameter>blue value</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_setrgbcolor_stroke</function> 関数は、指定した
+     RGBカラー値をカレントの描画色に設定します。</para>
+
+    <para>
+     <function>cpdf_setrgbcolor_fill</function>,
+              <function>cpdf_setrgbcolor</function> も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+  
+  <refentry id="function.cpdf-setrgbcolor">
+   <refnamediv>
+    <refname>cpdf_setrgbcolor</refname>
+    <refpurpose>描画色および塗りつぶし色をRGB値に設定する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_setrgbcolor</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+     <paramdef>double <parameter>red value</parameter></paramdef>
+     <paramdef>double <parameter>green value</parameter></paramdef>
+     <paramdef>double <parameter>blue value</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_setrgbcolor_stroke</function> 関数は、カレントの
+     描画色および塗りつぶし色を指定したRGB値に設定します。</para>
+
+    <para>
+     <function>cpdf_setrgbcolor_stroke</function>,
+              <function>cpdf_setrgbcolor_fill</function> も参照下さい。</para>
+
+   </refsect1>
+  </refentry>
+  
+  <refentry id="function.cpdf-add-outline">
+   <refnamediv>
+    <refname>cpdf_add_outline</refname>
+    <refpurpose>現在のページにブックマークを追加する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_add_outline</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+     <paramdef>string <parameter>text</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_add_outline</function> 関数は、
+     テキスト <parameter>text</parameter> により、
+     現在のページを指すブックマークを設定します。
+
+     <example>
+      <title>ページアウトラインの追加</title>
+      <programlisting>
+&lt;?php
+$cpdf = cpdf_open(0);
+cpdf_page_init($cpdf, 1, 0, 595, 842);
+cpdf_add_outline($cpdf, 0, 0, 0, 1, "Page 1");
+// ...
+// 何らかの描画
+// ...
+cpdf_finalize($cpdf);
+Header("Content-type: application/pdf");
+cpdf_output_buffer($cpdf);
+cpdf_close($cpdf);
+?>
+    </programlisting>
+    <para></para>
+  </example></para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-set-page-animation">
+   <refnamediv>
+    <refname>cpdf_set_page_animation</refname>
+    <refpurpose>ページ間の移行時間を設定する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_set_page_animation</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+     <paramdef>int <parameter>transition</parameter></paramdef>
+     <paramdef>double <parameter>duration</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_set_page_animation</function> 関数は
+     ページ間の移行に要する時間を設定します。</para>
+
+    <para>
+     <parameter>transition</parameter> の値は次のようにすることができます。
+     <simplelist>
+      <member>
+       0 は、何もしない,
+      </member>
+      <member>
+       1 は、ページを表示する際に2行ずつスクロールする,
+      </member>
+      <member>
+       2 はページを表示する際に複数行ずつスクロールする,
+      </member>
+      <member>
+       3 ページの周りに箱を描く,
+      </member>
+      <member>
+       4 はページを表示する際に1行ずつスクロールする,
+      </member>
+      <member>
+       5 はページを描画する際に古いページを消去する
+      </member>
+      <member>
+       6 は画面の一つの隅から他の隅に移動するように消すといった効果を用いる
+      </member>
+      <member>
+       7 は古いページを新しいページで単純に置換する (デフォルト)
+      </member>
+     </simplelist></para>
+
+    <para>
+     <parameter>duration</parameter> の値はページ間の切り替えに要する
+     秒数です。</para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-import-jpeg">
+   <refnamediv>
+    <refname>cpdf_import_jpeg</refname>
+    <refpurpose>JPEG 画像をオープンする</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>int <function>cpdf_open_jpeg</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+     <paramdef>string <parameter>file name</parameter></paramdef>
+     <paramdef>double <parameter>x-coor</parameter></paramdef>
+     <paramdef>double <parameter>y-coor</parameter></paramdef>
+     <paramdef>double <parameter>angle</parameter></paramdef>
+     <paramdef>double <parameter>width</parameter></paramdef>
+     <paramdef>double <parameter>height</parameter></paramdef>
+     <paramdef>double <parameter>x-scale</parameter></paramdef>
+     <paramdef>double <parameter>y-scale</parameter></paramdef>
+     <paramdef>int <parameter>mode</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_import_jpeg</function> 関数は、
+     <parameter>file name</parameter> という名前のファイルに保存された
+     画像をオープンします。画像のフォーマットは jpeg である必要があります。
+     画像は、カレントのページの位置
+     (<parameter>x-coor</parameter>, <parameter>y-coor</parameter>)
+     に置かれます。
+     画像は、<parameter>angle</parameter> 度回転されます。</para>
+    <para>
+    最後のオプションのパラメータ <parameter>mode</parameter> は
+    単位長さを定義します。
+     0 または指定しなかった場合、そのページに指定されたデフォルトの単位が
+     使用されます。
+     デフォルトの単位が指定されていない場合は、座標はポストスクリプト
+     ポイントで計られます。</para>
+
+    <para>
+     <function>cpdf_place_inline_image</function> も参照下さい。</para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-place-inline-image">
+   <refnamediv>
+    <refname>cpdf_place_inline_image</refname>
+    <refpurpose>画像をページに置く</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_place_inline_image</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+     <paramdef>int <parameter>image</parameter></paramdef>
+     <paramdef>double <parameter>x-coor</parameter></paramdef>
+     <paramdef>double <parameter>y-coor</parameter></paramdef>
+     <paramdef>double <parameter>angle</parameter></paramdef>
+     <paramdef>double <parameter>width</parameter></paramdef>
+     <paramdef>double <parameter>height</parameter></paramdef>
+     <paramdef>int <parameter>mode</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_place_inline_image</function> 関数は、
+     php 画像関数で作成された画像を、ページの位置
+     (<parameter>x-coor</parameter>,<parameter>y-coor</parameter>) に置きます。
+     同時に画像の縮小・拡大を行うことができます。</para>
+    <para>
+    最後のオプションのパラメータ <parameter>mode</parameter> は
+    単位長さを定義します。
+     0 または指定しなかった場合、そのページに指定されたデフォルトの単位が
+     使用されます。
+     デフォルトの単位が指定されていない場合は、座標はポストスクリプト
+     ポイントで計られます。</para>
+
+    <para>
+     <function>cpdf_import_jpeg</function> も参照下さい。</para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.cpdf-add-annotation">
+   <refnamediv>
+    <refname>cpdf_add_annotation</refname>
+    <refpurpose>注記を追加する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcdef>void <function>cpdf_add_annotation</function></funcdef>
+     <paramdef>int <parameter>pdf document</parameter></paramdef>
+     <paramdef>double <parameter>llx</parameter></paramdef>
+     <paramdef>double <parameter>lly</parameter></paramdef>
+     <paramdef>double <parameter>urx</parameter></paramdef>
+     <paramdef>double <parameter>ury</parameter></paramdef>
+     <paramdef>string <parameter>title</parameter></paramdef>
+     <paramdef>string <parameter>content</parameter></paramdef>
+     <paramdef>int <parameter>mode</parameter></paramdef>
+    </funcsynopsis>
+    <para>
+     <function>cpdf_add_annotation</function> は、
+     左下隅を
+      (<parameter>llx</parameter>, <parameter>lly</parameter>) 、
+      右上隅を
+     (<parameter>urx</parameter>, <parameter>ury</parameter>) とする
+     注記を追加します。</para>
+
+    <para>
+    最後のオプションのパラメータ <parameter>mode</parameter> は
+    単位長さを定義します。
+     0 または指定しなかった場合、そのページに指定されたデフォルトの単位が
+     使用されます。
+     デフォルトの単位が指定されていない場合は、座標はポストスクリプト
+     ポイントで計られます。</para>
+   </refsect1>
+  </refentry>
+
+ </reference>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+sgml-parent-document:nil
+sgml-default-dtd-file:"../../manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->
