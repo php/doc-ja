@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.30 $ -->
+<!-- $Revision: 1.31 $ -->
  <reference id="ref.pgsql">
   <title>PostgreSQL 関数</title>
   <titleabbrev>PostgreSQL</titleabbrev>
@@ -1051,13 +1051,25 @@ for ($i=0; $i < $num; $i++) {
     </funcsynopsis>
     <para>
      <function>pg_loopen</function>はインバージョンラージオブジェクトを
-     オープンし、そのラージオブジェクトのファイル識別子を返します。
-     ファイル識別子は接続に関する情報をカプセル化します。
-     ラージオブジェクトのファイル識別子をクローズする前に接続をクローズ
-     するのは避けてください。
-     <parameter>objoid</parameter>には、有効なラージオブジェクトのoidを
-     指定し、<parameter>mode</parameter>には"r","w","rw"のうちのいずれかを
-     指定します。
+     オープンし、ラージオブジェクトのリソースを返します。このリソース
+     は接続に関する情報をカプセル化します。<parameter>oid</parameter>
+     には、有効なラージオブジェクトのoidを指定し、
+     <parameter>mode</parameter>には"r","w","rw"のうちのいずれかを指定
+     します。この関数はエラーの場合に &false;を返します。
+    </para>
+    <warning>
+     <para>
+      ラージオブジェクトのリソースを閉じる前にデータベースへの接続を閉
+      じないで下さい。
+     </para>
+    </warning>
+    <para>
+     ラージオブジェクト(lo)インターフェイスを使用するには、トランザク
+     ションブロックの中に括る必要があります。
+    </para>
+    <para>
+     <function>pg_loclose</function>および
+     <function>pg_locreate</function>も参照下さい。
     </para>
    </refsect1>
   </refentry>
@@ -1065,7 +1077,7 @@ for ($i=0; $i < $num; $i++) {
   <refentry id="function.pg-loread">
    <refnamediv>
     <refname>pg_loread</refname>
-    <refpurpose>ラージオブジェクトを読み込み</refpurpose>
+    <refpurpose>ラージオブジェクトを読み込む</refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
@@ -1079,9 +1091,17 @@ for ($i=0; $i < $num; $i++) {
     <para>
      <function>pg_loread</function>は、ラージオブジェクトから最大
      <parameter>len</parameter>バイト分読み込み、文字列として返します。
-     <parameter>fd</parameter>には有効なラージオブジェクトのファイル識別子
-     を指定し、<parameter>len</parameter>にはラージオブジェクトセグメント
-     の利用可能な最大サイズを指定します。
+     <parameter>large_object</parameter>には有効なラージオブジェクトの
+     リソースを指定し、<parameter>len</parameter>にはラージオブジェク
+     トセグメントで利用可能な最大サイズを指定します。エラーの場合には、
+     &false;が返されます。
+    </para>
+    <para>
+     ラージオブジェクト(lo)インターフェイスを使用するには、トランザク
+     ションブロックの中に括る必要があります。
+    </para>
+    <para>
+     <function>pg_loreadall</function>も参照下さい。
     </para>
    </refsect1>
   </refentry>
@@ -1089,7 +1109,9 @@ for ($i=0; $i < $num; $i++) {
   <refentry id="function.pg-loreadall">
    <refnamediv>
     <refname>pg_loreadall</refname>
-    <refpurpose>ラージオブジェクト全体を読み込む</refpurpose>
+    <refpurpose>
+     ラージオブジェクト全体を読み込みブラウザに直接送信する
+    </refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
@@ -1100,10 +1122,18 @@ for ($i=0; $i < $num; $i++) {
      </funcprototype>
     </funcsynopsis>
     <para>
-     <function>pg_loreadall</function> はラャ¸オブジェクトを読み込み、
-     未送信ヘッダを送信した後、ブラウザを通して直接ラージオブジェクト
+     <function>pg_loreadall</function> はラージオブジェクトを読み込み、
+     未送信のヘッダを全て送信した後、ブラウザに直接ラージオブジェクト
      を送信します。これは主に、イメージや音などのバイナリデータを送信
-     するために使用します。
+     するために使用します。この関数は送信したバイト数を返します。エラー
+     の場合には、&false;が返されます。
+    </para>
+    <para>
+     ラージオブジェクト(lo)インターフェイスを使用するには、トランザク
+     ションブロックの中に括る必要があります。
+    </para>
+    <para>
+     <function>pg_loread</function>も参照下さい。
     </para>
    </refsect1>
   </refentry>
@@ -1123,9 +1153,17 @@ for ($i=0; $i < $num; $i++) {
      </funcprototype>
     </funcsynopsis>
     <para>
-     <function>pg_lounlink</function>は、ラージオブジェクトID
-     <parameter>lobjid</parameter>で関連付けられたラージオブジェクトを
-     削除します。
+     <function>pg_lounlink</function>は、<parameter>oid</parameter>で
+     関連付けられたラージオブジェクトを削除します。成功時に&true;、そ
+     の他の場合は&false;が返されます。
+    </para>
+    <para>
+     ラージオブジェクト(lo)インターフェイスを使用するには、トランザク
+     ションブロックの中に括る必要があります。
+    </para>
+    <para>
+     <function>pg_locreate</function> および
+     <function>pg_loimport</function>も参照下さい。
     </para>
    </refsect1>
   </refentry>
@@ -1145,11 +1183,20 @@ for ($i=0; $i < $num; $i++) {
      </funcprototype>
     </funcsynopsis>
     <para>
-     <function>pg_lowrite</function>は、変数<parameter>buf</parameter>から
-     ラージオブ¸ェクトに書き込み、実際に書きこんだバイト数を返します。
-     エラーを生じた場合は&false;を返します。<parameter>fd</parameter>
-     は、<function>pg_loopen</function>でオープンされたラージオブジェクトの
-     ファイル識別子です。
+     <function>pg_lowrite</function>は、変数
+     <parameter>data</parameter>からラージオブジェクトに書き込み、実際
+     に書きこんだバイト数を返します。エラーを生じた場合は&false;を返し
+     ます。<parameter>large_object</parameter>は、
+     <function>pg_loopen</function>でオープンされたラージオブジェクト
+     のリソースです。
+    </para>
+    <para>
+     ラージオブジェクト(lo)インターフェイスを使用するには、トランザク
+     ションブロックの中に括る必要があります。
+    </para>
+    <para>
+     <function>pg_locreate</function>および
+     <function>pg_loopen</function>も参照下さい。
     </para>
    </refsect1>
   </refentry>
@@ -1168,9 +1215,10 @@ for ($i=0; $i < $num; $i++) {
      </funcprototype>
     </funcsynopsis>
     <para>
-     <function>pg_numfields</function>は、PostgreSQLの結果におけるフィールド
-     (カラム)数を返します。引数は、<function>pg_exec</function>で返された
-     有効な結果IDです。この関数はエラーの場合-1を返します。
+     <function>pg_numfields</function>は、PostgreSQL
+     <parameter>result</parameter>におけるフィールド(カラム)数を返しま
+     す。引数は、<function>pg_exec</function>により返された結果リソー
+     スです。この関数はエラーの場合-1を返します。
     </para>
     <para>
      <function>pg_numrows</function> および
@@ -1193,10 +1241,17 @@ for ($i=0; $i < $num; $i++) {
      </funcprototype>
     </funcsynopsis>
     <para>
-     <function>pg_numrows</function>はPostgreSQLの結果における行数を返します。
-     引数は、<function>pg_exec</function>で返された有効な結果IDです。
+     <function>pg_numrows</function>はPostgreSQLの
+     <parameter>result</parameter>リソースにおける行数を返します。引数
+     は、<function>pg_exec</function>で返されたクエリ結果リソースです。
      この関数は、エラーの際に-1を返します。
     </para>
+    <note>
+     <para>
+      INSERT、UPDATE、DELETEクエリで変更されたレコード数を得るには、
+      <function>pg_cmdtuples</function> を使用して下さい。
+     </para>
+    </note>
     <para>
      <function>pg_numfields</function> および
      <function>pg_cmdtuples</function> も参照下さい。
@@ -1207,7 +1262,7 @@ for ($i=0; $i < $num; $i++) {
   <refentry id="function.pg-options">
    <refnamediv>
     <refname>pg_options</refname> 
-    <refpurpose>オプションを返す</refpurpose>
+    <refpurpose>接続に関連するオプションを取得する</refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
@@ -1218,9 +1273,9 @@ for ($i=0; $i < $num; $i++) {
      </funcprototype>
     </funcsynopsis>
     <para>
-     <function>pg_options</function>は、指定したPostgreSQL接続ID
-     (<parameter>connection_id</parameter>)において指定されたオプションを
-     保持する文字列を返します。
+     <function>pg_options</function>は、指定した
+     PostgreSQL<parameter>connection</parameter>リソースで指定したオプ
+     ションを保持する文字列を返します。
     </para>
    </refsect1>
   </refentry>
@@ -1228,36 +1283,77 @@ for ($i=0; $i < $num; $i++) {
   <refentry id="function.pg-pconnect">
    <refnamediv>
     <refname>pg_pconnect</refname>
-    <refpurpose>持続的なデータベース接続を行う</refpurpose>
+    <refpurpose>持続的なデータベース接続をオープンする</refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>resource <function>pg_pconnect</function></funcdef>
+      <funcdef>int <function>pg_pconnect</function></funcdef>
       <paramdef>string <parameter>connection_string</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
-     成功すると接続IDを返し、接続ができなかった場合は&false;を返します。
-     この関数は、PostgreSQLデータベースに対する持続的な接続をオープン
-     します。引数は、引用符で括った文字列とする必要があります。
-     引数としては、<parameter>dbname</parameter> 
+     <function>pg_pconnect</function> はPostgreSQLへの接続をオープンし
+     ます。この関数は、他のPostgreSQL関数により必要とされる接続リソー
+     スを返します。
+    </para>
+    <para>
+     この関数は、成功すると接続IDを返し、接続ができなかった場合は
+     &false;を返します。引数は、引用符で括った文字列とする必要がありま
+     す。引数としては、<parameter>dbname</parameter> 
      <parameter>port</parameter>, <parameter>host</parameter>, 
      <parameter>tty</parameter>, <parameter>options</parameter>,
      <parameter>user</parameter>, <parameter>password</parameter>が使
      用可能です。
     </para>
+     <example>
+     <title>pg_pconnectの使用</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+$dbconn = pg_pconnect ("dbname=mary");
+// "mary"という名前のデータベースに接続
+$dbconn2 = pg_pconnect ("host=localhost port=5432 dbname=mary");
+// "localhost"上のポート"5432"で"mary"という名前のデータベースに接続
+$dbconn3 = pg_connect ("host=sheep port=5432 dbname=mary user=lamb password=foo");
+// ユーザ名をパスワードを指定してホスト"sheep"上の"mary"という名前のデータベースに接続
+$conn_string = "host=sheep port=5432 dbname=test user=lamb password=bar";
+$dbconn4 = pg_pconnect ($conn_string);
+// ユーザ名とパスワードを指定してホスト"sheep"上の"test"という名前のデータベースに接続
+?>
+]]>
+     </programlisting>
+    </example>
     <para>
-     この関数は接続IDを返します。このIDは、その他のPostgreSQL関数で必要です。
-     一度に複数の持続的な接続を行うことも可能です。
+     同じ引数で<function>pg_pconnect</function>への２回目のコールが行
+     われた場合、新規の接続はオープンされず、代わりに既にオープンされ
+     ている接続リソースが返されます。異なった接続パラメータ(すなわち別
+     のユーザ名)を使用する場合には、同じデータベースに複数の接続を行う
+     ことが可能です。
     </para>
     <para>
-     以前の構文:
+     <function>pg_pconnect</function>の複数のパラメータを使用する構文
      <command>$conn = pg_pconnect ("host", "port", "options", "tty",
-      "dbname")
+    "dbname")
      </command>
-     は推奨されません。
+     は過去のものです。
+    </para>
+    <para>
+     持続的接続を有効にするには、php.iniのディレクティブ<link
+     linkend="ini.pgsql.allow-persistent">pgsql.allow_persistent</link>
+     を &quot;On&quot;に設定する必要があります。 (デフォルトはOnです)
+     持続的接続の最大数をphp.iniディレクティブ<link
+     linkend="ini.pgsql.max-persistent">pgsql.max_persistent</link>
+     で指定することも可能です。(デフォルトは制限無しを意味する-1です)
+     接続全体の数をphp.iniディレクティブ<link
+     linkend="ini.pgsql.max-links">pgsql.max_links</link> で設定可能で
+     す。
+    </para>
+    <para>
+     <function>pg_close</function> は、
+     <function>pg_pconnect</function>によりオープンされた持続的接続は
+     閉じません。 
     </para>
     <para>
      <function>pg_connect</function>も参照下さい。
@@ -1268,7 +1364,7 @@ for ($i=0; $i < $num; $i++) {
   <refentry id="function.pg-port">
    <refnamediv>
     <refname>pg_port</refname>
-    <refpurpose>ポート番号を返す</refpurpose>
+    <refpurpose>接続に関連するポート番号を返す</refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
@@ -1279,8 +1375,9 @@ for ($i=0; $i < $num; $i++) {
      </funcprototype>
     </funcsynopsis>
     <para>
-     <function>pg_port</function>は、指定したPostgreSQL接続IDが接続し
-     ているポートの番号を返します。
+     <function>pg_port</function>は、指定したPostgreSQL
+     <parameter>connection</parameter>リソースが接続しているポートの番
+     号を返します。
     </para>
    </refsect1>
   </refentry>
@@ -1322,7 +1419,8 @@ for ($i=0; $i < $num; $i++) {
      <example>
       <title>データのテーブルへの高速挿入</title>
       <programlisting role="php">
-&lt;?php 
+<![CDATA[
+<?php 
     $conn = pg_pconnect ("dbname=foo");
     pg_exec($conn, "create table bar (a int4, b char(16), d float8)");
     pg_exec($conn, "copy bar from stdin");
@@ -1331,6 +1429,7 @@ for ($i=0; $i < $num; $i++) {
     pg_put_line($conn, "\\.\n");
     pg_end_copy($conn);
 ?>
+]]>
       </programlisting>
      </example>
     </para>
@@ -1354,10 +1453,12 @@ for ($i=0; $i < $num; $i++) {
     </funcsynopsis>
     <para>
      <function>pg_result</function>は、<function>pg_exec</function>で
-     返された結果ID(<parameter>result_id</parameter>)から実際の値を返
-     します。<parameter>row_number</parameter>および
-     <parameter>fieldname</parameter>は、結果のテーブルに返すセルを指
-     定します。行(row)番号は0から始まります。フィールドを名前で指定す
+     返された結果リソース<parameter>result</parameter>から実際の値を返
+     します。<parameter>row_number</parameter>は整数です。
+     <parameter>field</parameter>は、フィールド名(文字列)またはフィー
+     ルド番号(整数)です。<parameter>row_number</parameter>と
+     <parameter>field</parameter>は、結果のテーブルのどのセルを返すか
+     を指定します。行(row)番号は0から始まります。フィールドを名前で指定す
      る代わりに、フィールド番号を引用符で括らずに指定することもできま
      す。フィールド番号は0から始まります。
     </para>
@@ -1403,8 +1504,9 @@ for ($i=0; $i < $num; $i++) {
     </para>
     <note>
      <para>
-      この関数を使用するには、PHP-4.0.2以降とPostgreSQL-7.0以降が必要
-      です。
+      この関数を使用するには、PHP-4.0.3以降とPostgreSQL-7.0以降が必要
+      です。サポートされるエンコーディングはPostgreSQLのバージョンに依
+      存します。詳細はPostgreSQLのマニュアルを参照下さい。
      </para>
      <para>
       この関数は、<function>pg_setclientencoding</function>とコールす
@@ -1435,16 +1537,23 @@ for ($i=0; $i < $num; $i++) {
      </funcprototype>
     </funcsynopsis>
     <para>
-     この関数は、PostgreSQLクライアントのエンコーディングを文字列とし
-     て返します。返り値は、次のどれかとなります。:
+     <function>pg_client_encoding</function>は、PostgreSQLクライアント
+     のエンコーディングを文字列として返します。返り値は、次のどれかと
+     なります。:
      SQL_ASCII, EUC_JP, EUC_CN, EUC_KR, EUC_TW, UNICODE,
-     MULE_INTERNAL, LATINX (X=1...9), KOI8, WIN, ALT,
-     SJIS, BIG5, WIN1250     
+     MULE_INTERNAL, LATINX (X=1...9), KOI8, WIN, ALT, SJIS, BIG5,
+     WIN1250
     </para>
     <note>
      <para>
-      この関数を使用するには、PHP-4.0.2以降とPostgreSQL-7.0以降が必要
-      です。
+      この関数を使用するには、PHP-4.0.3以降とPostgreSQL-7.0以降が必要
+      です。libpqがマルチバイトエンコーディングサポートを有効にせずに
+      コンパイルされている場合、
+      <function>pg_set_client_encoding</function>は常に
+      &quot;SQL_ASCII&quot;を返します。サポートされるエンコーディング
+      はPostgreSQLのバージョンに依存します。マルチバイトを有効にする方
+      法とサポートされるエンコーディングに関する詳細はPostgreSQLのマニュ
+      アルを参照下さい。
      </para>
      <para>
       この関数は、<function>pg_clientencoding</function>とコールするこ
@@ -1492,9 +1601,9 @@ for ($i=0; $i < $num; $i++) {
     <para>
      <parameter>filename</parameter>および<parameter>mode</parameter>は
      <function>fopen</function>と同じです。
-     (<parameter>mode</parameter>のデフォルトは'w')
-     <parameter>connection</parameter>によりトレースへのコネクションを
-     指定します。デフォルトは最後にオープンされたコネクションです。
+     (<parameter>mode</parameter>のデフォルトは'w'です)
+     <parameter>connection</parameter>によりトレースする接続を指定しま
+     す。デフォルトは最後にオープンされた接続です。
     </para>
     <para>
      <parameter>filename</parameter>をロギング用にオープンできた場合に
@@ -1521,7 +1630,8 @@ for ($i=0; $i < $num; $i++) {
      </funcprototype>
     </funcsynopsis>
     <para>
-     <function>pg_tty</function>は、指定したPostgreSQL接続ID上で、サー
+     <function>pg_tty</function>は、指定した
+     PostgreSQL<parameter>connection</parameter>リソースで、サー
      バ側のデバッグ出力が送られるtty名を返します。
     </para>
    </refsect1>
@@ -1546,14 +1656,385 @@ for ($i=0; $i < $num; $i++) {
     </funcsynopsis>
     <para>
      <function>pg_trace</function>により開始したトレースを停止します。
-     <parameter>connection</parameter>によりトレースされているコネクション
-     を指定します。デフォルトは最後にオープンされたコネクションです。
+     <parameter>connection</parameter>によりトレースされている接続を指
+     定します。デフォルトは最後にオープンされた接続です。
     </para>
     <para>
      常に&true;を返します。
     </para>
     <para>
      <function>pg_trace</function>も参照下さい。
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id='function.pg-get-result'>
+   <refnamediv>
+    <refname>pg_get_result</refname>
+    <refpurpose>
+     Get asynchronous query result
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>resource <function>pg_get_result</function></funcdef>
+      <paramdef>resource <parameter><optional>connection</optional></parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id='function.pg-request-cancel'>
+   <refnamediv>
+    <refname>pg_request_cancel</refname>
+    <refpurpose>
+     Cancel request
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>bool <function>pg_request_cancel</function></funcdef>
+      <paramdef>resource <parameter><optional>connection</optional></parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id='function.pg-is-busy'>
+   <refnamediv>
+    <refname>pg_is_busy</refname>
+    <refpurpose>
+     Get connection is busy or not
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>bool <function>pg_is_busy</function></funcdef>
+      <paramdef>resource <parameter><optional>connection</optional></parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id='function.pg-send-query'>
+   <refnamediv>
+    <refname>pg_send_query</refname>
+    <refpurpose>
+     同期クエリを送信する
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>bool <function>pg_send_query</function></funcdef>
+      <paramdef>resource <parameter>connection</parameter></paramdef>
+      <paramdef>string <parameter>qeury</parameter></paramdef>
+     </funcprototype>
+     <funcprototype>
+      <funcdef>bool <function>pg_send_query</function></funcdef>
+      <paramdef>string <parameter>qeury</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id='function.pg-cancel-query'>
+   <refnamediv>
+    <refname>pg_cancel_query</refname>
+    <refpurpose>
+     リクエストをキャンセルする
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>bool <function>pg_cancel_query</function></funcdef>
+      <paramdef>resource <parameter>connection</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id='function.pg-connection-busy'>
+   <refnamediv>
+    <refname>pg_connection_busy</refname>
+    <refpurpose>
+     接続がビジーかどうかを調べる
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>bool <function>pg_connection_busy</function></funcdef>
+      <paramdef>resource <parameter>connection</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id='function.pg-connection-reset'>
+   <refnamediv>
+    <refname>pg_connection_reset</refname>
+    <refpurpose>
+     接続をリセット(再接続)する
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>bool <function>pg_connection_reset</function></funcdef>
+      <paramdef>resource <parameter>connection</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id='function.pg-connection-status'>
+   <refnamediv>
+    <refname>pg_connection_status</refname>
+    <refpurpose>
+     接続ステータスを取得する
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>int <function>pg_connection_status</function></funcdef>
+      <paramdef>resource <parameter>connnection</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id='function.pg-copy-from'>
+   <refnamediv>
+    <refname>pg_copy_from</refname>
+    <refpurpose>
+     No description given yet
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>int <function>pg_copy_from</function></funcdef>
+      <paramdef>int <parameter>connection</parameter></paramdef>
+      <paramdef>string <parameter>table_name</parameter></paramdef>
+      <paramdef>array <parameter>rows</parameter></paramdef>
+      <paramdef>string <parameter><optional>delimiter</optional></parameter></paramdef>
+      <paramdef>string <parameter><optional>null_as</optional></parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id='function.pg-copy-to'>
+   <refnamediv>
+    <refname>pg_copy_to</refname>
+    <refpurpose>
+     Send null-terminated string to backend server
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>int <function>pg_copy_to</function></funcdef>
+      <paramdef>int <parameter>connection</parameter></paramdef>
+      <paramdef>string <parameter>table_name</parameter></paramdef>
+      <paramdef>string <parameter><optional>delimiter</optional></parameter></paramdef>
+      <paramdef>string <parameter><optional>null_as</optional></parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id='function.pg-escape-bytea'>
+   <refnamediv>
+    <refname>pg_escape_bytea</refname>
+    <refpurpose>
+     Escape binary for bytea type
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>string <function>pg_escape_bytea</function></funcdef>
+      <paramdef>string <parameter>data</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id='function.pg-escape-string'>
+   <refnamediv>
+    <refname>pg_escape_string</refname>
+    <refpurpose>
+     Escape string for text/char type
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>string <function>pg_escape_string</function></funcdef>
+      <paramdef>string <parameter>data</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id='function.pg-lo-close'>
+   <refnamediv>
+    <refname>pg_lo_close</refname>
+    <refpurpose>
+     Close a large object
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>bool <function>pg_lo_close</function></funcdef>
+      <paramdef>resource <parameter>large_object</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id='function.pg-lo-seek'>
+   <refnamediv>
+    <refname>pg_lo_seek</refname>
+    <refpurpose>
+     Seeks position of large object
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>bool <function>pg_lo_seek</function></funcdef>
+      <paramdef>resource <parameter>large_object</parameter></paramdef>
+      <paramdef>int <parameter>offset</parameter></paramdef>
+      <paramdef>int <parameter><optional>whence</optional></parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id='function.pg-lo-tell'>
+   <refnamediv>
+    <refname>pg_lo_tell</refname>
+    <refpurpose>
+     Returns current position of large object
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>int <function>pg_lo_tell</function></funcdef>
+      <paramdef>resource <parameter>large_object</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id='function.pg-result-error'>
+   <refnamediv>
+    <refname>pg_result_error</refname>
+    <refpurpose>
+     Get error message associated with result
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>string <function>pg_result_error</function></funcdef>
+      <paramdef>resource <parameter>result</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id='function.pg-result-status'>
+   <refnamediv>
+    <refname>pg_result_status</refname>
+    <refpurpose>
+     Get status of query result
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>int <function>pg_result_status</function></funcdef>
+      <paramdef>resource <parameter>result</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     &warn.undocumented.func;
     </para>
    </refsect1>
   </refentry>
