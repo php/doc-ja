@@ -1,0 +1,128 @@
+ <chapter id="features.http-auth">
+  <title>PHP による HTTP 認証</title>
+
+  <simpara>
+     PHP による HTTP 認証のフックは、Apache モジュールとして実行した時のみ
+   有効です。Apache モジュール PHP スクリプトにおいて、
+    <function>Header</function> 関数を使用して "Authentication Required" 
+    メッセージをクライアントブラウザに送ることが可能です。
+    これにより、クライアントブラウザにユーザー名とパスワードを入力する
+    ウインドウがポップアップ表示されます。
+    一度、ユーザーがユーザー名とパスワードを入力すると、
+    PHP スクリプトを含むその URL は、次回以降、
+    $PHP_AUTH_USER、$PHP_AUTH_PW、$PHP_AUTH_TYPE にそれぞれユーザー名、
+    パスワード、認証型を入力してコールされます。
+    現在、"Basic" 認証のみがサポートされています。
+   詳細は、<function>Header</function>を参照下さい。</simpara>
+   
+  <para>   
+  ページ上でクライアント認証を強制するスクリプトの例を
+  以下に示します。
+
+   <example>
+    <title>HTTP 認証の例</title>
+    <programlisting role="php">
+&lt;?php
+  if(!isset($PHP_AUTH_USER)) {
+    Header(&quot;WWW-Authenticate: Basic realm=\&quot;My Realm\&quot;&quot;);
+    Header(&quot;HTTP/1.0 401 Unauthorized&quot;);
+    echo &quot;ユーザーがキャンセルボタンを押した時に送信されるテキスト\n&quot;;
+    exit;
+  } else {
+    echo &quot;Hello $PHP_AUTH_USER.&lt;P&gt;&quot;;
+    echo &quot;あなたは $PHP_AUTH_PW をパスワードとして入力しました。&lt;P&gt;&quot;;
+  }
+?>
+    </programlisting>
+   </example></para>
+
+  <para>
+   単に $PHP_AUTH_USER、$PHP_AUTH_PW を出力するのではなく、
+   ユーザー名とパスワードの有効性をチェックしたいと思うかもしれません。
+   その場合、クエリーをデータベースに送るか、ある dbm ファイル中の
+   ユーザーを調べるといったことをすることになるでしょう。</para>
+
+  <para>
+   バグのある Internet Explorer ブラウザには注意してください。
+   このブラウザは、ヘッダの順序に関してとてもうるさいようです。
+    今のところ、<errorcode>HTTP/1.0 401</errorcode> ヘッダの前に
+    <emphasis>WWW-Authenticate</emphasis> ヘッダを送るのが
+    効果があるようです。</para>
+
+  <simpara>
+   誰かが従来の外部機構による認証を行ってきたページのパスワードを暴く
+   ようなスクリプトを書くことを防ぐために、特定のページに関して
+   外部認証が可能である場合、PHP_AUTH 変数はセットされません。
+   この場合、外部認証されたユーザーかどうかを確認するために
+   $REMOTE_USER 変数を使用することができます。</simpara>
+
+  <simpara>
+   しかし、上記の機能も、認証を要求されない URL を管理する人が
+   同じサーバーにある認証を要する URL からパスワードを
+   盗むことを防ぐわけではありません。</simpara>
+  <simpara>
+    サーバーからリターンコード 401 を受けた際に、
+    Netscape および Internet Explorer は共にローカルブラウザのウインドウ上の
+    認証キャッシュを消去します。
+    この機能により、簡単にユーザーを "ログアウト" させ、
+    強制的にユーザー名とパスワードを再入力させることができます。
+    この機能は、"タイムアウト" 付きのログインや、"ログアウト" ボタンに
+    適用されています。</simpara>
+  <simpara></simpara>
+   <example>
+     <title>新規に名前/パスワードを入力させるHTTP 認証の例</title>
+     <programlisting role="php">
+&lt;?php
+  function  authenticate()  {
+    Header( &quot;WWW-authenticate:  basic  realm='Test  Authentication  System'&quot;);
+    Header( &quot;HTTP/1.0  401  Unauthorized&quot;);
+    echo  &quot;このリソースにアクセスする際には有効なログインIDとパスワードを入力する必要があります。\n&quot;;
+    exit;
+  }
+
+  if(!isset($PHP_AUTH_USER)  ||  ($SeenBefore ==  1  &&  !strcmp($OldAuth,  $PHP_AUTH_USER))  )  {
+    authenticate();
+  }  
+  else  {
+    echo  &quot;ようこそ:  $PHP_AUTH_USER&lt;BR&gt;&quot;;
+    echo  &quot;Old:  $OldAuth&quot;;
+    echo  &quot;&lt;FORM  ACTION=\&quot;$PHP_SELF\&quot;  METHOD=POST&gt;\n&quot;;
+    echo  &quot;&lt;INPUT  TYPE=HIDDEN  NAME=\&quot;SeenBefore\&quot;  VALUE=\&quot;1\&quot;&gt;\n&quot;;
+    echo  &quot;&lt;INPUT  TYPE=HIDDEN  NAME=\&quot;OldAuth\&quot;  VALUE=\&quot;$PHP_AUTH_USER\&quot;&gt;\n&quot;;
+    echo  &quot;&lt;INPUT  TYPE=Submit  VALUE=\&quot;Re  Authenticate\&quot;&gt;\n&quot;;
+    echo  &quot;&lt;/FORM&gt;\n&quot;;
+
+}
+?>
+   </programlisting>
+  </example>
+  <simpara>
+    この動作は、HTTP Basic認証の標準に基づいていません。
+    よって、この機能に依存しないように注意する必要があります。
+    Lynx によるテストの結果、Lynx は、認証証明書を 401 サーバー応答
+    によりクリアしないことが明らかになっています。
+    このため、back を押してから foward を再度押すことにより
+    (証明書の要件が変更されない限り)リソースをオープンすることができます。</simpara>
+  <simpara>
+    Microsoft の IIS サーバーと CGI 版の PHP の組み合わせでは、
+    この機能は、IIS の制約により使用することができないということにも
+    注意して下さい。</simpara>
+
+ </chapter>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+sgml-parent-document:nil
+sgml-default-dtd-file:"../manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->

@@ -1,0 +1,251 @@
+ <chapter id="features.file-upload">
+  <title>ファイルアップロードの処理</title>
+
+  <sect1 id="features.file-upload.post-method">
+   <title>POST メソッドによるアップロード</title>
+
+   <simpara>
+   PHP は、全ての RFC-1867 対応ブラウザ(Netscape Navigator 3 以上、
+Microsoft からのパッチをあてた Microsoft Internet Explorer 3 またはパッチ無しの
+それ以降の版を含みます)からファイルアップロードを
+   受けることができます。
+   この機能では、テキストとバイナリファイルの両方のアップロードが可能です。
+   PHP の認証関数およびファイル操作関数を用いて、アップロードを許可するユーザーと
+   アップロード後にそのファイルを使用して行う動作を完全に制御することが
+   可能です。
+   </simpara>
+
+   <para>
+   PHPはNetscape ComposerおよびW3CのAmayaクライアントにより使用される
+   PUTメソッドによるファイルアップロードもサポートしています。
+   詳細は、<link
+    linkend="features.file-upload.put-method">PUT メソッドのサポート</link>
+    を参照下さい。</para>
+
+   <para>
+   ファイルアップロード画面は、次のような特別なフォームを作成することにより、
+   作成することができます。
+
+    <example>
+     <title>ファイルアップロード用のフォーム</title>
+     <programlisting>
+&lt;FORM ENCTYPE=&quot;multipart/form-data&quot; ACTION=&quot;_URL_&quot; METHOD=POST&gt;
+&lt;INPUT TYPE=&quot;hidden&quot; name=&quot;MAX_FILE_SIZE&quot; value=&quot;1000&quot;&gt;
+Send this file: &lt;INPUT NAME=&quot;userfile&quot; TYPE=&quot;file&quot;&gt;
+&lt;INPUT TYPE=&quot;submit&quot; VALUE=&quot;Send File&quot;&gt;
+&lt;/FORM&gt;
+    </programlisting>
+    </example>
+    
+    _URL_ はPHPファイルを指す必要があります。MAX_FILE_SIZE hidden
+    フィールド MAX_FILE_SIZEは、入力フィールド file の前に置く必要があります。
+    この値は、取得可能なファイルの最大サイズを規定します。
+    この値はバイト数で指定します。
+    アップロードに成功した場合、(URLで指定した)送信先ファイルで
+    次の変数が設定されます。</para>
+
+   <para>
+    <itemizedlist>
+     <listitem>
+      <simpara>
+       $userfile - サーバーマシンにアップロードされたファイルが
+       保存されているテンポラリファイルの名前
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+      $userfile_name - 送信元のシステムにおけるオリジナルのファイル名
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       $userfile_size - アップロードされたファイルのサイズ(バイト数)
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+        $userfile_type - ファイルの MIME 型。ただし、ブラウザがこの情報を提供した場合のみ。例えば、&quot;image/gif&quot;.のようになります。
+      </simpara>
+     </listitem>
+    </itemizedlist>
+    
+    上記の変数のうち、&quot;$userfile&quot; は、
+    アップロード用フォーム中の TYPE=file を有する INPUT フィールドの NAME 
+    フィールドの値とは関連がないことに注意して下さい。
+    上のアップロード用フォームの例においては、その NAME フィールドの値を
+    &quot;userfile&quot; としています。</para>
+
+   <simpara>
+   ファイルは、デフォルトでサーバーにおけるデフォルトの
+   テンポラリディレクトリに保存されます。
+   このディレクトリは、PHP を実行する環境において環境変数 <envar>TMPDIR</envar>
+   を設定することにより変更することができます。
+   しかし、PHP スクリプトの内部から <function>putenv</function> 関数により
+   設定しても上手くいきません。</simpara>
+
+   <simpara>
+   アップロードされたファイルを受け取る PHP スクリプトは、
+   アップロードされたファイルを用いて何をするべきかを
+   決めるために必要なロジックを全て実装する必要があります。
+   例えば、$file_size 変数を使用して、小さすぎたり、大きすぎたりする
+   ファイルを捨てることができます。
+   指定した型以外のファイルを全て捨てるために
+   $file_type 変数を用いることができます。
+   何らかの方法により、テンポラリディレクトリからファイルを
+   削除したり、他の場所に移動したりする必要があります。</simpara>
+
+   <simpara>
+   移動または名前の変更が行われていない場合、リクエストの終了時に
+   そのファイルはテンポラリディレクトリから削除されます。</simpara></sect1>
+ 
+  <sect1 id="features.file-upload.common-pitfalls">
+   <title>陥りやすい落とし穴</title>
+   <simpara>
+   MAX_FILE_SIZE に PHP3.ini ファイル
+   または 対応するApache .confディレクティブ php3_upload_max_filesize
+   で指定されたファイルサイズより大きなファイルサイズを指定することは
+   できません。デフォルトは、2メガバイトです。</simpara>
+   <simpara>
+   CERN httpd は、クライアントから得た content-type MIME ヘッダにおいて
+   最初が空白文字で始まるものを切り捨てるようですので注意して下さい。
+   このような動作をする限り、CERN httpd は、ファイルアップロード機能を
+   サポートしないでしょう。</simpara>
+  </sect1>
+
+  <sect1 id="feature-fileupload.multiple">
+   <title>複数ファイルのアップロード</title>
+   <simpara>
+   複数のファイルを一度にアップロードし、自動的にまとめられた情報を
+   配列で取得することが可能です。
+   これを行うには、HTMLフォームで複数選択可能なセレクトやチェックボックス
+   を指定する際と同様に
+   配列を用いた投稿用の構文を使用する必要があります。</simpara>
+   <note>
+    <para>
+    複数ファイルのアップロード機能は 3.0.10以降サポートされました。</para>
+    </note>
+
+   <para>
+    <example>
+     <title>複数ファイルのアップロード</title>
+     <programlisting>
+&lt;form action=&quot;file-upload.html&quot; method=&quot;post&quot; enctype=&quot;multipart/form-data&quot;&gt;
+  Send these files:&lt;br&gt;
+  &lt;input name=&quot;userfile[]&quot; type=&quot;file&quot;&gt;&lt;br&gt;
+  &lt;input name=&quot;userfile[]&quot; type=&quot;file&quot;&gt;&lt;br&gt;
+  &lt;input type=&quot;submit&quot; value=&quot;Send files&quot;&gt;
+&lt;/form&gt;
+     </programlisting>
+    </example></para>
+
+   <simpara>
+   上記のフォームを投稿した際、
+   ($HTTP_POST_VARS の中にあるのと同様に)
+   配列 <computeroutput>$userfile</computeroutput>,
+    <computeroutput>$userfile_name</computeroutput>,
+    <computeroutput>$userfile_size</computeroutput> が
+    グローバル変数として作成されます。
+    これらの各々は、投稿されたファイルに関する適当な値を
+    有する数値を添字とする配列となります。</simpara>
+ 
+   <simpara>
+   例えば、ファイル名が
+    <filename>/home/test/review.html</filename> および
+    <filename>/home/test/xwp.out</filename> として投稿されたとしましょう。
+    この場合、<computeroutput>$userfile_name[0]</computeroutput> は
+    値 <computeroutput>review.html</computeroutput>を有し、
+    <computeroutput>$userfile_name[1]</computeroutput> は
+    value <computeroutput>xwp.out</computeroutput> を有することになります。
+    同様に、<computeroutput>$userfile_size[0]</computeroutput> は、
+    <filename>review.html</filename> のファイルサイズ、といったように
+    なります。</simpara></sect1>
+
+  <sect1 id="features.file-upload.put-method">
+   <title>PUT メソッドのサポート</title>
+
+   <para>
+    PHP は、Netscape Composer や W3C Amaya のようなクライアントで
+    サポートされる HTTP PUT メソッドをサポートします。
+    PUT リクエストは、ファイルアップロードよりもかなり簡単であり、
+    次のようなものになります。
+
+    <informalexample><programlisting>
+PUT /path/filename.html HTTP/1.1
+    </programlisting></informalexample>
+   </para>
+
+   <para>
+   これは、通常、リモートクライアントが /path/filename.html 
+   が指す内容を Web ツリーに保存したいことを意味します。
+   Apache または PHP において
+   全ての人がWebツリー上の任意のファイルを自動的に
+   上書きできるようにするというのは明らかに良い発想ではありません。
+   よって、このようなりクエストを処理する際には、
+   まずそのリクエストを処理する特定のPHPスクリプトが必要なことを
+   webサーバーに通知する必要があります。
+   Apacheにおいては、
+   <emphasis>Script</emphasis> ディレクティブによりこれを行うことができます。
+   これは、Apache設定ファイルのほぼ任意の場所に置くことができます。
+   一般的なのは、&lt;Directory&gt; ブロックまたは
+    a &lt;Virtualhost&gt; ブロックの中です。
+    次のように指定します。
+
+    <informalexample><programlisting>
+Script PUT /put.php3
+    </programlisting></informalexample>
+   </para>
+
+   <simpara>
+   これにより、この行で指定した内容にマッチするURIを有する
+   全てのPUTリクエストが put.php3 スクリプトに
+   送られるよう Apache に指定します。 
+   もちろん、拡張子 .php3 により PHP が実行されるよう設定され、
+   PHP がアクティブであることが必要です。
+   </simpara>
+   <simpara>
+   put.php3 ファイルの中で次のように処理を行う必要があります。
+   </simpara>
+   <para>
+    <informalexample><programlisting>
+&lt;? copy($PHP_UPLOADED_FILE_NAME,$DOCUMENT_ROOT.$REQUEST_URI); ?&gt;
+    </programlisting></informalexample>
+   </para>
+   <simpara>
+   これは、
+   リモートクライアントによりリクエストされた位置にファイルをコピーします。
+   このファイルコピーを実行する前に何らかの確認やユーザーの認証
+   を実行することが望ましいでしょう。
+   上記のスクリプトでは、PHPがPUTメソッドのリクエストを
+   受けた際に
+    <link linkend="features.file-upload.post-method">POSTメソッド</link>
+    と全く同様にテンポラリファイルにアップロードされたファイルを
+    保存するということを利用しています。
+    リクエストが終了した際に、テンポラリファイルは削除されます。
+    よって、PUTを処理するPHPスクリプトは、このファイルをどこかに
+    コピーする必要があります。
+    このテンポラリファイルのファイル名は $PHP_PUT_FILENAME 変数に保持されており、
+    $REQUEST_URI (Apache以外のWebサーバーでは変わる可能性があります)
+    で指定された送信先ファイル名を得ることができます。
+    送信先ファイル名は、リモートクライアントが指定したものです。
+    このクライアントの指定を必ずしも受ける必要はありません。
+    例えば、アップロードされた全てのファイルを特別なアップロード用
+    ディレクトリにコピーすることも可能です。</simpara></sect1>
+
+ </chapter>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+sgml-parent-document:nil
+sgml-default-dtd-file:"../manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->
