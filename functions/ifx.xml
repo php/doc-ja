@@ -5,20 +5,28 @@
 
   <partintro>
    <para>
-   オンライン用の Informix ドライバ (ODS) 7.x, SE 7.x および Universal
-    Server (IUS) 9.x は、"functions/ifx.ec" および
-    "functions/php3_ifx.h" に実装されています。ODS 7.x サポートはほぼ完成してお
-    BLOB および TEXT カラムは完全にサポートされています。
-    IUS 9.x サポートは、部分的に完成しています。
-    新規のデータ型のサポートは完了していますが、SLOBおよびCLOBサポートに
-	関しては、まだ作業中です。
+    Informix driver for 
+    Informix (IDS) 7.x, SE 7.x, Universal Server (IUS) 9.x ,IDS 2000 
+    用のInformixドライバは、informix拡張機能用ディレクトリの"ifx.ec"
+    および"php3_ifx.h"に実装されています。 
+    IDS 7.xのサポートは、BYTEおよびTEXTカラムを完全にサポートしており、
+    完成度はかなり高いです。
+    IUS 9.xのサポートは、部分的に完成しています。つまり、
+    新しいデータ型はサポートされていますが、SLOBおよびCLOBのサポートについては
+    まだ作業中です。
    </para>
    <note>
     <title>設定に関する注意</title>
-   <para></para><para>
-   "configure" スクリプトを実行する前に、必ず
-    "INFORMIXDIR" 変数を設定しておいてください。
-   </para><para> 
+   <para>
+    PHP Informix ドライバをコンパイルするには、何らかのバージョンのESQL/C
+    が必要です。7.2x以降のバージョンに付属するESQL/Cは問題なく使用できます。
+    現在では、ESQL/CはInformixクライアントSDKに含まれています。
+   </para>
+   <para>
+   "configure" スクリプトを実行する前に、必ず"INFORMIXDIR" 変数を設定し、
+   PATHに$INFORMIXDIR/bin を設定しておいてください。
+   </para>
+   <para> 
     "configure --with_informix=yes" を実行した場合、
    configure スクリプトは、ライブラリおよびインクルードディレクトリを
    自動検出します。
@@ -31,9 +39,27 @@
    </para>
    </note>
    <note>
+   <title>実行時に考慮すべき点</title>
+   <para>
+    Informix用環境変数INFORMIXDIRおよびINFORMIXSERVERがPHP ifxドライバ
+    で利用可能であり、INFORMIXのバイナリがあるディレクトリにパスが
+    通っていることを確認して下さい。テストを始める前に
+    <function>phpinfo()</function>と書いたスクリプトを実行し、
+    これを確認して下さい。
+    <function>phpinfo()</function> があるスクリプトは、これらの環境変数
+    の一覧を出力します。これは、CGI版のPHPおよびApache mod_phpで共に
+    行われます。これらの環境変数はApacheのスタートアップスクリプトで設定
+    する必要があります。
+   </para>
+   <para>
+    また、Informix共有ライブラリがローダーで利用可能である必要があります。
+    (LD_LINBRARY_PATHまたはld.so.conf/ldconfigを確認して下さい)
+   </para>
+   </note>
+   <note>
     <title>BLOB (TEXT および BYTE カラム)の使用に関する注意</title>
-   <para></para><para>
-  通常、BLOB は整数の BLOB ID により指定されます。
+   <para>
+  通常、BLOB はBLOB ID により指定されます。
   select クエリーは、BYTE および TEXT カラム毎に "blob id" を返します。
   ( "ifx_blobinfile(0);" により) メモリー上で BLOB を得ることを選択した場合、
   "string_var = ifx_get_blob($blob_id);"  で内容を得ることができます。
@@ -41,44 +67,61 @@
    "ifx_blobinfile(1);" を使用して下さい。
    "ifx_get_blob($blob_id);" によりファイル名を得ることができます。
    BLOB の内容を得る際には、通常のファイル入出力を行ってください。
-  </para><para>
+  </para>
+  <para>
    insert/update クエリーに関しては、
    "ifx_create_blob(..);" により自分で "blob id" を作成する必要があります。
    その後、blob id を配列に代入し、
    クエリー文字列の中の blob カラムを疑問符 (?) で置換します。
    updates/inserts の場合、ifx_update_blob(...) で blob の内容を設定する
    のが便利でしょう。
-  </para><para>
+  </para>
+  <para>
   BLOB カラムの動作は、設定用変数で変更することができます。
   これらの変数は、実行時にも設定可能です。
-  </para><para>
-  </para><para>
+  </para>
+  <para>
+  </para>
+  <para>
    設定変数 : ifx.textasvarchar
-  </para><para>
+  </para>
+  <para>
    設定変数 : ifx.byteasvarchar
-  </para><para>
-  </para><para>
-   実行時関数 :
-  </para><para>
+  </para>
+  <para>
+  </para>
+  <para>
+   ランタイム関数 :
+  </para>
+  <para>
    ifx_textasvarchar(0) : TEXT カラムを有する select クエリーに blob id を使用する
-  </para><para>
+  </para>
+  <para>
    ifx_byteasvarchar(0) : BYTE カラムを有する select クエリーに blob id を使用する
-  </para><para>
-   ifx_textasvarchar(1) : select クエリーには blob id の使用をせずに
-   VARCHAR カラムである場合と同様に TEXT カラムを返す
-  </para><para>
-   ifx_byteasvarchar(1) : select クエリーには blob id の使用をせずに
-   VARCHAR カラムである場合と同様に BYTE カラムを返す
-  </para><para>
-  </para><para>
+  </para>
+  <para>
+   ifx_textasvarchar(1) : TEXTカラムをVARCHARカラムとして返します。
+   このため、selectクエリーにおいてblob idを使用する必要はありません。
+  </para>
+  <para>
+   ifx_byteasvarchar(1) : BYTEカラムをVARCHARカラムとして返します。
+   このため、selectクエリーにおいてblob idを使用する必要はありません。
+  </para>
+  <para>
+  </para>
+  <para>
    設定変数 : ifx.blobinfile
-  </para><para>
-   実行時関数 :
-  </para><para>
+  </para>
+  <para>
+   ランタイム関数 :
+  </para>
+  <para>
    ifx_blobinfile_mode(0) : メモリーに BYTE カラムを返す, blob id によりその内容を取り出す
-  </para><para>
+  </para>
+  <para>
    ifx_blobinfile_mode(1) : メモリーに BYTE カラムを返す, blob id によりそのファイル名を取り出す
-  </para><para>
+  </para>
+  <para>
    ifx_text/byteasvarchar を 1 に設定した場合、
    通常の(しかしやや長い) VARCHAR フィールドのように
    select クエリーで TEXT や BYTE カラムを使用することが可能です。
@@ -87,14 +130,16 @@
    これを正しく処理するのはあなた次第です。
    返されるデータには何でも含むことができますが、その内容について
    責任を負うことになります。
-  </para><para>
+  </para>
+  <para>
    ifx_blobinfile を 1 に設定した場合、blob の内容を得るために
    ifx_get_blob(..) により返されたファイル名を使用して下さい。
    この場合、行を取得する際に Informix により作成されたテンポラリファイル
    を削除する責任があります。
    取得された新規の行は、BYTE カラム毎に新規のテンポラリファイルを
    作成します。
-  </para><para>
+  </para>
+  <para>
   テンポラリファイルの位置は、環境変数 "blobdir" により
   設定することができます。
   デフォルトは、"." (カレントディレクトリ)です。
@@ -105,15 +150,17 @@
    </note>
    <note>
     <title>自動的に "char" (SQLCHAR および SQLNCHAR) データを取り去る</title>
-   <para></para><para>
+   <para>
    これは、次の設定変数により設定することが可能です。
-   </para><para>
-   ifx.charasvarchar : 最後尾のスペースを自動的に取り去る場合に 1 に設定します。    </para>
+   </para>
+   <para>
+   ifx.charasvarchar : 最後尾のスペースを何らかの削除処理を行わずに
+   自動的に取り去る場合に1に設定します。
+   </para>
    </note>
-    <para></para>
    <note>
    <title>NULL 値</title>
-    <para></para><para>
+    <para>
     設定変数 ifx.nullformat (およびランタイム関数 <function>ifx_nullformat</function>) をTRUEに設定した場合、文字列 "NULL" として NULL カラムを返します。
     FALSEに設定した場合は空文字列を返します。
     これにより、NULLカラムと空のカラムを識別することが可能となります。
@@ -139,7 +186,8 @@
     </funcsynopsis>
     <para> 
     成功時に接続 ID を、エラー時に FALSE を返します。
-    </para><para> 
+    </para>
+    <para> 
      <function>ifx_connect</function> は、Informix サーバーへの接続を
      確立します。全ての引数はオプションであり、指定されない場合には、
       <link linkend="configuration.file">設定ファイル</link>にて指定された値
@@ -149,23 +197,27 @@
      , ユーザーに関して ifx.default_user, 
      パスワードに関して ifx.default_password (定義されていない場合は無し)
      となります。
-    </para><para>
+    </para>
+    <para>
     同じ引数で 
      <function>ifx_connect</function> を2回目にコールした際には、
      新規のリンクは確立されず、代わりに既にオープンされたリンクの
      リンク ID が返されます。
-    </para><para> 
+    </para>
+    <para> 
     サーバーへのリンクは、<function>ifx_close</function> のコールに
     より明示的に事前に閉じない限り、スクリプトの実行終了直後に閉じられます。
-    </para><para> 
+    </para>
+    <para> 
      <function>ifx_pconnect</function>,
               <function>ifx_close</function> も参照下さい。
      <example>
       <title>Informix データベースへの接続</title>
       <programlisting role="php3">
-$conn_id = ifx_pconnect (mydb@ol_srv1, "imyself", "mypassword");
+$conn_id = ifx_pconnect ("mydb@ol_srv1", "imyself", "mypassword");
       </programlisting>
-     </example></para>
+     </example>
+     </para>
    </refsect1>
   </refentry>
 
@@ -202,11 +254,14 @@ $conn_id = ifx_pconnect (mydb@ol_srv1, "imyself", "mypassword");
     第二に、SQL サーバーへの接続は、スクリプトの実行終了時に閉じられません。
     代わりにリンクは、後の使用のためにオープンされたままとなります。
     (<function>ifx_close</function> は <function>ifx_pconnect</function>
-    により確立されたリンクを閉じません。)</para>
+    により確立されたリンクを閉じません。)
+    </para>
     <para> 
-    この型のリンクは、このため、'持続的' であると呼ばれます。</para>
+    この型のリンクは、このため、'持続的' であると呼ばれます。
+    </para>
     <para>
-     <function>ifx_connect</function> も参照下さい。</para>
+     <function>ifx_connect</function> も参照下さい。
+    </para>
    </refsect1>
   </refentry>
 
@@ -223,19 +278,23 @@ $conn_id = ifx_pconnect (mydb@ol_srv1, "imyself", "mypassword");
                    </parameter></paramdef>
     </funcsynopsis>
     <para>
-     返り値: 常に TRUE。</para>
+     返り値: 常に TRUE。
+    </para>
     <para> 
      <function>ifx_close</function> は、
      指定したリンク ID が関連する Informix データベースへの接続を
      閉じます。
-     リンク ID が指定されない場合、最後にオープンされたリンクが仮定されます。</para>
+     リンク ID が指定されない場合、最後にオープンされたリンクが仮定されます。
+    </para>
     <para> 
     非持続的関数としてオープンされたリンクはスクリプトの実行終了時に
     自動的に閉じられるため、
-    この関数は通常の場合は必要ではないことに注意して下さい。</para>
+    この関数は通常の場合は必要ではないことに注意して下さい。
+    </para>
     <para> 
      <function>ifx_close</function> は、<function>ifx_pconnect</function>
-     により作成された持続的リンクは閉じません。</para>
+     により作成された持続的リンクは閉じません。
+    </para>
     <para> 
      <function>ifx_connect</function>, 
                <function>ifx_pconnect</function> も参照下さい。
@@ -246,7 +305,8 @@ $conn_id = ifx_connect (mydb@ol_srv, "itsme", "mypassword");
 ... クエリー等を実行 ...
 ifx_close($conn_id);
       </programlisting>
-     </example></para>
+     </example>
+    </para>
    </refsect1>
   </refentry>
 
@@ -269,12 +329,14 @@ ifx_close($conn_id);
     </funcsynopsis>
     <para> 
      返り値: 成功時に正の Informix 結果 ID、エラー時に FALSE
-    </para><para> 
-    整数 "result_id" は、クエリー結果を取得するために
+    </para>
+    <para> 
+    リソース "result_id" は、クエリー結果を取得するために
     他の関数により使用されます。
      <function>ifx_affected_rows</function> 関数による取得を行うために
      "affected_rows" をセットします。
-    </para><para> 
+    </para>
+    <para> 
      <function>ifx_query</function> は、サーバー上の
      指定したリンク ID が指す現在アクティブなデータベースに
      クエリーを送信します。リンク ID が指定されない場合は、
@@ -282,39 +344,48 @@ ifx_close($conn_id);
      リンクがオープンされていない場合、この関数は、
      <function>ifx_connect</function> がコールされた時と同様に
      リンクを確立しようと試み、それを使用します。
-    </para><para>
+    </para>
+    <para>
      接続 <parameter>conn_id</parameter> において <parameter>query</parameter>
      を実行します。
      "select 型" のクエリーでは、カーソルが定義され、オープンされます。
      オプションの <parameter>cursor_type</parameter> パラメータにより、
      そのカーソルを
      "スクロール" または "ホールド" カーソルとすることができます。
-     このオプションはマスクであり、IFX_SCROLL, IFX_HOLD, または
+     このオプションはビットマスクであり、IFX_SCROLL, IFX_HOLD, または
      両方とも指定することができます。
      select でないクエリーは、"直ちに実行"されます。
+     IFX_SCROLL および IFX_HOLD はシンボル定数なので
+     引用符で括る必要はありません。
+     このパラメ―タを省略した場合、カーソルは通常のシーケンシャルカーソル
+     になります。
     </para><para>
     どちらのタイプのクエリーにおいても、(予測または実際の数として)
     作用された行の数は、<function>ifx_affected_rows</function> により
     取得するために保存されます。
-    </para><para>
+    </para>
+    <para>
     もし、update クエリーにおいて BLOB (BYTE または TEXT) カラムがある場合、
     対応する "BLOB ID" を有する
     <parameter>blobidarray</parameter> パラメータを追加することが可能です。
     この場合、クエリーテキストのこれらのカラムを "?" で置換することが必要です。
-    </para><para>
+    </para>
+    <para>
     TEXT (または BYTE) カラムの内容が許すならば、
     "ifx_textasvarchar(1)" または "ifx_byteasvarchar(1)" を使用することも
     可能です。
     これにより、TEXT (または BYTE) カラムは、select クエリーの
     通常の(しかし長い)VARCHAR カラムと同様に処理され、
     BLOB ID で悩むこともなくなります。
-    </para><para>
+    </para>
+    <para>
     ifx_textasvarchar(0) または ifx_byteasvarchar(0) (デフォルト値)
     の場合、select クエリーは、BLOB ID (整数値) に属するものとして
     BLOB カラムを返します。
     BLOB 関数により文字列またはファイルとして BLOB の値を得ることが可能です。
     (以下を参照)
-    </para><para>
+    </para>
+    <para>
      <function>ifx_connect</function> も参照下さい。
      <example>
       <title>"orders" テーブルの全行を HTML テーブルとして表示する</title>
@@ -350,7 +421,8 @@ if (! $res_id) {
                      // 結果 id を解放
 ifx_free_result($res_id);
       </programlisting>
-     </example></para>
+     </example>
+    </para>
    </refsect1>
   </refentry>
 
@@ -381,32 +453,38 @@ ifx_free_result($res_id);
      オプションの <parameter>cursor_type</parameter> パラメータにより、
      そのカーソルを "スクロール" または "ホールド" カーソルとすることが
      できます。
-     このオプションはマスクであり、IFX_SCROLL, IFX_HOLD, または
+     このオプションはビットマスクであり、IFX_SCROLL, IFX_HOLD, または
      両方とも指定することができます。
      select でないクエリーは、"直ちに実行"されます。
-    </para><para>
+    </para>
+    <para>
     どちらのタイプのクエリーにおいても、(予測または実際の数として)
     作用された行の数は、<function>ifx_affected_rows</function> により
     取得可能とするために保存されます。
-    </para><para>
+    </para>
+    <para>
     もし、クエリーにおいて BLOB (BYTE または TEXT) カラムがある場合、
     対応する "BLOB ID" を有する
     <parameter>blobidarray</parameter> パラメータを追加することが可能です。
     この場合、クエリーテキストのこれらのカラムを "?" で置換することが必要です。
-    </para><para>
+    </para>
+    <para>
     TEXT (または BYTE) カラムの内容が許すならば、
     "ifx_textasvarchar(1)" または "ifx_byteasvarchar(1)" を使用することも
     可能です。
     これにより、TEXT (または BYTE) カラムは、select クエリーの
     通常の(しかし長い)VARCHAR カラムと同様に処理され、
     BLOB ID で悩むこともなくなります。
-    </para><para>
+    </para>
+    <para>
     ifx_textasvarchar(0) または ifx_byteasvarchar(0) (デフォルト値)
     の場合、select クエリーは、BLOB ID (整数値) に属するものとして
     BLOB カラムを返します。
     BLOB 関数により文字列またはファイルとして BLOB の値を得ることが可能です。
-    </para><para>
-     <function>ifx_do</function> も参照下さい。</para>
+    </para>
+    <para>
+     <function>ifx_do</function> も参照下さい。
+    </para>
    </refsect1>
   </refentry>
 
@@ -423,16 +501,21 @@ ifx_free_result($res_id);
     </funcsynopsis>
     <para>
     成功時に TRUE、エラーの時に FALSE を返す。
-    </para><para> 
+    </para>
+    <para> 
     事前に準備されたクエリーを実行し、カーソルをオープンします。
-    </para><para> 
+    </para>
+    <para> 
     エラーの際に、<parameter>result_id</parameter> を解放しないで下さい。
-    </para><para> 
+    </para>
+    <para> 
     select 文でない場合に、<function>ifx_affected_rows</function> 
     に数を設定します。
     これは、<function>ifx_affected_rows</function> で取得可能です。
-    </para><para>
-     <function>ifx_prepare</function> も参照下さい。例があります。</para>
+    </para>
+    <para>
+     <function>ifx_prepare</function> も参照下さい。例があります。
+    </para>
    </refsect1>
   </refentry>
 
@@ -528,6 +611,10 @@ printf("%s\n&lt;br>", ifx_errormsg(-201));
     insert, update ,delete の場合、その数は、実際に作用された行の数
     (sqlerrd[2]) です。select の場合、これは推定値 (sqlerrd[0])です。
     この値を信用してはいけません。
+    データベースサーバーは、SELECTにより実際に返される行の数を
+    返すことはありません。これは、この段階(オプティマイザがクエリー
+    手順を定義している場合には、"PREPARE"を行った直後)では、
+    行の取得を始めてさえもいないためです。
     </para><para> 
     <function>ifx_prepare</function> の実行後に
     クエリー結果を適当な量に制限するために使用すると便利です。
@@ -574,7 +661,8 @@ if ($rowcount > 1000) {
     設定される場合と同様にレコードの値が返されます。
     これにより、作用を受けた行の下図および連番の挿入値にアクセスすることが
     可能となります。
-    select の場合、命令を準備した段階で保存されます。
+    SELECT の場合、この値はPREPARE 文の後で保存された値となります。
+    この値から作用を受けた行の数の"推測"値が分かります。
      ifx ドライバにより適当な時に保存された値が取得されるため、
      この関数を使用することにより、
      "select dbinfo('sqlca.sqlerrdx')" クエリを実行するオーバーヘッドを
@@ -584,13 +672,15 @@ if ($rowcount > 1000) {
       <title>Informix sqlca.sqlerrd[x] の値を取得する</title>
       <programlisting role="php3">
 /* 'sometable' の最初のカラムは連番であると仮定する */
- $qid = ifx_query("insert into sometable values(0, '2nd column', 'another column' ", $connid);
+ $qid = ifx_query("insert into sometable
+                   values(0, '2nd column', 'another column' ", $connid);
 if (! $qid) {
     ... error ...
 }
 $sqlca = ifx_getsqlca ($qid);
 $serial_value = $sqlca["sqlerrd1"];
-echo "挿入された行の続き番号は : " . "$serial_value&lt;br>\n";       </programlisting>
+echo "挿入された行の続き番号は : " . "$serial_value&lt;br>\n";       
+      </programlisting>
      </example>
    </refsect1>
   </refentry>
@@ -616,7 +706,7 @@ echo "挿入された行の続き番号は : " . "$serial_value&lt;br>\n";      
     整数値 BLOB ID として返されます。
     ただし、ifx_textasvarchar(1) または ifx_byteasvarchar(1) を指定している
     場合を除きます。この場合、BLOB は、文字列として返されます。
-    エラーの場合、FALSE が返されます。
+    エラーの場合、false が返されます。
     </para><para>
      <parameter>result_id</parameter> は、
      <function>ifx_query</function> または
@@ -628,15 +718,16 @@ echo "挿入された行の続き番号は : " . "$serial_value&lt;br>\n";      
      次のようになります。
      "NEXT", "PREVIOUS", "CURRENT", "FIRST", "LAST" ,または番号。
      番号を指定した場合、"絶対" 行の取得が行われます。このパラメータは、
-     オプションであり、スクロールカーソルの場合にのみ有効です。
+     オプションであり、SCROLL カーソルの場合にのみ有効です。
     </para><para>
      <function>ifx_fetch_row</function> は、指定された結果 ID が関連する
      結果から1行文のデータを取得します。
      各結果カラムは、オフセット 0 から始まる配列オフセットに保存されます。
+     カラム名がキーとなります。
     </para><para>
      <function>ifx_fetch_row</function> を続けてコールした場合、結果セットの
      次の行が返されるます。
-     行がもうない場合は、FALSE が返されます。
+     行がもうない場合は、false が返されます。
     </para>
     <example>
      <title>Informix 行の取得</title>
@@ -728,7 +819,7 @@ ifx_free_result($rid);
     <para>
      <parameter>result_id</parameter> のクエリーについて
     フィールド名をキーとし、SQL フィールド型をデータとした連想配列を返します。
-    エラーの場合に FALSE を返します。
+    エラーの場合にfalseを返します。
     </para>
     <example>
      <title>フィールド名および SQL フィールド型</title>
@@ -762,7 +853,7 @@ for ($i = 0; $i < count($types); $i++) {
      <parameter>result_id</parameter> のクエリーについて
     フィールド名をキーとし、SQL フィールドプロパティをデータとした
     連想配列を返します。
-    エラーの場合に FALSE を返します。
+    エラーの場合にfalseを返します。
     </para><para>
     クエリー中の全てのフィールドの Informix SQL フィールドプロパティ
     を連想配列として返します。コード化されるプロパティを次に示します。
@@ -800,7 +891,7 @@ for ($i = 0; $i < count($properties); $i++) {
     </funcsynopsis>
     <para>
      <parameter>result_id</parameter> に関するクエリー結果のカラム数または
-     エラーの場合に FALSE を返します。
+     エラーの場合にfalseを返します。
     </para><para>
     クエリーを準備または実行された後、この関数をコールすることにより、
     クエリー結果中でカラム数が得られます。
@@ -840,7 +931,7 @@ for ($i = 0; $i < count($properties); $i++) {
     </funcsynopsis>
     <para>
      <parameter>result_id</parameter> に間連するクエリーの
-     リソースを解放します。エラーの場合に FALSE を返します。
+     リソースを解放します。エラーの場合にfalseを返します。
     </para>
    </refsect1>
   </refentry>
@@ -1290,7 +1381,7 @@ sgml-always-quote-attributes:t
 sgml-indent-step:1
 sgml-indent-data:t
 sgml-parent-document:nil
-sgml-default-dtd-file:"../manual.ced"
+sgml-default-dtd-file:"../../manual.ced"
 sgml-exposed-tags:nil
 sgml-local-catalogs:nil
 sgml-local-ecat-files:nil
