@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.1 $ -->
+<!-- $Revision: 1.2 $ -->
 <!-- Author: Wez Furlong <wez@thebrainroom.com>
   Please contact me before making any major amendments to the
   content of this section.  Splitting/Merging are fine if they are
@@ -24,7 +24,7 @@
    <para>
     <function>php_stream_stat_path</function> は、
     <parameter>path</parameter>で指定したファイルまたはURLを調べ、
-    ファイルサイズ、アクセス時、作成時といった情報を返します。
+    ファイルサイズ、アクセス権、作成日時といった情報を返します。
     返り値は成功時に0、エラー時に-1となります。返される情報の詳細に
     ついては、
     <link linkend="streams.struct-php-stream-statbuf">php_stream_statbuf</link>
@@ -46,11 +46,13 @@
     <methodparam><type>php_stream_statbuf *</type><parameter>ssb</parameter></methodparam>
    </methodsynopsis>
    <para>
-    <function>php_stream_stat</function> examines the storage to which <parameter>stream</parameter>
-    is bound, and returns information such as file size, access and creation times and so on.
-    The return value is 0 on success, -1 on error.
-    For more information about the information returned, see
-    <link linkend="streams.struct-php-stream-statbuf">php_stream_statbuf</link>.
+    <function>php_stream_stat</function> は、<parameter>stream</parameter>
+    にバインドされているストレージに関する情報を調べ、ファイルサイズ、
+    アクセス権、作成日時といった情報を返します。
+    返り値は成功時に0、エラー時に-1となります。返される情報の詳細に
+    ついては、
+    <link linkend="streams.struct-php-stream-statbuf">php_stream_statbuf</link>
+    を参照ください。
    </para>
   </refsect1>
  </refentry>
@@ -70,29 +72,30 @@
     <methodparam><type>char **</type><parameter>opened</parameter></methodparam>
    </methodsynopsis>
    <para>
-    <function>php_stream_open_wrapper</function> opens a stream on the file, URL or
-    other wrapped resource specified by <parameter>path</parameter>.  Depending on
-    the value of <parameter>mode</parameter>, the stream may be opened for reading,
-    writing, appending or combinations of those. See the table below for the different
-    modes that can be used; in addition to the characters listed below, you may
-    include the character 'b' either as the second or last character in the mode string.
-    The presence of the 'b' character informs the relevant stream implementation to
-     open the stream in a binary safe mode.
+    <function>php_stream_open_wrapper</function> は <parameter>path</parameter>
+    で指定されたファイルやURLなどのラップされたリソースのストリームを開きます。
+    <parameter>mode</parameter> によって、ストリームを読み出し用、書き出し用、
+    追記用、あるいはその組み合わせで開くことができます。指定できる種々のモード
+    については下記の表をご覧下さい。それらの文字列に加え、文字 'b' を
+    モード文字列の2文字目、または末尾に含めることができます。
+    この文字 'b' は、該当するストリームの実装に対し、バイナリセーフなモードで
+    ストリームを開くよう指示します。
    </para>
    <para>
-    The 'b' character is ignored on all POSIX conforming systems which treat
-    binary and text files in the same way.  It is a good idea to specify the 'b'
-    character whenever your stream is accessing data where the full 8 bits
-    are important, so that your code will work when compiled on a system
-    where the 'b' flag is important.
+    文字 'b' は、すべての POSIX に準拠したシステム上では、バイナリファイルと
+    テキストファイルが同列に扱われるため、無視されます。アクセスするデータ
+    において、8 ビットすべてが重要な際には、この 'b' 文字を指定しておくのは、
+    'b' フラグが意味を持つシステムでも同じスクリプトを動かせるので、
+    よいアイディアといえます。 
    </para>
    <para>
-    Any local files created by the streams API will have their initial permissions set
-    according to the operating system defaults - under UNIX based systems
-    this means that the umask of the process will be used.  Under Windows,
-    the file will be owned by the creating process.
-    Any remote files will be created according to the URL wrapper that was
-    used to open the file, and the credentials supplied to the remote server.
+    ストリーム API によって作成されたすべてのローカルにあるファイルの
+    パーミッションは、オペレーティングシステムのデフォルトに従って
+    設定されます - UNIX ベースのシステムでは、ファイルを作成したプロセスの
+    umask が反映されます。また、Windows では、ファイルを作成したプロセスが
+    ファイルを所有します。
+    リモートにあるファイルについては、ファイルを開くのに用いた URL ラッパー
+    の設定や、リモートのサーバに与えられた信頼情報に応じて作成されます。
    </para>
    <para>
     <variablelist>
@@ -102,8 +105,8 @@
       </term>
       <listitem>
        <simpara>
-        Open text file for reading.  The stream is positioned at the beginning of
-        the file.
+        ファイルを読み出し用に開きます。このとき、ストリームの位置は、
+        ファイルの先頭に移動されます。
        </simpara>
       </listitem>
      </varlistentry>
@@ -114,8 +117,8 @@
       </term>
       <listitem>
        <simpara>
-        Open text file for reading and writing.  The stream is positioned at the beginning of
-        the file.
+        ファイルを読み書き用に開きます。このとき、ストリームの位置は、
+        ファイルの先頭に移動されます。
        </simpara>
       </listitem>
      </varlistentry>
@@ -126,8 +129,9 @@
       </term>
       <listitem>
        <simpara>
-        Truncate the file to zero length or create text file for writing.
-        The stream is positioned at the beginning of the file.
+        ファイルの内容を長さ 0 に切り詰めるか、新規にファイルを作成し、
+        書き出しモードで開きます。このとき、ストリームの位置は、
+        ファイルの先頭に移動されます。
        </simpara>
       </listitem>
      </varlistentry>
@@ -138,9 +142,9 @@
        </term>
       <listitem>
        <simpara>
-        Open text file for reading and writing.  The file is created if
-        it does not exist, otherwise it is truncated. The stream is positioned at
-        the beginning of the file.
+        ファイルを読み書き用に開きます。もし指定されたファイルが存在
+        しない場合は、新規に作成し、存在する場合は、長さを切り詰めます。
+        このとき、ストリームの位置は、ファイルの先頭に移動されます。
        </simpara>
       </listitem>
      </varlistentry>
@@ -151,8 +155,9 @@
       </term>
       <listitem>
        <simpara>
-        Open for writing.  The file is created if it does not exist.
-        The stream is positioned at the end of the file.
+        ファイルを書き出し用に開きます。もしファイルが存在しない場合は、
+        新規に作成します。このとき、ストリームの位置は、ファイルの
+        末尾に移動されます。
        </simpara>
       </listitem>
      </varlistentry>
@@ -163,8 +168,9 @@
       </term>
       <listitem>
        <simpara>
-        Open text file for reading and writing.  The file is created if
-        it does not exist. The stream is positioned at the end of the file.
+        ファイルを読み書き用に開きます。もし指定されたファイルが存在
+        しない場合は、新規に作成します。このとき、ストリームの位置は、
+        ファイルの末尾に移動されます。
        </simpara>
       </listitem>
      </varlistentry>
@@ -172,24 +178,25 @@
     </variablelist>    
    </para>    
     <para>
-    <parameter>options</parameter> affects how the path/URL of the stream is
-    interpreted, safe mode checks and actions taken if there is an error during opening
-    of the stream.  See <link linkend="streams.options">Stream open options</link> for
-    more information about options.
+    <parameter>options</parameter> は、ストリームへのパスや URL をどのように
+    解釈するかや、セーフモードチェック、ストリームを開くときにエラーが
+    発生した場合のアクションに影響します。このオプションに関しては、
+    <link linkend="streams.options">Stream open options</link> を参照ください。
    </para>
    <para>
-    If <parameter>opened</parameter> is not NULL, it will be set to a string containing
-    the name of the actual file/resource that was opened.  This is important when the
-    options include <constant>USE_PATH</constant>, which causes the include_path to be searched for the
-    file.  You, the caller, are responsible for calling <function>efree</function> on
-    the filename returned in this parameter.
+    もし <parameter>opened</parameter> が NULL でなければ、実際に
+    開かれたファイルやリソースの名前がセットされます。これは、
+    オプションに include_path に列挙されたパスからファイルを探すよう指示する
+    <constant>USE_PATH</constant> が含まれている時に重要になります。
+    呼び出し元は、最後にこのパラメータによって返されたファイル名を
+    <function>efree</function> の呼び出しによって開放する必要があります。
    </para>
    <note>
     <simpara>
-     If you specified <constant>STREAM_MUST_SEEK</constant> in <parameter>options</parameter>,
-     the path returned in <parameter>opened</parameter> may not be the name of the
-     actual stream that was returned to you.  It will, however, be the name of the original
-     resource from which the seekable stream was manufactured.
+     もし、<constant>STREAM_MUST_SEEK</constant> を <parameter>options</parameter>
+     に指定した場合、<parameter>opened</parameter> に返されたファイルへのパス
+     は、実際に返されるストリームのものと違う場合があります。しかし、これは
+     シーク可能なストリームを作るのに用いられた元のストリームの名前になります。
     </simpara>
    </note>
   </refsect1>
@@ -210,27 +217,29 @@
       <methodparam><type>size_t</type><parameter>count</parameter></methodparam>
      </methodsynopsis>
     <para>
-     <function>php_stream_read</function> reads up to <parameter>count</parameter>
-     bytes of data from <parameter>stream</parameter> and copies them into the
-     buffer <parameter>buf</parameter>.
+     <function>php_stream_read</function> は <parameter>count</parameter>
+     バイトで指定されたバイト数まで <parameter>stream</parameter> から
+     データを読み取り、バッファ <parameter>buf</parameter> にコピーします。
     </para>
     <para>
-     <function>php_stream_read</function> returns the number of bytes that were
-     read successfully.  There is no distinction between a failed read or an end-of-file
-     condition - use <function>php_stream_eof</function> to test for an <constant>EOF</constant>.
+     <function>php_stream_read</function> は、正常に読み込むことのできた
+     バイト数を返します。読み込みが失敗したのか、ファイルの終端に達したのか
+     をここから知ることはできませんので、<function>php_stream_eof</function>
+     を、<constant>EOF</constant> 条件のテストに使います。
     </para>
     <para>
-     The internal position of the stream is advanced by the number of bytes that were
-     read, so that subsequent reads will continue reading from that point.
+     ストリームの内部位置は、次回以降続きから読めるよう、
+     読み込まれた分だけ進められます。
     </para>
     <para>
-     If less than <parameter>count</parameter> bytes are available to be read, this
-     call will block (or wait) until the required number are available, depending on the
-     blocking status of the stream.  By default, a stream is opened in blocking mode.
-     When reading from regular files, the blocking mode will not usually make any
-     difference: when the stream reaches the <constant>EOF</constant>
-     <function>php_stream_read</function> will return a value less than
-     <parameter>count</parameter>, and 0 on subsequent reads.
+     もし、<parameter>count</parameter> バイトよりも少ないデータしか揃って
+     いない場合、この関数は、ストリームのブロックモードの設定に応じて、
+     すべてのデータが揃うまでブロックします(待ちます)。デフォルトでは、
+     ストリームはブロックモードで開かれます。
+     もし通常のファイルから読み込む場合は、ブロックモードはあまり意味を
+     持ちません。ストリームが、<constant>EOF</constant> に達した場合は、
+     <function>php_stream_read</function> は、<parameter>count</parameter>
+     よりも少ない値を返し、次回以降は、0 を返します。
     </para>
    </refsect1>
   </refentry>
@@ -249,17 +258,19 @@
       <methodparam><type>size_t</type><parameter>count</parameter></methodparam>
      </methodsynopsis>
     <para>
-     <function>php_stream_write</function> writes <parameter>count</parameter>
-     bytes of data from <parameter>buf</parameter> into <parameter>stream</parameter>.
+     <function>php_stream_write</function> は、<parameter>count</parameter>
+     バイトのデータを <parameter>buf</parameter> から
+     <parameter>stream</parameter> に書き出します。
     </para>
     <para>
-     <function>php_stream_write</function> returns the number of bytes that were
-     read successfully.  If there was an error, the number of bytes written will be
-     less than <parameter>count</parameter>.
+     <function>php_stream_write</function> は正常に書き込むことのできた
+     バイト数を返します。もし、何らかのエラーがあった場合は、
+     書き込むことのできたバイト数は <parameter>count</parameter> よりも
+     小さくなります。
     </para>
     <para>
-     The internal position of the stream is advanced by the number of bytes that were
-     written, so that subsequent writes will continue writing from that point.
+     ストリームの内部位置は、次回以降続きから書き込めるよう、
+     読み込まれた分だけ進められます。
     </para>
    </refsect1>
   </refentry>
@@ -276,12 +287,13 @@
       <methodparam><type>php_stream *</type><parameter>stream</parameter></methodparam>
      </methodsynopsis>
     <para>
-     <function>php_stream_eof</function> checks for an end-of-file condition
-     on <parameter>stream</parameter>.
+     <function>php_stream_eof</function> は、<parameter>stream</parameter> が、
+     ファイルの終端に達したかどうかを調べます。
     </para>
     <para>
-     <function>php_stream_read</function> returns the 1 to indicate
-     <constant>EOF</constant>,  0 if there is no <constant>EOF</constant> and -1 to indicate an error.
+     <function>php_stream_eof</function> が 1 を返すということは、
+     <constant>EOF</constant> に達したことを意味します。0 ならば、
+     まだ <constant>EOF</constant> でなく、-1 はエラーを意味します。
     </para>
    </refsect1>
   </refentry>
@@ -298,16 +310,17 @@
       <methodparam><type>php_stream *</type><parameter>stream</parameter></methodparam>
      </methodsynopsis>
     <para>
-     <function>php_stream_getc</function> reads a single character from
-     <parameter>stream</parameter> and returns it as an unsigned char cast
-     as an int, or <constant>EOF</constant> if the end-of-file is reached, or an error occurred.
+     <function>php_stream_getc</function> は <parameter>stream</parameter>
+     から 1 文字読み込み、unsigned char を int としてキャストした形で
+     返します。 ファイルの終端に達したか、エラーが発生した場合は、
+     <constant>EOF</constant> を返します。
     </para>
     <para>
-     <function>php_stream_getc</function> may block in the same way as
-     <function>php_stream_read</function> blocks.
+     <function>php_stream_getc</function> のブロックに関する挙動は、 
+     <function>php_stream_read</function> のものと一緒です。
     </para>
     <para>
-     The internal position of the stream is advanced by 1 if successful.
+     正常に実行できた場合、ストリームの内部位置は 1 だけ進められます。
     </para>
    </refsect1>
   </refentry>
@@ -326,23 +339,24 @@
       <methodparam><type>size_t</type><parameter>maxlen</parameter></methodparam>
      </methodsynopsis>
     <para>
-     <function>php_stream_gets</function> reads up to <parameter>count</parameter>-1
-     bytes of data from <parameter>stream</parameter> and copies them into the
-     buffer <parameter>buf</parameter>.  Reading stops after an <constant>EOF</constant>
-     or a newline.  If a newline is read, it is stored in <parameter>buf</parameter> as part of
-     the returned data.  A NUL terminating character is stored as the last character
-     in the buffer.
+     <function>php_stream_gets</function> は、最大で <parameter>count</parameter>-1
+     バイトまでのデータを <parameter>stream</parameter> から読み込み、
+     バッファ <parameter>buf</parameter> にコピーします。読み込みは、
+     <constant>EOF</constant> あるいは行末記号に到達した時点でストップします。
+     もし、行末まで読み込まれた場合、行末記号は、<parameter>buf</parameter>
+     の一部として含まれます。NUL 終端文字が、バッファの末尾に付加されます。
     </para>
     <para>
-     <function>php_stream_read</function> returns <parameter>buf</parameter>
-     when successful or NULL otherwise.
+     <function>php_stream_read</function> は正常に終了すると、<parameter>buf</parameter>
+     を、その他の場合は NULL を返します。
     </para>
     <para>
-     The internal position of the stream is advanced by the number of bytes that were
-     read, so that subsequent reads will continue reading from that point.
+     ストリームの内部位置は、次回以降続きから読めるよう、
+     読み込まれた分だけ進められます。
     </para>
     <para>
-     This function may block in the same way as <function>php_stream_read</function>.     
+     この関数のブロックに関する挙動は、<function>php_stream_read</function>
+     のものと一緒です。
     </para>
    </refsect1>
   </refentry>
@@ -359,15 +373,16 @@
       <methodparam><type>php_stream *</type><parameter>stream</parameter></methodparam>
      </methodsynopsis>
     <para>
-     <function>php_stream_close</function> safely closes <parameter>stream</parameter>
-     and releases the resources associated with it.  After <parameter>stream</parameter>
-     has been closed, it's value is undefined and should not be used.
+     <function>php_stream_close</function> は、<parameter>stream</parameter> を
+     安全にクローズし、それに関連付けられたリソースを同時に開放します。
+     一旦 <parameter>stream</parameter> を閉じると、その値は不定になります。
+     再び利用してはいけません。
     </para>
     <para>
-     <function>php_stream_close</function> returns 0 if the stream was closed or
-     <constant>EOF</constant> to indicate an error.  Regardless of the success of the call,
-     <parameter>stream</parameter> is undefined and should not be used after a call to
-      this function.
+     <function>php_stream_close</function> は正常にストリームを閉じられた
+     場合、0 を、エラーが発生した場合には、<constant>EOF</constant>
+     を返します。関数の実行の成否にかかわらず、<parameter>stream</parameter>
+     は不定になりますので、この関数の実行後に利用してはいけません。
     </para>
    </refsect1>
   </refentry>
