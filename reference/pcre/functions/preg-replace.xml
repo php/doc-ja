@@ -13,9 +13,7 @@
       <methodparam><type>mixed</type><parameter>pattern</parameter></methodparam>
       <methodparam><type>mixed</type><parameter>replacement</parameter></methodparam>
       <methodparam><type>mixed</type><parameter>subject</parameter></methodparam>
-      <methodparam><type>int</type><parameter>
-	<replaceable><optional>limit</optional></replaceable>
-       </parameter></methodparam>
+      <methodparam choice="opt"><type>int</type><parameter>limit</parameter></methodparam>
      </methodsynopsis>
     <para>
      <parameter>subject</parameter>に関して
@@ -37,15 +35,108 @@
      <literal>\\0</literal> または <literal>$0</literal> はパターン全
      体にマッチするテキストを参照します。マッチしたサブパターンの番号
      を得るために左括弧は(1から始まって)左から右に番号がふられます。
+     <note>
+      <para>
+       When working with a replacement pattern where a backreference is immediately
+       followed by another number (i.e.: placing a literal number immediately
+       after a matched pattern), you cannot use the familiar <literal>\\1</literal>
+       notation for your backreference.  <literal>\\11</literal>, for example,
+       would confuse <function>preg_replace</function> since it does not know whether
+       you want the <literal>\\1</literal> backreference followed by a literal <literal>1</literal>, 
+       or the <literal>\\11</literal> backreference followed by nothing.  In this case
+       the solution is to use <literal>\${1}1</literal>.  This creates an
+       isolated <literal>$1</literal> backreference, leaving the <literal>1</literal>
+       as a literal.
+      </para>
+     </note>
+     <example>
+      <title>Using backreferences followed by numeric literals.</title>
+      <programlisting role="php">
+<![CDATA[
+<?php
+$string = "April 15, 2003";
+$pattern = "/(\w+) (\d+), (\d+)/i";
+$replacement = "\${1}1,\$3";
+print preg_replace($pattern, $replacement, $string);
+
+/* Output
+   ======
+
+April1,2003
+
+ */
+?>
+]]>
+      </programlisting>
+     </example>
     </para>
     <para>
      マッチした場合、新しい<parameter>subject</parameter>が返されます。
-     マッチしなかった場合には、<parameter>subject</parameter> は、無変
-     更で返されます。
+     マッチしなかった場合には、<parameter>subject</parameter> は、変更
+     されずに返されます。
     </para>
     <para>
-     <function>preg_replace</function>に渡す全てのパラメータは配列とする
+     <function>preg_replace</function>に渡す
+     (<parameter>limit</parameter>以外の)全てのパラメータは配列とする
      ことができます。
+    </para>
+    <para>
+     <note>
+      <para>
+       When using arrays with <parameter>pattern</parameter> and
+       <parameter>replacement</parameter>, the keys are processed
+       in the order they appear in the array.  This is 
+       <emphasis>not necessarily</emphasis> the same as the numerical
+       index order.  If you use indexes to identify which 
+       <parameter>pattern</parameter> should be replaced by which
+       <parameter>replacement</parameter>, you should perform a
+       <function>ksort</function> on each array prior to calling
+       <function>preg_replace</function>.
+      </para>
+     </note>
+     <example>
+      <title>Using indexed arrays with <function>preg_replace</function></title>
+      <programlisting role="php">
+<![CDATA[
+<?php
+$string = "The quick brown fox jumped over the lazy dog.";
+
+$patterns[0] = "/quick/";
+$patterns[1] = "/brown/";
+$patterns[2] = "/fox/";
+
+$replacements[2] = "bear";
+$replacements[1] = "black";
+$replacements[0] = "slow";
+
+print preg_replace($patterns, $replacements, $string);
+
+/* Output
+   ======
+
+The bear black slow jumped over the lazy dog.
+
+*/
+
+/* By ksorting patterns and replacements,
+   we should get what we wanted. */
+
+ksort($patterns);
+ksort($replacements);
+
+print preg_replace($patterns, $replacements, $string);
+
+/* Output
+   ======
+
+The slow black bear jumped over the lazy dog.
+
+*/
+
+?>
+]]>
+      </programlisting>
+     </example>
     </para>
     <para>
      <parameter>subject</parameter>が配列の場合、検索及び置換は
