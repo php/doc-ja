@@ -4,11 +4,13 @@
 
   <partintro>
    <para>
-    この関数で使用されるパターンに関する構文は、Perl に非常によく似ています。
-    表現は、デリミタ、例えばスラッシュ (/) で囲まれる必要があります。
-    英数字またはバックスラッシュ(\)以外の全ての文字をデリミタとして
-    使用可能です。デリミタ文字を正規表現本体において使用する必要がある場合は、
-    バックスラッシュでエスケープする必要があります。
+    この関数で使用されるパターンに関する構文は、Perl に非常によく似て
+    います。式は、デリミタ、例えばスラッシュ (/) で囲まれる必要があり
+    ます。英数字またはバックスラッシュ(\)以外の全ての文字をデリミタと
+    して使用可能です。デリミタ文字を正規表現本体において使用する必要が
+    ある場合は、バックスラッシュでエスケープする必要があります。PHP
+    4.0.4以降、パターン指定用に Perl形式の (), {}, [], &lt;&gt; も
+    使用可能です。
    </para>
    <para>
     マッチングに影響を与える様々な修正子を終端デリミタの後に付ける
@@ -20,9 +22,10 @@
     <example>
      <title>有効なパターンの例</title>
      <itemizedlist>
-      <listitem><simpara>/<\/\w+>/</simpara></listitem>
+      <listitem><simpara>/&lt;\/\w+>/</simpara></listitem>
       <listitem><simpara>|(\d{3})-\d+|Sm</simpara></listitem>
       <listitem><simpara>/^(?i)php[34]/</simpara></listitem>
+      <listitem><simpara>{^\s+(\s+)?$}</simpara></listitem>
      </itemizedlist>
     </example>
    </para>
@@ -50,7 +53,7 @@
    </para>
    <note>
     <simpara>
-     Perl互換の正規表現関数は、PHP4およびPHP3.0.9以降で利用可能です。
+     Perl互換の正規表現関数は、PHP 4およびPHP 3.0.9以降で利用可能です。
     </simpara>
    </note>
   </partintro>
@@ -108,24 +111,27 @@ if (preg_match ("/php/i", "PHP is the web scripting language of choice.")) {
 // "web"にのみマッチし、"webbing" または "cobweb"のような単語の一
 //  部にはマッチしません
 if (preg_match ("/\bweb\b/i", "PHP is the web scripting language of choice.")) {
-    print "A match was found.";
+    print "マッチするものが一つみつかりました。";
 } else {
-    print "A match was not found.";
+    print "マッチするものはみつかりませんでした。";
 }
 if (preg_match ("/\bweb\b/i", "PHP is the website scripting language of choice.")) {
-    print "A match was found.";
+    print "マッチするものが一つみつかりました。";
 } else {
-    print "A match was not found.";
+    print "マッチするものはみつかりませんでした。";
 }
       </programlisting>
      </example>
      <example>
       <title>URLからドメイン名を得る</title>
       <programlisting role="php">
-preg_match("/^(.*)([^\.]+\.[^\.]+)(\/.*)?/U",
-       "http://www.php.net/index.html", $matches);
-// 2番目の括弧内のパターンを表示
-echo "domain name is: ".$matches[2]."\n"; 
+// URLからホスト名を得る
+preg_match("/^(http:\/\/)?([^\/]+)/i",
+"http://www.php.net/index.html", $matches);
+$host = $matches[2];
+// ホスト名の最後の二つを得る
+preg_match("/[^\.\/]+\.[^\.\/]+$/",$host,$matches);
+echo "ドメイン名: ".$matches[0]."\n";
       </programlisting>
      </example>
      この例の出力は以下となります。
@@ -255,9 +261,8 @@ preg_match_all ("/\(?  (\d{3})?  \)?  (?(1)  [\-\s] ) \d{3}-\d{4}/x",
      <example>
       <title>HTMLタグにマッチするものを見付ける(greedy)</title>
       <programlisting role="php">
-// the \\2 is an example of backreferencing. This tells pcre that
-// it must match the 2nd set of parenthesis in the regular expression
-// itself, which would be the ([\w]+) in this case.
+// \\2 は後方参照の例です。これは、pcre に正規表現自体の括弧の2番目の
+// 組、つまりこの場合は([\w]+)、にマッチします。
 $html = "&lt;b&gt;bold text&lt;b&gt;lt;a href=howdy.html&gt;click me&lt;a&gt;
 
 preg_match_all ("/(&lt;([\w]+)[^&gt;]*&gt;)(.*)(&lt;\/\\2&gt;)/", 
@@ -316,7 +321,8 @@ part 3: &lt;a&gt;
      <parameter>subject</parameter>に関して
      <parameter>pattern</parameter>を用いて検索を行い、
      <parameter>replacement</parameter>に置換します。
-     <parameter>limit</parameter>を指定した場合、<parameter>limit</parameter>
+     <parameter>limit</parameter>を指定した場合、
+     <parameter>limit</parameter>
      回のマッチまで置換が行なわれます。<parameter>limit</parameter>が
      省略されるか -1 の場合、マッチするものは全て置換されます。
     </para>
@@ -363,16 +369,18 @@ part 3: &lt;a&gt;
      <function>preg_replace</function>が
      <parameter>replacement</parameter>パラメータを適当な置換を
      行った後、PHP コードとして処理するようにします。
-     注意: 
+     ヒント: 
      <parameter>replacement</parameter> が有効なPHPコード文字列から
      構成されるようにしてください。そうでない場合、
-     <function>preg_replace</function> のある行で
-     PHP は構文エラーを発生します。
-     <note>
-      <para>
-      この修正子は PHP 4.0 で追加されました。
-      </para>
-     </note>
+     <function>preg_replace</function> のある行でPHP は構文エラーを発
+     生します。
+    </para>
+    <para>
+    <literal>/F</literal> 修正子は、<parameter>replacement</parameter>
+     を関数名としてとることを意味します。この関数には、subject文字列の
+     マッチした要素の配列が渡された状態でコールされます。この関数は、
+     置換文字列を返す必要があります。この修正子は PHP 4.0.4で追加され
+     ました。
     </para>
     <para>
      <example>
@@ -559,7 +567,7 @@ print_r($chars);
     </para>
     <para>
      <example>
-      <title>例:</title>
+      <title><function>preg_quote</function>の例</title>
       <programlisting role="php">
 $keywords="$40 for a g3/400";
 $keywords = preg_quote ($keywords, "/");
@@ -570,9 +578,8 @@ echo $keywords; // \$40 for a g3\/400 を返します。
       <title>テキストの中の単語を置換する</title>
       <programlisting role="php">
 
-// In this example, preg_quote($word) is used to keep the
-// asterisks from having special meaning to the regular
-// expression.
+// この例では、preg_quote($word) が正規表現の特殊文字であるアスタリス
+// クを保持するために使用されています。
 
 $textbody = "This book is *very* hard to find.";
 $word = "*very*";
@@ -607,11 +614,18 @@ $textbody = preg_replace ("/".preg_quote($word)."/",
      <parameter>input</parameter>配列の要素からなる配列を返します。
     </para>
     <para>
+     PHP 4.0.4以降、<function>preg_grep</function>により返された結果は、
+     入力配列のキーを使用して添字が設定されます。この動作が好ましくな
+     い場合、値の添字を再設定するために<function>preg_grep</function>
+     により返された配列に<function>array_values</function>を適用して下
+     さい。
+    </para>
+
+    <para>
      <example>
       <title><function>preg_grep</function>の例</title>
       <programlisting role="php">
-// return all array elements
-// containing floating point numbers
+// 浮動小数点数を含む全ての配列要素を返す
 $fl_array = preg_grep ("/^(\d+)?\.\d+$/", $array);
       </programlisting>
      </example>
@@ -702,11 +716,30 @@ $fl_array = preg_grep ("/^(\d+)?\.\d+$/", $array);
 	  この修正子が設定されている場合、<function>preg_replace</function>
 	  は、置換文字列において後方参照に関する通常の置換を行った後、
 	  PHP コードとして評価し、検索文字列を置換するためにその結果を
-	  使用します。
+	  使用します。この修正子は、<literal>/F</literal> 修正子と共に
+	  使用することはできません。
 	 </simpara>
 	 <simpara>
 	  この修正子を使用するのは、<function>preg_replace</function>のみです。
 	  他の PCRE 関数では無視されます。
+	 </simpara>
+	</listitem>
+       </varlistentry>
+       <varlistentry>
+	<term><emphasis>F</emphasis></term>
+	<listitem>
+	 <simpara>
+	  この修正子が設定された場合、
+	  <function>preg_replace</function>は、置換文字列を与えるため
+	  にコールされる関数名としてreplacementパラメータを処理します。
+	  関数は、subject文字列中のマッチする要素に渡されます。この修
+	  正子は、<literal>/e</literal>修正子と共に使用することはでき
+	  ません。
+	 </simpara>
+	 <simpara>
+	  <function>preg_replace</function> のみがこの修正子を使用しま
+	  す。他の PCRE関数では無視されます。この修正子はPHP 4.0.4で追
+	  加されました。
 	 </simpara>
 	</listitem>
        </varlistentry>
@@ -1119,7 +1152,8 @@ $fl_array = preg_grep ("/^(\d+)?\.\d+$/", $array);
      文字クラスの外側では、パターンの中のドットは非出力文字を含む
      (デフォルトでは)改行以外の対象の全ての1文字にマッチします。
      PCRE_DOTALL オプションを設定した場合、ドットは改行にもマッチ
-     します。ドャÈの処理は、ハット記号およびドル記号とは完全お     独立し?Dます。共通な点は共に改行文字を含むことだけです。
+     します。ドットの処理は、ハット記号およびドル記号とは完全に独立し
+     ています。共通な点は共に改行文字を含むことだけです。
      ドットは、文字クラスの中では特別な意味を持ちません。
 
 ブラケット
@@ -1576,12 +1610,30 @@ $fl_array = preg_grep ("/^(\d+)?\.\d+$/", $array);
        (?&lt;=\d{3})(?&lt;!999)foo
 
      は前に "999" でない3桁の数字がある "foo" にマッチします。
-     更に、言明は、自由に組み合わせてネストさせることが可能です。
-     例えば、
+     各言明は対象文字列の同じ場所に独立して適用されることに注意して下
+     さい。まず、前の3文字が全て数字であることがチェックされ、続いて、
+     同じ3文字が"999"でないことが確認されます。このパターンは、"foo"の
+     前に6個の文字があり、その猜疑ょが数字で最後の3文字が"999"でないパ
+     ターンにはマッチしません。例えば、"123abcfoo"にはマッチしません。
+     これを行うパターンは次のようになります。
+
+       (?&lt;=\d{3}...)(?&lt;!999)foo
+
+     この時、最初の言明は、先行する6つの文字を探し、最初の3文字が数字
+     であることを確認します。続いて、2番目の言明は、先行する3文字が
+     "999"でないことを確認します。
+
+     言明は、自由に組み合わせてネストさせることが可能です。例えば、
 
        (?&lt;=(?&lt;!foo)bar)baz
 
      は、"bar" が前にあり、逆に "foo" が前にない "baz" にマッチします。
+     一方、
+
+       (?<=\d{3}(?!999)...)foo
+
+     は、3桁の数が先行し、中の3文字が"999"でない"foo"にマッチする別の
+     パターンです。
 
      言明のサブパターンは値を取得するサブパターンではなく、繰り
      返されないかもしれません。それは、同じことを複数回言明するの
@@ -1658,14 +1710,42 @@ $fl_array = preg_grep ("/^(\d+)?\.\d+$/", $array);
      合、最後の文字以外の全てのものにマッチするよう再度マッチを
      行い、続いて最後の2文字以外という風に動作します。
      "a" の検索を文字列全体に対して左から右に再度行うため、
-     効率は良くありません。しかし、パターンを次のよ?k書いた場合、
+     効率は良くありません。しかし、パターンを次のように書いた場合、
 
-       ^(?&gt;.*)(?&lt;=abcd)
+       ^(?>.*)(?<=abcd)
 
      この場合は、.* に関する再検索は行われず、文字列全体にのみマッ
      チします。続く後方言明は、最後の4文字に対する試行を1回だけ行
      います。これが失敗した場合、マッチはただちに失敗します。長い
      文字列の場合、この方法による実行時間にはかなりの差が生じます。
+
+     パターンの無制限の繰り返しをサブパターン内に有しており、そのサブ
+     パターン自体の無制限の反復が可能な場合、一度限りのサブパターンの
+     使用がマッチに非常に長い時間かかり失敗することを回避するための唯
+     一の手段です。
+     パターン
+
+       (\D+|<\d+>)*[!?]
+
+     は、無制限の数の副文字列にマッチします。その副文字列は非数値から
+     なるか<>で括られた数値のどちらかで、後に ! または ? が続くもので
+     す。マッチした場合、実行は高速です。しかし、以下の文字列に適用し
+     た場合、
+
+       aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
+     エラーを出力するまでに長い時間を要します。これは、二つの反復に文
+     字列を分割する選択肢が多く、全て試みる必要があるためです。(この例
+     では、終端に単一の文字ではなく[!?]を使用しています。これは、PCRE
+     とPerlは共に単一の文字を使用した場合により早く失敗と判定するよう
+     に最適化するためです。マッチに必要な最後の一文字をこれらは記憶し
+     ており、文字列にこれがない場合に早期に失敗と判定します。)
+     このパターンを次のように変更した場合、
+
+       ((?>\D+)|<\d+>)*[!?]
+
+     数字以外の並びにより不備を生じることがなくなり、失敗は早期に生じ
+     ます。
 
 条件付きサブパターン
      言明の結果または前の値を取得するサブパターンがマッチしたかど
@@ -1693,7 +1773,7 @@ $fl_array = preg_grep ("/^(\d+)?\.\d+$/", $array);
      最初の部分は、オプションの左括弧にマッチし、その文字がある場
      合に、最初の部分文字列として設定します。第2の部分は、括弧以外
      の一つ以上の文字にマッチします。第3の部分は、最初の括弧にマッ
-     チしたかどうKを調べる条件ۘサブパターンです。マッチしている
+     チしたかどうかを調べる条件付きサブパターンです。マッチしている
      場合、つまり、対象が左括弧で始まっている場合、条件はtrueと
      なり、yes-pattern が実行され、右括弧が必要となります。
      そうでない場合、no-pattern が存在しないため、サブパターンは
@@ -1706,12 +1786,12 @@ $fl_array = preg_grep ("/^(\d+)?\.\d+$/", $array);
      目に置いています。
 
        (?(?=[^a-z]*[a-z])
-       \d{2}[a-z]{3}-\d{2}  |  \d{2}-\d{2}-\d{2} )
+       \d{2}-[a-z]{3}-\d{2}  |  \d{2}-\d{2}-\d{2} )
 
      条件は、肯定後方言明であり、英字以外の文字の並びかその後に
      英字が続くものにマッチします。言いかえると、対象文字列に少な
      くとも文字が一つあるかどうかを調べます。文字がみつかると、
-     検索対象は最初の選択肢に対してマッチします〣]うgない場合
+     検索対象は最初の選択肢に対してマッチします。みつからない場合
      は、2番目にマッチします。このパターンは、2つの形式 dd-aaa-dd
      または dd-dd-dd のどちらかの文字列にマッチします。ただし、
      aaa は英字、dd は数字です。
@@ -1724,6 +1804,55 @@ $fl_array = preg_grep ("/^(\d+)?\.\d+$/", $array);
      PCRE_EXTENDED オプションが設定されている場合、文字クラスの外
      にあるエスケープされていない # 文字は、コメントを指定します。
      コメントは、パターン中の次の改行文字まで続きます。
+
+再帰的パターン
+     無制限のネストを許容する括弧を含む文字列にマッチを行う問題を考え
+     てみましょう。再帰を使用しない場合、実現可能な最良の方法は、何ら
+     かの固定した深さのネストまでマッチを行うパターンを使用することで
+     す。これでは、任意の深さのネストを処理することはできません。Perl
+     5.6では、(他の機能と共に)正規表現で再帰を行うことを可能にする実験
+     的な機能がサポートされています。専用のシーケンス (?R)が再帰を指定
+     するためにサポートされています。このPCREパターンによりこの括弧の
+     問題は次のように解決されます。(空白を無視するためにPCRE_EXTENDED
+     オプションが設定されていると仮定します)
+
+       \( ( (?>[^()]+) | (?R) )* \)
+
+     まず、このパターンは開き括弧にマッチします。続いて、括弧以外の並
+     びまたはパターン自体に再帰的にマッチする部分文字列に何回でもマッ
+     チします。最後に閉じ括弧にマッチします。
+
+     このパターン例には、ネストした無制限の反復が含まれており、このた
+     め、マッチしない文字列のパターンを適用する際に括弧以外の文字列に
+     一回だけマッチするサブパターンを使用することが重要です。例えば、
+     このパターンを次の文字列に適用した場合、
+
+       (aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa()
+
+     "マッチしない"という判定が速やかに行われます。しかし、一回限りの
+     サブパターンを使用しない場合、対象文字列を分割可能な + と * の反
+     復の種類が非常に多く、失敗を出力する前に全てを確認する必要がある
+     ため、マッチに非常に時間がかかります。
+
+     値を取得するサブパターンに設定される値は、サブパターンの値が設定
+     される最も外側の再帰のレベルからのものです。上記のパターンを以下
+     にマッチさせる場合、
+
+       (ab(cd)ef)
+
+     値を取得する括弧の値は"ef"であり、最上位レベルの最後の値です。
+     次のように括弧を追加すると、
+
+       \( ( ( (?>[^()]+) | (?R) )* ) \)
+          ^                        ^
+          ^                        ^ 取得される文字列は、"ab(cd)ef" と
+          なり、最上位レベルの括弧の中身となります。一つのパターン内に
+          15以上の取得用括弧がある場合、PCREは再帰の間のデータ保存用に
+          追加のメモリを取得する必要があります。これは、pcre_malloc に
+          より確保され、後で pcre_free により開放されます。メモリが取
+          得できない場合、メモリ不足エラーを再帰の内側から出力する手段
+          はないため、最初の15個の取得用括弧についてのみデータが保存さ
+          れます。
 
 性能
      パターンの幾つかの要素は、他の要素よりもより効率的です。
@@ -1755,6 +1884,36 @@ $fl_array = preg_grep ("/^(\d+)?\.\d+$/", $array);
      にパターンを ^.* で開始することにより最高の性能が得られます。
      これにより、PCRE が対象文字列の改行を探し、そこで再スタート
      することを防止します。
+
+     ネストした未確定の反復を有するパターンには注意を要します。
+     このパターンをマッチしない文字列に適用した場合には、実行に長い時
+     間を要します。次のパターンを考えてみましょう。
+
+       (a+)*
+
+     これは、33通りの異なった方法で、"aaaa"にマッチします。この数は、
+     文字列が長くなるにつれて急激に増大します。(* 反復は、0、1、2、3、
+     4回マッチし、0以外の各々のケースで、+反復は異なった回数分マッチし
+     ます) パターンの残りにマッチ全体が失敗するようなパターンである場
+     合、PCREは基本的に全ての可能性がある選択肢を調べるため、非常に長
+     い時間がかかります。
+
+     次のように文字リテラルが後にあるようなより簡単な場合には最適化が
+     可能です。
+
+       (a+)*b
+
+     標準のマッチ手順に着手する前に、PCREは対象文字列の後の方に"b"があ
+     るかどうかを調べます。これがない場合には、直ちにマッチは失敗しま
+     す。しかし、リテラルが後にない場合には、この最適化を使用すること
+     はできません。以下のパターンと上のパターンの動作の差異を比較して
+     みましょう。
+
+       (a+)*\d
+
+     前者は、全体が "a" 文字である行に適用された場合にほぼ瞬間的に失敗
+     と判定します。一方、後者では、およそ20文字より長い文字列ではかな
+     りの時間がかかります。
     </literallayout>
    </refsect1>
   </refentry>
