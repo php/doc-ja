@@ -39,13 +39,59 @@
     <para>
      assersion は、入力パラメータのチェックのような通常の実行動作に使
      用するべきではありません。一般的には、assertion のチェックが有効
-     でない場合に自分のコード常に成城に動作することができる必要があり
+     でない場合に自分のコードを常に正常に動作することができる必要があり
      ます。
     </para>
     <para>
      <function>assert</function> の動作は、
      <function>assert_options</function> またはマニュアルの関数の部分
      に記述された .ini の設定により設定することが可能です。
+    </para>
+    <para>
+     関数 <function>assert_options</function> かつ/または
+     ASSERT_CALLBACK 設定ディレクティブにより失敗したassertionを
+     処理するコールバック関数を設定することが可能です。
+    </para>
+    <para>
+     <function>assert</function> のコールバックは、assertionが発生
+     した場所に関する情報と共にassertionに渡されたコードを容易にキャ
+     プチャーできるため、特に自動テストセットを構築する際に便利です。
+     この情報は他の手法でもキャプチャー可能ですが、assertionを使用
+     することにより、より簡単かつ容易に行なうことが可能です!
+    </para>
+    <para>
+     コールバック関数は、3つの引数を受ける必要があります。最初の引数
+     は、assertionが失敗したファイルが含まれます。2番目の引数には、
+     assertionが失敗した行が含まれ、3番目の引数には失敗した式が含ま
+     れます。(もしある場合のみ。1または"two"のようなリテラルの値はこ
+     の引数に渡されません)
+    </para>
+    <para>
+     <example>
+      <title>カスタムハンドラで失敗したassertionを処理する</title>
+      <programlisting role="php">
+&lt;?php
+// assertを有効にし、出力を抑制する
+assert_options (ASSERT_ACTIVE, 1);
+assert_options (ASSERT_WARNING, 0);
+assert_options (ASSERT_QUIET_EVAL, 1);
+
+// ハンドラ関数を作成する
+function my_assert_handler ($file, $line, $code) {
+	echo "&lt;hr&gt;Assertion Failed:
+		File '$file'&lt;br&gt;
+		Line '$line'&lt;br&gt;
+		Code '$code'&lt;br&gt;&lt;hr&gt;";
+}
+
+// コールバックを設定する
+assert_options (ASSERT_CALLBACK, 'my_assert_handler');
+
+// 失敗するassertionを作成
+assert ('mysql_query ("")');
+?&gt;
+      </programlisting>
+     </example>
     </para>
    </refsect1>
   </refentry> 
@@ -720,7 +766,7 @@ echo $dat["ru_utime.tv_usec"]; # 使用するユーザー時間 (マイクロ秒
          <row>
           <entry>register_globals</entry>
           <entry>"1"</entry>
-          <entry>PHP_INI_ALL</entry>
+          <entry>PHP_INI_PERDIR|PHP_INI_SYSTEM</entry>
          </row>
          <row>
           <entry>safe_mode</entry>
@@ -749,7 +795,7 @@ echo $dat["ru_utime.tv_usec"]; # 使用するユーザー時間 (マイクロ秒
          </row>
          <row>
           <entry>arg_separator</entry>
-          <entry>"&"</entry>
+          <entry>"&amp;"</entry>
           <entry>PHP_INI_ALL</entry>
          </row>
          <row>
@@ -1094,6 +1140,8 @@ phpcredits(CREDITS_GENERAL);
     <para>
      オプションのパラメータ <parameter>what</parameter> に以下の値を一
      つまたは複数指定することにより出力をカスタマイズすることが可能です。
+     (<link linkend="language.operators.bitwise">or</link>演算子により
+     これらを組み合わせることが可能です。)
      <itemizedlist>
       <listitem><simpara>INFO_GENERAL</simpara></listitem>
       <listitem><simpara>INFO_CREDITS</simpara></listitem>
@@ -1256,15 +1304,35 @@ if (substr(php_uname(), 0, 7) == "Windows") {
      </funcprototype>
     </funcsynopsis>
     <para>
-     サーバーの環境変数に <parameter>setting</parameter> を追加します。この環境変数は、カレントのリクエストを実行している間のみ存在します。リクエスト終了時、環境変数は元の状態に戻されます。
+     サーバーの環境変数に <parameter>setting</parameter> を追加します。
+     この環境変数は、カレントのリクエストを実行している間のみ存在します。
+     リクエスト終了時、環境変数は元の状態に戻されます。
     </para>
     <para>
-     ある種の環境変数が変更されることは潜在的なセキュリティリスクとなる可能性があります。<literal>safe_mode_allowed_env_vars</literal> ディレクティブには接頭辞のカンマ区切りのリストが含まれます。セーフモードでは、ユーザはこのディレクティブで指定された接頭辞で始まる名前を有する環境変数のみを変更可能となります。
-デフォルトでは、ユーザは<literal>PHP_</literal> で始まる環境変数(例えば<literal>PHP_FOO=BAR</literal>)のみを変更可能です。注意:このディレクティブが空の場合、PHPはユーザに全ての環境変数を修正できる許可を与えてしまいます!
+     ある種の環境変数が変更されることは潜在的なセキュリティリスクとなる
+     可能性があります。<literal>safe_mode_allowed_env_vars</literal> 
+     ディレクティブには接頭辞のカンマ区切りのリストが含まれます。セーフ
+     モードでは、ユーザはこのディレクティブで指定された接頭辞で始まる名前
+     を有する環境変数のみを変更可能となります。
+     デフォルトでは、ユーザは<literal>PHP_</literal> で始まる環境変数
+     (例えば<literal>PHP_FOO=BAR</literal>)のみを変更可能です。注意:この
+     ディレクティブが空の場合、PHPはユーザに全ての環境変数を修正できる許可
+     を与えてしまいます!
     </para>
     <para>
-     <literal>safe_mode_protected_env_vars</literal> ディレクティブには、カンマ区切りの環境変数のリストが含まれます。ユーザは、この環境変数を<function>putenv</function>により変更することができません。これらの変数は、<literal>safe_mode_allowed_env_vars</literal>が変更することを許可している場合でも保護されます。
+     <literal>safe_mode_protected_env_vars</literal> ディレクティブには、
+     カンマ区切りの環境変数のリストが含まれます。ユーザは、この環境変数
+     を<function>putenv</function>により変更することができません。これら
+     の変数は、<literal>safe_mode_allowed_env_vars</literal>が変更するこ
+     とを許可している場合でも保護されます。
     </para>
+    <warning>
+     <para>
+      これらのディレクティブは、
+      <link linkend="features.safe-mode">セーフモード</link> が有効な場合に
+      のみ効果があります!
+     </para>
+    </warning>
     <para>
      <example>
       <title>環境変数の設定</title>

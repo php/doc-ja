@@ -31,9 +31,9 @@
    <sect1 id="yaz.install">
    <title>インストール</title>
     <para>
-     YAZをコンパイルし、インストールして下さい。PHPをオプション--
-     with-yazを付けて他の任意のモジュールとコンパイルして下さい。この
-     手順の概要を以下に示します。
+     YAZをコンパイルし、インストールして下さい。PHPをオプション
+     <literal>--with-yaz</literal>を付けて他の任意のモジュールと
+     コンパイルして下さい。この手順の概要を以下に示します。
     </para>
     <para>
      <informalexample>
@@ -181,8 +181,8 @@ if (empty($term) || count($host) == 0) {
      <funcprototype>
       <funcdef>int <function>yaz_connect</function></funcdef>
       <paramdef>string <parameter>zurl</parameter></paramdef>
-      <paramdef>string
-       <parameter><optional>authentication</optional></parameter>
+      <paramdef>mixed
+       <parameter><optional>options</optional></parameter>
       </paramdef>
      </funcprototype>
     </funcsynopsis>
@@ -194,6 +194,59 @@ if (empty($term) || count($host) == 0) {
      ソケットを作成しようとしません。単に後で
      <function>yaz_wait</function>がコールされた際に接続を実行する準備
      を行うだけです。
+    </para>
+    <para>
+     2番目の引数、<parameter>options</parameter>に文字列が指定された場合、
+     Z39.50 V2認証文字列(OpenAuth)として処理されます。
+    </para>
+    <para>
+     <parameter>options</parameter> に配列が指定された場合、その配列の内
+     容はオプションとして処理されます。配列オプションは、PHP 4.0.7以降
+     でのみサポートされることに注意して下さい。
+
+     <variablelist>
+      <title><function>yaz_connect</function> オプション</title>
+      <varlistentry><term>user</term><listitem>
+	<simpara>認証用のユーザ名
+	</simpara></listitem>
+      </varlistentry>
+      <varlistentry><term>group</term><listitem>
+	<simpara>認証用のグループ
+	</simpara></listitem>
+      </varlistentry>
+      <varlistentry><term>password</term><listitem>
+	<simpara>認証用のパスワード
+	</simpara></listitem>
+      </varlistentry>
+      <varlistentry><term>cookie</term><listitem>
+	<simpara>セッションクッキー (YAZ proxy).
+	</simpara></listitem>
+      </varlistentry>
+      <varlistentry><term>proxy</term><listitem>
+	<simpara>接続用プロキシ (YAZ proxy).
+	</simpara></listitem>
+      </varlistentry>
+      <varlistentry><term>persistent</term><listitem>
+	<simpara>
+	 論理値。&true; の場合、接続は持続的となります。&false; の
+	 場合、接続は持続的ではありません。デフォルトで、接続は
+	 持続的です。
+	</simpara>
+       </listitem>
+      </varlistentry>
+      <varlistentry><term>piggyback</term><listitem>
+	<simpara>
+	 論理値。&true; の場合、検索時のpiggybackが有効になります。
+	 &false; の場合、piggybackが無効になります。デフォルトでは、
+	 piggyback は有効です。piggybackを有効にするとより効率的となり、
+	 通常、レコードを最初に取得する際のネットワーク往復時間を節約
+	 することが可能です。しかし、少数の Z39.50ターゲットは
+	 piggybackをサポートしていないか、エレメント集合名を無視します。
+	 この場合、piggybackを無効とする必要があります。
+	</simpara>
+       </listitem>
+      </varlistentry>
+     </variablelist>
     </para>
    </refsect1>
   </refentry>
@@ -446,37 +499,36 @@ if (empty($term) || count($host) == 0) {
         </row>
       </tbody>
      </tgroup>
-    </table>     
-    <para>
-     以下は、有効なクエリ構造を説明するものです。
-     <informalexample>
+    </table> 
+    <example>
+     <title>クエリの例</title>
+     <para>
+      クエリ
       <screen>computer</screen>
-     </informalexample>
-      "computer" がある文書にマッチします。属性は指定されてません。
-    </para>
-    <para>
-     <informalexample>
+      は、"computer"を含む文書にマッチします。属性は指定されていません。
+     </para>
+     <para>
+      クエリ
       <screen>"donald knuth"</screen>
-     </informalexample>
-     "donald knuth" がある文書にマッチします。
-    </para>
-    <para>
-     <informalexample>
-      <screen>@attr 1=4 art</screen>
-     </informalexample>
-     属性型は1 (Bib-1 使用)で、属性値は 4(タイトル)です。これにより、
-     "art"がタイトルにある文書にマッチします。
-    </para>
-    <para>
-     <informalexample>
+      は、"donald knuth" がある文書にマッチします。
+     </para>
+     <para>
+      クエリ
+      <screen>@attr 1=4 art</screen>の場合、
+      属性型は1 (Bib-1 use)、属性の値は4 (Title)となります。このため、
+      titleに<literal>art</literal>が現れる文書にマッチします。
+     </para>
+     <para>
+      その他のより複雑なクエリの例:
       <screen>@attrset gils @and @attr 1=4 art @attr 1=1003 "donald knuth"</screen>
-     </informalexample>
-     このクエリは全体にGILS属性セットを使用します。このクエリはtitleに
-     "art"があり、authorに"donald knuth"がある文書にマッチします。
-    </para>
+      このクエリは、GILS属性集合を使用しています。クエリはtitleに
+      <literal>art</literal>が現れ、authorに<literal>donald knuth</literal>
+      が現れる文書にマッチします。
+     </para>
+    </example>
    </refsect1>
   </refentry>
-
+  
   <refentry id="function.yaz-present">
    <refnamediv>
     <refname>yaz_present</refname>
@@ -850,7 +902,9 @@ itemorder-item
     <funcsynopsis>
      <funcprototype>
       <funcdef>int <function>yaz_wait</function></funcdef>
-      <void></void>
+      <paramdef>
+       <parameter><optional>array options</optional></parameter>
+      </paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
@@ -862,6 +916,21 @@ itemorder-item
      トが全てのリクエストを完了したか、(エラーの場合には)中断された場
      合に処理を戻します。
     </para>
+    <para>
+     配列 <parameter>options</parameter> が指定された場合、
+     <function>yaz_wait</function>の動作を変更するオプションとなります。
+    </para>
+    <variablelist>
+     <varlistentry><term><literal>timeout</literal></term>
+      <listitem>
+       <para>
+	時間のタイムアウトを設定します。ターゲットが時間内に応答しなかっ
+	た場合、動作していないとみなされ、<function>yaz_wait</function>
+	は帰ります。タイムアウトのデフォルト値は15sです。
+       </para>
+      </listitem>
+     </varlistentry>
+    </variablelist>
    </refsect1>
   </refentry>
 
