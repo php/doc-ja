@@ -251,6 +251,9 @@ preg_match_all ("/\(?  (\d{3})?  \)?  (?(1)  [\-\s] ) \d{3}-\d{4}/x",
      <example>
       <title>HTMLタグにマッチするものを見付ける(greedy)</title>
       <programlisting role="php">
+// the \\2 is an example of backreferencing. This tells pcre that
+// it must match the 2nd set of parenthesis in the regular expression
+// itself, which would be the ([\w]+) in this case.
 $html = "&lt;b&gt;bold text&lt;b&gt;lt;a href=howdy.html&gt;click me&lt;a&gt;
 
 preg_match_all ("/(&lt;([\w]+)[^&gt;]*&gt;)(.*)(&lt;\/\\2&gt;)/", 
@@ -398,33 +401,34 @@ preg_replace ("/(<\/?)(\w+)([^>]*>)/e",
 	  
 $search = array ("'&lt;script[^&gt;]*?&gt;.*?&lt;/script&gt;'si",   
                                                 // javascriptを削除
-"'&lt;[\/\!]*?[^&lt;&gt;]*?&gt;'si",            // htmlタグを削除
-"'([\r\n])[\s]+'",                              // 空白を削除
-"'&amp;(quote|#34);'i",                         // htmlエンティティを置換
-"'&amp;(amp|#38);'i",
-"'&amp;(lt|#60);'i",
-"'&amp;(gt|#62);'i",
-"'&amp;(nbsp|#160);'i",
-"'&amp;(iexcl|#161);'i",
-"'&amp;(cent|#162);'i",
-"'&amp;(pound|#163);'i",
-"'&amp;(copy|#169);'i"
-);              
+                 "'&lt;[\/\!]*?[^&lt;&gt;]*?&gt;'si",  // Strip out html tags
+                 "'([\r\n])[\s]+'",  // Strip out white space
+                 "'&amp;(quote|#34);'i",  // Replace html entities
+                 "'&amp;(amp|#38);'i",
+                 "'&amp;(lt|#60);'i",
+                 "'&amp;(gt|#62);'i",
+                 "'&amp;(nbsp|#160);'i",
+                 "'&amp;(iexcl|#161);'i",
+                 "'&amp;(cent|#162);'i",
+                 "'&amp;(pound|#163);'i",
+                 "'&amp;(copy|#169);'i",
+                 "'&amp;#(\d+);'e");  // evaluate as php
 
-$replace = array(   "",
-                    "",
-                    "\\1",
-                    "\"",
-                    "&amp;",
-                    "&lt;",
-                    "&gt;",
-                    " ",
-                    chr(161),
-                    chr(162),
-                    chr(163),
-                    chr(169));
+$replace = array ("",
+                  "",
+                  "\\1",
+                  "\"",
+                  "&amp;",
+                  "&lt;",
+                  "&gt;",
+                  " ",
+                  chr(161),
+                  chr(162),
+                  chr(163),
+                  chr(169),
+                  "chr(\\1)");
 
-$text = preg_replace ($search,$replace,$document);
+$text = preg_replace ($search, $replace, $document);
       </programlisting>
      </example>
     </para>
@@ -477,13 +481,10 @@ $text = preg_replace ($search,$replace,$document);
      <example>
       <title>検索文字列の一部を得る</title>
       <programlisting role="php">
+// split the phrase by any number of commas or space characters,
+// which include " ", \r, \t, \n and \f
 $keywords = preg_split ("/[\s,]+/", "hypertext language, programming");
       </programlisting>
-      <para>
-       この例は、テキストをスペースまたはカンマで分割します。よって、
-       配列 $keyword は、("hypertext", "language", "programming")とな
-       ります。
-      </para>
      </example>
      <function>preg_match</function>,
      <function>preg_match_all</function>, 
@@ -538,17 +539,17 @@ echo $keywords; // \$40 for a g3\/400 を返します。
      <example>
       <title>テキストの中の単語を置換する</title>
       <programlisting role="php">
+
+// In this example, preg_quote($word) is used to keep the
+// asterisks from having special meaning to the regular
+// expression.
+
 $textbody = "This book is *very* hard to find.";
 $word = "*very*";
-$textbody = preg_replace("|\b".preg_quote($word)."\b|",
-                         "&lt;i&gt;".$word."&lt;/i&gt;",$textbody);
+$textbody = preg_replace ("/".preg_quote($word)."/",
+                         "&lt;i&gt;".$word."&lt;/i&gt;",
+                          $textbody);
       </programlisting>
-      <para>
-       この例では、正規表現における特殊文字であるアスタリスクをエスケー
-       プするために preg_quote($word) を使用しています。付け加えると、
-       \bにより単語の境界を簡単に見付けることができます。これにより、
-       "is*very*big"のようなものにはマッチしません。
-      </para>
      </example>
     </para>
    </refsect1>
@@ -579,7 +580,9 @@ $textbody = preg_replace("|\b".preg_quote($word)."\b|",
      <example>
       <title><function>preg_grep</function>の例</title>
       <programlisting role="php">
-preg_grep ("/^(\d+)?\.\d+$/", $array); // 配列の全ての浮動少数点数を見つける
+// return all array elements
+// containing floating point numbers
+$fl_array = preg_grep ("/^(\d+)?\.\d+$/", $array);
       </programlisting>
      </example>
     </para>
@@ -822,8 +825,8 @@ preg_grep ("/^(\d+)?\.\d+$/", $array); // 配列の全ての浮動少数点数�
      しかし、パターンを/^(aa(b(b))?)+$/に変えると、$2 (および $3)
      が設定されます。
 
-     Perl 5.004 では、$2 はどちら�ケースでも設定されます。
-     これは、PCRE でも同様です。将来的に Perl が別の矛盾のない
+     Perl 5.004 では、$2 はどちら?±ースでも設定されます。
+     これは、PCRE でも�様です。将来的に Perl が別の矛盾のない
      状態に変更された場合、PCRE も追従する可能性があります。
 
      9. 他の未解決の矛盾は、Perl 5.005_02 では、パターン
@@ -1088,7 +1091,7 @@ preg_grep ("/^(\d+)?\.\d+$/", $array); // 配列の全ての浮動少数点数�
      文字クラスの外側では、パターンの中のドットは非出力文字を含む
      (デフォルトでは)改行以外の対象の全ての1文字にマッチします。
      PCRE_DOTALL オプションを設定した場合、ドットは改行にもマッチ
-     します。ド�トの処理は、ハット記号およびドル記号とは完全に
+     します。ドャÈの処理は、ハット記号およびドル記号とは完全�
      独立しています。共通な点は共に改行文字を含むことだけです。
      ドットは、文字クラスの中では特別な意味を持ちません。
 
@@ -1368,8 +1371,8 @@ preg_grep ("/^(\d+)?\.\d+$/", $array); // 配列の全ての浮動少数点数�
 
      はCコメントに正しくマッチします。様々な反復指定子の意味は、
      他には変化せず、好ましいマッチの数だけが変更されます。
-     この疑問符の使用法を反復指定子がその�にある場合の使用法と
-     こんなランしないようにして下さい。2種類の使用法があるので、
+     この疑問符の使用法を反復指定子がその?kある場合の使用法と
+     こんなランしないように�て下さい。2種類の使用法があるので、
      時々、次のように2重に使用されることがあります。
 
        \d??\d
@@ -1663,14 +1666,14 @@ preg_grep ("/^(\d+)?\.\d+$/", $array); // 配列の全ての浮動少数点数�
      最初の部分は、オプションの左括弧にマッチし、その文字がある場
      合に、最初の部分文字列として設定します。第2の部分は、括弧以外
      の一つ以上の文字にマッチします。第3の部分は、最初の括弧にマッ
-     チしたかどうかを調べる条件付サブパターンです。マッチしている
+     チしたかどう��を調べる条件付サブパターンです。マッチしている
      場合、つまり、対象が左括弧で始まっている場合、条件はtrueと
      なり、yes-pattern が実行され、右括弧が必要となります。
      そうでない場合、no-pattern が存在しないため、サブパターンは
      何にもマッチしません。言いかえると、このパターンは、括弧なし
      の並びにマッチし、オプションで括弧で囲まれた並びにマッチします。
 
-     条件が数字の並っg内��合、言明となります。肯定あるいは否定の
+     条件が数字の並っg内4合、言明となります。肯定あるいは否定の
      前方または後方言明となります。次のパターンを見てみましょう。
      このパターンにも意味のないパターンを挿入し、2つの選択肢を2行
      目に置いています。
