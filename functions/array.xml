@@ -1,5 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.34 $ -->
  <reference id="ref.array">
-  <title>配列関数</title>
+  <title>配列関数(array)</title>
   <titleabbrev>Arrays</titleabbrev>
   <partintro>
    <simpara>
@@ -7,11 +9,16 @@
     になります。配列は、変数の組を保存、管理、操作する基本的な要素です。
    </simpara>
    <simpara>
-    単純な配列および多次元配列がサポートされており、ユーザが定義したり、
-    他の関数で作成することも可能です。
-    いくつかのデータベース処理関数は、データベースのクエリから配列を返
-    しますし、複数の関数は、配列を返します。
+    通常の配列および多次元配列がサポートされており、ユーザが定義したり、
+    他の関数で作成することも可能です。いくつかのデータベース処理関数は、
+    データベースのクエリから配列を返しますし、いくつかの関数は配列を返
+    します。
    </simpara>
+   <para>
+    PHPでの配列の実装や使用方法の詳細については、マニュアルの
+    <link linkend="language.types.array">配列</link>に関する節を参照下
+    さい。
+   </para>
    <para>
     <function>is_array</function>, <function>explode</function>, 
     <function>implode</function>, <function>split</function>,
@@ -121,6 +128,94 @@ Array
    </refsect1>
   </refentry>
 
+  <refentry id="function.array-chunk">
+   <refnamediv>
+    <refname>array_chunk</refname>
+    <refpurpose>配列を分割する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>array <function>array_chunk</function></funcdef>
+      <paramdef>array <parameter>input</parameter></paramdef>
+      <paramdef>int <parameter>size</parameter></paramdef>
+      <paramdef>bool 
+       <parameter><optional>preserve_keys</optional></parameter>
+      </paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     <function>array_chunk</function> は、各配列が
+     <parameter>size</parameter>個の値を有するように配列を複数の配列に
+     分割します。最後の配列には指定した数よりも少ない個数の値が含まれ
+     る可能性があります。ゼロから始まる添字を有する多次元配列のメンバー
+     としてこれらの配列を取得します。
+    </para>
+    <para>
+     オプションの引数<parameter>preserve_keys</parameter>に&true;を設
+     定することにより、配列inputから取得した元のキーを維持させることが
+     可能です。&false;を指定した場合、返される各配列ではゼロから始まる
+     新しい添字が使用されます。デフォルトは、&false;です。
+    </para>
+    <para>
+     <example>
+      <title><function>array_chunk</function> の例</title>
+      <programlisting role="php">
+$input_array = array('a', 'b', 'c', 'd', 'e');
+print_r(array_chunk($input_array, 2));
+print_r(array_chunk($input_array, 2, TRUE));
+      </programlisting>
+     </example>     
+     上のプログラムの出力は以下のようになります。
+     <informalexample>
+      <programlisting>
+Array
+(
+    [0] => Array
+        (
+            [0] => a
+            [1] => b
+        )
+
+    [1] => Array
+        (
+            [0] => c
+            [1] => d
+        )
+
+    [2] => Array
+        (
+            [0] => e
+        )
+
+)
+Array
+(
+    [0] => Array
+        (
+            [0] => a
+            [1] => b
+        )
+
+    [1] => Array
+        (
+            [2] => c
+            [3] => d
+        )
+
+    [2] => Array
+        (
+            [4] => e
+        )
+
+)
+      </programlisting>
+     </informalexample>
+    </para>
+   </refsect1>
+  </refentry>
+
   <refentry id="function.array-count-values">
    <refnamediv>
     <refname>array_count_values</refname>
@@ -201,6 +296,63 @@ $result = array_diff ($array1, $array2);
    </refsect1>
   </refentry>
 
+  <refentry id="function.array-filter">
+   <refnamediv>
+    <refname>array_filter</refname>
+    <refpurpose>
+     コールバック関数を使用する配列要素フィルタ
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>array <function>array_filter</function></funcdef>
+      <paramdef>array <parameter>input</parameter></paramdef>
+      <paramdef>mixed 
+       <parameter><optional>callback</optional></parameter>
+      </paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     <function>array_filter</function> は、コールバック関数によりフィ
+     ルタ処理が行われた<parameter>input</parameter>の全ての要素を含む
+     配列を返します。<parameter>input</parameter>が連想配列の場合、キー
+     は保存されます。
+    </para>
+    <para>
+     <example>
+      <title><function>array_filter</function>の例</title>
+      <programlisting role="php">
+function odd($var) {
+    return ($var % 2 == 1);
+}
+
+function even($var) {
+    return ($var % 2 == 0); 
+}
+
+$array1 = array ("a"=&gt;1, "b"=&gt;2, "c"=&gt;3, "d"=&gt;4, "e"=&gt;5);
+$array2 = array (6, 7, 8, 9, 10, 11, 12);
+
+$odd_arr = array_filter($array1, "odd");
+$even_arr = array_filter($array2, "even");
+      </programlisting>
+     </example>
+    </para>     
+    <para>
+     この例により、<varname>$odd_arr</varname> は
+     <literal>array ("a"=&gt;1, "c"=&gt;3, "e"=&gt;5);</literal> とな
+     り、<varname>$even_arr</varname> は
+     <literal>array (6, 8, 10, 12);</literal>となります。
+    </para>
+    <para>
+     <function>array_map</function>,
+     <function>array_reduce</function>も参照下さい。
+    </para>
+   </refsect1>
+  </refentry>
+
   <refentry id="function.array-flip">
    <refnamediv>
     <refname>array_flip</refname>
@@ -230,6 +382,50 @@ $original = strtr ($str, $trans);
        この関数は、PHP 4.0で追加されました。
       </para> 
      </note>
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.array-fill">
+   <refnamediv>
+    <refname>array_fill</refname>
+    <refpurpose>配列を指定した値で埋める</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>array <function>array_fill</function></funcdef>
+      <paramdef>int <parameter>start_index</parameter></paramdef>
+      <paramdef>int <parameter>num</parameter></paramdef>
+      <paramdef>mixed <parameter>value</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     <function>array_fill</function> は、
+     パラメータ<parameter>value</parameter>を値とする
+     <parameter>num</parameter>個のエントリからなる配列を埋めます。
+     この際、キーは、<parameter>start_index</parameter>パラメータから
+     外します。
+    </para>
+    <para>
+     <example>
+      <title><function>array_fill</function> の例</title>
+      <programlisting role="php">
+$a = array_fill(5, 6, 'banana');
+
+/*
+$a now has the following entries:
+
+$a[5]  = "banana";
+$a[6]  = "banana";
+$a[7]  = "banana";
+$a[8]  = "banana";
+$a[9]  = "banana";
+$a[10] = "banana";
+*/
+      </programlisting>
+     </example>     
     </para>
    </refsect1>
   </refentry>
@@ -967,6 +1163,75 @@ $result_keyed = array_reverse ($input, TRUE);
    </refsect1>
   </refentry>
  
+  <refentry id="function.array-reduce">
+   <refnamediv>
+    <refname>array_reduce</refname>
+    <refpurpose>
+     コールバックを用いて配列を普通の値に変更することにより、配列を再
+     帰的に減らします。
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>mixed <function>array_reduce</function></funcdef>
+      <paramdef>array <parameter>input</parameter></paramdef>
+      <paramdef>mixed <parameter>callback</parameter></paramdef>
+      <paramdef>int
+       <parameter><optional>initial</optional></parameter>
+      </paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     <function>array_reduce</function> applies iteratively the
+     <parameter>callback</parameter> function to the elements of the
+     array <parameter>input</parameter>, so as to reduce the array to
+     a single value. If the optional <parameter>intial</parameter> is
+     avaliable, it will be used at the beginning of the process, or as
+     a final result in case the array is empty.
+    </para>
+    <para>
+     <example>
+      <title><function>array_reduce</function> example</title>
+      <programlisting role="php">
+function rsum($v, $w) {
+    $v += $w;
+    return $v;
+}
+
+function rmul($v, $w) {
+    $v *= $w;
+    return $v;
+}
+
+$a = array(1, 2, 3, 4, 5);
+$x = array();
+$b = array_reduce($a, "rsum");
+$c = array_reduce($a, "rmul", 10);
+$d = array_reduce($x, "rsum", 1);
+      </programlisting>
+     </example>
+    </para>
+    <para>
+     This will result in <varname>$b</varname> containing
+     <literal>15</literal>, <varname>$c</varname> containing
+     <literal>1200</literal> (= 1*2*3*4*5*10), and
+     <varname>$d</varname> containing <literal>1</literal>.
+    </para>
+    <para>
+     See also <function>array_filter</function>,
+     <function>array_map</function>.
+    </para>
+   </refsect1>
+  </refentry>
+
+
+  <parameter>num</parameter> entries of the value of the 
+  <parameter>value</parameter> parameter, keys starting at the 
+  <parameter>start_index</parameter> parameter.
+ </para>
+
   <refentry id="function.array-shift">
    <refnamediv>
     <refname>array_shift</refname>
