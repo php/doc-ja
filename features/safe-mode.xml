@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.8 $ -->
+<!-- $Revision: 1.9 $ -->
  <chapter id="features.safe-mode">
   <title>セーフモード</title>
 
@@ -10,19 +10,240 @@
    てきではないため、多くのユーザ、特にISPではセーフモードが現在使用され
    ています。
   </para>
-  <para>
-   セーフモードを制御する設定ディレクティブには、次のようなものがあります。
-   <programlisting role="ini">
-<![CDATA[
-safe_mode = Off 
-open_basedir = 
-safe_mode_exec_dir = 
-safe_mode_allowed_env_vars = PHP_ 
-safe_mode_protected_env_vars = LD_LIBRARY_PATH 
-disable_functions = 
-]]>
-   </programlisting>
-  </para>
+
+  <sect1 id="ini.sect.safe-mode">
+   <title>セキュリティとセーフモード</title>
+   <para>
+    <table>
+     <title>セキュリティとセーフモード設定ディレクティブ</title>
+     <tgroup cols="3">
+      <thead>
+       <row>
+        <entry>名前</entry>
+        <entry>デフォルト</entry>
+        <entry>変更の可否</entry>
+       </row>
+      </thead>
+      <tbody>
+      <row>
+       <entry>safe_mode</entry>
+       <entry>"0"</entry>
+       <entry>PHP_INI_SYSTEM</entry>
+      </row>
+      <row>
+       <entry>safe_mode_gid</entry>
+       <entry>"0"</entry>
+       <entry>PHP_INI_SYSTEM</entry>
+      </row>
+      <row>
+       <entry>safe_mode_include_dir</entry>
+       <entry>NULL</entry>
+       <entry>PHP_INI_SYSTEM</entry>
+      </row>
+      <row>
+       <entry>safe_mode_exec_dir</entry>
+       <entry>""</entry>
+       <entry>PHP_INI_SYSTEM</entry>
+      </row>
+      <row>
+       <entry>safe_mode_allowed_env_vars</entry>
+       <entry>PHP_</entry>
+       <entry>PHP_INI_SYSTEM</entry>
+      </row>
+      <row>
+       <entry>safe_mode_protected_env_vars</entry>
+       <entry>LD_LIBRARY_PATH</entry>
+       <entry>PHP_INI_SYSTEM</entry>
+      </row>
+      <row>
+       <entry>open_basedir</entry>
+       <entry>NULL</entry>
+       <entry>PHP_INI_SYSTEM</entry>
+      </row>
+      <row>
+       <entry>disable_functions</entry>
+       <entry>""</entry>
+       <entry>PHP_INI_SYSTEM</entry>
+      </row>
+      </tbody>
+     </tgroup>
+    </table>
+    PHP_INI_*の定義と詳細については、
+    <function>ini_set</function>を参照して下さい。
+   </para>
+   <para>
+   セーフモードの設定ディレクティブの簡単な説明を以下に示します。
+    <variablelist>
+     <varlistentry id="ini.safe-mode">
+      <term>
+       <parameter>safe_mode</parameter>
+       <type>boolean</type>
+      </term>
+      <listitem>
+       <para>
+        Whether to enable PHP's safe mode. Read the
+        <link linkend="security">Security</link> and chapter for more
+        information.
+       </para>
+      </listitem>
+     </varlistentry>
+     <varlistentry id="ini.safe-mode-gid">
+      <term>
+       <parameter>safe_mode_gid</parameter>
+       <type>boolean</type>
+      </term>
+      <listitem>
+       <para>
+        By default, Safe Mode does a UID compare check when
+        opening files. If you want to relax this to a GID compare,
+        then turn on safe_mode_gid.
+        Whether to use <literal>UID</literal> (&false;) or
+        <literal>GID</literal> (&true;) checking upon file
+        access.
+       </para>
+      </listitem>
+     </varlistentry>
+     <varlistentry id="ini.safe-mode-include-dir">
+      <term>
+       <parameter>safe_mode_include_dir</parameter>
+       <type>string</type>
+      </term>
+      <listitem>
+       <para>
+        <literal>UID</literal>/<literal>GID</literal> checks are bypassed when
+        including files from this directory and its subdirectories (directory
+        must also be in <link linkend="ini.include-path">include_path</link>
+        or full path must including).
+       </para>
+       <simpara>
+        As of PHP 4.2.0, this directive can take a semi-colon separated 
+        path in a similar fashion to the
+        <link linkend="ini.include-path">include_path</link> directive,
+        rather than just a single directory.
+       </simpara>
+      </listitem>
+     </varlistentry>
+     <varlistentry id="ini.safe-mode-exec-dir">
+      <term>
+       <parameter>safe_mode_exec_dir</parameter>
+       <type>string</type>
+      </term>
+      <listitem>
+       <para>
+        If PHP is used in safe mode, <function>system</function> and the other
+        <link linkend="ref.exec">functions executing system programs</link>
+        refuse to start programs that are not in this directory.
+       </para>
+      </listitem>
+     </varlistentry>
+     <varlistentry id="ini.safe-mode-allowed-env-vars">
+      <term>
+       <parameter>safe_mode_allowed_env_vars</parameter>
+       <type>string</type>
+      </term>
+      <listitem>
+       <para>
+        Setting certain environment variables may be a potential security breach.
+        This directive contains a comma-delimited list of prefixes. In Safe Mode,
+        the user may only alter environment variables whose names begin with the
+        prefixes supplied here. By default, users will only be able to set
+        environment variables that begin with PHP_ (e.g. PHP_FOO=BAR).
+       </para>
+       <note>
+        <para>
+         If this directive is empty, PHP will let the user modify ANY
+         environment variable!
+        </para>
+       </note>
+      </listitem>
+     </varlistentry>
+     <varlistentry id="ini.safe-mode-protected-env-vars">
+      <term>
+       <parameter>safe_mode_protected_env_vars</parameter>
+       <type>string</type>
+      </term>
+      <listitem>
+       <para>
+        This directive contains a comma-delimited list of environment
+        variables that the end user won't be able to change using
+        <function>putenv</function>. These variables will be protected
+        even if safe_mode_allowed_env_vars is set to allow to change them.
+       </para>
+      </listitem>
+     </varlistentry>
+      <varlistentry id="ini.open-basedir">
+      <term>
+       <parameter>open_basedir</parameter>
+       <type>string</type>
+      </term>
+      <listitem>
+       <para>
+        Limit the files that can be opened by PHP to the specified
+        directory-tree. This directive is <emphasis>NOT</emphasis>
+        affected by whether Safe Mode is turned On or Off.
+       </para>
+       <para>
+        When a script tries to open a file with,
+        for example, fopen or gzopen, the location of the file is
+        checked. When the file is outside the specified directory-tree,
+        PHP will refuse to open it. All symbolic links are resolved,
+        so it's not possible to avoid this restriction with a symlink.
+       </para>
+       <para>
+        The special value <systemitem class="constant">.</systemitem>
+        indicates that the directory in which the script is stored will
+        be used as base-directory.
+       </para>
+       <para>
+        Under Windows, separate the directories with a semicolon. On all
+        other systems, separate the directories with a colon. As an Apache
+        module, open_basedir paths from parent directories are now
+        automatically inherited.
+       </para>
+       <para>
+         The restriction specified with open_basedir is actually a
+         prefix, not a directory name.  This means that "open_basedir =
+         /dir/incl" also allows access to "/dir/include" and
+         "/dir/incls" if they exist. When you want to restrict access
+         to only the specified directory, end with a slash. For example:
+         "open_basedir = /dir/incl/"
+       </para>
+       <note>
+        <para>
+         Support for multiple directories was added in 3.0.7.
+        </para>
+       </note>
+       <para>
+        The default is to allow all files to be opened.
+       </para>
+      </listitem>
+     </varlistentry>
+     <varlistentry id="ini.disable-functions">
+      <term>
+       <parameter>disable_functions</parameter>
+       <type>string</type>
+      </term>
+      <listitem>
+       <simpara>
+        This directive allows you to disable certain functions for 
+        <link linkend="security">security</link> reasons. It takes 
+        on a comma-dilimited list of function names. disable_functions
+        is not affected by <link linkend="ini.safe-mode">Safe Mode</link>.
+       </simpara>
+       <simpara>
+        This directive must be set in &php.ini; For example, you 
+        cannot set this in <filename>httpd.conf</filename>.
+       </simpara>
+      </listitem>
+     </varlistentry>
+    </variablelist>
+   </para>
+   <para>
+    See also: <link linkend="ini.register-globals">register_globals</link>,
+    <link linkend="ini.display-errors">display_errors</link>, and
+    <link linkend="ini.log-errors">log_errors</link>
+   </para>
+
   <para>
    <link linkend="ini.safe-mode">セーフモード</link>がonの場合、PHPは、
    現在のスクリプトの所有者がファイル関数により処理されているファイル
@@ -33,7 +254,7 @@ disable_functions =
 -rw-r--r--    1 root     root       1116 May 26 18:01 /etc/passwd 
 ]]>
    </programlisting>
-   以下のscript.php を実行すると、
+    以下のscript.php を実行すると、
    <programlisting role="php">
 <![CDATA[
 <?php
@@ -41,28 +262,38 @@ disable_functions =
 ?>
 ]]>
    </programlisting>
-   セーフモードが有効な場合、以下のようなエラーが出力されます。
-   <screen>
+    セーフモードが有効な場合、以下のようなエラーが出力されます。
+    <screen>
 <![CDATA[
 Warning: SAFE MODE Restriction in effect. The script whose uid is 500 is not 
 allowed to access /etc/passwd owned by uid 0 in /docroot/script.php on line 2
 ]]>
-   </screen>
+    </screen>
+   </para>
+   <para>
+    However, there may be environments where a strict <literal>UID</literal>
+   check is not appropriate and a relaxed <literal>GID</literal> check is
+   sufficient.  This is supported by means of the <link
+   linkend="ini.safe-mode-gid">safe_mode_gid</link> switch. Setting it to
+   <literal>On</literal> performs the relaxed <literal>GID</literal> checking,
+   setting it to <literal>Off</literal> (the default) performs
+   <literal>UID</literal> checking.
   </para>
   <para>
-   <link linkend="ini.safe-mode">safe_mode</link>の代わりに、
-   <link linkend="ini.open-basedir">open_basedir</link>ディレクトリを設定すると、
-   指定したディレクトリでの全てのファイル操作は、制限されます。
-   例を以下に示します。(Apache httpd.conf の例) 
+   If instead of <link linkend="ini.safe-mode">safe_mode</link>, you set an 
+   <link linkend="ini.open-basedir">open_basedir</link> directory then all
+   file operations will be limited to files under the specified directory
+   For example (Apache httpd.conf example): 
    <programlisting role="ini">
 <![CDATA[
 <Directory /docroot>
-php_admin_value open_basedir /docroot 
+  php_admin_value open_basedir /docroot 
 </Directory>
 ]]>
    </programlisting>
-   この<link linkend="ini.open-basedir">open_basedir</link>の設定で、
-   同じscript.phpを実行した場合、以下のような結果となります。
+   If you run the same script.php with this
+   <link linkend="ini.open-basedir">open_basedir</link> setting
+   then this is the result: 
    <screen>
 <![CDATA[
 Warning: open_basedir restriction in effect. File is in wrong directory in 
@@ -71,16 +302,17 @@ Warning: open_basedir restriction in effect. File is in wrong directory in
    </screen>
   </para>
   <para>
-   個々の関数を無効にすることも可能です。ただし、disable_functionsディレクティブは
-   &php.ini;ファイルにおいてのみ有効だということに気をつけて下さい。つまり、
-   httpd.confによるバーチャルホスト毎、ディレクトリ毎の指定は出来ません。
-   以下の設定をphp.iniファイルに追加してみましょう。
+   You can also disable individual functions. Note that the disable_functions 
+   directive can not be used outside of the &php.ini; file which means that
+   you cannot disable functions on a per-virtualhost or per-directory basis
+   in your httpd.conf file.
+   If we add this to our &php.ini; file: 
    <programlisting role="ini">
 <![CDATA[
 disable_functions readfile,system  
 ]]>
    </programlisting>
-   この場合、次のような出力となります。
+   Then we get this output: 
    <screen>
 <![CDATA[
 Warning: readfile() has been disabled for security reasons in 
@@ -88,6 +320,7 @@ Warning: readfile() has been disabled for security reasons in
 ]]>
    </screen>
   </para>
+ </sect1>
 
   <sect1 id="features.safe-mode.functions">
    <title>セーフモードにより制限を受けるか無効となる関数</title>
@@ -129,17 +362,17 @@ Warning: readfile() has been disabled for security reasons in
        </row>
        <row>
         <entry><function>ifx_*</function></entry>
-        <entry>sql_safe_mode restrictions, (!= safe-mode)</entry>
+        <entry>sql_safe_mode restrictions, (!= safe mode)</entry>
         <!-- TODO: more info on sql-safe-mode -->
        </row>
        <row>
         <entry><function>ingres_*</function></entry>
-        <entry>sql_safe_mode restrictions, (!= safe-mode)</entry>
+        <entry>sql_safe_mode restrictions, (!= safe mode)</entry>
         <!-- TODO: more info on sql-safe-mode -->
        </row>
        <row>
         <entry><function>mysql_*</function></entry>
-        <entry>sql_safe_mode restrictions, (!= safe-mode)</entry>
+        <entry>sql_safe_mode restrictions, (!= safe mode)</entry>
         <!-- TODO: more info on sql-safe-mode -->
        </row>
        <row>
@@ -176,13 +409,12 @@ Warning: readfile() has been disabled for security reasons in
         <entry>&sm.disabled;</entry>
        </row>
        <row>
-        <entry>
-	 <link linkend="language.operators.execution">backtick演算子</link>
-	</entry>
+        <entry><link linkend="language.operators.execution">backtick operator</link></entry>
         <entry>&sm.disabled;</entry>
        </row>
        <row>
-        <entry><function>shell_exec</function> (backticksに等価な機能)</entry>
+        <entry><function>shell_exec</function> (functional equivalent 
+        of backticks)</entry>
         <entry>&sm.disabled;</entry>
        </row>
        <row>
@@ -229,10 +461,7 @@ Warning: readfile() has been disabled for security reasons in
        </row>
        <row>
         <entry><function>rename</function></entry>
-        <entry>
-	 &sm.uidcheck; &sm.uidcheck.dir;
-	 <!-- on the old name only, it seems. Is rename preventing moving files? -->
-	</entry>
+        <entry>&sm.uidcheck; &sm.uidcheck.dir;<!-- on the old name only, it seems. Is rename preventing moving files? --></entry>
        </row>
        <row>
         <entry><function>unlink</function></entry>
@@ -241,7 +470,7 @@ Warning: readfile() has been disabled for security reasons in
        <row>
         <entry><function>copy</function></entry>
         <entry>&sm.uidcheck; &sm.uidcheck.dir; ( 
-        <parameter>source</parameter> および
+        <parameter>source</parameter>および 
         <parameter>target</parameter>において) </entry>
        </row>
        <row>
@@ -255,8 +484,9 @@ Warning: readfile() has been disabled for security reasons in
        <row>
         <entry><function>chmod</function></entry>
         <entry>
-	 &sm.uidcheck; 加えて、SUID, SGID, stickyビットを設定できません。
-	</entry>
+         &sm.uidcheck; 加えて、SUID, SGID, スティキービットを設定する
+         ことはできません
+        </entry>
        </row>
        <row>
         <entry><function>touch</function></entry>
@@ -281,9 +511,35 @@ Warning: readfile() has been disabled for security reasons in
 	 <function>getallheaders</function>の実装では正常に動作しません!
 	</entry>
        </row>
+        <row>
+        <entry><function>header</function></entry>
+        <entry>
+         In safe mode, the uid of the script is added to the
+         <literal>realm</literal> part of the
+         <literal>WWW-Authenticate</literal> header if you set this
+         header (used for HTTP Authentication).
+        </entry>
+       </row>
        <row>
         <entry>
-         <filename>php4/main/fopen_wrappers.c</filename>を使用する全ての関数
+         <function>highlight_file</function>,
+         <function>show_source</function>
+        </entry>
+        <entry>
+         &sm.uidcheck; &sm.uidcheck.dir; (note: only affected since PHP 4.2.1)
+        </entry>
+       </row>
+       <row>
+        <entry>
+         <function>parse_ini_file</function>
+        </entry>
+        <entry>
+         &sm.uidcheck; &sm.uidcheck.dir; (note: only affected since PHP 4.2.1)
+        </entry>
+       </row>
+       <row>
+        <entry>Any function that uses 
+         <filename>php4/main/fopen_wrappers.c</filename>
         </entry>
         <entry>??</entry>
        </row>
