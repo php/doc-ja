@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.7 $ -->
-<!-- EN-Revision: 1.13 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.8 $ -->
+<!-- EN-Revision: 1.22 Maintainer: hirokawa Status: ready -->
  <chapter id="faq.misc">
   <title>その他の質問</title>
   <titleabbrev>その他の質問</titleabbrev>
@@ -32,10 +32,10 @@
       ルを使用することも可能です。
       <ulink url="&url.winrar;">WinRAR</ulink>または
       <ulink url="&url.powerarchiver;">Power Archiver</ulink>のような
-      ツールを持っている場合、簡単にbz2ファイルを解凍できます。
-      Windows Commanderを使用している
-      場合はbz2用のプラグインを<ulink url="&url.wincmd;">Windows
-       Commander</ulink>のサイトから無料で手に入れることが出来ます。
+      ツールを持っている場合、簡単にbz2ファイルを解凍できます
+      Total Commander(以前はWindows Commander)を使用している
+      場合はbz2用のプラグインを<ulink url="&url.wincmd;">Total Commander</ulink>の
+      サイトから無料で手に入れることが出来ます。
      </para>
      <para>
       Redhatから入手可能なbzip2コマンドラインツール:
@@ -75,6 +75,104 @@
       <ulink url="&url.winzip;">WinZip</ulink>といったアーカイバで
       扱うことができます。
       </para>
+    </answer>
+   </qandaentry>
+
+   <qandaentry id="faq.misc.arguments.references">
+    <question>
+     <para>
+      What does &amp; beside argument mean in function declaration of e.g.
+      <function>asort</function>?
+     </para>
+    </question>
+    <answer>
+     <para>
+      It means that the argument is
+      <link linkend="language.references.pass">passed by reference</link> and
+      the function will likely modify it corresponding to the documentation. You
+      can pass only variables this way and you don't need to pass them with
+      &amp; in function call (it's even
+      <link linkend="ini.allow-call-time-pass-reference">deprecated</link>).
+     </para>
+    </answer>
+   </qandaentry>
+   
+   <qandaentry id="faq.misc.registerglobals">
+    <question>
+     <para>
+      How do I deal with <literal>register_globals</literal>?
+     </para>
+    </question>
+    <answer>
+     <para>
+      For information about the security implications of
+      <literal>register_globals</literal>, read the security chapter on
+      <link linkend="security.globals">Using register_globals</link>.
+     </para>
+     <para>
+      It's preferred to use
+      <link linkend="language.variables.superglobals">superglobals</link>,
+      rather than relying upon <literal>register_globals</literal> being on.
+     </para>
+     <para>
+      If you are on a shared host with <literal>register_globals</literal> turned
+      off and need to use some legacy applications, which require this option
+      to be turned on, or you are on some hosting server, where this feature
+      is turned on, but you would like to eliminate security risks, you might
+      need to emulate the opposite setting with PHP. It is always a good idea to
+      first ask if it would be possible to change the option somehow in PHP's
+      configuration, but if it is not possible, then you can use these
+      compatibility snippets.
+     </para>
+     <para>
+      <example>
+       <title>Emulating Register Globals</title>
+        <para>
+        This will emulate register_globals On.
+       </para>
+       <programlisting role="php">
+<![CDATA[
+<?php
+// Emulate register_globals on
+if (!ini_get('register_globals')) {
+    $superglobals = array($_SERVER, $_ENV,
+        $_FILES, $_COOKIE, $_POST, $_GET);
+    if (isset($_SESSION)) {
+        array_unshift($superglobals, $_SESSION);
+    }
+    foreach ($superglobals as $superglobal) {
+        extract($superglobal, EXTR_SKIP);
+    }
+    ini_set('register_globals', true);
+}
+?>
+]]>
+       </programlisting>
+       <para>
+        This will emulate register_globals Off.
+       </para>
+       <programlisting role="php">
+<![CDATA[
+<?php
+// Emulate register_globals off
+if (ini_get('register_globals')) {
+    $superglobals = array($_SERVER, $_ENV,
+        $_FILES, $_COOKIE, $_POST, $_GET);
+    if (isset($_SESSION)) {
+        array_unshift($superglobals, $_SESSION);
+    }
+    foreach ($superglobals as $superglobal) {
+        foreach ($superglobal as $global => $value) {
+            unset($GLOBALS[$global]);
+        }
+    }
+    ini_set('register_globals', false);
+}
+?>
+]]>
+       </programlisting>
+      </example>
+     </para>
     </answer>
    </qandaentry>
   </qandaset>
