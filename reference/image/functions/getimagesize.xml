@@ -1,39 +1,56 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- splitted from ./ja/functions/image.xml, last change in rev 1.1 -->
-<!-- sync: 1.36 -->
+<!-- $Revision: 1.3 $ -->
+<!-- sync: 1.20 -->
   <refentry id="function.getimagesize">
    <refnamediv>
     <refname>GetImageSize</refname>
-    <refpurpose>JPEG、GIF、PNG、SWF画像の大きさを取得する</refpurpose>    
+    <refpurpose>画像の大きさを取得する</refpurpose>    
    </refnamediv>
    <refsect1>
     <title>説明</title>
-     <methodsynopsis>
-      <type>array</type><methodname>getimagesize</methodname>
-      <methodparam><type>string</type><parameter>filename</parameter></methodparam>
-      <methodparam><type>array</type><parameter>
-	<replaceable><optional>imageinfo</optional></replaceable>
-       </parameter></methodparam>
-     </methodsynopsis>
+    <methodsynopsis>
+     <type>array</type><methodname>getimagesize</methodname>
+     <methodparam><type>string</type><parameter>filename</parameter></methodparam>
+     <methodparam choice="opt"><type>array</type><parameter>imageinfo</parameter></methodparam>
+    </methodsynopsis>
     <para>
-     <function>GetImageSize</function>関数は、任意の<acronym>GIF</acronym>、
-     <acronym>JPG</acronym>、<acronym>PNG</acronym>、<acronym>SWF</acronym>
-     ファイルの大きさを定義し、
+     <function>GetImageSize</function>関数は任意の<acronym>GIF</acronym>,<acronym>JPG</acronym>,
+     <acronym>PNG</acronym>,<acronym>SWF</acronym>,
+     <acronym>SWC</acronym>, <acronym>PSD</acronym>, 
+     <acronym>TIFF</acronym>, <acronym>BMP</acronym>, 
+     <acronym>IFF</acronym>, <acronym>JP2</acronym>,
+     <acronym>JPX</acronym>, <acronym>JB2</acronym>,
+     <acronym>JPC</acronym>, <acronym>XBM</acronym>, or
+     <acronym>WBMP</acronym> ファイルの大きさを定義し、
      ファイルの型と <acronym>HTML</acronym><sgmltag>IMG</sgmltag>
      タグ中で通常使用される高さと幅からなる寸法を表す文字列を返します。
     </para>
+    <note>
+     <para>
+      <acronym>JPC</acronym>, <acronym>JP2</acronym>,
+      <acronym>JPX</acronym>, <acronym>JB2</acronym>,
+      <acronym>XBM</acronym>, <acronym>WBMP</acronym>は
+      PHP 4.3.2以降でサポートされます。
+      <acronym>SWC</acronym>はPHP 4.3.0以降でサポートされます。
+     </para>
+    </note>
     <para>
      返り値は、4つの要素からなる配列です。0番目の要素は、ピクセル単位
      での画像の幅です。1番目の要素は高さです。2番目の要素は画像の種類を
-     示すフラグです。1 = GIF、2 = JPG、3 = PNG、4 = SWFです。
+     示すフラグです。1 = GIF, 2 = JPG, 3 =PNG, 4 = SWF, 5 = PSD, 6 = BMP, 
+     7 = TIFF(intel byte order), 8 = TIFF(motorola byte order), 
+     9 = JPC, 10 = JP2, 11 = JPX, 12 = JB2, 13 = SWC, 14 = IFF, 15 = WBMP, 
+     16 = XBM です。これらの値はPHP4.3以降で定義されるIMAGETYPE定数に対応します。
      3番目の要素はIMGタグで直接利用できる文字列 "height=xxx width=xxx"
      です。
      <example>
       <title>GetImageSize (ファイル)</title>
       <programlisting role="php">
 <![CDATA[
-<?php $size = GetImageSize ("img/flag.jpg"); ?>
-<IMG SRC="img/flag.jpg" <?php echo $size[3]; ?>
+<?php
+list($width, $height, $type, $attr) = getimagesize("img/flag.jpg");
+echo "<img src=\"img/flag.jpg\" $attr>";
+?>
 ]]>
       </programlisting>
      </example>
@@ -43,11 +60,63 @@
       <title>GetImageSize (URL)</title>
       <programlisting role="php">
 <![CDATA[
-<?php $size = GetImageSize ("http://www.php.net/gifs/logo.gif"); ?>
+<?php 
+$size = getimagesize("http://www.example.com/gifs/logo.gif");
+
+// ファイル名にスペースが含まれる場合は適切にエンコードしてください
+$size = getimagesize("http://www.example.com/gifs/lo%20go.gif");
+
+?>
 ]]>
       </programlisting>
      </example>
     </para>
+   <para>
+    <acronym>JPG</acronym>画像では
+    <literal>channels</literal>と<literal>bits</literal>の二つの拡張項目が返されます。
+    <literal>channels</literal>はRGB画像の場合に3、CMYK画像の場合に4です。
+    <literal>bits</literal>はカラーの数です。
+   </para>
+   <para>
+    PHP4.3以降、<literal>bits</literal>と<literal>channels</literal>は
+    他の画像形式に対しても提供されます。しかし、これらの値の存在はちょっと
+    混乱気味です。例えば、<acronym>GIF</acronym>は常に1ピクセルあたり3チャンネル
+    を使用しますが、グローバルカラーテーブルを使ったアニメーションGIFの
+    ピクセルあたりのビット数を計算することはできません。
+   </para>
+   <para>
+    いくつかの画像フォーマットは画像を含まないこともできるし、また複数の画像を
+    含むこともできます。そうした場合には、<function>getimagesize</function>は
+    画像サイズを正しく認識できず、幅と高さについてはゼロを返します。
+   </para>
+   <para>
+    PHP4.3以降、<function>getimagesize</function>は追加パラメータを返します。
+    <literal>mime</literal>は画像のMIMEタイプに一致します。この情報は
+    画像とともに正しいHTTP Content-Typeヘッダを転送するために使用できます。
+    <example>
+     <title>getimagesize()とMIMEタイプ</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+$size = getimagesize ($filename);
+$fp=fopen($filename, "rb");
+if ($size && $fp) {
+  header("Content-type: {$size['mime']}");
+  fpassthru($fp);
+  exit;
+} else {
+  // error
+}
+?>
+]]>
+     </programlisting>
+    </example>
+   </para>
+   <para>
+    <parameter>filename</parameter>に指定された画像にアクセスできない場合や
+    あるいは正しい画像ではない場合、<function>getimagesize</function>は
+    &false;を返しwarningを発行します。
+   </para>
     <para>
      オプションの <parameter>imageinfo</parameter> パラメータにより
      画像ファイルから何らかの拡張情報を引き出すことが可能です。
@@ -72,16 +141,32 @@
 ]]>
       </programlisting>
      </example>
-     <note>
-      <simpara>
-       この関数は、GD画像ライブラリを必要としません。
-      </simpara>
-     </note>
-     <note>
-      <simpara>
-       URL のサポートは PHP 4.0.5 で追加されました。
-      </simpara>
-     </note>
+    <note>
+     <simpara>
+      JPEG 2000 support was added in PHP 4.3.2. Note that JPC and JP2 are
+      capable of having components with different bit depths. In this case, 
+      the value for "bits" is the highest bit depth encountered. Also, JP2 
+      files may contain multiple JPEG 2000 codestreams. In this case, 
+      <function>getimagesize</function> returns the values for the first 
+      codestream it encounters in the root of the file.
+     </simpara>
+    </note>
+    <note>
+     <simpara>
+      TIFFサポートはPHP 4.2 で追加されました。
+     </simpara>
+     <simpara>
+      この関数はGD画像ライブラリを必要としません。
+     </simpara>
+     <simpara>
+      <function>image_type_to_mime_type</function>, 
+      <function>exif_imagetype</function>, <function>exif_read_data</function>
+      <function>exif_thumbnail</function>も参照してください。
+     </simpara>
+     <simpara>
+      URLのサポートは PHP 4.0.5. で追加されました。
+     </simpara>
+    </note>
     </para>
    </refsect1>
   </refentry>
