@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- splitted from ./ja/functions/session.xml, last change in rev 1.14 -->
+<!-- last change to 'session-set-save-handler' in en/ tree in rev 1.23 -->
+  <refentry id="function.session-set-save-handler">
+   <refnamediv>
+    <refname>session_set_save_handler</refname>
+    <refpurpose>
+     ユーザ定義のセッション保存関数を設定する
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+     <methodsynopsis>
+      <type>void</type><methodname>session_set_save_handler</methodname>
+      <methodparam><type>string</type><parameter>open</parameter></methodparam>
+      <methodparam><type>string</type><parameter>close</parameter></methodparam>
+      <methodparam><type>string</type><parameter>read</parameter></methodparam>
+      <methodparam><type>string</type><parameter>write</parameter></methodparam>
+      <methodparam><type>string</type><parameter>destroy</parameter></methodparam>
+      <methodparam><type>string</type><parameter>gc</parameter></methodparam>
+     </methodsynopsis>
+    <para>
+     <function>session_set_save_handler</function> は、セッションに関
+     連するデータを保存および取得するために使用されるユーザ定義のセッ
+     ション保存関数を設定します。この関数は、セッションデータをローカ
+     ルデータベースに保存する場合のようにPHPセッションにより提供される
+     もの以外の保存方法を使用したい場合に有用です。
+    </para>
+    <note>
+     <para>
+      <function>session_set_save_handler</function>の設定を有効にする
+      には、php.ini ファイルの
+      <parameter>session.save_handler</parameter>に
+      <parameter>user</parameter>を設定する必要があります。
+     </para>
+    </note>
+    <note>
+     <para>
+      "write" ハンドラは、出力ストリームがクローズされるまでは実行され
+      ません。つまり、"write"ハンドラにおけるデバッグ用出力はブラウザ
+      側では見ることができません。デバッグ用の出力が必要な場合は、代わ
+      りにデバッグ出力をファイルに書き込むことを推奨します。
+     </para>
+    </note>
+    <para>
+     以下の例では、デフォルトの保存<parameter>files</parameter>に似た
+     ファイルベースのセッション保存を行います。この例は、PHPがサポート
+     する任意のデータベースエンジンを用いてデータベースへの保存を行う
+     ように容易に拡張可能です。
+    </para>
+    <para>
+     saveハンドラが期待通りに動作するようにread関数は常に文字列を返す
+     必要があります。データがない場合には、空の文字列を返して下さい。
+     他のハンドラからの返り値は、論理式、すなわち、成功時に&true;、失
+     敗した場合に&false;を返します。
+    </para>
+    <para>
+     <example>
+      <title>
+       <function>session_set_save_handler</function>の例
+      </title>
+      <programlisting role="php">
+<![CDATA[
+<?php
+function open ($save_path, $session_name) {
+  global $sess_save_path, $sess_session_name;
+       
+  $sess_save_path = $save_path;
+  $sess_session_name = $session_name;
+  return(true);
+}
+
+function close() {
+  return(true);
+}
+
+function read ($id) {
+  global $sess_save_path, $sess_session_name;
+
+  $sess_file = "$sess_save_path/sess_$id";
+  if ($fp = @fopen($sess_file, "r")) {
+    $sess_data = fread($fp, filesize($sess_file));
+    return($sess_data);
+  } else {
+    return(""); // Must return "" here.
+  }
+
+}
+
+function write ($id, $sess_data) {
+  global $sess_save_path, $sess_session_name;
+
+  $sess_file = "$sess_save_path/sess_$id";
+  if ($fp = @fopen($sess_file, "w")) {
+    return(fwrite($fp, $sess_data));
+  } else {
+    return(false);
+  }
+
+}
+
+function destroy ($id) {
+  global $sess_save_path, $sess_session_name;
+       
+  $sess_file = "$sess_save_path/sess_$id";
+  return(@unlink($sess_file));
+}
+
+/*********************************************
+ * WARNING - You will need to implement some *
+ * sort of garbage collection routine here.  *
+ *********************************************/
+function gc ($maxlifetime) {
+  return true;
+}
+
+session_set_save_handler ("open", "close", "read", "write", "destroy", "gc");
+
+session_start();
+
+// proceed to use sessions normally
+
+?>
+]]>
+      </programlisting>
+     </example>
+    </para>
+   </refsect1>
+  </refentry>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"../../../../manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->

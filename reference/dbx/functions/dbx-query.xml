@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- splitted from ./ja/functions/dbx.xml, last change in rev 1.1 -->
+<!-- last change to 'dbx-query' in en/ tree in rev 1.3 -->
+  <refentry id="function.dbx-query">
+   <refnamediv>
+    <refname>dbx_query</refname>
+    <refpurpose>クエリを送信し、(ある場合には)結果を全て取得する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+     <methodsynopsis>
+      <type>dbx_result_object</type><methodname>dbx_query</methodname>
+      <methodparam><type>dbx_link_object</type><parameter>link_identifier</parameter></methodparam>
+      <methodparam><type>string</type><parameter>sql_statement</parameter></methodparam>
+      <methodparam choice="opt"><type>long</type><parameter>flags</parameter></methodparam>
+     </methodsynopsis>
+   &warn.experimental;
+    <para>
+     成功時にdbx_result_objectまたは1を返します。結果オブジェクトは、
+     SQL命令が結果を返す場合にのみ返されます。エラーの場合には、0を返
+     します。パラメータ <parameter>flags</parameter> は、返される情報
+     の量を制御するために使用されます。定数 DBX_RESULT_INFO,
+     DBX_RESULT_INDEX, DBX_RESULT_ASSOC またはこれらの論理和を組み合わ
+     せることが可能です。DBX_RESULT_INFO を指定するとフィールド名およ
+     びフィールド型のようなカラムに関する情報が提供されます。
+     DBX_RESULT_INDEX により、結果は(data[2][3]のような、ただし、2はレ
+     コード番号、3はカラム番号)2次元の配列で返されます。ただし、最初の
+     レコードおよびカラム番号は0から始まります。
+     DBX_RESULT_ASSOC により、フィールド名にカラム添字が関連付けられま
+     す。パラメータ<parameter>flags</parameter> によらず
+     DBX_RESULT_INDEXは常に返されることに注意して下さい。
+     DBX_RESULT_ASSOC が指定された場合、DBX_RESULT_INFOは指定されない
+     場合でも返されます。これは、DBX_RESULT_INDEX,DBX_RESULT_INDEX |
+     DBX_RESULT_INFO および DBX_RESULT_INDEX | DBX_RESULT_INFO |
+     DBX_RESULT_ASSOC の組み合わせのみが結果的に使用可能であることを意
+     味します。 <parameter>flags</parameter> が指定されない場合、この
+     最後の組み合わせがデフォルトです。連想配列で参照される結果は、添
+     字番号の結果へのリファレンスです。このため、
+     <literal>data[0][0]</literal> を修正した場合、
+     <literal>data[0]['fieldnameforfirstcolumn']</literal> も同時に修
+     正されます。
+    </para>
+    <para>
+     dbx_result_object には、5つのメンバがあります。
+     (<parameter>flags</parameter>によっては4つの場合もあります)これら
+     は、'handle', 'cols', 'rows', 'info'(オプション), 'data'です。
+     handle は、指定したモジュールに関する有効な結果IDであり、次のよう
+     にモジュール専用関数で使用可能です。
+    </para>
+    <para>
+     <informalexample role="php">
+      <programlisting>
+<![CDATA[
+$result = dbx_query ($link, "SELECT id FROM tbl");
+mysql_field_len ($result->handle, 0);
+]]>
+      </programlisting>
+     </informalexample>
+    </para>
+    <para>
+     メンバ cols および rows は、それぞれカラム(またはフィールド)番号
+     および行(またはレコード)番号です。例えば、
+    </para>
+    <para>
+     <informalexample>
+      <programlisting role="php">
+<![CDATA[
+$result = dbx_query ($link, "SELECT id FROM tbl");
+echo "result size: " . $result->rows . " x " . $result->cols . "<br>\n";
+]]>
+      </programlisting>
+     </informalexample>
+    </para>
+    <para>
+     メンバinfoは、DBX_RESULT_INFOまたはDBX_RESULT_ASSOCが
+     <parameter>flags</parameter>パラメータで指定された場合のみ返され
+     ます。このメンバは2次元配列で、カラム情報を取得するために二つのレ
+     コード("name"と"type")を有しています。例えば、
+    </para>
+    <para>
+     <informalexample>
+      <programlisting role="php">
+<![CDATA[
+$result = dbx_query ($link, "SELECT id FROM tbl");
+echo "column name: " . $result->info["name"][0] . "<br>\n";
+echo "column type: " . $result->info["type"][0] . "<br>\n";
+]]>
+      </programlisting>
+     </informalexample>
+    </para>
+    <para>
+     メンバdataには、実際の結果が含まれます。そして、カラム名も同様に
+     関連しています。DBX_RESULT_ASSOCが設定された場合、
+     <literal>$result->data[2]["fieldname"]</literal>を使用することが
+     可能です。
+    </para>
+    <example>
+     <title><function>dbx_query</function> の例</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+$link = dbx_connect ("odbc", "", "db", "username", "password")
+    or die ("Could not connect");
+$result = dbx_query ($link, "SELECT id, parentid, description FROM tbl");
+if ($result==0) echo "Query failed\n<br>";
+elseif ($result==1) {
+    echo "Query executed successfully\n<br>";
+} else {
+    $rows=$result->rows;
+    $cols=$result->cols;
+    echo "<p>table dimension: {$result->rows} x {$result->cols}<br><table border=1>\n";
+    echo "<tr>";
+    for ($col=0; $col<$cols; ++$col) {
+        echo "<td>-{$result->info["name"][$col]}-<br>-{$result->info["type"][$col]}-</td>";
+    }
+    echo "</tr>\n";
+    for ($row=0; $row<$rows; ++$row){
+        echo "<tr>";
+        for ($col=0; $col<$cols; ++$col) {
+            echo "<td>-{$result->data[$row][$col]}-</td>";
+        }
+        echo "</tr>\n";
+    }
+    echo "</table><p>\n";
+    echo "table dimension: {$result->rows} x id, parentid, description<br><table border=1>\n";
+    for ($row=0; $row<$rows; ++$row) {
+        echo "<tr>";
+        echo "<td>-{$result->data[$row]["id"]}-</td>";
+        echo "<td>-{$result->data[$row]["parentid"]}-</td>";
+        echo "<td>-{$result->data[$row]["description"]}-</td>";
+        echo "</tr>\n";
+    }
+    echo "</table><p>\n";
+}
+dbx_close($link);
+?>
+]]>
+     </programlisting>
+    </example>
+    <note>
+     <para>
+      モジュール毎のドキュメントも参照下さい。
+     </para>
+    </note>
+    <para>
+     <function>dbx_connect</function>も参照下さい。
+    </para>
+   </refsect1>
+  </refentry>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"../../../../manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->

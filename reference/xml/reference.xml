@@ -1,0 +1,621 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.1 $ -->
+ <reference id="ref.xml">
+  <title>XML パーサ関数</title>
+  <titleabbrev>XML</titleabbrev>
+
+  <partintro>
+   <section id="xml.partintro">
+    <title>導入</title>
+    <section id="xml.intro">
+     <title>XML について</title>
+     <para>
+      XML (eXtensible Markup Language) は、Web における構造化された
+      ドキュメント交換用のデータフォーマットです。XML は、World Wide
+      Web consortium (W3C) で規定された規格です。XML に関する情報およ
+      び関連する技術は、<ulink url="&url.xml;">&url.xml;</ulink>
+      で参照することができます。
+     </para>
+    </section>
+
+    <section id="xml.install">
+     <title>インストール</title>
+     <para>
+      この拡張機能は、<productname>expat</productname> を使用します。これは、
+      <ulink url="&url.expat;">&url.expat;</ulink>にあります。expatに
+      付属のMakefileは、デフォルトでライブラリを構築しません。これを行
+      うmakeルールを次のように指定できます。
+      <programlisting role="makefile">
+<![CDATA[
+libexpat.a: $(OBJS)
+    ar -rc $@ $(OBJS)
+    ranlib $@
+]]>
+      </programlisting>
+      expat のソース RPM パッケージが 
+      <ulink url="&url.expat.rpm;">&url.expat.rpm;</ulink> にあります。
+     </para>
+     <para>
+      Apache-1.3.7 以降を使用している場合、すでに必要なexpatライブラリ
+      はインストールされていることに注意して下さい。(パスを追加設定せず
+      に) <option role="configure">--with-xml</option>を付けてPHPの
+      configureを実行して下さい。これにより Apache に組み込まれたexpat
+      ライブラリが自動的に使用されます。
+     </para>
+     <para>
+      UNIXでは、<option role="configure">--with-xml</option>オプション
+      を付けて<command>configure</command> を実行して下さい。
+      <productname>expat</productname>ライブラリをコンパイラのパスが通っ
+      た場所にインストールする必要があります。Apache 1.3.9 以降のモジュー
+      ルとして PHP をコンパイルする場合、PHP は自動的に Apache にバン
+      ドルされた<productname>expat</productname> ライブラリを使用しま
+      す。expat を通常と異なる場所にインストールした場合は、configure
+      を実行する前に環境変数に <envar>CPPFLAGS</envar> および
+      <envar>LDFLAGS</envar>を設定する必要があるかもしれません。
+     </para>
+     <para>
+      PHP を構築して下さい。<emphasis>そう!</emphasis> 再構築は、当然
+      必要です。
+     </para>
+    </section>
+
+    <section id="xml.about">
+     <title>この拡張機能について</title>
+     <para>
+      このPHP拡張機能は、James Clark氏の
+      <productname>expat</productname>のサポートをPHPに付加します。
+      このツールキットは、XML ドキュメントの構文解析をしますが、
+      検証は行いません。3種類のソース
+      <link linkend="xml.encoding">文字エンコーディング</link>、
+      <literal>US-ASCII</literal>,
+      <literal>ISO-8859-1</literal> ,<literal>UTF-8</literal>
+      がPHPでサポートされます。<literal>UTF-16</literal> はサポートさ
+      れません。
+     </para>
+     <para>
+      この拡張機能は、<link
+      linkend="function.xml-parser-create">XML パーサの作成</link>
+      を行い、異なった XML イベントに関して<emphasis>ハンドラ
+      </emphasis> を定義します。各XMLパーサーには、設定可能な小数の
+      <link linkend="function.xml-parser-set-option">パラメータ</link> 
+      もあります。
+     </para>
+     <para>
+      XML イベントハンドラは次のように定義されます。
+      <table>
+       <title>サポートされる XML ハンドラ</title>
+       <tgroup cols="2">
+	<thead>
+	 <row>
+	  <entry>ハンドラ設定用の PHP 関数</entry>
+	  <entry>イベントの説明</entry>
+	 </row>
+	</thead>
+	<tbody>
+	 <row>
+	  <entry><function>xml_set_element_handler</function></entry>
+	  <entry>
+	   要素イベントは、XML パーサーが開始または終了タグに出会うたび
+	   に発行されます。開始タグと終了タグについて別のハンドラがあり
+	   ます。
+	  </entry>
+	 </row>
+	 <row>
+	  <entry>
+	   <function>xml_set_character_data_handler</function>
+	  </entry>
+	  <entry>
+	   文字データは、タグの間の空白を含めて XML ドキュメントにおけ
+	   るほぼ全ての非マークアップ部分の内容です。XML パーサーは、
+	   空白を加えたり削除したりしないことに注意して下さい。空白が
+	   意味を有するかどうかを決めるのは、アプリケーション側の責任
+	   です。
+	  </entry>
+	 </row>
+	 <row>
+	  <entry>
+	   <function>xml_set_processing_instruction_handler</function>
+	  </entry>
+	  <entry>
+	   PHP プログラマは、既に処理用命令 (PI) に既に慣れているに違
+	   いありません。&lt;?php ?&gt; は処理用命令であり、この場合、
+	   <replaceable>php</replaceable> は "PI ターゲット"と呼ばれます。
+	   これらの処理はアプリケーション依存ですが、全ての PI ターゲッ
+	   トが "XML" から始まることだけは、規定されています。
+	  </entry>
+	 </row>
+	 <row>
+	  <entry>
+	   <function>xml_set_default_handler</function>
+	  </entry>
+	  <entry>
+	   別のハンドラでしないことをデフォルトのハンドラで行います。
+	   XML およびドキュメント型の宣言のようなことをデフォルトハンドラで
+	   行います。
+	  </entry>
+	 </row>
+	 <row>
+	  <entry>
+	   <function>xml_set_unparsed_entity_decl_handler</function>
+	  </entry>
+	  <entry>
+	   このハンドラは、処理されない (NDATA) エンティティの宣言用に
+	   コールされます。
+	  </entry>
+	 </row>
+	 <row>
+	  <entry>
+	   <function>xml_set_notation_decl_handler</function>
+	  </entry>
+	  <entry>
+	   このハンドラは、表記の宣言用にコールされます。
+	  </entry>
+	 </row>
+	 <row>
+	  <entry>
+	   <function>xml_set_external_entity_ref_handler</function>
+	  </entry>
+	  <entry>
+	   このハンドラは、XML パーサーが外部処理された通常のエンティティ
+	   への参照を見つけた際にコールされます。これは、例えば、ファ
+	   イルまたは URL への参照とすることが可能です。例としては、
+	   <link linkend="example.xml-external-entity">外部エンティティ
+	   の例</link> を参照下さい。
+	  </entry>
+	 </row>
+	</tbody>
+       </tgroup>
+      </table>
+     </para>
+    </section>
+
+    <section id="xml.case-folding">
+     <title>大文字変換(Case Folding)</title>
+     <para>
+      要素ハンドラ関数は、その要素に<glossterm>大文字小文字を変換する
+      (case-folded)</glossterm>の名前をつけることができます。
+      大文字変換(case-folding) は、XML標準により "大文字でないものは等
+      価な大文字に置換される一連の文字に適用されるプロセス" として定義
+      されています。言い替えると、XML に関しては単に大文字変換は大文字
+      にすることを意味します。
+     </para>
+     <para>
+      デフォルトで、ハンドラ関数に渡される全ての要素名は、大文字変換さ
+      れます。この動作は、<function>xml_parser_get_option</function>
+      および<function>xml_parser_set_option</function> 関数でXMLパーサー
+      毎にそれぞれ問い合わせ、制御することが可能です。
+     </para>
+    </section>
+
+    <section id="xml.error-codes">
+     <title>エラーコード</title>
+     <para>
+      (<function>xml_parse</function> により返されるものとして)
+      XMLエラーコードとして次のような定数が定義されています。:
+      <simplelist>
+       <member>XML_ERROR_NONE</member>
+       <member>XML_ERROR_NO_MEMORY</member>
+       <member>XML_ERROR_SYNTAX</member>
+       <member>XML_ERROR_NO_ELEMENTS</member>
+       <member>XML_ERROR_INVALID_TOKEN</member>
+       <member>XML_ERROR_UNCLOSED_TOKEN</member>
+       <member>XML_ERROR_PARTIAL_CHAR</member>
+       <member>XML_ERROR_TAG_MISMATCH</member>
+       <member>XML_ERROR_DUPLICATE_ATTRIBUTE</member>
+       <member>XML_ERROR_JUNK_AFTER_DOC_ELEMENT</member>
+       <member>XML_ERROR_PARAM_ENTITY_REF</member>
+       <member>XML_ERROR_UNDEFINED_ENTITY</member>
+       <member>XML_ERROR_RECURSIVE_ENTITY_REF</member>
+       <member>XML_ERROR_ASYNC_ENTITY</member>
+       <member>XML_ERROR_BAD_CHAR_REF</member>
+       <member>XML_ERROR_BINARY_ENTITY_REF</member>
+       <member>XML_ERROR_ATTRIBUTE_EXTERNAL_ENTITY_REF</member>
+       <member>XML_ERROR_MISPLACED_XML_PI</member>
+       <member>XML_ERROR_UNKNOWN_ENCODING</member>
+       <member>XML_ERROR_INCORRECT_ENCODING</member>
+       <member>XML_ERROR_UNCLOSED_CDATA_SECTION</member>
+       <member>XML_ERROR_EXTERNAL_ENTITY_HANDLING</member>
+      </simplelist>
+     </para>
+    </section>
+
+    <section id="xml.encoding">
+     <title>文字エンコーディング</title>
+     <para>
+      PHPのXML拡張機能は、異なった<glossterm>文字エンコーディング
+      </glossterm>を通じて<ulink url="&url.unicode;">Unicode</ulink> 
+      文字セットをサポートします。<glossterm>ソースエンコーディング
+      </glossterm>および<glossterm>ターゲットエンコーディング
+      </glossterm>という2種類の文字エンコーディングがあります。
+      PHP におけるドキュメントの内部表現は、常に
+      <literal>UTF-8</literal>でエンコードされます。
+     </para>
+     <para>
+      ソースエンコーディングは、XMLドキュメントが 
+      <link linkend="function.xml-parse">構文解析</link>された際に行わ
+      れます。<link linkend="function.xml-parser-create">XML パーサの
+      作成</link>を行う際に、ソースエンコードを指定することができます。
+       (このエンコーディングは、その XML パーサーが存在する間、後で変更す
+      ることはできません)サポートされるソースエンコーディングは、
+      <literal>ISO-8859-1</literal>, <literal>US-ASCII</literal> ,
+      <literal>UTF-8</literal> です。前の二つは、シングルバイトエンコー
+      ディングです。これは、各文字がシングルバイトで表現されることを意
+      味します。<literal>UTF-8</literal> は、1から4バイトの可変ビット
+      数(最大21ビット)で構成された文字をエンコードすることが可能です。
+      PHP で用いられるデフォルトのソースエンコーディングは、
+      <literal>ISO-8859-1</literal>です。
+     </para>
+     <para>
+      ターゲットエンコーディングは、PHPがデータをXMLハンドラ関数に
+      渡す時に行われます。あるXMLパーサが作成された際、ターゲットエン
+      コーディングは、ソースエンコーディングと同様に設定されます。
+      しかし、これは、いつでも変更可能です。ターゲットエンコーディング
+      は、タグ名と同様に文字データに作用し、命令を処理します。
+     </para>
+     <para>
+      XML パーサがソースエンコーディングが表現できる範囲の外側の文字に
+      出会った場合、エラーが返されます。
+     </para>
+     <para>
+      解釈するXMLドキュメントにおいてPHPが文字に出会った際に、選択した
+      ターゲットエンコーディングで表現できない文字に出会った場合、問題
+      の文字は "降格" されます。現在、このことはこのような文字が疑問符
+      で置換されることを意味します。
+     </para>
+    </section>
+   </section>
+
+   <section id="xml.examples">
+    <title>いくつかの例</title>
+    <para>
+     以下にXMLドキュメントを処理するPHPスクリプトの例をいくつか示しま
+     す。
+    </para>
+    <section id="example.xml-structure">
+     <title>XML エレメント構造の例</title>
+     <para>
+      この最初の例は、あるドキュメント中のstart エレメントの構造をイン
+      デントを付けて表示します。
+      <example>
+       <title>XML エレメント構造を表示</title>
+       <programlisting role="php">
+<![CDATA[
+$file = "data.xml";
+$depth = array();
+
+function startElement($parser, $name, $attrs){
+    global $depth;
+    for ($i = 0; $i < $depth[$parser]; $i++) {
+        print "  ";
+    }
+    print "$name\n";
+    $depth[$parser]++;
+}
+
+function endElement($parser, $name){
+    global $depth;
+    $depth[$parser]--;
+}
+
+$xml_parser = xml_parser_create();
+xml_set_element_handler($xml_parser, "startElement", "endElement");
+if (!($fp = fopen($file, "r"))) {
+    die("could not open XML input");
+}
+while ($data = fread($fp, 4096)) {
+    if (!xml_parse($xml_parser, $data, feof($fp))) {
+        die(sprintf("XML error: %s at line %d",
+                    xml_error_string(xml_get_error_code($xml_parser)),
+                    xml_get_current_line_number($xml_parser)));
+    }
+}
+xml_parser_free($xml_parser);
+]]>
+       </programlisting>
+      </example>
+     </para>
+    </section>
+
+    <section id="example.xml-map-tags">
+     <title>XMLタグのマッピングの例</title>
+     <para>
+      <example>
+       <title>XMLをHTMLにマップする</title>
+       <para>
+	この例は、XMLドキュメントのタグを直接HTMLタグにマップします。
+	"map array" にないエレメントは無視されます。もちろん、この例は、
+	特定の XML ドキュメント型を有する場合のみ動作します。
+	<programlisting role="php">
+<![CDATA[
+$file = "data.xml";
+$map_array = array(
+    "BOLD"     => "B",
+    "EMPHASIS" => "I",
+    "LITERAL"  => "TT"
+);
+
+function startElement($parser, $name, $attrs){
+    global $map_array;
+    if ($htmltag = $map_array[$name]) {
+        print "<$htmltag>";
+    }
+}
+
+ function endElement($parser, $name){
+    global $map_array;
+    if ($htmltag = $map_array[$name]) {
+        print "</$htmltag>";
+    }
+}
+
+function characterData($parser, $data){
+    print $data;
+}
+
+$xml_parser = xml_parser_create();
+// $map_array の中のタグをみつけられるように大文字変換を行う
+xml_parser_set_option($xml_parser, XML_OPTION_CASE_FOLDING, true);
+xml_set_element_handler($xml_parser, "startElement", "endElement");
+xml_set_character_data_handler($xml_parser, "characterData");
+if (!($fp = fopen($file, "r"))) {
+    die("could not open XML input");
+}
+while ($data = fread($fp, 4096)) {
+    if (!xml_parse($xml_parser, $data, feof($fp))) {
+        die(sprintf("XML error: %s at line %d",
+                    xml_error_string(xml_get_error_code($xml_parser)),
+                    xml_get_current_line_number($xml_parser)));
+    }
+}
+xml_parser_free($xml_parser);
+]]>
+	</programlisting>
+       </para>
+      </example>
+     </para>
+    </section>
+
+    <section id="example.xml-external-entity">
+     <title>XML 外部エンティティの例</title>
+     <para>
+      この例は、XML コードに焦点を当てます。この例は、他のドキュメント
+      をインクルードし処理するための外部エンティティリファレンスのハン
+      ドラの使用法およびPIの処理方法、PIが含むコードに関する"信頼度"
+      を定義する手段を説明します。
+     </para>
+     <para>
+      この例で使用される XML ドキュメントは、例題ファイル
+      (<filename>xmltest.xml</filename> および
+      <filename>xmltest2.xml</filename>) にあります。
+     </para>
+     <para>
+      <example>
+       <title>外部エンティティの例</title>
+       <programlisting role="php">
+<![CDATA[
+$file = "xmltest.xml";
+
+function trustedFile($file){
+    // 自己所有のローカルファイルのみを信頼する
+    if (!eregi("^([a-z]+)://", $file) 
+        && fileowner($file) == getmyuid()) {
+        return true;
+    }
+    return false;
+}
+
+function startElement($parser, $name, $attribs){
+    print "&lt;<font color=\"#0000cc\">$name</font>";
+    if (sizeof($attribs)) {
+        while (list($k, $v) = each($attribs)) {
+            print " <font color=\"#009900\">$k</font>=\"<font
+	           color=\"#990000\">$v</font>\"";
+        }
+    }
+    print "&gt;";
+}
+
+function endElement($parser, $name){
+    print "&lt;/<font color=\"#0000cc\">$name</font>&gt;";
+}
+
+function characterData($parser, $data){
+    print "<b>$data</b>";
+}
+
+function PIHandler($parser, $target, $data){
+    switch (strtolower($target)) {
+        case "php":
+            global $parser_file;
+            // 処理されるドキュメントが "信頼されている" 場合、
+	    // PHP コードをその内部で実行します。
+	    // そうでない場合、そのコードが代わりに表示されます。
+            if (trustedFile($parser_file[$parser])) {
+                eval($data);
+            } else {
+                printf("Untrusted PHP code: <i>%s</i>", 
+                        htmlspecialchars($data));
+            }
+            break;
+    }
+}
+
+function defaultHandler($parser, $data){
+    if (substr($data, 0, 1) == "&" && substr($data, -1, 1) == ";") {
+        printf('<font color="#aa00aa">%s</font>', 
+                htmlspecialchars($data));
+    } else {
+        printf('<font size="-1">%s</font>', 
+                htmlspecialchars($data));
+    }
+}
+
+function externalEntityRefHandler($parser, $openEntityNames, $base, $systemId,
+                                  $publicId){
+    if ($systemId) {
+        if (!list($parser, $fp) = new_xml_parser($systemId)) {
+            printf("Could not open entity %s at %s\n", $openEntityNames,
+                   $systemId);
+            return false;
+        }
+        while ($data = fread($fp, 4096)) {
+            if (!xml_parse($parser, $data, feof($fp))) {
+                printf("XML error: %s at line %d while parsing entity %s\n",
+                       xml_error_string(xml_get_error_code($parser)),
+                       xml_get_current_line_number($parser), $openEntityNames);
+                xml_parser_free($parser);
+                return false;
+            }
+        }
+        xml_parser_free($parser);
+        return true;
+    }
+    return false;
+}
+
+function new_xml_parser($file) {
+    global $parser_file;
+
+    $xml_parser = xml_parser_create();
+    xml_parser_set_option($xml_parser, XML_OPTION_CASE_FOLDING, 1);
+    xml_set_element_handler($xml_parser, "startElement", "endElement");
+    xml_set_character_data_handler($xml_parser, "characterData");
+    xml_set_processing_instruction_handler($xml_parser, "PIHandler");
+    xml_set_default_handler($xml_parser, "defaultHandler");
+    xml_set_external_entity_ref_handler($xml_parser, "externalEntityRefHandler");
+    
+    if (!($fp = @fopen($file, "r"))) {
+        return false;
+    }
+    if (!is_array($parser_file)) {
+        settype($parser_file, "array");
+    }
+    $parser_file[$xml_parser] = $file;
+    return array($xml_parser, $fp);
+}
+
+if (!(list($xml_parser, $fp) = new_xml_parser($file))) {
+    die("could not open XML input");
+}
+
+print "<pre>";
+while ($data = fread($fp, 4096)) {
+    if (!xml_parse($xml_parser, $data, feof($fp))) {
+        die(sprintf("XML error: %s at line %d\n",
+                    xml_error_string(xml_get_error_code($xml_parser)),
+                    xml_get_current_line_number($xml_parser)));
+    }
+}
+print "</pre>";
+print "parse complete\n";
+xml_parser_free($xml_parser);
+
+?>
+]]>
+        </programlisting>
+      </example>
+     </para>
+     <para id="example.xml-xmltest.xml">
+      <example>
+       <title>xmltest.xml</title>
+       <programlisting role="xml">
+<![CDATA[
+<?xml version='1.0'?>
+<!DOCTYPE chapter SYSTEM "/just/a/test.dtd" [
+<!ENTITY plainEntity "FOO entity">
+<!ENTITY systemEntity SYSTEM "xmltest2.xml">
+]>
+<chapter>
+ <TITLE>Title &plainEntity;</TITLE>
+ <para>
+  <informaltable>
+   <tgroup cols="3">
+    <tbody>
+     <row><entry>a1</entry><entry morerows="1">b1</entry><entry>c1</entry></row>
+     <row><entry>a2</entry><entry>c2</entry></row>
+     <row><entry>a3</entry><entry>b3</entry><entry>c3</entry></row>
+    </tbody>
+   </tgroup>
+  </informaltable>
+ </para>
+ &systemEntity;
+ <section id="about">
+  <title>About this Document</title>
+  <para>
+   <!-- this is a comment -->
+   <?php print 'Hi!  This is PHP version '.phpversion(); ?>
+  </para>
+ </section>
+</chapter>
+]]>
+       </programlisting>
+      </example>
+     </para>
+     <para id="example.xml-xmltest2.xml">
+      This file is included from <filename>xmltest.xml</filename>:
+      <example>
+       <title>xmltest2.xml</title>
+       <programlisting role="xml">
+<![CDATA[
+<?xml version="1.0"?>
+<!DOCTYPE foo [
+<!ENTITY testEnt "test entity">
+]>
+<foo>
+   <element attrib="value"/>
+   &testEnt;
+   <?php print "This is some more PHP code being executed."; ?>
+</foo>
+]]>
+       </programlisting>
+      </example>
+     </para>
+    </section>
+   </section>
+  </partintro>
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&reference.xml.functions;
+
+ </reference>
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"../../../manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->
+

@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- splitted from ./ja/functions/errorfunc.xml, last change in rev 1.1 -->
+<!-- last change to 'set-error-handler' in en/ tree in rev 1.1 -->
+  <refentry id="function.set-error-handler">
+   <refnamediv>
+    <refname>set_error_handler</refname>
+    <refpurpose>
+     ユーザ定義のエラーハンドラ関数を設定する
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+     <methodsynopsis>
+      <type>string</type><methodname>set_error_handler</methodname>
+      <methodparam><type>string</type><parameter>error_handler</parameter></methodparam>
+     </methodsynopsis>
+    <para>
+     スクリプトのエラー処理を行うユーザ関数
+     (<parameter>error_handler</parameter>)を設定します。定義済のエラー
+     ハンドラまたはエラーの際に &false; を返します。この関数は、実行時の
+     エラー処理をユーザが定義するために使用します。例えば、致命的なエ
+     ラーを発生した場合や、ある条件のもとに
+     (<function>trigger_error</function>を使用して)エラーを発生する必
+     要がある場合にデータやファイルを消去する必要があるようなアプリケー
+     ションがこの場合にあたります。
+    </para>
+    <para>
+     ユーザ関数の引数は2つ、エラーコードとエラーを記述する文字列です。
+     PHP 4.0.2 からオプションのパラメータが3つ追加されています。これら
+     は、エラーが発生したファイル名、エラーが発生した行、発生したエラー
+     のコンテキスト(エラーが発生した場所でのアクティブなシンボルテーブ
+     ルを指す配列)です。
+    </para>
+    <para>
+     以下の例では、エラーを発生することにより内部例外の処理を表示し、
+     ユーザ定義関数によりこれを処理します。
+     <example>
+      <title>
+       <function>set_error_handler</function>および
+       <function>trigger_error</function>によるエラー処理
+      </title>
+      <programlisting role="php">
+<![CDATA[
+<?php
+
+// ユーザエラー定数による再定義 - PHP4 のみ
+define (FATAL,E_USER_ERROR);
+define (ERROR,E_USER_WARNING);
+define (WARNING,E_USER_NOTICE);
+
+// このスクリプトのエラー出力レベルを設定
+error_reporting (FATAL | ERROR | WARNING);
+
+// エラーハンドラ関数
+function myErrorHandler ($errno, $errstr, $errfile, $errline) {
+  switch ($errno) {
+  case FATAL:
+    echo "<b>FATAL</b> [$errno] $errstr<br>\n";
+    echo "  Fatal error in line ".$errline." of file ".$errfile;
+    echo ", PHP ".PHP_VERSION." (".PHP_OS.")<br>\n";
+    echo "Aborting...<br>\n";
+    exit -1;
+    break;
+  case ERROR:
+    echo "<b>ERROR</b> [$errno] $errstr<br>\n";
+    break;
+  case WARNING:
+    echo "<b>WARNING</b> [$errno] $errstr<br>\n";
+    break;
+    default:
+    echo "Unkown error type: [$errno] $errstr<br>\n";
+    break;
+  }
+}
+
+// エラー処理のテスト用関数
+function scale_by_log ($vect, $scale) {
+  if ( !is_numeric($scale) || $scale <= 0 )
+    trigger_error("log(x) for x <= 0 is undefined, you used: scale = $scale",
+      FATAL);
+  if (!is_array($vect)) {
+    trigger_error("Incorrect input vector, array of values expected", ERROR);
+    return null;
+  }
+  for ($i=0; $i<count($vect); $i++) {
+    if (!is_numeric($vect[$i]))
+      trigger_error("Value at position $i is not a number, using 0 (zero)", 
+        WARNING);
+    $temp[$i] = log($scale) * $vect[$i];
+  }
+  return $temp;
+}
+
+// 定義したエラーハンドラを設定する
+$old_error_handler = set_error_handler("myErrorHandler");
+
+// エラーを発生します。まず、数値でない項目が混ざった配列を定義します。
+echo "vector a\n";
+$a = array(2,3,"foo",5.5,43.3,21.11);
+print_r($a);
+
+// 次に警告を発生するような2番目の配列を生成します。
+echo "----\nvector b - a warning (b = log(PI) * a)\n";
+$b = scale_by_log($a, M_PI);
+print_r($b);
+
+// 配列の代わりに文字列を渡しており、問題を発生します。
+echo &quot;----\nvector c - an error\n&quot;;
+$c = scale_by_log(&quot;not array&quot;,2.3);
+var_dump($c);
+
+// ゼロまたは負数の log が定義されないという致命的なエラーを発生します。
+echo "----\nvector d - fatal error\n";
+$d = scale_by_log($a, -2.5);
+
+?>
+]]>
+      </programlisting>
+     </example>
+     このサンプルスクリプトを実行すると、出力は次のようになります。
+     <informalexample>
+      <programlisting>
+<![CDATA[
+vector a
+Array
+(
+    [0] => 2
+    [1] => 3
+    [2] => foo
+    [3] => 5.5
+    [4] => 43.3
+    [5] => 21.11
+)
+----
+vector b - a warning (b = log(PI) * a)
+<b>WARNING</b> [1024] Value at position 2 is not a number, using 0 (zero)<br>
+Array
+(
+    [0] => 2.2894597716988
+    [1] => 3.4341896575482
+    [2] => 0
+    [3] => 6.2960143721717
+    [4] => 49.566804057279
+    [5] => 24.165247890281
+)
+----
+vector c - an error
+<b>ERROR</b> [512] Incorrect input vector, array of values expected<br>
+NULL
+----
+vector d - fatal error
+<b>FATAL</b> [256] log(x) for x <= 0 is undefined, you used: scale = -2.5<br>
+  Fatal error in line 36 of file trigger_error.php, PHP 4.0.2 (Linux)<br>
+Aborting...<br>
+]]>
+      </programlisting>
+     </informalexample>
+    </para>
+    <para>
+     PHP の標準のエラーハンドラは完全にバイパスされることに注意して下
+     さい。<function>error_reporting</function> の設定は影響せず、どの
+     ような場合でもユーザが設定したエラーハンドラがコールされます。た
+     だし、この場合でもハンドラで <function>error_reporting</function>
+     のカレントの値を読み、適当に動作させることは可能です。エラーを発
+     生した命令の前に <link
+     linkend="language.operators.errorcontrol">@ エラー制御演算子
+     </link> が付加されている場合、この値は 0 となることには注意を要し
+     ます。
+    </para>
+    <para>
+     ユーザハンドラ関数は、要すれば <function>die</function> をコール
+     する責任があることにも注意を要します。エラーハンドラ関数がリター
+     ンした場合、スクリプトの実行は、エラーを発生した命令の次の命令に
+     継続されます。
+    </para>
+    <para>
+     <function>error_reporting</function>,
+     <function>restore_error_handler</function>,
+     <function>trigger_error</function>,
+     <function>user_error</function>も参照下さい。
+    </para>
+   </refsect1>
+  </refentry>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"../../../../manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->

@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- splitted from ./ja/functions/pcre.xml, last change in rev 1.1 -->
+<!-- last change to 'preg-replace' in en/ tree in rev 1.2 -->
+  <refentry id="function.preg-replace">
+   <refnamediv>
+    <refname>preg_replace</refname>
+    <refpurpose>正規表現検索および置換を行う</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+     <methodsynopsis>
+      <type>mixed</type><methodname>preg_replace</methodname>
+      <methodparam><type>mixed</type><parameter>pattern</parameter></methodparam>
+      <methodparam><type>mixed</type><parameter>replacement</parameter></methodparam>
+      <methodparam><type>mixed</type><parameter>subject</parameter></methodparam>
+      <methodparam><type>int</type><parameter>
+	<replaceable><optional>limit</optional></replaceable>
+       </parameter></methodparam>
+     </methodsynopsis>
+    <para>
+     <parameter>subject</parameter>に関して
+     <parameter>pattern</parameter>を用いて検索を行い、
+     <parameter>replacement</parameter>に置換します。
+     <parameter>limit</parameter>を指定した場合、
+     <parameter>limit</parameter>
+     回のマッチまで置換が行なわれます。<parameter>limit</parameter>が
+     省略されるか -1 の場合、マッチするものは全て置換されます。
+    </para>
+    <para>
+     <parameter>replacement</parameter>では、
+     <literal>\\<replaceable>n</replaceable></literal>形式または
+     (PHP 4.0.4 以降) <literal><replaceable>$n</replaceable></literal>
+     形式で参照を指定することができます。後者の形式の方が好ましい形式
+     です。各参照は、<replaceable>n</replaceable>番目の括弧で括られた
+     パターンにマッチしたテキストにより置換されます。
+     <replaceable>n</replaceable>は0から99までとすることができ、
+     <literal>\\0</literal> または <literal>$0</literal> はパターン全
+     体にマッチするテキストを参照します。マッチしたサブパターンの番号
+     を得るために左括弧は(1から始まって)左から右に番号がふられます。
+    </para>
+    <para>
+     マッチした場合、新しい<parameter>subject</parameter>が返されます。
+     マッチしなかった場合には、<parameter>subject</parameter> は、無変
+     更で返されます。
+    </para>
+    <para>
+     <function>preg_replace</function>に渡す全てのパラメータは配列とする
+     ことができます。
+    </para>
+    <para>
+     <parameter>subject</parameter>が配列の場合、検索及び置換は
+     <parameter>subject</parameter>の各エントリ毎に行われ、
+     返り値も配列として返されます。
+    </para>
+    <para>
+     <parameter>pattern</parameter>および<parameter>replacement</parameter>
+     が配列の場合、
+     <function>preg_replace</function>は各配列からの値を用いて
+     <parameter>subject</parameter>に関する検索および置換を行います。
+     <parameter>replacement</parameter>の値が
+     <parameter>pattern</parameter>よりも少ない場合、残りの置換用文字列
+     に関して空の文字列が使用されます。
+     パターン<parameter>pattern</parameter>が配列で
+     <parameter>replacement</parameter>が文字列の場合、この置換文字列
+     は <parameter>pattern</parameter>の各値毎に使用されます。
+     しかし、逆の場合は意味がありません。
+    </para>
+    <para>
+     <literal>/e</literal>修飾子は、
+     <function>preg_replace</function>が
+     <parameter>replacement</parameter>パラメータを適当な置換を
+     行った後、PHP コードとして処理するようにします。
+     ヒント: 
+     <parameter>replacement</parameter> が有効なPHPコード文字列から
+     構成されるようにしてください。そうでない場合、
+     <function>preg_replace</function> のある行でPHP は構文エラーを発
+     生します。
+    </para>
+    <para>
+     <example>
+      <title>複数の値を置換する</title>
+      <programlisting role="php">
+<![CDATA[
+$patterns = array ("/(19|20)(\d{2})-(\d{1,2})-(\d{1,2})/",
+                    "/^\s*{(\w+)}\s*=/");
+$replace = array ("\\3/\\4/\\1\\2", "$\\1 =");
+print preg_replace ($patterns, $replace, "{startDate} = 1999-5-27");
+]]>
+      </programlisting>
+     </example>
+     この例の出力は次のようになります。
+     <programlisting>
+<![CDATA[
+$startDate = 5/27/1999
+]]>
+     </programlisting>
+     <example>
+      <title>/e 修飾子の使用法</title>
+      <programlisting role="php">
+<![CDATA[
+preg_replace ("/(<\/?)(\w+)([^>]*>)/e", 
+              "'\\1'.strtoupper('\\2').'\\3'", 
+              $html_body);
+]]>
+      </programlisting>
+      <para>
+       入力テキストの全てのHTMLタグを大文字に変換します。
+      </para>
+     </example>
+     <example>
+      <title>HTMLをテキストに変換する</title>
+      <programlisting role="php">
+<![CDATA[
+// $document には、HTMLドキュメントが含まれている必要があります。
+// このドキュメントのHTMLタグおよびjavascriptの部分と空白文字を
+// 削除します。また、いくつかのHTMLエンティティを等価なテキストに
+// 変換します。
+	  
+$search = array ("'<script[^>]*?>.*?</script>'si",   
+                                                // javascriptを削除
+                 "'<[\/\!]*?[^<>]*?>'si",  // htmlタグを削除
+                 "'([\r\n])[\s]+'",  // 空白文字を削除
+                 "'&(quot|#34);'i",  // htmlエンティティを置換
+                 "'&(amp|#38);'i",
+                 "'&(lt|#60);'i",
+                 "'&(gt|#62);'i",
+                 "'&(nbsp|#160);'i",
+                 "'&(iexcl|#161);'i",
+                 "'&(cent|#162);'i",
+                 "'&(pound|#163);'i",
+                 "'&(copy|#169);'i",
+                 "'&#(\d+);'e");  // phpとして評価
+
+$replace = array ("",
+                  "",
+                  "\\1",
+                  "\"",
+                  "&",
+                  "<",
+                  ">",
+                  " ",
+                  chr(161),
+                  chr(162),
+                  chr(163),
+                  chr(169),
+                  "chr(\\1)");
+
+$text = preg_replace ($search, $replace, $document);
+]]>
+      </programlisting>
+     </example>
+    </para>
+    <note>
+     <para>
+      パラメータ<parameter>limit</parameter>はPHP 4.0.1pl2で追加されま
+      した。
+     </para>
+    </note>	 
+    <para>
+     <function>preg_match</function>,
+     <function>preg_match_all</function>, 
+     <function>preg_split</function>も参照下さい。
+    </para>
+   </refsect1>
+  </refentry>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"../../../../manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->

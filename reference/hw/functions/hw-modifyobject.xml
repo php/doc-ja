@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- splitted from ./ja/functions/hw.xml, last change in rev 1.8 -->
+<!-- last change to 'hw-modifyobject' in en/ tree in rev 1.2 -->
+  <refentry id="function.hw-modifyobject">
+   <refnamediv>
+    <refname>hw_Modifyobject</refname>
+    <refpurpose>オブジェクトレコードを修正する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+     <methodsynopsis>
+      <type>int</type><methodname>hw_modifyobject</methodname>
+      <methodparam><type>int</type><parameter>connection</parameter></methodparam>
+      <methodparam><type>int</type><parameter>object_to_change</parameter></methodparam>
+      <methodparam><type>array</type><parameter>remove</parameter></methodparam>
+      <methodparam><type>array</type><parameter>add</parameter></methodparam>
+      <methodparam><type>int</type><parameter>mode</parameter></methodparam>
+     </methodsynopsis>
+    <para>
+     このコマンドによりオブジェクトレコードの個々の属性を削除、追加、
+     修正することが可能となります。オブジェクトはオブジェクトID
+     <parameter>object_to_change</parameter>により指定します。最初の配
+     列 <parameter>remove</parameter> は、削除する属性のリストです。二
+     番目の配列 <parameter>add</parameter> は、加えたい属性のリストで
+     す。ある属性を修正するためには、古い属性を削除し、新規に追加する
+     必要があります。<function>hw_modifyobject</function> は、
+     削除する属性の値が文字列または配列でない限り、つねに属性を追加する前に
+     属性の削除を行います。
+    </para>
+    <para>
+     最後のパラメータは、修正を再帰的に行うかどうかを指定します。
+     1は、再帰的な修正を意味します。オブジェクトのいくつかを修正できな
+     い場合、通知されることなくスキップされます。
+     <function>hw_error</function> は、いくつかのオブジェクトが
+     修正されなかったことからエラーを発生しない可能性があります。
+    </para>
+    <para>
+     二つの配列のキーは属性の名前です。各配列要素の値は、配列または文
+     字列またはその他のものとすることができます。配列の場合、各属性の
+     値は、各要素のキーにコロンと各要素の値を加えたものから構成されま
+     す。文字列の場合、属性の値として指定します。空文字列を指定すると
+     その属性は完全に削除されます。値が文字列でも配列でもなく、整数の
+     ような他のものである場合、その属性に関して処理は全く行われません。
+     このような動作は、既存の属性に新規の値を追加するのではなく、
+     完全に新規の属性を追加したい場合に必要です。remove 配列がその属性
+     に関する空の文字列を含む場合、値が存在しないため、その属性の削除
+     は失敗します。続いてその属性に新規の値を追加する処理も同じく失敗
+     します。属性の値を例えば0に設定すると削除することさえできませんが、
+     加算は実行可能です。
+    </para>
+     <para>
+     値 'books'を有する属性 'Name' を 'articles' に変更したい場合、
+     二つの配列を作成し、<function>hw_modifyobject</function> をコールする
+     必要があります。
+     <example>
+      <title>属性を修正する</title>
+      <programlisting role="php">
+<![CDATA[
+       // $connect は、Hyperwave サーバーへの既存の接続です。
+       // $objid は、修正するオブジェクトのIDです。
+       $remarr = array("Name" => "books");
+       $addarr = array("Name" => "articles");
+       $hw_modifyobject($connect, $objid, $remarr, $addarr);
+]]>
+      </programlisting>
+     </example>
+     名前=値の組を削除/追加するためには、オブジェクトレコードをremove/add 
+     配列にて渡し、最後/3番目のパラメータは空の配列にします。
+     新規に属性を追加する場合には、
+     remove 配列におけるその属性の値を整数に設定して下さい。
+     <example>
+      <title>完全に新規の属性を追加する</title>
+      <programlisting role="php">
+<![CDATA[
+       // $connect は、Hyperwave サーバーへの既存の接続です。
+       // $objid は、修正するオブジェクトのIDです。
+       $remarr = array("Name" => 0);
+       $addarr = array("Name" => "articles");
+       $hw_modifyobject($connect, $objid, $remarr, $addarr);
+]]>
+      </programlisting>
+     </example>
+    </para>
+    <para>
+     <note>
+      <simpara>
+       'Title' のような多言語属性は、2つの方法で修正可能です。
+       この場合、
+       'language':'title' という基本形式で属性の値を与えるか、
+	下記のように各言語毎に配列の要素を与えることにより指定します。
+	まずは、以下の例を見てみましょう。
+      </simpara>
+     </note>
+     <example>
+      <title>Title 属性を修正する</title>
+      <programlisting role="php">
+<![CDATA[
+       $remarr = array("Title" => "en:Books");
+       $addarr = array("Title" => "en:Articles");
+       $hw_modifyobject($connect, $objid, $remarr, $addarr);
+]]>
+       </programlisting>
+     </example>
+     または
+     <example>
+      <title>Title 属性を修正する</title>
+      <programlisting role="php">
+<![CDATA[
+       $remarr = array("Title" => array("en" => "Books"));
+       $addarr = array("Title" => array("en" => "Articles", "ge"=>"Artikel"));
+       $hw_modifyobject($connect, $objid, $remarr, $addarr);
+]]>
+      </programlisting>
+     </example>
+     この例では、英語のタイトル 'Books' を削除し、
+     英語のタイトル 'Articles' およびドイツ語のタイトル
+     'Artikel' を追加しています。
+     <example>
+      <title>属性を削除する</title>
+      <programlisting role="php">
+<![CDATA[
+       $remarr = array("Title" => "");
+       $addarr = array("Title" => "en:Articles");
+       $hw_modifyobject($connect, $objid, $remarr, $addarr);
+]]>
+      </programlisting>
+     </example>
+     <note>
+      <simpara> 
+       この例では、 'Title' という名前の属性を全て削除し、
+       属性 'Title' を新規に追加しています。
+       全ての属性を再帰的に削除したい場合には、これは簡便な方法です。
+      </simpara>
+     </note>
+     <note>
+      <simpara>
+       ある名前を有する全ての属性を削除する必要がある場合には、
+       属性の値として空の文字列を渡してください。
+      </simpara>
+     </note>
+     <note>
+      <simpara>
+       属性 'Title', 'Description' , 'Keyword' のみが
+       言語指定用の接頭辞を正しく処理します。
+       これらの属性において言語指定用接頭辞が指定されていない場合、
+       接頭辞 'xx' が割りつけられます。
+      </simpara>
+     </note>
+     <note>
+      <simpara>
+       'Name' 属性もやや特殊です。いくつかの場合には、完全に削除することは
+       できません。
+       'Change of base attribute' というエラーメッセージが発生する可能性が
+       あります。(いつこのエラーが発生するかは明らかではありません) 
+       このため、新しい Name をまず追加してから、古いものを削除する
+       必要があります。
+      </simpara>
+     </note>
+     <note>
+      <simpara>
+       この関数のコールの前後に <function>hw_getandlock</function> および 
+       <function>hw_unlock</function> をコールする必要はありません。
+       <function>hw_modifyobject</function> は内部的にこの処理を
+       行います。
+      </simpara>
+     </note>
+    </para>
+    <para>
+     エラーを生じた場合は&true;、それ以外の場合には&false;を返します。
+    </para>
+   </refsect1>
+  </refentry>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"../../../../manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->

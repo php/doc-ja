@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.1 $ -->
+ <reference id="ref.java">
+  <title>Java</title>
+  <titleabbrev>PHP / Java の連携</titleabbrev>
+  <partintro>
+   <para>
+    PHPとJavaの連携をとして考えられる手段は2種類あります。PHPをJavaサーブ
+    レット環境に統合する方法とJavaサポートをPHPに統合する方法です。前者の
+    方がより安定で効率的な手法です。前者は、サーブレットサーバへのインター
+    フェイスとしてSAPIモジュールにより提供され、後者は、Java拡張モジュール
+    として提供されます。
+   </para>
+   <para>
+    PHP 4 ext/java は、PHPからJavaオブジェクトのメソッドを生成し、コール
+    する簡単で効率的な手段を提供します。このJVMはJNIを用いて作成され、全
+    てはこのプロセスで動作します。ext/javaの構築手順は、
+    <filename>php4/ext/java/README</filename>にあります。
+
+    <example>
+     <title>Java の例</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+  // Java クラス java.lang.System のインスタンスをPHPに作成する
+  $system = new Java('java.lang.System');
+
+  // プロパティへのアクセスのデモ
+  print 'Java version='.$system->getProperty('java.version').' <br>';
+  print 'Java vendor=' .$system->getProperty('java.vendor').'  <br>';
+  print 'OS='.$system->getProperty('os.name').' '.
+              $system->getProperty('os.version').' on '.
+              $system->getProperty('os.arch').' <br>';
+
+  // java.util.Date example
+  $formatter = new Java('java.text.SimpleDateFormat',
+                        "EEEE, MMMM dd, yyyy 'at' h:mm:ss a zzzz");
+
+  print $formatter->format(new Java('java.util.Date'));
+?>
+]]>
+     </programlisting>
+    </example>
+    <example>
+     <title>AWT の例</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+  // この例は、CGIとして実行されることのみを考慮しています。
+
+  $frame  = new Java('java.awt.Frame', 'PHP');
+  $button = new Java('java.awt.Button', 'Hello Java world!');
+
+  $frame->add('North', $button);
+  $frame->validate();
+  $frame->pack();
+  $frame->visible = True;
+
+  $thread = new Java('java.lang.Thread');
+  $thread->sleep(10000);
+
+  $frame->dispose();
+?>
+]]>
+     </programlisting>
+    </example>
+
+    注意:
+
+    <itemizedlist>
+     <listitem>
+      <simpara>
+       <literal>new Java()</literal> は、有効なコンストラクタがある場合、
+       クラスのインスタンスを生成します。引数が指定されない場合には、
+       デフォルトのコンストラクタにより
+       <literal>java.lang.System</literal>のようなクラスにアクセスすると
+       良いでしょう。このクラスは、静的な手法でそのクラスの機能の多くを
+       公開しています。
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       あるインスタンスのメンバーにアクセスする際には、まずbeanプロパティ
+       が探されてから、次にpublicフィールドが探されます。言い換えると、
+       <literal>print $date.time</literal>はまず
+       <literal>$date.getTime()</literal>と解釈され、続いて
+       <literal>$date.time</literal>と解釈されます。
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       静的メンバおよびインスタンスメンバは共に同じ構文でアクセス可能です。
+       さらに、javaオブジェクトが<literal>java.lang.Class</literal>型の場
+       合、このクラスの静的メンバ(フィールドとメソッド)にアクセス可能です。
+      </simpara>
+     </listitem>
+     <listitem>
+      <para>
+       例外が発生するとPHPの警告が出力され、結果は&null;となります。警告は
+       "@"記号を付けてメソッドをコールすることに抑圧できます。以下のAPI
+       を直近のエラーを取得し、リセットするために使用することができます。
+
+       <itemizedlist>
+        <listitem><simpara><function>java_last_exception_get</function></simpara></listitem>
+        <listitem><simpara><function>java_last_exception_clear</function></simpara></listitem>
+       </itemizedlist>
+      </para>
+     </listitem>
+     <listitem>
+      <simpara>
+       オーバーロードの解決は、二つの言語の間で型の違いがあるため一般には
+       困難な問題です。PHP のJava拡張機能は簡単ですが最も一致するオーバー
+       ロードを定義するかなり効率的な手段を使用しています。
+      </simpara>
+      <simpara>
+       加えて、PHPのメソッド名は大文字小文字を区別しないため、選択される
+       オーバーロードの数は増加する傾向があります。
+      </simpara>
+      <simpara>
+       メソッドが一度選択されると、パラメータの値は必要に応じて調整されま
+       す。このため、(倍精度実数が論理値に変換されるといった)データの劣化
+       が発生する可能性があります。
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       PHPでは伝統的に配列とハッシュテーブルは相互に完全に可換でした。PHPの
+       ハッシュテーブルは整数または配列の添字のみを使用できることに注意して
+       下さい。また、Javaのprimitive型の配列は疎とすることができないことに
+       も注意して下さい。これらの構造は値で渡されるため、メモリと時間の消
+       費量が大きくする可能性があります。
+      </simpara>
+     </listitem>
+    </itemizedlist>
+   </para>
+   <para>
+    sapi/servlet はPHPプロセッサ全体をサーブレットとして実行するために
+    ext/javaにより定義された機構の上に構築されています。
+    この形態のPHPの側からこの実装が基本的に優れている点は、サーブレットを
+    サポートするWebサーバが通常JVMをプールし、再利用することに注力している
+    ことです。このサーブレットSAPIモジュールの構築手順は、
+    <filename>php4/sapi/README</filename> にあります。
+
+    注意:
+
+    <itemizedlist>
+     <listitem>
+      <simpara>
+       このコードは、全てのサーブレットエンジンで実行可能であるように作成
+       されていますが、現在ApacheのJakarta/tomcatでしかテストされていませ
+       ん。他のエンジンでこのコードを実行する際に必要なパッチ、バグレポー
+       ト、成功事例等をお知らせ下さい。
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       PHP は、動作ディレクトリを変更する特徴があります。sapi/サーブレット
+       はもとに戻そうとしますが、PHPが実行されている間、サーブレットエンジ
+       ンはCLASSPATHい相対ディレクトリにより指定されている全てのクラスをロ
+       ードできないか、管理用およびJSPコンパイル用に使用されている作業ディ
+       レクトリを見つけることができなくなる可能性があります。
+      </simpara>
+     </listitem>
+    </itemizedlist>
+   </para>
+  </partintro>
+
+
+&reference.java.functions;
+
+ </reference>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"../../../manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->
+

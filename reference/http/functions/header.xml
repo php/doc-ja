@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- splitted from ./ja/functions/http.xml, last change in rev 1.6 -->
+<!-- last change to 'header' in en/ tree in rev 1.2 -->
+  <refentry id="function.header">
+   <refnamediv>
+    <refname>header</refname>
+    <refpurpose>生のHTTPヘッダを送信する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+     <methodsynopsis>
+      <type>int</type><methodname>header</methodname>
+      <methodparam><type>string</type><parameter>string</parameter></methodparam>
+      <methodparam choice="opt"><type>bool</type><parameter>replace</parameter></methodparam>
+     </methodsynopsis>
+    <para>
+     <function>header</function>関数は、<acronym>HTML</acronym>ファイル
+     の送信に先立って、生の<acronym>HTTP</acronym>ヘッダ文字列を送信
+     するために使用します。HTTPヘッダの詳細は、
+     <ulink url="&spec.http1.1;">HTTP 1.1 Specification</ulink>を参照
+     して下さい。
+    </para>
+    <para>
+     オプションのパラメータ <parameter>replace</parameter> は、ヘッダ
+     が前に送信された類似のヘッダを置換するか、または、同じ形式の二番
+     目のヘッダを追加するかどうかを指定します。デフォルトでは、この関
+     数は、置換を行ないますが、二番目の引数に&false; を指定すると、同
+     じ型の複数のヘッダを強制的に生成します。例えば、
+     <informalexample>
+      <programlisting role="php">
+<![CDATA[
+header('WWW-Authenticate: Negotiate');
+header('WWW-Authenticate: NTLM',false);
+]]>
+      </programlisting>
+     </informalexample>
+    </para>
+    <para>
+     特殊なheaderコールが2種類あります。最初のは、&quot;Location&quot;
+     ヘッダーです。このヘッダーはブラウザに返されるだけではなく、
+     ApacheにREDIRECTステータスコードを返します。スクリプトの作者にとっ
+     ては、この点はあまり重要ではありませんが、Apacheの内部動作を知る
+     人にとっては、理解しておくべき重要なこととなります。
+     <informalexample>
+      <programlisting role="php">
+<![CDATA[
+header("Location: http://www.php.net/");  /* ブラウザをPHP Web サイトに
+                                            リダイレクトする */
+exit;                 /* リダイレクトを行う際に以下のコードが
+                         実行されないようにする */
+]]>
+      </programlisting>
+     </informalexample>
+    </para>
+    <note>
+     <para>
+      HTTP/1.1では、スキーム、ホスト名、絶対パスを含む絶対
+      <acronym>URI</acronym>が<ulink
+      url="&spec.http1.1;-sec14.html#sec14.30">Location:</ulink>
+      の引数として必要ですが、いくつかのクライアントでは相対URIも受け
+      つけます。通常、相対URIから絶対URIを作成するために
+      $HTTP_SERVER_VARS['HTTP_HOST'],$HTTP_SERVER_VARS['PHP_SELF'],
+      <function>dirname</function>を使用することが可能です。
+      <informalexample>
+       <programlisting>
+<![CDATA[
+header("Location: http://".$HTTP_SERVER_VARS['HTTP_HOST']
+                      ."/".dirname($HTTP_SERVER_VARS['PHP_SELF'])
+                      ."/".$relative_url);
+]]>
+       </programlisting>
+      </informalexample>
+     </para>
+    </note>
+    <para>
+     2番目の特別なヘッダは、文字列&quot;<literal>HTTP/</literal>&quot;
+     から始まる全てのヘッダ(大文字・小文字は区別されません)です。この
+     ヘッダは、送信するHTTPステータスコードを示すために使用されます。
+     例えば、存在しないファイルへのリクエストを処理するためにあるPHPスクリ
+     プトを使用するよう(<literal>ErrorDocument</literal>ディレクティブ
+     により)Apacheを設定する場合、そのスクリプトが正しいステータスコー
+     ドを返すようにする必要があります。
+     <informalexample>
+      <programlisting role="php">
+<![CDATA[
+header("HTTP/1.0 404 Not Found");
+]]>
+      </programlisting>
+     </informalexample>
+     <note>
+      <para>
+       PHP 3では、このコードは、PHPがApacheモジュール版としてコンパイ
+       ルされている場合にのみ動作します。<literal>Status</literal>ヘッ
+       ダを用いて同じ効果を得ることが可能です。
+       <informalexample>
+        <programlisting role="php">
+<![CDATA[
+header("Status: 404 Not Found");
+]]>
+        </programlisting>
+       </informalexample>
+      </para>
+     </note>
+    </para>
+    <para>
+     PHPスクリプトはしばしば動的に HTML を生成するため、クライアントブ
+     ラウザやサーバーおよびクライアントブラウザの間でプロキシがキャッ
+     シュを行ったりするべきではありません。多くのプロキシとクライアン
+     トでは、以下のコードにより強制的にキャッシュを無効にできます。
+     <informalexample>
+      <programlisting role="php">
+<![CDATA[
+header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");    // 日付が過去
+header("Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT"); 
+                                                     // 常に修正されている
+header("Cache-Control: no-store, no-cache, must-revalidate");  // HTTP/1.1
+header("Cache-Control: post-check=0, pre-check=0", false);
+header("Pragma: no-cache");                          // HTTP/1.0
+]]>
+      </programlisting>
+     </informalexample>
+     <note>
+      <para>
+       上記のヘッダを全て出力しなかったとしてもページのキャッシュが行
+       われない場合があることに気付くかもしれません。デフォルトのブラ
+       ウザのキャッシュの動作をユーザが変更できる手段はいくつもありま
+       す。上記のヘッダを送信することにより、スクリプトの出力がキャッ
+       シュされる可能性がある設定を上書きするべきです。
+      </para>
+      <para>
+       加えて、<function>session_cache_limiter</function>および
+       設定<literal>session.cache_limiter</literal>をセッションが使用
+       された際にキャッシュ関係のヘッダを正しく自動的に生成するために
+       使用できます。
+      </para>
+     </note>
+    </para>
+    <para>
+     覚えておいて頂きたいのは、<function>header</function> 関数は、通
+     常の HTML タグまたは PHP からの出力にかかわらず、すべての実際の出
+     力の前にコールする必要があることです。
+     頻出するエラーとして、<function>include</function> または
+     <function>require</function> 関数、他のファイルをアクセスする関数
+     に空白または空行があり、<function>header</function> の前に出力が
+     行われてしまうというものがあります。同じ問題は、単一の PHP/HTMLファ
+     イルを使用している場合でも存在します。
+    </para>
+    <para>
+     <informalexample>
+      <programlisting role="php">
+<![CDATA[
+<?php require("user_logging.inc") ?>
+
+<?php header ("Content-type: audio/x-pn-realaudio"); ?>
+// 動作しません。上の空行に注意して下さい。
+]]>
+      </programlisting>
+     </informalexample>
+     <note>
+      <para>
+       PHP 4では、この問題に対処するために出力のバッファリングを使用す
+       ることが可能です。この場合、ブラウザへの出力が送信するまでサー
+       バに全てバッファリングされるオーバーヘッドがあります。出力バッ
+       ファリングは、<function>ob_start</function>と
+       <function>ob_end_flush</function>をスクリプトでコールするか
+       <filename>php.ini</filename>またはサーバ設定ファイルの設定ディ
+       レクティブ<literal>output_buffering</literal>を設定することによ
+       り行うことが可能です。
+      </para>
+     </note>
+    </para>    
+    <para>
+     PDFファイルを生成するといったように送信するデータを保存するかどう
+     かユーザにプロンプトを表示したい場合、推奨されるファイル名を指定
+     してブラウザに保存ダイアログを表示させる<ulink
+     url="&url.rfc2183;">Content-Disposition</ulink>ヘッダを使用可能で
+     す。
+     <informalexample>
+      <programlisting role="php">
+<![CDATA[
+<?php
+header("Content-type: application/pdf");
+header("Content-Disposition: attachment; filename=downloaded.pdf");
+
+/* ... PDFファイルを出力 ... */
+]]>
+      </programlisting>
+     </informalexample>
+     <note>
+      <para>
+       Microsoft Internet Explorer 4.01にはこれが動作しないというバグ
+       があります。この解決策はありません。Microsoft Internet Explorer
+       5.5にもこれを妨げるバグがあります。これは、サービスパック2以降
+       とすることで修整可能です。
+      </para>
+     </note>
+    </para>
+    <para>
+     <function>headers_sent</function>,
+     <function>setcookie</function>及び
+     <link linkend="features.http-auth">HTTP認証</link>の節も参照下さ
+     い。
+    </para>
+   </refsect1>
+  </refentry>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"../../../../manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->

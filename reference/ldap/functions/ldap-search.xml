@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- splitted from ./ja/functions/ldap.xml, last change in rev 1.13 -->
+<!-- last change to 'ldap-search' in en/ tree in rev 1.17 -->
+  <refentry id="function.ldap-search">
+   <refnamediv>
+    <refname>ldap_search</refname>
+    <refpurpose>LDAP ツリーを探索する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+     <methodsynopsis>
+      <type>int</type><methodname>ldap_search</methodname>
+      <methodparam><type>int</type><parameter>link_identifier</parameter></methodparam>
+      <methodparam><type>string</type><parameter>base_dn</parameter></methodparam>
+      <methodparam><type>string</type><parameter>filter</parameter></methodparam>
+      <methodparam><type>array</type><parameter>
+	<replaceable><optional>attributes</optional></replaceable>
+       </parameter></methodparam>
+      <methodparam><type>int</type><parameter>
+	<replaceable><optional>attrsonly</optional></replaceable>
+       </parameter></methodparam>
+      <methodparam><type>int</type><parameter>
+	<replaceable><optional>sizelimit</optional></replaceable>
+       </parameter></methodparam>
+      <methodparam><type>int</type><parameter>
+	<replaceable><optional>timelimit</optional></replaceable>
+       </parameter></methodparam>
+      <methodparam><type>int</type><parameter>
+	<replaceable><optional>deref</optional></replaceable>
+       </parameter></methodparam>
+     </methodsynopsis>
+    <para>
+     サーチ結果IDを返します。エラーの場合に&false;を返します。
+    </para>
+    <para>  
+     <function>ldap_search</function> は、
+     LDAP_SCOPE_SUBTREE のスコープを有するディレクトリに関して、
+     指定されたフィルタにより検索を行います。
+     これは、ディレクトリ全体を探索することと等価です。
+     <parameter>base_dn</parameter> はディレクトリのベース DN を指定し
+     ます。
+    </para>
+    <para>
+     サーバーから返される属性と値を必要なものだけに制限するために
+     オプションの4番目のバラメータを指定することができます。
+     これは、(全ての属性と関連する値を返す)デフォルトの動作よりも
+     かなり効率的です。
+     このため、4番目のパラメータを使用することが望ましいです。
+    </para>
+    <para>
+     4番目のパラメータは、array("mail","sn","cn") のような
+     必要な属性を保持する通常の PHP 文字列配列です。
+     "dn" は要求された属性の型によらず常に返されることに注意して下さい。
+    </para>
+    <para>
+     いくつかのあディレクトリサーバホストは、事前に設定されたエントリ
+     数以上のものを返します。この場合、サーバは部分的な結果集合を返し
+     ただけであることをサーバは示します。この場合、取得するエントリ数
+     を制限するために6番目のパラメータ<parameter>sizelimit</parameter>
+     も使用します。
+    </para> 
+    <para>
+     属性型のみを取得したい場合、5番目パラメータ
+     <parameter>attrsonly</parameter>を1とする必要があります。0に設定
+     した場合、属性型と属性値がデフォルトの動作として取得されます。
+    </para> 
+    <para>
+     6番目のパラメータ<parameter>sizelimit</parameter>が指定された場合
+     取得するエントリ数を制限することが可能です。これに0を指定すると制
+     限を設けないこととなります。
+     注意: このパラメータはサーバ側で事前に設定されたsizelimitを上書き
+     することはできません。
+    </para> 
+    <para>
+     7番目のパラメータ<parameter>timelimit</parameter>は、検索に要する
+     最大時間を設定します。これを0にすると制限を設けないこととなります。
+     注意: このパラメータはサーバ側で事前に設定されたtimelimitを上書き
+     することはできません。これより小さい値を設定することも可能です。
+    </para> 
+    <para>
+     8番目のパラメータ<parameter>deref</parameter>は、検索時に処理する
+     べきエイリアスを指定します。以下のどれかを指定することは可能です。
+     <itemizedlist>
+     <listitem>
+      <simpara>
+       LDAP_DEREF_NEVER - (デフォルト) エイリアスは被参照されません。
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       LDAP_DEREF_SEARCHING - エイリアスは検索時に被参照されますが、
+        検索の基本オブジェクトにある場合には参照されません。
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       LDAP_DEREF_FINDING - エイリアスは、基本オブジェクトがあるが検索
+       時にはない時に被参照される必要があります。
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       LDAP_DEREF_ALWAYS - エイリアスは常に被参照するべきです。
+      </simpara>
+     </listitem>
+     </itemizedlist>
+    </para>  
+    <note>
+     <para>
+      これらのオプションのパラメータは4.0.2で追加されました。
+      <parameter>attrsonly</parameter>,
+      <parameter>sizelimit</parameter>,
+      <parameter>timelimit</parameter>,
+      <parameter>deref</parameter>
+     </para>
+    </note>
+    <para>
+     検索フィルターは、LDAP ドキュメントに記述されたフォーマットの論理
+     演算子を用いて、簡単なものまたは高度なものとすることができます。
+     (フィルターに関する詳細な情報については、
+     <ulink url="&url.ldap.filters;">Netscape Directory SDK</ulink>
+     を参照下さい)
+    </para>
+    <para>
+     以下の例は、"My Company" の全員について姓または名に部分文字列
+     $person を含まれる組織単位、姓、名、電子メールアドレスを取得します。
+     この例は、複数の属性に関する情報についてサーバーに検索をかける論理
+     フィルターを使用します。
+     <example>
+      <title>LDAP 検索</title>
+      <programlisting role="php">
+<![CDATA[
+// $ds は、ディレクトリサーバーの有効なリンク ID
+ 
+// $person は、人名またはその一部。例 "Jo"
+ 
+$dn = "o=My Company, c=US";
+$filter="(|(sn=$person*)(givenname=$person*))";
+$justthese = array( "ou", "sn", "givenname", "mail");
+ 
+$sr=ldap_search($ds, $dn, $filter, $justthese);
+ 
+$info = ldap_get_entries($ds, $sr);
+ 
+print $info["count"]." 個のエントリが返されました<p>";
+]]>
+      </programlisting>
+     </example>
+    </para>
+    <para>
+     4.0.5以降、並行検索も可能となっています。並行検索を行うには、単一
+     のIDを使うのではなく、リンクIDの配列を使用します。
+     同じ基本DNを使用したくない場合や全ての検索について同じフィルタを
+     使用したくない場合、基本DNの配列またはフィルタの配列を使用するこ
+     とが可能です。これらの配列は、リンクIDの配列と同じ大きさである必
+     要があります。これは、その配列の最初が一回の検索で使用され、2番目
+     のエントリが他の検索で使用されるといったようになるからです。並行
+     検索を実行する際、エラーの場合を除き、検索結果IDの配列が返されま
+     す。エラーの場合は対応する検索のエントリは&false;となります。これは、
+     通常返される値とよく似ていますが、検索が行われた際に結果IDが常に
+     返されます。まれに、並行検索はIDを返すにもかかわらず通常の検索は
+     &false;を返すということがあります。
+    </para>
+   </refsect1>
+  </refentry>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"../../../../manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->

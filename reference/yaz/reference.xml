@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.1 $ -->
+ <reference id="ref.yaz">
+  <title>YAZ 関数</title>
+  <titleabbrev>YAZ</titleabbrev>
+  
+  <partintro>
+   <section id="yaz.intro">
+    <title>導入</title>
+    <para>
+     この拡張モジュールは、情報取得用のZ39.50プロトコルを実装する
+     <productname>YAZ</productname>ツールキットへのPHPインターフェース
+     を提供するものです。この拡張モジュールにより、Z39.50ターゲット(サー
+     バー)を並列に検索またはスキャンするZ39.50オリジン(クライアント)を
+     容易に実装することが可能になります。
+    </para>
+    <para>
+     <productname>YAZ</productname> は、<ulink
+     url="&url.yaz;">&url.yaz;</ulink>で取得可能です。この拡張モジュー
+     ルに関する新しい情報、スクリプトの例等を
+     <ulink url="&url.yaz-phpyaz;">&url.yaz-phpyaz;</ulink>にて
+     参照可能です。
+    </para>
+    <para>
+     このモジュールはZ39.50 の複雑さを隠蔽するため、使用法がかなり容
+     易になります。PHPで利用可能な様々なSQL APIにより提供されているも
+     のに非常によく似たステートレスな持続的接続がサポートされています。
+     これにより、セッションはステートレスですが、ユーザ間で共有され、
+     これにより多くの場合に接続および初期化手順が保存されます。
+    </para>
+   </section>
+
+   <section id="yaz.install">
+   <title>インストール</title>
+    <para>
+     YAZをコンパイルし、インストールして下さい。PHPをオプション
+     <literal>--with-yaz</literal>を付けて他の任意のモジュールと
+     コンパイルして下さい。この手順の概要を以下に示します。
+    </para>
+    <para>
+     <informalexample>
+    <programlisting role="shell">
+<![CDATA[
+gunzip -c yaz-1.6.tar.gz|tar xf -
+gunzip -c php-4.0.X.tar.gz|tar xf -
+cd yaz-1.6
+./configure --prefix=/usr
+make
+make install
+cd ../php-4.0.X
+./configure --with-yaz=/usr/bin
+make
+make install
+]]>
+      </programlisting>
+     </informalexample>
+    </para>
+   </section>
+
+   <section id="yaz.example">
+    <title>Example</title>
+    <para>
+     PHP/YAZ はターゲット(Z-Associations)との接続を保持し続けます。
+     正の整数で特定の接続のIDを表します。
+    </para>
+    <para>
+     以下のスクリプトは、APIのパラレルサーチ機能のデモです。
+     このスクリプトは起動された際に(引数が指定されない場合は)クエリフォー
+     ムを表示し、引数(termおよび一つ以上のhost)がある場合には、配列host
+     にあるターゲットを検索します。
+    </para>
+    <para>
+     <example>
+      <title>YAZによる並列検索</title>
+      <simpara>
+       以下のスクリプトは、APIの並列検索機能のデモです。引数を指定せず
+       にコールした場合、この関数は、クエリフォームを出力します。そう
+       でない場合(引数を指定した場合)は、配列hostにあるターゲットを検
+       索します。
+      </simpara>
+      <programlisting role="php">
+<![CDATA[
+$num_hosts = count ($host);
+if (empty($term) || count($host) == 0) {
+    echo '<form method="get">
+    <input type="checkbox"
+    name="host[]" value="bagel.indexdata.dk/gils">
+        GILS test
+    <input type="checkbox"
+    name="host[]" value="localhost:9999/Default">
+        local test
+    <input type="checkbox" checked="1"
+    name="host[]" value="z3950.bell-labs.com/books">
+        BELL Labs Library
+    <br>
+    RPN Query:
+    <input type="text" size="30" name="term">
+    <input type="submit" name="action" value="Search">
+    ';        
+} else {
+    echo 'You searced for ' . htmlspecialchars($term) . '<br>';
+    for ($i = 0; $i < $num_hosts; $i++) {
+        $id[] = yaz_connect($host[$i]);
+        yaz_syntax($id[$i],"sutrs");
+        yaz_search($id[$i],"rpn",$term);
+    }
+    yaz_wait();
+    for ($i = 0; $i < $num_hosts; $i++) {
+        echo '<hr>' . $host[$i] . ":";
+        $error = yaz_error($id[$i]);
+        if (!empty($error)) {
+            echo "Error: $error";
+        } else {
+            $hits = yaz_hits($id[$i]);
+            echo "Result Count $hits";
+        }
+        echo '<dl>';
+        for ($p = 1; $p <= 10; $p++) {
+            $rec = yaz_record($id[$i],$p,"string");
+            if (empty($rec)) continue;
+            echo "<dt><b>$p</b></dt><dd>";
+            echo ereg_replace("\n", "<br>\n",$rec);
+            echo "</dd>";
+        }
+        echo '</dl>';
+    }
+}
+]]>
+      </programlisting>
+     </example>
+    </para>
+   </section>
+  </partintro>
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+ 
+
+  
+
+
+
+  
+&reference.yaz.functions;
+
+ </reference>
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"../../../manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->
+
