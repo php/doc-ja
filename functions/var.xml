@@ -523,7 +523,7 @@ if ( !isset($var) ) { // falseと評価された場合
      </funcprototype>
     </funcsynopsis>
     <para>
-     <parameter>var</parameter>が文字列であればtrue、
+     <parameter>var</parameter>が文字列であ?ptrue、
      そうでなければfalseを返します。
     </para>
     <para>
@@ -703,6 +703,12 @@ print_r ($a);
      <funcprototype>
       <funcdef>int <function>unset</function></funcdef>
       <paramdef>mixed <parameter>var</parameter></paramdef>
+      <paramdef>mixed 
+       <parameter><optional>var</optional></parameter>
+      </paramdef>
+      <paramdef>
+       <parameter><optional>...</optional></parameter>
+      </paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
@@ -712,10 +718,111 @@ print_r ($a);
      <example>
       <title><function>unset</function>の例</title>
       <programlisting role="php">
+// 変数を一つ破棄する
 unset ($foo);
+
+// 配列の要素の一つを破棄する
 unset ($bar['quux']);
+
+// 複数の変数を破棄する
+unset ($foo1, $foo2, $foo3);
       </programlisting>
      </example>
+    </para>
+    <para>
+     関数<function>unset</function>の内部動作は、破棄しようとする変数
+     の型に依存します。
+    </para>
+    <para>
+     あるグローバル変数が関数の中で<function>unset</function>された場
+     合、ローカル変数のみが破棄されます。呼出側の環境にある変数は、
+     <function>unset</function>がコールされる前と同じ値を保持します。
+     <informalexample>
+      <programlisting role="php">
+function destroy_foo() {
+    global $foo;
+    unset($foo);
+}
+
+$foo = 'bar';
+destroy_foo();
+echo $foo;
+      </programlisting>
+     </informalexample>
+     上記の例の出力は次のようになります。
+     <informalexample>
+      <programlisting>
+bar
+      </programlisting>
+     </informalexample>
+    </para>
+    <para>
+     参照渡しされた変数が関数内で<function>unset</function>された場合
+     に、ローカル変数のみが破棄されます。呼出側の環境でその変数は、
+     <function>unset</function>がコールされる前と同じ値を保持します。
+     <informalexample>
+      <programlisting role="php">
+function foo(&$bar) { 
+    unset($bar); 
+    $bar = "blah"; 
+}
+
+$bar = 'something';
+echo "$bar\n";
+
+foo($bar);
+echo "$bar\n";
+      </programlisting>
+     </informalexample>
+     The above example would output:
+     <informalexample>
+      <programlisting>
+something
+something
+      </programlisting>
+     </informalexample>
+    </para>
+    <para>
+     静的変数が関数の内部で<function>unset</function>された場合、
+     <function>unset</function> は静的変数自体ではなく静的変数へのリファ
+     レンスを破棄します。
+     <informalexample>
+      <programlisting role="php">
+function foo() { 
+    static $a;
+    $a++;
+       echo "$a\n";
+
+    unset($a);
+}
+
+foo();
+foo();
+foo();
+      </programlisting>
+     </informalexample>
+     上記の例の出力は次のようになります。
+     <informalexample>
+      <programlisting>
+1
+2
+3
+      </programlisting>
+     </informalexample>
+    </para>
+    <para>
+     グローバル変数を関数内で<function>unset</function>したい場合、
+     配列<parameter>$GLOBALS</parameter>を使用し、次のようにして下さい。
+     <informalexample>
+      <programlisting role="php">
+function foo() {
+    unset($GLOBALS['bar']);       
+}
+
+$bar = "something";
+foo();
+      </programlisting>
+     </informalexample>
     </para>
     <para>
      <function>isset</function>、<function>empty</function>も参照下さい。

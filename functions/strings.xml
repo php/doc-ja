@@ -903,10 +903,26 @@ $colon_separated = implode (":", $array);
       <paramdef>string <parameter>str1</parameter></paramdef>
       <paramdef>string <parameter>str2</parameter></paramdef>
      </funcprototype>
+     <funcprototype>
+      <funcdef>int <function>levenshtein</function></funcdef>
+      <paramdef>string <parameter>str1</parameter></paramdef>
+      <paramdef>string <parameter>str2</parameter></paramdef>
+      <paramdef>int <parameter>cost_ins</parameter></paramdef>
+      <paramdef>int <parameter>cost_rep</parameter></paramdef>
+      <paramdef>int <parameter>cost_del</parameter></paramdef>
+     </funcprototype>
+     <funcprototype>
+      <funcdef>int <function>levenshtein</function></funcdef>
+      <paramdef>string <parameter>str1</parameter></paramdef>
+      <paramdef>string <parameter>str2</parameter></paramdef>
+      <paramdef>function <parameter>cost</parameter></paramdef>
+     </funcprototype>
     </funcsynopsis>
     <para>
-     この関数は、引数で指定した二つの文字列のLevenshtein距離
-     を返します。引数文字列の一つが255文字の制限より長い場合に-1を返します。
+     この関数は、引数で指定した二つの文字列のLevenshtein距離を返します。
+     引数文字列の一つが255文字の制限より長い場合に-1を返します。
+     (255は名前や辞書比較に関して十分な長さであり、PHPでの通常の比較に
+     関しては問題となる制約ではありません)
     </para>
     <para>
      Levenshtein距離は <parameter>str1</parameter> を
@@ -917,6 +933,72 @@ $colon_separated = implode (":", $array);
      <parameter>str1</parameter>および<parameter>str2</parameter>の長さです。
      (O(max(n,m)**3)となる<function>similar_text</function>よりは良いですが
      まだかなりの計算量です)
+    </para>
+    <para>
+     上記の最も簡単な形式では、この関数はパラメータとして引数を二つだ
+     けとり、<parameter>str1</parameter>から
+     <parameter>str2</parameter>に変換する際に必要な挿入、置換、削除演
+     算の数のみを計算します。
+    </para>
+    <para>
+     2番目の形式では、挿入、置換、削除演算のコストを定義する3番目のパ
+     ラメータが追加されます。この形式は1番目の形式より一般的で汎用性が
+     高いですが、効率的ではありません。
+    </para>
+    <para>
+     3番目の形式(これは未実装です)は、最も一般的で汎用的ですが、最も遅
+     い形式でもあります。この形式では各演算毎にコストを定義するために
+     ユーザ定義関数をコールします。
+    </para>
+    <para>
+     ユーザ定義関数は、次のような引数を指定してコールされます。
+     <itemizedlist>
+      <listitem>
+       <simpara>
+	適用する演算: 'I'、'R'、'D'
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+	文字列1の文字の実体
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+	文字列2の文字の実体
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+	文字列1での位置
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+	文字列2での位置
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+	文字列1での残りの文字
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+	文字列2での残りの文字
+       </simpara>
+      </listitem>
+     </itemizedlist>
+     ユーザ定義関数は、この特定の演算に関するコストを表す正の整数を返
+     す必要があります。しかし、指定された引数のいくつかだけを使用して
+     コストを計算することも可能です。
+    </para>
+    <para> 
+     ユーザ定義関数を使用する形式では、挿入、置換、削除のコストを定義
+     する際に特定の記号(文字)またはこれらの記号を含む句の相関や差異を
+     考慮する手法をとることが可能となります。しかし、この代償として他
+     の二つの形式では動作するCPUレジスタの使用に関する最適化の実行は行
+     われず、キャッシュも動作しなくなります。
     </para>
     <para>
      <function>soundex</function>、<function>similar_text</function>、
@@ -1867,7 +1949,7 @@ if ( !strcasecmp($var1,$var2) ) {
     <para>
      この関数は、人間が行うような手法でアルファベットまたは数字の文字
      列の順序を比較するアルゴリズムを実装します。この手法は、"自然順"
-     と言われます。このアルゴリズムと(<function>strcmp</function>を使
+     ��言われます。このアルゴリズムと(<function>strcmp</function>を使
      用した)通常のコンピュータ文字列ソートの間の違いの例を次に示します。
      <informalexample>
       <programlisting role="php">
@@ -2129,7 +2211,7 @@ if (is_string ($pos) && !$pos) {
    <refnamediv>
     <refname>strrchr</refname>
     <refpurpose>
-     文字列中に文字が最後に現れる場所を�つける
+     文字列中に文字が最後に現れる場所を苣dける
     </refpurpose>
    </refnamediv>
    <refsect1>
@@ -2319,7 +2401,7 @@ strspn ("42 is the answer, what is the question ...", "1234567890");
     </funcsynopsis>
     <para>
      <parameter>haystack</parameter>の中で<parameter>needle</parameter>が
-     最初に現れる場所から、文字列の終わりまでを返します。
+     最初に現れる場所�ら、文字列の終わりまでを返します。
     </para>
     <para>
      <parameter>needle</parameter> が見つからない場合はfalseを返しま
@@ -2752,7 +2834,7 @@ print substr_count("This is a test", "is"); // 2を出力する
 $var = 'ABCDEFGH:/MNRPQR/';
 echo "Original: $var&lt;hr&gt;\n";
  
-/* 以下の2つの例は、全ての $var で 'bob' で置換します。 */
+/* 以下の2つの例は、全ての $var で 'bob' で置�します。 */
 echo substr_replace ($var, 'bob', 0) . "&lt;br&gt;\n";
 echo substr_replace ($var, 'bob', 0, strlen ($var)) . "&lt;br&gt;\n";
  
