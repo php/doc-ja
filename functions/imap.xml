@@ -1057,6 +1057,64 @@ imap_close($mbox);
    </refsect1>
   </refentry>
 
+  <refentry id="function.imap-get-quota">
+   <refnamediv>
+    <refname>imap_get_quota</refname>
+    <refpurpose>
+     クオータレベルの設定、メールボックス毎の使用状況を取得する
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>array <function>imap_get_quota</function></funcdef>
+      <paramdef>int <parameter>imap_stream</parameter></paramdef>
+      <paramdef>string <parameter>quota_root</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     指定したメールボックスのlimitとusageをキーとした整数値を配列とし
+     て返します。limitの値は、このメールボックスで最大使用可能な大きさ
+     を表します。usageの値は、このメールボックスの現在の使用状況を示し
+     ます。失敗した場合に FALSE を返します。
+    </para>
+    <para>
+     この関数は、現在、c-client2000 を使用しているユーザのみ使用可能で
+     す。
+    </para>
+    <para>
+     <parameter>imap_stream</parameter> は、
+     <function>imap_status</function>から返された値とする必要がありま
+     す。クオータ関数を使用するには、このストリームをメール管理者とし
+     てオープンする必要があります。<parameter>quota_root</parameter>
+     は、通常、user.name という形式にする必要があります。ただし、name
+     は情報を取得したいメールボックスの名前です。
+    </para>
+    <para>
+     <example>
+      <title><function>imap_get_quota</function>の例</title>
+      <programlisting role="php">
+$mbox = imap_open("{your.imap.host}","mailadmin","password",OP_HALFOPEN)
+      || die("接続できません: ".imap_last_error());
+ 
+$quota_value = imap_get_quota($mbox, "user.kalowsky");
+if(is_array($quota_value)) {
+    print "Usage level is: " . $quota_value['usage'];
+    print "Limit level is: " . $quota_value['limit'];
+} 
+ 
+imap_close($mbox); 
+      </programlisting>
+     </example>
+    </para>
+    <para>
+     <function>imap_open</function>,
+     <function>imap_set_quota</function> も参照下さい。
+    </para>
+   </refsect1>
+  </refentry>
+
   <refentry id="function.imap-listsubscribed">
    <refnamediv>
     <refname>imap_listsubscribed</refname>
@@ -1472,6 +1530,66 @@ imap_close($mbox);
     </para>
     <para>
      成功時にtrue、エラー時にfalseを返します。
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.imap-set-quota">
+   <refnamediv>
+    <refname>imap_set_quota</refname>
+    <refpurpose>指定したメールボックスにクオータを設定する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>int <function>imap_set_quota</function></funcdef>
+      <paramdef>int <parameter>imap_stream</parameter></paramdef>
+      <paramdef>string <parameter>quota_root</parameter></paramdef>
+      <paramdef>int <parameter>quota_limit</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>  
+     メールボックス単位でクオータ上限(最大容量)を設定します。この関数
+     は、メール管理者のアカウントでオープンされている
+     <parameter>imap_stream</parameter> を必要とします。他のユーザでオー
+     プンされている場合は、この関数は動作しません。
+    </para>
+    <para>
+     この関数は、c-client2000ライブラリのユーザのみ使用可能です。
+    </para>
+    <para>
+    <parameter>imap_stream</parameter> は、
+     <function>imap_open</function>コール時に返されたストリームポイン
+     タです。このストリームはメール管理者としてオープンする必要があり
+     ます。そうでない場合は、この関数は動作しません。
+     <parameter>quota_root</parameter> は、クオータを設定するメールボッ
+     クスです。これは、メールボックスのIMAP標準フォーマット
+     'user.name' に基づき指定する必要があります。
+     <parameter>quota_limit</parameter> は、
+     <parameter>quota_root</parameter> の最大サイズ(KB単位)です。
+    </para>
+    <para>
+     成功時にtrue、エラー時にfalseを返します。
+    </para>
+    <para>
+     <example>
+      <title><function>imap_set_quota</function>の例</title>
+      <programlisting role="php">
+$mbox = imap_open ("{your.imap.host:143}", "mailadmin", "password");
+
+if(!imap_set_quota($mbox, "user.kalowsky", 3000)) {
+	print "Error in setting quota\n";
+	return;
+}
+
+imap_close($mbox);
+      </programlisting>
+     </example>
+    </para>
+    <para>
+     <function>imap_open</function>,
+     <function>imap_set_quota</function> も参照下さい。
     </para>
    </refsect1>
   </refentry>
