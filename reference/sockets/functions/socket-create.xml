@@ -14,36 +14,172 @@
       <methodparam><type>int</type><parameter>type</parameter></methodparam>
       <methodparam><type>int</type><parameter>protocol</parameter></methodparam>
      </methodsynopsis>
-     &warn.experimental.func;
     <para>
-     通信用の終端(ソケット)を作成し、そのソケットへの記述子を返します。
+     通信の終端と呼ばれることもあるソケットのリソースを作成し、返します。
+     典型的なネットワーク接続は、2つのソケットから成り立ちます。このとき、
+     片方はクライアント、もう片方はサーバの役割をします。
     </para>
     <para>
-     パラメータ<parameter>domain</parameter>はドメインを設定します。現
-     在、<constant>AF_INET</constant>および
-     <constant>AF_UNIX</constant>が使用可轣Uれます。
+     パラメータ<parameter>domain</parameter>はソケットが利用する
+     プロトコルファミリーを指定します。
     </para>
+    <table>
+    <title>指定可能なアドレス/プロトコルファミリーの一覧</title>
+    <tgroup cols="2">
+     <thead>
+      <row>
+       <entry>プロトコル</entry>
+       <entry>説明</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry>AF_INET</entry>
+       <entry>
+        IPv4 インターネットプロトコル。
+        このプロトコルファミリーに属すプロトコルにはよく知られている
+        TCP と UDP があります。
+       </entry>
+      </row>
+      <row>
+       <entry>AF_UNIX</entry>
+       <entry>
+        ローカルでのコミュニケーションに用いられるプロトコルファミリーです。
+        高い効率と低いオーバーヘッドを誇るため、IPC (プロセス間通信)
+        でよく使われます。
+       </entry>
+      </row>
+     </tbody>
+    </tgroup>
+    </table>
     <para>
-     <parameter>type</parameter>パラメータはソケット型を選択します。
-     これは、<constant>SOCK_STREAM</constant>,
-     <constant>SOCK_DGRAM</constant>,
-     <constant>SOCK_SEQPACKET</constant>,
-     <constant>SOCK_RAW</constant>, <constant>SOCK_RDM</constant>, 
-     <constant>SOCK_PACKET</constant>のどれかです。
+     <parameter>type</parameter>パラメータはソケットが利用する通信のタイプを
+     指定します。
     </para>
+    <table>
+    <title>利用できるソケットのタイプ</title>
+    <tgroup cols="2">
+     <thead>
+      <row>
+       <entry>タイプ</entry>
+       <entry>説明</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry>SOCK_STREAM</entry>
+       <entry>
+         このタイプでは、時系列的な、信頼性の高い、全二重で、接続指向型の
+         バイトストリームが利用できます。
+         帯域外のデータ転送メカニズムに関しては、サポートされている場合と、
+         そうでない場合があります。
+         TCP プロトコルは、このソケットタイプに基づきます。
+       </entry>
+      </row>
+      <row>
+       <entry>SOCK_DGRAM</entry>
+       <entry>
+         このタイプでは、データグラム(非接続型で、信頼性の高くない
+         固定バイト長のメッセージ) がサポートされます。
+         UDP プロトコルは、このソケットタイプに基づきます。
+       </entry>
+      </row>
+        <row>
+       <entry>SOCK_SEQPACKET</entry>
+       <entry>
+         このタイプでは、時系列的な、信頼性のある、双方向の接続指向型の
+         固定長データグラム転送が利用できます。
+         パケットを消費する側は、一つのパケット全部を一度の read コールで
+         読み込む必要があります。
+       </entry>
+      </row>
+      <row>
+       <entry>SOCK_RAW</entry>
+       <entry>
+         このタイプでは、素のネットワークプロトコルを操作できます。
+         この特殊なソケットを使って、どのタイプのプロトコルでもユーザの手で
+         構築することができます。よくある使い方として、(ping や traceroute
+         などで行われているような) ICMP リクエストの作成があります。
+       </entry>
+      </row>
+      <row>
+       <entry>SOCK_RDM</entry>
+       <entry>
+         このタイプでは、信頼に足る、非時系列的なデータグラム転送が
+         利用できます。
+         ほとんどのオペレーティングシステムでは実装されていないでしょう。
+       </entry>
+      </row>
+     </tbody>
+    </tgroup>
+    </table>
     <para>
-     <parameter>protocol</parameter> はプロトコルを設定します。
+     <parameter>protocol</parameter> は、ソケット上の通信で使われる
+     <parameter>domain</parameter> で指定されたファミリーに属するプロトコルを
+     指定します。正しい値は、<function>getprotobyname</function>
+     を使うことで取得できます。利用したいプロトコルが、TCP または UDP
+     の場合は、定数 <constant>SOL_TCP</constant> と
+     <constant>SOL_UDP</constant> を指定することもできます。
     </para>
+    <table>
+    <title>共通なプロトコルの一覧</title>
+    <tgroup cols="2">
+     <thead>
+      <row>
+       <entry>プロトコル名</entry>
+       <entry>説明</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry>icmp</entry>
+       <entry>
+        Internet Control Message Protocol は、主にゲートウェイやホストが、
+        データグラム通信におけるエラーを報告するのに使われます。
+        "ping" コマンド (最近のほとんどのオペーレーティングシステムに
+        搭載されています) が ICMP アプリケーションの一例です。
+       </entry>
+      </row>
+      <row>
+       <entry>udp</entry>
+       <entry>
+        User Datagram Protocol は、非接続指向の、信頼性の高くない、
+        固定のレコード長を用いるプロトコルです。このような側面のおかげで、
+        UDP はプロトコルとして最小限のオーバーへッドしか要求しません。
+       </entry>
+      </row>
+      <row>
+       <entry>tcp</entry>
+       <entry>
+        Transmission Control Protocol は、信頼性の高い、接続指向かつ
+        ストリーム指向の全二重通信プロトコルです。TCP は、
+        すべてのパケットが、送信された順序で(時系列的に)受信されることを
+        保証します。もし、何らかの理由でパケットが通信中に失われた場合、
+        TCP では、送信先から通知があるまで、パケットが再送信されるように
+        なっています。信頼性とパフォーマンス上の理由から、TCP の実装は、
+        下層にあるデータグラム通信レイヤーのオクテット幅を
+        適当な長さに決定します。このため、TCP アプリケーションは、
+        レコードの全部が一度に転送されない場合も考慮しなければなりません。
+       </entry>
+      </row>
+     </tbody>
+    </tgroup>
+    </table>
     <para>
-     成功時に有効な記述子を返し、失敗時に負のエラーコードを返します。
-     このコードを<function>socket_strerror</function>に渡すことにより、
+     成功時に有効な記述子を返し、失敗時に &false; を返します。
+     実際のエラーコードは、<function>socket_last_error</function> を
+     呼ぶことにより取得できます。このエラーコードをさらに
+     <function>socket_strerror</function>に渡すことにより、
      エラーの内容を文字列で取得することが可能です。
     </para>
-    <para>
-     <function>socket_create</function>の使用法に関するより詳しい情報
-     や種々のパラメータの意味については、UNIXマニュアルページ
-     <filename>socket (2)</filename>を参照下さい。
-    </para>
+    <note>
+     <para>
+      もし <parameter>domain</parameter> や <parameter>type</parameter> に
+      不正な値が与えられた場合、<function>socket_create</function> は、これらを
+      それぞれ <constant>AF_INET</constant> と <constant>SOCK_STREAM</constant>
+      であるとみなし、<constant>E_WARNING</constant> メッセージを出します。
+     </para>
+    </note>
     <para>
      <function>socket_accept</function>,
      <function>socket_bind</function>,
