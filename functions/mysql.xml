@@ -135,12 +135,12 @@
      により生成された持続的リンクを閉じません。
     </para>
     <example>
-     <title>MySQL closeの例</title>
+     <title>MySQL 接続をクローズする例</title>
      <programlisting role="php">
 &lt;?php
     $link = mysql_connect ("kraemer", "marliesle", "secret")
-        or die ("Could not connect");
-    print ("Connected successfully");
+        or die ("接続できません");
+    print ("接続に成功しました");
     mysql_close ($link);
 ?>
      </programlisting>
@@ -215,12 +215,12 @@
      明示的に閉じられない限り、スクリプトの実行終了と同時に閉じられます。
     </para>
     <example>
-     <title>MySQL connectの例</title>
+     <title>MySQL に接続する例</title>
      <programlisting role="php">
 &lt;?php
     $link = mysql_connect ("kraemer", "marliesle", "secret")
-        or die ("Could not connect");
-    print ("Connected successfully");
+        or die ("接続できませんでした");
+    print ("接続に成功しました");
     mysql_close ($link);
 ?>
      </programlisting>
@@ -261,9 +261,9 @@
     $link = mysql_pconnect ("kron", "jutta", "geheim")
         or die ("Could not connect");
     if (mysql_create_db ("my_db")) {
-        print ("Database created successfully\n");
+        print ("データベースの作成に成功しました\n");
     } else {
-        printf ("Error creating database: %s\n", mysql_error ());
+        printf ("データベース作成時に次のエラーが発生しました: %s\n", mysql_error ());
     }
 ?>
      </programlisting>
@@ -311,20 +311,20 @@
      <programlisting role="php">
 &lt;?php
     $link = mysql_pconnect ("kron", "jutta", "geheim")
-        or die ("Could not connect");
+        or die ("接続できません");
 
     mysql_select_db ("samp_db")
-        or die ("Could not select database");
+        or die ("データベースを select できません");
 
     $query = "SELECT last_name, first_name FROM friends";
     $result = mysql_query ($query)
-        or die ("Query failed");
+        or die ("クエリが失敗しました");
 
     # 行を逆順に取得する
 
     for ($i = mysql_num_rows ($result) - 1; $i >=0; $i--) {
         if (!mysql_data_seek ($result, $i)) {
-            printf ("Cannot seek to row %d\n", $i);
+            printf ("行 %d に移動できません\n", $i);
             continue;
         }
 
@@ -382,7 +382,7 @@ mysql_connect('dbhost', 'username', 'password');
 $db_list = mysql_list_dbs();
 
 $i = 0;
-$cnt = mysql_numrows($db_list);
+$cnt = mysql_num_rows($db_list);
 while ($i < $cnt) {
     echo mysql_db_name($db_list, $i) . "\n";
     $i++;
@@ -811,16 +811,16 @@ mysql_free_result ($result);
      <programlisting role="php">
 &lt;?php 
 mysql_connect ($host, $user, $password)
-    or die ("Could not connect");
+    or die ("接続できません");
 $result = mysql_db_query ("database", "select * from table")
-    or die ("Query failed");
+    or die ("クエリが失敗しました");
 # get column metadata
 $i = 0;
 while ($i &lt; mysql_num_fields ($result)) {
-    echo "Information for column $i:&lt;BR>\n";
+    echo "カラム $i の情報 &lt;BR>\n";
     $meta = mysql_fetch_field ($result);
     if (!$meta) {
-        echo "No information available&lt;BR>\n";
+        echo "情報を入手できません &lt;BR>\n";
     }
     echo "&lt;PRE>
 blob:         $meta->blob
@@ -864,9 +864,9 @@ mysql_free_result ($result);
      </funcprototype>
     </funcsynopsis>
     <para> 
-     <function>mysql_fetch_row</function>により一番最近に取得された行における
-     各フィールドの長さを格納した配列を返します。
-     エラーの場合は、falseを返します。
+     <function>mysql_fetch_row</function>により一番最近に取得された行
+     における各フィールドの長さを格納した配列を返します。エラーの場合
+     は、falseを返します。
     </para>
     <para>
      <function>mysql_fetch_lengths</function>は、
@@ -978,6 +978,42 @@ mysql_free_result ($result);
    </refsect1>
   </refentry>
 
+  <refentry id="function.mysql-field-flags">
+   <refnamediv>
+    <refname>mysql_field_flags</refname>
+    <refpurpose>
+     結果において指定したフィールドのフラグを得る
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>string <function>mysql_field_flags</function></funcdef>
+      <paramdef>string <parameter>result</parameter></paramdef>
+      <paramdef>int <parameter>field_offset</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para> 
+     <function>mysql_field_flags</function>は、指定したフィールドの
+     フィールドフラグを得ます。フラグは、空白一つで区切られたフラグ毎
+     に一つの単語として取得されます。このため、
+     <function>explode</function>を用いて返り値を分割することができま
+     す。
+    </para>
+    <para>
+     運用システム上のMySQLがサポートしている場合、次のフラグがレポート
+     されます。"not_null", "primary_key",
+     "unique_key", "multiple_key", "blob", "unsigned", "zerofill",
+     "binary", "enum", "auto_increment", "timestamp"
+    </para>
+    <para> 
+     下位互換性の維持のため、
+     <function>mysql_fieldflags</function>も使用可能です。
+    </para>
+   </refsect1>
+  </refentry>
+
   <refentry id="function.mysql-field-name">
    <refnamediv>
     <refname>mysql_field_name</refname> 
@@ -1004,6 +1040,30 @@ mysql_free_result ($result);
     <para>
      下位互換性を維持するため、<function>mysql_fieldname</function>
      も使用可能です。
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.mysql-field-len">
+   <refnamediv>
+    <refname>mysql_field_len</refname>
+    <refpurpose>
+     指定したフィールドの長さを得る
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>int <function>mysql_field_len</function></funcdef>
+      <paramdef>int <parameter>result</parameter></paramdef>
+      <paramdef>int <parameter>field_offset</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     <function>mysql_field_len</function>は指定したフィールドの長さを
+     得ます。下位互換性の維持のため、
+     <function>mysql_fieldlen</function>も使用可能です。
     </para>
    </refsect1>
   </refentry>
@@ -1109,66 +1169,6 @@ mysql_close();
     <para> 
      下位互換性を維持するため、
      <function>mysql_fieldtype</function>も使用可能です。
-    </para>
-   </refsect1>
-  </refentry>
-
-  <refentry id="function.mysql-field-flags">
-   <refnamediv>
-    <refname>mysql_field_flags</refname>
-    <refpurpose>
-     結果において指定したフィールドのフラグを得る
-    </refpurpose>
-   </refnamediv>
-   <refsect1>
-    <title>説明</title>
-    <funcsynopsis>
-     <funcprototype>
-      <funcdef>string <function>mysql_field_flags</function></funcdef>
-      <paramdef>string <parameter>result</parameter></paramdef>
-      <paramdef>int <parameter>field_offset</parameter></paramdef>
-     </funcprototype>
-    </funcsynopsis>
-    <para> 
-     <function>mysql_field_flags</function>は、指定したフィールドの
-     フィールドフラグを得ます。
-     フラグは、空白一つで区切られたフラグ毎に一つの単語として
-     取得されます。このため、<function>explode</function>を用いて返り値を
-     分割することができます。
-    </para>
-    <para>
-     運用システム上のMySQLがサポートしている場合、次のフラグがレポート
-     されます。"not_null", "primary_key",
-     "unique_key", "multiple_key", "blob", "unsigned", "zerofill",
-     "binary", "enum", "auto_increment", "timestamp"
-    </para>
-    <para> 
-     下位互換性の維持のため、
-     <function>mysql_fieldflags</function>も使用可能です。
-    </para>
-   </refsect1>
-  </refentry>
-
-  <refentry id="function.mysql-field-len">
-   <refnamediv>
-    <refname>mysql_field_len</refname>
-    <refpurpose>
-     指定したフィールドの長さを得る
-    </refpurpose>
-   </refnamediv>
-   <refsect1>
-    <title>説明</title>
-    <funcsynopsis>
-     <funcprototype>
-      <funcdef>int <function>mysql_field_len</function></funcdef>
-      <paramdef>int <parameter>result</parameter></paramdef>
-      <paramdef>int <parameter>field_offset</parameter></paramdef>
-     </funcprototype>
-    </funcsynopsis>
-    <para>
-     <function>mysql_field_len</function>は指定したフィールドの長さを
-     得ます。下位互換性の維持のため、
-     <function>mysql_fieldlen</function>も使用可能です。
     </para>
    </refsect1>
   </refentry>
@@ -1399,8 +1399,8 @@ mysql_close();
      </funcprototype>
     </funcsynopsis>
     <para>
-     <function>mysql_num_rows</function>は結果セットにおける行の数を返し��す。
-     このコマンドはSELECT文でのみ有効です。
+     <function>mysql_num_rows</function>は結果セットにおける行の数を返
+     します。このコマンドはSELECT文でのみ有効です。
      INSERT、UPDATE、DELETEから返される行の数を取得する際には、
      <function>mysql_affected_rows</function>を使用して下さい。
      <example>
@@ -1413,7 +1413,7 @@ mysql_close();
 $conn = mysql_connect("hostaddress", "username", "password"); 
 mysql_select_db("database",$conn); // 複数のデータベースがある場合は必要
 $Resultfornummembers = mysql_query("SELECT * FROM Accounts",$conn); 
-$NumMembers = mysql_numrows($Resultfornummembers); 
+$NumMembers = mysql_num_rows($Resultfornummembers); 
 echo "$NumMembers Members";
 ?>                          
       </programlisting>
@@ -1430,8 +1430,6 @@ echo "$NumMembers Members";
     </para>
    </refsect1>
   </refentry>
-
-
 
   <refentry id="function.mysql-pconnect">
    <refnamediv>
@@ -1712,7 +1710,7 @@ $result = mysql_query ("SELECT my_col FROM my_tbl")
      タおよび整数インデックスを引数とし、テーブルの名前を返します。
      結果ポインタにおけるテーブルの数を定義するために
      <function>mysql_num_rows</function>関数を使用することができます。
-    <example>
+     <example>
       <title><function>mysql_tablename</function>の例</title>
       <programlisting role="php">
 &lt;?php 
