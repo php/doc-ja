@@ -1,5 +1,5 @@
  <reference id="ref.strings">
-  <title>文字列関数</title>
+  <title>Strings(文字列関数)</title>
   <titleabbrev>文字列</titleabbrev>
   <partintro>
    <simpara>
@@ -31,23 +31,55 @@
     </funcsynopsis>
     <para>
      <parameter>charlist</parameter>パラメータに羅列された文字の前に
-     バックスラッシュを付けた文字列を返します。
-     この関数は、<literal>\n</literal>, <literal>\r</literal> 等を
-     C言語と同様の手法によりエスケープします。アスキーコードが 
-     32 未満または126より大きい文字は、8進表現に変換されます。
-     英数字をエスケープする際には、注意して下さい。
-     "\0..\37" のように <parameter>charlist</parameter> の範囲を
-     指定可能です。この場合、アスキーコードが 0 から 31 の範囲の
-     文字は全てエスケープされます。
+     バックスラッシュを付けた文字列を返します。この関数は、
+     <literal>\n</literal>, <literal>\r</literal> 等ををC言語と同様の手
+     法によりエスケープします。アスキーコードが32未満または126より大き
+     い文字は、8進表現に変換されます。
+    </para>
+    <para>
+     エスケープ文字を0, a, b, f, n, r, t , vとする場合には注意して下さ
+     い。これらは、\0, \a, \b, \f, \n, \r, \t に変換されます。
+     PHPでは、\0 (&null;), \r (復改文字), \n (改行文字) , \t (タブ)
+     が定義済みのエスケープシーケンスですが、C言語では、これら全てが定
+     義済みのエスケープシーケンスです。
+    </para>
+    <para>
+     "\0..\37" のように<parameter>charlist</parameter>に範囲を指定可能
+     です。この場合、アスキーコードが 0 から 31 の範囲の文字は全てエス
+     ケープされます。
      <example>
       <title><function>addcslashes</function> の例</title>
       <programlisting role="php">
 $escaped = addcslashes($not_escaped, "\0..\37!@\177..\377");
       </programlisting>
      </example>
+    </para>
+    <para>
+     charlist引数の文字の列びを定義する際には、範囲の最初と最後で指定
+     する文字集合に含まれる文字の種類を把握するようにして下さい。
+     <informalexample>
+      <programlisting role="php">
+echo addcslashes('foo[]', 'A..z'); 
+// 全ての大文字と小文字はエスケープされます。
+// ... しかし、[\]^_` および空白文字もエスケープされてしまいます。
+      </programlisting>
+     </informalexample>
+     また、指定した範囲の2番目の文字ではなく、最初の文字が小文字ASCII
+     値の場合、範囲は定義されません。開始位置から終了位置までの文字の
+     みがエスケープされます。ある文字のASCII値を見つけるには
+     <function>ord</function> 関数を使用して下さい。
+     <informalexample>
+      <programlisting role="php">
+echo addcslashes("zoo['.']", 'z..A');
+/* 出力:
+\zoo['\.']
+
+*/
+      </programlisting>
+     </informalexample>
      <note>
       <simpara>
-       PHP4b3-dev で追加されました。
+       PHP 4で追加されました。
       </simpara>
      </note>
     </para>
@@ -80,6 +112,12 @@ $escaped = addcslashes($not_escaped, "\0..\37!@\177..\377");
      ダブルクォート(<literal>"</literal>),バックスラッシュ
      (<literal>\</literal>) ,NUL (ヌルバイト) です。
     </para>
+    <note>
+     <para>
+      <link linkend="ini.magic-quotes-gpc">magic_quotes_gpc</link> は
+      デフォルトでOnです。
+     </para>
+    </note>
     <para>
      <function>stripslashes</function>, 
      <function>htmlspecialchars</function>,
@@ -378,30 +416,35 @@ $new_string = chunk_split (base64_encode($data));
     </funcsynopsis>
     <para>
      <function>crypt</function>は、Unix 標準の <abbrev>DES</abbrev>
-     暗号化手法を使って文字列を暗号化します。引数は暗号化したい
-     文字列を指定し、オプションで暗号化のベースとなる 2 文字の
-     'salt' 文字列を指定します。暗号化に関する関数の詳細は Unix
-     man ページを参照してください。
+     暗号を使って文字列を暗号化します。引数には暗号化したい文字列を指
+     定し、オプションで暗号化のベースとなる 2 文字の'salt' 文字列を指
+     定します。暗号化に関する関数の詳細は Unix man ページを参照してく
+     ださい。
     </para>
     <simpara>
      salt引数が指定されない場合、PHPによりランダムに生成されます。
     </simpara>
     <simpara>
-     いくつかのオペレーティングシステムは、複数の暗号化方式をサポートしています。
-     実際、標準のDES暗号化の替わりにMD5に基づく暗号化アルゴリズムが
-     使用されることが時々あります。暗号化手法は、salt引数により選定されます。
-    インストール時に、PHPはcrypt関数の機能を定義し、他の暗号化方式用の
-     saltを受付ます。saltが指定されない場合、
-     システムのデフォルトの暗号化手法がMD5でない限り
-     PHPはデフォルトで標準の2文字DES saltを自動的に生成します。
-     暗号化手法がMD5の場合、MD5互換のsaltが生成されます。
-     PHPは、標準の2文字のsaltをシステムに適用するか、
-     より長い12文字MD5 saltが適用できるかを意味する
-     定数 CRYPT_SALT_LENGTH を設定します。
+     いくつかのオペレーティングシステムは、複数の暗号化方式をサポート
+     しています。実際、標準のDES暗号の替わりにMD5に基づく暗号化アルゴ
+     リズムが使用されることが時々あります。暗号化手法は、salt引数によ
+     り選定されます。インストール時に、PHPはcrypt関数の機能を定義し、
+     他の暗号化方式用のsaltを受付ます。saltが指定されない場合、システ
+     ムのデフォルトの暗号化手法がMD5でない限りPHPはデフォルトで標準の2
+     文字DES saltを自動的に生成します。暗号化手法がMD5の場合、MD5互換
+     のsaltが生成されます。PHPは、標準の2文字のsaltをシステムに適用す
+     るか、より長い12文字MD5 saltが適用できるかを意味する定数
+     CRYPT_SALT_LENGTH を設定します。
     </simpara>
     <simpara>
-     標準 DES 暗号化 <function>crypt</function> は、
-     出力の最初の2文字をsaltとして使用します。
+     生成されたsaltを使用する場合、saltが生成されるのは一回限りである
+     ことに気付く必要があります。この関数を再帰的にコールする場合、こ
+     のことは、出力だけでなく、セキュリティにも影響を与える可能性があ
+     ります。
+    </simpara>
+    <simpara>
+     標準 DES 暗号化 <function>crypt</function> は、出力の最初の2文字
+     をsaltとして使用します。
     </simpara>
     <simpara>
      crypt() 関数が複数の暗号化手法をサポートするシステムにおいては、
@@ -802,9 +845,12 @@ $original = strtr ($str, $trans);
     </para>
     <para>
      現在のところ、ISO-8859-1 文字セットがデフォルトの文字エンコーディ
-     ングとして使用されます。3番目の引数
-     <parameter>charset</parameter>にて他の文字エンコーディングを指定
-     することも可能です。
+     ングとして使用されます。オプションの2番目の引数は、PHP 3.0.17およ
+     びPHP 4.0.3で追加されました。
+    </para>
+    <para>
+     <function>htmlspecialchars</function>と同様に、この関数はオプショ
+     ンの3番目の引数をとり、変換に使用される文字セットを指定可能です。
     </para>
     <para>
      <function>htmlspecialchars</function> および 
@@ -817,7 +863,7 @@ $original = strtr ($str, $trans);
    <refnamediv>
     <refname>htmlspecialchars</refname>
     <refpurpose>
-     特殊文字を HTML エントリに変換する
+     特殊文字をHTMLエンティティに変換する
     </refpurpose>
    </refnamediv>
    <refsect1>
@@ -830,6 +876,9 @@ $original = strtr ($str, $trans);
        <parameter>
 	<replaceable><optional>quote_style</optional></replaceable>
        </parameter>
+      </paramdef>
+      <paramdef>string 
+       <parameter><optional>charset</optional></parameter>
       </paramdef>
      </funcprototype>
     </funcsynopsis>
@@ -874,11 +923,22 @@ $original = strtr ($str, $trans);
        </simpara>
       </listitem>
      </itemizedlist>
+     <example>
+      <title><function>htmlspecialchars</function>の例</title>
+      <programlisting role="php">
+$new = htmlspecialchars("&lt;a href='test'&gt;Test&lt;/a&gt;", ENT_QUOTES);
+      </programlisting>
+     </example>
     </para>
     <para>
      この関数は上記のあげたもの以外に関しては一切の変換を行わないことに
      注意して下さい。すべての変換を行うには
-     <function>htmlentities</function>を参照してください。
+     <function>htmlentities</function>を参照してください。オプションの
+     2番目の引数は、PHP 3.0.17およびPHP 4.0.3で追加されました。
+    </para>
+    <para>
+     3番目の引数は、変換に使用される文字セットを指定します。デフォルト
+     の文字セットは、ISO-8859-1です。
     </para>
     <para>
      <function>htmlentities</function> および 
