@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revison$ -->
+<!-- $Revision: 1.21 $ -->
+<!-- sync: 1.62 -->
  <chapter id="features.file-upload">
   <title>ファイルアップロードの処理</title>
   
@@ -41,8 +42,8 @@
      <title>ファイルアップロード用のフォーム</title>
      <programlisting role="html">
 <![CDATA[
-<form enctype="multipart/form-data" action="_URL_" method="post">
-<input type="hidden" name="MAX_FILE_SIZE" value="1000">
+<form enctype="multipart/form-data" action="_URL_" method="POST">
+<input type="hidden" name="MAX_FILE_SIZE" value="30000">
 Send this file: <input name="userfile" type="file">
 <input type="submit" value="Send File">
 </form>
@@ -58,6 +59,10 @@ Send this file: <input name="userfile" type="file">
       MAX_FILE_SIZEはブラウザへの勧告に過ぎません。この最大値を
       出し抜くのは簡単なことなので信頼してはいけません。しかし、
       PHP側の最大サイズの設定を欺くことはできません。
+      しかしそれでもMAX_FILE_SIZEを指定すべきです。なぜなら、
+      巨大なファイルを転送しようとして、実はそれが大きすぎて
+      転送できないということを長時間待ったあとで知らされるのを
+      防げるからです。
      </para>
     </warning>
    </para>
@@ -82,6 +87,7 @@ Send this file: <input name="userfile" type="file">
     の内容は次のようになります。ここでは、上の例のスクリプトで使われたように、
     アップロードファイルの名前として<emphasis>userfile</emphasis>を使用する
     ことを仮定していることに注意して下さい。
+    実際にはどんな名前にすることもできます。
     <variablelist>
      <varlistentry>
       <term><varname>$_FILES['userfile']['name']</varname></term>
@@ -167,20 +173,28 @@ Send this file: <input name="userfile" type="file">
       以下の例は、4.0.2 より後のバージョンの PHP 4 用です。
       <function>is_uploaded_file</function>
       および<function>move_uploaded_file</function>の関数のエントリを
-      参照下さい。
+      参照下さい。以下はフォームからファイルをアップロードするプロセスの例です。
      </para>
      <programlisting role="php">
 <![CDATA[
-<?php 
+<?php
 // 4.1.0より前のPHPでは$FILESの代わりに$HTTP_POST_FILESを使用する必要
-// があります。
-if (is_uploaded_file($_FILES['userfile']['tmp_name'])) {
-    copy($_FILES['userfile']['tmp_name'], "/place/to/put/uploaded/file");
+// があります。4.0.3より前のPHPではmove_uploaded_fileの代わりにcopy() と
+// is_uploaded_file()を使用してください
+
+$uploaddir = '/var/www/uploads/';
+$uploadfile = $uploaddir. $_FILES['userfile']['name'];
+
+print "<pre>";
+if (move_uploaded_file($_FILES['userfile']['tmp_name'], $uploadfile)) {
+    print "File is valid, and was successfully uploaded. ";
+    print "Here's some more debugging info:\n";
+    print_r($_FILES);
 } else {
-    echo "ファイルアップロード攻撃をされた可能性があります。ファイル名: " . $_FILES['userfile']['name'];
+    print "ファイルアップロード攻撃をされた可能性があります。デバッグ関連情報:\n";
+    print_r($_FILES);
 }
-/* ...または... */
-move_uploaded_file($_FILES['userfile']['tmp_name'], "/place/to/put/uploaded/file");
+
 ?>
 ]]>
      </programlisting>
@@ -286,7 +300,6 @@ move_uploaded_file($_FILES['userfile']['tmp_name'], "/place/to/put/uploaded/file
     <link linkend="ini.memory-limit">memory_limit</link>に充分大きな値
     を設定するようにして下さい。
    </simpara>
-<!-- FIXME: max_execution_time INI -->
    <simpara>
     <link linkend="ini.max-execution-time">max_execution_time</link>
     に設定した値が小さすぎた場合、スクリプトの実行時間がこの値を越える
@@ -294,6 +307,17 @@ move_uploaded_file($_FILES['userfile']['tmp_name'], "/place/to/put/uploaded/file
     <literal>max_execution_time</literal>に充分大きな値を設定するよう
     にして下さい。
    </simpara>
+   <note>
+    <simpara>
+     <link linkend="ini.max-execution-time">max_execution_time</link>は
+     スクリプト自身の実行時間にのみ影響します。
+     スクリプトの実行範囲の外側で発生する動作にかかる時間、つまり、
+     <function>system</function>を使ったシステムコールや、
+     <function>sleep</function>関数、データベースに対するクエリー、
+     ファイルアップロードプロセス、などに費やされた時間はスクリプトの
+     総実行時間に含まれません。
+    </simpara>
+   </note>    
    <simpara>
     <link linkend="ini.post-max-size">post_max_size</link>の設定値が小
     さすぎた場合、大きなファイルをアップロードすることができなくなりま
@@ -309,6 +333,11 @@ move_uploaded_file($_FILES['userfile']['tmp_name'], "/place/to/put/uploaded/file
     て最初が空白文字で始まるものを切り捨てるようですので注意して下さい。
     このような動作をする限り、CERN httpd は、ファイルアップロード機能を
     サポートしないでしょう。
+   </simpara>
+   <simpara>
+    大量のディレクトリ一覧のスタイルのせいで、
+    風変わりな名前（空白を含んでいるとか）のファイルを適切に扱えることは
+    保証できません。
    </simpara>
   </sect1>
 
@@ -344,8 +373,6 @@ move_uploaded_file($_FILES['userfile']['tmp_name'], "/place/to/put/uploaded/file
      </programlisting>
     </example>
    </para>
-
-
    <simpara>
     上記のフォームで投稿された場合、配列
     <varname>$_FILES['userfile']</varname>,
@@ -380,13 +407,48 @@ move_uploaded_file($_FILES['userfile']['tmp_name'], "/place/to/put/uploaded/file
 
   <sect1 id="features.file-upload.put-method">
    <title>PUT メソッドのサポート</title>
-
+   <simpara>
+    PUT method support has changed between PHP 3 and PHP 4.
+    In PHP 4, one should use the standard input stream to read
+    the contents of an HTTP PUT.
+    PHP3とPHP4の間でPUTメソッドのサポートが変更されました。
+    PHP4では、HTTP PUTのコンテンツを読み込むためには
+    標準の入力ストリームを使用すべきです。
+   </simpara>
    <para>
-    PHP は、Netscape Composer や W3C Amaya のようなクライアントで
-    サポートされる HTTP PUT メソッドをサポートします。
-    PUT リクエストは、ファイルアップロードよりもかなり簡単であり、
-    次のようなものになります。
+    <example>
+     <title>PHP 4でHTTP PUTファイルを保存する</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+/* PUT データが標準入力ストリームから入ってくる */
+$putdata = fopen("php://stdin","r");
 
+/* 書き込み先ファイルをオープン */
+$fp = fopen("myputfile.ext","w");
+
+/* 1kb毎に読み込んでファイルに書き込む */
+while ($data = fread($putdata,1024))
+  fwrite($fp,$data);
+
+/* ストリームを閉じる */
+fclose($fp);
+fclose($putdata);
+?>
+]]>
+     </programlisting>
+    </example>
+   </para>
+   <note>
+    <para>
+     以下の全てのドキュメントはPHP3にのみ適用されます。
+    </para>
+   </note>
+   <para>
+    PHPは、Netscape Composer や W3C Amayaのようなクライアントを使用した場合の
+    HTTP PUTメソッドのサポートを提供します。
+    PUTリクエストはファイルアップロードよりもシンプルであり、
+    次のような形になります。
     <informalexample>
      <programlisting>
 PUT /path/filename.html HTTP/1.1
