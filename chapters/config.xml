@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.33 $ -->
+<!-- $Revision: 1.34 $ -->
 <!-- EN-Revision: 1.118 Maintainer: hirokawa Status: ready -->
  <chapter id="configuration">
   <title>設定</title>
@@ -8,8 +8,8 @@
    <title>設定ファイル</title>
    
    <simpara>
-    設定ファイル (PHP 3.0 では <filename>php3.ini</filename>、
-    PHP 4.0 では &php.ini;) は、PHP の起動時に読み込まれます。
+    PHPの起動時に 設定ファイル (PHP 3 では <filename>php3.ini</filename>、
+    PHP 4 では &php.ini;) が読み込まれます。
     PHP のサーバーモジュール版では、このファイルは、Web サーバーの起動
     時に一度だけ読み込まれます。<acronym>CGI</acronym>と
     <acronym>CLI</acronym>版では、起動する度にこのファイルが読み込まれます。
@@ -21,32 +21,27 @@
     <acronym>CLI</acronym> 版の場合、コマンドラインスイッチ
     <literal>-c</literal>によりこれを変更することができます。
     <link linkend="features.commandline">コマンドライン</link>からの
-    <literal>PHP</literal> の使用に関する章を参照下さい。
+    PHPの使用に関する章を参照下さい。
     &php.ini;を探すパスを追加するために環境変数
     <literal>PHPRC</literal> を使用することもできます。
    </para>
    <note>
     <para>
-     Apache web サーバー は、スタート時に作業ディレクトリをルートディレクトリ
-     に変更するので、PHPは、ルートディレクトリに
-     <filename>php.ini</filename> が存在する場合、それを読もうとします。
+     Apache web サーバー は、スタート時にディレクトリをルート
+     に変更するので、PHPは、ルートファイルシステムに &php.ini;
+     が存在する場合、それを読もうとします。
     </para>
    </note>
    <para>
-    下記では、必ずしもすべての PHP ディレクティブが説明されているわけでは
-    ありません。すべてのディレクティブについての説明は、&php.ini; ファイル
-    のコメントを参照してください。CVS にある最新の &php.ini; は、
-    <ulink url="&url.php.cvs.phpini;">ここ</ulink> で見ることができます。
+    拡張モジュールにより処理される&php.ini;ディレクティブは、各拡張モジュール自体の
+    ドキュメントに記述されています。
+    <link linkend="ini">コアディレクティブのリスト</link> が付録にあります。
+    おそらくあなたが使用するPHPのバージョンでこれらのPHPディレクティブが全て
+    利用可能なわけではないでしょう。コメントが充実した &php.ini; ファイルを
+    読んでみて下さい。
+    もしくは、CVS から入手可能な <ulink url="&url.php.cvs.phpini;">
+     最新の &php.ini;</ulink> も役に立つでしょう。
    </para>
-   <note>
-    <para>
-     PHPディレクティブ
-     <link linkend="ini.register-globals">register_globals</link>
-     のデフォルト値は、PHP <ulink url="&url.php.release4.2.0;">4.2.0</ulink>
-     以降では <emphasis>on</emphasis> から <emphasis>off</emphasis>
-     に変更されました。
-    </para>
-   </note>
    <para>
     <example>
      <title>&php.ini; の例</title>
@@ -76,7 +71,7 @@ include_path = ".;c:\php\lib"
    <title>設定を変更するには</title>
    
    <sect2 id="configuration.changes.apache">
-    <title>Apacheモジュールとして<literal>PHP</literal>を実行する</title>
+    <title>ApacheモジュールとしてPHPを実行する</title>
     <simpara>
      PHP を Apache モジュールとして使用する場合、Apache用設定ファイルや
      .htaccess ファイルに命令を記述することによりPHPの設定を行うことが
@@ -85,7 +80,7 @@ include_path = ".;c:\php\lib"
     </simpara>
    
     <para>
-     PHP 4.0 においては、PHP設定用の複数のApacheディレクティブがあり、
+     PHP 4および PHP 5においては、PHP設定用の複数のApacheディレクティブがあり、
      Apacheの設定ファイルでPHPの設定を変更可能です。どのディレクティブが、
      <constant>PHP_INI_ALL</constant> か, <constant>PHP_INI_PERDIR</constant>,
      または <constant>PHP_INI_SYSTEM</constant> なのかについてのリストは、
@@ -94,7 +89,7 @@ include_path = ".;c:\php\lib"
 
     <note>
      <simpara>
-      PHP 3.0 においては、<filename>php3.ini</filename>の各ディレクティ
+      PHP 3においては、<filename>php3.ini</filename>の各ディレクティ
       ブに対応した Apache 用ディレクティブが存在し、PHP 用のディレクティ
       ブの前に "php3_" を付けて使用することにより、設定の変更が可能です。
      </simpara>
@@ -177,9 +172,13 @@ include_path = ".;c:\php\lib"
       <title>Apache 設定の例</title>
       <programlisting role="ini">
 <![CDATA[
+<IfModule mod_php5.c>
+  php_value include_path ".:/usr/local/lib/php"
+  php_admin_flag safe_mode on
+</IfModule>
 <IfModule mod_php4.c>
   php_value include_path ".:/usr/local/lib/php"
-  php_flag safe_mode on
+  php_admin_flag safe_mode on
 </IfModule>
 <IfModule mod_php3.c>
   php3_include_path ".:/usr/local/lib/php"
@@ -205,75 +204,34 @@ include_path = ".;c:\php\lib"
    </sect2>
 
    <sect2 id="configuration.changes.windows">
-    <title>Changing <literal>PHP</literal> configuration via the Windows registry</title>
+    <title>WindowsレジストリによりPHPの設定を変更する</title>
      <simpara>
-      When running PHP on Windows, the configuration values can be
-      modified on per-directory basis using the Windows registry. The
-      configuration values are stored in the registry key 
-      <literal>HKLM\SOFTWARE\PHP\Per Directory Values</literal>, 
-      in the sub-keys corresponding to the path names. For example, configuration 
-      values for the directory <literal>c:\inetpub\wwwroot</literal> would
-      be stored in the key <literal>HKLM\SOFTWARE\PHP\Per Directory
-      Values\c\inetpub\wwwroot</literal>. The settings for the
-      directory would be active for any script running from this
-      directory or any subdirectory of it. The values under the key
-      should have the name of <link linkend="configuration">PHP
-      configuration directive</link> and the string value. PHP
-      constants in the values would not be parsed. 
-     </simpara>
+     Windows上でPHPを実行する際、Windowsレジストリを使用して設定値を
+     ディレクトリ毎に変更することができます。
+     設定値は、レジストリキー <literal>HKLM\SOFTWARE\PHP\Per Directory Values</literal>
+     に保存され、そのサブキーをパス名とします。
+     例えば、ディレクトリ <literal>c:\inetpub\wwwroot</literal>の設定値
+     は、 キー <literal>HKLM\SOFTWARE\PHP\Per Directory 
+      Values\c\inetpub\wwwroot</literal> に保存されます。
+     このディレクトリの設定は、このディレクトリまたはそのサブディレクトリで
+     実行される全てのスクリプトで有効となります。
+     キーの値は、PHP設定ディレクティブの名前と文字列の値を有している必要があります。
+     この値にPHP定数を書いても解釈されません。
+    </simpara>
    </sect2>
 
    <sect2 id="configuration.changes.other">
-    <title><literal>PHP</literal>への別のインターフェイス</title>
+    <title>PHPへの別のインターフェイス</title>
     <para>
-     <literal>PHP</literal> へのインターフェイスによらず、
+     PHPへのインターフェイスによらず、
      <function>ini_set</function>によりスクリプトの実行時ある種の値を
-     変更することができます。以下の表にどのレベルのディレクティブを設
-     定/変更できるかの概要を示します。
+     変更することができます。詳細は、
+     <function>ini_set</function>を参照して下さい。
     </para>
     <para>
-     <table>
-      <title>PHP_INI_* 定数の定義</title>
-      <tgroup cols="3">
-       <thead>
-        <row>
-         <entry>定数</entry>
-         <entry>値</entry>
-         <entry>意味</entry>
-        </row>
-       </thead>
-       <tbody>
-        <row>
-         <entry>PHP_INI_USER</entry>
-         <entry>1</entry>
-         <entry>ユーザスクリプトで設定できるエントリ</entry>
-        </row>
-        <row>
-         <entry>PHP_INI_PERDIR</entry>
-         <entry>2</entry>
-         <entry>
-          &php.ini;, &htaccess; および &httpd.conf; で設定できるエントリ
-         </entry>
-        </row>
-        <row>
-         <entry>PHP_INI_SYSTEM</entry>
-         <entry>4</entry>
-         <entry>
-          &php.ini; または &httpd.conf; で設定できるエントリ
-         </entry>
-        </row>
-        <row>
-         <entry>PHP_INI_ALL</entry>
-         <entry>7</entry>
-         <entry>どこでも設定できるエントリ</entry>
-        </row>
-       </tbody>
-      </tgroup>
-     </table>
-    </para>
-    <para>
-     <function>phpinfo</function>の出力で設定値を参照することができま
-     す。また、<function>ini_get</function> または
+     使用するシステム上での設定とその現在の値に関する完全なリストを見たい場合、
+     <function>phpinfo</function>関数を実行し、出力される結果を見ることができます。
+     また、<function>ini_get</function> または
      <function>get_cfg_var</function>により個々の設定値にアクセスする
      ことも可能です。
     </para>
