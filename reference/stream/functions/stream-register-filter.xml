@@ -1,37 +1,38 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
-<!-- $Revision: 1.1 $ -->
+<!-- $Revision: 1.2 $ -->
 <!-- sync: 1.6 -->
   <refentry id="function.stream-register-filter">
    <refnamediv>
     <refname>stream_register_filter</refname>
-    <refpurpose>Register a stream filter implemented as a PHP class derived from <literal>php_user_filter</literal></refpurpose>
+    <refpurpose><literal>php_user_filter</literal> に由来するクラスとして実装されたストリームフィルタを登録する</refpurpose>
    </refnamediv>
    <refsect1>
-    <title>Description</title>
+    <title>説明</title>
     <methodsynopsis>
      <type>bool</type><methodname>stream_register_filter</methodname>
      <methodparam><type>string</type><parameter>filtername</parameter></methodparam>
      <methodparam><type>string</type><parameter>classname</parameter></methodparam>
     </methodsynopsis>
     <para>
-     <function>stream_register_filter</function> allows you to implement
-     your own filter on any registered stream used with all the other
-     filesystem functions (such as <function>fopen</function>,
-     <function>fread</function> etc.).
+     <function>stream_register_filter</function> は、<function>fopen</function>
+     や <function>fread</function> などのファイルシステムの関数で利用可能な
+     登録されているどの種類のストリームとも一緒に使うことのできる
+     カスタムフィルタを登録します。
     </para>
     <para>
-     To implement a filter, you need to define a class as an extension of
-     <literal>php_user_fitler</literal> with a number of member functions 
-     as defined below. When performing read/write operations on the stream
-     to which your filter is attached, PHP will pass the data through your
-     filter (and any other filters attached to that stream) so that the
-     data may be modified as desired. You must implement the methods
-     exactly as described below - doing otherwise will lead to undefined
-     behaviour.
+     フィルタを実装するには、まず、<literal>php_user_fitler</literal>
+     を継承したクラスの下記に示されたメンバ関数を実装しなくてはなりません。
+     <literal>PHP</literal> は、書き込みまたは読み出し操作を
+     カスタムフィルタの付加されたストリームに対して行う際に、まず
+     データをそのフィルタに(そして、付加されている他のすべてのフィルタにも)
+     渡し、指示どおりストリームのデータが変更されるようにします。
+     下記のメソッドは、説明の通り実装されなくてはなりません。
+     さもないと、定義されていない動作をします。
     </para>
     <para>
-     <function>stream_register_filter</function> will return &false; if the
-     <parameter>filtername</parameter> is already defined.
+     <function>stream_register_filter</function> は、
+     指定された <parameter>filtername</parameter> がすでに定義されている場合、
+     &false; を返します。
     </para>
 
     <methodsynopsis>
@@ -42,26 +43,31 @@
      <methodparam><type>boolean</type><parameter>closing</parameter></methodparam>
     </methodsynopsis>
     <para>
-     This method is called whenever data is read from or written to 
-     the attached stream (such as with <function>fread</function> or <function>fwrite</function>).  
-     <parameter>in</parameter> is a resource pointing to a <literal>bucket brigade</literal>
-     which contains one or more <literal>bucket</literal> objects containing data to be filtered.
-     <parameter>out</parameter> is a resource pointing to a second <literal>bucket brigade</literal>
-     into which your modified buckets should be placed.
-     <parameter>consumed</parameter>, which must <emphasis>always</emphasis>
-     be declared by reference, should be incremented by the length of the data
-     which your filter reads in and alters.  In most cases this means you will
-     increment <parameter>consumed</parameter> by $bucket->datalen for each $bucket.
-     If the stream is in the process of closing (and therefore this is the last pass
-     through the filterchain), the <parameter>closing</parameter> parameter will be
-     set to &true;  The <methodname>filter</methodname> method must return one of
-     three values upon completion.  <constant>PSFS_PASS_ON</constant> indicates
-     success with data available in the <parameter>out</parameter> <literal>bucket brigade</literal>.
-     <constant>PSFS_FEED_ME</constant> indicates that the filter has no data
-     available to return and requires additional data from the stream.
-     <constant>PSFS_ERR_FATAL</constant> indicates that the filter experienced an
-     unrecoverable error and cannot continue.  If no value is returned by this method,
-     <constant>PSFS_ERR_FATAL</constant> will be assumed.
+     このメソッドは、<function>fread</function> や <function>fwrite</function>
+     等の関数で、付加されたストリームからデータを読み出す時や、
+     データを書き込む度に呼ばれます。
+     <parameter>in</parameter> は、<literal>bucket brigade</literal> (バケツリレー隊) を指すポインターです。
+     これは、フィルタの対象になるデータを含む複数の
+     <literal>bucket</literal> オブジェクトから成っています。
+     <parameter>out</parameter> は、変更されたバケットが渡される
+     <literal>bucket brigade</literal> を示しています。
+     <parameter>consumed</parameter> は、参照渡しされるパラメータで、
+     ここには、フィルタが実際に処理した元のデータ長を加算します。
+     ほとんどの場合、それぞれのバケットについて、そのデータ長
+     <literal>$bucket->datalen</literal> を、そこに足すだけでいいはずです。
+     もし、ストリームが閉じようとしている時 (すなわちフィルタ連鎖の中の
+     最後の呼び出しだった時)、<parameter>closing</parameter> パラメータは、
+     &true; となります。<methodname>filter</methodname> パラメータは、さらに、
+     次の値のいずれかを終了時に返さなくてはなりません。
+     <constant>PSFS_PASS_ON</constant> は、処理に成功し、
+     <parameter>out</parameter> の <literal>バケツ隊</literal> に
+     データが渡されたことを示します。<constant>PSFS_FEED_ME</constant> は、
+     その時点では返すデータがなく、ストリームからのより多くの入力データを
+     必要としていることを示します。
+     <constant>PSFS_ERR_FATAL</constant> は、フィルタにおいて、
+     復旧不可能なエラーが発生し、処理を継続できないことを示します。
+     もし、返値が返されなかった場合、 <constant>PSFS_ERR_FATAL</constant> が
+     想定されます。
     </para>
 
     <methodsynopsis>
@@ -69,9 +75,9 @@
      <void/>
     </methodsynopsis>
     <para>
-     This method is called during instantiation of the filter class
-     object.  If your filter allocates or initializes any other resources
-     (such as a buffer), this is the place to do it.
+     このメソッドは、フィルタクラスのオブジェクトが実体化されるときに
+     呼び出されます。もし、フィルタがバッファなど他のリソースを
+     確保したり初期化しなくてはならない場合、この時点で行ってください。
     </para>
 
     <methodsynopsis>
@@ -79,25 +85,26 @@
      <void/>
     </methodsynopsis>
     <para>
-     This method is called upon filter shutdown (typically, this is also
-     during stream shutdown), and is executed <emphasis>after</emphasis>
-     the <literal>flush</literal> method is called.  If any resources
-     were allocated or initialzed during <literal>oncreate</literal>
-     this would be the time to destroy or dispose of them.
+     このメソッドは、フィルタが遮断される時(通常、ストリームが遮断
+     される時)に呼ばれます。また、同様に、<literal>flush</literal> メソッドが
+     呼ばれた<emphasis>後に</emphasis>呼び出されます。
+     もし、何らかのリソースが、<literal>oncreate</literal> メソッドの
+     呼び出し時に確保されていた場合は、それらをここで廃棄するのが
+     いいでしょう。
     </para>
 
     <para>
-     The example below implements a filter named <literal>strtoupper</literal>
-     on the <literal>foo-bar.txt</literal> stream which will capitalize
-     all letter characters written to/read from that stream.
+     下記の例は、読み込まれたり書き出されたりするデータに含まれるすべての英文字を
+     大文字化する <literal>strtoupper</literal> ストリームを実装し、<literal>foo-bar.txt</literal>
+     ストリームに適用するものです。
 
      <example> 
-      <title>Filter for capitalizing characters on foo-bar.txt stream</title>
+      <title>foo-bar.txt ストリームの文字を大文字化するフィルタ</title>
       <programlisting role="php">
 <![CDATA[
 <?php
 
-/* Define our filter class */
+/* フィルタクラスを定義する */
 class strtoupper_filter extends php_user_filter {
   function filter($in, $out, &$consumed, $closing) {
     while ($bucket = stream_bucket_make_writeable($in)) {
@@ -109,13 +116,13 @@ class strtoupper_filter extends php_user_filter {
   }
 } 
 
-/* Register our filter with PHP */
+/* PHP にフィルタを登録する */
 stream_register_filter("strtoupper", "strtoupper_filter")
     or die("Failed to register filter");
 
 $fp = fopen("foo-bar.txt", "w");
 
-/* Attach the registered filter to the stream just opened */
+/* フィルタを開いたストリームに付加する */
 stream_filter_append($fp, "strtoupper");
 
 fwrite($fp, "Line1\n");
@@ -124,7 +131,7 @@ fwrite($fp, "Easy As 123\n");
 
 fclose($fp);
 
-/* Read the contents back out
+/* ファイルを読み出し出力する。 
  */
 readfile("foo-bar.txt");
 
@@ -142,10 +149,9 @@ EASY AS 123
      </example>
     </para>
     <simpara>
-     See Also:
      <function>stream_register_wrapper</function>,
-     <function>stream_filter_prepend</function>, and
-     <function>stream_filter_append</function>
+     <function>stream_filter_prepend</function>,
+     <function>stream_filter_append</function> も参照下さい。
     </simpara>
    </refsect1>
   </refentry>
