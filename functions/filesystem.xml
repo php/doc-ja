@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.37 $ -->
  <reference id="ref.filesystem">
   <title>ファイルシステム関数</title>
   <titleabbrev>ファイルシステム</titleabbrev>
@@ -16,11 +17,16 @@
      <funcprototype>
       <funcdef>string <function>basename</function></funcdef>
       <paramdef>string <parameter>path</parameter></paramdef>
+      <paramdef>string 
+       <parameter><optional>suffix</optional></parameter>
+      </paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
      この関数は、ファイルへのパスを有する文字列を引数とし、
-     ファイルのベース名を返します。
+     ファイルのベース名を返します。ファイル名が、
+     <parameter>suffix</parameter>で終了する場合、この部分もカットされ
+     ます。
     </para>
     <para>
      Windows では、スラッシュ(<literal>/</literal>)とバックスラッシュ
@@ -30,11 +36,20 @@
     <para>
      <example><title><function>basename</function>の例</title>
       <programlisting role="php">
-$path = "/home/httpd/html/index.php3";
-$file = basename ($path); // $file は"index.php3"にセットされる
+<![CDATA[
+$path = "/home/httpd/html/index.php";
+$file = basename ($path);        // $file is set to "index.php"
+$file = basename ($path,".php"); // $file is set to "index"
+]]>
       </programlisting>
      </example>
     </para>
+    <note>
+     <para>
+      パラメータ<parameter>suffix</parameter>は、PHP 4.1.0で追加されま
+      した。
+     </para>
+    </note>
     <para>
      <function>dirname</function>も参照下さい。
     </para>
@@ -56,8 +71,8 @@ $file = basename ($path); // $file は"index.php3"にセットされる
      </funcprototype>
     </funcsynopsis>
     <para>
-     ファイル<parameter>filename</parameter>のグループを
-     <parameter>group</parameter>に変更しようと試みます。
+     (名前または番号で指定した)ファイル<parameter>filename</parameter>
+     のグループを<parameter>group</parameter>に変更しようと試みます。
      スーパーユーザのみがファイルのグループを任意に変更できます。
      その他のユーザは、ファイルのグループをそのユーザがメンバーとして
      属しているグループに変更できます。
@@ -69,14 +84,9 @@ $file = basename ($path); // $file は"index.php3"にセットされる
      <function>chown</function>および<function>chmod</function>
      も参照下さい。
     </para>
-    <note>
-     <simpara>
-      この関数は、Windowsでは動作しません。
-     </simpara>
-    </note>
+     &note.no-windows;
    </refsect1>
   </refentry>
-
 
   <refentry id="function.chmod">
    <refnamediv>
@@ -103,9 +113,11 @@ $file = basename ($path); // $file は"index.php3"にセットされる
      (0)を付ける必要があります。
      <informalexample>
       <programlisting role="php">
+<![CDATA[
 chmod ("/somedir/somefile", 755);   // 10 進数; おそらく間違い
 chmod ("/somedir/somefile", "u+rwx,go+rx"); // 文字列; 正しくない
 chmod ("/somedir/somefile", 0755);  // 8 進数; 正しいモードの値
+]]>
       </programlisting>
      </informalexample>
     </para>
@@ -116,11 +128,7 @@ chmod ("/somedir/somefile", 0755);  // 8 進数; 正しいモードの値
      <function>chown</function>および<function>chgrp</function>
      も参照下さい。
     </para>
-    <note>
-     <simpara>
-      この関数は、Windowsでは動作しません。
-     </simpara>
-    </note>
+     &note.no-windows;
    </refsect1>
   </refentry>
 
@@ -139,8 +147,9 @@ chmod ("/somedir/somefile", 0755);  // 8 進数; 正しいモードの値
      </funcprototype>
     </funcsynopsis>
     <para>
-     ファイルfilenameの所有者をユーザuserに変更しようと試みます。
-     スーパーユーザのみがファイルの所有者を変更できます。
+     ファイル<parameter>filename</parameter>の所有者を(名前または番号
+     で指定した)ユーザ<parameter>user</parameter>に変更しようと試みま
+     す。スーパーユーザのみがファイルの所有者を変更できます。
     </para>
     <para>
      成功すると&true;を返し、そうでなければ&false;を返します。
@@ -149,6 +158,7 @@ chmod ("/somedir/somefile", 0755);  // 8 進数; 正しいモードの値
      <function>chown</function>および<function>chmod</function>
      も参照下さい。
     </para>
+     &note.no-windows;
    </refsect1>
   </refentry>
 
@@ -224,14 +234,24 @@ chmod ("/somedir/somefile", 0755);  // 8 進数; 正しいモードの値
      <example>
       <title><function>copy</function>の例</title>
       <programlisting role="php">
+<![CDATA[
 if (!copy($file, $file.'.bak')) {
-    print ("$file へのコピーに失敗しました...&lt;br>\n");
+    print ("failed to copy $file...<br>\n");
 }
+]]>
       </programlisting>
      </example>
     </para>
+    <warning>
+     <para>
+      コピー先のファイルが既に存在する場合、上書きされます。
+     </para>
+    </warning>
     <para>
-     <function>rename</function>も参照下さい。
+     <function>move_uploaded_file</function>、
+     <function>rename</function>、
+     <link linkend="features.file-upload">ファイルアップロード処理
+     </link>に関するマニュアルのセクションも参照下さい。
     </para>
    </refsect1>
   </refentry>
@@ -287,8 +307,10 @@ if (!copy($file, $file.'.bak')) {
      <example>
       <title><function>dirname</function>の例</title>
       <programlisting role="php">
+<![CDATA[
 $path = "/etc/passwd";
 $file = dirname ($path); // $file は "/etc" にセットされる
+]]>
       </programlisting>
      </example>
     </para>
@@ -298,10 +320,40 @@ $file = dirname ($path); // $file は "/etc" にセットされる
    </refsect1>
   </refentry>
 
+  <refentry id="function.disk-free-space">
+   <refnamediv>
+    <refname>disk_free_space</refname>
+    <refpurpose>ディレクトリの利用可能なスペースを返す</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>float <function>disk_free_space</function></funcdef>
+      <paramdef>string <parameter>directory</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     ディレクトリを指定することにより、この関数は対応するファイルシス
+     テムまたはディスクパーティションで利用可能なバイト数を返します。
+    </para>
+    <para>
+     <example>
+      <title><function>disk_free_space</function>の例</title>
+      <programlisting role="php">
+<![CDATA[
+$df = disk_free_space("/"); // $dfは"/"で利用可能なバイト数となります。
+]]>
+      </programlisting>
+     </example>
+    </para>
+   </refsect1>
+  </refentry>
+
   <refentry id="function.diskfreespace">
    <refnamediv>
     <refname>diskfreespace</refname>
-    <refpurpose>ディレクトリの利用可能なスペースを返す</refpurpose>
+    <refpurpose><function>disk_free_space</function>へのエイリアス</refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
@@ -312,14 +364,37 @@ $file = dirname ($path); // $file は "/etc" にセットされる
      </funcprototype>
     </funcsynopsis>
     <para>
-     ディレクトリを指定することにより、この関数は対応するファイルシス
-     テムまたはディスクパーティションで利用可能なバイト数を返します。
+     この関数は、<function>disk_free_space</function>への古いエイリア
+     スです。替わりにこの関数を使用して下さい。
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.disk-total-space">
+   <refnamediv>
+    <refname>disk_total_space</refname>
+    <refpurpose>ディレクトリの全体サイズを返す</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>float <function>disk_total_space</function></funcdef>
+      <paramdef>string <parameter>directory</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     ディレクトリを含む文字列を指定して下さい。この関数は、ファイルシ
+     ステムまたはディスクパーティションに対応する全体バイト数を返しま
+     す。
     </para>
     <para>
      <example>
-      <title><function>diskfreespace</function>の例</title>
+      <title><function>disk_total_space</function>の例</title>
       <programlisting role="php">
-$df = diskfreespace("/"); // $dfは"/"で利用可能なバイト数となります。
+<![CDATA[
+$df = disk_total_space("/"); // $dfは、"/"で利用可能な全体バイト数
+]]>
       </programlisting>
      </example>
     </para>
@@ -335,7 +410,7 @@ $df = diskfreespace("/"); // $dfは"/"で利用可能なバイト数となりま
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>int <function>fclose</function></funcdef>
+      <funcdef>bool <function>fclose</function></funcdef>
       <paramdef>int <parameter>fp</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
@@ -489,17 +564,19 @@ $df = diskfreespace("/"); // $dfは"/"で利用可能なバイト数となりま
       込み、出力します。
      </title>
      <programlisting role="php">
+<![CDATA[
 $row = 1;
 $fp = fopen ("test.csv","r");
 while ($data = fgetcsv ($fp, 1000, ",")) {
     $num = count ($data);
-    print "&lt;p> $num fields in line $row: &lt;br>";
+    print "<p> $num fields in line $row: <br>";
     $row++;
-    for ($c=0; $c&lt;$num; $c++) {
-        print $data[$c] . "&lt;br>";
+    for ($c=0; $c < $num; $c++) {
+        print $data[$c] . "<br>";
     }
 }
 fclose ($fp);
+]]>
      </programlisting>
     </example>
    </refsect1>
@@ -516,14 +593,17 @@ fclose ($fp);
      <funcprototype>
       <funcdef>string <function>fgets</function></funcdef>
       <paramdef>int <parameter>fp</parameter></paramdef>
-      <paramdef>int <parameter>length</parameter></paramdef>
+      <paramdef>int 
+       <parameter><optional>length</optional></parameter>
+      </paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
-     fpで指定したファイルポインタから最大length-1バイト読み出し、
-     その文字列を返します。読み出しは、length-1バイト読み出したか、
-     (返り値に含まれる)改行文字を検出したか、
-     EOFに達したかのいずれかが起こった時点で終了します。
+     fpで指定したファイルポインタから最大length-1バイト読み出し、その
+     文字列を返します。読み出しは、length-1バイト読み出したか、(返り値
+     に含まれる)改行文字を検出したか、EOFに達したかのいずれかが起こっ
+     た時点で終了します。lengthが指定されない場合、デフォルトは1kまた
+     は1024バイトとなります。
     </para>
     <para> 
      エラーが起こった場合、&false;を返します。
@@ -546,15 +626,23 @@ fclose ($fp);
      <example> 
       <title>行毎にファイルを読み込む</title>
       <programlisting role="php">
+<![CDATA[
 $fd = fopen ("/tmp/inputfile.txt", "r");
 while (!feof ($fd)) {
   $buffer = fgets($fd, 4096);
   echo $buffer;
 }
 fclose ($fd);
+]]>
       </programlisting>
      </example>
     </para>
+    <note>
+     <simpara>
+      <parameter>length</parameter>パラメータは、PHP 4.2.0でオプション
+      となりました。
+     </simpara>
+    </note>
     <para>
      <function>fread</function>,
      <function>fopen</function>, <function>popen</function>, 
@@ -593,8 +681,8 @@ fclose ($fd);
      ことができます。
      <note>
       <para>
-       <parameter>allowable_tags</parameter>は、PHP 3.0.13、PHP4B3で追加
-       されました。
+       <parameter>allowable_tags</parameter>は、PHP 3.0.13、PHP 4.0.0
+       で追加されました。
       </para>
      </note>
     </para>
@@ -638,19 +726,23 @@ fclose ($fd);
     <para>
      <informalexample>
       <programlisting role="php">
-&lt;?php
+<![CDATA[
+<?php
 // Webページを配列として取得し、出力します。
-$fcontents = file ('http://www.php.net');
+$fcontents = file ('http://www.php.net/');
 while (list ($line_num, $line) = each ($fcontents)) {
-   echo "&lt;b&gt;Line $line_num:&lt;/b&gt; " . htmlspecialchars ($line) . "&lt;br&gt;\n";
+    echo "<b>Line $line_num:</b>; ", htmlspecialchars ($line), "<br>\n";
 }
 
 // Webページを文字列として取得します。
-$fcontents = join ( '', file ( 'http://www.php.net'));
-?&gt;
+$fcontents = join ('', file ('http://www.php.net/'));
+?>
+]]>
       </programlisting>
      </informalexample>
     </para>
+    &note.not-bin-safe;
+    &tip.fopen-wrapper;
     <para> 
      <function>readfile</function>,<function>fopen</function>,
      <function>fsockopen</function>,<function>popen</function>も参照下
@@ -709,18 +801,16 @@ $fcontents = join ( '', file ( 'http://www.php.net'));
      この関数の結果はキャッシュされます。詳細は、
      <function>clearstatcache</function>を参照下さい。
     </simpara>
-    <note>
-     <para>
-      ファイルのatimeは、ファイルのデータブロックが読み込まれる度
-      に変更されるとみなされます。この仕様は、アプリケーションが非常に
-      多くのファイルまたはディレクトリに常にアクセスする場合に性能上の
-      負荷となる可能性があります。いくつかのUNIXファイルシステムでは、
-      このようなアプリケーションの性能を向上させるためにatimeの更新を無
-      効としてマウントすることが可能です。USENETのニューススプールが一
-      般的な例です。このようなファイルシステムでは、この関数は使用でき
-      ません。
-     </para>
-    </note>
+    <simpara>
+     注意: ファイルのatimeは、ファイルのデータブロックが読み込まれる度
+     に変更されるとみなされます。この仕様は、アプリケーションが非常に
+     多くのファイルまたはディレクトリに常にアクセスする場合に性能上の
+     負荷となる可能性があります。いくつかのUNIXファイルシステムでは、
+     このようなアプリケーションの性能を向上させるためにatimeの更新を無
+     効としてマウントすることが可能です。USENETのニューススプールが一
+     般的な例です。このようなファイルシステムでは、この関数は使用でき
+     ません。
+    </simpara>
     <simpara>
      この関数は、<link linkend="features.remote-files">リモートファイ
      ル</link> では動作しません。評価するファイルはサーバのファイルシ
@@ -750,23 +840,19 @@ $fcontents = join ( '', file ( 'http://www.php.net'));
      この関数の結果はキャッシュされます。詳細は、
      <function>clearstatcache</function> を参照下さい。
     </para>
-    <note>
-     <para>
-      多くのUNIXファイルシステムでは、i-ノードが変更された際、つま
-      り、パーミッション、所有者、グループ、または他のメタデータが書き
-      込まれた際に、ファイルが変更されたとみなされます。
-      <function>filemtime</function>(この関数はWebページ上で"Last
-      Modified"フッタを作成したい場合に使用するものです。)および
-      <function>fileatime</function>も参照下さい。
-     </para>
-    </note>
-    <note>
-     <para>
-      いくつかのUNIXでは、ファイルのctimeはファイルの作成時間として参照
-      されます。これは間違っています。多くのUNIXファイルシステムでは
-      UNIXファイルの作成時間は存在しません。
-     </para>
-    </note>
+    <para>
+     注意: 多くのUNIXファイルシステムでは、i-ノードが変更された際、つ
+     まり、パーミッション、所有者、グループ、または他のメタデータが書
+     き込まれた際に、ファイルが変更されたとみなされます。
+     <function>filemtime</function>(この関数はWebページ上で"Last
+     Modified"フッタを作成したい場合に使用するものです。)および
+     <function>fileatime</function>も参照下さい。
+    </para>
+    <para>
+     いくつかのUNIXでは、ファイルのctimeはファイルの作成時間として参照
+     されます。これは間違っています。多くのUNIXファイルシステムでは
+     UNIXファイルの作成時間は存在しません。
+    </para>
     <simpara>
      この関数は、<link linkend="features.remote-files">リモートファイ
      ル</link> では動作しません。評価するファイルはサーバのファイルシ
@@ -797,10 +883,8 @@ $fcontents = join ( '', file ( 'http://www.php.net'));
      この関数の結果はキャッシュされます。詳細は、
      <function>clearstatcache</function>を参照下さい。
     </para>
+    &note.no-windows;
     <note>
-     <simpara>
-      この関数は、Windowsでは動作しません。
-     </simpara>
      <simpara>
       この関数は、<link linkend="features.remote-files">リモートファイ
        ル</link> では動作しません。評価するファイルはサーバのファイルシ
@@ -835,11 +919,7 @@ $fcontents = join ( '', file ( 'http://www.php.net'));
       ル</link> では動作しません。評価するファイルはサーバのファイルシ
      ステムによりアクセス可能である必要があります。
     </simpara>
-    <note>
-     <simpara>
-      この関数は、Windowsでは動作しません。
-     </simpara>
-    </note>
+     &note.no-windows;
    </refsect1>
   </refentry>
 
@@ -869,14 +949,12 @@ $fcontents = join ( '', file ( 'http://www.php.net'));
       ル</link> では動作しません。評価するファイルはサーバのファイルシ
      ステムによりアクセス可能である必要があります。
     </simpara>
-    <note>
-     <para>
-      この関数は、ファイルのブロックデータが書き込まれた時間を返します。
-      これは、ファイルの内容が変更された際の時間です。ページのフッタで
-      使用するために出力可能な修正時刻を取得するには、この関数の結果を
-      <function>date</function>に使用して下さい。
-     </para>
-    </note>
+    <para>
+     注意:この関数は、ファイルのブロックデータが書き込まれた時間を返し
+     ます。これは、ファイルの内容が変更された際の時間です。ページのフッ
+     タで使用するために出力可能な修正時刻を取得するには、この関数の結
+     果を<function>date</function>に使用して下さい。
+    </para>
    </refsect1>
   </refentry>
 
@@ -907,11 +985,7 @@ $fcontents = join ( '', file ( 'http://www.php.net'));
       ル</link> では動作しません。評価するファイルはサーバのファイルシ
      ステムによりアクセス可能である必要があります。
     </simpara>
-    <note>
-     <simpara>
-      この関数は、Windowsでは動作しません。
-     </simpara>
-    </note>
+     &note.no-windows;
    </refsect1>
   </refentry>
 
@@ -940,11 +1014,6 @@ $fcontents = join ( '', file ( 'http://www.php.net'));
      この関数の結果はキャッシュされます。詳細は、
      <function>clearstatcache</function>を参照下さい。
     </para>
-    <note>
-     <simpara>
-      この関数は、Windowsでは動作しません。
-     </simpara>
-    </note>
    </refsect1>
   </refentry>
 
@@ -975,7 +1044,6 @@ $fcontents = join ( '', file ( 'http://www.php.net'));
     </simpara>
    </refsect1>
   </refentry>
-
 
   <refentry id="function.filetype">
    <refnamediv>
@@ -1080,14 +1148,26 @@ $fcontents = join ( '', file ( 'http://www.php.net'));
      <function>flock</function> は成功時に&true;、
      (例えばロックが確保できなかった場合等の)エラー時に&false;を返します。
     </simpara>
+    <note>
+     <para>
+      <function>flock</function>は、ファイルポインタを必要とするため、
+      (<function>fopen</function>へ引数"w"または"w+"を指定して)書き込
+      みモードでオープンすることにより丸めるファイルにアクセス保護する
+      特別なロックファイルを使用する必要があるかもしれません。
+     </para>
+    </note>
     <warning>
      <para>
-      ほとんどのオーペレーティングシステムで
-      <function>flock</function> はプロセスレベルで実装されています。
-      ISAPIのようなマルチスレッド型のサーバーAPIを使用している場合、同
-      じサーバーインスタンスの並列スレッドで実行されている他のPHPスク
-      リプトに対してファイルを保護する際に <function>flock</function>
-      を使用することはできません。
+      <function>flock</function>はNFS及び他の多くのネットワークファイ
+      ルシステムでは動作しません。詳細についてはオペレーティングシステ
+      ムのドキュメントを確認下さい。
+     </para>
+     <para>
+      いくつかのオーペレーティングシステムで<function>flock</function>
+      はプロセスレベルで実装されています。ISAPIのようなマルチスレッド
+      型のサーバーAPIを使用している場合、同じサーバーインスタンスの並
+      列スレッドで実行されている他のPHPスクリプトに対してファイルを保
+      護する際に <function>flock</function>を使用することはできません!
      </para>
     </warning>
    </refsect1>
@@ -1210,10 +1290,12 @@ $fcontents = join ( '', file ( 'http://www.php.net'));
      <example>
       <title><function>fopen</function>の例</title>
       <programlisting role="php">
+<![CDATA[
 $fp = fopen ("/home/rasmus/file.txt", "r");
 $fp = fopen ("/home/rasmus/file.gif", "wb");
 $fp = fopen ("http://www.php.net/", "r");
 $fp = fopen ("ftp://user:password@example.com/", "w");
+]]>
       </programlisting>
      </example>
     </para>
@@ -1228,7 +1310,9 @@ $fp = fopen ("ftp://user:password@example.com/", "w");
      エスケープするかフォワードスラッシュを使用することに注意して下さい。
      <informalexample>
       <programlisting role="php">
+<![CDATA[
 $fp = fopen ("c:\\data\\info.txt", "r");
+]]>
       </programlisting>
      </informalexample>
     </para>
@@ -1256,11 +1340,12 @@ $fp = fopen ("c:\\data\\info.txt", "r");
      </funcprototype>
     </funcsynopsis>
     <simpara>
-     与えられたファイルポインタをEOFまで読み、結果を標準出力に書き出します。
+     与えられたファイルポインタをEOFまで読み、結果を標準出力に書き出し
+     ます。
     </simpara>
     <simpara>
      エラーが起こった場合、<function>fpassthru</function>は
-     &false;を返します。
+      &false;を返します。
     </simpara>
     <simpara>
      ファイルポインタは有効なものでなければならず、また
@@ -1276,6 +1361,14 @@ $fp = fopen ("c:\\data\\info.txt", "r");
      <function>readfile</function>を使用することが可能です。
      この場合、<function>fopen</function>コールは必要ありません。
     </simpara>
+    <note>
+     <para>
+      <function>fpassthru</function>をWindowsシステムのバイナリファイ
+      ルで使用する場合、<function>fopen</function>をコールする際に
+      モードに<literal>b</literal>を追加してバイナリモードでファイルを
+      オープンするようにして下さい。
+     </para>
+    </note>
     <simpara>
      <function>readfile</function>, <function>fopen</function>,
      <function>popen</function>, <function>fsockopen</function>
@@ -1336,11 +1429,13 @@ $fp = fopen ("c:\\data\\info.txt", "r");
     <para>
     <informalexample>
       <programlisting role="php">
+<![CDATA[
 // ファイルの中身を読んで文字列に格納する
 $filename = "/usr/local/something.txt";
 $fd = fopen ($filename, "r");
 $contents = fread ($fd, filesize ($filename));
 fclose ($fd);
+]]>
       </programlisting>
      </informalexample>
     </para>
@@ -1354,10 +1449,12 @@ fclose ($fd);
     <para>
      <informalexample>
       <programlisting role="php">
+<![CDATA[
 $filename = "c:\\files\\somepic.gif";
 $fd = fopen ($filename, "rb");
 $contents = fread ($fd, filesize ($filename));
 fclose ($fd);
+]]>
       </programlisting>
      </informalexample>
     </para>
@@ -1400,23 +1497,27 @@ fclose ($fd);
      された場合、この関数は、代入された値の数を返します。オプション引
      数は参照渡しとする必要があります。
      <example>
-      <title><function>fscanf</function> の例</title>
+      <title><function>fscanf</function>の例</title>
       <programlisting role="php">
+<![CDATA[
 $fp = fopen ("users.txt","r");
 while ($userinfo = fscanf ($fp,"%s\t%s\t%s\n")) {
 	list ($name, $profession, $countrycode) = $userinfo;
 	//... 値を用いた処理
 }
 fclose($fp);
+]]>
       </programlisting>
      </example>
      <example>
       <title>users.txt</title>
       <programlisting>
+<![CDATA[
 javier	argonaut	pe
 hiroshi	sculptor	jp
 robert	slacker	us
 luigi	florist	it
+]]>
       </programlisting>
      </example>
     </para>
@@ -1481,7 +1582,7 @@ luigi	florist	it
     </para>
     <note>
      <para>
-      引数<parameter>whence</parameter>はPHP4.0RC1以降で追加されました。
+      引数<parameter>whence</parameter>はPHP 4.0.0以降で追加されました。
      </para>
     </note>
     <para>
@@ -1621,10 +1722,14 @@ luigi	florist	it
      事象により書き込みは中止されます。
     </simpara>
     <simpara>
-    <parameter>length</parameter> パラメータが指定されている場合、
-    <link linkend="ini.magic-quotes-runtime">magic_quotes_runtime</link>
-    構成オプションは無視され、<parameter>string</parameter>からの
-    スラッシュ文字の取り除きは行われないことに注意して下さい。
+     <function>fwrite</function>は書き込んだバイト数、またはエラー時に-
+     1を返します。
+    </simpara>
+    <simpara>
+     <parameter>length</parameter> パラメータが指定されている場合、
+     <link linkend="ini.magic-quotes-runtime">magic_quotes_runtime</link>
+     構成オプションは無視され、<parameter>string</parameter>からの
+     スラッシュ文字の取り除きは行われないことに注意して下さい。
     </simpara>
     <note>
      <para>
@@ -1680,12 +1785,14 @@ luigi	florist	it
      <example>
       <title><function>set_file_buffer</function>の例</title>
       <programlisting role="php">
+<![CDATA[
 $fp=fopen($file, "w");
 if($fp){
   set_file_buffer($fp, 0);
   fputs($fp, $output);
   fclose($fp);
 }
+]]>
       </programlisting>
      </example>
     </para>
@@ -1713,15 +1820,15 @@ if($fp){
      <parameter>filename</parameter>が存在して、かつそれが
      ディレクトリであれば&true;を返します。
     </para>
+    <para>
+     この関数の結果はキャッシュされます。詳細は、
+     <function>clearstatcache</function>を参照下さい。
+    </para>
     <simpara>
      この関数は、<link linkend="features.remote-files">リモートファイ
      ル</link>では動作しません。評価されるファイルはサーバのファイルシ
      ステムによりアクセス可能である必要があります。
     </simpara>
-    <para>
-     この関数の結果はキャッシュされます。詳細は、
-     <function>clearstatcache</function>を参照下さい。
-    </para>
     <para>
      <function>is_file</function>, <function>is_link</function>
      も参照下さい。
@@ -1759,11 +1866,6 @@ if($fp){
      <function>is_dir</function>および<function>is_link</function>
      も参照下さい。
     </para>
-    <note>
-     <simpara>
-      この関数は、Windowsでは動作しません。
-     </simpara>
-    </note>     
    </refsect1>
   </refentry>
 
@@ -1811,10 +1913,10 @@ if($fp){
      </funcprototype>
     </funcsynopsis>
     <para>
-    <parameter>filename</parameter>が存在して、かつっ?が
-    シンボリックリンクであれば&true;を返します。
+     <parameter>filename</parameter>が存在し、かつシンボリックリンクで
+     あれば&true;を返します。
     </para>
-   <para>
+    <para>
      この関数の結果はキャッシュされます。詳細は、
      <function>clearstatcache</function> を参照下さい。
     </para>
@@ -1827,11 +1929,7 @@ if($fp){
      ル</link>では動作しません。評価されるファイルはサーバのファイルシ
      ステムによりアクセス可能である必要があります。
     </simpara>
-    <note>
-     <simpara>
-      この関数は、Windowsシステムでは動作しません。
-     </simpara>
-    </note>
+     &note.no-windows;
    </refsect1>
   </refentry>
 
@@ -1849,13 +1947,13 @@ if($fp){
      </funcprototype>
     </funcsynopsis>
     <para>
-     <parameter>filename</parameter>が存在し、それが
-     読み込み可能であれば&true;を返します。
+     <parameter>filename</parameter>が存在し、それが読み込み可能であれ
+     ば&true;を返します。
     </para>
     <para>
-     PHPは、Webサーバが実行されているユーザ ID('nobody' が多い)
-     でファイルにアクセスすることを覚えておいて下さい。
-     セーフモードの制限は働きません。
+     PHPは、Webサーバが実行されているユーザ ID('nobody' が多い)でファ
+     イルにアクセスすることを覚えておいて下さい。セーフモードの制限は
+     働きません。
     </para>
     <para>
      この関数の結果はキャッシュされます。詳細は、
@@ -1991,11 +2089,7 @@ if($fp){
      <function>linkinfo</function>、<function>readlink</function> 
      も参照下さい。
     </para>
-    <note>
-     <simpara>
-      この関数は、Windowsでは動作しません。
-     </simpara>
-    </note>     
+     &note.no-windows;
    </refsect1>
   </refentry>
 
@@ -2024,11 +2118,7 @@ if($fp){
      <function>symlink</function>, <function>link</function>,
      <function>readlink</function>も参照下さい。
     </para>
-    <note>
-     <simpara>
-      この関数は、Windowsでは動作しません。
-     </simpara>
-    </note>     
+     &note.no-windows;
    </refsect1>
   </refentry>
 
@@ -2051,11 +2141,14 @@ if($fp){
      作成しようと試みます。
     </para>
     <para>
-     モードを8進数で指定する場合には、先頭にゼロを付ける必要が
-     あることに注意して下さい。
+     モードを8進数で指定する必要があり、このため、先頭にゼロを付ける必
+     要があることに注意して下さい。modeは、カレントのumaskでも修正され
+     ます。umaskは、<function>umask</function>により変更可能です。
      <informalexample>
       <programlisting role="php">
+<![CDATA[
 mkdir ("/path/to/my/dir", 0700);
+]]>
       </programlisting>
      </informalexample>
     </para>
@@ -2083,10 +2176,6 @@ mkdir ("/path/to/my/dir", 0700);
      </funcprototype>
     </funcsynopsis>
     <para>
-     この関数は、PHP 3.0.16 より後のバージョンのPHP 3および4.0.2より後
-     のバージョンの PHP 4 でのみ利用可能です。
-    </para>
-    <para>
      この関数は、<parameter>filename</parameter>で指定されたファイルが
      (PHPのHTTP POSTアップロード機構によりアップロードされたという意味
      で)有効なアップロードファイルであるかどうかを確認します。そのファ
@@ -2109,14 +2198,126 @@ mkdir ("/path/to/my/dir", 0700);
      合には、その内容をユーザ、または同じシステム上の他のユーザにさえ
      暴かれる可能性があるため、特に重要です。
     </para>
-
     &note.sm.uidcheck;
-
+    <warning>
+     <para>
+      コピー先のファイルが既に存在する場合、上書きされます。
+     </para>
+    </warning>
     <para>
      簡単な使用例については、
      <function>is_uploaded_file</function>および<link
      linkend="features.file-upload">アップロードファイルの処理</link>
      の節を参照下さい。
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.parse-ini-file">
+   <refnamediv>
+    <refname>parse_ini_file</refname>
+    <refpurpose>設定ファイルをパースする</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>array <function>parse_ini_file</function></funcdef>
+      <paramdef>string <parameter>filename</parameter></paramdef>
+      <paramdef>bool 
+       <parameter>
+        <optional>process_sections</optional>
+       </parameter>
+      </paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     <function>parse_ini_file</function> は、
+     <parameter>filename</parameter>で指定したiniファイルをロードし、
+     連想配列としてその設定値を返します。
+     直近の<parameter>process_sections</parameter>パラメータに&true;
+     を設定することにより、セクション名と設定が含まれた多次元の配列を
+     得ることができます。デフォルトでは、
+     <parameter>process_sections</parameter>は、&false;です。
+    </para>
+    <note>
+     <para>
+      この関数は、<filename>php.ini</filename>ファイルには何もしません。
+      このファイルはスクリプトを実行している時には既に処理されています。
+      この関数は、アプリケーション個有の設定ファイルを読み込む際に使用
+      可能です。
+     </para>
+    </note>
+    <para>
+     初期ファイルの構造は、<filename>php.ini</filename>の構造に似てい
+     ます。
+    </para>
+    <para>
+     <example>
+      <title>sample.iniの内容</title>
+      <programlisting>
+<![CDATA[
+; This is a sample configuration file
+; Comments start with ';', as in php.ini
+
+[first_section]
+one = 1
+five = 5
+
+[second_section]
+path = /usr/local/bin
+]]>
+      </programlisting>
+     </example>
+    </para>
+    <para>
+     <example>
+      <title><function>parse_ini_file</function>の例</title>
+      <programlisting>
+<![CDATA[
+<?php
+
+// Parse without sections
+$ini_array = parse_ini_file("sample.ini");
+print_r($ini_array);
+
+// Parse with sections
+$ini_array = parse_ini_file("sample.ini", TRUE);
+print_r($ini_array);
+
+?>
+]]>
+      </programlisting>
+     </example>
+    </para>
+    <para>
+     出力は以下のようになります:
+     <informalexample>
+      <programlisting>
+<![CDATA[
+Array
+(
+    [one] => 1
+    [five] => 5
+    [path] => /usr/local/bin
+)
+Array
+(
+    [first_section] => Array
+        (
+            [one] => 1
+            [five] => 5
+        )
+
+    [second_section] => Array
+        (
+            [path] => /usr/local/bin
+        )
+
+)
+]]>
+      </programlisting>
+     </informalexample>
     </para>
    </refsect1>
   </refentry>
@@ -2142,9 +2343,10 @@ mkdir ("/path/to/my/dir", 0700);
     </para>
     <para>
      <example>
-      <title><function>pathinfo</function> の例</title>
+      <title><function>pathinfo</function>の例</title>
       <programlisting role="php">
-&lt;?php
+<![CDATA[
+<?php
 
 $path_parts = pathinfo("/www/htdocs/index.html");
 
@@ -2152,7 +2354,8 @@ echo $path_parts["dirname"] . "\n";
 echo $path_parts["basename"] . "\n";
 echo $path_parts["extension"] . "\n";
 
-?&gt;
+?>
+]]>
       </programlisting>
      </example>
     </para>
@@ -2160,15 +2363,17 @@ echo $path_parts["extension"] . "\n";
      出力は次のようになります。
      <informalexample>
       <programlisting>
+<![CDATA[
 /www/htdocs
 index.html
 html
+]]>
       </programlisting>
      </informalexample>
     </para>
     <para>
-     <function>dirname</function>,
-     <function>basename</function>, <function>realpath</function> も参
+     <function>dirname</function>, <function>basename</function>,
+     <function>parse_url</function>, <function>realpath</function>も参
      照下さい。
     </para>
    </refsect1>
@@ -2238,7 +2443,9 @@ html
     <para>
      <informalexample>
       <programlisting role="php">
+<![CDATA[
 $fp = popen ("/bin/ls", "r");
+]]>
       </programlisting>
      </informalexample>
     </para>
@@ -2280,8 +2487,8 @@ $fp = popen ("/bin/ls", "r");
      オープンされ、返されたテキストが標準出力に書き出されます。
     </para>
     <para>
-     HTTPリダイレクトは処理されないので、ディレクトリ名を
-     指定する場合は末尾にスラッシュを置く必要があります。
+     PHP 4.0.5より前のバージョンは、HTTPリダイレクトを処理しません。こ
+     のため、ディレクトリには末尾のスラッシュを含める必要があります。
     </para>
     <para>
      <parameter>filename</parameter>が "ftp://"(大文字小文字は区別されません)
@@ -2330,11 +2537,7 @@ $fp = popen ("/bin/ls", "r");
      <function>symlink</function>,<function>readlink</function>,
      <function>linkinfo</function>も参照下さい。
     </para>
-    <note>
-     <simpara>
-      この関数は、Windowsでは動作しません。
-     </simpara>
-    </note>     
+     &note.no-windows;
    </refsect1>
   </refentry>
 
@@ -2386,7 +2589,13 @@ $fp = popen ("/bin/ls", "r");
      ファイルポインタは有効なものでなければならず、また
      <function>fopen</function>で正常にオープンされたファイルを
      指している必要があります。
-    </para>
+    </para>   
+    <note>
+     <para>
+      追記("a")モードでファイルをオープンした場合、ファイル位置によら
+      ずファイルに書き込まれるデータは常に追加されます。
+     </para>
+    </note>
     <para>
      <function>fseek</function>, <function>ftell</function>も参照下さい。
     </para>
@@ -2455,7 +2664,16 @@ $fp = popen ("/bin/ls", "r");
       <listitem><simpara>blocksize for filesystem I/O *</simpara></listitem>
       <listitem><simpara>number of blocks allocated</simpara></listitem>
      </orderedlist>
-     * - st_blksizeタイプをサポートしているシステムでのみ有効です《     その他のシステム(_とHばWindowsなど)では-1を返します。</para>
+     * - st_blksizeタイプをサポートしているシステムでのみ有効です。
+         (Windowsのような)その他のシステムでは-1を返します。
+    </para>
+    <para>
+     エラーの場合は、&false;を返します。
+    </para>
+    <para>
+     <function>stat</function>は、<function>fopen</function>のように
+     URLを処理しません。
+    </para>
     <para>
      この関数の結果はキャッシュされます。詳細は、
      <function>clearstatcache</function>を参照下さい。
@@ -2535,7 +2753,9 @@ $fp = popen ("/bin/ls", "r");
      <example>
       <title><function>realpath</function>の例</title>
       <programlisting role="php">
-$real_path = realpath("../../index.php");
+<![CDATA[
+$real_path = realpath ("../../index.php");
+]]>
       </programlisting>
      </example>
     </para>
@@ -2564,16 +2784,11 @@ $real_path = realpath("../../index.php");
     <para>
      ハードリンクを作るには<function>link</function>、そして
      <function>readlink</function>と<function>linkinfo</function>
-     を参照下っD。
+     を参照下さい。
     </para>
-    <note>
-     <simpara>
-      この関数は、Windowsでは動作しません。
-     </simpara>
-    </note>     
+     &note.no-windows;
    </refsect1>
   </refentry>
-
 
   <refentry id="function.tempnam">
    <refnamediv>
@@ -2593,22 +2808,34 @@ $real_path = realpath("../../index.php");
      ユニークなテンポラリファイル名を指定したディレクトリに作成します。
      指定したディレクトリが存在しない場合、
      <function>tempnam</function> は、システムのテンポラリディレクトリ
-     にファイル名を生成します。
+     にあるファイル名を生成し、その名前を返します。
     </para>
     <para>
-     関数<function>tempnam</function>の動作はシステムに依存します。
-     WindowsにおいてTMP環境変数は<parameter>dir</parameter>パラメータ
-     を上書きします。Linuxにおいては、TMPDIR環境変数が優先されます。
-     一方、SVR4においては指定したディレクトリが存在する場合は、
-     常に<parameter>dir</parameter>パラメータを使用します。
-     疑問がある場合は、tempnam(3)に関するシステムドキュメントを参照下さい。
+     PHP 4.0.6より前では、関数<function>tempnam</function>の動作はシス
+     テムに依存していました。WindowsにおいてTMP環境変数は
+     <parameter>dir</parameter>パラメータを上書きします。Linuxにおいて
+     は、TMPDIR環境変数が優先されます。一方、SVR4においては指定したディ
+     レクトリが存在する場合は、常に<parameter>dir</parameter>パラメー
+     タを使用します。疑問がある場合は、tempnam(3)に関するシステムドキュ
+     メントを参照下さい。
     </para>
     <para>
-     新しい中間ファイル名を返し、失敗すると空の文字列を返します。
+     新しいテンポラリファイル名を返し、失敗時にはすると&false;文字列を
+     返します。
      <example>
       <title><function>tempnam</function>の例</title>
       <programlisting role="php">
-$tmpfname = tempnam ( "/tmp", "FOO" );
+<![CDATA[
+$tmpfname = tempnam ("/tmp", "FOO");
+
+$fp = fopen($tmpfname, "w");
+fwrite($fp, "writing to tempfile");
+fclose($fp);
+
+// ここで何か行う
+
+unlink($tmpfname);
+]]>
       </programlisting>
      </example>
     </para>
@@ -2617,11 +2844,14 @@ $tmpfname = tempnam ( "/tmp", "FOO" );
       この関数の動作は、4.0.3 で変更され、文字列が生成された時間の間や
       スクリプトがファイルの作成にとりかかる前にファイルシステムに現れ
       る可能性がある場合のファイルとの競合を回避するためにもテンポラリ
-      ファイルは作成されます。
+      ファイルは作成されます。このファイルは自動的に削除されないため、
+      不要となった場合にはこのファイルを削除する必要があることに注意し
+      て下さい。
      </simpara>
     </note>
     <para>
-     <function>tmpfile</function>も参照下さい。
+     <function>tmpfile</function>, <function>unlink</function>も参照下
+     さい。
     </para>
    </refsect1>
   </refentry>
@@ -2636,7 +2866,7 @@ $tmpfname = tempnam ( "/tmp", "FOO" );
     <funcsynopsis>
      <funcprototype>
       <funcdef>int <function>tmpfile</function></funcdef>
-      <paramdef>void</paramdef>
+      <void/>
      </funcprototype>
     </funcsynopsis>
     <para>
@@ -2650,6 +2880,18 @@ $tmpfname = tempnam ( "/tmp", "FOO" );
      詳細については、関数<literal>tmpfile(3)</literal>のシステムドキュ
      メントおよびヘッダファイル<filename>stdio.h</filename>を参照下さ
      い。
+    </para>
+    <para>
+     <example>
+      <title><function>tmpfile</function>の例</title>
+      <programlisting role="php">
+<![CDATA[
+$temp = tmpfile();
+fwrite($temp, "writing to tempfile");
+fclose($temp); // ファイルを削除します
+]]>
+      </programlisting>
+     </example>
     </para>
     <para>
      <function>tempnam</function>も参照下さい。
@@ -2685,11 +2927,14 @@ $tmpfname = tempnam ( "/tmp", "FOO" );
      <example>
       <title><function>touch</function>の例</title>
       <programlisting role="php">
-if ( touch($FileName) ) {
-  print "$FileName modification time has been changed to todays date and time";
+<![CDATA[
+if (touch ($FileName)) {
+    print "$FileName modification time has been 
+           changed to todays date and time";
 } else {
-  print "Sorry Could Not change modification time of $FileName";
+    print "Sorry Could Not change modification time of $FileName";
 }
+]]>
       </programlisting>
      </example>
     </para>
@@ -2711,19 +2956,14 @@ if ( touch($FileName) ) {
     </funcsynopsis>
     <para>
      <function>umask</function>はPHPのumaskをmask &amp; 0777にセットし、
-     元のumask値を返します。
-     PHPがサーバ・モジュールとして動作中の場合、各リクエストが
-     終了するたびにumaskは元の値に戻されます。
+     元のumask値を返します。PHPがサーバ・モジュールとして動作中の場合、
+     各リクエストが終了するたびにumaskは元の値に戻されます。
     </para>
     <para>
      <function>umask</function>を引数無しで実行すると、単に現在の
      umask値を返します。
     </para>
-    <note>
-     <simpara>
-      この関数は、Windowsでは動作しません。
-     </simpara>
-    </note>     
+     &note.no-windows;
    </refsect1>
   </refentry>
 
@@ -2745,16 +2985,11 @@ if ( touch($FileName) ) {
      と動作は同じです。
     </para>
     <para>
-     0を返し、エラーの場合は&false;を返します。
+     &return.success;
     </para>
     <para>
      ディレクトリの削除には、<function>rmdir</function>を参照下さい。
     </para>
-    <note>
-     <simpara>
-      この関数は、Windowsでは動作しません。
-     </simpara>
-    </note>     
    </refsect1>
   </refentry>
 

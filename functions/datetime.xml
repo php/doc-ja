@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.30 $ -->
  <reference id="ref.datetime">
   <title>日付・時刻関数</title>
   <titleabbrev>日付/時刻</titleabbrev>
@@ -42,6 +43,10 @@
       </listitem>
      </itemizedlist>
     </para>
+    <para>
+     <function>mktime</function>及び<function>strtotime</function>も参
+     照下さい。
+    </para>
    </refsect1>
   </refentry>
 
@@ -64,9 +69,25 @@
      </funcprototype>
     </funcsynopsis>
     <para>
-     与えられた引数 <parameter>timestamp</parameter> を、与えられた
+     指定された引数 <parameter>timestamp</parameter> を、与えられた
      フォーマット文字列によりフォーマットし、日付文字列を返します。
-     タイムスタンプが与えられない場合は、現在のローカル時刻が使われます。
+     タイムスタンプが与えられない場合は、現在のローカル時刻が使われま
+     す。
+     <note>
+      <para>
+       有効なタイムスタンプの範囲は通常       Fri, 13 Dec 1901
+       20:45:54 GMTからTue, 19 Jan 2038 03:14:07 GMTまでです。
+       (これらの日付は、32ビット符号付き整数の最小および最大値に対応し
+       ます。)
+      </para>
+      <para>
+       日付の文字列表現からタイムスタンプを生成するには、
+       <function>strtotime</function>を使用できる可能性があります。加
+       えて、いくつかのデータベースは、(MySQLのUNIX_TIMESTAMP関数のよ
+       うな)日付フォーマットからタイムスタンプに変換する関数を有してい
+       ます。
+      </para>
+     </note>
     </para>
     <para>
      フォーマット文字列では、以下の文字が認識されます。
@@ -191,6 +212,12 @@
       </listitem>
       <listitem>
        <simpara>
+        W - ISO-8601 月曜日に始まる年単位の週番号 (PHP 4.1.0で追加)
+        (Saturday)
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
 	Y - 年。4 桁の数字。すなわち"1999"。
        </simpara>
       </listitem>
@@ -206,19 +233,37 @@
       </listitem>
       <listitem>
        <simpara>
-	Z - タイムゾーンのオフセット秒数。(すなわち、"-43200"から"43200")
+	Z - タイムゾーンのオフセット秒数。(すなわち、"-43200"から
+	"43200")UTCの西側のタイムゾーン用のオフセットは常に負です。そ
+	して、UTCの東側のオフセットは常に正です。
        </simpara>
       </listitem>
      </itemizedlist>
      フォーマット文字列中の認識されない文字は、そのまま表示されます。
-     <function>gmdate()</function>で使用した場合、"Z"フォーマットは常に"0"を
+     <function>gmdate</function>で使用した場合、"Z"フォーマットは常に"0"を
      返します。
      <example>
       <title><function>date</function> の例</title>
       <programlisting role="php">
-print (date ("l dS of F Y h:i:s A"));
-print ("July 1, 2000 is on a " . date ("l", mktime(0,0,0,7,1,2000)));
+<![CDATA[
+echo date ("l dS of F Y h:i:s A");
+echo "July 1, 2000 is on a " . date ("l", mktime(0,0,0,7,1,2000));
+]]>
      </programlisting>
+     </example>
+    </para>
+    <para>
+     前にバックスラッシュを付けてエスケープすることにより、フォーマッ
+     ト文字列として認識される文字が展開されることを防止することができ
+     ます。バックスラッシュ付きの文字は既に特別なシーケンスであり、バッ
+     クスラッシュもエスケープすることが必要となる可能性があります。
+     <example>
+      <title><function>date</function>の文字をエスケープする</title>
+      <programlisting role="php">
+<![CDATA[
+echo date("l \\t\h\e jS"); // 'Saturday the 8th'のように出力
+]]>
+      </programlisting>
      </example>
     </para>
     <para>
@@ -228,12 +273,20 @@ print ("July 1, 2000 is on a " . date ("l", mktime(0,0,0,7,1,2000)));
       <title>
        <function>date</function>と<function>mktime</function>の例
       </title>
-      <programlisting>
+      <programlisting role="php">
+<![CDATA[
 $tomorrow  = mktime (0,0,0,date("m")  ,date("d")+1,date("Y"));
 $lastmonth = mktime (0,0,0,date("m")-1,date("d"),  date("Y"));
 $nextyear  = mktime (0,0,0,date("m"),  date("d"),  date("Y")+1);
+]]>
       </programlisting>
      </example>
+     <note>
+      <para>
+       サマータイムがあるため日付や月の秒数を単純にタイムスタンプに可
+       減算するよりもより信頼性があります。
+      </para>
+     </note>
     </para>
     <para>
      <function>date</function> フォーマットのいくつかの例を示します。
@@ -247,6 +300,7 @@ $nextyear  = mktime (0,0,0,date("m"),  date("d"),  date("Y")+1);
        <function>date</function> によるフォーマット
       </title>
       <programlisting role="php">
+<![CDATA[
 /* 今日は、March 10th, 2001, 5:16:18 pm です。 */
 $today = date("F j, Y, g:i a");                 // March 10, 2001, 5:16 pm
 $today = date("m.d.y");                         // 03.10.01
@@ -257,6 +311,7 @@ $today = date('\i\t \i\s \t\h\e jS \d\a\y.');   // It is the 10th day.
 $today = date("D M j G:i:s T Y");               // Sat Mar 10 15:16:08 MST 2001
 $today = date('H:m:s \m \i\s\ \m\o\n\t\h');     // 17:03:17 m is month
 $today = date("H:i:s");                         // 17:16:17
+]]>
       </programlisting>
      </example>
     </para>
@@ -266,8 +321,9 @@ $today = date("H:i:s");                         // 17:16:17
      関数を使用する必要があります。
     </para>
     <para>
-     <function>gmdate</function>, <function>mktime</function>も参照下
-     さい。
+     <function>getlastmod</function>, <function>gmdate</function>,
+     <function>mktime</function>, <function>strftime</function>,
+     <function>time</function>も参照下さい。
     </para>
    </refsect1>
   </refentry>
@@ -347,12 +403,14 @@ $today = date("H:i:s");                         // 17:16:17
      </itemizedlist>
      <example>
       <title><function>getdate</function> の例</title>
-      <programlisting>
+     <programlisting role="php">
+<![CDATA[
 $today = getdate(); 
 $month = $today['month']; 
 $mday = $today['mday']; 
 $year = $today['year']; 
 echo "$month $mday, $year";
+]]>
       </programlisting>
      </example>
     </para>
@@ -429,14 +487,17 @@ echo "$month $mday, $year";
      <example>
       <title><function>gmdate</function>の例</title>
       <programlisting role="php">
+<![CDATA[
 echo date ("M d Y H:i:s", mktime (0,0,0,1,1,1998));
 echo gmdate ("M d Y H:i:s", mktime (0,0,0,1,1,1998));
+]]>
       </programlisting>
      </example>
     </para>
     <para>
      <function>date</function>,<function>mktime</function>, 
-     <function>gmmktime</function>も参照下さい。
+     <function>gmmktime</function>, <function>strftime</function>も参
+     照下さい。
     </para>
    </refsect1>
   </refentry>
@@ -499,9 +560,11 @@ echo gmdate ("M d Y H:i:s", mktime (0,0,0,1,1,1998));
      <example>
       <title><function>gmstrftime</function> の例</title>
       <programlisting role="php">
-setlocale ('LC_TIME','en_US');
+<![CDATA[
+setlocale ('LC_TIME', 'en_US');
 echo strftime ("%b %d %Y %H:%M:%S", mktime (20,0,0,12,31,98))."\n";
 echo gmstrftime ("%b %d %Y %H:%M:%S", mktime (20,0,0,12,31,98))."\n";
+]]>
       </programlisting>
      </example>
     </para>
@@ -622,6 +685,7 @@ echo gmstrftime ("%b %d %Y %H:%M:%S", mktime (20,0,0,12,31,98))."\n";
      <example>
       <title><function>microtime</function> の例</title>
       <programlisting role="php">
+<![CDATA[
 function getmicrotime(){ 
     list($usec, $sec) = explode(" ",microtime()); 
     return ((float)$sec + (float)$usec); 
@@ -629,7 +693,7 @@ function getmicrotime(){
 
 $time_start = getmicrotime();
     
-for ($i=0; $i &lt; 1000; $i++){
+for ($i=0; $i < 1000; $i++){
     // 何もしない。1000 回ループ
     }
 
@@ -637,6 +701,7 @@ $time_end = getmicrotime();
 $time = $time_end - $time_start;
 
 echo "$time 秒間何もしませんでした。";
+]]>
       </programlisting>
      </example>
     </para>
@@ -702,11 +767,13 @@ echo "$time 秒間何もしませんでした。";
      例えば、以下の各行はいずれも文字列 "Jan-01-1998"を出力します。
      <example>
       <title><function>mktime</function>の例</title>
-      <programlisting>
+      <programlisting role="php">
+<![CDATA[
 echo date ("M-d-Y", mktime (0,0,0,12,32,1997));
 echo date ("M-d-Y", mktime (0,0,0,13,1,1997));
 echo date ("M-d-Y", mktime (0,0,0,1,1,1998));
 echo date ("M-d-Y", mktime (0,0,0,1,1,98));
+]]>
       </programlisting>
      </example>
      <parameter>year</parameter> は2桁または4桁の値を指定可能で、
@@ -721,11 +788,13 @@ echo date ("M-d-Y", mktime (0,0,0,1,1,98));
      <example>
       <title>次の月の最後の日</title>
       <programlisting role="php">
+<![CDATA[
 $lastday = mktime (0,0,0,3,0,2000);
 echo strftime ("Last day in Feb 2000 is: %d", $lastday);
      
 $lastday = mktime (0,0,0,4,-31,2000);
 echo strftime ("Last day in Feb 2000 is: %d", $lastday);
+]]>
       </programlisting>
      </example>
     </para>
@@ -954,14 +1023,16 @@ echo strftime ("Last day in Feb 2000 is: %d", $lastday);
      <example>
       <title><function>strftime</function>の例</title>
       <programlisting role="php">
+<![CDATA[
 setlocale ("LC_TIME", "C");
-print(strftime("%A in Finnish is "));
+print (strftime ("%A in Finnish is "));
 setlocale ("LC_TIME", "fi_FI");
-print(strftime("%A, in French "));
-setlocale ("LC_TIME", "fr_CA");
-print(strftime("%A and in German "));
+print (strftime ("%A, in French "));
+setlocale ("LC_TIME", "fr_FR");
+print (strftime ("%A and in German "));
 setlocale ("LC_TIME", "de_DE");
-print(strftime("%A.\n"));
+print (strftime ("%A.\n"));
+]]>
       </programlisting>
      </example>
      この例は、各ロケールがシステムにインストールされている場合に動作します。
@@ -1023,14 +1094,40 @@ print(strftime("%A.\n"));
      <example>
       <title><function>strtotime</function>の例</title>
       <programlisting role="php">
-echo strtotime ("now") . "\n";
-echo strtotime ("10 September 2000") . "\n";
-echo strtotime ("+1 day") . "\n";
-echo strtotime ("+1 week") . "\n";
-echo strtotime ("+1 week 2 days 4 hours 2 seconds") . "\n";
+<![CDATA[
+echo strtotime ("now"), "\n";
+echo strtotime ("10 September 2000"), "\n";
+echo strtotime ("+1 day"), "\n";
+echo strtotime ("+1 week"), "\n";
+echo strtotime ("+1 week 2 days 4 hours 2 seconds"), "\n";
+echo strtotime ("next Thursday"), "\n";
+echo strtotime ("last Monday"), "\n";
+]]>
       </programlisting>
      </example>
     </para>
+    <para>
+     <example>
+      <title>失敗のチェック</title>
+      <programlisting role="php">
+<![CDATA[
+$str = 'Not Good';
+if (($timestamp = strtotime($str)) === -1) {
+    echo "The string ($str) is bogus";
+} else {
+    echo "$str == ". date('l dS of F Y h:i:s A',$timestamp);
+}
+]]>
+      </programlisting>
+     </example>
+    </para>
+    <note>
+     <para>
+      タイムスタンプの有効な範囲は、通常、Fri, 13 Dec 1901 20:45:54
+      GMTからTue, 19 Jan 2038 03:14:07 GMTまでです。(これらは、32ビッ
+      ト符号付整数の最大及び最小に一致します。)
+     </para>
+    </note>
    </refsect1>
   </refentry>
   

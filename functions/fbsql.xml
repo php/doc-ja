@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.10 $ -->
  <reference id="ref.fbsql">
   <title>FrontBase関数</title>
   <titleabbrev>FrontBase</titleabbrev>
@@ -51,7 +52,7 @@
     <para> 
      <function>fbsql_affected_rows</function> は、
      <parameter>link_identifier</parameter>が指す接続において
-     直近のINSERT, UPDATE, DELETEクエルで作用されたレコードの数を返し
+     直近のINSERT, UPDATE, DELETEクエリで作用されたレコードの数を返し
      ます。リンクIDが指定されない場合、
      <function>fbsql_connect</function>により直近にオープンされた接続
      が使用されます。
@@ -70,22 +71,22 @@
     </para>
     <note>
      <para>
-      When using UPDATE, FrontBase will not update columns where the new
-      value is the same as the old value.  This creates the possiblity
-      that <function>fbsql_affected_rows</function> may not actually
-      equal the number of rows matched, only the number of rows that
-      were literally affected by the query.
+      UPDATEを使用する場合、FrontBaseは、新しい値が古い値と同じ場合に
+      はカラムを更新しません。このため、
+      <function>fbsql_affected_rows</function>は、実際にはマッチした行
+      の数と一致しない可能性があり、クエリにより実際に変更された行の数
+      だけとなります。
      </para>
     </note>
     <para>
-     If the last query failed, this function will return -1.
+     直近のクエリが失敗した場合、この関数は-1を返します。
     </para>
     <para>
      <function>fbsql_num_rows</function>も参照下さい。
     </para>
    </refsect1>
   </refentry>
-
+  
   <refentry id="function.fbsql-autocommit">
    <refnamediv>
     <refname>fbsql_autocommit</refname> 
@@ -107,10 +108,20 @@
      </funcprototype>
     </funcsynopsis>
     <para> 
-     <function>fbsql_autocommit</function> returns the current
-     autocommit status. if the optional OnOff parameter is
-     given the auto commit status will be changed.
+     <function>fbsql_autocommit</function>は、カレントのautocommitステー
+     タスを返します。オプションのOnOffパラメータが指定された場合、オー
+     トコミットステータスは変更されます。
+     OnOffを&true;に設定すると、エラーがない場合には、各命令は自動的に
+     コミットされます。
+     OnOffが &false; に設定された場合、ユーザは、
+     <function>fbsql_commit</function>または
+     <function>fbsql_rollback</function>のどちらかによりユーザはコミッ
+     トまたはロールバックを行う必要があります。
     </para> 
+    <para>
+     <function>fbsql_commit</function>および
+     <function>fbsql_rollback</function>も参照下さい。
+    </para>
    </refsect1>
   </refentry>
 
@@ -138,15 +149,16 @@
         <optional>link_identifier</optional>
        </parameter>
       </paramdef>
-     </funcprototype>
+        </funcprototype>
     </funcsynopsis>
     <para> 
-     <function>fbsql_change_user</function> changes the logged in user
-     of the current active connection, or the connection given by the 
-     optional parameter link_identifier.  If a database is
-     specified, this will default or current database after the user
-     has been changed.  If the new user and password authorization fails, 
-     the current connected user stays active.
+     <function>fbsql_change_user</function>は、カレントのアクティブ接
+     続またはオプションのパラメータ
+     <parameter>link_identifier</parameter>で指定した接続のログインユー
+     ザを変更します。<parameter>database</parameter>が指定された場合、
+     ユーザ変更後のデフォルトまたはカレントのデータベースとなります。
+     新規ユーザ及びパスワード認証が失敗した場合、カレントの接続ユーザ
+     はアクティブなままとなります。
     </para>
    </refsect1>
   </refentry>
@@ -169,32 +181,68 @@
      </funcprototype>
     </funcsynopsis>
     <para>
-     Returns: &true; on success, &false; on error.
+     成功時に&true;、エラー時に&false;を返します。
     </para>
-    <para> <function>fbsql_close</function> closes the connection to
-    the FrontBase server that's associated with the specified link
-    identifier. If <parameter>link_identifier</parameter> isn't
-    specified, the last opened link is used.
+    <para> 
+     <function>fbsql_close</function>は、指定したリンクIDに関連する
+     FrontBaseサーバへの接続を閉じます。
+     <parameter>link_identifier</parameter>が指定されない場合、直近に
+     オープンされたリンクが使用されます。
     </para>
     <para>
-     Using <function>fbsql_close</function> isn't usually necessary,
-     as non-persistent open links are automatically closed at the end
-     of the script's execution.
+     持続的でないオープンされたリンクは、スクリプト実行終了時に自動的
+     にクローズされるため、<function>fbsql_close</function>は実際には
+     不用です。
     </para>
     <example>
      <title><function>fbsql_close</function> の例</title>
      <programlisting role="php">
-&lt;?php
+<![CDATA[
+<?php
     $link = fbsql_connect ("localhost", "_SYSTEM", "secret")
         or die ("Could not connect");
     print ("Connected successfully");
     fbsql_close ($link);
-?&gt;
+?>
+]]>
      </programlisting>
     </example>
     <para> 
      <function>fbsql_connect</function>, 
      <function>fbsql_pconnect</function>も参照下さい。
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.fbsql-commit">
+   <refnamediv>
+    <refname>fbsql_commit</refname>
+    <refpurpose>データベースへのトランザクションをコミットする</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>bool <function>fbsql_commit</function></funcdef>
+      <paramdef>resource 
+       <parameter>
+        <optional>link_identifier</optional>
+       </parameter>
+      </paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para> 
+     成功時に&true;、失敗時に&false;を返します。
+    </para>
+    <para> 
+     <function>fbsql_commit</function>は、ディスクへのinsert、update、
+     deleteを全て書き込み、トランザクションによりホールドされた全ての
+     行及びテーブルのロックをアンロックします。このコマンドは、
+     autocommitがfalseに設定されている場合のみ必要です。
+    </para>
+    <para>
+     <function>fbsql_autocommit</function>及び
+     <function>fbsql_rollback</function>も参照下さい。
     </para>
    </refsect1>
   </refentry>
@@ -228,44 +276,44 @@
      </funcprototype>
     </funcsynopsis>
     <para> 
-     Returns a positive FrontBase link identifier on success, or an error
-     message on failure.
+     成功時に正のFrontBaseリンクIDは、失敗時にエラーメッセージを返しま
+     す。
     </para>
     <para>
-     <function>fbsql_connect</function> establishes a connection
-     to a FrontBase server.  The following defaults are assumed for
-     missing optional parameters: <parameter>hostname</parameter> =
-     '&null;', <parameter>username</parameter> = '_SYSTEM' and 
-     <parameter>password</parameter> = empty password.
+     <function>fbsql_connect</function>は、FrontBaseサーバへの接続を確
+     立します。オプションのパラメータを省略した場合には以下のデフォル
+     ト値が仮定されます。: <parameter>hostname</parameter> = '&null;',
+     <parameter>username</parameter> = '_SYSTEM',
+     <parameter>password</parameter> = 空のパスワード
     </para>
     <para>
-     If a second call is made to <function>fbsql_connect</function>
-     with the same arguments, no new link will be established, but
-     instead, the link identifier of the already opened link will be
-     returned.
+     同じ引数で<function>fbsql_connect</function>への2番目のコールが行
+     われた場合、新規のリンクは確立されず、替わりに既にオープンされて
+     いるリンクIDが返されます。
     </para>
     <para>
-     The link to the server will be closed as soon as the execution of
-     the script ends, unless it's closed earlier by explicitly calling
-     <function>fbsql_close</function>.
+     <function>fbsql_close</function>をコールすることにより事前に明示
+     的にクローズされていない限り、サーバへのリンクはスクリプト実行終
+     了時にクローズされます。
     </para>  
     <example>
      <title><function>fbsql_connect</function>の例</title>
      <programlisting role="php">
-&lt;?php
+<![CDATA[
+<?php
 
     $link = fbsql_connect ("localhost", "_SYSTEM", "secret")
         or die ("Could not connect");
     print ("Connected successfully");
     fbsql_close ($link);
 
-?&gt;
+?>
+]]>
      </programlisting>
     </example>
     <para> 
-     See also
-     <function>fbsql_pconnect</function>, and
-     <function>fbsql_close</function>.
+     <function>fbsql_pconnect</function>および
+     <function>fbsql_close</function>も参照下さい。
     </para>
    </refsect1>
   </refentry>
@@ -289,14 +337,14 @@
      </funcprototype>
     </funcsynopsis>
     <para> 
-     <function>fbsql_create_db</function> attempts to create a new
-     database on the server associated with the specified link
-     identifier.
+     <function>fbsql_create_db</function>は、指定したリンクIDが指すサー
+     バ上に新規にデータベースを作成します。
     </para>
     <example>
-     <title><function>fbsql_create_db</function> example</title>
+     <title><function>fbsql_create_db</function>の例</title>
      <programlisting role="php">
-&lt;?php
+<![CDATA[
+<?php
     $link = fbsql_pconnect ("localhost", "_SYSTEM", "secret")
         or die ("Could not connect");
     if (fbsql_create_db ("my_db")) {
@@ -304,11 +352,164 @@
     } else {
         printf("Error creating database: %s\n", fbsql_error ());
     }
-?&gt;
+?>
+]]>
      </programlisting>
     </example>
     <para> 
-     See also: <function>fbsql_drop_db</function>.
+     <function>fbsql_drop_db</function>も参照下さい。
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.fbsql-create-blob">
+   <refnamediv>
+    <refname>fbsql_create_blob</refname>
+    <refpurpose>BLOBを生成する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>string <function>fbsql_create_blob</function></funcdef>
+      <paramdef>string <parameter>blob_data</parameter></paramdef>
+      <paramdef>resource 
+       <parameter>
+        <optional>link_identifier</optional>
+       </parameter>
+      </paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para> 
+     返り値: 新規に生成されたblobへのリソースハンドル
+    </para>
+    <para> 
+     <function>fbsql_create_blob</function>は、blob_dataからblobを生成
+     します。返されたリソースハンドルは、データベース中にblobを保存す
+     るinsert及びupdateコマンドで使用されます。
+    </para>
+    <example>
+     <title><function>fbsql_create_blob</function>の例</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+    $link = fbsql_pconnect ("localhost", "_SYSTEM", "secret")
+        or die ("Could not connect");
+    $filename = "blobfile.bin";
+    $fp = fopen($filename, "rb");
+    $blobdata = fread($fp, filesize($filename));
+    fclose($fp);
+    
+    $blobHandle = fbsql_create_blob($blobdata, $link);
+    
+    $sql = "INSERT INTO BLOB_TABLE (BLOB_COLUMN) VALUES ($blobHandle);";
+    $rs = fbsql_query($sql, $link);
+?>
+]]>
+     </programlisting>
+    </example>
+    <para>
+     <function>fbsql_create_clob</function>,
+     <function>fbsql_read_blob</function>,
+     <function>fbsql_read_clob</function>,
+     <function>fbsql_set_lob_mode</function>も参照下さい。
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.fbsql-create-clob">
+   <refnamediv>
+    <refname>fbsql_create_clob</refname>
+    <refpurpose>CLOBを生成する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>string <function>fbsql_create_clob</function></funcdef>
+      <paramdef>string <parameter>clob_data</parameter></paramdef>
+      <paramdef>resource 
+       <parameter>
+        <optional>link_identifier</optional>
+       </parameter>
+      </paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para> 
+     返り値: 新規に生成されたCLOBへのリソースハンドル
+    </para>
+    <para> 
+     <function>fbsql_create_clob</function>は、clob_dataからclobを生成
+     します。返されたリソースハンドルは、データベースにclob保存する
+     insert及びupdateコマンドで使用されます。
+    </para>
+    <example>
+     <title><function>fbsql_create_clob</function>の例</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+    $link = fbsql_pconnect ("localhost", "_SYSTEM", "secret")
+        or die ("Could not connect");
+    $filename = "clob_file.txt";
+    $fp = fopen($filename, "rb");
+    $clobdata = fread($fp, filesize($filename));
+    fclose($fp);
+    
+    $clobHandle = fbsql_create_clob($clobdata, $link);
+    
+    $sql = "INSERT INTO CLOB_TABLE (CLOB_COLUMN) VALUES ($clobHandle);";
+    $rs = fbsql_query($sql, $link);
+?>
+]]>
+     </programlisting>
+    </example>
+    <para>
+     <function>fbsql_create_blob</function>,
+     <function>fbsql_read_blob</function>,
+     <function>fbsql_read_clob</function>,
+     <function>fbsql_set_lob_mode</function>も参照下さい。
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.fbsql-database-password">
+   <refnamediv>
+    <refname>fbsql_database_password</refname>
+    <refpurpose>
+     FrontBaseデータベースのパスワードを設定または取得する
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>string
+       <function>fbsql_database_password</function>
+      </funcdef>
+      <paramdef>resource
+      <parameter>link_identifier</parameter></paramdef>
+      <paramdef>string
+       <parameter>
+        <optional>database_password</optional>
+       </parameter>
+      </paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para> 
+     返り値: リンクIDにより表されるデータベースのデータベースパスワード
+    </para>
+    <para> 
+     <function>fbsql_database_password</function>は、カレントのデータ
+     ベースパスワードを設定または取得します。二番目のオプションのパラ
+     メータが指定された場合、指定したリンクIDが指すサーバのパスワード
+     のデータベースパスワードを設定します。リンクIDが指定されない場合、
+     直近にオープンされたリンクが仮定されます。リンクがオープンされて
+     いない場合、この関数は、<function>fbsql_connect</function>がコー
+     ルされた場合と同様にリンクを確立し、使用します。
+    </para>
+    <para> 
+     <function>fbsql_connect</function>および
+     <function>fbsql_pconnect</function>も参照下さい。
     </para>
    </refsect1>
   </refentry>
@@ -323,27 +524,30 @@
     <funcsynopsis>
      <funcprototype>
       <funcdef>bool <function>fbsql_data_seek</function></funcdef>
-      <paramdef>resource <parameter>result_identifier</parameter></paramdef>
+      <paramdef>resource 
+       <parameter>result_identifier</parameter>
+      </paramdef>
       <paramdef>int <parameter>row_number</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para> 
-     Returns: &true; on success, &false; on failure.
+     返り値: 成功時に&true;、失敗時に&false;。
     </para>
     <para> 
-     <function>fbsql_data_seek</function> moves the internal row
-     pointer of the FrontBase result associated with the specified result
-     identifier to point to the specified row number.  The next call
-     to <function>fbsql_fetch_row</function> would return that row.
+     <function>fbsql_data_seek</function>は、指定した結果IDが指す
+     FrontBase結果の内部行ポインタを指定した行番号に移動します。
+     これ以降、<function>fbsql_fetch_row</function>をコールすると、そ
+     の行が返されます。
     </para>
     <para>
-     <parameter>Row_number</parameter> starts at 0.
+     <parameter>row_number</parameter>は、0から始まります。
     </para>
 
     <example>
-     <title><function>fbsql_data_seek</function> example</title>
+     <title><function>fbsql_data_seek</function>の例</title>
      <programlisting role="php">
-&lt;?php
+<![CDATA[
+<?php
     $link = fbsql_pconnect ("localhost", "_SYSTEM", "secret")
         or die ("Could not connect");
 
@@ -365,11 +569,12 @@
         if(!($row = fbsql_fetch_object ($result)))
             continue;
 
-        printf("%s %s&lt;BR>\n", $row->last_name, $row->first_name);
+        printf("%s %s<BR>\n", $row->last_name, $row->first_name);
     }
 
     fbsql_free_result ($result);
-?&gt;
+?>
+]]>
      </programlisting>
     </example>
    </refsect1>
@@ -395,19 +600,98 @@
      </funcprototype>
     </funcsynopsis>
     <para> 
-     Returns: A positive FrontBase result identifier to the query result,
-     or &false; on error.
+     返り値: クエリ結果への正のFrontBase結果ID、またはエラー時には&false;。
     </para>
     <para> 
-     <function>fbsql_db_query</function> selects a database and
-     executes a query on it.  If the optional link identifier isn't
-     specified, the function will try to find an open link to the
-     FrontBase server and if no such link is found it'll try to create one
-     as if <function>fbsql_connect</function> was called with no
-     arguments
+     <function>fbsql_db_query</function>は、データベースを選択し、そこ
+     でクエリを実行します。オプションのリンクIDが省略された場合、この
+     関数は、FrontBaseサーバへのリンクをオープンしようとし、
+     <function>fbsql_connect</function>が引数無しでコールされた時と同
+     様にリンクを作成します。
     </para>
     <para> 
-     See also <function>fbsql_connect</function>.
+     <function>fbsql_connect</function>も参照下さい。
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.fbsql-db-status">
+   <refnamediv>
+    <refname>fbsql_db_status</refname>
+    <refpurpose>指定したデータベースのステータスを取得する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>int <function>fbsql_db_status</function></funcdef>
+      <paramdef>string <parameter>database_name</parameter></paramdef>
+      <paramdef>resource 
+       <parameter>
+        <optional>link_identifier</optional>
+       </parameter>
+      </paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para> 
+     返り値: カレントステータスを表す整数値
+    </para>
+    <para> 
+     <function>fbsql_db_status</function>は、
+     <parameter>database_name</parameter>で指定したデータベースのカレ
+     ントステータスを取得します。
+     <parameter>link_identifier</parameter>が省略された場合、デフォル
+     トのlink_identifierが使用されます。
+    </para>
+    <para> 
+     返り値は、次の定数の１つとします。
+     <itemizedlist>
+      <listitem>
+       <simpara>
+        &false; - hostが無効なexecハンドラ。このエラーは、
+        link_identifierがポート番号を用いてデータベースへ直接接続する
+        場合に発生します。FBExecはサーバで利用可能ですが、接続は行われ
+        ていません。
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+        FBSQL_UNKNOWN - 未知のステータスです。
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+        FBSQL_STOPPED - データベースは実行されていません。データベース
+        を開始するには、<function>fbsql_start_db</function>を使用して
+        下さい。
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+        FBSQL_STARTING - データベースは起動中です。
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+        FBSQL_RUNNING - データベースは実行中で、SQL処理を実行可能です。
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+        FBSQL_STOPPING - データベースは停止中です。
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+        FBSQL_NOEXEC - FBExecはサーバで実行されておらず、データベース
+        のステータスを取得することはできません。
+       </simpara>
+      </listitem>
+     </itemizedlist>
+    </para>
+    <para> 
+     <function>fbsql_start_db</function>および
+     <function>fbsql_stop_db</function>も参照下さい。
     </para>
    </refsect1>
   </refentry>
@@ -431,12 +715,11 @@
      </funcprototype>
     </funcsynopsis>
     <para> 
-     Returns: &true; on success, &false; on failure.
+     返り値: 成功時に&true;、失敗時に&false;。
     </para>  
     <para> 
-     <function>fbsql_drop_db</function> attempts to drop (remove) an
-     entire database from the server associated with the specified
-     link identifier.
+     <function>fbsql_drop_db</function>は、指定したリンクIDが指すサー
+     バからデータベース全体を破棄(削除)します。
     </para>
    </refsect1>
   </refentry>
@@ -475,14 +758,16 @@
      function.
      <informalexample>
       <programlisting role="php">
-&lt;?php
+<![CDATA[
+<?php
 fbsql_connect("marliesle");
-echo fbsql_errno().": ".fbsql_error()."&lt;BR>";
+echo fbsql_errno().": ".fbsql_error()."<BR>";
 fbsql_select_db("nonexistentdb");
-echo fbsql_errno().": ".fbsql_error()."&lt;BR>";
+echo fbsql_errno().": ".fbsql_error()."<BR>";
 $conn = fbsql_query("SELECT * FROM nonexistenttable;");
-echo fbsql_errno().": ".fbsql_error()."&lt;BR>";
-?&gt;
+echo fbsql_errno().": ".fbsql_error()."<BR>";
+?>
+]]>
       </programlisting>
      </informalexample>
     </para>
@@ -526,14 +811,16 @@ echo fbsql_errno().": ".fbsql_error()."&lt;BR>";
      sure you check the value before calling another fbsql function.
      <informalexample>
       <programlisting role="php">
-&lt;?php
+<![CDATA[
+<?php
 fbsql_connect("marliesle");
-echo fbsql_errno().": ".fbsql_error()."&lt;BR>";
+echo fbsql_errno().": ".fbsql_error()."<BR>";
 fbsql_select_db("nonexistentdb");
-echo fbsql_errno().": ".fbsql_error()."&lt;BR>";
+echo fbsql_errno().": ".fbsql_error()."<BR>";
 $conn = fbsql_query("SELECT * FROM nonexistenttable;");
-echo fbsql_errno().": ".fbsql_error()."&lt;BR>";
-?&gt;
+echo fbsql_errno().": ".fbsql_error()."<BR>";
+?>
+]]>
       </programlisting>
      </informalexample>
     </para>
@@ -580,7 +867,9 @@ echo fbsql_errno().": ".fbsql_error()."&lt;BR>";
      make an alias for the column.
      <informalexample>
       <programlisting>
+<![CDATA[
 select t1.f1 as foo t2.f1 as bar from t1, t2
+]]>
       </programlisting>
      </informalexample>
     </para>
@@ -597,23 +886,26 @@ select t1.f1 as foo t2.f1 as bar from t1, t2
      FBSQL_BOTH.
     </para>
     <para>
-     For further details, see also
-     <function>fbsql_fetch_row</function> and <function>fbsql_fetch_assoc</function>.
+     詳細については、
+     <function>fbsql_fetch_row</function>および
+     <function>fbsql_fetch_assoc</function>も参照下さい。
     </para>
     <example>
-     <title><function>fbsql_fetch_array</function> example</title>
+     <title><function>fbsql_fetch_array</function>の例</title>
      <programlisting role="php">
-&lt;?php 
+<![CDATA[
+<?php 
 fbsql_connect ($host, $user, $password);
 $result = fbsql_db_query ("database","select user_id, fullname from table");
 while ($row = fbsql_fetch_array ($result)) {
-    echo "user_id: ".$row["user_id"]."&lt;br>\n";
-    echo "user_id: ".$row[0]."&lt;br>\n";
-    echo "fullname: ".$row["fullname"]."&lt;br>\n";
-    echo "fullname: ".$row[1]."&lt;br>\n";
+    echo "user_id: ".$row["user_id"]."<br>\n";
+    echo "user_id: ".$row[0]."<br>\n";
+    echo "fullname: ".$row["fullname"]."<br>\n";
+    echo "fullname: ".$row[1]."<br>\n";
 }
 fbsql_free_result ($result);
-?&gt;
+?>
+]]>
      </programlisting>
     </example>
    </refsect1>
@@ -658,13 +950,14 @@ fbsql_free_result ($result);
      provides a significant added value.
     </para>
     <para>
-     For further details, see also
-     <function>fbsql_fetch_row</function> and <function>fbsql_fetch_array</function>.
+     詳細については、<function>fbsql_fetch_row</function>および
+     <function>fbsql_fetch_array</function>も参照下さい。
     </para>
     <example>
-     <title><function>fbsql_fetch_assoc</function> example</title>
+     <title><function>fbsql_fetch_assoc</function>の例</title>
      <programlisting role="php">
-&lt;?php 
+<![CDATA[
+<?php 
 fbsql_connect ($host, $user, $password);
 $result = fbsql_db_query ("database","select * from table");
 while ($row = fbsql_fetch_assoc ($result)) {
@@ -672,7 +965,8 @@ while ($row = fbsql_fetch_assoc ($result)) {
     echo $row["fullname"];
 }
 fbsql_free_result ($result);
-?&gt;
+?>
+]]>
      </programlisting>
     </example>
    </refsect1>
@@ -738,36 +1032,38 @@ fbsql_free_result ($result);
      </itemizedlist>
     </para>
     <example>
-     <title><function>fbsql_fetch_field</function> example</title>
+     <title><function>fbsql_fetch_field</function>の例</title>
      <programlisting role="php">
-&lt;?php 
+<![CDATA[
+<?php 
 fbsql_connect ($host, $user, $password)
     or die ("Could not connect");
 $result = fbsql_db_query ("database", "select * from table")
     or die ("Query failed");
 # get column metadata
 $i = 0;
-while ($i &lt; fbsql_num_fields ($result)) {
-    echo "Information for column $i:&lt;BR>\n";
+while ($i < fbsql_num_fields ($result)) {
+    echo "Information for column $i:<BR>\n";
     $meta = fbsql_fetch_field ($result);
     if (!$meta) {
-        echo "No information available&lt;BR>\n";
+        echo "No information available<BR>\n";
     }
-    echo "&lt;PRE>
+    echo "<PRE>
 max_length:   $meta->max_length
 name:         $meta->name
 not_null:     $meta->not_null
 table:        $meta->table
 type:         $meta->type
-&lt;/PRE>";
+</PRE>";
     $i++;
 }
 fbsql_free_result ($result);
-?&gt;
+?>
+]]>
      </programlisting>
     </example>
     <para>
-     See also <function>fbsql_field_seek</function>.
+     <function>fbsql_field_seek</function>も参照下さい。
     </para>
    </refsect1>
   </refentry>
@@ -848,9 +1144,10 @@ fbsql_free_result ($result);
      <function>fbsql_fetch_row</function> (the difference is
      insignificant).
      <example>
-      <title><function>fbsql_fetch_object</function> example</title>
+      <title><function>fbsql_fetch_object</function>の例</title>
       <programlisting role="php">
-&lt;?php 
+<![CDATA[
+<?php 
 fbsql_connect ($host, $user, $password);
 $result = fbsql_db_query ("database", "select * from table");
 while ($row = fbsql_fetch_object ($result)) {
@@ -858,13 +1155,14 @@ while ($row = fbsql_fetch_object ($result)) {
     echo $row->fullname;
 }
 fbsql_free_result ($result);
-?&gt;
+?>
+]]>
       </programlisting>
      </example>
     </para>
     <para> 
-     See also: <function>fbsql_fetch_array</function> and
-     <function>fbsql_fetch_row</function>.
+     <function>fbsql_fetch_array</function>および
+     <function>fbsql_fetch_row</function>も参照下さい。
     </para>
    </refsect1>
   </refentry>
@@ -965,8 +1263,9 @@ fbsql_free_result ($result);
     </note>
     <para>
      <example>
-      <title><function>fbsql_field_name</function> example</title>
+      <title><function>fbsql_field_name</function>の例</title>
       <programlisting role="php">
+<![CDATA[
 // The users table consists of three fields: 
 //   user_id
 //   username
@@ -976,15 +1275,18 @@ $res = fbsql_db_query("users", "select * from users", $link);
 
 echo fbsql_field_name($res, 0) . "\n";
 echo fbsql_field_name($res, 2);
+]]>
       </programlisting>
      </example>
     </para>
     <para>
-     The above example would produce the following output:
+     上の例の出力は以下のようになります。
      <informalexample>
       <programlisting>
+<![CDATA[
 user_id
 password
+]]>
       </programlisting>
      </informalexample>
     </para>
@@ -1091,7 +1393,8 @@ password
      <example>
       <title><function>fbsql_field_type</function> example</title>
       <programlisting role="php">
-&lt;?php 
+<![CDATA[
+<?php 
 
 fbsql_connect ("localhost", "_SYSTEM", "");
 fbsql_select_db ("wisconsin");
@@ -1100,19 +1403,20 @@ $fields = fbsql_num_fields ($result);
 $rows   = fbsql_num_rows ($result);
 $i = 0;
 $table = fbsql_field_table ($result, $i);
-echo "Your '".$table."' table has ".$fields." fields and ".$rows." records &lt;BR>";
-echo "The table has the following fields &lt;BR>"; 
-while ($i &lt; $fields) {
+echo "Your '".$table."' table has ".$fields." fields and ".$rows." records <BR>";
+echo "The table has the following fields <BR>"; 
+while ($i < $fields) {
     $type  = fbsql_field_type  ($result, $i);
     $name  = fbsql_field_name  ($result, $i);
     $len   = fbsql_field_len   ($result, $i);
     $flags = fbsql_field_flags ($result, $i);
-    echo $type." ".$name." ".$len." ".$flags."&lt;BR>";
+    echo $type." ".$name." ".$len." ".$flags."<BR>";
     $i++;
 }
 fbsql_close();
 
-?&gt;
+?>
+]]>
       </programlisting>
      </example>
     </para>
@@ -1215,32 +1519,36 @@ fbsql_close();
     </para>
     <para>
      <example>
-      <title><function>fbsql_list_dbs</function> example</title>
+      <title><function>fbsql_list_dbs</function>の例</title>
       <programlisting role="php">
+<![CDATA[
 $link = fbsql_connect('localhost', 'myname', 'secret');
 $db_list = fbsql_list_dbs($link);
 
 while ($row = fbsql_fetch_object($db_list)) {
-  echo $row->Database . "\n";
+    echo $row->Database . "\n";
 }
+]]>
       </programlisting>
      </example>
     </para>
     <para>
-     The above example would produce the following output:
+     上の例の出力は以下のようになります。
      <informalexample>
       <programlisting>
+<![CDATA[
 database1
 database2
 database3
 ...
+]]>
       </programlisting>
      </informalexample>
     </para>
     <note>
      <para>
-      The above code would just as easily work with
-      <function>fbsql_fetch_row</function> or other similar functions.
+      上記のコードは、<function>fbsql_fetch_row</function>または他の類
+      似の関数でも簡単に同じことが可能です。
      </para>
     </note>
    </refsect1>
@@ -1283,27 +1591,31 @@ database3
     </para>
     <para>
      <example>
-      <title><function>fbsql_list_fields</function> example</title>
+      <title><function>fbsql_list_fields</function>の例</title>
       <programlisting role="php">
+<![CDATA[
 $link = fbsql_connect('localhost', 'myname', 'secret');
 
 $fields = fbsql_list_fields("database1", "table1", $link);
 $columns = fbsql_num_fields($fields);
 
-for ($i = 0; $i &lt; $columns; $i++) {
-  echo fbsql_field_name($fields, $i) . "\n";;
+for ($i = 0; $i < $columns; $i++) {
+    echo fbsql_field_name($fields, $i) . "\n";;
 }
+]]>
       </programlisting>
      </example>
     </para>
     <para>
-     The above example would produce the following output:
+     上の例の出力は以下のようになります。
      <informalexample>
       <programlisting>
+<![CDATA[
 field1
 field2
 field3
 ...
+]]>
       </programlisting>
      </informalexample>
     </para>
@@ -1365,7 +1677,8 @@ field3
     <example>
      <title><function>fbsql_next_result</function> example</title>
      <programlisting role="php">
-&lt;?php
+<![CDATA[
+<?php
     $link = fbsql_connect ("localhost", "_SYSTEM", "secret");
     fbsql_select_db("MyDB", $link);
     $SQL = "Select * from table1; select * from table2;";
@@ -1376,7 +1689,8 @@ field3
     } while (fbsql_next_result($rs));
     fbsql_free_result($rs);
     fbsql_close ($link);
-?&gt;
+?>
+]]>
      </programlisting>
     </example>
    </refsect1>
@@ -1427,9 +1741,10 @@ field3
      To retrieve the number of rows returned from a INSERT, UPDATE or 
      DELETE query, use <function>fbsql_affected_rows</function>.
      <example>
-      <title><function>fbsql_num_rows</function> example</title>
+      <title><function>fbsql_num_rows</function>の例</title>
       <programlisting role="php">
-&lt;?php
+<![CDATA[
+<?php
 
 $link = fbsql_connect("localhost", "username", "password"); 
 fbsql_select_db("database", $link);
@@ -1439,16 +1754,16 @@ $num_rows = fbsql_num_rows($result);
 
 echo "$num_rows Rows\n";
 
-?&gt;
+?>
+]]>
       </programlisting>
      </example>
     </para>
     <para>
-     See also:  
      <function>fbsql_affected_rows</function>, 
      <function>fbsql_connect</function>, 
-     <function>fbsql_select_db</function> and 
-     <function>fbsql_query</function>.
+     <function>fbsql_select_db</function>,
+     <function>fbsql_query</function>も参照下さい。
     </para>
    </refsect1>
   </refentry>
@@ -1553,12 +1868,14 @@ echo "$num_rows Rows\n";
      The following query is syntactically invalid, so
      <function>fbsql_query</function> fails and returns &false;:
      <example>
-      <title><function>fbsql_query</function> example</title>
+      <title><function>fbsql_query</function>の例</title>
       <programlisting role="php">
-&lt;?php
+<![CDATA[
+<?php
 $result = fbsql_query ("SELECT * WHERE 1=1")
     or die ("Invalid query");
-?&gt;
+?>
+]]>
       </programlisting>
      </example>
     </para>
@@ -1568,12 +1885,14 @@ $result = fbsql_query ("SELECT * WHERE 1=1")
      <literal>my_tbl</literal>, so <function>fbsql_query</function>
      fails and returns &false;:
      <example>
-      <title><function>fbsql_query</function> example</title>
+      <title><function>fbsql_query</function>の例</title>
       <programlisting role="php">
-&lt;?php
+<![CDATA[
+<?php
 $result = fbsql_query ("SELECT my_col FROM my_tbl")
     or die ("Invalid query");
-?&gt;
+?>
+]]>
       </programlisting>
      </example>
     </para>
@@ -1606,6 +1925,134 @@ $result = fbsql_query ("SELECT my_col FROM my_tbl")
      <function>fbsql_result</function>,
      <function>fbsql_select_db</function>, and
      <function>fbsql_connect</function>.
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.fbsql-read-blob">
+   <refnamediv>
+    <refname>fbsql_read_blob</refname>
+    <refpurpose>データベースからBLOBを読み込む</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>string <function>fbsql_read_blob</function></funcdef>
+      <paramdef>string <parameter>blob_handle</parameter></paramdef>
+      <paramdef>resource 
+       <parameter>
+        <optional>link_identifier</optional>
+       </parameter>
+      </paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para> 
+     返り値: blob_handleで指定したBLOBを含む文字列。
+    </para>
+    <para> 
+     <function>fbsql_read_blob</function> reads BLOB data from the
+     database.  If a select statement contains BLOB and/or BLOB
+     columns FrontBase will return the data directly when data is
+     fetched. This default behavior can be changed with
+     <function>fbsql_set_lob_mode</function> so the fetch functions
+     will return handles to BLOB and CLOB data.  If a handle is
+     fetched a user must call <function>fbsql_read_blob</function> to
+     get the actual BLOB data from the database.
+    </para>
+    <example>
+     <title><function>fbsql_read_blob</function>の例</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+    $link = fbsql_pconnect ("localhost", "_SYSTEM", "secret")
+        or die ("Could not connect");
+    $sql = "SELECT BLOB_COLUMN FROM BLOB_TABLE;";
+    $rs = fbsql_query($sql, $link);
+    $row_data = fbsql_fetch_row($rs);
+    // $row_data[0] will now contain the blob data for teh first row
+    fbsql_free_result($rs);
+    
+    $rs = fbsql_query($sql, $link);
+    fbsql_set_lob_mode($rs, FBSQL_LOB_HANDLE);
+    $row_data = fbsql_fetch_row($rs);
+    // $row_data[0] will now contain a handle to the BLOB data in the first row
+    $blob_data = fbsql_read_blob($row_data[0]);
+    fbsql_free_result($rs);
+    
+?>
+]]>
+     </programlisting>
+    </example>
+    <para>
+     <function>fbsql_create_blob</function>,
+     <function>fbsql_read_blob</function>,
+     <function>fbsql_read_clob</function>,
+     <function>fbsql_set_lob_mode</function>も参照下さい。
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.fbsql-read-clob">
+   <refnamediv>
+    <refname>fbsql_read_clob</refname>
+    <refpurpose>データベースからCLOBを読み込む</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>string <function>fbsql_read_clob</function></funcdef>
+      <paramdef>string <parameter>clob_handle</parameter></paramdef>
+      <paramdef>resource 
+       <parameter>
+        <optional>link_identifier</optional>
+       </parameter>
+      </paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para> 
+     返り値: clob_handleにより指定したCLOBを含む文字列。
+    </para>
+    <para> 
+     <function>fbsql_read_clob</function> reads CLOB data from the
+     database.  If a select statement contains BLOB and/or CLOB
+     columns FrontBase will return the data directly when data is
+     fetched. This default behavior can be changed with
+     <function>fbsql_set_lob_mode</function> so the fetch functions
+     will return handles to BLOB and CLOB data.  If a handle is
+     fetched a user must call <function>fbsql_read_clob</function> to
+     get the actual CLOB data from the database.
+    </para>
+    <example>
+     <title><function>fbsql_read_clob</function>の例</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+    $link = fbsql_pconnect ("localhost", "_SYSTEM", "secret")
+        or die ("Could not connect");
+    $sql = "SELECT CLOB_COLUMN FROM CLOB_TABLE;";
+    $rs = fbsql_query($sql, $link);
+    $row_data = fbsql_fetch_row($rs);
+    // $row_data[0] will now contain the clob data for teh first row
+    fbsql_free_result($rs);
+    
+    $rs = fbsql_query($sql, $link);
+    fbsql_set_lob_mode($rs, FBSQL_LOB_HANDLE);
+    $row_data = fbsql_fetch_row($rs);
+    // $row_data[0] will now contain a handle to the CLOB data in the first row
+    $clob_data = fbsql_read_clob($row_data[0]);
+    fbsql_free_result($rs);
+    
+?>
+]]>
+     </programlisting>
+    </example>
+    <para>
+     <function>fbsql_create_blob</function>,
+     <function>fbsql_read_blob</function>,
+     <function>fbsql_read_clob</function>,
+     <function>fbsql_set_lob_mode</function>も参照下さい。
     </para>
    </refsect1>
   </refentry>
@@ -1651,10 +2098,101 @@ $result = fbsql_query ("SELECT my_col FROM my_tbl")
      with calls to other functions that deal with the result set.
     </para>
     <para>
-     Recommended high-performance alternatives:
+     推奨される高性能な代替関数:
      <function>fbsql_fetch_row</function>, 
-     <function>fbsql_fetch_array</function>, and
-     <function>fbsql_fetch_object</function>.
+     <function>fbsql_fetch_array</function>,
+     <function>fbsql_fetch_object</function>
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.fbsql-rollback">
+   <refnamediv>
+    <refname>fbsql_rollback</refname>
+    <refpurpose>データベースへのトランザクションをロールバックする</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>bool <function>fbsql_rollback</function></funcdef>
+      <paramdef>resource 
+       <parameter>
+        <optional>link_identifier</optional>
+       </parameter>
+      </paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para> 
+     Returns: &true; on success, &false; on failure.
+    </para>
+    <para> 
+     <function>fbsql_rollback</function> ends the current transaction by
+     rolling back all statements issued since last commit.
+     This command is only needed if autocommit is set to false.
+    </para>
+    <para> See also:
+     <function>fbsql_autocommit</function> and
+     <function>fbsql_commit</function>
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.fbsql-set-lob-mode">
+   <refnamediv>
+    <refname>fbsql_set_lob_mode</refname>
+    <refpurpose>
+     FrontBase結果セットのLOB取得モードを設定する
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>bool <function>fbsql_set_lob_mode</function></funcdef>
+      <paramdef>resource <parameter>result</parameter></paramdef>
+      <paramdef>string <parameter>database_name</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para> 
+     返り値: 成功時に&true; on success、エラー時に&false;。
+    </para>
+    <para> 
+     <function>fbsql_set_lob_mode</function> sets the mode for
+     retrieving LOB data from the database. When BLOB and CLOB data is
+     stored in FrontBase it can be stored direct or indirect.  Direct
+     stored LOB data will always be fetched no matter the setting of
+     the lob mode. If the LOB data is less than 512 bytes it will
+     always be stored directly.
+     <itemizedlist>
+      <listitem>
+       <simpara>
+        FBSQL_LOB_DIRECT - LOB data is retrieved directly. When data
+        is fetched from the database with
+        <function>fbsql_fetch_row</function>, and other fetch
+        functions, all CLOB and BLOB columns will be returned as
+        ordinary columns.  This is the default value on a new
+        FrontBase result.
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+        FBSQL_LOB_HANDLE - LOB data is retrieved as handles to the
+        data.  When data is fetched from the database with
+        <function>fbsql_fetch_row </function>, and other fetch
+        functions, LOB data will be returned as a handle to the data
+        if the data is stored indirect or the data if it is stored
+        direct.  If a handle is returned it will be a 27 byte string
+        formatted as "@'000000000000000000000000'".
+       </simpara>
+      </listitem>
+     </itemizedlist>     
+    </para>
+    <para>
+     <function>fbsql_create_blob</function>, 
+     <function>fbsql_create_clob</function>, 
+     <function>fbsql_read_blob</function>,
+     <function>fbsql_read_clob</function>も参照下さい。
     </para>
    </refsect1>
   </refentry>
@@ -1708,6 +2246,72 @@ $result = fbsql_query ("SELECT my_col FROM my_tbl")
    </refsect1>
   </refentry>
 
+  <refentry id="function.fbsql-start-db">
+   <refnamediv>
+    <refname>fbsql_start_db</refname>
+    <refpurpose>
+     ローカルまたはリモートサーバのデータベースを開始する
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>Description</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>bool <function>fbsql_start_db</function></funcdef>
+      <paramdef>string <parameter>database_name</parameter></paramdef>
+      <paramdef>resource 
+       <parameter>
+        <optional>link_identifier</optional>
+       </parameter>
+      </paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para> 
+     Returns: &true; on success, &false; on failure.
+    </para>
+    <para> 
+     <function>fbsql_start_db</function>
+    </para>
+    <para> 
+     See also: <function>fbsql_db_status</function> and
+     <function>fbsql_stop_db</function>.
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.fbsql-stop-db">
+   <refnamediv>
+    <refname>fbsql_stop_db</refname>
+    <refpurpose>
+     ローカルまたはリモートサーバのデータベースを停止する
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>bool <function>fbsql_stop_db</function></funcdef>
+      <paramdef>string <parameter>database_name</parameter></paramdef>
+      <paramdef>resource 
+       <parameter>
+        <optional>link_identifier</optional>
+       </parameter>
+      </paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para> 
+     Returns: &true; on success, &false; on failure.
+    </para>
+    <para> 
+     <function>fbsql_stop_db</function>
+    </para>
+    <para> 
+     <function>fbsql_db_status</function>および
+     <function>fbsql_start_db</function>も参照下さい。
+    </para>
+   </refsect1>
+  </refentry>
+
   <refentry id="function.fbsql-tablename">
    <refnamediv>
     <refname>fbsql_tablename</refname>
@@ -1729,18 +2333,20 @@ $result = fbsql_query ("SELECT my_col FROM my_tbl")
      <function>fbsql_num_rows</function> function may be used to
      determine the number of tables in the result pointer.
      <example>
-      <title><function>fbsql_tablename</function> example</title>
+      <title><function>fbsql_tablename</function>の例</title>
       <programlisting role="php">
-&lt;?php 
+<![CDATA[
+<?php 
 fbsql_connect ("localhost", "_SYSTEM", "");
 $result = fbsql_list_tables ("wisconsin");
 $i = 0;
-while ($i &lt; fbsql_num_rows ($result)) {
+while ($i < fbsql_num_rows ($result)) {
     $tb_names[$i] = fbsql_tablename ($result, $i);
-    echo $tb_names[$i] . "&lt;BR>";
+    echo $tb_names[$i] . "<BR>";
     $i++;
 }
-?&gt;
+?>
+]]>
       </programlisting>
      </example>
     </para>
@@ -1771,6 +2377,148 @@ while ($i &lt; fbsql_num_rows ($result)) {
     <para> 
      <function>fbsql_warnings</function> は、FrontBaseの警告を有効または
      無効にします。
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id='function.fbsql-database'>
+   <refnamediv>
+    <refname>fbsql_database</refname>
+    <refpurpose>
+     No description given yet
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>string <function>fbsql_database</function></funcdef>
+      <paramdef>resource <parameter>link_identifier</parameter></paramdef>
+      <paramdef>string 
+       <parameter><optional>database</optional></parameter>
+      </paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id='function.fbsql-get-autostart-info'>
+   <refnamediv>
+    <refname>fbsql_get_autostart_info</refname>
+    <refpurpose>
+     No description given yet
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>array <function>fbsql_get_autostart_info</function></funcdef>
+      <paramdef>resource 
+       <parameter><optional>link_identifier</optional></parameter>
+      </paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id='function.fbsql-hostname'>
+   <refnamediv>
+    <refname>fbsql_hostname</refname>
+    <refpurpose>
+     No description given yet
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>string <function>fbsql_hostname</function></funcdef>
+      <paramdef>resource <parameter>link_identifier</parameter></paramdef>
+      <paramdef>string 
+       <parameter><optional>host_name</optional></parameter>
+      </paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id='function.fbsql-password'>
+   <refnamediv>
+    <refname>fbsql_password</refname>
+    <refpurpose>
+     No description given yet
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>string <function>fbsql_password</function></funcdef>
+      <paramdef>resource <parameter>link_identifier</parameter></paramdef>
+      <paramdef>string 
+       <parameter><optional>password</optional></parameter>
+      </paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id='function.fbsql-set-transaction'>
+   <refnamediv>
+    <refname>fbsql_set_transaction</refname>
+    <refpurpose>
+     トランザクションのロックとアイソレーションを設定する
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>void <function>fbsql_set_transaction</function></funcdef>
+      <paramdef>resource <parameter>link_identifier</parameter></paramdef>
+      <paramdef>int <parameter>Locking</parameter></paramdef>
+      <paramdef>int <parameter>Isolation</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id='function.fbsql-username'>
+   <refnamediv>
+    <refname>fbsql_username</refname>
+    <refpurpose>
+     No description given yet
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>string <function>fbsql_username</function></funcdef>
+      <paramdef>resource <parameter>link_identifier</parameter></paramdef>
+      <paramdef>string 
+       <parameter><optional>username</optional></parameter>
+      </paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     &warn.undocumented.func;
     </para>
    </refsect1>
   </refentry>

@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.13 $ -->
  <reference id="ref.ftp">
   <title>FTP 関数</title>
   <titleabbrev>FTP</titleabbrev>
@@ -9,17 +10,13 @@
     Protocol (FTP)を使用してファイルサーバにアクセスするクライアントの
     実装です。
    </para>
-
-   <para>
-    FTP は、File Transfer Protocol を意味します。
-   </para>
    <para>
     FTP モジュールを使用する際、次の定数が定義されます。
     <constant>FTP_ASCII</constant>および<constant>FTP_BINARY</constant>
    </para>
    <para>
-    PHPの設定でFTP関数を使用するためには、PHP 4をインストールする場合に
-    は、オプション <link linkend="install.configure.enable-ftp">
+    PHPの設定でFTP関数を使用するためには、PHP 4をインストールする場合、
+    オプション <link linkend="install.configure.enable-ftp">
      <option>--enable-ftp</option></link>、PHP 3を使用している場合には、
     <link linkend="install.configure.with-ftp">
      <option>--with-ftp</option></link>を使用する必要があります。
@@ -28,35 +25,37 @@
     <example>
      <title><function>ftp</function> の例</title>
       <programlisting>
-&lt;?php
-// 基本的な接続を設定
-$conn_id = ftp_connect("$ftp_server"); 
+<![CDATA[
+<?php
+// set up basic connection
+$conn_id = ftp_connect($ftp_server); 
 
-// ユーザ名とパスワードを指定してログイン
-$login_result = ftp_login($conn_id, "$ftp_user_name", "$ftp_user_pass"); 
+// login with username and password
+$login_result = ftp_login($conn_id, $ftp_user_name, $ftp_user_pass); 
 
-// 接続を確認
+// check connection
 if ((!$conn_id) || (!$login_result)) { 
         echo "Ftp connection has failed!";
-        echo "Attempted to connect to $ftp_server for user $user"; 
+        echo "Attempted to connect to $ftp_server for user $ftp_user_name"; 
         die; 
     } else {
-        echo "Connected to $ftp_server, for user $user";
+        echo "Connected to $ftp_server, for user $ftp_user_name";
     }
 
-// ファイルをアップロードする
-$upload = ftp_put($conn_id, "$destination_file", "$source_file", FTP_BINARY); 
+// upload the file
+$upload = ftp_put($conn_id, $destination_file, $source_file, FTP_BINARY); 
 
-// アップロードのステータスを確認
+// check upload status
 if (!$upload) { 
         echo "Ftp upload has failed!";
     } else {
         echo "Uploaded $source_file to $ftp_server as $destination_file";
     }
 
-// FTPストリームを閉じる
-ftp_quit($conn_id); 
+// close the FTP stream 
+ftp_close($conn_id); 
 ?>
+]]>
      </programlisting>
     </example>
    </para>
@@ -71,26 +70,40 @@ ftp_quit($conn_id);
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>int <function>ftp_connect</function></funcdef>
+      <funcdef>resource <function>ftp_connect</function></funcdef>
       <paramdef>string <parameter>host</parameter></paramdef>
       <paramdef>int 
-       <parameter>
-	<replaceable><optional>port</optional></replaceable>
-       </parameter>
+       <parameter><optional>port</optional></parameter>
+      </paramdef>
+      <paramdef>int
+       <parameter><optional>timeout</optional></parameter>
       </paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
-     成功時に FTP ストリームを、エラーの場合に &false; を返します。</para>
+     成功時にFTPストリーム、エラーの場合に&false;を返します。
+    </para>
     <para>
-     <function>ftp_connect</function> は、指定した <parameter>host</parameter>
-     への FTP 接続をオープンします。
-     <parameter>port</parameter> パラメータは別のポートに接続することを
-     指定します。これを省略するか 0 にした場合、デフォルトの FTP ポート、
-     つまり、21 が使用されます。</para>
+     <function>ftp_connect</function>は、指定した
+     <parameter>host</parameter>へのFTP接続をオープンします。
+     <parameter>port</parameter>パラメータは別のポートに接続することを
+     指定します。これを省略するか0にした場合、デフォルトのFTPポート、
+     つまり、21が使用されます。
+    </para>
+    <para>
+     パラメータ<parameter>timeout</parameter>は、以降の全てのネットワー
+     ク処理のタイムアウトを指定します。省略された場合、デフォルト値は、
+     90秒となります。timeoutは、<function>ftp_set_option</function>お
+     よび<function>ftp_get_option</function>でいつでも変更および取得可
+     能です。
+     <note>
+      <para>
+       このパラメータは、CVS版でのみ利用可能です。
+      </para>
+     </note>
+    </para>
    </refsect1>
   </refentry>
-
 
   <refentry id="function.ftp-login">
    <refnamediv>
@@ -101,16 +114,18 @@ ftp_quit($conn_id);
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>int <function>ftp_login</function></funcdef>
-      <paramdef>int <parameter>ftp_stream</parameter></paramdef>
+      <funcdef>bool <function>ftp_login</function></funcdef>
+      <paramdef>resource <parameter>ftp_stream</parameter></paramdef>
       <paramdef>string <parameter>username</parameter></paramdef>
       <paramdef>string <parameter>password</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
-    <para>
-     成功時に &true;、エラー時に &false; を返します。</para>
     <para> 
-     指定した FTP ストリームにログインします。</para>
+     指定したFTPストリームにログインします。
+    </para>
+    <para>
+     成功時に&true;、エラー時に&false;を返します。
+    </para>
    </refsect1>
   </refentry>
 
@@ -124,11 +139,12 @@ ftp_quit($conn_id);
     <funcsynopsis>
      <funcprototype>
       <funcdef>string <function>ftp_pwd</function></funcdef>
-      <paramdef>int <parameter>ftp_stream</parameter></paramdef>
+      <paramdef>resource <parameter>ftp_stream</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
-     現在のディレクトリを返します。エラーの場合は、&false; を返します。
+     カレントのディレクトリを返します。エラーの場合は、&false; を返し
+     ます。
     </para>
    </refsect1>
   </refentry>
@@ -142,14 +158,16 @@ ftp_quit($conn_id);
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>int <function>ftp_cdup</function></funcdef>
-      <paramdef>int <parameter>ftp_stream</parameter></paramdef>
+      <funcdef>bool <function>ftp_cdup</function></funcdef>
+      <paramdef>resource <parameter>ftp_stream</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
-    <para>
-     成功時に &true;、エラー時に &false; を返します。</para>
     <para> 
-     親ディレクトリに移動します。</para>
+     親ディレクトリに移動します。
+    </para>
+    <para>
+     成功時に &true;、エラー時に &false; を返します。
+    </para>
    </refsect1>
   </refentry>
 
@@ -162,15 +180,17 @@ ftp_quit($conn_id);
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>int <function>ftp_chdir</function></funcdef>
-      <paramdef>int <parameter>ftp_stream</parameter></paramdef>
+      <funcdef>bool <function>ftp_chdir</function></funcdef>
+      <paramdef>resource <parameter>ftp_stream</parameter></paramdef>
       <paramdef>string <parameter>directory</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
-    <para>
-     成功時に &true;、エラー時に &false; を返します。</para>
     <para> 
-     指定した <parameter>directory</parameter> に移動します。</para>
+     指定した<parameter>directory</parameter>に移動します。
+    </para>
+    <para>
+     成功時に&true;、エラー時に&false;を返します。
+    </para>
    </refsect1>
   </refentry>
 
@@ -184,14 +204,17 @@ ftp_quit($conn_id);
     <funcsynopsis>
      <funcprototype>
       <funcdef>string <function>ftp_mkdir</function></funcdef>
-      <paramdef>int <parameter>ftp_stream</parameter></paramdef>
+      <paramdef>resource <parameter>ftp_stream</parameter></paramdef>
       <paramdef>string <parameter>directory</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
-    <para>
-     成功した時に、新規に作成したディレクトリ名、エラー時に&false;を返します。</para>
     <para> 
-     指定した <parameter>directory</parameter> を作成します。</para>
+     指定した<parameter>directory</parameter>を作成します。
+    </para>
+    <para>
+     成功した時に、新規に作成したディレクトリ名、エラー時に&false;を返
+     します。
+    </para>
    </refsect1>
   </refentry>
 
@@ -204,15 +227,17 @@ ftp_quit($conn_id);
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>int <function>ftp_rmdir</function></funcdef>
-      <paramdef>int <parameter>ftp_stream</parameter></paramdef>
+      <funcdef>bool <function>ftp_rmdir</function></funcdef>
+      <paramdef>resource <parameter>ftp_stream</parameter></paramdef>
       <paramdef>string <parameter>directory</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
-    <para>
-     成功時に &true;、エラー時に &false; を返します。</para>
     <para> 
-     指定した <parameter>directory</parameter> を削除します。</para>
+     指定した<parameter>directory</parameter>を削除します。
+    </para>
+    <para>
+     成功時に &true;、エラー時に &false; を返します。
+    </para>
    </refsect1>
   </refentry>
 
@@ -226,12 +251,14 @@ ftp_quit($conn_id);
     <funcsynopsis>
      <funcprototype>
       <funcdef>array <function>ftp_nlist</function></funcdef>
-      <paramdef>int <parameter>ftp_stream</parameter></paramdef>
+      <paramdef>resource <parameter>ftp_stream</parameter></paramdef>
       <paramdef>string <parameter>directory</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
-     成功時にファイル名の配列を、エラー時に &false; を返します。</para>
+     成功時に指定したディレクトリにあるファイル名の配列を、エラー時に
+     &false;を返します。
+    </para>
    </refsect1>
   </refentry>
 
@@ -247,7 +274,7 @@ ftp_quit($conn_id);
     <funcsynopsis>
      <funcprototype>
       <funcdef>array <function>ftp_rawlist</function></funcdef>
-      <paramdef>int <parameter>ftp_stream</parameter></paramdef>
+      <paramdef>resource <parameter>ftp_stream</parameter></paramdef>
       <paramdef>string <parameter>directory</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
@@ -273,7 +300,7 @@ ftp_quit($conn_id);
     <funcsynopsis>
      <funcprototype>
       <funcdef>string <function>ftp_systype</function></funcdef>
-      <paramdef>int <parameter>ftp_stream</parameter></paramdef>
+      <paramdef>resource <parameter>ftp_stream</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
@@ -291,20 +318,20 @@ ftp_quit($conn_id);
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>int <function>ftp_pasv</function></funcdef>
-      <paramdef>int <parameter>ftp_stream</parameter></paramdef>
-      <paramdef>int <parameter>pasv</parameter></paramdef>
+      <funcdef>bool <function>ftp_pasv</function></funcdef>
+      <paramdef>resource <parameter>ftp_stream</parameter></paramdef>
+      <paramdef>bool <parameter>pasv</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
-    <para>
-     成功時に&true;、エラー時に&false;を返します。
-    </para>
     <para>
      <function>ftp_pasv</function> は、<parameter>pasv</parameter> パ
      ラメータが &true; の場合にパッシブモードをオンにします。
      (<parameter>pasv</parameter> が &false; の場合は、パッシブモードを
      オフにします) パッシモードでは、データ接続はサーバーではなくクラ
      イアントにより初期化されます。
+    </para>
+    <para>
+     成功時に&true;、エラー時に&false;を返します。
     </para>
    </refsect1>
   </refentry>
@@ -318,16 +345,13 @@ ftp_quit($conn_id);
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>int <function>ftp_get</function></funcdef>
-      <paramdef>int <parameter>ftp_stream</parameter></paramdef>
+      <funcdef>bool <function>ftp_get</function></funcdef>
+      <paramdef>resource <parameter>ftp_stream</parameter></paramdef>
       <paramdef>string <parameter>local_file</parameter></paramdef>
       <paramdef>string <parameter>remote_file</parameter></paramdef>
       <paramdef>int <parameter>mode</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
-    <para>
-     成功時に &true;、エラー時に &false; を返します。
-    </para>
     <para>
      <function>ftp_get</function> は、FTPサーバーから
      <parameter>remote_file</parameter>を取得し、ローカルシステムの
@@ -336,29 +360,34 @@ ftp_quit($conn_id);
      たは <constant>FTP_BINARY</constant>のどちらかを指定する必要があ
      ります。
     </para>
+    <para>
+     成功時に &true;、エラー時に &false; を返します。
+    </para>
+    <para>
+     <function>ftp_fget</function>も参照下さい。
+    </para>
    </refsect1>
   </refentry>
 
   <refentry id="function.ftp-fget">
    <refnamediv>
     <refname>ftp_fget</refname>
-    <refpurpose>FTP サーバーからファイルをダウンロードし、
-     オープン中のファイルに保存する</refpurpose>
+    <refpurpose>
+     FTP サーバーからファイルをダウンロードし、オープン中のファイルに
+     保存する
+    </refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>int <function>ftp_fget</function></funcdef>
-      <paramdef>int <parameter>ftp_stream</parameter></paramdef>
-      <paramdef>int <parameter>fp</parameter></paramdef>
+      <funcdef>bool <function>ftp_fget</function></funcdef>
+      <paramdef>resource <parameter>ftp_stream</parameter></paramdef>
+      <paramdef>resource <parameter>fp</parameter></paramdef>
       <paramdef>string <parameter>remote_file</parameter></paramdef>
       <paramdef>int <parameter>mode</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
-    <para>
-     成功時に &true;、エラー時に &false; を返します。
-    </para>
     <para>
      <function>ftp_fget</function> は、FTP サーバーから
      <parameter>remote_file</parameter> を取得し、指定したファイルポイ
@@ -366,6 +395,9 @@ ftp_quit($conn_id);
      <parameter>mode</parameter> には、<constant>FTP_ASCII</constant>
      または<constant>FTP_BINARY</constant>のどちらかを指定する必要があ
      ります。
+    </para>
+    <para>
+     成功時に &true;、エラー時に &false; を返します。
     </para>
    </refsect1>
   </refentry>
@@ -379,16 +411,13 @@ ftp_quit($conn_id);
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>int <function>ftp_put</function></funcdef>
-      <paramdef>int <parameter>ftp_stream</parameter></paramdef>
+      <funcdef>bool <function>ftp_put</function></funcdef>
+      <paramdef>resource <parameter>ftp_stream</parameter></paramdef>
       <paramdef>string <parameter>remote_file</parameter></paramdef>
       <paramdef>string <parameter>local_file</parameter></paramdef>
       <paramdef>int <parameter>mode</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
-    <para>
-     成功時に &true;、エラー時に &false; を返します。
-    </para>
     <para>
      <function>ftp_put</function> は <parameter>local_file</parameter> を
      <parameter>remote_file</parameter> として FTP サーバーに保存します。
@@ -396,10 +425,15 @@ ftp_quit($conn_id);
      または<constant>FTP_BINARY</constant>
     </para>
     <para>
+     成功時に &true;、エラー時に &false; を返します。
+    </para>
+    <para>
      <example>
       <title><function>ftp_put</function> の例</title>
       <programlisting role="php">
-$upload = ftp_put ($conn_id, "$destination_file", "$source_file", FTP_ASCII); 
+<![CDATA[
+$upload = ftp_put($conn_id, $destination_file, $source_file, FTP_ASCII); 
+]]>
       </programlisting>
      </example>
     </para>
@@ -417,16 +451,13 @@ $upload = ftp_put ($conn_id, "$destination_file", "$source_file", FTP_ASCII);
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>int <function>ftp_fput</function></funcdef>
-      <paramdef>int <parameter>ftp_stream</parameter></paramdef>
+      <funcdef>bool <function>ftp_fput</function></funcdef>
+      <paramdef>resource <parameter>ftp_stream</parameter></paramdef>
       <paramdef>string <parameter>remote_file</parameter></paramdef>
-      <paramdef>int <parameter>fp</parameter></paramdef>
+      <paramdef>resource <parameter>fp</parameter></paramdef>
       <paramdef>int <parameter>mode</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
-    <para>
-     成功時に &true;、エラー時に &false; を返します。
-    </para>
     <para>
      <function>ftp_fput</function> は、ファイルポインタ
      <parameter>fp</parameter> からデータをファイルの終端まで
@@ -435,6 +466,9 @@ $upload = ftp_put ($conn_id, "$destination_file", "$source_file", FTP_ASCII);
      転送モード <parameter>mode</parameter> には、
      <constant>FTP_ASCII</constant>または
      <constant>FTP_BINARY</constant>のどちらかを指定する必要があります。
+    </para>
+    <para>
+     成功時に &true;、エラー時に &false; を返します。
     </para>
    </refsect1>
   </refentry>
@@ -449,18 +483,18 @@ $upload = ftp_put ($conn_id, "$destination_file", "$source_file", FTP_ASCII);
     <funcsynopsis>
      <funcprototype>
       <funcdef>int <function>ftp_size</function></funcdef>
-      <paramdef>int <parameter>ftp_stream</parameter></paramdef>
+      <paramdef>resource <parameter>ftp_stream</parameter></paramdef>
       <paramdef>string <parameter>remote_file</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
-    <para>
-     成功時にファイルのサイズ、エラー時に -1 を返します。
-    </para>
     <para>
      <function>ftp_size</function> はファイルのサイズを返します。エラー
      を生じた場合、またはファイルが存在しない場合、 -1 が返されます。
      全てのサーバーがこの機能をサポートしているわけではないことに注意
      してください。
+    </para>
+    <para>
+     成功時にファイルのサイズ、エラー時に -1 を返します。
     </para>
    </refsect1>
   </refentry>
@@ -475,18 +509,18 @@ $upload = ftp_put ($conn_id, "$destination_file", "$source_file", FTP_ASCII);
     <funcsynopsis>
      <funcprototype>
       <funcdef>int <function>ftp_mdtm</function></funcdef>
-      <paramdef>int <parameter>ftp_stream</parameter></paramdef>
+      <paramdef>resource <parameter>ftp_stream</parameter></paramdef>
       <paramdef>string <parameter>remote_file</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
-    <para>
-     成功時にUNIXのタイムスタンプ、エラー時に -1 を返します。
-    </para>
     <para>
      <function>ftp_mdtm</function> はあるファイルについて最後に修正さ
      れた時間を調べ、UNIXタイムスタンプとして返します。エラーを生じた
      場合、またはファイルが存在しない場合、-1 が返されます。全てのサー
      バーがこの機能をサポートしているわけではないことに注意してください。
+    </para>
+    <para>
+     成功時にUNIXのタイムスタンプ、エラー時に -1 を返します。
     </para>
     <note>
      <para>
@@ -512,13 +546,13 @@ $upload = ftp_put ($conn_id, "$destination_file", "$source_file", FTP_ASCII);
      </funcprototype>
     </funcsynopsis>
     <para>
-     成功時に&true;、エラー時に&false;を返します。
-    </para>
-    <para>
      <function>ftp_rename</function> は、
      FTP ストリーム <parameter>ftp_stream</parameter>において
      <parameter>from</parameter> という名前のファイルまたはディレクトリを
      <parameter>to</parameter> に変更します。
+    </para>
+    <para>
+     成功時に&true;、エラー時に&false;を返します。
     </para>
    </refsect1>
   </refentry>
@@ -532,17 +566,17 @@ $upload = ftp_put ($conn_id, "$destination_file", "$source_file", FTP_ASCII);
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>int <function>ftp_delete</function></funcdef>
-      <paramdef>int <parameter>ftp_stream</parameter></paramdef>
+      <funcdef>bool <function>ftp_delete</function></funcdef>
+      <paramdef>resource <parameter>ftp_stream</parameter></paramdef>
       <paramdef>string <parameter>path</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
-     成功時に&true;、エラー時に&false;を返します。
-    </para>
-    <para>
      <function>ftp_delete</function> は、<parameter>path</parameter>
      で指定したファイルをFTPサーバーから削除します。
+    </para>
+    <para>
+     成功時に&true;、エラー時に&false;を返します。
     </para>
    </refsect1>
   </refentry>
@@ -556,38 +590,218 @@ $upload = ftp_put ($conn_id, "$destination_file", "$source_file", FTP_ASCII);
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>int <function>ftp_site</function></funcdef>
-      <paramdef>int <parameter>ftp_stream</parameter></paramdef>
+      <funcdef>bool <function>ftp_site</function></funcdef>
+      <paramdef>resource <parameter>ftp_stream</parameter></paramdef>
       <paramdef>string <parameter>cmd</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
-    <para>
-     成功時に&true;、エラー発生時に&false;を返します。</para>
     <para>
      <function>ftp_site</function>は<parameter>cmd</parameter>で
      指定されたコマンドをFTPサーバーに送信します。SITEコマンドは
      規格が統一されていないため、サーバーにより仕様が異なります．
      ファイルのパーミッションやグループメンバーの設定のような
-     処理を行う際には有用です。</para>
+     処理を行う際には有用です。
+    </para>
+    <para>
+     成功時に&true;、エラー発生時に&false;を返します。
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.ftp-close">
+   <refnamediv>
+    <refname>ftp_close</refname>
+    <refpurpose>FTP接続を閉じる</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>void <function>ftp_close</function></funcdef>
+      <paramdef>resource <parameter>ftp_stream</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <note>
+     <para>
+      この関数はCVS版でのみ利用可能です。
+     </para>
+    </note>
+    <para>
+     <function>ftp_close</function>は、
+     <parameter>ftp_stream</parameter>を閉じ、リソースを解放します。こ
+     のリソースを再使用することはできませんが、
+     <function>ftp_connect</function>で新規の接続を作成する必要があり
+     ます。
+    </para>
    </refsect1>
   </refentry>
 
   <refentry id="function.ftp-quit">
    <refnamediv>
     <refname>ftp_quit</refname>
-    <refpurpose>FTP 接続を閉じる</refpurpose>
+    <refpurpose>FTP接続を閉じる</refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>int <function>ftp_quit</function></funcdef>
-      <paramdef>int <parameter>ftp_stream</parameter></paramdef>
+      <funcdef>void <function>ftp_quit</function></funcdef>
+      <paramdef>resource <parameter>ftp_stream</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
-     <function>ftp_connect</function> は、<parameter>ftp_stream</parameter>
-     を閉じます。</para>
+     <function>ftp_quit</function>は、<parameter>ftp_close</parameter>
+     のエイリアスです。
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id='function.ftp-exec'>
+   <refnamediv>
+    <refname>ftp_exec</refname>
+    <refpurpose>
+     ftpサーバでプログラム実行する
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>bool <function>ftp_exec</function></funcdef>
+      <paramdef>resource <parameter>stream</parameter></paramdef>
+      <paramdef>string <parameter>command</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     ftpサーバにSITE EXEC <parameter>command</parameter>リクエストを送
+     信する。リクエストを失敗した場合、&false;を返し、その他の場合は、
+     コマンドの出力を返します。
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id='function.ftp-set-option'>
+   <refnamediv>
+    <refname>ftp_set_option</refname>
+    <refpurpose>
+     FTP実行オプションを設定する
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>bool <function>ftp_set_option</function></funcdef>
+      <paramdef>resource <parameter>stream</parameter></paramdef>
+      <paramdef>int <parameter>option</parameter></paramdef>
+      <paramdef>mixed <parameter>value</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <note>
+     <para>
+      この関数はCVS版でのみ利用可能です。
+     </para>
+    </note>
+    <para>
+     オプションが設定できる場合に&true;、そうでない場合に&false;を返し
+     ます。<parameter>option</parameter>がサポートされていないか、指定
+     された<parameter>value</parameter>が指定した
+     <parameter>option</parameter>が期待する値に一致しない場合に警告メッ
+     セージが発生します。
+    </para>
+    <para>
+     この関数は、指定したFTPストリームに関して種々の実行時オプションを
+     制御します。パラメータ<parameter>value</parameter>は変更するパラ
+     メータ<parameter>option</parameter>に依存します。
+     現在、以下のオプションがサポートされています。
+     <table>
+      <title>サポートされる実行時FTPオプション</title>
+      <tgroup cols="2">
+       <tbody>
+        <row>
+         <entry>FTP_TIMEOUT_SEC</entry>
+         <entry>
+          全てのネットワーク関連関数に関して秒単位でタイムアウトを変更
+          します。パラメータ<parameter>value</parameter>は、int型で、0
+          より大きい必要があります。デフォルトのタイムアウトは90秒です。
+         </entry>
+        </row>
+       </tbody>
+      </tgroup>
+     </table>
+    </para>
+    <para>
+     <example>
+      <title><function>ftp_set_option</function>の例</title>
+      <programlisting role="php">
+<![CDATA[
+// Set the network timeout down to 10 seconds
+ftp_set_option($conn_id, FTP_TIMEOUT_SEC, 10);
+]]>
+      </programlisting>
+     </example>
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id='function.ftp-get-option'>
+   <refnamediv>
+    <refname>ftp_get_option</refname>
+    <refpurpose>
+     カレントのFTPストリームの種々の実行動作を取得する
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>bool <function>ftp_get_option</function></funcdef>
+      <paramdef>resource <parameter>stream</parameter></paramdef>
+      <paramdef>int <parameter>option</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <note>
+     <para>
+      この関数は、CVS版でのみ利用可能です。
+     </para>
+    </note>
+    <para>
+     成功時に値、指定した<parameter>option</parameter>がサポートされて
+     いない場合に&false;を返します。後者では、警告メッセージも発生しま
+     す。
+    </para>
+    <para>
+     
+     この関数は、指定した<parameter>FTP stream</parameter>に関して指定
+     した<parameter>option</parameter>に関する
+     <parameter>value</parameter>を返します。現在、以下のオプションが
+     サポートされています。
+     <table>
+      <title>サポートされる実行時FTPオプション</title>
+      <tgroup cols="2">
+       <tbody>
+        <row>
+         <entry>FTP_TIMEOUT_SEC</entry>
+         <entry>
+          ネットワーク関連処理で使用されるカレントのタイムアウトを返し
+          ます。
+         </entry>
+        </row>
+       </tbody>
+      </tgroup>
+     </table>
+    </para>
+    <para>
+     <example>
+      <title><function>ftp_get_option</function>の例</title>
+      <programlisting role="php">
+<![CDATA[
+// 指定したFTPストリームのタイムアウトを取得する
+$timeout = ftp_get_option($conn_id, FTP_TIMEOUT_SEC);
+]]>
+      </programlisting>
+     </example>
+    </para>
    </refsect1>
   </refentry>
 

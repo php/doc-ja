@@ -1,8 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-
+<!-- $Revision: 1.12 $ -->
  <reference id="ref.dir">
   <title>ディレクトリ関数</title>
   <titleabbrev>ディレクトリ</titleabbrev>
+
+  <partintro>
+   <simpara>
+    <function>dirname</function>, <function>is_dir</function>,
+    <function>mkdir</function>, <function>rmdir</function>のような関係
+    については、<link linkend="ref.filesystem">ファイルシステム</link>
+    の節を参照下さい。
+   </simpara>
+  </partintro>
 
   <refentry id="function.chroot">
    <refnamediv>
@@ -42,18 +51,17 @@
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>int <function>chdir</function></funcdef>
+      <funcdef>bool <function>chdir</function></funcdef>
       <paramdef>string <parameter>directory</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
-    PHP のカレント・ディレクトリを <parameter>directory</parameter>
-    に変更します。ディレクトリを変更できなかった場合は &false; を
-    返し、そうでなければ &true; を返します。
+     PHPのカレント・ディレクトリを<parameter>directory</parameter>に変
+     更します。ディレクトリを変更できなかった場合は&false;を返し、そう
+     でなければ&true;を返します。
     </para>
    </refsect1>
   </refentry>
-
 
   <refentry id="class.dir">
    <refnamediv>
@@ -64,35 +72,43 @@
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>new <function>dir</function></funcdef>
+      <funcdef>object <function>dir</function></funcdef>
       <paramdef>string <parameter>directory</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
-    ディレクトリを読むための疑似オブジェクト指向の機構です。
-    指定した <parameter>directory</parameter> がオープンされます。
-    いったんディレクトリがオープンされると、2 つのプロパティを使用
-    できるようになります。handle プロパティは、<function>readdir
-    </function>, <function>rewinddir</function>, <function>
-    closedir</function> のような他のディレクトリ関数と組み合わせて
-    使用可能です。path プロパティには、オープンするディレクトリのパス
-    をセットします。read, rewind, close の3種類のメソッドが
-    使用できます。
-    <example><title><function>dir</function> の例</title>
-<programlisting role="php">
+     ディレクトリを読むための疑似オブジェクト指向の機構です。
+     指定した <parameter>directory</parameter> がオープンされます。
+     いったんディレクトリがオープンされると、2 つのプロパティを使用
+     できるようになります。handle プロパティは、<function>readdir
+     </function>, <function>rewinddir</function>, <function>
+      closedir</function> のような他のディレクトリ関数と組み合わせて
+     使用可能です。path プロパティには、オープンするディレクトリのパス
+     をセットします。read, rewind, close の3種類のメソッドが
+     使用できます。
+     <example>
+      <title><function>dir</function> の例</title>
+      <programlisting role="php">
+<![CDATA[
 $d = dir("/etc");
-echo "Handle: ".$d->handle."&lt;br>\n";
-echo "Path: ".$d->path."&lt;br>\n";
-while($entry=$d->read()) {
-    echo $entry."&lt;br>\n";
+echo "Handle: ".$d->handle."<br>\n";
+echo "Path: ".$d->path."<br>\n";
+while (false !== ($entry = $d->read())) {
+    echo $entry."<br>\n";
 }
 $d->close();
+]]>
       </programlisting>
      </example>
     </para>
+    <note>
+     <para>
+      読み込みにより返されるディレクトリエントリの順番は、システムに依
+      存します。
+     </para>
+    </note>
    </refsect1>
   </refentry>
-
 
   <refentry id="function.closedir">
    <refnamediv>
@@ -104,13 +120,14 @@ $d->close();
     <funcsynopsis>
      <funcprototype>
       <funcdef>void <function>closedir</function></funcdef>
-      <paramdef>int <parameter>dir_handle</parameter></paramdef>
+      <paramdef>resource <parameter>dir_handle</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
-    <parameter>dir_handle</parameter> で指定したディレクトリの
-    ストリームをクローズします。このストリームは、<function>opendir
-    </function>により事前にオープンされていなければなりません。
+     <parameter>dir_handle</parameter> で指定したディレクトリのストリー
+     ムをクローズします。このストリームは、
+     <function>opendir</function>により事前にオープンされていなければ
+     なりません。
     </para>
    </refsect1>
   </refentry>
@@ -143,36 +160,38 @@ $d->close();
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>int <function>opendir</function></funcdef>
+      <funcdef>resource <function>opendir</function></funcdef>
       <paramdef>string <parameter>path</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
-    ディレクトリ・ハンドルをオープンします。この関数は、この後、
-    <function>closedir</function>, <function>readdir</function>, 
-    <function>rewinddir</function> 関数コールで使用されます。
+     ディレクトリ・ハンドルをオープンします。この関数は、この後、
+     <function>closedir</function>, <function>readdir</function>, 
+     <function>rewinddir</function> 関数コールで使用されます。
     </para>
     <para>
      <parameter>path</parameter> が有効なディレクトリでないかまたは権
      限が制限されているかファイルシステムのエラーによりディレクトリが
-     オープンできない場合、<function>opendir</function> は &false; を返
-     し、PHPエラーを生成します。<function>opendir</function>のこのエラー
-     出力は、関数名の前に `@' を付けることにより抑制できます。
+     オープンできない場合、<function>opendir</function>は&false;を返し、
+     PHPエラーを生成します。<function>opendir</function>のこのエラー出
+     力は、関数名の前に `@' を付けることにより抑制できます。
     </para>
     <para>
      <example>
       <title><function>opendir</function> の例</title>
       <programlisting role="php">
-&lt;?php
+<![CDATA[
+<?php
 
 if ($dir = @opendir("/tmp")) {
-  while($file = readdir($dir)) {
+  while (($file = readdir($dir)) !== false) {
     echo "$file\n";
   }  
   closedir($dir);
 }
 
-?&gt;
+?>
+]]>
       </programlisting>
      </example>
     </para>
@@ -189,24 +208,27 @@ if ($dir = @opendir("/tmp")) {
     <funcsynopsis>
      <funcprototype>
       <funcdef>string <function>readdir</function></funcdef>
-      <paramdef>int <parameter>dir_handle</parameter></paramdef>
+      <paramdef>resource <parameter>dir_handle</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
-    ディレクトリから次のファイルのファイル名を返します。ファイル名は
-    特定の順序で返されるわけではありません。
+     ディレクトリから次のファイルのファイル名を返します。ファイル名は
+     特定の順序で返されるわけではありません。
      <example>
       <title>カレントディレクトリにある全ファイルのリスト</title>
       <programlisting role="php">
-&lt;?php
+<![CDATA[
+// Note that !== did not exist until 4.0.0-RC2
+<?php
 $handle=opendir('.');
 echo "Directory handle: $handle\n";
 echo "Files:\n";
-while (($file = readdir($handle))!==false) {
+while (false !== ($file = readdir($handle))) { 
     echo "$file\n";
 }
 closedir($handle); 
-?&gt;
+?>
+]]>
       </programlisting>
      </example>
     </para>
@@ -218,21 +240,22 @@ closedir($handle);
        現在のディレクトリの . および .. を除いた全てのファイルの一覧を表示。
       </title>
       <programlisting role="php">
-&lt;?php 
-$handle=opendir('.'); 
-while (false!==($file = readdir($handle))) { 
-    if ($file != "." &amp;&amp; $file != "..") { 
+<![CDATA[
+<?php 
+$handle = opendir('.'); 
+while (false !== ($file = readdir($handle))) { 
+    if ($file != "." && $file != "..") { 
         echo "$file\n"; 
     } 
 }
 closedir($handle); 
-?&gt;
+?>
+]]>
       </programlisting>
      </example>
     </para>
    </refsect1>
   </refentry>
-
 
   <refentry id="function.rewinddir">
    <refnamediv>
@@ -244,16 +267,15 @@ closedir($handle);
     <funcsynopsis>
      <funcprototype>
       <funcdef>void <function>rewinddir</function></funcdef>
-      <paramdef>int <parameter>dir_handle</parameter></paramdef>
+      <paramdef>resource <parameter>dir_handle</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
-     <para>
+    <para>
      <parameter>dir_handle</parameter> で指定されたディレクトリの
      ストリームをディレクトリの先頭にリセットします。
-     </para>
+    </para>
    </refsect1>
   </refentry>
-
 
  </reference>
 
@@ -273,4 +295,7 @@ sgml-exposed-tags:nil
 sgml-local-catalogs:nil
 sgml-local-ecat-files:nil
 End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
 -->
