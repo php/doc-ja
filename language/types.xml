@@ -100,6 +100,20 @@
     変数の型は、一般にプログラマによりセットされません。むしろ、その変
     数が使用される文の内容に応じて PHP により実行時に決定されます。
    </simpara>
+   <tip>
+    <simpara>
+	 もし<link linkend="language.expressions">式</link>の型と値を正確に
+	 知りたい場合は、<function>var_dump</function>関数を使用してください。
+	</simpara>
+	<simpara>
+	 単純にデバッグのために人間が読みやすい形で型を表示したい場合には
+	 <function>gettype</function>を使用してください。型をチェックする
+	 場合には<function>gettype</function>を使用しては<emphasis>いけません
+	 </emphasis>。<literal>is_<replaceable>type</replaceable></literal>
+	 関数を使用してください。
+	</simpara>
+	<!-- TODO: example(s) would be great -->
+   </tip>
    <simpara>
     ある変数の型を強制的に他の型に変換したい場合、変数を
     <link linkend="language.types.typecasting">キャスト</link> するか、
@@ -137,7 +151,9 @@
      <!-- technically they are just constants -->
      <informalexample>
       <programlisting role="php">
+<![CDATA[
 $foo = True; // 値TRUEを$fooに代入する
+]]>
       </programlisting>
      </informalexample>
     </para>
@@ -147,6 +163,7 @@ $foo = True; // 値TRUEを$fooに代入する
      <link linkend="control-structures">制御構造</link>にその結果を渡
      します。
      <informalexample>
+	  <!-- intentionally omitting CDATA -->
       <programlisting role="php">
 if ($action == "show_version") // == は、<type>boolean</type>型を返す
                                // <link linkend="language.operators">演算子</link>
@@ -229,7 +246,8 @@ if ($show_separators)
       </listitem>
       <listitem>
        <simpara>
-	特別な値 <link linkend="language.types.null">&null;</link> 
+	特別な値 <link linkend="language.types.null">NULL</link> (値がセット
+	されていない変数を含む)
        </simpara>
       </listitem>
      </itemizedlist>
@@ -260,7 +278,7 @@ if ($show_separators)
      
    <para>
     <link linkend="ref.gmp">任意精度整数</link> および
-    <link linkend="language.types.float">double</link>も参照下さい。
+    <link linkend="language.types.float">float</link>も参照下さい。
    </para>
 
    <sect2 id="language.types.integer.syntax">
@@ -277,10 +295,12 @@ if ($show_separators)
      <example>
       <title>整数リテラル</title>
       <programlisting role="php">
+<![CDATA[
 $a = 1234; # 10進整数
 $a = -123; # 負の数
 $a = 0123; # 18進数 (10進数の83と等価)
 $a = 0x1A; # 16進数 (10進数の26と等価)
+]]>
       </programlisting>
      </example>
      <!--
@@ -300,57 +320,64 @@ $a = 0x1A; # 16進数 (10進数の26と等価)
      最大値が約20億である(32ビット符号付)というのが一般的な値ですが、
      整数のサイズはプラットフォーム依存です。
     </para>
-    <note><!-- or warning? -->
-     <simpara>
-      PHPでは、整数の割算はありません。<literal>1/2</literal>は、
-      <type>double</type>型の<literal>0.5</literal>になります。
-      <!-- See ??? for more information. (with the operators, or with
-      type-jug) -->
-     </simpara>
-    </note>
    </sect2>
    
    <sect2 id="language.types.integer.overflow">
     <title>整数のオーバーフロー</title>
     <para>
      <type>integer</type>型の範囲外の数を指定した場合、かわりに
-     <type>double</type>として解釈されます。
+	 <type>float</type>として解釈されます。また、結果が<type>
+	 integer</type>型の範囲外の数となるような計算を行うと<type>
+	 float</type>が代わりに返されます。
      <informalexample>
       <programlisting role="php">
+<![CDATA[
 $large_number =  2147483647;
 var_dump($large_number);
 // 出力: int(2147483647)
+
 $large_number =  2147483648;
 var_dump($large_number);
 // 出力: float(2147483648)
 
 // 指定した16進表現整数も出力
-
 var_dump( 0x80000000 );
 // 出力: float(2147483648)
-      </programlisting>
-     </informalexample>
-     更に、関数または演算子が、<type>integer</type>の範囲外の数を生成
-     する場合も自動的に<type>float</type>に変換されます。
-     <informalexample>
-      <programlisting role="php">
+
 $million = 1000000;
 $large_number =  50000 * $million;
 var_dump($large_number);
 // 出力: float(50000000000)
+]]>
       </programlisting>
      </informalexample>
      <warning>
       <simpara>
-       不幸にして、スクリプトエンジンにはバグ(4.0.6にはまだあり、恐らく
-       4.0.7では解決されるでしょう)があり、負の数が含まれている場合に、
+	   不幸にして、スクリプトエンジンにはバグがあり、
+	   負の数が含まれている場合に、
        常に正しく動作するわけではありません。例えば、
        <literal>-50000 * $million</literal>を実行した場合、結果は、
        <literal>-429496728</literal>となります。しかし、オペランドが共に
        正の場合は問題ありません。
       </simpara>
+	  <simpara>
+	   この問題はPHP 4.1.0で解決されました。
+	  </simpara>
      </warning>
     </para>
+	<para>
+	 PHPには整数の割り算はありません。<literal>1/2</literal>は<type>
+	 float</type>型の0.5になります。<!-- See ??? for more information.
+	 (with the operators, or with type-jug) -->
+	 <informalexample>
+	  <programlisting role="php">
+<![CDATA[
+var_dump( 25/7 );
+// output: float(3.5714285714286)
+]]>
+      </programlisting>
+	 </informalexample>
+	</para>
    </sect2>
    
    <sect2 id="language.types.integer.casting">
@@ -398,7 +425,9 @@ var_dump($large_number);
        場合、予期しない結果となることがあります。
        <informalexample>
 	<programlisting role="php">
+<![CDATA[
 echo (int) ( (0.1+0.7) * 10 ); // 7が出力されます!
+]]>
 	</programlisting>
        </informalexample>
        より詳細な情報については、<link linkend="warn.float-precision">
@@ -553,6 +582,7 @@ EXPONENT_DNUM	(({LNUM}|{DNUM})[eE][+-]?{LNUM})
       </note>
       <informalexample>
        <programlisting role="php">
+<![CDATA[
 echo 'this is a simple string';
 echo 'You can also have embedded newlines in strings,
 like this way.';
@@ -564,6 +594,7 @@ echo 'Are you sure you want to delete C:\*.*?';
 // 出力: ... delete C:\*.*?
 echo 'I am trying to include at this point: \n a newline';
 // 出力: ... this point: \n a newline
+]]>
        </programlisting>
       </informalexample>
      </para>
@@ -682,16 +713,18 @@ echo 'I am trying to include at this point: \n a newline';
       には注意が必要です。
       <example> 
        <title>ヒアドキュメントで文字列を括る例</title>
-       <programlisting>
-&lt;?php
-$str = &lt;&lt;&lt;EOD
+       <programlisting role="php">
+<![CDATA[
+<?php
+$str = <<<EOD
 Example of string
 spanning multiple lines
 using heredoc syntax.
 EOD;
 
 /* 変数を使用するより複雑な例 */
-class foo {
+class foo
+{
     var $foo;
     var $bar;
 
@@ -704,12 +737,13 @@ class foo {
 $foo = new foo();
 $name = 'MyName';
 
-echo &lt;&lt;&lt;EOT
+echo <<<EOT
 My name is "$name". I am printing some $foo-&gt;foo.
 Now, I am printing some {$foo-&gt;bar[1]}.
 This should print a capital 'A': \x41
 EOT;
 ?>
+]]>
        </programlisting>
       </example>
      </para>
@@ -750,10 +784,12 @@ EOT;
       </simpara>
       <informalexample>
        <programlisting role="php">
+<![CDATA[
 $beer = 'Heineken';
 echo "$beer's taste is great"; // 動作します。"'" は変数名として無効な文字です。
 echo "He drunk some $beers"; // 動作しません。's' は、変数名として有効な文字です。
 echo "He drunk some ${beer}s"; // 動作します。
+]]>
        </programlisting>
       </informalexample>
       <simpara>
@@ -772,9 +808,11 @@ echo "He drunk some ${beer}s"; // 動作します。
       
       </simpara>
       <informalexample>
+	   <!-- intentionally omitting CDATA -->
        <programlisting role="php">
 $fruits = array( 'strawberry' =&gt; 'red' , 'banana' =&gt; 'yellow' );
-echo "A banana is $fruits[banana].";
+echo "A banana is $fruits[banana]."; // シングルクオートの外では動作が異なることに注意してください。
+   // <link linkend="language.types.array.foo-bar"><literal>$foo[bar]</literal></link>を参照してください。
 echo "This square is $square-&gt;width meters broad.";
 echo "This square is $square-&gt;width00 centimeters broad."; // 動作しません。
    // 解決策については、<link linkend="language.types.string.parsing.complex">複雑な構文</link>を参照下さい。
@@ -845,10 +883,11 @@ echo "I'd like to have another {${ strrev('reeb') }}, hips";
       <example>
        <title>複数のstringの例</title>
        <programlisting role="php">
+<![CDATA[
 <!-- TODO: either move these examples to a example section,
 as with arrays, or distribute them under the applicable
 sections. -->
-&lt;?php
+<?php
 /* 文字列に代入。 */
 $str = "This is a string";
 
@@ -858,13 +897,13 @@ $str = $str . " with some more text";
 /* 追加する別の方法。改行を示すエスケープ文字を含む。 */
 $str .= " and a newline at the end.\n";
 
-/* この文字列は、最終的に'&lt;p&gt;Number: 9&lt;/p&gt;'となります */
+/* この文字列は、最終的に'<p>Number: 9</p>'となります */
 $num = 9;
-$str = "&lt;p&gt;Number: $num&lt;/p&gt;";
+$str = "<p>Number: $num</p>";
 
-/* この文字列は、'&lt;p&gt;Number: $num&lt;/p&gt;'となります。 */
+/* この文字列は、'<p>Number: $num</p>'となります。 */
 $num = 9;
-$str = '&lt;p&gt;Number: $num&lt;/p&gt;';
+$str = '<p>Number: $num</p>';
 
 /* 文字列の最初の文字を得る  */
 $str = 'This is a test.';
@@ -873,7 +912,8 @@ $first = $str{0};
 /* 文字列の最後の文字を得る */
 $str = 'This is still a test.';
 $last = $str{strlen($str)-1};
-?&gt;	  
+?>
+]]>
        </programlisting>
       </example>
      </para>
@@ -934,6 +974,7 @@ $last = $str{strlen($str)-1};
     </simpara>
     <informalexample>
      <programlisting role="php">
+<![CDATA[
 $foo = 1 + "10.5";              // $foo は float です (11.5)
 $foo = 1 + "-1.3e3";            // $foo は float です (-1299)
 $foo = 1 + "bob-1.3e3";         // $foo は integer です (1)
@@ -942,6 +983,7 @@ $foo = 1 + "10 Small Pigs";     // $foo は integer です (11)
 $foo = 1 + "10 Little Piggies"; // $foo は integer です (11)
 $foo = "10.0 pigs " + 1;        // $foo は integer です (11)
 $foo = "10.0 pigs " + 1.0;      // $foo は float です (11)     
+]]>
      </programlisting>
     </informalexample>
     <simpara>
@@ -952,7 +994,9 @@ $foo = "10.0 pigs " + 1.0;      // $foo は float です (11)
      動作を確認するために次の行を挿入して下さい。
      <informalexample>
       <programlisting role="php">
-echo "\$foo==$foo; type is " . gettype ($foo) . "&lt;br&gt;\n";
+<![CDATA[
+echo "\$foo==$foo; type is " . gettype ($foo) . "<br>\n";
+]]>
       </programlisting>
      </informalexample>
     </para>
@@ -1080,6 +1124,26 @@ $arr[] = <replaceable>value</replaceable>;
      配列で使用する便利な関数がたくさんあります。
      <link linkend="ref.array">配列関数</link> の節を参照下さい。
     </para>
+	<note>
+	 <para>
+	  <function>unset</function>関数は配列のキーを削除することが出来ます。
+	  ただし、これによってインデックスの再構築が行われるわけでは<emphasis>
+	  ない</emphasis>ということに気をつけてください。
+	  <informalexample>
+	   <programlisting role="php">
+<![CDATA[
+$a = array( 1 => 'one', 2 => 'two', 3 => 'three' );
+unset( $a[2] );
+/* これにより配列は以下の様に定義されます。
+   $a = array( 1=>'one', 3=>'three');
+   こうではありません：
+   $a = array( 1 => 'one', 2 => 'three');
+*/
+]]>
+      </programlisting>
+	 </informalexample>
+	 </para>
+	</note>
     <para>
      制御構造<link linkend="control-structures.foreach">foreach</link> 
      が配列用に限定して存在します。この構造は、配列の要素に簡単に連続
@@ -1096,9 +1160,11 @@ $arr[] = <replaceable>value</replaceable>;
       古いスクリプトで次のような構文を見たことがあるかもしれません。
       <informalexample>
        <programlisting role="php">
+<![CDATA[
 $foo[bar] = 'enemy';
 echo $foo[bar];
 // 等
+]]>
        </programlisting>
       </informalexample>
       これは間違っていますが、動作します。では、なぜ間違っているのでしょ
@@ -1109,7 +1175,9 @@ echo $foo[bar];
       意味します。
       <informalexample>
        <programlisting role="php">
+<![CDATA[
 echo $arr[ foo(true) ];        
+]]>
        </programlisting>
       </informalexample>
       これは、関数の出力を配列の添字として使用する例です。PHPは定数に
@@ -1118,9 +1186,11 @@ echo $arr[ foo(true) ];
 
       <informalexample>
        <programlisting role="php">
+<![CDATA[
 $error_descriptions[E_ERROR] = "A fatal error has occured";
 $error_descriptions[E_WARNING] = "PHP issued a warning";
 $error_descriptions[E_NOTICE] = "This is just an informal notice";
+]]>
        </programlisting>
       </informalexample>
       最初の例の<literal>bar</literal>と全く同様に
@@ -1128,9 +1198,11 @@ $error_descriptions[E_NOTICE] = "This is just an informal notice";
       い。しかし、実際には最後の例は次のように書くことと同じです。
       <informalexample>
        <programlisting role="php">
+<![CDATA[
 $error_descriptions[1] = "A fatal error has occured";
 $error_descriptions[2] = "PHP issued a warning";
 $error_descriptions[8] = "This is just an informal notice";
+]]>
        </programlisting>
       </informalexample>
       これは、<literal>E_ERROR</literal> が <literal>1</literal>と等し
@@ -1194,6 +1266,7 @@ $error_descriptions[8] = "This is just an informal notice";
     <para>
       <informalexample>
        <programlisting role="php">
+<![CDATA[
 // this
 $a = array( 'color' => 'red'
           , 'taste' => 'sweet'
@@ -1214,6 +1287,7 @@ $b[] = 'b';
 $b[] = 'c';
 // この結果は配列 array( 0 => 'a' , 1 => 'b' , 2 => 'c' )
 // または単に array('a', 'b', 'c') となります
+]]>
        </programlisting>
       </informalexample>
      </para>
@@ -1221,11 +1295,12 @@ $b[] = 'c';
     <example>
      <title>array()の使用例</title>
      <programlisting role="php">
+<![CDATA[
 // マップを行う配列
-$map = array( 'version'    =&gt; 4
-            , 'OS'         =&gt; 'Linux'
-            , 'lang'       =&gt; 'english'
-            , 'short_tags' =&gt; true
+$map = array( 'version'    => 4
+            , 'OS'         => 'Linux'
+			, 'lang'       => 'english'
+			, 'short_tags' => true
             );
             
 // 数値キーのみを有する
@@ -1235,16 +1310,16 @@ $array = array( 7
               , 156
               , -10
               );
-// これは、array( 0 =&gt; 7, 1 =&gt; 8, ...) と同じです
+// これは、array( 0 => 7, 1 => 8, ...) と同じです
 
 $switching = array(         10 // key = 0
-                  , 5    =&gt;  6
-                  , 3    =&gt;  7 
-                  , 'a'  =&gt;  4
+                  , 5    =>  6
+                  , 3    =>  7 
+                  , 'a'  =>  4
                   ,         11 // key = 6 (最大の添字は5です)
-                  , '8'  =&gt;  2 // key = 8 (整数!)
-                  , '02' =&gt; 77 // key = '02'
-                  , 0    =&gt; 12 // 値10は12で上書きされます
+                  , '8'  =>  2 // key = 8 (整数!)
+                  , '02' => 77 // key = '02'
+                  , 0    => 12 // 値10は12で上書きされます
                   );
                   
 <!-- TODO example of
@@ -1257,16 +1332,17 @@ $switching = array(         10 // key = 0
 
 // empty array
 $empty = array();           
+]]>
      </programlisting>
     </example>
 
     <example id="language.types.array.examples.loop">
      <title>コレクション</title>
      <programlisting role="php">
+<![CDATA[
 $colors = array('red','blue','green','yellow');
 
-foreach ( $colors as $color )
-{
+foreach ( $colors as $color ) {
     echo "Do you like $color?\n";
 }
 
@@ -1276,6 +1352,7 @@ Do you like blue?
 Do you like green?
 Do you like yellow?
 */
+]]>
      </programlisting>
     </example>
     
@@ -1292,8 +1369,7 @@ Do you like yellow?
      <example id="language.types.array.examples.changeloop">
       <title>コレクション</title>
       <programlisting role="php">
-<link linkend="control-structures.foreach">foreach</link> ( $colors as $key => $color )
-{
+<link linkend="control-structures.foreach">foreach</link> ( $colors as $key => $color ) {
     // 動作しない:
     //$color = <link linkend="function.strtoupper">strtoupper</link>($color);
     
@@ -1338,7 +1414,7 @@ Array
      <programlisting role="php">
 // <link linkend="ref.dir">ディレクトリ</link>から全てのアイテムを配列に代入する
 $handle = <link linkend="function.opendir">opendir</link>('.');
-while ( $file = <link linkend="function.readdir">readdir</link>($handle) ) 
+while ($file = <link linkend="function.readdir">readdir</link>($handle)) 
 {
     $files[] = $file;
 }
@@ -1601,8 +1677,10 @@ echo $a["apple"]["taste"];    # will output "sweet"
      <informalexample>
       <programlisting role="php">
 &lt;?php
-class foo {
-    function do_foo () { 
+class foo
+{
+    function do_foo()
+    { 
         echo "Doing foo."; 
     }
 }
@@ -1683,7 +1761,7 @@ $bar -> do_foo ();
      &null;です。
      <informalexample>
       <programlisting role="php">
-$var = Null;       
+$var = NULL;       
       </programlisting>
      </informalexample>
     </para>
