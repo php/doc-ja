@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.20 $ -->
-<!-- sync: 1.51 -->
+<!-- $Revision: 1.21 $ -->
+<!-- sync: 1.52 -->
  <chapter id="language.operators">
   <title>演算子</title>
   <simpara>
@@ -115,6 +115,14 @@
      </tgroup>
     </table>
    </para>
+   <note>
+    <para>
+     <literal>!</literal>は<literal>=</literal>よりも優先されるはずなの
+     にもかかわらず、PHPは依然として<literal>if (!$a = foo())</literal>
+     のような式も許します。この場合は<literal>foo()</literal>の出力が
+     <varname>$a</varname>に代入されます。
+    </para>
+   </note>
   </sect1>
   
   <sect1 id="language.operators.arithmetic">
@@ -166,6 +174,10 @@
    <simpara>
     2つのオペランドが整数の場合(または整数に変換された文字列の場合)で
     あっても、割算演算子 ("/") は常にfloat値を返します。
+   </simpara>
+   <simpara>
+    マニュアルの
+    <link linkend="ref.math">数学関数</link>の項も参照してください。
    </simpara>
 
    <!--
@@ -268,44 +280,44 @@ $b .= "There!"; // $bを"Hello There!"にセットします。$b = $b . "There!"
        <entry>$a &amp; $b</entry>
        <entry>ビット積</entry>
        <entry>
-	$aおよび$bの両方にセットされているビット
+    $aおよび$bの両方にセットされているビット
        </entry>
       </row>
       <row>
        <entry>$a | $b</entry>
         <entry>ビット和</entry>
        <entry>
-	$aまたは$bのどちらかにセットされているビット
+    $aまたは$bのどちらかにセットされているビット
        </entry>
       </row>
       <row>
        <entry>$a ^ $b</entry>
        <entry>排他的論理和</entry>
        <entry>
-	$aまたは$bにセットされており、両方にセットされていないビット
+    $aまたは$bにセットされており、両方にセットされていないビット
        </entry>
       </row>
       <row>
        <entry>~ $a</entry>
        <entry>否定</entry>
        <entry>
-	$aにセットされているビットはセットせず、そうでないものは逆にする
+    $aにセットされているビットはセットせず、そうでないものは逆にする
        </entry>
       </row>
       <row>
        <entry>$a &lt;&lt; $b</entry>
        <entry>左シフト</entry>
        <entry>
-	$a のビットを左に $b ビットシフトする(各シフトは "2をかける"こ
-	とを意味します)
+    $a のビットを左に $b ビットシフトする(各シフトは "2をかける"こ
+    とを意味します)
        </entry>
       </row>
       <row>
        <entry>$a &gt;&gt; $b</entry>
        <entry>右シフト</entry>
        <entry>
-	$a のビットを右に $b ビットシフトします (各シフトは "2で割る"
-	ことを意味します)
+    $a のビットを右に $b ビットシフトします (各シフトは "2で割る"
+    ことを意味します)
        </entry>
       </row>
      </tbody>
@@ -354,7 +366,7 @@ $b .= "There!"; // $bを"Hello There!"にセットします。$b = $b . "There!"
        <entry>$a !== $b</entry>
        <entry>等しくない</entry>
        <entry>
-	$a が $b と等しくないか、同じ型でない場合に &true;。(PHP 4のみ)
+    $a が $b と等しくないか、同じ型でない場合に &true;。(PHP 4のみ)
        </entry>
       </row>
       <row>
@@ -386,14 +398,30 @@ $b .= "There!"; // $bを"Hello There!"にセットします。$b = $b . "There!"
     <informalexample>
      <programlisting role="php">
 <![CDATA[
-(式1) ? (式2) : (式3);
+<?php
+// 三項演算子の使用例
+$action = (empty($_POST['action'])) ? 'default' : $_POST['action'];
+
+// 上記は以下のif/else式と同じです。
+if (empty($_POST['action'])) {
+    $action = 'default';
+} else {
+    $action = $_POST['action'];
+}
+?>
 ]]>
      </programlisting>
     </informalexample>
-    この式は、<replaceable>式1</replaceable> が&true;の場合に
+    <literal>(expr1) ? (expr2) : (expr3)</literal>
+    という式は、<replaceable>式1</replaceable> が&true;の場合に
     <replaceable>式2</replaceable> を、
     <replaceable>式1</replaceable> が&false;の場合に
     <replaceable>式3</replaceable> を値とします。
+   </para>
+   <para>
+    <function>strcasecmp</function>,
+    <function>strcmp</function>
+    <link linkend="language.types">型</link> も参照してください。
    </para>
   </sect1>
  
@@ -406,7 +434,8 @@ $b .= "There!"; // $bを"Hello There!"にセットします。$b = $b . "There!"
    <simpara>
     <link linkend="ini.track-errors">track_errors</link>機能が有効の場
     合、式により生成されたエラーメッセージはグローバル変数
-    $php_errormsgに保存されます。この変数は、誤差発生の度に上書きされ、
+    <link linkend="reserved.variables.phperrormsg">$php_errormsg</link>
+    に保存されます。この変数は、誤差発生の度に上書きされ、
     このため、この変数を使用したい場合には速やかに確認する必要がありま
     す。
    </simpara>
@@ -430,7 +459,8 @@ $value = @$cache[$key];
    </para>
    <note>
     <simpara>
-     @演算子は、式でのみ動作します。基本的なルールは次のようになります。
+     @演算子は、<link linkend="language.expressions">式</link>
+     でのみ動作します。基本的なルールは次のようになります。
      値を得ることができるものの場合、@演算子を前に付けることが可能です。
      例えば、変数、関数、<function>include</function>コール、定数等の
      前にこの演算子をつけることが可能です。関数またはクラスの定義や
@@ -439,8 +469,17 @@ $value = @$cache[$key];
     </simpara>
    </note>
    <simpara>
-    <function>error_reporting</function>も参照下さい。
+    <function>error_reporting</function>と、
+    <link linkend="ref.errorfunc">エラー処理とログ出力関数</link>
+    も参照してください。
    </simpara>
+   <note>
+    <para>
+     The "@" error-control operator prefix will not disable messages
+     that are the result of parse errors.
+     パースエラーによるメッセージを@演算子で抑制することはできません。
+    </para>
+   </note>
    <warning>
     <para>
      現在、誤差制御演算子プレフィックス"@"は、スクリプトの実行を終了す
@@ -459,7 +498,8 @@ $value = @$cache[$key];
     ングルクォートではないことに注意してください!PHP は、後方引用符の
     中身をシェルコマンドとして実行しようとします。出力が返されます。
     (すなわち、出力を単にダンプするのではなく、変数に代入することがで
-    きます。)
+    きます。) 
+    バッククォート演算子の使用は<function>shell_exec</function>と等価です。
     <informalexample>
      <programlisting role="php">
 <![CDATA[
@@ -471,8 +511,7 @@ echo "<pre>$output</pre>";
    </para>
    <note>
     <para>
-     バッククオート演算子は、
-     <link linkend="ini.safe-mode">セーフモード</link> が有効な場合、
+     バッククオート演算子は、&safemode; が有効な場合
      もしくは<function>shell_exec</function>が無効な場合は無効となります。
     </para>
    </note>
@@ -480,6 +519,7 @@ echo "<pre>$output</pre>";
     <function>escapeshellcmd</function>, <function>exec</function>,
     <function>passthru</function>, <function>popen</function>,
     <function>shell_exec</function>, <function>system</function>
+    <link linkend="features.commandline">PHPをコマンドラインから使用する</link>
     も参照して下さい。
    </para>
   </sect1>
@@ -553,6 +593,37 @@ echo "4となります: " . $a . "<br>\n";
      </programlisting>
     </informalexample>
    </para>
+   <para>
+    PHPは算術演算子で文字変数を扱った場合にCではなくperlの慣習に
+    従います。例えば、perlでは 'Z'+1 は 'AA' を返しますが Cでは 'Z'+1 は
+    '[' ( ord('Z') == 90, ord('[') == 91 ) を返します。
+    文字変数はインクリメントされることは可能ですがデクリメントは不可能である
+    ことに注意してください。
+    <example>
+     <title>文字変数に対する算術演算子の使用</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+$i = 'W';
+for($n=0; $n<6; $n++)
+  echo ++$i . "\n";
+
+/*
+  以下のような結果が出力されます:
+
+X
+Y
+Z
+AA
+AB
+AC
+
+*/
+?>
+]]>
+     </programlisting>
+    </example>
+   </para>
   </sect1>
  
   <sect1 id="language.operators.logical">
@@ -583,7 +654,7 @@ echo "4となります: " . $a . "<br>\n";
        <entry>$a xor $b</entry>
        <entry>排他的論理和</entry>
        <entry>
-	$aまたは$bのどちらかが&true;でかつ両方とも&true;でない場合に&true;
+    $aまたは$bのどちらかが&true;でかつ両方とも&true;でない場合に&true;
        </entry>
       </row>
       <row>
@@ -635,6 +706,10 @@ $a .= "World!"; // $a は、"Hello World!" となります。
      </programlisting>
     </informalexample>
    </para>
+   <para>
+    <link linkend="language.types.string">文字列</link> と 
+    <link linkend="ref.strings">文字列 関数</link>も参照してください。
+   </para>
   </sect1>
   
   <sect1 id="language.operators.array">
@@ -670,6 +745,10 @@ array(3) {
 ]]>
      </screen>
     </informalexample>
+   </para>
+   <para>
+    <link linkend="language.types.array">配列</link> と 
+    <link linkend="ref.array">配列関数</link>も参照してください。
    </para>
   </sect1>
  </chapter>

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.13 $ -->
+<!-- $Revision: 1.14 $ -->
+<!-- sync: 1.40 -->
  <chapter id="functions">
   <title>関数</title>
   
@@ -12,11 +13,13 @@
     <informalexample>
      <programlisting role="php">
 <![CDATA[
+<?php
 function foo ($arg_1, $arg_2, ..., $arg_n)
 {
     echo "関数の例\n";
     return $retval;
 }
+?>
 ]]>
      </programlisting>
     </informalexample>
@@ -36,13 +39,93 @@ function foo ($arg_1, $arg_2, ..., $arg_n)
    </simpara>     
    <simpara>
     PHP 3 では、関数は参照される前に定義されている必要がありました。
-    PHP 4ではそのような制限はありません。
+    PHP 4ではそのような制限はありません。<emphasis>Except</emphasis> when
+    a function is conditionally defined such as shown in the two examples
+    below.
    </simpara>
+   <para>
+    When a function is defined in a conditional manner such as the two
+    examples shown.  Its definition must be processed <emphasis>prior</emphasis>
+    to being called.
+   </para>
+   <para>
+    <example>
+     <title>Conditional functions</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+
+$makefoo = true;
+
+/* We can't call foo() from here 
+   since it doesn't exist yet,
+   but we can call bar() */
+
+bar();
+
+if ($makefoo) {
+  function foo ()
+  {
+    echo "I don't exist until program execution reaches me.\n";
+  }
+}
+
+/* Now we can safely call foo()
+   since $makefoo evaluated to true */
+
+if ($makefoo) foo();
+
+function bar() 
+{
+  echo "I exist immediately upon program start.\n";
+}
+
+?>
+]]>
+     </programlisting>
+    </example>
+   </para>
+   <para>
+    <example>
+     <title>Functions within functions</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+function foo() 
+{
+  function bar() 
+  {
+    echo "I don't exist until foo() is called.\n";
+  }
+}
+
+/* We can't call bar() yet
+   since it doesn't exist. */
+
+foo();
+
+/* Now we can call bar(),
+   foo()'s processesing has
+   made it accessable. */
+
+bar();
+
+?>  
+]]>
+     </programlisting>
+    </example>
+   </para>
    <simpara>
     PHP は関数のオーバーロードをサポートしていません。
     また、宣言された関数の定義を取り消したり再定義することも
     できません。
    </simpara>
+   <note>
+    <simpara>
+     Function names are case-insensitive, though it is usually good form
+     to call functions as they appear in their declaration.
+    </simpara>
+   </note>   
    <simpara>
     PHP 3 では、引数のデフォルト値(詳細は、<link
     linkend="functions.arguments.default">引数のデフォルト値</link>を
@@ -76,16 +159,21 @@ function foo ($arg_1, $arg_2, ..., $arg_n)
     <function>func_get_args</function> に関する関数リファレンスを
     参照下さい。PHP 3でも関数に引数の配列を渡すことにより
     同様の効果を得ることができます。
- 
-    <informalexample>
+   </para>
+   <para>
+    <example>
+     <title>Passing arrays to functions</title>
      <programlisting role="php">
 <![CDATA[
-function takes_array($input) {
+<?php
+function takes_array($input)
+{
     echo "$input[0] + $input[1] = ", $input[0]+$input[1];
 }
+?>
 ]]>
      </programlisting>
-    </informalexample>
+    </example>
    </para>
    
    <sect2 id="functions.arguments.by-reference">
@@ -100,20 +188,24 @@ function takes_array($input) {
     <para>
      関数の引数を常に参照渡しとしたい場合には、関数定義において
      アンパサンド(&amp;) を引数名の前に付加することができます。    
-     
-     <informalexample>
+    </para>
+    <para>
+     <example>
+      <title>Passing function parameters by reference</title>
       <programlisting role="php">
 <![CDATA[
-function add_some_extra(&$string) 
+<?php
+function add_some_extra(&$string)
 {
     $string .= 'and something extra.';
 }
 $str = 'This is a string, ';
 add_some_extra($str);
-echo $str;    // 'This is a string, and something extra.' を出力します
+echo $str;    // outputs 'This is a string, and something extra.'
+?>
 ]]>
       </programlisting>
-     </informalexample>
+     </example>
     </para>
  
    </sect2>
@@ -124,24 +216,29 @@ echo $str;    // 'This is a string, and something extra.' を出力します
     <para>
      関数は、スカラー引数に関して次のように C++ スタイルのデフォルト値を
      定義することができます。
-     
-     <informalexample>
+    </para>
+    <para>
+     <example>
+      <title>Use of default parameters in functions</title>
       <programlisting role="php">
 <![CDATA[
-function makecoffee ($type = "cappucino")
+<?php
+function makecoffee ($type = "cappuccino")
 {
-    return "一杯の $type を作ります\n";
+    return "Making a cup of $type.\n";
 }
 echo makecoffee ();
 echo makecoffee ("espresso");
+?>
 ]]>
       </programlisting>
-     </informalexample>
+     </example>
     </para>
     
     <para>
      上のコードにより、次のような出力が行われます。
- 
+    </para>
+    <para>
      <screen>
 一杯の cappucino を作ります
 一杯の espresso を作ります
@@ -157,46 +254,54 @@ echo makecoffee ("espresso");
      フォルト値がない引数の右側に全てある必要があることに注意して下さ
      い。そうでない場合、意図したような動作が行われません。次の簡単な
      コードを見てみましょう。
- 
-      <informalexample>
-       <programlisting role="php">
+    </para>
+    <para>
+     <example>
+      <title>Incorrect usage of default function arguments</title>
+      <programlisting role="php">
 <![CDATA[
+<?php
 function makeyogurt ($type = "acidophilus", $flavour)
 {
     return "Making a bowl of $type $flavour.\n";
 }
  
-echo makeyogurt ("raspberry");   // 期待通りには動作しません
+echo makeyogurt ("raspberry");   // won't work as expected
+?>
 ]]>
       </programlisting>
-     </informalexample>
+     </example>
     </para>
     
     <para>
      上記の例の出力は次のようになります。
- 
+    </para>
+    <para>
      <screen>
 Warning: Missing argument 2 in call to makeyogurt() in 
 /usr/local/etc/httpd/htdocs/php3test/functest.html on line 41
 Making a bowl of raspberry .
      </screen>
     </para>
- 
     <para>
      ここで、上の例を次のコードと比べてみましょう。
-     
-     <informalexample>
+    </para>
+    <para>
+     <example>
+      <title>Correct usage of default function arguments</title>
       <programlisting role="php">
 <![CDATA[
+<?php
 function makeyogurt ($flavour, $type = "acidophilus")
 {
     return "Making a bowl of $type $flavour.\n";
 }
  
-echo makeyogurt ("raspberry");   // 期待通りに動作します
+echo makeyogurt ("raspberry");   // works as expected
+?>
 ]]>
       </programlisting>
-     </informalexample>
+     </example>
     </para>
     
     <para>
@@ -238,82 +343,68 @@ Making a bowl of acidophilus raspberry.
     これにより、関数の実行を任意の箇所で終了し、その関数を呼び出した
     箇所に制御を戻すことが出来ます。詳細に関しては
     <function>return</function>を参照してください。
-    
-    <informalexample>
+   </para>
+   <para>
+    <example>
+     <title>Use of <function>return</function></title>
      <programlisting role="php">
 <![CDATA[
+<?php
 function square ($num)
 {
     return $num * $num;
 }
-echo square (4);   // '16' を出力します。
+echo square (4);   // outputs '16'.
+?>
 ]]>
      </programlisting>
-    </informalexample>
+    </example>
    </para>
    <para>
     複数の値を返すことはできませんが、リストを返すことにより
     同じ効果を得ることができます。
- 
-    <informalexample>
+   </para>
+   <para>
+    <example>
+     <title>Returning an array to get multiple values</title>
      <programlisting role="php">
 <![CDATA[
+<?php
 function small_numbers()
 {
     return array (0, 1, 2);
 }
 list ($zero, $one, $two) = small_numbers();
+?>
 ]]>
      </programlisting>
-    </informalexample>
+    </example>
    </para>
    <para>
     関数からリファレンスを返すには、リファレンス演算子 &amp; を関数宣
     言部および変数への返り値を代入する際の両方で使用する必要があります。
-    <informalexample>
+   </para>
+   <para>
+    <example>
+     <title>Returning a reference from a function</title>
      <programlisting role="php">
 <![CDATA[
+<?php
 function &returns_reference()
 {
     return $someref;
 }
 
 $newref =& returns_reference();
+?>
 ]]>
      </programlisting>
-    </informalexample>
+    </example>
    </para>
    <simpara>
     リファレンスに関するさらに詳しい情報が<link 
     linkend="language.references">リファレンスの説明</link>にあります。
    </simpara>
-  </sect1>
-
-  <sect1 id="functions.old-syntax">
-   <title><literal>old_function</literal></title>
- 
-   <simpara>
-    <literal>old_function</literal> 文は、
-    ('function' を 'old_function' で置き換えなければなりませんが、) 
-    PHP/FI2 と同じ構文を用いている関数を定義することを可能にします。
-   </simpara>
-   <simpara>
-    この機能は推奨されない機能であり、PHP/FI 2->PHP 3 コンバーターのみで
-    使用されるべきです。
-   </simpara>
-   <warning>
-    <para>
-     <literal>old_function</literal> として宣言された関数は、PHP の内
-     部コードからコールすることはできません。
-     つまり、このことは、<function>usort</function>,
-     <function>array_walk</function>, 
-     <function>register_shutdown_function</function> のような
-     関数においてこの関数を使用することができないことを意味します。
-     (通常の PHP 3 形式で)ラッパー関数を書くことによりこの制約を
-     取り除き、<literal>old_function</literal> をコールすることができます。
-    </para>
-   </warning>
-   
   </sect1>
 
   <sect1 id="functions.variable-functions">
@@ -330,7 +421,8 @@ $newref =& returns_reference();
     <function>isset</function>, <function>empty</function>, 
     <function>include</function>, <function>print</function>
     のような言語構造と組み合わせて使用する
-    ことはできません。
+    ことはできません。これらの言語構造を可変変数として使うには
+    独自のラッパ関数を使う必要があります。
    </para> 
    <para>
     <example>
@@ -338,19 +430,60 @@ $newref =& returns_reference();
      <programlisting role="php">
 <![CDATA[
 <?php
-function foo() {
+function foo()
+{
     echo "In foo()<br>\n";
 }
- 
+
 function bar($arg = '')
 {
     echo "In bar(); argument was '$arg'.<br>\n";
 }
- 
+
+// This is a wrapper function around echo
+function echoit($string)
+{
+    echo $string;
+}
+
 $func = 'foo';
-$func();
+$func();        // This calls foo()
+
 $func = 'bar';
-$func('test');
+$func('test');  // This calls bar()
+
+$func = 'echoit';
+$func('test');  // This calls echoit()
+?>
+]]>
+     </programlisting>
+    </example>
+   </para>
+   <para>
+    オブジェクトのメソッドを可変関数を使ってコールすることもできます。
+    <example>
+     <title>可変メソッドの例</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+class Foo
+{
+    function Var()
+    {
+        $name = 'Bar';
+        $this->$name(); // Bar() メソッドのコール
+    }
+    
+    function Bar()
+    {
+        echo "This is Bar";
+    }
+}
+
+$foo = new Foo();
+$funcname = "Var";
+$foo->$funcname();  // $foo->Var() をコールしている
+
 ?>
 ]]>
      </programlisting>
@@ -361,6 +494,53 @@ $func('test');
     <function>function_exists</function>も参照してください。
    </para>
    
+  </sect1>
+
+  <sect1 id="functions.internal">
+   <title>内部（ビルトイン）関数</title>
+   
+   <para>
+    PHPは標準で多くの関数と言語構造を持っています。また他にも
+    コンパイル済みの特定のPHPエクステンションを必要とする関数があります。
+    それらはもしコンパイルされていなければ"undefined function（未定義の関数）"
+    として致命的エラーを発するでしょう。例えば、
+    <function>imagecreatetruecolor</function>のような
+    <link linkend="ref.image">画像</link>関数を使用するには、
+    GDサポートを有効にしてPHPをコンパイルしておく必要があります。
+    また、<function>mysql_connect</function>を使う場合もやはり
+    <link linkend="ref.mysql">MySQL</link>サポートを有効にしてPHPが
+    コンパイルされている必要があります。
+    <link linkend="ref.strings">string</link>や
+    <link linkend="ref.variables">variable</link>関数のように
+    どのバージョンのPHPでも含まれているコアの関数もたくさんあります。
+    <function>phpinfo</function>や<function>get_loaded_extensions</function>を
+    コールすることで使用しているPHPにロードされているエクステンションを
+    見ることができます。また、多くのエクステンションはデフォルトで有効に
+    なっており、PHPのマニュアルはエクステンション毎に分けられていることにも
+    注意してください。PHPのセットアップについては
+    <link linkend="configuration">configuration</link>,  
+    <link linkend="installation">install</link>,そして個々のエクステンション
+    の項をご覧ください。
+   </para>
+   <para>
+    関数のプロトタイプに関する解説はマニュアルの
+    <link linkend="about.prototypes">関数の定義を読むには</link>を
+    参照してください。関数の戻り値や引数が直接与えられた場合に
+    どのように動くかを認識することは重要です。
+    例えば、<function>str_replace</function>は変更された文字列を
+    返すのに対し、<function>usort</function>は与えられた引数そのものを
+    変更します。マニュアルの各項にはそれぞれの関数に関する情報があります。
+    関数の引数、振る舞いの変更、成功した場合失敗した場合の
+    それぞれの戻り値、可用性に関する情報などです。
+    これらの重要な（時には微妙な）違いを知ることは、
+    正しいPHPコードを書くうえで極めて重要なことです。
+   </para>
+   <para>
+    <function>function_exists</function>, 
+    <link linkend="funcref">the function reference</link>,
+    <function>get_extension_funcs</function>, 
+    <function>dl</function>も参照してください。
+   </para>
   </sect1>
 
  </chapter>
