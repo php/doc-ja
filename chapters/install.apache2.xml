@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.1 $ -->
+  <sect1 id="install.apache2">
+   <title>Apache 2.0サーバ</title>
+   <para>
+    本節には、<link linkend="install.apache2.unix">Unix</link>もしくは<link
+     linkend="install.apache2.windows">Windows</link>プラットフォームで
+    Apache 2.0に<literal>PHP</literal>をインストールするための説明や
+    ヒントがあります。
+   </para>
+   <warning>
+    <para>
+     Apache 2.0と<literal>PHP</literal>の組み合わせを(Unix、Windows
+     どちらのプラットフォームでも)実運用環境で使用しないでください。
+    </para>
+   </warning>
+    <para>
+     Apache 2.0サーバに関する基本的な知識を得るために、<ulink 
+      url="&url.apache2.docs;">Apache Documentation</ulink>を一読することを
+     お勧めします。
+    </para>
+
+   <sect2 id="compat.apache2">
+    <title>PHPとApache 2.0の互換性</title>
+    <para>
+     PHP 4.3.0がリリースされるまでの間は、Apache 2.0の最新バージョンと
+     以下のいずれかのリリースとの組み合わせで使用することをお勧めします。
+     <itemizedlist spacing="compact">
+      <listitem>
+       <simpara>
+        最新のスナップショット。
+        ソースコード<ulink url="&url.php.snapshots;php4-latest.tar.gz">
+         &url.php.snapshots;php4-latest.tar.gz</ulink>もしくはWindows用の
+        バイナリ<ulink url="&url.php.snapshots;win32/php4-win32-latest.zip">
+         &url.php.snapshots;win32/php4-win32-latest.zip</ulink>をダウンロード
+        して使用します。
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+        PHP 4.3.0のプレビューリリース(もしくはRC)を<ulink
+         url="&url.php.prerelease;">&url.php.prerelease;</ulink>から
+        ダウンロードすることが出来ます。
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+        <ulink url="&url.php.anoncvs;">anonymous CVS</ulink>を使用して
+        最新の<literal>PHP</literal>を取得することも出来ます。
+       </simpara>
+      </listitem>
+     </itemizedlist>
+     上記の<literal>PHP</literal>バージョンはApache 2.0.40以降と
+     互換性があります。
+    </para>
+    <note>
+     <simpara>
+      Apache 2.0 <literal>SAPI</literal>サポートはPHP 4.2.0から開始されて
+      おり、PHP 4.2.3はApache 2.0.39との組み合わせで動作することが
+      確認されています。ただし他のApache 2バージョンとの組み合わせでの
+      動作は保証されていません。PHP 4.2.3とApache 2.0.39との組み合わせに
+      ついてもお勧めはしません。
+     </simpara>
+     <simpara>
+      上記で触れている全ての<literal>PHP</literal>バージョンはApache 1.3.x
+      では問題なく動作します。
+     </simpara>
+    </note>
+   </sect2>
+
+   <sect2 id="install.apache2.unix">
+    <title>Linux上でのPHPとApache 2</title>
+    <para>
+     最新バージョンの<ulink url= "&url.apache;">Apache 2.0</ulink>を
+     ダウンロードして上述のいずれかのバージョンのPHPを用意してください。
+     このクイックガイドはApache 2.0で<literal>PHP</literal>を動作させるための
+     基本的な部分しかカバーしていません。更なる情報については<ulink
+      url="&url.apache2.docs;">Apache Documentation</ulink>をご覧ください。
+     情報が古く不正確になってしまうため、ここには詳細なバージョン番号は
+     記述されていません。'NN'という文字列をご使用のバージョンに適宜置き換えて
+     ください。
+    </para>
+    <example>
+     <title>
+      インストールガイド(Apache 2 Shared Module Version)
+     </title>
+     <screen>
+<![CDATA[
+1.  gzip -d httpd-2_0_NN.tar.gz
+2.  tar xvf httpd-2_0_NN.tar
+3.  gunzip php-NN.tar.gz
+4.  tar -xvf php-NN.tar
+5.  cd httpd-2_0_NN
+6.  ./configure --enable-so
+7.  make
+8.  make install
+
+    この状態でApache 2.0.NNが/usr/local/apache2で使用可能になっており、
+    モジュールのダイナミックロードと標準MPMのpreforkがサポートされている
+    はずです。正しくインストールされたかどうかをテストするために
+    Apacheサーバを起動するには:
+    /usr/local/apache2/bin/apachectl start
+    とします。PHPの設定を開始するためにサーバを停止するには:
+    /usr/local/apache2/bin/apachectl stop
+    とします。
+
+9.  cd ../php4-NN
+10. ./configure --with-apxs2=/usr/local/apache2/bin/apxs
+11. make
+12. make install
+13. cp php.ini-dist /usr/local/lib/php.ini
+
+    php.iniファイルを編集してPHPオプションを適宜設定して
+    ください。もしphp.iniを他の場所で使用したい場合は
+    --with-config-file-path=/pathをステップ10で指定して
+    ください。
+
+14. httpd.confを編集して以下の行が記述されていることを確認して
+    ください。
+  
+   LoadModule php4_module modules/libphp4.so
+   AddType application/x-httpd-php .php
+
+  拡張子は自由に設定することが出来ます。.phpというのは私たちが
+  挙げた例の一つ過ぎません。
+ 
+  LoadModule文の右項に記述するパスにあなたのシステム上でのPHPモジュールの
+  位置を記述します。これまでのステップ通り実行すれば上記の値のままで
+  問題ないではずです。
+
+15. Apacheサーバを起動してください:
+   /usr/local/apache2/bin/apachectl start
+   
+]]>
+
+      </screen>
+     </example>
+    <para>
+     上記の手順で、<literal>PHP</literal>SAPIモジュールサポートを有効にして
+     Apache 2.0を動作させることが出来ます。もちろん、Apacheと<literal>
+      PHP</literal>共にもっと多くのconfigureオプションを指定することが出来ます。
+     詳しい情報を得るにはそれぞれのソースツリーディレクトリで<command>./configure
+      --help</command>を実行してください。マルチスレッド版のApache 2.0を
+     構築する場合は、標準MPM-Moduleである<filename>prefork</filename>を
+     <filename>worker</filename>もしくは<filename>perchild</filename>で
+     上書きする必要があります。このためには、上記のステップ6で<option
+      role="configure">--with-mpm=worker</option>もしくは<option
+      role="configure">--with-mpm=perchild</option>を指定します。マルチ
+     スレッド版については、その動作に関して十分注意してください。
+     詳細はApacheドキュメントの<ulink url="&url.apache2.mpm;">MPM-Modules
+     </ulink>を参照してください。
+    </para>
+    <note>
+     <para>
+      マルチスレッド版のApacheを構築する場合は、あなたのシステムがスレッドを
+      サポートしている必要があります。また、この場合<literal>PHP</literal>を
+      実験的なステータスにあるZend Thread Safety(ZTS)で構築することを意味します。
+      従って全ての拡張モジュールを使用できるわけではありません。<filename>
+       prefork</filename>MPM-Moduleでの構築をお勧めします。
+     </para>
+    </note>
+   </sect2>
+
+   <sect2 id="install.apache2.windows">
+    <title>Windows上でのPHPとApache 2.0</title>
+    <para>
+     まず<ulink url="&url.apache2.windows;">Windows特有の事柄</ulink>を
+     読むことをお勧めします。
+    </para>
+    <warning>
+     <para>
+      Apache 2.0はWindows NT 4.0, Windows 2000, Windows XPでの動作を
+      想定してデザインされており、現時点ではWindows 9xのサポートは
+      不完全です。これらのプラットフォームでの動作は保証されません。
+     </para>
+    </warning>
+    <para>
+     最新バージョンの<ulink url= "&url.apache;">Apache
+      2.0</ulink>をダウンロードして上記のいずれかのPHPのバージョンを
+     用意します。まず<link linkend="install.windows.manual">マニュアル
+      インストールの手順</link>の手順に従ってから、<literal>PHP</literal>と
+     Apacheの統合を開始します。
+    </para>
+    <para>
+     Windows上のApache 2.0で<literal>PHP</literal>を動作させるには2つの
+     方法があります。一つはCGIバイナリを使用する方法、もう一つはApache
+     モジュールDLLを使用する方法です。前者の場合は一旦Apacheサーバを
+     停止して<filename>httpd.conf</filename>を<literal>PHP</literal>と
+     動作するように編集します。
+    </para>
+    <para>
+     <emphasis>CGIバイナリ</emphasis>を有効にするにはApacheの<filename>
+      httpd.conf</filename>に以下の3行を追加します。
+     <example>
+      <title>CGI版PHPとApache 2.0</title>
+       <programlisting role="apache">
+<![CDATA[
+ScriptAlias /php/ "c:/php/"
+AddType application/x-httpd-php .php
+Action application/x-httpd-php "/php/php-cgi.exe"
+]]>
+       </programlisting>
+     </example>
+    </para>
+    <note>
+     <para>
+      PHP 4.3.0からCGIバイナリのファイル名が<filename>php-cgi.exe</filename>に
+      変更されています。ApacheのActionディレクティブを記述する際には
+      ご注意ください。
+     </para>
+    </note>
+    <para>
+     <literal>PHP</literal>をApache 2.0のモジュールとして使用したい場合は、
+     まず<filename>php4ts.dll</filename>を<filename>winnt/system32</filename>
+     (Windows NT/2000)もしくは<filename>windows/system32</filename>(Windows
+     XP)に移動します(既存のファイルは全て上書きしてください)。次に
+     <emphasis>PHPモジュール</emphasis>を有効にするため、Apacheの
+     <filename>httpd.conf</filename>に以下の2行を追加します。
+     <example>
+      <title>モジュール版PHPとApache 2.0</title>
+       <programlisting role="apache">
+<![CDATA[
+LoadModule php4_module c:/php/sapi/php4apache2.dll
+AddType application/x-httpd-php .php
+]]>
+       </programlisting>
+     </example>
+    </para>
+    <note>
+     <simpara>
+      <filename>c:/php/</filename>はあなたが実際に<literal>PHP</literal>を
+      インストールしたパスに置き換えてください。
+     </simpara>
+    </note>
+    <warning>
+     <simpara>
+      インストール時に<emphasis>異なったPHPバージョン</emphasis>のDLLを
+      混同しないように気をつけてください。
+     </simpara>
+    </warning>
+   </sect2>
+
+  </sect1>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"../../manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
