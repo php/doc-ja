@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.18 $ -->
  <reference id="ref.http">
   <title>HTTP関連の関数</title>
   <titleabbrev>HTTP</titleabbrev>
@@ -41,8 +42,10 @@
      じ型の複数のヘッダを強制的に生成します。例えば、
      <informalexample>
       <programlisting role="php">
-header('www-authenticate: Negociate');
-header('www-authenticate: NTLM',false);
+<![CDATA[
+header('WWW-Authenticate: Negotiate');
+header('WWW-Authenticate: NTLM',false);
+]]>
       </programlisting>
      </informalexample>
     </para>
@@ -54,40 +57,97 @@ header('www-authenticate: NTLM',false);
      人にとっては、理解しておくべき重要なこととなります。
      <informalexample>
       <programlisting role="php">
+<![CDATA[
 header("Location: http://www.php.net/");  /* ブラウザをPHP Web サイトに
                                             リダイレクトする */
 exit;                 /* リダイレクトを行う際に以下のコードが
                          実行されないようにする */
+]]>
       </programlisting>
      </informalexample>
     </para>
+    <note>
+     <para>
+      HTTP/1.1では、スキーム、ホスト名、絶対パスを含む絶対
+      <acronym>URI</acronym>が<ulink
+      url="&spec.http1.1;-sec14.html#sec14.30">Location:</ulink>
+      の引数として必要ですが、いくつかのクライアントでは相対URIも受け
+      つけます。通常、相対URIから絶対URIを作成するために
+      $HTTP_SERVER_VARS['HTTP_HOST'],$HTTP_SERVER_VARS['PHP_SELF'],
+      <function>dirname</function>を使用することが可能です。
+      <informalexample>
+       <programlisting>
+<![CDATA[
+header("Location: http://".$HTTP_SERVER_VARS['HTTP_HOST']
+                      ."/".dirname($HTTP_SERVER_VARS['PHP_SELF'])
+                      ."/".$relative_url);
+]]>
+       </programlisting>
+      </informalexample>
+     </para>
+    </note>
     <para>
-     2番目の特別なヘッダは、文字列&quot;HTTP/&quot;から始まる全てのヘ
-     ッダ(大文字・小文字は区別されません)です。例えば、
-     ApacheディレクティブErrorDocument 404であるPHPスクリプトを指定し
-     ている場合、そのPHPスクリプトがステータスコード404を生成するよう
-     にすると良いでしょう。この場合、そのスクリプトの中に以下のように
-     記述します。
+     2番目の特別なヘッダは、文字列&quot;<literal>HTTP/</literal>&quot;
+     から始まる全てのヘッダ(大文字・小文字は区別されません)です。この
+     ヘッダは、送信するHTTPステータスコードを示すために使用されます。
+     例えば、存在しないファイルへのリクエストを処理するためにあるPHPスクリ
+     プトを使用するよう(<literal>ErrorDocument</literal>ディレクティブ
+     により)Apacheを設定する場合、そのスクリプトが正しいステータスコー
+     ドを返すようにする必要があります。
      <informalexample>
       <programlisting role="php">
-header ("HTTP/1.0 404 Not Found");
+<![CDATA[
+header("HTTP/1.0 404 Not Found");
+]]>
       </programlisting>
      </informalexample>
+     <note>
+      <para>
+       PHP 3では、このコードは、PHPがApacheモジュール版としてコンパイ
+       ルされている場合にのみ動作します。<literal>Status</literal>ヘッ
+       ダを用いて同じ効果を得ることが可能です。
+       <informalexample>
+        <programlisting role="php">
+<![CDATA[
+header("Status: 404 Not Found");
+]]>
+        </programlisting>
+       </informalexample>
+      </para>
+     </note>
     </para>
     <para>
-     PHP スクリプトはしばしば動的に HTML を生成するため、クライアントブラウザや
-     サーバーおよびクライアントブラウザの間でプロキシがキャッシュを行ったり
-     するべきではありません。多くのプロキシとクライアントは、以下のコードにより
-     強制的にキャッシュを無効にできます。
+     PHPスクリプトはしばしば動的に HTML を生成するため、クライアントブ
+     ラウザやサーバーおよびクライアントブラウザの間でプロキシがキャッ
+     シュを行ったりするべきではありません。多くのプロキシとクライアン
+     トでは、以下のコードにより強制的にキャッシュを無効にできます。
      <informalexample>
       <programlisting role="php">
-header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");             // 過去の日付
-header("Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT");
-                                                              // 常に修正されている
-header("Cache-Control: no-cache, must-revalidate");           // HTTP/1.1
-header("Pragma: no-cache");                                   // HTTP/1.0
+<![CDATA[
+header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");    // 日付が過去
+header("Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT"); 
+                                                     // 常に修正されている
+header("Cache-Control: no-store, no-cache, must-revalidate");  // HTTP/1.1
+header("Cache-Control: post-check=0, pre-check=0", false);
+header("Pragma: no-cache");                          // HTTP/1.0
+]]>
       </programlisting>
      </informalexample>
+     <note>
+      <para>
+       上記のヘッダを全て出力しなかったとしてもページのキャッシュが行
+       われない場合があることに気付くかもしれません。デフォルトのブラ
+       ウザのキャッシュの動作をユーザが変更できる手段はいくつもありま
+       す。上記のヘッダを送信することにより、スクリプトの出力がキャッ
+       シュされる可能性がある設定を上書きするべきです。
+      </para>
+      <para>
+       加えて、<function>session_cache_limiter</function>および
+       設定<literal>session.cache_limiter</literal>をセッションが使用
+       された際にキャッシュ関係のヘッダを正しく自動的に生成するために
+       使用できます。
+      </para>
+     </note>
     </para>
     <para>
      覚えておいて頂きたいのは、<function>header</function> 関数は、通
@@ -102,16 +162,59 @@ header("Pragma: no-cache");                                   // HTTP/1.0
     <para>
      <informalexample>
       <programlisting role="php">
-&lt;?php require("user_logging.inc") ?>
+<![CDATA[
+<?php require("user_logging.inc") ?>
 
 
-&lt;?php header ("Content-Type: audio/x-pn-realaudio"); ?>
+<?php header ("Content-type: audio/x-pn-realaudio"); ?>
 // 動作しません。上の空行に注意して下さい。
+]]>
       </programlisting>
      </informalexample>
+     <note>
+      <para>
+       PHP 4では、この問題に対処するために出力のバッファリングを使用す
+       ることが可能です。この場合、ブラウザへの出力が送信するまでサー
+       バに全てバッファリングされるオーバーヘッドがあります。出力バッ
+       ファリングは、<function>ob_start</function>と
+       <function>ob_end_flush</function>をスクリプトでコールするか
+       <filename>php.ini</filename>またはサーバ設定ファイルの設定ディ
+       レクティブ<literal>output_buffering</literal>を設定することによ
+       り行うことが可能です。
+      </para>
+     </note>
     </para>    
     <para>
-     <function>headers_sent</function>も参照下さい。
+     PDFファイルを生成するといったように送信するデータを保存するかどう
+     かユーザにプロンプトを表示したい場合、推奨されるファイル名を指定
+     してブラウザに保存ダイアログを表示させる<ulink
+     url="&url.rfc2183;">Content-Disposition</ulink>ヘッダを使用可能で
+     す。
+     <informalexample>
+      <programlisting role="php">
+<![CDATA[
+<?php
+header("Content-type: application/pdf");
+header("Content-Disposition: attachment; filename=downloaded.pdf");
+
+/* ... PDFファイルを出力 ... */
+]]>
+      </programlisting>
+     </informalexample>
+     <note>
+      <para>
+       Microsoft Internet Explorer 4.01にはこれが動作しないというバグ
+       があります。この解決策はありません。Microsoft Internet Explorer
+       5.5にもこれを妨げるバグがあります。これは、サービスパック2以降
+       とすることで修整可能です。
+      </para>
+     </note>
+    </para>
+    <para>
+     <function>headers_sent</function>,
+     <function>setcookie</function>及び
+     <link linkend="features.http-auth">HTTP認証</link>の節も参照下さ
+     い。
     </para>
    </refsect1>
   </refentry>
@@ -126,7 +229,7 @@ header("Pragma: no-cache");                                   // HTTP/1.0
     <funcsynopsis>
      <funcprototype>
       <funcdef>boolean <function>headers_sent</function></funcdef>
-      <paramdef><parameter>void</parameter></paramdef>
+      <void/>
      </funcprototype>
     </funcsynopsis>
     <para>
@@ -231,9 +334,11 @@ header("Pragma: no-cache");                                   // HTTP/1.0
      <example>
       <title><function>setcookie</function>による送信の例</title>
       <programlisting role="php">
+<![CDATA[
 setcookie ("TestCookie", "Test Value");
 setcookie ("TestCookie", $value,time()+3600);  /* 1時間で期限切れ */
 setcookie ("TestCookie", $value,time()+3600, "/~rasmus/", ".utoronto.ca", 1);
+]]>
       </programlisting>
      </example>
     </para>
@@ -242,10 +347,12 @@ setcookie ("TestCookie", $value,time()+3600, "/~rasmus/", ".utoronto.ca", 1);
      <example>
       <title><function>setcookie</function>による削除の例</title>
       <programlisting role="php">
+<![CDATA[
 setcookie ("TestCookie");
 // 有効期限を1時間前に設定する
 setcookie ("TestCookie", "", time() - 3600);
 setcookie ("TestCookie", "", time() - 3600, "/~rasmus/", ".utoronto.ca", 1);
+]]>
       </programlisting>
      </example>
      クッキーを削除する場合には、ブラウザの削除機構を起動するために必
@@ -259,8 +366,10 @@ setcookie ("TestCookie", "", time() - 3600, "/~rasmus/", ".utoronto.ca", 1);
      の例のうちの一つを使用して下さい。
      <informalexample>
       <programlisting role="php">
+<![CDATA[
 echo $TestCookie;
 echo $HTTP_COOKIE_VARS["TestCookie"];
+]]>
       </programlisting>
      </informalexample>
     </para>
@@ -271,14 +380,16 @@ echo $HTTP_COOKIE_VARS["TestCookie"];
      に置きかえられます。
      <informalexample>
       <programlisting role="php">
+<![CDATA[
 setcookie ("cookie[three]", "cookiethree");
 setcookie ("cookie[two]", "cookietwo");
 setcookie ("cookie[one]", "cookieone");
 if (isset ($cookie)) {
     while (list ($name, $value) = each ($cookie)) {
-        echo "$name == $value&lt;br&gt;\n";
+        echo "$name == $value<br>\n";
     } 
 }
+]]>
       </programlisting>
      </informalexample>
     </para>

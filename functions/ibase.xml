@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.17 $ -->
  <reference id="ref.ibase">
   <title>InterBase関数</title>
   <titleabbrev>InterBase</titleabbrev>
@@ -13,6 +14,18 @@
    <note>
     <para>
      InterBase 6の完全なサポートがPHP 4.0で追加されました。
+    </para>
+    <para>
+     このデータベースは、シングルクオート(')文字をエスケープに使用しま
+     す。この動作はSybaseデータベースに似ており、以下のディレクティブ
+     を<filename>php.ini</filename>に追加して下さい。
+     <informalexample>
+      <programlisting>
+<![CDATA[
+magic_quotes_sybase = On
+]]>
+      </programlisting>
+     </informalexample>
     </para>
    </note>
   </partintro>
@@ -63,23 +76,22 @@
      </funcprototype>
     </funcsynopsis>
     <para>
-     InterBaseサーバーへの接続を確立します。
-     引数<parameter>database</parameter>は接続するサーバー上の
-     データベースファイルへの正しいパスである必要があります。
-     ローカルなサーバーへの接続でない場合、使用する接続プロトコルに応じて
-     この引数の前に
-     'hostname:' (TCP/IP)、'//hostname/' (NetBEUI)、'hostname@' (IPX/SPX)
-     のどれかをつける必要があります。
-     <parameter>username</parameter>および<parameter>password</parameter>
-     はPHP設定ディレクティブibase.default_user
-     およびibase.default_passwordで指定することも可能です。
-     <parameter>charset</parameter>はデータベースに関するデフォルトの
-     文字セットです。 <parameter>buffers</parameter>は
-     サーバー側のキャッシュに確保されるデータベースバッファの数です。
-     0または省略された場合、サーバーはデフォルト値を用います。
-     <parameter>dialect</parameter>は、接続時に実行される全ての命令に関する
-     SQL方言のデフォルト値を選択し、デフォルトではクライアントライブラリでサポート
-     される方言のうち、最高位のものになります。
+     InterBaseサーバーへの接続を確立します。引数
+     <parameter>database</parameter>は接続するサーバー上のデータベース
+     ファイルへの正しいパスである必要があります。ローカルなサーバーへ
+     の接続でない場合、使用する接続プロトコルに応じてこの引数の前に'
+     hostname:' (TCP/IP)、'//hostname/' (NetBEUI)、'hostname@'
+     (IPX/SPX)のどれかをつける必要があります。
+     <parameter>username</parameter>および
+     <parameter>password</parameter>はPHP設定ディレクティブ
+     ibase.default_userおよびibase.default_passwordで指定することも可
+     能です。<parameter>charset</parameter>はデータベースに関するデフォ
+     ルトの文字セットです。 <parameter>buffers</parameter>はサーバー側
+     のキャッシュに確保されるデータベースバッファの数です。0または省略
+     された場合、サーバーはデフォルト値を用います。
+     <parameter>dialect</parameter>は、接続時に実行される全ての命令に
+     関するSQL方言のデフォルト値を選択し、デフォルトではクライアントラ
+     イブラリでサポートされる方言のうち、最高位のものになります。
     </para>
     <para>
      同じ引数で<function>ibase_connect</function>が再度コールされた場合、
@@ -90,32 +102,35 @@
      <example>
       <title><function>ibase_connect</function>の例</title>
       <programlisting role="php">
-&lt;?php
-       $dbh = ibase_connect ($host, $username, $password);
-       $stmt = 'SELECT * FROM tblname';
-       $sth = ibase_query ($dbh, $stmt);
-       while ($row = ibase_fetch_object ($sth)) {
-       print $row->email . "\n";
-       }
-       ibase_close ($dbh);
+<![CDATA[
+<?php
+    $dbh = ibase_connect($host, $username, $password);
+    $stmt = 'SELECT * FROM tblname';
+    $sth = ibase_query($dbh, $stmt);
+    while ($row = ibase_fetch_object($sth)) {
+        echo $row->email, "\n";
+    }
+    ibase_free_result($sth);
+    ibase_close($dbh);
 ?>
+]]>
       </programlisting>
      </example>
     </para>
     <note>
      <para>
-      <parameter>buffers</parameter>はPHP 4-RC2で追加されました。
+      <parameter>buffers</parameter>は、PHP 4.0RC2で追加されました。
      </para>
     </note>
     <note>
      <para>
-      <parameter>dialect</parameter>はPHP 4-RC2で追加されました。
+      <parameter>dialect</parameter>はPHP 4.0RC2で追加されました。
       このオプションは、InterBase 6以降でのみ使用可能です。
      </para>
     </note>
     <note>
      <para>
-      <parameter>role</parameter>はPHP 4-RC2で追加されました。
+      <parameter>role</parameter>はPHP 4.0RC2で追加されました。
       この機能は、InterBase 5以降でのみ使用可能です。
      </para>
     </note>
@@ -263,20 +278,38 @@
      </funcprototype>
     </funcsynopsis>
     <simpara>
-     InterBaseデータベース上でクエリーを実行し、結果IDを返します。
-     このIDは、<function>ibase_fetch_row</function>,
-     <function>ibase_fetch_object</function>,
-     <function>ibase_free_result</function>,
-     <function>ibase_free_query</function>で使用されます。
+     InterBaseデータベース上でクエリーを実行します。クエリが成功しない
+     場合、&false;を返します。成功した場合、(SELECTクエリのような)結果
+     の行がある場合、結果IDを返します。クエリが成功し、結果がない場合、
+     &true;を返します。クエリが失敗した場合、 &false;が返されます。
     </simpara>
-    <note>
-     <para>
-      この関数は、パラメータへの変数のバインドをサポートしていますが、
-      この機能を使用する意味はあまりありません。
-      実用例については、<function>ibase_prepare</function>および
-      <function>ibase_execute</function>を参照下さい。
-     </para>
-    </note>
+    <para>
+     <function>ibase_errmsg</function>,
+     <function>ibase_fetch_row</function>,
+     <function>ibase_fetch_object</function>,
+     <function>ibase_free_result</function>も参照下さい。
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.ibase-errmsg">
+   <refnamediv>
+    <refname>ibase_errmsg</refname>
+    <refpurpose>
+     エラーメッセージを返す
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>string <function>ibase_errmsg</function></funcdef>
+      <void/>
+     </funcprototype>
+    </funcsynopsis>
+    <simpara>
+     エラーメッセージを有する文字列を返します。
+    </simpara>
    </refsect1>
   </refentry>
 
@@ -323,7 +356,8 @@
      擬似オブジェクトとして1行分の結果を取得します。
      <informalexample>
       <programlisting role="php">
-&lt;?php
+<![CDATA[
+<php
        $dbh = ibase_connect ($host, $username, $password);
        $stmt = 'SELECT * FROM tblname';
        $sth = ibase_query ($dbh, $stmt);
@@ -332,6 +366,7 @@
        }
        ibase_close ($dbh);
 ?>
+]]>
       </programlisting>
      </informalexample>
     </para>
@@ -363,11 +398,10 @@
      まれます。
      <informalexample>
       <programlisting role="php">
-// helio@helio.com.br  08-Dec-2000 02:53
-
-$rs=ibase_query("Select * from something"); 
-$coln = ibase_num_fields($rs); 
-for ($i=0 ; $i &lt; $coln ; $i++) { 
+<![CDATA[
+$rs=ibase_query("SELECT * FROM tablename"); 
+$coln = ibase_num_fields($rs);
+for ($i=0; $i < $coln; $i++) {
     $col_info = ibase_field_info($rs, $i); 
     echo "name: ".$col_info['name']."\n"; 
     echo "alias: ".$col_info['alias']."\n"; 
@@ -375,9 +409,33 @@ for ($i=0 ; $i &lt; $coln ; $i++) {
     echo "length: ".$col_info['length']."\n"; 
     echo "type: ".$col_info['type']."\n"; 
     }
+]]>
       </programlisting>
      </informalexample>
     </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id="function.ibase-free-query">
+   <refnamediv>
+    <refname>ibase_free_query</refname>
+    <refpurpose>
+     準備されたクエリにより確保されたメモリを解放する
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>int <function>ibase_free_query</function></funcdef>
+      <paramdef>int 
+       <parameter>query</parameter>
+      </paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <simpara>
+     <function>ibase_prepare</function>により準備されたクエリを解放します。
+    </simpara>
    </refsect1>
   </refentry>
 
@@ -424,8 +482,8 @@ for ($i=0 ; $i &lt; $coln ; $i++) {
      </funcprototype>
     </funcsynopsis>
     <simpara>
-     対応するパラメータのバインドや
-     (<function>ibase_execute</function>による)実行をするためのクエリを準備します。
+     対応するパラメータのバインドや(<function>ibase_execute</function>
+     による)実行をするためのクエリを準備します。
     </simpara>
    </refsect1>
   </refentry>
@@ -457,7 +515,8 @@ for ($i=0 ; $i &lt; $coln ; $i++) {
      <function>ibase_query</function>を使用するよりもずっと効率的です。
      <informalexample>
       <programlisting role="php">
-&lt;?php
+<![CDATA[
+<?php
        $updates = array(
            1 => 'Eric',
            5 => 'Filip',
@@ -470,6 +529,7 @@ for ($i=0 ; $i &lt; $coln ; $i++) {
        ibase_execute($query, $bar, $baz);
        }
 ?>
+]]>
       </programlisting>
      </informalexample>
     </para>
@@ -556,29 +616,6 @@ for ($i=0 ; $i &lt; $coln ; $i++) {
    </refsect1>
   </refentry>
 
-  <refentry id="function.ibase-free-query">
-   <refnamediv>
-    <refname>ibase_free_query</refname>
-    <refpurpose>
-     準備されたクエリにより確保されたメモリを解放する
-    </refpurpose>
-   </refnamediv>
-   <refsect1>
-    <title>説明</title>
-    <funcsynopsis>
-     <funcprototype>
-      <funcdef>int <function>ibase_free_query</function></funcdef>
-      <paramdef>int 
-       <parameter>query</parameter>
-      </paramdef>
-     </funcprototype>
-    </funcsynopsis>
-    <simpara>
-     <function>ibase_prepare</function>により準備されたクエリを解放します。
-    </simpara>
-   </refsect1>
-  </refentry>
-
   <refentry id="function.ibase-timefmt">
    <refnamediv>
     <refname>ibase_timefmt</refname>
@@ -602,25 +639,29 @@ for ($i=0 ; $i &lt; $coln ; $i++) {
      </funcprototype>
     </funcsynopsis>
     <para>
-     クエリーから返されるtimestamp、data,time型カラムのフォーマットを設定します。
-     内部的にこれらのカラムはC言語の関数strftime()によりフォーマットされます。このため、
-     文字列のフォーマットについてはこのC言語の関数ドキュメントを参照下さい。
-     <parameter>columntype</parameter>には定数IBASE_TIMESTAMP、IBASE_DATE、IBASE_TIME
-     のどれかを指定します。省略した場合には、下位互換性を保つため     
-     IBASE_TIMESTAMPがデフォルト値となります。
+     クエリーから返されるtimestamp、data,time型カラムのフォーマットを
+     設定します。内部的にこれらのカラムはC言語の関数strftime()により
+     フォーマットされます。このため、文字列のフォーマットについてはこ
+     のC言語の関数ドキュメントを参照下さい。
+     <parameter>columntype</parameter>には定数IBASE_TIMESTAMP、
+     IBASE_DATE、IBASE_TIMEのどれかを指定します。省略した場合には、下
+     位互換性を保つためIBASE_TIMESTAMPがデフォルト値となります。
      <informalexample>
       <programlisting role="php">
-&lt;?php
-    // InterBase 6 TIME型カラムが
-    // '05 hours 37 minutes'の形式で返されます 
-    ibase_timefmt("%H hours %M minutes", IBASE_TIME);
+<![CDATA[
+<?php
+// InterBase 6 TIME型カラムが
+// '05 hours 37 minutes'の形式で返されます 
+ibase_timefmt("%H hours %M minutes", IBASE_TIME);
 ?>
+]]>
       </programlisting>
      </informalexample>
     </para>
     <para>
-     PHP設定ディレクティブibase.timestampformat、ibase.dateformat、ibase.timeformat
-     によりこれらのフォーマットのデフォルト値を設定することが可能です。
+     PHP設定ディレクティブibase.timestampformat、ibase.dateformat、
+     ibase.timeformatによりこれらのフォーマットのデフォルト値を設定す
+     ることが可能です。
     </para>
     <note>
      <para>
@@ -630,11 +671,11 @@ for ($i=0 ; $i &lt; $coln ; $i++) {
     </note>
     <note>
      <para>
-      PHP 4.0では、PHP設定ディレクティブibase.timeformatがibase.timestampformatに
-      名前が変更され、ディレクティブibase.dateformatとibase.timeformatが
-      追加され、過去のバージョンとの互?性がない変更が行われています。
-      この変更は、ディレクティブの名前がそれ自体の機能により一致するように
-      行われたものです。
+      PHP 4.0では、PHP設定ディレクティブibase.timeformatが
+      ibase.timestampformatに名前が変更され、ディレクティブ
+      ibase.dateformatとibase.timeformatが追加され、過去のバージョンと
+      の互換性がない変更が行われています。この変更は、ディレクティブの
+      名前がそれ自体の機能により一致するように行われたものです。
      </para>
     </note>
    </refsect1>
@@ -659,7 +700,8 @@ for ($i=0 ; $i &lt; $coln ; $i++) {
      結果セットにおけるフィールド数を整数として返します。
      <informalexample>
       <programlisting role="php">
-&lt;?php
+<![CDATA[
+<?php
     $dbh = ibase_connect ($host, $username, $password);
     $stmt = 'SELECT * FROM tblname';
     $sth = ibase_query ($dbh, $stmt);
@@ -674,38 +716,209 @@ for ($i=0 ; $i &lt; $coln ; $i++) {
 
     ibase_close ($dbh);
 ?>
+]]>
       </programlisting>
      </informalexample>
     </para>
     <para>
      <function>ibase_field_info</function>も参照下さい。
     </para>
-    <note>
-     <para>
-      <function>ibase_num_fields</function>は現在、PHP 4では動作しません。
-     </para>
-    </note>
    </refsect1>
   </refentry>
 
-  <refentry id="function.ibase-errmsg">
+  <refentry id='function.ibase-blob-add'>
    <refnamediv>
-    <refname>ibase_errmsg</refname>
+    <refname>ibase_blob_add</refname>
     <refpurpose>
-     エラーメッセージを返す
+     生成されたblobにデータを追加する
     </refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
     <funcsynopsis>
      <funcprototype>
-      <funcdef>string <function>ibase_errmsg</function></funcdef>
-      <void/>
+      <funcdef>int <function>ibase_blob_add</function></funcdef>
+      <paramdef>int <parameter>blob_id</parameter></paramdef>
+      <paramdef>string <parameter>data</parameter></paramdef>
      </funcprototype>
     </funcsynopsis>
-    <simpara>
-     エラーメッセージを有する文字列を返します。
-    </simpara>
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id='function.ibase-blob-cancel'>
+   <refnamediv>
+    <refname>ibase_blob_cancel</refname>
+    <refpurpose>
+     blobの生成を取り消す
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>int <function>ibase_blob_cancel</function></funcdef>
+      <paramdef>int <parameter>blob_id</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id='function.ibase-blob-close'>
+   <refnamediv>
+    <refname>ibase_blob_close</refname>
+    <refpurpose>
+     blobを閉じる
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>int <function>ibase_blob_close</function></funcdef>
+      <paramdef>int <parameter>blob_id</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id='function.ibase-blob-create'>
+   <refnamediv>
+    <refname>ibase_blob_create</refname>
+    <refpurpose>
+     データを追加するためにblobを生成する
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>int <function>ibase_blob_create</function></funcdef>
+      <paramdef>int 
+       <parameter><optional>link_identifier</optional></parameter>
+      </paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id='function.ibase-blob-echo'>
+   <refnamediv>
+    <refname>ibase_blob_echo</refname>
+    <refpurpose>
+     ブラウザにblobの内容を出力する
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>int <function>ibase_blob_echo</function></funcdef>
+      <paramdef>string <parameter>blob_id_str</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id='function.ibase-blob-get'>
+   <refnamediv>
+    <refname>ibase_blob_get</refname>
+    <refpurpose>
+     オープンしたblobからデータのバイト数を取得する
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>string <function>ibase_blob_get</function></funcdef>
+      <paramdef>int <parameter>blob_id</parameter></paramdef>
+      <paramdef>int <parameter>len</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id='function.ibase-blob-import'>
+   <refnamediv>
+    <refname>ibase_blob_import</refname>
+    <refpurpose>
+     blobを生成し、ファイルをコピーし、閉じる
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>string <function>ibase_blob_import</function></funcdef>
+      <paramdef>int 
+       <parameter><optional>link_identifier</optional></parameter>
+      </paramdef>
+      <paramdef>int <parameter>file_id</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id='function.ibase-blob-info'>
+   <refnamediv>
+    <refname>ibase_blob_info</refname>
+    <refpurpose>
+     blobの長さと他の便利な情報を返す
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>object <function>ibase_blob_info</function></funcdef>
+      <paramdef>string <parameter>blob_id_str</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     &warn.undocumented.func;
+    </para>
+   </refsect1>
+  </refentry>
+
+  <refentry id='function.ibase-blob-open'>
+   <refnamediv>
+    <refname>ibase_blob_open</refname>
+    <refpurpose>
+     データの一部を取得するためにblobをオープンする
+    </refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+    <funcsynopsis>
+     <funcprototype>
+      <funcdef>int <function>ibase_blob_open</function></funcdef>
+      <paramdef>string <parameter>blob_id</parameter></paramdef>
+     </funcprototype>
+    </funcsynopsis>
+    <para>
+     &warn.undocumented.func;
+    </para>
    </refsect1>
   </refentry>
 
