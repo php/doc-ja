@@ -115,11 +115,21 @@ header("Pragma: no-cache");                                   // HTTP/1.0
      <funcprototype>
       <funcdef>int <function>setcookie</function></funcdef>
       <paramdef>string <parameter>name</parameter></paramdef>
-      <paramdef>string <parameter>value</parameter></paramdef>
-      <paramdef>int <parameter>expire</parameter></paramdef>
-      <paramdef>string <parameter>path</parameter></paramdef>
-      <paramdef>string <parameter>domain</parameter></paramdef>
-      <paramdef>int <parameter>secure</parameter></paramdef>
+      <paramdef>string 
+       <parameter><optional>value</optional></parameter>
+      </paramdef>
+      <paramdef>int 
+       <parameter><optional>expire</optional></parameter>
+      </paramdef>
+      <paramdef>string 
+       <parameter><optional>path</optional></parameter>
+      </paramdef>
+      <paramdef>string 
+       <parameter><optional>domain</optional></parameter>
+      </paramdef>
+      <paramdef>int 
+       <parameter><optional>secure</optional></parameter>
+      </paramdef>
      </funcprototype>
     </funcsynopsis>
     <para>
@@ -149,35 +159,56 @@ header("Pragma: no-cache");                                   // HTTP/1.0
     </para>
     <para>  
      陥りやすい失敗:
+     <itemizedlist>
+      <listitem>
+       <simpara>
+	クッキーはクッキーを有効にするためにページを再ロードするまで
+	アクセスすることができません。
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+	クッキーは設定されたものと同じパラメータで削除する必要がありま
+        す。
+       </simpara>
+      </listitem>
+     </itemizedlist>
     </para>
     <simpara>
-     クッキーはクッキーを有効にするためにページを再ロードするまで
-     アクセスすることができません。
-    </simpara>
-    <simpara>
-     PHP3において同じスクリプトで<function>setcookie</function>を複数回コール
-     した場合、逆の順番で実行されます。他のクッキーを挿入する前に
-     あるクッキーを削除しようとする場合、削除する前に挿入を行う必要が
-     あります。PHP4では、<function>setcookie</function>を複数回コール
-     した場合でもコールした順番で実行されます。
+     PHP3において同じスクリプトで<function>setcookie</function>を複数
+     回コールした場合、逆の順番で実行されます。他のクッキーを挿入する
+     前にあるクッキーを削除しようとする場合、削除する前に挿入を行う必
+     要があります。PHP4では、<function>setcookie</function>を複数回コー
+     ルした場合でもコールした順番で実行されます。
     </simpara>
     <para>
-     いくつかの例を以下に示します。
+     クッキーを送信するいくつかの例を以下に示します。
      <example>
-      <title><function>setcookie</function>の例</title>
+      <title><function>setcookie</function>による送信の例</title>
       <programlisting role="php">
-setcookie("TestCookie","Test Value");
-setcookie("TestCookie",$value,time()+3600);  /* 1時間で期限切れ */
-setcookie("TestCookie",$value,time()+3600,"/~rasmus/",".utoronto.ca",1);
+setcookie ("TestCookie", "Test Value");
+setcookie ("TestCookie", $value,time()+3600);  /* 1時間で期限切れ */
+setcookie ("TestCookie", $value,time()+3600, "/~rasmus/", ".utoronto.ca", 1);
+      </programlisting>
+     </example>
+    </para>
+    <para>
+     上記の例で送信したクッキーを削除する方法の例を以下に示します。
+     <example>
+      <title><function>setcookie</function>による削除の例</title>
+      <programlisting role="php">
+setcookie ("TestCookie");
+setcookie ("TestCookie", "", time());
+setcookie ("TestCookie", "", time(), "/~rasmus/", ".utoronto.ca", 1);
       </programlisting>
      </example>
     </para>
     <para>
      クッキーのvalueの部分は、クッキーの送信を行う際に自動的に
      URLエンコードされ、またクッキーを受信した際は、自動的にデコード
-     されてクッキー名と同じ名前の変数に格納されます。すなわち、
-     スクリプト内部でTestCookieの内容を見たい場合は、以下の例の
-     うちの一つを使用して下さい。
+     されてクッキー名と同じ名前の変数に格納されることに注意して下さい。
+     すなわち、スクリプト内部でTestCookieの内容を見たい場合は、以下
+     の例のうちの一つを使用して下さい。
      <informalexample>
       <programlisting role="php">
 echo $TestCookie;
@@ -186,19 +217,20 @@ echo $HTTP_COOKIE_VARS["TestCookie"];
      </informalexample>
     </para>
     <para>
-     クッキー名で配列を記述することにより、クッキーの配列を設定することも可能です。
-     これにより配列要素と同数のクッキーを設定されますが、
-     クッキーがスクリプトに受信された際に、値はクッキー名を有する配列に置きかえられます。
+     クッキー名で配列を記述することにより、クッキーの配列を設定するこ
+     とも可能です。これにより配列要素と同数のクッキーを設定されますが、
+     クッキーがスクリプトに受信された際に、値はクッキー名を有する配列
+     に置きかえられます。
      <informalexample>
       <programlisting role="php">
- setcookie( "cookie[three]", "cookiethree" );
- setcookie( "cookie[two]", "cookietwo" );
- setcookie( "cookie[one]", "cookieone" );
- if ( isset( $cookie ) ) {
-    while( list( $name, $value ) = each( $cookie ) ) {
- 	  echo "$name == $value&lt;br&gt;\n";
-    }
- }
+setcookie ("cookie[three]", "cookiethree");
+setcookie ("cookie[two]", "cookietwo");
+setcookie ("cookie[one]", "cookieone");
+if (isset ($cookie)) {
+    while (list ($name, $value) = each ($cookie)) {
+        echo "$name == $value&lt;br&gt;\n";
+    } 
+}
       </programlisting>
      </informalexample>
     </para>

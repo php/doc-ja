@@ -828,6 +828,11 @@ require ("file.inc");  /* $varoneと$vartwoはfile.incで利用可能 */
     しかし、PHP4では、この機能は廃止されました。この機能が必要な場合、
     <function>include</function>を参照下さい。
    </simpara>
+   <simpara>
+    <function>include</function>, <function>require_once</function>,
+    <function>include_once</function>, <function>readfile</function>,
+    <function>virtual</function>も参照下さい。
+   </simpara>
   </sect1>
  
   <sect1 id="function.include">
@@ -843,11 +848,11 @@ require ("file.inc");  /* $varoneと$vartwoはfile.incで利用可能 */
     HTMLモードになること、読み込み完了時にPHPモードに戻ることがあります。
     このため、読み込むファイル中のPHPコードとして実行する必要がある
     コードは、<link linkend="language.basic-syntax.phpmode">
-     有効なPHPの開始タグおよび終了タグ </link>で括る必要があります。
+     有効なPHPの開始タグおよび終了タグ </link>で括る必�があります。
    </simpara>
    <para>
     読み込み処理は<literal>include</literal>文を処理する度に行われます。
-    このため、異なった複数のファイルを読み込むためにル�×構造の中で
+    このため、異なった複数のファイルを読み込むためにルッצǋ造の中で
     <literal>include</literal>を使用することができます。
     <informalexample>
      <programlisting role="php">
@@ -998,39 +1003,183 @@ include ("file.inc");  /* $varoneおよび$vartwoはfile.incで利用可能で�
     下さい。その場合は、可能です。
    </simpara>
    <simpara>
-    <function>readfile</function>,
-    <function>require</function>, <function>virtual</function>
-    も参照下さい。
+    <function>require</function>, <function>require_once</function>,
+    <function>include_once</function>, <function>readfile</function>,
+    <function>virtual</function>も参照下さい。
    </simpara>
   </sect1>
 
   <sect1 id="function.require-once">
    <title><function>require_once</function></title>
-   <simpara>
+   <para>
     <function>require_once</function>命令は、C言語のプリプロセッサ
-    <literal>#include</literal>の動作と同様にこの部分を指定したファイ
-    ルで置換します。
-   </simpara>
+    <literal>#include</literal>の動作と全く同様にこの部分を指定したファ
+    イルで置換し、この面では、<function>require</function>命令に似てい
+    ます。主な違いは、読み込みの連鎖です。
+    <function>require_once</function>を使用した場合、そのコードがスク
+    リプトに読み込まれるのが一回だけであることが保証され、変数の値また
+    は定義した関数の名前が壊されるのを回避します。
+   </para>
+   <para>
+    例えば、<literal>utils.inc</literal>と
+    <literal>foolib.inc</literal>という2つのファイルを作成するとしましょ
+    う。
+    <example>
+     <title>utils.inc</title>
+     <programlisting role="php">
+&lt;?php
+define(PHPVERSION, floor(phpversion()));
+echo "GLOBALS ARE NICE\n";
+function goodTea() {
+	return "Oolong tea tastes good!";
+}
+?&gt;
+     </programlisting>
+    </example>
+    <example>
+     <title>foolib.inc</title>
+     <programlisting role="php">
+&lt;?php
+require ("utils.inc");
+function showVar($var) {
+	if (PHPVERSION == 4) {
+		print_r($var);
+	} else {
+		dump_var($var);
+	}
+}
+
+// 他の関数の定義 ...
+?&gt;
+     </programlisting>
+    </example>
+    そして、この後、スクリプト
+    <literal>cause_error_require.php</literal>を書いて下さい。
+    <example>
+     <title>cause_error_require.php</title>
+     <programlisting role="php">
+&lt;?php
+require("foolib.inc");
+/* 以下の処理は、エラーを発生します。 */
+require("utils.inc");
+$foo = array("1",array("complex","quaternion"));
+echo "this is requiring utils.inc again which is also\n";
+echo "required in foolib.inc\n";
+echo "Running goodTea: ".goodTea()."\n";
+echo "Printing foo: \n";
+showVar($foo);
+?&gt;
+     </programlisting>
+    </example>
+    後の例を実行した場合、( PHP 4.01pl2を用いた)結果の出力は次のように
+    なります。
+	 <informalexample>
+	 <programlisting>
+GLOBALS ARE NICE
+GLOBALS ARE NICE
+
+Fatal error:  Cannot redeclare causeerror() in utils.inc on line 5
+     </programlisting>
+    </informalexample>
+    <literal>foolib.inc</literal>および
+    <literal>cause_errror_require.php</literal>を
+    <function>require</function>の代わりに
+    <function>require_once</function>を使用するように修正し、
+    後の例のファイル名を
+    <literal>avoid_error_require_once.php</literal>に変更すると
+    次のようになります。
+    <example>
+     <title>foolib.inc (fixed)</title>
+     <programlisting role="php">
+...
+require_once("utils.inc");
+function showVar($var) {
+...
+     </programlisting>
+    </example>
+    <example>
+     <title>avoid_error_require_once.php</title>
+     <programlisting role="php">
+...
+require_once("foolib.inc");
+require_once("utils.inc");
+$foo = array("1",array("complex","quaternion"));
+...
+     </programlisting>
+    </example>
+    これを実行すると、(PHP 4.0.1pl2を用いた)出力は次のようになります。
+    <informalexample>
+     <programlisting>
+GLOBALS ARE NICE
+this is requiring globals.inc again which is also
+required in foolib.inc
+Running goodTea: Oolong tea tastes good!
+Printing foo:
+Array
+(
+    [0] =&gt; 1
+    [1] =&gt; Array
+        (
+            [0] =&gt; complex
+            [1] =&gt; quaternion
+        )
+
+)
+     </programlisting>
+    </informalexample>
+   </para>
+   <para>
+    また、Cプリプロセッサの動作との類似にも注意して下さい。この命令は、
+    "コンパイル時"、つまり、スクリプトがパースされた後で実行される前に
+    実行され、実行時に動的に挿入される必要があるスクリプトの部分に使用
+    するべきではありません。このような場合は、
+    <function>include_once</function>または
+    <function>include</function>を使用して下さい。
+   </para>
+   <para>
+    <function>require_once</function>および
+    <function>include_once</function>の他の例については、最新のPHPソー
+    スコード配布ファイルに含まれるPEARのコードを参照下さい。
+   </para>
    <para>
     <function>require</function>、<function>include</function>、
     <function>include_once</function>、
     <function>get_required_files</function>、
-    <function>get_included_files</function>も参照下さい。
+    <function>get_included_files</function>、
+    <function>readfile</function>、<function>virtual</function>も参照
+    下さい。
    </para>
   </sect1>
   
   <sect1 id="function.include-once">
    <title><function>include_once</function></title>
-   <simpara>
-    <function>include_once</function>命令は、C言語のプリプロセッサ
-    <literal>#include</literal>の動作と全く同様にこの部分を指定したファイ
-    ルで置換します。
-   </simpara>
+   <para>
+    <function>include_once</function>命令は、スクリプトの実行時に指定
+    したファイルを読み込み評価します。この動作は、
+    <function>include</function>命令と似ていますが、ファイルからのコー
+    ドが既に読み込まれている場合は、再度読み込まれないという重要な違い
+    があります。
+   </para>
+   <para>
+    <function>require_once</function>の説明で述べたように、
+    <function>include_once</function>は、クリプトの実行時に同じファイ
+    ルが複数回読み込まれ、評価される可能性がある場合に、関数の再定義や
+    変数値の再代入といった問題を回避するために一回だけ読み込ませるため
+    に使用します。
+   </para>
+   <para>
+    <function>require_once</function>および
+    <function>include_once</function>の使用例に関する他の例については、
+    最新のPHPソースコード配布ファイルに含まれるPEARのコードを参照下さ
+    い。
+   </para>
    <para>
     <function>require</function>、<function>include</function>、
     <function>require_once</function>、
     <function>get_required_files</function>、
-    <function>get_included_files</function>も参照下さい。
+    <function>get_included_files</function>、
+    <function>readfile</function>、<function>virtual</function>も参照
+    下さい。
    </para>
   </sect1>
  
