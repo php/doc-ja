@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.2 $ -->
-<!-- EN-Revision: 1.13 Maintainer: hirokawa Status: working -->
+<!-- $Revision: 1.3 $ -->
+<!-- EN-Revision: 1.38 Maintainer: hirokawa Status: working -->
  <appendix id="migration5">
   <title>PHP 4 から PHP 5への移行</title>
 
@@ -25,42 +25,60 @@
     以下の下位互換性がない変更点について注意する必要があります。
    </para>
    <itemizedlist>
-    <listitem><simpara>
+    <listitem>
+     <simpara>
+      <link linkend="reserved.keywords">新たな予約キーワード</link>がいくつか
+      あります。
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
       <function>strrpos</function> と <function>strripos</function> は、
       needleとして文字列全体を使用するようになりました。
-    </simpara></listitem>
-    <listitem><simpara>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
       文字列オフセットの不正な使用は、<constant>E_WARNING</constant>ではなく、
       <constant>E_ERROR</constant> を発生します。
-    </simpara></listitem>
-    <listitem><simpara>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
       <function>array_merge</function> は、配列のみを指定できるよう
       変更されました。配列以外の変数を指定した場合は、各パラメータ毎に
       <constant>E_WARNING</constant> が発生します。あなたのコードで
       突然 <constant>E_WARNING</constant> が発生し始める可能性が
       あるため注意して下さい。
-     </simpara></listitem>
-    <listitem><simpara>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
       サーバー変数PATH_TRANSLATEDは、Apache2 SAPIでは暗黙のうちに設定されません。
       この動作は、Apacheにより設定されていない場合にSCRIPT_FILENAMEと同じ値に
       設定するPHP 4と異なります。
       この変更は、<ulink url="&url.cgispecs;">CGIの規約</ulink>に従う
       ためのものです。詳細については、
       <ulink url="&url.php.bugs;23610">bug #23610</ulink> を参照して下さい。
-     </simpara></listitem>
-    <listitem><simpara>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
       定数 <constant>T_ML_CONSTANT</constant> は、
-      <link linkend="ref.tokenizer">Tokenizer</link> 拡張モジュールで
-      定義されなくなりました。error_reportingに<constant>E_ALL</constant>
+      <link linkend="ref.tokenizer">Tokenizer</link>エクステンションで
+      定義されなくなりました。error_reporting に<constant>E_ALL</constant>
       を指定した場合、PHPは通知(notice)を生成します。
-      /* */  については、<constant>T_ML_CONSTANT</constant> の代わりに
-      <constant>T_COMMENT</constant>  定数が使用され、これにより、
-      // と /* */ が共に <constant>T_COMMENT</constant> 定数で解釈される
-      ことになります。しかし、PHP5からPHPにより解釈されるようになった
+      <constant>T_ML_CONSTANT</constant>は、全く使用されていませんが、
+      PHP 4 では定義されていました。PHP 4とPHP 5の両方において、
+      // と /* */ は、共に <constant>T_COMMENT</constant> 定数と
+      解釈されます。
+      しかし、PHP5からPHPにより解釈されるようになった
       PHPDoc形式のコメント /** */  は、<constant>T_DOC_COMMENT</constant>
       と認識されます。
-     </simpara></listitem>
-    <listitem><simpara>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
       <link linkend="ini.variables-order">variables_order</link> に
       "S"が含まれる場合に、$_SERVER が argcおよびargv と共に設定されます。
       $_SERVERを作成しないような特別な設定を行った場合、当然、argcおよびargv は
@@ -70,13 +88,68 @@
       設定によらず常にargcおよびargvを作成するために行われました。
       これにより、CLI版では、常にグローバル変数 $argc および $argv
       が設定されるようになりました。
-     </simpara></listitem>
-    <listitem><simpara>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
       プロパティを持たないオブジェクトはもはや"空"とはみなされません。
-    </simpara></listitem>
-    <listitem><simpara>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
       クラスは、使用前に宣言する必要があります。
-     </simpara></listitem>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      In some cases classes must be declared before used. It only happens
+      only if some of the new features of PHP 5 are used. Otherwise the
+      behaviour is the old.
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>get_class</function>, <function>get_parent_class</function>
+      and <function>get_class_methods</function> now return the name of the
+      classes/methods as they were declared (case-sensitive) which may lead to
+      problems in older scripts that rely on the previous behaviour (the
+      class/method name was always returned lowercased). A possible solution
+      is to search for those functions in all your scripts and use
+      <function>strtolower</function>.
+     </simpara>
+     <simpara>
+      This case sensitivity change also applies to the 
+      <link linkend="language.constants.predefined">magical predefined 
+      constants</link> <constant>__CLASS__</constant>, 
+      <constant>__METHOD__</constant>, and <constant>__FUNCTION__</constant>.
+      The values are returned exactly as they're declared (case-sensitive).
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>ip2long</function> now returns &false; when an invalid IP
+      address is passed as argument to the function, and no longer
+      <literal>-1</literal>.
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      If there are functions defined in the included file, they can be used in the
+      main file independent if they are before <function>return</function> or after.
+      If the file is included twice, PHP 5 issues fatal error because functions
+      were already declared, while PHP 4 doesn't complain about it.
+      It is recommended to use <function>include_once</function> instead of
+      checking if the file was already included and conditionally return inside
+      the included file.
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>include_once</function> and <function>require_once</function>
+      first normalize the path of included file on Windows so that including
+      A.php and a.php include the file just once.
+     </simpara>
+    </listitem>
    </itemizedlist>
    
    <para>

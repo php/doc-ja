@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.1 $ -->
+<!-- $Revision: 1.2 $ -->
 
-<!-- EN-Revision: 1.3 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 1.9 Maintainer: hirokawa Status: ready -->
 
  <appendix id="ini">
   <title>コア &php.ini; ディレクティブのリスト</title>
@@ -83,6 +83,11 @@
       <entry>expose_php</entry>
       <entry>On</entry>
       <entry>PHP_INI_SYSTEM</entry>
+     </row>
+     <row>
+      <entry>zend.ze1_compatibility_mode</entry>
+      <entry>Off</entry>
+      <entry>PHP_INI_ALL</entry>
      </row>
     </tbody>
     </tgroup>
@@ -169,29 +174,36 @@
       </varlistentry>
 
 
-      <varlistentry id="ini.allow-call-time-pass-reference">
-       <term>
-        <parameter>allow_call_time_pass_reference</parameter>
-        <type>boolean</type>
-       </term>
-       <listitem>
-        <para>
-         関数のコール時に引数を強制的に参照で渡す機能の有効/無効を設定
-         します。この機能は過去のものであり、将来のバージョンの
-         PHP/Zendではサポートされない可能性があります。
-         推奨される方法は、関数宣言時に参照渡しとするべき引数を指定す
+     <varlistentry id="ini.allow-call-time-pass-reference">
+      <term>
+       <parameter>allow_call_time_pass_reference</parameter>
+       <type>boolean</type>
+      </term>
+      <listitem>
+       <para>
+        関数のコール時に引数を強制的に参照で渡す機能の有効/無効を設定
+        します。この機能は過去のものであり、将来のバージョンの
+        PHP/Zendではサポートされない可能性があります。
+        推奨される方法は、関数宣言時に参照渡しとするべき引数を指定す
          る方法です。将来のバージョンでの動作を保障するために、このオ
-         プションをoffとし、スクリプトがこの状態で正しく動作することを
-         確認することが推奨されます。
-         (この機能を使用する度に警告が発生し、引数は参照ではなく値で渡
-         されます。)
-        </para>
-        <para>
+        プションをoffとし、スクリプトがこの状態で正しく動作することを
+        確認することが推奨されます。
+        (この機能を使用する度に警告が発生し、引数は参照ではなく値で渡
+        されます。)
+       </para>
+       <para>
+        関数コール時に参照で引数を渡すことは、コードの明解さを損なうために
+        廃止されています。関数は、引数が参照渡しであると宣言されて
+        いない場合でも、文書化されていない方法で、その引数を修正できます。
+        副作用を回避するためには、どの引数を参照渡しとするかを関数宣言でのみ
+        指定すると良いでしょう。
+       </para>
+       <para>
         <link linkend="language.references">参照に関する説明</link>も
         参照下さい。
-        </para>
-       </listitem>
-      </varlistentry>
+       </para>
+      </listitem>
+     </varlistentry>
 
       <varlistentry id="ini.expose-php">
        <term>
@@ -207,9 +219,21 @@
         </para>
        </listitem>
       </varlistentry>
-     </variablelist>
-    </para>
-   </sect1>
+      <varlistentry id="ini.zend.ze1-compatibility-mode">
+       <term>
+        <parameter>zend.ze1_compatibility_mode</parameter>
+        <type>boolean</type>
+       </term>
+      <listitem>
+       <para>
+        Zend Engine 1 (PHP 4)との互換モードを有効にします。
+        この設定は、オブジェクトのコピー、キャスト、比較に影響を与えます。
+       </para>
+      </listitem>
+     </varlistentry>
+    </variablelist>
+   </para>
+  </sect1>
 
   <sect1 id="ini.sect.resource-limits">
    <title>リソース制限</title>
@@ -259,6 +283,9 @@
         PHP 4.3.2で、memory_limit が有効な場合、PHP関数
         <function>memory_get_usage</function> が使用可能です。
        </para>
+
+       &ini.shorthandbytes;
+
       </listitem>
      </varlistentry>
     </variablelist>
@@ -438,52 +465,43 @@
         </para>
        </listitem>
       </varlistentry>
-
-      <varlistentry id="ini.register-globals">
-       <term>
-        <parameter>register_globals</parameter>
-        <type>boolean</type>
-       </term>
-       <listitem>
+     
+     <varlistentry id="ini.register-globals">
+      <term>
+       <parameter>register_globals</parameter>
+       <type>boolean</type>
+      </term>
+      <listitem>
+       <para>
+        EGPCS(Environment, GET, POST, Cookie, Server)変数を
+        グローバル変数として登録するかどうかを指定します。
+       </para>
+       <para>
+        <ulink url="&url.php.release4.2.0;">PHP 4.2.0</ulink>以降、
+        このディレクティブのデフォルトは、<emphasis>off</emphasis>です。
+       </para>
+       <para>
+        関連する情報については、セキュリティの章の
+        <link linkend="security.registerglobals">register_globalsの使用</link> 
+        を参照してください。
+       </para>
+       <para>
+        <systemitem role="directive">register_globals</systemitem>は、
+        (<function>ini_set</function>で)実行時に設定することができないことに
+        注意して下さい。しかし、前記のようにホストが許可している場合には、
+        &htaccess; を使用することができます。 
+        &htaccess; エントリの例を以下に示します。
+        <userinput>php_flag register_globals off</userinput>
+       </para>
+       <note>
         <para>
-EGPCS(Environment, GET, POST, Cookie, Server)変数を
-         グローバル変数として登録するかどうかを指定します。例えば、
-         register_globals = onの場合、URL
-         <literal>http://www.example.com/test.php?id=3</literal>は、
-         <varname>$id</varname>を生成します。また、
-         <varname>$_SERVER['DOCUMENT_ROOT']</varname>から
-         <varname>$DOCUMENT_ROOT</varname>が生成されます。
-         使用するスクリプトのグローバルスコープをユーザのデータで混乱
-         させられたくない場合には、このオプションをoffにするとよいでしょう。
-         PHP <ulink url="&url.php.release4.2.0;">4.2.0</ulink>以降、
-         このディレクティブのデフォルトは、<emphasis>off</emphasis>となっています。
-         <link linkend="language.variables.superglobals">スーパーグローバル</link>: 
-         <varname>$_ENV</varname>, <varname>$_GET</varname>, 
-         <varname>$_POST</varname>, <varname>$_COOKIE</varname>, 
-         <varname>$_SERVER</varname>のような
-         PHPの<link linkend="reserved.variables">定義済みの変数</link>を
-         かわりに使用することが推奨されています。
-         関連する情報については、セキュリティの章の
-         <link linkend="security.registerglobals">register_globalsの使用</link> 
-         を参照してください。
+         <systemitem role="directive">register_globals</systemitem> は、
+         <link linkend="ini.variables-order">variables_order</link>
+         ディレクティブの影響を受けます。
         </para>
-        <para>
-         <systemitem role="directive">register_globals</systemitem>は、
-         (<function>ini_set</function>で)実行時に設定することができないことに
-         注意して下さい。しかし、前記のようにホストが許可している場合には、
-         <filename>.htaccess</filename>を使用することができます。
-         <filename>.htaccess</filename>エントリの例を以下に示します。
-         <userinput>php_flag register_globals on</userinput>
-        </para>
-        <note>
-         <para>
-          <systemitem role="directive">register_globals</systemitem> は、
-          <link linkend="ini.variables-order">variables_order</link>
-          ディレクティブの影響を受けます。
-         </para>
-        </note>
-       </listitem>
-      </varlistentry>
+       </note>
+      </listitem>
+     </varlistentry>
 
       <varlistentry id="ini.register-argc-argv">
        <term>
@@ -546,9 +564,12 @@ EGPCS(Environment, GET, POST, Cookie, Server)変数を
         <link
          linkend="ini.post-max-size">post_max_size</link>よりも大きく
         する必要があります。
-        </simpara>
-       </listitem>
-      </varlistentry>
+       </simpara>
+       
+       &ini.shorthandbytes;
+
+      </listitem>
+     </varlistentry>
 
       <varlistentry id="ini.gpc-order">
        <term>
@@ -657,25 +678,26 @@ EGPCS(Environment, GET, POST, Cookie, Server)変数を
        </listitem>
       </varlistentry>
 
-      <varlistentry id="ini.allow-webdav-methods">
-       <term>
-        <parameter>allow_webdav_methods</parameter>
-        <type>boolean</type>
-       </term>
-       <listitem>
-        <para>
+     <varlistentry id="ini.allow-webdav-methods">
+      <term>
+       <parameter>allow_webdav_methods</parameter>
+       <type>boolean</type>
+      </term>
+      <listitem>
+       <para>
         PHPスクリプトの中で WebDAV http リクエスト
         (例：PROPFIND, PROPPATCH, MOVE, COPY, 等..) の処理を可能にします。
+        このディレクティブは、PHP 4.3.2以降存在しません。
         これらのリクエストのPOSTデータを取得したい場合、
         <link linkend="ini.always-populate-raw-post-data">
          always_populate_raw_post_data</link> も同時に設定する必要があ
         ります。
        </para>
-       </listitem>
-      </varlistentry>
-     </variablelist>
-    </para>
-    <para>
+      </listitem>
+     </varlistentry>
+    </variablelist>
+   </para>
+   <para>
     <link linkend="ini.magic-quotes-gpc">magic_quotes_gpc</link>,
     <link linkend="ini.magic-quotes-runtime">magic-quotes-runtime</link>,
     および
@@ -854,7 +876,7 @@ include_path=".;c:\php\includes"
        </listitem>
       </varlistentry>
       
-      <varlistentry id="ini.cgi.fix_pathinfo">
+      <varlistentry id="ini.cgi.fix-pathinfo">
        <term>
         <parameter>cgi.fix_pathinfo</parameter>
         <type>boolean</type>
@@ -959,7 +981,7 @@ include_path=".;c:\php\includes"
     </para>
    </sect1>
 
-  <sect1 id="ini.sect.file_uploads">
+  <sect1 id="ini.sect.file-uploads">
    <title>ファイルアップロード</title>
     <para>
      <table>
@@ -995,24 +1017,27 @@ include_path=".;c:\php\includes"
     
     &ini.descriptions.title;
     
-    <para>
-     <variablelist>
-      <varlistentry id="ini.file-uploads">
-       <term>
-        <parameter>file_uploads</parameter>
-        <type>boolean</type>
-       </term>
-       <listitem>
-        <para>
-         HTTP <link linkend="features.file-upload">ファイルアップロード</link>
-         を有効とするかどうか。
-         <link linkend="ini.upload-max-filesize">upload_max_filesize</link>,
-         <link linkend="ini.upload-tmp-dir">upload_tmp_dir</link>, 
-         <link linkend="ini.post-max-size">post_max_size</link>
-         ディレクティブも参照下さい。
-        </para>
-       </listitem>
-      </varlistentry>
+   <para>
+    <variablelist>
+     <varlistentry id="ini.file-uploads">
+      <term>
+       <parameter>file_uploads</parameter>
+       <type>boolean</type>
+      </term>
+      <listitem>
+       <para>
+        HTTP <link linkend="features.file-upload">ファイルアップロード</link>
+        を有効とするかどうか。
+        <link linkend="ini.upload-max-filesize">upload_max_filesize</link>,
+        <link linkend="ini.upload-tmp-dir">upload_tmp_dir</link>, 
+        <link linkend="ini.post-max-size">post_max_size</link>
+        ディレクティブも参照下さい。
+       </para>
+       
+       &ini.shorthandbytes;
+
+      </listitem>
+     </varlistentry>
 
       <varlistentry id="ini.upload-tmp-dir">
        <term>
@@ -1029,20 +1054,23 @@ include_path=".;c:\php\includes"
        </listitem>
       </varlistentry>
 
-      <varlistentry id="ini.upload-max-filesize">
-       <term>
-        <parameter>upload_max_filesize</parameter>
-        <type>integer</type>
-       </term>
-       <listitem>
-        <para>
+     <varlistentry id="ini.upload-max-filesize">
+      <term>
+       <parameter>upload_max_filesize</parameter>
+       <type>integer</type>
+      </term>
+      <listitem>
+       <para>
         アップロードされるファイルの最大サイズ。
-        </para>
-       </listitem>
-      </varlistentry>
-     </variablelist>
-    </para>
-   </sect1>
+       </para>
+       
+       &ini.shorthandbytes;
+       
+      </listitem>
+     </varlistentry>
+    </variablelist>
+   </para>
+  </sect1>
 
   <sect1 id="ini.sql-general">
    <title>SQL全般</title>
