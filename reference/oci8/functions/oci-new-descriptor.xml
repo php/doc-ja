@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- $Revision: 1.1 $ -->
+<!-- EN-Revision: 1.6 Maintainer: shimooka Status: ready -->
+  <refentry id="function.oci-new-descriptor">
+   <refnamediv>
+    <refname>oci_new_descriptor</refname>
+    <refpurpose>空の新規 LOB あるいは FILE ディスクリプタを初期化する</refpurpose>
+   </refnamediv>
+   <refsect1>
+    <title>説明</title>
+     <methodsynopsis>
+      <type>OCI-Lob</type><methodname>oci_new_descriptor</methodname>
+      <methodparam><type>resource</type><parameter>connection</parameter></methodparam>
+      <methodparam choice="opt"><type>int</type><parameter>type</parameter></methodparam>
+     </methodsynopsis>
+    <para>
+     <function>oci_new_descriptor</function> は固定したディスクリプタまたは
+     LOB ロケータにリソースを割り当てます。
+     <parameter>type</parameter> の有効な値は、
+     <constant>OCI_D_FILE</constant>,
+     <constant>OCI_D_LOB</constant> あるいは <constant>OCI_D_ROWID</constant>
+     です。
+    </para>
+    <para>
+     <example>
+      <title><function>oci_new_descriptor</function> の例</title>
+      <programlisting role="php">
+<![CDATA[
+<?php
+    /* このスクリプトは HTML フォームからコールされるよう設計されています。
+     * また、$user, $passwor, $table, $where, $commitsizeがフォームから
+     * 渡されることを前提にしています。このスクリプトは、ROWID を用いて
+     * 選択された行を削除し、$commitsize 行毎にコミットします。
+     * (ロールバックがないので、注意して使用してください。)
+     */
+    $conn = oci_connect($user, $password);
+    $stmt = oci_parse($conn, "select rowid from $table $where");
+    $rowid = oci_new_descriptor($conn, OCI_D_ROWID);
+    oci_define_by_name($stmt, "ROWID", $rowid);
+    oci_execute($stmt);
+    while (oci_fetch($stmt)) {
+       $nrows = oci_num_rows($stmt);
+       $delete = oci_parse($conn, "delete from $table where ROWID = :rid");
+       oci_bind_by_name($delete, ":rid", $rowid, -1, OCI_B_ROWID);
+       oci_execute($delete);
+       echo "$nrows\n";
+       if (($nrows % $commitsize) == 0) {
+           oci_commit($conn);
+       }
+    }
+    $nrows = oci_num_rows($stmt);
+    echo "$nrows deleted...\n";
+    oci_free_statement($stmt);
+    oci_close($conn);
+?>
+]]>
+      </programlisting>
+      <programlisting role="php">
+<![CDATA[
+<?php
+    /* このスクリプトは LOB カラムにファイルをアップロードする例を示します。
+     * LOBカラムにアップロードを行うこの例に関するフォームは、
+     * <form action="upload.php3" method="post" enctype="multipart/form-data">
+     * <input type="file" name="lob_upload" />
+     * ... のようなものが使用されます。
+     */
+  if (!isset($lob_upload) || $lob_upload == 'none'){
+?>
+<form action="upload.php" method="post" enctype="multipart/form-data">
+Upload file: <input type="file" name="lob_upload" /><br />
+<input type="submit" value="Upload" /> - <input type="reset" value="Reset" />
+</form>
+<?php
+  } else {
+
+     // $lob_upload contains the temporary filename of the uploaded file
+
+     // see also the features section on file upload,
+     // if you would like to use secure uploads
+
+     $conn = oci_connect($user, $password);
+     $lob = oci_new_descriptor($conn, OCI_D_LOB);
+     $stmt = oci_parse($conn, "insert into $table (id, the_blob)
+               values(my_seq.NEXTVAL, EMPTY_BLOB()) returning the_blob into :the_blob");
+     oci_bind_by_name($stmt, ':the_blob', $lob, -1, OCI_B_BLOB);
+     oci_execute($stmt, OCI_DEFAULT);
+     if ($lob->savefile($lob_upload)){
+        echo "Blob のアップロードは成功しました\n";
+     }else{
+        echo "Blob をアップロードできませんでした\n";
+     }
+     oci_free_descriptor($lob);
+     oci_free_statement($stmt);
+     oci_close($conn);
+  }
+?>
+]]>
+      </programlisting>
+     </example>
+     <example>
+      <title><function>oci_new_descriptor</function> の例</title>
+      <programlisting role="php">
+<![CDATA[
+<?php
+    /* 入力パラメータとして clob を含む PL/SQLストアドプロシージャを
+     * コールする (PHP 4 >= 4.0.6) 。
+     * PL/SQL ストアドプロシージャのシグネチャは次の通り。
+     *
+     * PROCEDURE save_data
+     *   Argument Name                  Type                    In/Out Default?
+     *   ------------------------------ ----------------------- ------ --------
+     *   KEY                            NUMBER(38)              IN
+     *   DATA                           CLOB                    IN
+     *
+     */
+
+    $conn = oci_connect($user, $password);
+    $stmt = oci_parse($conn, "begin save_data(:key, :data); end;");
+    $clob = oci_new_descriptor($conn, OCI_D_LOB);
+    oci_bind_by_name($stmt, ':key', $key);
+    oci_bind_by_name($stmt, ':data', $clob, -1, OCI_B_CLOB);
+    $clob->write($data);
+    oci_execute($stmt, OCI_DEFAULT);
+    oci_commit($conn);
+    $clob->free();
+    oci_free_statement($stmt);
+?>
+]]>
+      </programlisting>
+     </example>
+    </para>
+    <para>
+     エラーの場合、<function>oci_new_descriptor</function> は &false;
+     を返します。
+    </para>
+    <note>
+     <para>
+      PHP バージョン 5.0.0 以前では、代わりに
+      <function>ocinewdescriptor</function>
+      を使用しなければなりません。
+      まだこの名前を使用することができ、下位互換性のため
+      <function>oci_new_descriptor</function> への別名として残されていますが、
+      推奨されません。
+     </para>
+    </note>
+   </refsect1>
+  </refentry>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"../../../../manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
