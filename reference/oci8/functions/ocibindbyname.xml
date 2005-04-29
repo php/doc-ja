@@ -1,31 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+
+DO NOT TRANSLATE THIS FILE.
+THE FUNCTION IT DESCRIBES WAS RENAMED AND THIS NAME IS DEPRECATED.
+PLEASE, TRANSLATE THE APPROPRIATE NEW FILE.
+
+-->
 <!-- splitted from ./ja/functions/oci8.xml, last change in rev 1.1 -->
-<!-- EN-Revision: 1.2 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 1.16 Maintainer: shimooka Status: ready -->
+<!-- CREDITS: hirokawa -->
   <refentry id="function.ocibindbyname">
    <refnamediv>
-    <refname>OCIBindByName</refname>
+    <refname>ocibindbyname</refname>
     <refpurpose>Oracle プレースホルダーに PHP 変数をバインドする</refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
      <methodsynopsis>
-      <type>int</type><methodname>OCIBindByName</methodname>
-      <methodparam><type>int</type><parameter>stmt</parameter></methodparam>
+      <type>bool</type><methodname>ocibindbyname</methodname>
+      <methodparam><type>resource</type><parameter>stmt</parameter></methodparam>
       <methodparam><type>string</type><parameter>ph_name</parameter></methodparam>
-      <methodparam><type>mixed &amp;</type><parameter>variable</parameter></methodparam>
-      <methodparam><type>int</type><parameter>length</parameter></methodparam>
-      <methodparam><type>int</type><parameter>
-	<replaceable><optional>type</optional></replaceable>
-       </parameter></methodparam>
+      <methodparam><type>mixed</type><parameter role="reference">variable</parameter></methodparam>
+      <methodparam choice="opt"><type>int</type><parameter>maxlength</parameter></methodparam>
+      <methodparam choice="opt"><type>int</type><parameter>type</parameter></methodparam>
      </methodsynopsis>
     <para>
-     <function>OCIBindByName</function> は、PHP 変数
+     <function>ocibindbyname</function> は、PHP 変数
      <parameter>variable</parameter> を Oracle プレースホルダー
      <parameter>ph_name</parameter> にバインドします。実行時に入力用、
      出力用に使用されるによらず、必要な記憶領域が確保されます。
      <parameter>length</parameter> パラメータは、バインド時の最大長を
      設定します。<parameter>length</parameter> を -1 に設定した場合、
-     <function>OCIBindByName</function> は
+     <function>ocibindbyname</function> は
      <parameter>variable</parameter> の現在の長さを最大長として設定し
      ます。
     </para>
@@ -39,63 +45,73 @@
      OCI_B_FILE (Binary-File), OCI_B_CFILE (Character-File), OCI_B_CLOB
      (Character-LOB), OCI_B_BLOB (Binary-LOB) ,OCI_B_ROWID (ROWID)
     </para>
+    <para>
      <example>
-      <title>OCIDefineByName</title>
-      <programlisting>
+      <title><function>ocibindbyname</function> の例</title>
+      <programlisting role="php">
 <![CDATA[
 <?php
-/* OCIBindByPos の例 thies@thieso.net (980221)
+/* OCIBindByPos の例 thies at thieso dot net (980221)
   3レコードをempに挿入し、挿入の直後にレコードを更新するために
   ROWIDを使用します。
 */
 
-$conn = OCILogon("scott","tiger");
+$conn = OCILogon("scott", "tiger");
 
-$stmt = OCIParse($conn,"insert into emp (empno, ename) ".
-					   "values (:empno,:ename) ".
-					   "returning ROWID into :rid");
+$stmt = OCIParse($conn, "insert into emp (empno, ename) " .
+                        "values (:empno,:ename) " .
+                        "returning ROWID into :rid");
 
 $data = array(1111 => "Larry", 2222 => "Bill", 3333 => "Jim");
 
-$rowid = OCINewDescriptor($conn,OCI_D_ROWID);
+$rowid = OCINewDescriptor($conn, OCI_D_ROWID);
 
-OCIBindByName($stmt,":empno",&$empno,32);
-OCIBindByName($stmt,":ename",&$ename,32);
-OCIBindByName($stmt,":rid",&$rowid,-1,OCI_B_ROWID);
+OCIBindByName($stmt, ":empno", $empno, 32);
+OCIBindByName($stmt, ":ename", $ename, 32);
+OCIBindByName($stmt, ":rid", $rowid, -1, OCI_B_ROWID);
 
-$update = OCIParse($conn,"update emp set sal = :sal where ROWID = :rid");
-OCIBindByName($update,":rid",&$rowid,-1,OCI_B_ROWID);
-OCIBindByName($update,":sal",&$sal,32);
+$update = OCIParse($conn, "update emp set sal = :sal where ROWID = :rid");
+OCIBindByName($update, ":rid", $rowid, -1, OCI_B_ROWID);
+OCIBindByName($update, ":sal", $sal, 32);
 
 $sal = 10000;
 
-while (list($empno,$ename) = each($data)) {
-	OCIExecute($stmt);
-	OCIExecute($update);
-} 
+while (list($empno, $ename) = each($data)) {
+    OCIExecute($stmt);
+    OCIExecute($update);
+}
 
 $rowid->free();
 
 OCIFreeStatement($update);
 OCIFreeStatement($stmt);
 
-$stmt = OCIParse($conn,"select * from emp where empno in (1111,2222,3333)");
+$stmt = OCIParse($conn, "select * from emp where empno in (1111,2222,3333)");
 OCIExecute($stmt);
-while (OCIFetchInto($stmt,&$arr,OCI_ASSOC)) {
-	var_dump($arr);
+while (OCIFetchInto($stmt, &$arr, OCI_ASSOC)) {
+    var_dump($arr);
 }
 OCIFreeStatement($stmt);
 
 /* テーブル emp から "junk" を削除する.... */
-$stmt = OCIParse($conn,"delete from emp where empno in (1111,2222,3333)");
+$stmt = OCIParse($conn, "delete from emp where empno in (1111,2222,3333)");
 OCIExecute($stmt);
 OCIFreeStatement($stmt);
 
 OCILogoff($conn);
 ?>
 ]]>
-     </programlisting>
-    </example>
+      </programlisting>
+     </example>
+    </para>
+    <note>
+     <para>
+      この関数は PHP >= 5.0.0 以降 <function>oci_bind_by_name</function>
+      に改名されました。
+      下位互換性のため、 <function>ocibindbyname</function>
+      も使用することができますが、推奨されません。
+     </para>
+    </note>
     <warning>
      <para>
       magic quote と<function>OciBindByName</function>を同時に使用する
@@ -104,7 +120,7 @@ OCILogoff($conn);
       引用符は、<function>OciBindByName</function> が magic quote によ
       り付加された引用符を意図的に付加されたものと区別できないため、そ
       のままデータベースに書き込まれるためです。
-     </para> 
+     </para>
     </warning>
    </refsect1>
   </refentry>

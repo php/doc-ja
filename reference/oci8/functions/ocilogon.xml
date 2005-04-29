@@ -1,32 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+
+DO NOT TRANSLATE THIS FILE.
+THE FUNCTION IT DESCRIBES WAS RENAMED AND THIS NAME IS DEPRECATED.
+PLEASE, TRANSLATE THE APPROPRIATE NEW FILE.
+
+-->
 <!-- splitted from ./ja/functions/oci8.xml, last change in rev 1.1 -->
-<!-- EN-Revision: 1.2 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 1.14 Maintainer: shimooka Status: ready -->
+<!-- CREDITS: hirokawa -->
   <refentry id="function.ocilogon">
    <refnamediv>
-    <refname>OCILogon</refname>
+    <refname>ocilogon</refname>
     <refpurpose>Oracle への接続を確立する</refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
      <methodsynopsis>
-      <type>int</type><methodname>OCILogon</methodname>
+      <type>resource</type><methodname>ocilogon</methodname>
       <methodparam><type>string</type><parameter>username</parameter></methodparam>
       <methodparam><type>string</type><parameter>password</parameter></methodparam>
-      <methodparam><type>string</type><parameter>
-	<replaceable><optional>db</optional></replaceable>
-       </parameter></methodparam>
+      <methodparam choice="opt"><type>string</type><parameter>db</parameter></methodparam>
+      <methodparam choice="opt"><type>string</type><parameter>charset</parameter></methodparam>
      </methodsynopsis>
     <para>
-     <function>OCILogon</function> は他のほとんどの OCI コールで必要な
+     <function>ocilogon</function> は他のほとんどの OCI コールで必要な
      接続 ID を返します。
      オプションの3番目のパラメータには、ローカルOracleインスタンスの名前か
      tnsnames.ora における接続先のエントリ名を指定することができます。
      オプションの3番目のパラメータが指定されない場合、
-     PHP は接続先のデータベースを定義するために環境変数 ORACLE_SID (Oracle 
+     PHP は接続先のデータベースを定義するために環境変数 ORACLE_SID (Oracle
      インスタンス)または TWO_TASK (tnsnames.ora) を使用します。
      </para>
      <para>
-     <function>OCILogon</function> を使用した場合、接続はページレベルで共有
+     <function>ocilogon</function> を使用した場合、接続はページレベルで共有
      されます。
      このことは、多重接続を行った場合でも、コミット及びロールバックは
      そのページの全てのオープンされたトランザクションに適用されることを
@@ -35,58 +42,66 @@
     <para>
     この例は、接続がどのように共有されるかをデモします。
      <example>
-      <title>OCILogon</title>
-      <programlisting>
+      <title><function>ocilogon</function> の例</title>
+      <programlisting role="php">
 <![CDATA[
 <?php
-print "<HTML><PRE>";
+echo "<pre>";
 $db = "";
 
-$c1 = ocilogon("scott","tiger",$db);
-$c2 = ocilogon("scott","tiger",$db);
+$c1 = ocilogon("scott", "tiger", $db);
+$c2 = ocilogon("scott", "tiger", $db);
 
 function create_table($conn)
-{ $stmt = ociparse($conn,"create table scott.hallo (test varchar2(64))");
+{
+  $stmt = ociparse($conn, "create table scott.hallo (test varchar2(64))");
   ociexecute($stmt);
-  echo $conn." created table\n\n";
+  echo $conn . " created table\n\n";
 }
 
 function drop_table($conn)
-{ $stmt = ociparse($conn,"drop table scott.hallo");
+{
+  $stmt = ociparse($conn, "drop table scott.hallo");
   ociexecute($stmt);
-  echo $conn." dropped table\n\n";
+  echo $conn . " dropped table\n\n";
 }
 
 function insert_data($conn)
-{ $stmt = ociparse($conn,"insert into scott.hallo 
+{
+  $stmt = ociparse($conn, "insert into scott.hallo
             values('$conn' || ' ' || to_char(sysdate,'DD-MON-YY HH24:MI:SS'))");
-  ociexecute($stmt,OCI_DEFAULT);
-  echo $conn." inserted hallo\n\n";
+  ociexecute($stmt, OCI_DEFAULT);
+  echo $conn . " inserted hallo\n\n";
 }
 
 function delete_data($conn)
-{ $stmt = ociparse($conn,"delete from scott.hallo");
-  ociexecute($stmt,OCI_DEFAULT);
-  echo $conn." deleted hallo\n\n";
+{
+  $stmt = ociparse($conn, "delete from scott.hallo");
+  ociexecute($stmt, OCI_DEFAULT);
+  echo $conn . " deleted hallo\n\n";
 }
 
 function commit($conn)
-{ ocicommit($conn);
-  echo $conn." committed\n\n";
+{
+  ocicommit($conn);
+  echo $conn . " committed\n\n";
 }
 
 function rollback($conn)
-{ ocirollback($conn);
-  echo $conn." rollback\n\n";
+{
+  ocirollback($conn);
+  echo $conn . " rollback\n\n";
 }
 
 function select_data($conn)
-{ $stmt = ociparse($conn,"select * from scott.hallo");
-  ociexecute($stmt,OCI_DEFAULT);
+{
+  $stmt = ociparse($conn, "select * from scott.hallo");
+  ociexecute($stmt, OCI_DEFAULT);
   echo $conn."----selecting\n\n";
-  while (ocifetch($stmt))
-    echo $conn." <".ociresult($stmt,"TEST").">\n\n";
-  echo $conn."----done\n\n";
+  while (ocifetch($stmt)) {
+    echo $conn . " [" . ociresult($stmt, "TEST") . "]\n\n";
+  }
+  echo $conn . "----done\n\n";
 }
 
 create_table($c1);
@@ -94,37 +109,41 @@ insert_data($c1);   // Insert a row using c1
 insert_data($c2);   // Insert a row using c2
 
 select_data($c1);   // Results of both inserts are returned
-select_data($c2);   
+select_data($c2);
 
 rollback($c1);      // Rollback using c1
 
 select_data($c1);   // Both inserts have been rolled back
-select_data($c2);   
+select_data($c2);
 
 insert_data($c2);   // Insert a row using c2
-commit($c2);        // commit using c2
+commit($c2);        // Commit using c2
 
-select_data($c1);   // result of c2 insert is returned
+select_data($c1);   // Result of c2 insert is returned
 
-delete_data($c1);   // delete all rows in table using c1
-select_data($c1);   // no rows returned
-select_data($c2);   // no rows returned
-commit($c1);        // commit using c1
+delete_data($c1);   // Delete all rows in table using c1
+select_data($c1);   // No rows returned
+select_data($c2);   // No rows returned
+commit($c1);        // Commit using c1
 
-select_data($c1);   // no rows returned
-select_data($c2);   // no rows returned
+select_data($c1);   // No rows returned
+select_data($c2);   // No rows returned
 
 drop_table($c1);
-print "</PRE></HTML>";
+echo "</pre>";
 ?>
 ]]>
       </programlisting>
      </example>
     </para>
-    <simpara>
-     <function>OCIPLogon</function> および
-     <function>OCINLogon</function> も参照ください。
-    </simpara>
+    <note>
+     <para>
+      この関数は PHP >= 5.0.0 以降 <function>oci_connect</function>
+      に改名されました。
+      下位互換性のため、 <function>ocilogon</function>
+      も使用することができますが、推奨されません。
+     </para>
+    </note>
    </refsect1>
   </refentry>
 
