@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.4 $ -->
 <!-- splitted from ./ja/functions/xslt.xml, last change in rev 1.1 -->
-<!-- EN-Revision: 1.3 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 1.17 Maintainer: shimooka Status: ready -->
+<!-- CREDITS: hirokawa -->
   <refentry id="function.xslt-process">
    <refnamediv>
     <refname>xslt_process</refname>
@@ -10,19 +12,24 @@
     <title>説明</title>
      <methodsynopsis>
       <type>mixed</type><methodname>xslt_process</methodname>
-      <methodparam><type>resource</type><parameter>xh</parameter></methodparam>
-      <methodparam><type>string</type><parameter>xml</parameter></methodparam>
-      <methodparam><type>string</type><parameter>xsl</parameter></methodparam>
-      <methodparam choice="opt"><type>string</type><parameter>result</parameter></methodparam>
+       <methodparam><type>resource</type><parameter>xh</parameter></methodparam>
+       <methodparam><type>string</type><parameter>xmlcontainer</parameter></methodparam>
+       <methodparam><type>string</type><parameter>xslcontainer</parameter></methodparam>
+       <methodparam choice="opt"><type>string</type><parameter>resultcontainer</parameter></methodparam>
        <methodparam choice="opt"><type>array</type><parameter>arguments</parameter></methodparam>
-      <methodparam choice="opt"><type>array</type><parameter>parameters</parameter></methodparam>
+       <methodparam choice="opt"><type>array</type><parameter>parameters</parameter></methodparam>
      </methodsynopsis>
     <para>
      <function>xslt_process</function>関数は、新規XSLT拡張の中心関数で
-     す。引数バッファの概念により、ほとんど全ての型の入力ソースを用い
+     す。引数バッファの概念により、ほとんど全ての型の入力ソース -
+     コンテナを用い
      てXSLT変換を実行可能です。引数バッファは、Sablotron XSLTプロセッ
      サ(現在、この拡張モジュールがサポートする惟一のXSLTプロセッサ)か
      ら得た概念です。
+     入力コンテナは処理する文章を '含んでいる' ファイル名が
+     デフォルトです。結果コンテナは、変換された文章のためのファイル名が
+     デフォルトです。もし結果コンテナが指定されていない場合 - 例えば &null; -
+     、結果が返されます。
     </para>
     <para>
      <function>xslt_process</function>関数で変換する最も簡単な方法は、
@@ -39,21 +46,20 @@
 <![CDATA[
 <?php
 
-// Allocate a new XSLT processor
+// 新規 XSLT プロセッサを割り当てる
 $xh = xslt_create();
 
-// Process the document
+// 文章を処理する
 if (xslt_process($xh, 'sample.xml', 'sample.xsl', 'result.xml')) {
-    print "SUCCESS, sample.xml was transformed by sample.xsl into result.xml";
-    print ", result.xml has the following contents\n<br>\n";
-    print "<pre>\n";
+    echo "SUCCESS, sample.xml was transformed by sample.xsl into result.xml";
+    echo ", result.xml has the following contents\n<br />\n";
+    echo "<pre>\n";
     readfile('result.xml');
-    print "</pre>\n";
-}
-else {
-    print "Sorry, sample.xml could not be transformed by sample.xsl into";
-    print "  result.xml the reason is that " . xslt_error($xh) . " and the ";
-    print "error code is " . xslt_errno($xh);
+    echo "</pre>\n";
+} else {
+    echo "Sorry, sample.xml could not be transformed by sample.xsl into";
+    echo "  result.xml the reason is that " . xslt_error($xh) . " and the ";
+    echo "error code is " . xslt_errno($xh);
 }
 
 xslt_free($xh);
@@ -78,10 +84,10 @@ xslt_free($xh);
 <![CDATA[
 <?php
 
-// Allocate a new XSLT processor
+// 新規 XSLT プロセッサを割り当てる
 $xh = xslt_create();
 
-// Process the document, returning the result into the $result variable
+// 文章を処理し、変数 $result に結果を返す
 $result = xslt_process($xh, 'sample.xml', 'sample.xsl');
 if ($result) {
     print "SUCCESS, sample.xml was transformed by sample.xsl into the \$result";
@@ -92,7 +98,7 @@ if ($result) {
 }
 else {
     print "Sorry, sample.xml could not be transformed by sample.xsl into";
-    print "  the \$result variable the reason is that " . xslt_error($xh) . 
+    print "  the \$result variable the reason is that " . xslt_error($xh) .
     print " and the error code is " . xslt_errno($xh);
 }
 
@@ -128,29 +134,28 @@ xslt_free($xh);
      <programlisting role="php">
 <![CDATA[
 <?php
-// $xml and $xsl contain the XML and XSL data
+// $xml と $xsl は XML データと XSL データを含む
 
 $arguments = array(
      '/_xml' => $xml,
      '/_xsl' => $xsl
 );
 
-// Allocate a new XSLT processor
+// 新規 XSLT プロセッサを割り当てる
 $xh = xslt_create();
 
-// Process the document
-$result = xslt_process($xh, 'arg:/_xml', 'arg:/_xsl', NULL, $arguments); 
+// 文章を処理する
+$result = xslt_process($xh, 'arg:/_xml', 'arg:/_xsl', NULL, $arguments);
 if ($result) {
-    print "SUCCESS, sample.xml was transformed by sample.xsl into the \$result";
-    print " variable, the \$result variable has the following contents\n<br>\n";
-    print "<pre>\n";
-    print $result;
-    print "</pre>\n";
-}
-else {
-    print "Sorry, sample.xml could not be transformed by sample.xsl into";
-    print "  the \$result variable the reason is that " . xslt_error($xh) . 
-    print " and the error code is " . xslt_errno($xh);
+    echo "SUCCESS, sample.xml was transformed by sample.xsl into the \$result";
+    echo " variable, the \$result variable has the following contents\n<br />\n";
+    echo "<pre>\n";
+    echo $result;
+    echo "</pre>\n";
+} else {
+    echo "Sorry, sample.xml could not be transformed by sample.xsl into";
+    echo "  the \$result variable the reason is that " . xslt_error($xh);
+    echo " and the error code is " . xslt_errno($xh);
 }
 xslt_free($xh);
 ?>
@@ -159,11 +164,70 @@ xslt_free($xh);
      </example>
     </para>
     <para>
-     最後に、<function>xslt_process</function>関数の最後の引数は、XSLT
-     ドキュメントに渡したいあらゆる引数です。これらのパラメータは、
-     &lt;xsl:param name=&quot;parameter_name&quot;&gt;命令を用いて
-     XSLファイルの中でアクセスすることが可能です。
+     最後に、<function>xslt_process</function> 関数の最後のパラメータは、
+     XSLT 文章に渡したいトップレベルのパラメータの配列です。
+     これらのパラメータは、&lt;xsl:param name=&quot;parameter_name&quot;&gt;
+     命令を用いて XSL ファイルのなかでアクセスすることができます。
+     パラメータは UTF-8 エンコードでなければなりません。また、
+     その値は <productname>Sablotron</productname>
+     プロセッサによって文字列として解釈されます。その他の場合、
+     XSLT 文章へのパラメータとしてノードセットを渡すことはできません。
     </para>
+    <para>
+     <example>
+      <title>PHP 変数を XSL ファイルに渡す</title>
+      <programlisting role="php">
+<![CDATA[
+<?php
+
+// XML 文字列
+$xml = '<?xml version="1.0"?>
+<para>
+ change me
+</para>';
+
+// XSL 文字列
+$xsl = '
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+<xsl:output method="html" encoding="ISO-8859-1" indent="no"
+ omit-xml-declaration="yes"  media-type="text/html"/>
+ <xsl:param name="myvar"/>
+ <xsl:param name="mynode"/>
+ <xsl:template match="/">
+My PHP variable : <xsl:value-of select="$myvar"/><br />
+My node set : <xsl:value-of select="$mynode"/>
+ </xsl:template>
+</xsl:stylesheet>';
+
+
+$xh = xslt_create();
+
+// 2番目のパラメータは文字列として解釈される
+$parameters = array (
+  'myvar' => 'test',
+  'mynode' => '<foo>bar</foo>'
+);
+
+$arguments = array (
+  '/_xml' => $xml,
+  '/_xsl' => $xsl
+);
+
+echo xslt_process($xh, 'arg:/_xml', 'arg:/_xsl', NULL, $arguments, $parameters);
+
+?>
+]]>
+      </programlisting>
+      &example.outputs;
+      <screen>
+<![CDATA[
+My PHP variable : test<br>
+My node set : &lt;foo&gt;bar&lt;/foo&gt;
+]]>
+      </screen>
+     </example>
+    </para>
+    &note.xslt.windows;
    </refsect1>
   </refentry>
 

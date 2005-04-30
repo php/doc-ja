@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- splitted from ./ja/functions/xslt.xml, last change in rev 1.1 -->
-<!-- EN-Revision: 1.1 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 1.6 Maintainer: shimooka Status: ready -->
+<!-- CREDITS: hirokawa -->
   <refentry id="function.xslt-set-error-handler">
    <refnamediv>
     <refname>xslt_set_error_handler</refname>
@@ -17,6 +18,94 @@
      <parameter>xh</parameter>で指定したXSLTプロセッサ用にエラーハンド
      ラ関数を設定します。この関数は、XSLT変換においてエラーが発生する
      度にコールされます。(この関数は通知のためにもコールされます)
+    </para>
+    <para>
+     ユーザ関数は4つのパラメータを受け取る必要があります:
+     XSLT プロセッサ、エラーレベル、エラーコードとメッセージの配列です。
+     その関数は次のように表すことができます。
+     <methodsynopsis>
+      <methodname><replaceable>error_handler</replaceable></methodname>
+      <methodparam><type>resource</type><parameter>xh</parameter></methodparam>
+      <methodparam><type>int</type><parameter>error_level</parameter></methodparam>
+      <methodparam><type>int</type><parameter>error_code</parameter></methodparam>
+      <methodparam><type>array</type><parameter>messages</parameter></methodparam>
+     </methodsynopsis>
+    </para>
+   </refsect1>
+   <refsect1>
+    &reftitle.examples;
+    <example>
+     <title><function>xslt_set_error_handler</function> の例</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+
+// 独自の XSLT エラーハンドラ
+function xslt_error_handler($handler, $errno, $level, $info)
+{
+  // 差し当たり、引数を見るだけにする
+  var_dump(func_get_args());
+}
+
+// XML の内容 :
+$xml='<?xml version="1.0"?>
+<para>
+ oops, I misspelled the closing tag
+</pata>';
+
+// XSL の内容 :
+$xsl='<?xml version="1.0"?>
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+<xsl:template match="/">
+   <strong><xsl:value-of select="para"/></strong>
+</xsl:template>
+</xsl:stylesheet>';
+
+$xh = xslt_create();
+
+xslt_set_error_handler($xh, "xslt_error_handler");
+
+echo xslt_process($xh, 'arg:/_xml', 'arg:/_xsl',
+                  NULL, array("/_xml" => $xml, "/_xsl" => $xsl));
+
+?>
+]]>
+     </programlisting>
+     &example.outputs.similar;
+     <screen>
+<![CDATA[
+array(4) {
+  [0]=>
+  resource(1) of type (XSLT Processor)
+  [1]=>
+  int(3)
+  [2]=>
+  int(0)
+  [3]=>
+  array(6) {
+    ["msgtype"]=>
+    string(5) "error"
+    ["code"]=>
+    string(1) "2"
+    ["module"]=>
+    string(9) "Sablotron"
+    ["URI"]=>
+    string(9) "arg:/_xml"
+    ["line"]=>
+    string(1) "4"
+    ["msg"]=>
+    string(34) "XML parser error 7: mismatched tag"
+  }
+}
+]]>
+     </screen>
+    </example>
+   </refsect1>
+   <refsect1>
+    &reftitle.seealso;
+    <para>
+     もしオブジェクトメソッドをハンドラとして使用したい場合、
+     <function>xslt_set_object</function> を参照ください。
     </para>
    </refsect1>
   </refentry>
