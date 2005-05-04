@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.4 $ -->
-<!-- EN-Revision: 1.5 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.5 $ -->
+<!-- EN-Revision: 1.10 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: shimooka -->
 
 <sect1 id="language.oop5.reflection">
  <title>リフレクション</title>
@@ -78,7 +79,12 @@ Class [ <internal> class Exception ] {
     Method [ <internal> final private method __clone ] {
     }
 
-    Method [ <internal> <ctor> method __construct ] {
+    Method [ <internal> <ctor> public method __construct ] {
+
+      - Parameters [2] {
+        Parameter #0 [ <required> $message ]
+        Parameter #1 [ <required> $code ]
+      }
     }
 
     Method [ <internal> final public method getMessage ] {
@@ -108,7 +114,7 @@ Class [ <internal> class Exception ] {
    </example>
   </para>
  </sect2>
- 
+
  <sect2 id="language.oop5.reflection.reflectionfunction">
   <title><classname>ReflectionFunction</classname></title>
   <para>
@@ -121,6 +127,7 @@ Class [ <internal> class Exception ] {
 <?php
 class ReflectionFunction implements Reflector
 {
+    final private __clone()
     public object __construct(string name)
     public string __toString()
     public static string export()
@@ -133,13 +140,21 @@ class ReflectionFunction implements Reflector
     public string getDocComment()
     public array getStaticVariables()
     public mixed invoke(mixed* args)
+    public mixed invokeArgs(array args)
     public bool returnsReference()
     public ReflectionParameter[] getParameters()
+    public int getNumberOfParameters()
+    public int getNumberOfRequiredParameters()
 }
 ?>
 ]]>
    </programlisting>
   </informalexample>
+   <note>
+    <simpara>
+     <function>invokeArgs</function> は PHP 5.1.0 で追加されました。
+    </simpara>
+   </note>
   <para>
    関数の内部を調べるために、まず、
    <classname>ReflectionFunction</classname>クラスのインスタンスを
@@ -152,20 +167,20 @@ class ReflectionFunction implements Reflector
 <![CDATA[
 <?php
 /**
- * A simple counter
+ * 簡単なカウンタ
  *
  * @return    int
  */
-function counter() 
+function counter()
 {
     static $c = 0;
     return $c++;
 }
 
-// Create an instance of the Reflection_Function class
+// Reflection_Function クラスのインスタンスを生成する
 $func = new ReflectionFunction('counter');
 
-// Print out basic information
+// 基本情報を表示する
 printf(
     "===> The %s function '%s'\n".
     "     declared in %s\n".
@@ -177,21 +192,21 @@ printf(
     $func->getEndline()
 );
 
-// Print documentation comment
+// ドキュメントコメントを表示する
 printf("---> Documentation:\n %s\n", var_export($func->getDocComment(), 1));
 
-// Print static variables if existant
+// static 変数があれば表示する
 if ($statics = $func->getStaticVariables())
 {
     printf("---> Static variables: %s\n", var_export($statics, 1));
 }
 
-// Invoke the function
+// 関数を呼び出す
 printf("---> Invokation results in: ");
 var_dump($func->invoke());
 
 
-// you may prefer to use the export() method
+// export() メソッドを使用する方が良い知れない
 echo "\nReflectionFunction::export() results:\n";
 echo ReflectionFunction::export('counter');
 ?>
@@ -206,7 +221,7 @@ echo ReflectionFunction::export('counter');
    </simpara>
   </note>
  </sect2>
- 
+
  <sect2 id="language.oop5.reflection.reflectionparameter">
   <title><classname>ReflectionParameter</classname></title>
   <para>
@@ -219,14 +234,17 @@ echo ReflectionFunction::export('counter');
 <?php
 class ReflectionParameter implements Reflector
 {
+    final private __clone()
     public object __construct(string name)
     public string __toString()
     public static string export()
     public string getName()
+    public bool isPassedByReference()
     public ReflectionClass getClass()
     public bool allowsNull()
-    public bool isPassedByReference()
     public bool isOptional()
+    public bool isDefaultValueAvailable()
+    public mixed getDefaultValue()
 }
 ?>
 ]]>
@@ -234,7 +252,9 @@ class ReflectionParameter implements Reflector
   </informalexample>
   <note>
    <para>
-    <function>isOptional</function>は、PHP 5.1.0で追加されました。
+    <function>isOptional</function>,
+     <function>isDefaultValueAvailable</function>,
+     <function>isOptional</function> は、PHP 5.1.0で追加されました。
    </para>
   </note>
   <para>
@@ -255,8 +275,8 @@ function bar(Exception $a, &$b, $c) { }
 function baz(ReflectionFunction $a, $b = 1, $c = null) { }
 function abc() { }
 
-// Create an instance of Reflection_Function with the
-// parameter given from the command line.    
+// コマンドラインから与えられたパラメータを使って
+// Reflection_Function のインスタンスを生成する
 $reflect = new ReflectionFunction($argv[1]);
 
 echo $reflect;
@@ -269,7 +289,7 @@ foreach ($reflect->getParameters() as $i => $param) {
         "   Passed to by reference: %s\n".
         "   Is optional?: %s\n".
         "}\n",
-        $i, 
+        $i,
         $param->getName(),
         var_export($param->getClass(), 1),
         var_export($param->allowsNull(), 1),
@@ -282,7 +302,7 @@ foreach ($reflect->getParameters() as $i => $param) {
    </programlisting>
   </example>
  </sect2>
- 
+
  <sect2 id="language.oop5.reflection.reflectionclass">
   <title><classname>ReflectionClass</classname></title>
   <para>
@@ -295,12 +315,17 @@ foreach ($reflect->getParameters() as $i => $param) {
 <?php
 class ReflectionClass implements Reflector
 {
-    public __construct(string name)
+    final private __clone()
+    public object __construct(string name)
     public string __toString()
     public static string export()
     public string getName()
     public bool isInternal()
     public bool isUserDefined()
+    public bool isInstantiable()
+    public bool hasConstant(string name)
+    public bool hasMethod(string name)
+    public bool hasProperty(string name)
     public string getFileName()
     public int getStartLine()
     public int getEndLine()
@@ -312,21 +337,32 @@ class ReflectionClass implements Reflector
     public ReflectionProperty[] getProperties()
     public array getConstants()
     public mixed getConstant(string name)
-    public bool isInstantiable()
+    public ReflectionClass[] getInterfaces()
     public bool isInterface()
-    public bool isFinal()
     public bool isAbstract()
+    public bool isFinal()
     public int getModifiers()
     public bool isInstance(stdclass object)
     public stdclass newInstance(mixed* args)
-    public ReflectionClass[] getInterfaces()
     public ReflectionClass getParentClass()
     public bool isSubclassOf(ReflectionClass class)
+    public array getStaticProperties()
+    public array getDefaultProperties()
+    public bool isIterateable()
+    public bool implementsInterface(string name)
+    public ReflectionExtension getExtension()
+    public string getExtensionName()
 }
 ?>
 ]]>
    </programlisting>
   </informalexample>
+   <note>
+    <simpara>
+     <function>hasConstant</function>, <function>hasMethod</function>,
+     <function>hasProperty</function> は、PHP 5.1.0 で追加されました。
+    </simpara>
+   </note>
   <para>
    To introspect a class, you will first have to create an instance
    of the <classname>ReflectionClass</classname> class. You can then
@@ -348,15 +384,15 @@ class Object
 }
 
 /**
- * A counter class
+ * カウンタクラス
  */
-class Counter extends Object implements Serializable 
+class Counter extends Object implements Serializable
 {
     const START = 0;
     private static $c = Counter::START;
 
     /**
-     * Invoke counter
+     * カウンタを呼び出す
      *
      * @access  public
      * @return  int
@@ -366,10 +402,10 @@ class Counter extends Object implements Serializable
     }
 }
 
-// Create an instance of the ReflectionClass class
-$class= new ReflectionClass('Counter');
+// ReflectionClass クラスのインスタンスを生成する
+$class = new ReflectionClass('Counter');
 
-// Print out basic information
+// 基本情報を表示する
 printf(
     "===> The %s%s%s %s '%s' [extends %s]\n" .
     "     declared in %s\n" .
@@ -388,26 +424,26 @@ printf(
         implode(' ', Reflection::getModifierNames($class->getModifiers()))
 );
 
-// Print documentation comment
+// ドキュメントコメントを表示する
 printf("---> Documentation:\n %s\n", var_export($class->getDocComment(), 1));
 
-// Print which interfaces are implemented by this class
+// このクラスが実装しているインターフェースを表示する
 printf("---> Implements:\n %s\n", var_export($class->getInterfaces(), 1));
 
-// Print class constants
+// クラス定数を表示する
 printf("---> Constants: %s\n", var_export($class->getConstants(), 1));
 
-// Print class properties
+// クラスプロパティを表示する
 printf("---> Properties: %s\n", var_export($class->getProperties(), 1));
 
-// Print class methods
+// クラスメソッドを表示する
 printf("---> Methods: %s\n", var_export($class->getMethods(), 1));
 
-// If this class is instantiable, create an instance
+// このクラスがインスタンス化可能な場合、インスタンスを生成する
 if ($class->isInstantiable()) {
-    $counter= $class->newInstance();
+    $counter = $class->newInstance();
 
-    echo '---> $counter is instance? '; 
+    echo '---> $counter is instance? ';
     echo $class->isInstance($counter) ? 'yes' : 'no';
 
     echo "\n---> new Object() is instance? ";
@@ -432,7 +468,7 @@ if ($class->isInstantiable()) {
    </simpara>
   </note>
  </sect2>
- 
+
  <sect2 id="language.oop5.reflection.reflectionmethod">
   <title><classname>ReflectionMethod</classname></title>
   <para>
@@ -446,8 +482,10 @@ if ($class->isInstantiable()) {
 class ReflectionMethod extends ReflectionFunction
 {
     public __construct(mixed class, string name)
+    public string __toString()
     public static string export()
     public mixed invoke(stdclass object, mixed* args)
+    public moxed invokeArgs(stdclass object, array args)
     public bool isFinal()
     public bool isAbstract()
     public bool isPublic()
@@ -455,11 +493,12 @@ class ReflectionMethod extends ReflectionFunction
     public bool isProtected()
     public bool isStatic()
     public bool isConstructor()
+    public bool isDestructor()
     public int getModifiers()
     public ReflectionClass getDeclaringClass()
 
-    // Inherited from ReflectionFunction
-    public string __toString()
+    // ReflectionFunction から継承したメソッド
+    final private __clone()
     public string getName()
     public bool isInternal()
     public bool isUserDefined()
@@ -470,6 +509,8 @@ class ReflectionMethod extends ReflectionFunction
     public array getStaticVariables()
     public bool returnsReference()
     public ReflectionParameter[] getParameters()
+    public int getNumberOfParameters()
+    public int getNumberOfRequiredParameters()
 }
 ?>
 ]]>
@@ -491,7 +532,7 @@ class Counter
     private static $c = 0;
 
     /**
-     * Increment counter
+     * カウンタをインクリメントする
      *
      * @final
      * @static
@@ -504,10 +545,10 @@ class Counter
     }
 }
 
-// Create an instance of the Reflection_Method class
-$method= new ReflectionMethod('Counter', 'increment');
+// Reflection_Method クラスのインスタンスを生成する
+$method = new ReflectionMethod('Counter', 'increment');
 
-// Print out basic information
+// 基本情報を表示する
 printf(
     "===> The %s%s%s%s%s%s%s method '%s' (which is %s)\n" .
     "     declared in %s\n" .
@@ -529,15 +570,15 @@ printf(
         implode(' ', Reflection::getModifierNames($method->getModifiers()))
 );
 
-// Print documentation comment
+// ドキュメントコメントを表示する
 printf("---> Documentation:\n %s\n", var_export($method->getDocComment(), 1));
 
-// Print static variables if existant
+// static 変数があれば表示する
 if ($statics= $method->getStaticVariables()) {
     printf("---> Static variables: %s\n", var_export($statics, 1));
 }
 
-// Invoke the method
+// メソッドを呼び出す
 printf("---> Invokation results in: ");
 var_dump($method->invoke(NULL));
 ?>
@@ -558,7 +599,7 @@ var_dump($method->invoke(NULL));
    </simpara>
   </note>
  </sect2>
- 
+
  <sect2 id="language.oop5.reflection.reflectionproperty">
   <title><classname>ReflectionProperty</classname></title>
   <para>
@@ -606,10 +647,10 @@ class String
     public $length  = 5;
 }
 
-// Create an instance of the ReflectionProperty class
+// ReflectionProperty クラスのインスタンスを生成する
 $prop = new ReflectionProperty('String', 'length');
 
-// Print out basic information
+// 基本情報を表示する
 printf(
     "===> The%s%s%s%s property '%s' (which was %s)\n" .
     "     having the modifiers %s\n",
@@ -622,19 +663,19 @@ printf(
         var_export(Reflection::getModifierNames($prop->getModifiers()), 1)
 );
 
-// Create an instance of String
+// String のインスタンスを生成する
 $obj= new String();
 
-// Get current value
+// 現在の値を取得する
 printf("---> Value is: ");
 var_dump($prop->getValue($obj));
 
-// Change value
+// 値を変更する
 $prop->setValue($obj, 10);
 printf("---> Setting value to 10, new value is: ");
 var_dump($prop->getValue($obj));
 
-// Dump object
+// オブジェクトをダンプする
 var_dump($obj);
 ?>
 ]]>
@@ -647,7 +688,7 @@ var_dump($obj);
    </simpara>
   </note>
  </sect2>
- 
+
  <sect2 id="language.oop5.reflection.reflectionextension">
   <title><classname>ReflectionExtension</classname></title>
   <para>
@@ -661,6 +702,7 @@ var_dump($obj);
 <![CDATA[
 <?php
 class ReflectionExtension implements Reflector {
+    final private __clone()
     public __construct(string name)
     public string __toString()
     public static string export()
@@ -669,6 +711,8 @@ class ReflectionExtension implements Reflector {
     public ReflectionFunction[] getFunctions()
     public array getConstants()
     public array getINIEntries()
+    public ReflectionClass[] getClasses()
+    public array getClassNames()
 }
 ?>
 ]]>
@@ -676,7 +720,7 @@ class ReflectionExtension implements Reflector {
   </informalexample>
   <para>
    メソッドの内部を調べるために、まず、
-   <classname>ReflectionProperty</classname>クラスのインスタンスを
+   <classname>ReflectionExtension</classname>クラスのインスタンスを
    生成する必要があります。
    次にこのインスタンスの上のメソッドのどれかをコールすることができます。
   </para>
@@ -685,31 +729,37 @@ class ReflectionExtension implements Reflector {
    <programlisting role='php'>
 <![CDATA[
 <?php
-// Create an instance of the ReflectionProperty class
+// ReflectionProperty クラスのインスタンスを生成する
 $ext = new ReflectionExtension('standard');
 
-// Print out basic information
+// 基本情報を表示する
 printf(
     "Name        : %s\n" .
     "Version     : %s\n" .
     "Functions   : [%d] %s\n" .
     "Constants   : [%d] %s\n" .
-    "INI entries : [%d] %s\n",
+    "INI entries : [%d] %s\n" .
+    "Classes     : [%d] %s\n",
         $ext->getName(),
         $ext->getVersion() ? $ext->getVersion() : 'NO_VERSION',
         sizeof($ext->getFunctions()),
         var_export($ext->getFunctions(), 1),
+
         sizeof($ext->getConstants()),
         var_export($ext->getConstants(), 1),
+
         sizeof($ext->getINIEntries()),
-        var_export($ext->getINIEntries(), 1)
+        var_export($ext->getINIEntries(), 1),
+
+        sizeof($ext->getClassNames()),
+        var_export($ext->getClassNames(), 1)
 );
 ?>
 ]]>
    </programlisting>
   </example>
  </sect2>
- 
+
  <sect2 id="language.oop5.reflection.extending">
   <title>reflectionクラスを拡張する</title>
   <para>
@@ -725,7 +775,7 @@ printf(
 <![CDATA[
 <?php
 /**
- * My Reflection_Method class
+ * 独自の Reflection_Method クラス
  */
 class My_Reflection_Method extends ReflectionMethod
 {
@@ -739,7 +789,7 @@ class My_Reflection_Method extends ReflectionMethod
 }
 
 /**
- * Demo class #1
+ * デモクラス #1
  *
  */
 class T {
@@ -747,14 +797,14 @@ class T {
 }
 
 /**
- * Demo class #2
+ * デモクラス #2
  *
  */
 class U extends T {
     function x() {}
 }
 
-// Print out information
+// 基本情報を表示する
 var_dump(new My_Reflection_Method('U', 'x'));
 ?>
 ]]>
@@ -773,7 +823,7 @@ var_dump(new My_Reflection_Method('U', 'x'));
   </note>
  </sect2>
 </sect1>
- 
+
 <!-- Keep this comment at the end of the file
 Local variables:
 mode: sgml
