@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.14 $ -->
-<!-- EN-Revision: 1.58 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.15 $ -->
+<!-- EN-Revision: 1.61 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: shimooka -->
  <chapter id="features.safe-mode">
   <title>セーフモード</title>
 
@@ -17,12 +18,13 @@
    <para>
     <table>
      <title>セキュリティとセーフモード設定ディレクティブ</title>
-     <tgroup cols="3">
+     <tgroup cols="4">
       <thead>
        <row>
         <entry>名前</entry>
         <entry>デフォルト</entry>
         <entry>変更の可否</entry>
+        <entry>変更ログ</entry>
        </row>
       </thead>
       <tbody>
@@ -30,46 +32,55 @@
        <entry>safe_mode</entry>
        <entry>"0"</entry>
        <entry>PHP_INI_SYSTEM</entry>
+       <entry></entry>
       </row>
       <row>
        <entry>safe_mode_gid</entry>
        <entry>"0"</entry>
        <entry>PHP_INI_SYSTEM</entry>
+       <entry>PHP 4.1.0 から利用可能</entry>
       </row>
       <row>
        <entry>safe_mode_include_dir</entry>
        <entry>NULL</entry>
        <entry>PHP_INI_SYSTEM</entry>
+       <entry>PHP 4.1.0 から利用可能</entry>
       </row>
       <row>
        <entry>safe_mode_exec_dir</entry>
        <entry>""</entry>
        <entry>PHP_INI_SYSTEM</entry>
+       <entry></entry>
       </row>
       <row>
        <entry>safe_mode_allowed_env_vars</entry>
-       <entry>PHP_</entry>
+       <entry>"PHP_"</entry>
        <entry>PHP_INI_SYSTEM</entry>
+       <entry></entry>
       </row>
       <row>
        <entry>safe_mode_protected_env_vars</entry>
-       <entry>LD_LIBRARY_PATH</entry>
+       <entry>"LD_LIBRARY_PATH"</entry>
        <entry>PHP_INI_SYSTEM</entry>
+       <entry></entry>
       </row>
       <row>
        <entry>open_basedir</entry>
        <entry>NULL</entry>
        <entry>PHP_INI_SYSTEM</entry>
+       <entry></entry>
       </row>
       <row>
        <entry>disable_functions</entry>
        <entry>""</entry>
-       <entry>PHP_INI_SYSTEM</entry>
+       <entry>&php.ini; only</entry>
+       <entry>PHP 4.0.1 から利用可能</entry>
       </row>
       <row>
        <entry>disable_classes</entry>
        <entry>""</entry>
-       <entry>PHP_INI_SYSTEM</entry>
+       <entry>&php.ini; only</entry>
+       <entry>PHP 4.3.2 から利用可能</entry>
       </row>
       </tbody>
      </tgroup>
@@ -77,9 +88,9 @@
     PHP_INI_*の定義と詳細については、
     <function>ini_set</function>を参照してください。
    </para>
-   
+
    &ini.descriptions.title;
-   
+
    <para>
    セーフモードの設定ディレクティブの簡単な説明を以下に示します。
     <variablelist>
@@ -135,6 +146,12 @@
         ディレクトリが存在すれば）。指定したディレクトリのみを許可したい
         場合には、最後にスラッシュを追加してください。
         例："safe_mode_include_dir = /dir/incl/"
+       </simpara>
+       <simpara>
+        PHP 4.2.3 と PHP 4.3.3 以降では、ディレクティブの値が空の場合、
+        異なる <literal>UID</literal>/<literal>GID</literal> を持つファイルを
+        インクルードすることはできません。
+        以前のバージョンでは、全てのファイルをインクルード可能でした。
        </simpara>
       </listitem>
      </varlistentry>
@@ -291,7 +308,7 @@
    </para>
    <para>
     <link linkend="ini.register-globals">register_globals</link>,
-    <link linkend="ini.display-errors">display_errors</link>, 
+    <link linkend="ini.display-errors">display_errors</link>,
     <link linkend="ini.log-errors">log_errors</link>も参照してください。
    </para>
 
@@ -301,22 +318,22 @@
    の所有者に一致するかどうかを調べます。例えば、
    <programlisting role="ls">
 <![CDATA[
--rw-rw-r--    1 rasmus   rasmus       33 Jul  1 19:20 script.php 
--rw-r--r--    1 root     root       1116 May 26 18:01 /etc/passwd 
+-rw-rw-r--    1 rasmus   rasmus       33 Jul  1 19:20 script.php
+-rw-r--r--    1 root     root       1116 May 26 18:01 /etc/passwd
 ]]>
    </programlisting>
     以下のscript.php を実行すると、
    <programlisting role="php">
 <![CDATA[
 <?php
- readfile('/etc/passwd'); 
+ readfile('/etc/passwd');
 ?>
 ]]>
    </programlisting>
     セーフモードが有効な場合、以下のようなエラーが出力されます。
     <screen>
 <![CDATA[
-Warning: SAFE MODE Restriction in effect. The script whose uid is 500 is not 
+Warning: SAFE MODE Restriction in effect. The script whose uid is 500 is not
 allowed to access /etc/passwd owned by uid 0 in /docroot/script.php on line 2
 ]]>
     </screen>
@@ -338,7 +355,7 @@ allowed to access /etc/passwd owned by uid 0 in /docroot/script.php on line 2
    <programlisting role="ini">
 <![CDATA[
 <Directory /docroot>
-  php_admin_value open_basedir /docroot 
+  php_admin_value open_basedir /docroot
 </Directory>
 ]]>
    </programlisting>
@@ -346,8 +363,8 @@ allowed to access /etc/passwd owned by uid 0 in /docroot/script.php on line 2
    同じscript.phpを実行すると、以下のような結果になります:
    <screen>
 <![CDATA[
-Warning: open_basedir restriction in effect. File is in wrong directory in 
-/docroot/script.php on line 2 
+Warning: open_basedir restriction in effect. File is in wrong directory in
+/docroot/script.php on line 2
 ]]>
    </screen>
   </para>
@@ -360,17 +377,22 @@ Warning: open_basedir restriction in effect. File is in wrong directory in
    もし&php.ini;ファイルに以下を追加した場合:
    <programlisting role="ini">
 <![CDATA[
-disable_functions readfile,system  
+disable_functions readfile,system
 ]]>
    </programlisting>
-   以下のような結果になります: 
+   以下のような結果になります:
    <screen>
 <![CDATA[
-Warning: readfile() has been disabled for security reasons in 
-/docroot/script.php on line 2 
+Warning: readfile() has been disabled for security reasons in
+/docroot/script.php on line 2
 ]]>
    </screen>
   </para>
+  <warning>
+   <para>
+    もちろん、これらの PHP の制限はバイナリを実行した場合は有効になりません。
+   </para>
+  </warning>
  </sect1>
 
   <sect1 id="features.safe-mode.functions">
@@ -464,7 +486,7 @@ Warning: readfile() has been disabled for security reasons in
         <entry>&sm.disabled;</entry>
        </row>
        <row>
-        <entry><function>shell_exec</function> (functional equivalent 
+        <entry><function>shell_exec</function> (functional equivalent
         of backticks)</entry>
         <entry>&sm.disabled;</entry>
        </row>
@@ -532,8 +554,8 @@ Warning: readfile() has been disabled for security reasons in
        </row>
        <row>
         <entry><function>copy</function></entry>
-        <entry>&sm.uidcheck; &sm.uidcheck.dir; ( 
-        <parameter>source</parameter>および 
+        <entry>&sm.uidcheck; &sm.uidcheck.dir; (
+        <parameter>source</parameter>および
         <parameter>target</parameter>において) </entry>
        </row>
        <row>

@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.22 $ -->
-<!-- EN-Revision: 1.37 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.23 $ -->
+<!-- EN-Revision: 1.42 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: shimooka -->
  <chapter id="features.http-auth">
   <title>PHP による HTTP 認証</title>
 
   <simpara>
-   PHP による HTTP 認証のフックは、Apache モジュールとして実行した時のみ
+   PHP による <acronym>HTTP</acronym> 認証のフックは、
+   Apache モジュールとして実行した時のみ
    有効で、CGI 版では利用できません。Apache モジュール上の PHP スクリプトに
    おいては、<function>header</function> 関数を使用して
     "Authentication Required" メッセージをクライアントブラウザに
@@ -13,14 +15,15 @@
    これにより、クライアントブラウザではユーザー名とパスワードの入力要求
    ウインドウがポップアップ表示されます。一度、ユーザーがユーザー名と
    パスワードを入力すると、PHP スクリプトを含むその URL は、次回以降、
-   <link linkend="reserved.variables">定義済みの変数</link> 
+   <link linkend="reserved.variables">定義済みの変数</link>
    <varname>PHP_AUTH_USER</varname> と、 <varname>PHP_AUTH_PW</varname> と、
    <varname>PHP_AUTH_TYPE</varname> にそれぞれユーザー名、
    パスワード、認証型が代入された状態で呼ばれます。
    定義済みの変数は、配列
-   <link linkend="reserved.variables.server">$_SERVER</link> および 
+   <link linkend="reserved.variables.server">$_SERVER</link> および
    <varname>$HTTP_SERVER_VARS</varname>　でアクセス可能です。
-   "Basic" 認証のみがサポートされています。詳細は、
+   "Basic" 認証および "Digest" 認証 (PHP 5.1.0 以降)
+   の両者がサポートされています。詳細は、
    <function>header</function>を参照ください。
   </simpara>
 
@@ -29,16 +32,16 @@
    <para>
     <link linkend="reserved.variables.server">$_SERVER</link>のような
     <link linkend="language.variables.superglobals">オートグローバル</link>は、
-    PHPバージョン <ulink url="&url.php.release4.1.0;">4.1.0</ulink>
+    PHP <ulink url="&url.php.release4.1.0;">4.1.0</ulink>
     で利用可能です。
     <varname>$HTTP_SERVER_VARS</varname>は、PHP 3以降で利用可能です。
    </para>
   </note>
 
-  <para>   
+  <para>
    ページ上でクライアント認証を強制するスクリプトの例を以下に示します。
    <example>
-    <title>HTTP 認証の例</title>
+    <title>Basic HTTP 認証の例</title>
     <programlisting role="php">
 <![CDATA[
 <?php
@@ -51,6 +54,56 @@
     echo "<p>こんにちは、{$_SERVER['PHP_AUTH_USER']} さん。</p>";
     echo "<p>あなたは、{$_SERVER['PHP_AUTH_PW']} をパスワードとして入力しました。</p>";
   }
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+
+  <para>
+   <example>
+    <title>Digest HTTP 認証の例</title>
+    <para>
+     この例は、シンプルな Digest HTTP 認証スクリプトをどの様に実装するか
+     を示しています。
+     その他情報については、<ulink url="&url.rfc;2617">RFC 2617</ulink>
+      を読んでください。
+    </para>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$realm = 'Restricted area';
+
+//user => password
+$users = array('admin' => 'mypass', 'guest' => 'guest');
+
+
+if (!isset($_SERVER['PHP_AUTH_DIGEST'])) {
+    header('HTTP/1.1 401 Unauthorized');
+    header('WWW-Authenticate: Digest realm="'.$realm.
+           '" qop="auth" nonce="'.uniqid().'" opaque="'.md5($realm).'"');
+
+    die('ユーザーがキャンセルボタンを押した時に送信されるテキスト');
+}
+
+// PHP_AUTH_DIGEST 変数を精査する
+preg_match('/username="(?P<username>.*)",\s*realm="(?P<realm>.*)",\s*nonce="(?P<nonce>.*)",\s*uri="(?P<uri>.*)",\s*response="(?P<response>.*)",\s*opaque="(?P<opaque>.*)",\s*qop=(?P<qop>.*),\s*nc=(?P<nc>.*),\s*cnonce="(?P<cnonce>.*)"/', $_SERVER['PHP_AUTH_DIGEST'], $digest);
+
+if (!isset($users[$digest['username']]))
+    die('ユーザー名が有効ではありません!');
+
+
+// 有効なレスポンスを生成する
+$A1 = md5($digest['username'] . ':' . $realm . ':' . $users[$digest['username']]);
+$A2 = md5($_SERVER['REQUEST_METHOD'].':'.$digest['uri']);
+$valid_response = md5($A1.':'.$digest['nonce'].':'.$digest['nc'].':'.$digest['cnonce'].':'.$digest['qop'].':'.$A2);
+
+if ($digest['response'] != $valid_response)
+    die('誤った証明書です!');
+
+// OK, 有効なユーザー名とパスワードだ
+echo 'あなたは次のユーザーとしてログインしています: ' . $digest['username'];
+
 ?>
 ]]>
     </programlisting>
@@ -89,7 +142,7 @@
    パスワードを暴くようなスクリプトを書くことを防ぐために、
    特定のページに関して外部認証が可能でかつ &safemode; が有効の場合、
    PHP_AUTH 変数はセットされません。
-   この場合、外部認証されたユーザーかどうかを確認するために 
+   この場合、外部認証されたユーザーかどうかを確認するために
    <varname>REMOTE_USER</varname> 変数、すなわち、
    <varname>$_SERVER['REMOTE_USER']</varname> を使用することができます。
   </simpara>
@@ -128,7 +181,7 @@
 
   if (!isset($_SERVER['PHP_AUTH_USER']) || ($_POST['SeenBefore'] == 1 && $_POST['OldAuth'] == $_SERVER['PHP_AUTH_USER'])) {
     authenticate();
-  }  
+  }
   else  {
    echo "<p>Welcome: {$_SERVER['PHP_AUTH_USER']}<br>";
    echo "Old: {$_REQUEST['OldAuth']}";
@@ -163,10 +216,10 @@
    オフのままにしてください。
   </simpara>
   <simpara>
-   他の制限としては、IIS モジュール (ISAPI) を使用している場合に、
+   他の制限としては、IIS モジュール (ISAPI) と PHP 4 を使用している場合に、
    <literal>PHP_AUTH_*</literal> 変数が使用できないことがあります。
    しかし、代わりに<literal>HTTP_AUTHORIZATION</literal> を使うことができます。
-   例えば、次のようなコードを考慮してください。<literal>list($user, $pw) = explode(':',  
+   例えば、次のようなコードを考慮してください。<literal>list($user, $pw) = explode(':',
    base64_decode(substr($_SERVER['HTTP_AUTHORIZATION'], 6)));</literal>
   </simpara>
   <note>

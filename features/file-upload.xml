@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.24 $ -->
-<!-- EN-Revision: 1.80 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.25 $ -->
+<!-- EN-Revision: 1.84 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: shimooka -->
  <chapter id="features.file-upload">
   <title>ファイルアップロードの処理</title>
-  
+
   <sect1 id="features.file-upload.post-method">
    <title>POST メソッドによるアップロード</title>
    <simpara>
@@ -24,7 +25,7 @@
     <title>関係する設定に関する注記</title>
     <para>
      &php.ini;の
-     <link linkend="ini.file-uploads">file_uploads</link>, 
+     <link linkend="ini.file-uploads">file_uploads</link>,
      <link linkend="ini.upload-max-filesize">upload_max_filesize</link>,
      <link linkend="ini.upload-tmp-dir">upload_tmp_dir</link>,
      <link linkend="ini.post-max-size">post_max_size</link>,
@@ -80,13 +81,16 @@
       転送できないということを長時間待ったあとで知らされるのを
       防げるからです。
      </para>
-     <para>
+    </example>
+   </para>
+
+   <note>
+    <para>
       アップロード用のフォームが
       <literal>enctype="multipart/form-data"</literal>属性を有しているかを
       確認してください。さもないと、ファイルのアップロードは動作しません。
-     </para>
-    </example>
-   </para>
+    </para>
+   </note>
 
    <para>
     オートグローバル<link linkend="reserved.variables.files">$_FILES</link>
@@ -219,8 +223,41 @@ print "</pre>";
     移動または名前の変更が行われていない場合、リクエストの終了時にその
     ファイルはテンポラリディレクトリから削除されます。
    </simpara>
+    <example>
+     <title>ファイルの配列をアップロードする</title>
+     <para>
+      PHP はファイルについても
+      <link linkend="faq.html.arrays">HTML フォームで配列を使用すること</link>
+      をサポートしています。
+     </para>
+     <programlisting role="html">
+<![CDATA[
+<form action="" method="post" enctype="multipart/form-data">
+<p>Pictures:
+<input type="file" name="pictures[]" />
+<input type="file" name="pictures[]" />
+<input type="file" name="pictures[]" />
+<input type="submit" value="Send" />
+</p>
+</form>
+]]>
+     </programlisting>
+     <programlisting role="php">
+<![CDATA[
+<?php
+foreach ($_FILES["pictures"]["error"] as $key => $error) {
+    if ($error == UPLOAD_ERR_OK) {
+        $tmp_name = $_FILES["pictures"]["tmp_name"][$key];
+        $name = $_FILES["pictures"]["name"][$key];
+        move_uploaded_file($tmp_name, "data/$name");
+    }
+}
+?>
+]]>
+     </programlisting>
+    </example>
   </sect1>
- 
+
   <sect1 id="features.file-upload.errors">
    <title>エラーメッセージの説明</title>
    <simpara>
@@ -245,7 +282,7 @@ print "</pre>";
       <listitem>
        <para>
         値: 1; アップロードされたファイルは、&php.ini; の
-        <link linkend="ini.upload-max-filesize">upload_max_filesize</link> 
+        <link linkend="ini.upload-max-filesize">upload_max_filesize</link>
         ディレクティブの値を超えています。
        </para>
       </listitem>
@@ -272,6 +309,15 @@ print "</pre>";
       <listitem>
        <para>
         値: 4; ファイルはアップロードされませんでした。
+       </para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term><constant>UPLOAD_ERR_NO_TMP_DIR</constant></term>
+      <listitem>
+       <para>
+        値: 6; テンポラリフォルダがありません。PHP 4.3.10 と PHP 5.0.3
+        で導入されました。
        </para>
       </listitem>
      </varlistentry>
@@ -316,7 +362,7 @@ print "</pre>";
      ファイルアップロードプロセス、などに費やされた時間はスクリプトの
      総実行時間に含まれません。
     </simpara>
-   </note>    
+   </note>
    <simpara>
     <link linkend="ini.post-max-size">post_max_size</link>の設定値が小
     さすぎた場合、大きなファイルをアップロードすることができなくなりま
@@ -328,7 +374,7 @@ print "</pre>";
     非公開情報にアクセスできる可能性を生じます。
    </simpara>
    <simpara>
-    <productname>CERN httpd</productname>は、クライアントから得た 
+    <productname>CERN httpd</productname>は、クライアントから得た
     content-type MIME ヘッダにおいて最初が空白文字で始まるものを切り捨てるようですので注意してください。
     このような動作をする限り、<productname>CERN httpd</productname>は、
     ファイルアップロード機能をサポートしないでしょう。
@@ -379,7 +425,7 @@ print "</pre>";
    <simpara>
     上記のフォームで投稿された場合、配列
     <varname>$_FILES['userfile']</varname>,
-    <varname>$_FILES['userfile']['name']</varname>, 
+    <varname>$_FILES['userfile']['name']</varname>,
     <varname>$_FILES['userfile']['size']</varname>
     (4.1.0より前のバージョンのPHPの場合は$HTTP_POST_FILES)が設定されま
     す。
@@ -403,7 +449,7 @@ print "</pre>";
    <simpara>
     <varname>$_FILES['userfile']['name'][0]</varname>,
     <varname>$_FILES['userfile']['tmp_name'][0]</varname>,
-    <varname>$_FILES['userfile']['size'][0]</varname>, 
+    <varname>$_FILES['userfile']['size'][0]</varname>,
     <varname>$_FILES['userfile']['type'][0]</varname>も設定されます。
    </simpara>
   </sect1>
@@ -448,14 +494,16 @@ fclose($putdata);
     </para>
    </note>
    <para>
-    PHPは、<productname>Netscape Composer</productname>や 
+    PHPは、<productname>Netscape Composer</productname>や
     W3C <productname>Amaya</productname>のようなクライアントを使用した場合の
     HTTP PUTメソッドのサポートを提供します。
     PUTリクエストはファイルアップロードよりもシンプルであり、
     次のような形になります。
     <informalexample>
-     <programlisting>
+     <programlisting role="HTTP">
+<![CDATA[
 PUT /path/filename.html HTTP/1.1
+]]>
      </programlisting>
     </informalexample>
    </para>
@@ -472,7 +520,9 @@ PUT /path/filename.html HTTP/1.1
     たは &lt;Virtualhost&gt; ブロックの中です。次のように指定します。
     <informalexample>
      <programlisting>
+<![CDATA[
 Script PUT /put.php
+]]>
     </programlisting>
     </informalexample>
    </para>
