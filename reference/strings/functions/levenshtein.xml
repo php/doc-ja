@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.5 $ -->
 <!-- splitted from ./ja/functions/strings.xml, last change in rev 1.1 -->
-<!-- EN-Revision: 1.12 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 1.7 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: shimooka -->
   <refentry id="function.levenshtein">
    <refnamediv>
-    <refname>levenshtein</refname> 
+    <refname>levenshtein</refname>
     <refpurpose>
      二つの文字列のLevenshtein距離を計算する
     </refpurpose>
@@ -14,26 +16,21 @@
       <type>int</type><methodname>levenshtein</methodname>
       <methodparam><type>string</type><parameter>str1</parameter></methodparam>
       <methodparam><type>string</type><parameter>str2</parameter></methodparam>
-     </methodsynopsis>
-     <methodsynopsis>
-      <type>int</type><methodname>levenshtein</methodname>
-      <methodparam><type>string</type><parameter>str1</parameter></methodparam>
-      <methodparam><type>string</type><parameter>str2</parameter></methodparam>
-      <methodparam><type>int</type><parameter>cost_ins</parameter></methodparam>
-      <methodparam><type>int</type><parameter>cost_rep</parameter></methodparam>
+      <methodparam choice="opt"><type>int</type><parameter>cost_ins</parameter></methodparam>
+      <methodparam choice="opt"><type>int</type><parameter>cost_rep</parameter></methodparam>
       <methodparam><type>int</type><parameter>cost_del</parameter></methodparam>
      </methodsynopsis>
+     <!-- Callback function not yet implemented, see bug #29552
      <methodsynopsis>
       <type>int</type><methodname>levenshtein</methodname>
       <methodparam><type>string</type><parameter>str1</parameter></methodparam>
       <methodparam><type>string</type><parameter>str2</parameter></methodparam>
-      <methodparam><type>function</type><parameter>cost</parameter></methodparam>
+      <methodparam><type>callback</type><parameter>cost</parameter></methodparam>
      </methodsynopsis>
+     -->
     <para>
      この関数は、引数で指定した二つの文字列のLevenshtein距離を返します。
      引数文字列の一つが255文字の制限より長い場合に-1を返します。
-     (255は名前や辞書比較に関して十分な長さであり、PHPでの通常の比較に
-     関しては問題となる制約ではありません)
     </para>
     <para>
      Levenshtein距離は <parameter>str1</parameter> を
@@ -56,6 +53,7 @@
      ラメータが追加されます。この形式は1番目の形式より一般的で汎用性が
      高いですが、効率的ではありません。
     </para>
+    <!--  Callback function not yet implemented, see bug #29552
     <para>
      3番目の形式(これは未実装です)は、最も一般的で汎用的ですが、最も遅
      い形式でもあります。この形式では各演算毎にコストを定義するために
@@ -66,37 +64,37 @@
      <itemizedlist>
       <listitem>
        <simpara>
-	適用する演算: 'I'、'R'、'D'
+  適用する演算: 'I'、'R'、'D'
        </simpara>
       </listitem>
       <listitem>
        <simpara>
-	文字列1の文字の実体
+  文字列1の文字の実体
        </simpara>
       </listitem>
       <listitem>
        <simpara>
-	文字列2の文字の実体
+  文字列2の文字の実体
        </simpara>
       </listitem>
       <listitem>
        <simpara>
-	文字列1での位置
+  文字列1での位置
        </simpara>
       </listitem>
       <listitem>
        <simpara>
-	文字列2での位置
+  文字列2での位置
        </simpara>
       </listitem>
       <listitem>
        <simpara>
-	文字列1での残りの文字
+  文字列1での残りの文字
        </simpara>
       </listitem>
       <listitem>
        <simpara>
-	文字列2での残りの文字
+  文字列2での残りの文字
        </simpara>
       </listitem>
      </itemizedlist>
@@ -104,16 +102,80 @@
      す必要があります。しかし、指定された引数のいくつかだけを使用して
      コストを計算することも可能です。
     </para>
-    <para> 
+    <para>
      ユーザ定義関数を使用する形式では、挿入、置換、削除のコストを定義
      する際に特定の記号(文字)またはこれらの記号を含む句の相関や差異を
      考慮する手法をとることが可能となります。しかし、この代償として他
      の二つの形式では動作するCPUレジスタの使用に関する最適化の実行は行
      われず、キャッシュも動作しなくなります。
+    -->
+    <para>
+     <example>
+      <title><function>levenshtein</function> の例</title>
+      <programlisting role="php">
+<![CDATA[
+<?php
+// スペルミスした単語を入力する
+$input = 'carrrot';
+
+// チェックするための単語の配列
+$words  = array('apple','pineapple','banana','orange',
+                'radish','carrot','pea','bean','potato');
+
+// まだ最短距離は見つかっていない
+$shortest = -1;
+
+// 最短距離を見つけるため単語をループ
+foreach ($words as $word) {
+
+    // 入力した単語と現在の単語の距離を
+    // 計算する
+    $lev = levenshtein($input, $word);
+
+    // マッチするかどうかチェックする
+    if ($lev == 0) {
+
+        // 再丹那単語はこれだ (マッチした)
+        $closest = $word;
+        $shortest = 0;
+
+        // ループを抜ける; マッチしたものを見つけた
+        break;
+    }
+
+    // もし距離が次に見つけた最短距離よりも短い場合、
+    // もしくは次の最短の単語がまだ見つかっていない場合
+    if ($lev <= $shortest || $shortest < 0) {
+        // 最短のマッチと最短距離をセットする
+        $closest  = $word;
+        $shortest = $lev;
+    }
+}
+
+echo "Input word: $input\n";
+if ($shortest == 0) {
+    echo "Exact match found: $closest\n";
+} else {
+    echo "Did you mean: $closest?\n";
+}
+
+?>
+]]>
+      </programlisting>
+      &example.outputs;
+      <screen>
+<![CDATA[
+Input word: carrrot
+Did you mean: carrot?
+]]>
+      </screen>
+     </example>
     </para>
     <para>
-     <function>soundex</function>、<function>similar_text</function>、
-     <function>metaphone</function>も参照ください。
+     <function>soundex</function>,
+     <function>similar_text</function>,
+     <function>metaphone</function>
+     も参照ください。
     </para>
    </refsect1>
   </refentry>
