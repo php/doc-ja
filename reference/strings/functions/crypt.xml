@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.5 $ -->
 <!-- splitted from ./ja/functions/strings.xml, last change in rev 1.1 -->
-<!-- EN-Revision: 1.2 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 1.11 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: shimooka -->
   <refentry id="function.crypt">
    <refnamediv>
     <refname>crypt</refname>
@@ -12,7 +14,7 @@
       <type>string</type><methodname>crypt</methodname>
       <methodparam><type>string</type><parameter>str</parameter></methodparam>
       <methodparam><type>string</type><parameter>
-	<replaceable><optional>salt</optional></replaceable>
+  <replaceable><optional>salt</optional></replaceable>
        </parameter></methodparam>
      </methodsynopsis>
     <para>
@@ -23,7 +25,8 @@
      ださい。
     </para>
     <simpara>
-     salt引数が指定されない場合、PHPによりランダムに生成されます。
+     salt引数が指定されない場合、この関数をコールするたびに
+     PHPによりランダムに生成されます。
     </simpara>
     <simpara>
      いくつかのオペレーティングシステムは、複数の暗号化方式をサポート
@@ -39,7 +42,7 @@
     </simpara>
     <simpara>
      生成されたsaltを使用する場合、saltが生成されるのは一回限りである
-     ことに気付く必要があります。この関数を再帰的にコールする場合、こ
+     ことに気付く必要があります。この関数を繰り返しコールする場合、こ
      のことは、出力だけでなく、セキュリティにも影響を与える可能性があ
      ります。
     </simpara>
@@ -72,7 +75,7 @@
      </listitem>
      <listitem>
       <simpara>
-       CRYPT_BLOWFISH - $2$ で始まる16文字の拡張DES暗号
+       CRYPT_BLOWFISH - $2$ もしくは $2a$ で始まる16文字の拡張DES暗号
       </simpara>
      </listitem>
     </itemizedlist>
@@ -87,18 +90,65 @@
      <programlisting role="php">
 <![CDATA[
 <?php
-$password = crypt("My1sTpassword"); # saltを生成
+$password = crypt("My1sTpassword"); // saltを自動的に生成
 
-# 異なったハッシュアルゴリズムが使用された際の問題を避けるために
-# crypt()の結果全体をパスワード比較用のsaltとして渡す必要があります。
-# (上記のように標準DESに基づくパスワードハッシュは2文字のsaltを使用します
-# が、MD5に基づくハッシュは12文字のsaltを使用します)
-if (crypt($user_input,$password) == $password) {
-   echo "パスワードは検証されました!";
+/* 異なったハッシュアルゴリズムが使用された際の問題を避けるために
+   crypt()の結果全体をパスワード比較用のsaltとして渡す必要があります。
+   (上記のように標準DESに基づくパスワードハッシュは2文字のsaltを使用します
+   が、MD5に基づくハッシュは12文字のsaltを使用します) */
+if (crypt($user_input, $password) == $password) {
+   echo "Password verified!";
 }
 ?>
 ]]>
      </programlisting>
+    </example>
+    <example>
+     <title>Using <function>crypt</function> with htpasswd</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+// Set the password
+$password = 'mypassword';
+
+// Get the hash, letting the salt be automatically generated
+$hash = crypt($password);
+?>
+]]>
+     </programlisting>
+    </example>
+    <example>
+     <title>異なる暗号化手法を用いた <function>crypt</function> の例</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+if (CRYPT_STD_DES == 1) {
+    echo 'Standard DES: ' . crypt('rasmuslerdorf', 'rl') . "\n";
+}
+
+if (CRYPT_EXT_DES == 1) {
+    echo 'Extended DES: ' . crypt('rasmuslerdorf', '_J9..rasm') . "\n";
+}
+
+if (CRYPT_MD5 == 1) {
+    echo 'MD5:          ' . crypt('rasmuslerdorf', '$1$rasmusle$') . "\n";
+}
+
+if (CRYPT_BLOWFISH == 1) {
+    echo 'Blowfish:     ' . crypt('rasmuslerdorf', '$2a$07$rasmuslerd...........$') . "\n";
+}
+?>
+]]>
+     </programlisting>
+      &example.outputs.similar;
+     <screen>
+<![CDATA[
+Standard DES: rl.3StKT.4T8M
+Extended DES: _J9..rasmBYk8r9AiWNc
+MD5:          $1$rasmusle$rISCgZzpwk3UhDidwXvin0
+Blowfish:     $2a$07$rasmuslerd............nIdrcHdxcUxWomQX9j6kvERCFjTg7Ra
+]]>
+     </screen>
     </example>
     <simpara>
      <function>md5</function>および<link linkend="ref.mcrypt">mcrypt拡
