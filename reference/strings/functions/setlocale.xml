@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.5 $ -->
 <!-- splitted from ./ja/functions/strings.xml, last change in rev 1.1 -->
-<!-- EN-Revision: 1.2 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 1.25 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: shimooka -->
   <refentry id="function.setlocale">
    <refnamediv>
     <refname>setlocale</refname>
@@ -10,8 +12,14 @@
     <title>説明</title>
      <methodsynopsis>
       <type>string</type><methodname>setlocale</methodname>
-      <methodparam><type>mixed</type><parameter>category</parameter></methodparam>
+      <methodparam><type>int</type><parameter>category</parameter></methodparam>
       <methodparam><type>string</type><parameter>locale</parameter></methodparam>
+      <methodparam choice="opt"><type>string</type><parameter>...</parameter></methodparam>
+     </methodsynopsis>
+     <methodsynopsis>
+      <type>string</type><methodname>setlocale</methodname>
+      <methodparam><type>int</type><parameter>category</parameter></methodparam>
+      <methodparam><type>array</type><parameter>locale</parameter></methodparam>
      </methodsynopsis>
     <para>
      <parameter>category</parameter>は、名前付きの定数(または文字列)で
@@ -20,22 +28,22 @@
      <itemizedlist>
       <listitem>
        <simpara>
-	LC_ALL 以下のものすべて
+  LC_ALL 以下のものすべて
        </simpara>
       </listitem>
       <listitem>
        <simpara>
-	LC_COLLATE 文字列の比較用。<function>strcoll</function>参照
+  LC_COLLATE 文字列の比較用。<function>strcoll</function>参照
        </simpara>
       </listitem>
       <listitem>
        <simpara>
-	LC_CTYPE 文字の分類と変換。たとえば <function>strtoupper</function>
+  LC_CTYPE 文字の分類と変換。たとえば <function>strtoupper</function>
        </simpara>
       </listitem>
       <listitem>
        <simpara>
-	LC_MONETARY localeconv() 用 - PHP では現在未実装
+  LC_MONETARY localeconv() 用 - PHP では現在未実装
        </simpara>
       </listitem>
       <listitem>
@@ -46,37 +54,121 @@
       </listitem>
       <listitem>
        <simpara>
-	LC_TIME 日時。<function>strftime</function>でフォーマットに使用
+  LC_TIME 日時。<function>strftime</function>でフォーマットに使用
        </simpara>
       </listitem>
      </itemizedlist>
     </para>
+    <note>
+     <simpara>
+      PHP 4.2.0 以降、文字列として <parameter>category</parameter>
+      を渡すことは推奨されません。代わりに上記の定数を使用してください。
+      これらを文字列として (クオートして) 渡すと、
+      ワーニングメッセージが表示されます。
+     </simpara>
+    </note>
     <para>
-     <parameter>locale</parameter>が空の文字列<literal>""</literal>
+     <parameter>locale</parameter>が &null; もしくは空の文字列
+     <literal>""</literal>
      の場合、ロケール名は上記のカテゴリと同じ名前の環境変数の値、
      または環境変数 "LANG" からセットされます。
     </para>
     <para>
-     ロケールが 0 または <literal>"0"</literal> の場合、ロケール
-     設定は適用されず、単に現在の設定が返されます。
+     <parameter>locale</parameter> が 0 または <literal>"0"</literal> の場合、
+     ロケール設定は適用されず、単に現在の設定が返されます。
     </para>
+    <para>
+     <parameter>locale</parameter> が配列もしくは追加のパラメータが続く場合、
+     それぞれの配列要素もしくはパラメータは成功するまで新規ロケールとしてセット
+     されます。これは、ロケールが異なるシステムで異なる名前を持っている、
+     もしくはロケールが利用できない可能性がある場合のフォールバックを提供する
+     といった場合に有用です。
+    </para>
+    <note>
+     <simpara>
+      PHP 4.3.0 以前では、複数のロケールを渡すことはできません。
+     </simpara>
+    </note>
     <para>
      setlocale は現在の新しいロケールを返し、ロケール機能が未実装、
      指定されたロケールが存在しない、カテゴリ名が無効などの場合は
      &false; を返します。また、カテゴリ名が無効の場合は警告メッセージ
-     が発生します。
+     が発生します。カテゴリやロケール名は、
+     <ulink url="&url.rfc;1766">RFC 1766</ulink>
+     や <ulink url="&url.iso-639;">ISO 639</ulink> にあります。
+     異なるシステムでは異なる命名スキーマになります。
     </para>
+    <note>
+     <para>
+      <function>setlocale</function> の戻り値は、
+      PHP が実行されているシステムに依存します。
+      システムの setlocale 関数が返す値を返すためです。
+     </para>
+    </note>
+    <warning>
+     <para>
+      ロケール情報は、スレッド毎ではなくプロセス毎に維持されます。
+      もし PHP を IIS や Windows 用 Apache のようなマルチスレッドサーバ
+      API 上で動作させている場合、
+      スクリプトを実行している間にロケールの設定が突然変わるのを
+      経験するかも知れませんが、スクリプト自身は決して
+      <function>setlocale</function> 自身をコールしていません。
+      これは同時に同一プロセスの異なるスレッドで実行されている他のスクリプトが
+      <function>setlocale</function>
+      を使用してプロセスワイドなロケールを変更する事により発生します。
+     </para>
+    </warning>
+    <tip>
+     <para>
+      Windows ユーザーは Microsoft の <acronym>MSDN</acronym> の Web サイトに
+      <parameter>locale</parameter>
+      文字列に関する有用な情報を見つけることができるでしょう。
+      サポートしている言語文字列は、<ulink
+      url="&url.setlocale.lang.win32;">&url.setlocale.lang.win32;</ulink> 、
+      サポートしている国/地域文字列は<ulink
+      url="&url.setlocale.country.win32;">
+      &url.setlocale.country.win32;</ulink>
+      にあります。Windows システムは、<literal>ISO 3166-Alpha-3</literal>
+      によって定められた国/地域文字列の 3 文字コードをサポートしています。
+      これは <ulink url="&url.iso-3166-3;">Unicode website</ulink>
+      にあります。
+     </para>
+    </tip>
     <para>
      <example>
       <title><function>setlocale</function>の例</title>
       <programlisting role="php">
 <![CDATA[
 <?php
-    /* ロケールをオランダ語に設定 */
-    setlocale (LC_ALL, 'nl_NL');
+/* ロケールをオランダ語に設定 */
+setlocale (LC_ALL, 'nl_NL');
 
-    /* 出力: vrijdag 22 december 1978 */
-    echo strftime ("%A %e %B %Y", mktime (0, 0, 0, 12, 22, 1978));
+/* 出力: vrijdag 22 december 1978 */
+echo strftime("%A %e %B %Y", mktime(0, 0, 0, 12, 22, 1978));
+
+/* PHP 4.3.0 以降、ドイツに対して利用可能な異なるロケール名を使用する */
+$loc_de = setlocale(LC_ALL, 'de_DE@euro', 'de_DE', 'de', 'ge');
+echo "Preferred locale for german on this system is '$loc_de'";
+?>
+]]>
+      </programlisting>
+     </example>
+    </para>
+    <para>
+     <example>
+      <title>Windows での <function>setlocale</function> の例</title>
+      <programlisting role="php">
+<![CDATA[
+<?php
+/* ロケールをオランダ語に設定 */
+setlocale(LC_ALL, 'nld_nld');
+
+/* 出力: vrijdag 22 december 1978 */
+echo strftime("%A %d %B %Y", mktime(0, 0, 0, 12, 22, 1978));
+
+/* PHP 4.3.0 以降、ドイツに対して利用可能な異なるロケール名を使用する */
+$loc_de = setlocale(LC_ALL, 'de_DE@euro', 'de_DE', 'deu_deu');
+echo "Preferred locale for german on this system is '$loc_de'";
 ?>
 ]]>
       </programlisting>
