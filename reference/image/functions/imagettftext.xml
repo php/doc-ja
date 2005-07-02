@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.5 $ -->
-<!-- EN-Revision: 1.8 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.6 $ -->
+<!-- EN-Revision: 1.16 Maintainer: hirokawa Status: ready -->
   <refentry id="function.imagettftext">
    <refnamediv>
     <refname>imagettftext</refname>
@@ -11,8 +11,8 @@
     <methodsynopsis>
      <type>array</type><methodname>imagettftext</methodname>
      <methodparam><type>resource</type><parameter>image</parameter></methodparam>
-     <methodparam><type>int</type><parameter>size</parameter></methodparam>
-     <methodparam><type>int</type><parameter>angle</parameter></methodparam>
+     <methodparam><type>float</type><parameter>size</parameter></methodparam>
+     <methodparam><type>float</type><parameter>angle</parameter></methodparam>
      <methodparam><type>int</type><parameter>x</parameter></methodparam>
      <methodparam><type>int</type><parameter>y</parameter></methodparam>
      <methodparam><type>int</type><parameter>color</parameter></methodparam>
@@ -20,75 +20,184 @@
      <methodparam><type>string</type><parameter>text</parameter></methodparam>
     </methodsynopsis>
     <para>
-     imagettftextは画像 <parameter>image</parameter>上に
-     座標(<parameter>x,y</parameter>)(左上が(0, 0))から
-     角度<parameter>angle</parameter>、色
-     <parameter>col</parameter>で文字列<parameter>text</parameter>を
-     描画します。TrueTypeフォントを<parameter>fontfile</parameter>で
-     指定します。
+     <variablelist>
+      <varlistentry>
+       <term><parameter>image</parameter></term>
+       <listitem>
+        <simpara>
+         イメージリソース。<function>imagecreate</function>
+         を参照ください。
+        </simpara>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term><parameter>size</parameter></term>
+       <listitem>
+        <simpara>
+         フォントサイズ。GD のバージョンに依存し、ピクセルサイズ
+         (GD1) もしくはポイントサイズ (GD2) で指定する必要があります。
+        </simpara>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term><parameter>angle</parameter></term>
+       <listitem>
+        <simpara>
+         度で表される角度。0度は左から右にテキストを読む方向になります。
+         0 より大きな値は、時計廻りの回転を表現します。例えば、
+         90 という値は下から上にテキストを読む方向になります。
+        </simpara>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term><parameter>x</parameter></term>
+       <listitem>
+        <simpara>
+         <parameter>x</parameter> と <parameter>y</parameter>
+         で与えられた座標は、最初の文字のベースポイント
+         (ほぼ文字の左下角) を定義します。
+         この仕様は、<parameter>x</parameter> と <parameter>y</parameter>
+         で最初の文字の右上角を定義する
+         <function>imagestring</function> と異なっています。
+         例えば、左上は 0, 0 となります。
+        </simpara>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term><parameter>y</parameter></term>
+       <listitem>
+        <simpara>
+         y 座標。これは文字の最下位置ではなく、
+         フォントペースラインの位置を指定します。
+        </simpara>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term><parameter>color</parameter></term>
+       <listitem>
+        <simpara>
+         カラーインデックス。負の数を使用した場合、アンチエイリアス機能が
+         オフになります。
+         <function>imagecolorallocate</function> を参照ください。
+        </simpara>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term><parameter>fontfile</parameter></term>
+       <listitem>
+        <simpara>
+         使用する TrueType フォントのパス。
+        </simpara>
+        <simpara>
+         PHP が使用している GD ライブラリのバージョンに依存しており、<emphasis>
+         <parameter>fontfile</parameter> が <literal>/</literal>
+         で始まらない場合、ファイル名に <literal>.ttf</literal> が追加され、
+         </emphasis>
+         ライブラリはライブラリが定義したフォントパスから
+         ファイル名を検索しようとします。
+        </simpara>
+        <simpara>
+         2.0.18 以前のバージョンの GD ライブラリを使用している場合、
+         異なるフォントファイルに対する 'パスの区切り文字' として
+         セミコロンよりも <literal>space</literal> 文字が使用されます。
+         この特徴が意図せずに使用されることで
+         <literal>Warning: Could not find/open font</literal>
+         という結果になります。
+         これらの影響があるバージョンに対する唯一の解決方法は、
+         スペースを含まないパスにフォントを移動させることです。
+        </simpara>
+        <para>
+         フォントがスクリプトと同一ディレクトリに存在している場合のほとんどで、
+         以下のトリックが問題の軽減に繋がります。
+         <programlisting role="php">
+<![CDATA[
+<?php
+// GD の環境変数を設定する
+putenv('GDFONTPATH=' . realpath('.'));
+
+// 使用するフォント名 (拡張子 .ttf がないことに注意)
+$font = 'SomeFont';
+?>
+]]>
+         </programlisting>
+        </para>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term><parameter>text</parameter></term>
+       <listitem>
+        <simpara>
+         テキスト文字列
+        </simpara>
+        <simpara>
+         フォント内で127 文字目以降の文字にアクセスするために
+         10 進数文字参照を含めることができます。
+         UTF-8 エンコーディングされた文字列を直接渡すことができます。
+        </simpara>
+        <simpara>
+         フォントでサポートされていない文字が文字列で使用されている場合、
+         その文字は白抜きの矩形に置き換えられます。
+        </simpara>
+       </listitem>
+      </varlistentry>
+     </variablelist>
     </para>
     <para>
-     (<parameter>x</parameter>,<parameter>y</parameter>)で指定する
-     座標は、最初の文字のベースポイント(ほぼ文字の左下角)を定義します。
-     この仕様は、(x,y)が最初の文字の右上角を定義する
-     <function>imagestring</function> と異なっています。
-    </para>
-    <para>
-     <parameter>angle</parameter>の単位は角度で、0度は左から
-     右にテキストを読む方向(3時の方向)になります。
-     0より大きな値は、反時計廻りの回転を表現します。
-     (即ち、90という値は下から上にテキストを読む方向になります。)
-    </para>
-    <para>
-     <parameter>fontfile</parameter>は、使用する TrueType
-     フォントのパスです。
-    </para>
-    <para>
-     <parameter>text</parameter> はテキスト文字列であり、
-     フォントの 255 番目までの文字をアクセスするために 
-     (&amp;#123; という形式の) UTF-8 文字列を使うことができます。
-    </para>
-    <para>
-     <parameter>color</parameter> はカラーインデックスです。
-     カラーインデックスに負の数を使用した場合、アンチエイリアス機能が
-     オフになります。
-    </para>
-    <para>
-     <function>imagettftext</function>は、text のbounding boxを
-     構成する4点を表す8個の要素を有する配列を返します。
+     <function>imagettftext</function> は、テキストの境界を
+     構成する 4 点を表す 8 個の要素を有する配列を返します。
      返される点は左上、右上、右下、左下の順番となります。
      点の座標は、角度によらず text に関する相対座標として表されます。
      つまり、"左上"は、text を水平に見た場合の左上の隅を表します。
     </para>
     <para>
-     以下の例題スクリプトは、400x30ピクセルの黒地に Arialフォントを
-     用いて、白字で"Testing..."と書かれたGIFを作成します。
      <example>
-      <title><function>imagettftext</function>の例</title>
-      <programlisting>
+      <title><function>imagettftext</function> の例</title>
+      <para>
+       この例題スクリプトは、400x30 ピクセルの白地に Arial
+       フォントを用いて、黒字 (グレーの影付き) で "Testing..."
+       と書かれた PNG を作成します。
+      </para>
+      <programlisting role="php">
 <![CDATA[
 <?php
-  header("Content-type: image/jpeg");
-  $im = imagecreate(400,30);
-  $white = imagecolorallocate($im, 255,255,255);
-  $black = imagecolorallocate($im, 0,0,0);
-  
-  // Replace path by your own font path
-  imagettftext($im, 20, 0, 10, 20, $black, "/path/arial.ttf",
-  "Testing... Omega: &amp;#937;");
-  imagejpeg($im);
-  imagedestroy($im);
+// コンテントタイプを設定する
+header("Content-type: image/png");
+
+// 画像を生成する
+$im = imagecreate(400, 30);
+
+// いくつかの色を生成する
+$white = imagecolorallocate($im, 255, 255, 255);
+$grey = imagecolorallocate($im, 128, 128, 128);
+$black = imagecolorallocate($im, 0, 0, 0);
+
+// 描画する文字列
+$text = 'Testing...';
+// フォント自身のパスでパスを置き換える
+$font = 'arial.ttf';
+
+// テキストに影を付ける
+imagettftext($im, 20, 0, 11, 21, $grey, $font, $text);
+
+// テキストを追加する
+imagettftext($im, 20, 0, 10, 20, $black, $font, $text);
+
+// imagepng() を使用して imagejpeg() よりもクリアなテキストにする
+imagepng($im);
+imagedestroy($im);
 ?>
 ]]>
       </programlisting>
      </example>
     </para>
     <para>
-     この関数はGDライブラリと<ulink url="&url.freetype;">FreeType</ulink>
+     この関数は GD ライブラリと <ulink
+     url="&url.freetype;">FreeType</ulink>
      ライブラリの両方が必要です。
     </para>
     <para>
-     <function>imagettfbbox</function>も参照ください。
+     <function>imagettfbbox</function>
+     も参照ください。
     </para>
    </refsect1>
   </refentry>
