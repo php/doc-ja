@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- splitted from ./ja/functions/var.xml, last change in rev 1.1 -->
-<!-- EN-Revision: 1.2 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 1.14 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: shimooka -->
   <refentry id="function.isset">
    <refnamediv>
     <refname>isset</refname>
@@ -9,8 +10,10 @@
    <refsect1>
     <title>説明</title>
      <methodsynopsis>
-      <type>int</type><methodname>isset</methodname>
+      <type>bool</type><methodname>isset</methodname>
       <methodparam><type>mixed</type><parameter>var</parameter></methodparam>
+      <methodparam choice="opt"><type>mixed</type><parameter>var</parameter></methodparam>
+      <methodparam choice="opt"><parameter>...</parameter></methodparam>
      </methodsynopsis>
     <simpara>
      <parameter>var</parameter> が存在すれば&true;、
@@ -23,21 +26,85 @@
      <function>isset</function> は&false;を返します。
       &null;バイト(<literal>"\0"</literal>)はPHPの定数
      &null;と等価ではないことにも注意してください。
+    </para>
+    <note>
+     <title>Warning</title>
+     <para>
+      <function>isset</function> は何らかの値が渡された
+      変数の場合のみ動作します。そうでない場合、パースエラーとなります。
+      もし <link linkend="language.constants">定数</link>
+      が設定されているかどうかをチェックする場合は、
+      <function>defined</function> を使用してください。
+     </para>
+    </note>
+    <para>
      <informalexample>
       <programlisting role="php">
 <![CDATA[
+<?php
+
+$var = '';
+
+// これは TRUE と評価されるので、テキストが出力される
+if (isset($var)) {
+    echo "This var is set so I will print.";
+}
+
+// 次の例では、isset() の戻り値を出力するため var_dump を
+// 使用している
+
 $a = "test";
-echo isset ($a); // TRUE
+$b = "anothertest";
+
+var_dump(isset($a));      // TRUE
+var_dump(isset($a, $b)); // TRUE
+
 unset ($a);
-echo isset ($a); // FALSE
-$foo = NULL; 
-print isset ($foo); // FALSE
+
+var_dump(isset($a));     // FALSE
+var_dump(isset($a, $b)); // FALSE
+
+$foo = NULL;
+var_dump(isset($foo));   // FALSE
+
+?>
 ]]>
       </programlisting>
      </informalexample>
     </para>
+    <para>
+     この関数は配列の要素に対しても動作します:
+     <informalexample>
+      <programlisting role="php">
+<![CDATA[
+<?php
+
+$a = array ('test' => 1, 'hello' => NULL);
+
+var_dump(isset($a['test']));            // TRUE
+var_dump(isset($a['foo']));             // FALSE
+var_dump(isset($a['hello']));           // FALSE
+
+// キー 'hello' は NULL と等しいのでセットされていないと見なされる。
+// もし NULL なキー値に対してチェックを行いたい場合、次を試してみること:
+var_dump(array_key_exists('hello', $a)); // TRUE
+
+?>
+]]>
+      </programlisting>
+     </informalexample>
+    </para>
+
+    &note.language-construct;
+
     <simpara>
-     <function>empty</function>および<function>unset</function>
+     <function>empty</function>,
+     <function>unset</function>,
+     <function>defined</function>,
+     <link linkend="types.comparisons">PHP 型の比較表</link>,
+     <function>array_key_exists</function>,
+     エラー制御演算子
+     <link linkend="language.operators.errorcontrol">@</link>
      も参照ください。
     </simpara>
    </refsect1>

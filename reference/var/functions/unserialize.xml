@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- splitted from ./ja/functions/var.xml, last change in rev 1.27 -->
-<!-- EN-Revision: 1.2 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 1.18 Maintainer: hirokawa Status: ready -->
   <refentry id="function.unserialize">
    <refnamediv>
     <refname>unserialize</refname>
@@ -16,37 +16,57 @@
      <function>unserialize</function> は、シリアル化された変数
      (<function>serialize</function> を参照) をとり、PHP 変数値に
      戻す変換を行います。変換された値が返されます。その値は、
-     <type>integer</type>, <type>float</type>,
-     <type>string</type>, <type>array</type> , <type>object</type>
+     <type>boolean</type>, <type>integer</type>, <type>float</type>,
+     <type>string</type>, <type>array</type>, <type>object</type>
      とすることが可能です。オブジェクトがシリアル化された場合、返り値
      にそのメソッドは保存されていません。
+     <literal>E_NOTICE</literal> が発生した場合、&false; を返します。
     </simpara>
+    <warning>
+     <para>
+      エラーやシリアライズされた &false; 値をアンシリアライズする場合、
+      &false; が返されます。この特殊なケースは
+      <parameter>str</parameter> を <literal>serialize(false)</literal>
+      で比較する、もしくは <literal>E_NOTICE</literal>
+      をキャッチすることで区別することができます。
+     </para>
+    </warning>
     <note>
+     <title>unserialize_callback_func ディレクティブ</title>
      <para>
       コールバック関数を設定することが可能です。(不完全な
       <type>object</type> "__PHP_Incomplete_Class"を得ることを防ぐため)
       コールバック関数は、非シリアル化する際に未定義のクラスをインスタ
       ンス化する必要がある場合にコールされます。
       'unserialize_callback_func'を定義するためには、
-      php.ini, <function>ini_set</function>, .htaccessファイルを使用し
+      &php.ini;, <function>ini_set</function>, &htaccess; を使用し
       てください。未定義のクラスをインスタンス化する度に、コールバック関
-      数がコールされます。この機能を無効とするには、このグローバル変数
-      を空としてください。
+      数がコールされます。この機能を無効とするには、
+      単純にこの設定を空にしてください。また、ディレクティブ
+      unserialize_callback_func は PHP 4.2.0
+      で利用可能になったことに注意してください。
      </para>
     </note>
     <para>
+     もしアンシリアライズサル変数がオブジェクトの場合、
+     オブジェクトが無事再作成された後、PHP は自動的にメンバー関数
+     <function>__wakeup</function> (存在していれば) をコールしようとします。
      <example>
       <title>unserialize_callback_funcの例</title>
       <programlisting role="php">
 <![CDATA[
+<?php
 $serialized_object='O:1:"a":1:{s:5:"value";s:3:"100";}';
 
-ini_set('unserialize_callback_func','mycallback'); // set your callback_function
+// unserialize_callback_func ディレクティブは PHP 4.2.0 以降で利用可能
+ini_set('unserialize_callback_func', 'mycallback'); // 独自のコールバック関数を設定する
 
-function mycallback($classname) {
+function mycallback($classname)
+{
     // just include a file containing your classdefinition
     // you get $classname to figure out which classdefinition is required
 }
+?>
 ]]>
       </programlisting>
      </example>
@@ -66,24 +86,26 @@ function mycallback($classname) {
       <title><function>unserialize</function>の例</title>
       <programlisting role="php">
 <![CDATA[
-// ここで、データベースから $session_data にセッションデータをロード 
+<?php
+// ここで、データベースから $session_data にセッションデータをロード
 // するために unserialize() を使用します。
 // この例は、<function>serialize</function> で記述された例を補足するものです。
- 
-$conn = odbc_connect ("webdb", "php", "chicken");
-$stmt = odbc_prepare ($conn, "SELECT data FROM sessions WHERE id = ?");
+
+$conn = odbc_connect("webdb", "php", "chicken");
+$stmt = odbc_prepare($conn, "SELECT data FROM sessions WHERE id = ?");
 $sqldata = array ($PHP_AUTH_USER);
-if (!odbc_execute ($stmt, &amp;$sqldata) || !odbc_fetch_into ($stmt, &amp;$tmp)) {
+if (!odbc_execute($stmt, &$sqldata) || !odbc_fetch_into($stmt, &$tmp)) {
     // 実行または取得が失敗した場合、空の配列で初期化します
     $session_data = array();
 } else {
-    // $tmp[0] にシリアル化されたデータを保持している必要があります。
-    $session_data = unserialize ($tmp[0]);
-    if (!is_array ($session_data)) {
+    // tmp[0] にシリアル化されたデータを保持している必要があります。
+    $session_data = unserialize($tmp[0]);
+    if (!is_array($session_data)) {
         // 何か問題があったため、空の配列で初期化します。
         $session_data = array();
     }
 }
+?>
 ]]>
       </programlisting>
      </example>
