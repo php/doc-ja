@@ -1,85 +1,151 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.4 $ -->
-<!-- EN-Revision: 1.4 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.5 $ -->
+<!-- EN-Revision: 1.15 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: shimooka -->
 <refentry id="function.sqlite-create-function">
  <refnamediv>
   <refname>sqlite_create_function</refname>
+  <refname>SQLiteDatabase->createFunction</refname>
   <refpurpose>
    SQLステートメントで使用するために"通常の"ユーザ定義関数を登録する
   </refpurpose>
  </refnamediv>
- <refsect1>
-  <title>説明</title>
+ <refsect1 role="description">
+  &reftitle.description;
   <methodsynopsis>
-   <type>bool</type><methodname>sqlite_create_function</methodname>
-   <methodparam><type>resource</type><parameter>db</parameter></methodparam>
+   <type>void</type><methodname>sqlite_create_function</methodname>
+   <methodparam><type>resource</type><parameter>dbhandle</parameter></methodparam>
    <methodparam><type>string</type><parameter>function_name</parameter></methodparam>
-   <methodparam><type>mixed</type><parameter>callback</parameter></methodparam>
+   <methodparam><type>callback</type><parameter>callback</parameter></methodparam>
    <methodparam choice="opt"><type>int</type><parameter>num_args</parameter></methodparam>
   </methodsynopsis>
+  <para>オブジェクト指向言語型スタイル (メソッド):</para>
+  <classsynopsis>
+   <ooclass><classname>SQLiteDatabase</classname></ooclass>
+   <methodsynopsis>
+    <type>void</type><methodname>createFunction</methodname>
+    <methodparam><type>string</type><parameter>function_name</parameter></methodparam>
+    <methodparam><type>callback</type><parameter>callback</parameter></methodparam>
+    <methodparam choice="opt"><type>int</type><parameter>num_args</parameter></methodparam>
+   </methodsynopsis>
+  </classsynopsis>
   <para>
    <function>sqlite_create_function</function> により、SQLiteにPHP関数
    を<acronym>UDF</acronym> (ユーザ定義関数)として登録することが可能で
    す。この関数は、SQLステートメントの中からコールできます。
   </para>
   <para>
-   <parameter>db</parameter>には拡張したいデータベースハンドルを指定、
-   <parameter>function_name</parameter> は、SQLステートメントで使用す
-   る関数の名前を指定、<parameter>callback</parameter>はSQL関数を処理
-   するためにコールされるPHP関数を指定する有効なPHPコールバック関数で
-   す。オプションのパラメータ<parameter>num_args</parameter>は、
-   SQLiteの式パーサ/評価器によりヒント情報として使用されます。この値は、
-   使用する関数が一定の数のパラメータのみを指定可能で、特定の値を指定
-   する場合に推奨されます。
-  </para>
-  <para>
    UDFは、SELECTおよびUPDATEステートメント、そして、トリガーの中のよう
    に関数をコールできる全てのSQLステートメントで使用可能です。
   </para>
+ </refsect1>
 
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <para>
+   <variablelist>
+    <varlistentry>
+     <term><parameter>dbhandle</parameter></term>
+     <listitem>
+      <para>
+       SQLite データベースリソース。手続きに従って、
+       <function>sqlite_open</function> から返されます。
+       このパラメータは、
+       オブジェクト指向言語型メソッドを使用する場合は不要です。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>function_name</parameter></term>
+     <listitem>
+      <para>
+       SQL ステートメントで使用する関数名
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>callback</parameter></term>
+     <listitem>
+      <para>
+       定義された SQL 関数を処理するためのコールバック関数
+      </para>
+      <note>
+       <simpara>
+        コールバック関数は SQLite で有効な型
+        (例えば <link linkend="language.types.intro">スカラー型</link>)
+        を返す必要があります
+       </simpara>
+      </note>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>num_args</parameter></term>
+     <listitem>
+      <para>
+       コールバック関数が規定の引数の数を受け入れるかどうかを決定するため
+       SQLite パーサに渡すヒント
+      </para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
+  </para>
+  &sqlite.param-compat;
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
   <para>
    <example>
-    <title><function>sqlite_create_function</function>の例</title>
+    <title><function>sqlite_create_function</function> の例</title>
     <programlisting role="php">
 <![CDATA[
 <?php
-function md5_and_reverse($string) {
+function md5_and_reverse($string)
+{
     return strrev(md5($string));
 }
 
-sqlite_create_function($db, 'md5rev', 'md5_and_reverse', 1);
+if ($dbhandle = sqlite_open('mysqlitedb', 0666, $sqliteerror)) {
 
-$rows = sqlite_array_query($db, 'SELECT md5rev(filename) from files');
-?>]]>
+    sqlite_create_function($dbhandle, 'md5rev', 'md5_and_reverse', 1);
+
+    $sql  = 'SELECT md5rev(filename) FROM files';
+    $rows = sqlite_array_query($dbhandle, $sql);
+} else {
+    echo 'Error opening sqlite db: ' . $sqliteerror;
+    exit;
+}
+?>
+]]>
     </programlisting>
    </example>
   </para>
   <para>
    この例では、文字列のMD5サムを計算し、順番を反転する関数が記述されています。
-   このSQLステートメントが実行された場合、関数により変換されたファイル
-   名の値を返します。
-   <parameter>$rows</parameter> により返されるデータには、処理結果が含
-   まれています。
+   このSQLステートメントが実行された場合、
+   関数により変換されたファイル名の値を返します。
+   <parameter>$rows</parameter> により返されるデータには、
+   処理結果が含まれています。
   </para>
   <para>
-   この技術の美しいところは、データのクエリーを実行した後で、
+   この技術の美しいところは、データのクエリーを実行した後で
    foreach() ループにより結果を処理する必要がないことです。
   </para>
-
   <para>
    PHP は、データベースが最初にオープンされる際に
-   <literal>php</literal>という名前の特別な関数を登録します。
+   <literal>php</literal> という名前の特別な関数を登録します。
    このphp関数は、事前に登録することなしにあらゆるPHP関数をコールする
    ために使用可能です。
   </para>
   <para>
    <example>
-    <title>PHP関数の使用例</title>
+    <title>PHP 関数の使用例</title>
     <programlisting role="php">
 <![CDATA[
 <?php
-$rows = sqlite_array_query($db, "SELECT php('md5', filename) from files");
-?>]]>
+$rows = sqlite_array_query($dbhandle, "SELECT php('md5', filename) from files");
+?>
+]]>
     </programlisting>
     <para>
      この例は、データベースの各 <literal>filename</literal> カラムにつ
@@ -112,11 +178,18 @@ $rows = sqlite_array_query($db, "SELECT php('md5', filename) from files");
     <function>sqlite_create_aggregate</function>も使用可能です。
    </para>
   </tip>
+ </refsect1>
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
   <para>
-   <function>sqlite_create_aggregate</function>も参照してください。
+   <simplelist>
+    <member><function>sqlite_create_aggregate</function></member>
+   </simplelist>
   </para>
  </refsect1>
 </refentry>
+
 <!-- Keep this comment at the end of the file
  Local variables:
  mode: sgml
@@ -127,7 +200,7 @@ $rows = sqlite_array_query($db, "SELECT php('md5', filename) from files");
  sgml-indent-step:1
  sgml-indent-data:t
  sgml-parent-document:nil
- sgml-default-dtd-file:"../../../../manual.ced"
+ sgml-default-dtd-file:"../../manual.ced"
  sgml-exposed-tags:nil
  sgml-local-catalogs:nil
  sgml-local-ecat-files:nil
