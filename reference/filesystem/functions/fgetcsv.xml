@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.6 $ -->
 <!-- splitted from ./ja/functions/filesystem.xml, last change in rev 1.1 -->
-<!-- EN-Revision: 1.8 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 1.20 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: shimooka -->
   <refentry id="function.fgetcsv">
    <refnamediv>
     <refname>fgetcsv</refname>
@@ -13,36 +15,63 @@
      <methodsynopsis>
       <type>array</type><methodname>fgetcsv</methodname>
       <methodparam><type>resource</type><parameter>handle</parameter></methodparam>
-      <methodparam><type>int</type><parameter>length</parameter></methodparam>
+      <methodparam choice="opt"><type>int</type><parameter>length</parameter></methodparam>
       <methodparam choice="opt"><type>string</type><parameter>delimiter</parameter></methodparam>
       <methodparam choice="opt"><type>string</type><parameter>enclosure</parameter></methodparam>
      </methodsynopsis>
+
+    <para>
+     <variablelist>
+      <varlistentry>
+       <term><parameter>handle</parameter></term>
+       <listitem>
+        <simpara>
+         ファイルポインタは有効なものでなければならず、また
+         <function>fopen</function>,
+         <function>popen</function>, もしくは <function>fsockopen</function>
+         で正常にオープンされたファイルを指している必要があります。
+        </simpara>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term><parameter>length</parameter> (オプション)</term>
+       <listitem>
+        <simpara>
+         (行末文字を考慮して) CSVファイルにある最も長い行よりも大きい
+         必要があります。
+         PHP 5 でオプションになりました。このパラメータを省略
+         (もしくは PHP 5.0.4 かそれ以降で 0 を設定) すると、
+         最大行長は制限されません。この場合、若干動作が遅くなります。
+        </simpara>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term><parameter>delimiter</parameter> (オプション)</term>
+       <listitem>
+        <simpara>
+         フィールドのデリミタ (1 文字のみ) を設定します。
+         デフォルトはカンマです。
+        </simpara>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term><parameter>enclosure</parameter> (オプション)</term>
+       <listitem>
+        <simpara>
+         フィールド囲い子文字 (1 文字のみ) を設定します。
+         デフォルトはダブルクォーテーションマークです。
+         PHP 4.3.0 で追加されました。
+        </simpara>
+       </listitem>
+      </varlistentry>
+     </variablelist>
+    </para>
+
     <simpara>
      <function>fgets</function>に動作は似ていますが、
      <function>fgetcsv</function>は行を<acronym>CSV</acronym>フォーマッ
      トのフィールドとして読込み処理を行い、読み込んだフィールドを含む
-     配列を返すという違いがあります。フィールドのデリミタは、オプショ
-     ンの3番目のパラメータで別のデリミタを指定した場合を除きカンマです。
-     また、オプションの <parameter>enclosure</parameter>
-     (フィールド囲い子) パラメータは、別の文字を4番目のパラメータで
-     指定しない限り、デフォルトではダブルクォーテーショーンマークとなります。
-     <parameter>enclosure</parameter> と <parameter>delimiter</parameter>
-     はそれぞれ1文字に限られており、もし1文字を超える文字列が指定された場合は、
-     最初の文字だけが使われます。
-    </simpara>
-    <note>
-     <simpara>
-      <parameter>enclosure</parameter>引数はPHP 4.3.0で追加されました。
-     </simpara>
-    </note>
-    <simpara>
-     <parameter>handle</parameter>は、<function>fopen</function>、
-     <function>popen</function>、<function>fsockopen</function>で正常
-     にオープンされたファイルへのファイルポインタである必要があります。
-    </simpara>
-    <simpara> 
-     <parameter>length</parameter>は、(行末文字を考慮して)CSVファイル
-     にある最も長い行よりも大きい必要があります。
+     配列を返すという違いがあります。
     </simpara>
     <simpara>
      <function>fgetcsv</function>はファイルの終端に達した場合を含み、
@@ -52,32 +81,43 @@
      CSVファイルの空行はヌルフィールドを一つだけ含む配列として返され、
      エラーにはなりません。
     </simpara>
-    <example>
-     <title>
-      <function>fgetcsv</function> によりCSV ファイルの内容全体を読み
-      込み、出力します。
-     </title>
-     <programlisting role="php">
+    <para>
+     <example>
+      <title>CVS ファイルの全てのコンテンツを読み込み、表示する</title>
+      <programlisting role="php">
 <![CDATA[
 <?php
 $row = 1;
-$handle = fopen ("test.csv","r");
-while ($data = fgetcsv ($handle, 1000, ",")) {
-    $num = count ($data);
-    print "<p> $num fields in line $row: <br>\n";
+$handle = fopen("test.csv", "r");
+while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
+    $num = count($data);
+    echo "<p> $num fields in line $row: <br /></p>\n";
     $row++;
     for ($c=0; $c < $num; $c++) {
-        print $data[$c] . "<br>\n";
+        echo $data[$c] . "<br />\n";
     }
 }
-fclose ($handle);
+fclose($handle);
 ?>
 ]]>
-     </programlisting>
-    </example>
+      </programlisting>
+     </example>
+    </para>
     <para>
-     <function>explode</function>, <function>file</function>, 
-     <function>pack</function>も参照してください。
+     <function>fgetcsv</function> は PHP 4.3.5 以降バイナリセーフになりました。
+    </para>
+    <note>
+     <simpara>
+      この関数はロケール設定を考慮します。もし <varname>LANG</varname>
+      が例えば <literal>en_US.UTF-8</literal> の場合、
+      ファイル中の 1 バイトエンコーディングは間違って読み込まれます。
+     </simpara>
+    </note>
+    &note.line-endings;
+    <para>
+     <function>explode</function>, <function>file</function>,
+     <function>pack</function>, <function>fputcsv</function>
+     も参照してください。
     </para>
    </refsect1>
   </refentry>
