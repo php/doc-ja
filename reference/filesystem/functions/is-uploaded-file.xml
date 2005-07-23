@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.6 $ -->
 <!-- splitted from ./ja/functions/filesystem.xml, last change in rev 1.20 -->
-<!-- EN-Revision: 1.3 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 1.6 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: shimooka -->
   <refentry id="function.is-uploaded-file">
    <refnamediv>
     <refname>is_uploaded_file</refname>
@@ -27,6 +29,30 @@
      暴かれる可能性があるため、特に重要です。
     </para>
     <para>
+     適切に動作させるため、関数 <function>is_uploaded_file</function>
+     は $_FILES['userfile']['tmp_name'] のような引数を必要とします。
+     アップロードされたファイルのクライアントマシン上での名前
+     $_FILES['userfile']['name'] では動作しません。
+    </para>
+    <example>
+     <title><function>is_uploaded_file</function> の例</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+
+if (is_uploaded_file($_FILES['userfile']['tmp_name'])) {
+   echo "File ". $_FILES['userfile']['name'] ." uploaded successfully.\n";
+   echo "Displaying contents\n";
+   readfile($_FILES['userfile']['tmp_name']);
+} else {
+   echo "Possible file upload attack: ";
+   echo "filename '". $_FILES['userfile']['tmp_name'] . "'.";
+}
+
+?>]]>
+     </programlisting>
+    </example>
+    <para>
      <function>is_uploaded_file</function>は、
      PHP 3.0.16 より後のバージョンの PHP 3 および 4.0.2 以
      降のバージョンの PHP 4 でのみ利用可能です。
@@ -38,21 +64,26 @@
        これはこのバージョン以降でPHPの内部処理が変更されたためです。
       </para>
      </note>
+    </para>
+     <example>
+      <title>PHP 4 &lt; 4.0.3 における <function>is_uploaded_file</function>
+      の例</title>
      <programlisting role="php">
 <![CDATA[
 <?php
-/* Userland test for uploaded file. */
-function is_uploaded_file($filename) {
+/* アップロードされたファイルのテスト */
+function is_uploaded_file($filename)
+{
     if (!$tmp_file = get_cfg_var('upload_tmp_dir')) {
         $tmp_file = dirname(tempnam('', ''));
     }
     $tmp_file .= '/' . basename($filename);
-    /* User might have trailing slash in php.ini... */
+    /* ユーザーは php.ini で最後にスラッシュを付けているかも知れない... */
     return (ereg_replace('/+', '/', $tmp_file) == $filename);
 }
 
-/* This is how to use it, since you also don't have
- * move_uploaded_file() in these older versions: */
+/* 以下はこの関数の使用方法。これら古いバージョンには
+ * move_uploaded_file() もない。 */
 if (is_uploaded_file($HTTP_POST_FILES['userfile'])) {
     copy($HTTP_POST_FILES['userfile'], "/place/to/put/uploaded/file");
 } else {
@@ -61,7 +92,7 @@ if (is_uploaded_file($HTTP_POST_FILES['userfile'])) {
 ?>
 ]]>
      </programlisting>
-    </para>
+    </example>
     <para>
      簡単な使用例に関しては、<function>move_uploaded_file</function>お
      よび<link linkend="features.file-upload">ファイルアップロードの処
