@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- splitted from ./ja/functions/filesystem.xml, last change in rev 1.1 -->
-<!-- EN-Revision: 1.7 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 1.11 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: shimooka -->
   <refentry id="function.flock">
    <refnamediv>
     <refname>flock</refname>
@@ -12,13 +13,18 @@
       <type>bool</type><methodname>flock</methodname>
       <methodparam><type>resource</type><parameter>handle</parameter></methodparam>
       <methodparam><type>int</type><parameter>operation</parameter></methodparam>
-      <methodparam choice="opt"><type>int</type><parameter>&amp;wouldblock</parameter></methodparam>
+      <methodparam choice="opt"><type>int</type><parameter role="reference">wouldblock</parameter></methodparam>
      </methodsynopsis>
     <simpara>
      PHP は、恣意的にファイルをロックする汎用の手段を提供します。
      (これは、アクセスする全プログラムが同一のロックの方法を使用する
      必要があり、そうでない場合は動作しないことを意味します)
     </simpara>
+    <note>
+     <para>
+      <function>flock</function> 関数は Windows 環境下では必ず行ってください。
+     </para>
+    </note>
     <simpara>
      <function>flock</function>は、<parameter>handle</parameter>を用いて
      操作を行います。これは、オープンされたファイルポインタである必要が
@@ -61,10 +67,35 @@
      ほとんど全てのプラットフォームで使用可能な簡易な読み手/書き手モデ
      ルが実現されます。ロックをブロックモードとする場合(EWOULDBLOCK
      errno 条件)にオプションの3番目の引数に&true;を設定します。
+     ロックは <function>fclose</function> でも解放されます
+     (スクリプトが終了した場合も自動的にコールされます) 。
     </simpara>
     <simpara>
       &return.success;
     </simpara>
+    <para>
+     <example>
+      <title><function>flock</function> example</title>
+      <programlisting role="php">
+<![CDATA[
+<?php
+
+$fp = fopen("/tmp/lock.txt", "w+");
+
+if (flock($fp, LOCK_EX)) { // 排他的ロックを行う
+    fwrite($fp, "Write something here\n");
+    flock($fp, LOCK_UN); // ロックを解放する
+} else {
+    echo "Couldn't lock the file !";
+}
+
+fclose($fp);
+
+?>
+]]>
+      </programlisting>
+     </example>
+    </para>
     <note>
      <para>
       <function>flock</function>は、ファイルポインタを必要とするため、
