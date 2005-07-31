@@ -1,131 +1,121 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.12 $ -->
-<!-- EN-Revision: 1.36 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.13 $ -->
+<!-- EN-Revision: 1.45 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: takagi -->
 
  <chapter id="language.basic-syntax">
   <title>基本的な構文</title>
-
-   <!--
-   
-    NOTE:                             Last modified: 2001-05-16 13:00 GMT
-    
-    the language part is currently under heavy revision. Please do not
-    not make any heavy (i.e. structural) modifications to this part 
-    for a moment. 
-    
-    You'd also better not start any translation yet.
-    
-    Comments are always welcome at phpdoc@lists.php.net
-    
-    Progress:
-    
-     intro : DOESN'T EXIST - yet?
-             new chapter, with some introductionary remarks?
-             Will be discussed on the ML soon.
-     basic-syntax: 
-             FINISHED
-             except maybe moving the 'advanced escaping'
-             to a better place?
-             TODO: 
-              - nada
-     types : Being revised. Added all new types
-             Boolean and Integer are more or less finished.
-             The rest isn't.
-             TODO: 
-              - why is $foo[bar] bad syntax?
-              - what's the difference between unset($bla) and
-                $bla = NULL; (it is different!)
-              - $obj->{expr} syntax
-              - (unset) cast?????
-              - $bla = unset <== should've been nuked, don't mention it
-              - $str{offset} syntax, rather than $str[offset]
-              - read notes and apply when any of them are useful
-              - remove notes which have been included here.
-              - ...
-     the rest: Not yet started with.
-             TODO: 
-              - ?
-     oop   : has been revised by Kristian, DONE.
-   -->
-  
   <sect1 id="language.basic-syntax.phpmode">
    <title>HTML からの脱出</title>
-   
    <para>
-    PHPはファイルからPHPコードの開始を示す特別なタグを見つけるまでは
-    単純にその内容を出力します。PHPコードの開始を示すタグが見つかると
-    PHPはコードの終了を示すタグとの間にあるコードを実行します。この
-    メカニズムによりPHPコードをHTMLの中に埋め込むことが出来るのです。
-    つまり、PHPタグの中にある文字列はPHPコードとして解釈されますが、
-    外にある文字列(つまり普通のHTML)はあくまで単純に出力されるだけ
-    ということです。
-   </para>
-   
-   <para>
-    PHPコードのブロックであることを宣言するタグは4種類あります。
-	これらのうちの2つ((&lt;?php. . .?&gt;と&lt;script language="php"&gt;
-	. . .&lt;/script&gt;)は常に使用することが出来ます。その他の
-	タグは<filename>php.ini</filename>設定ファイルでonまたはoffに
-	するとが出来ます。短縮型のタグ(&lt;?. . .?&gt;)とASP形式の
-	タグは便利なのですが、長いタグに比べると移植性に欠けます。
-	また、PHPコードをXMLやXHTMLに埋め込もうとする場合にはXMLの
-	規格に従うために&lt;?php. . .?&gt;形式を使用する必要があるでしょう。
-   </para>
-
-   <para>
-    PHPでサポートされるタグは以下のとおりです:
-   </para>
-   
-   <para>
-    <example>
-     <title>HTMLからの脱出法</title>
+    PHP はファイルを解析して開始タグと終了タグを探します。タグが
+    見つかると、PHP はコードの実行を開始したり終了したりします。
+    このような仕組みにより、PHP を他のあらゆる形式のドキュメント中に
+    埋め込むことができるのです。つまり、開始タグと終了タグで囲まれている
+    箇所以外のすべての部分は、PHP パーサに無視されます。
+    たいていの場合、PHP は HTML ドキュメントの中に埋め込まれます。
+    たとえば以下のようにです。
+    <informalexample>
      <programlisting role="php">
 <![CDATA[
-1.  <?php echo("XHTMLまたはXMLドキュメントを処理したい場合は、この方法が良いでしょう\n"); ?>
+<p>この部分は無視されます。</p>
+<?php echo '一方、この部分はパースされます。'; ?>
+<p>この部分も無視されます。</p>
+]]>
+     </programlisting>
+    </informalexample>
+   </para>
+   <para>
+    もっと複雑な構造を用いることもできます:
+    <example>
+     <title>高度なエスケープ処理</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+if ($expression) {
+    ?>
+    <strong>真です。</strong>
+    <?php
+} else {
+    ?>
+    <strong>偽です。</strong>
+    <?php
+}
+?>
+]]>
+     </programlisting>
+    </example>
+    これは期待通りに動作します。なぜなら、PHP は ?&gt; 終了タグを見つけると
+    それ以降新たに開始タグを見つけるまでの内容を何でも出力するからです。
+    確かにこの例には少し無理があります。しかし、大量のテキストを出力する際に
+    <function>echo</function> や <function>print</function> を用いることを
+    考えると、このように一度 PHP のパースモードを抜けるほうが効率的です。
+   </para>
+   <para>
+    PHP で用いられるタグは 4 種類あります。
+    これらのうちの 2 つ、&lt;?php ?&gt; と 
+    &lt;script language="php"&gt; &lt;/script&gt; は常に使用することができます。
+    残りの 2 つは短縮型のタグと <productname>ASP</productname> スタイルの
+    タグで、これらは &php.ini; ファイルによって有効か無効かを切り替えられます。
+    中には短縮型のタグや <productname>ASP</productname> スタイルのタグを
+    便利に感じる人がいるかも知れませんが、長いタグに比べると移植性に欠けます。
+    また一般的には推奨されていません。
+    <note>
+     <para>
+      さらに注意しなければならないことがあります。PHP コードを XML や XHTML に
+      埋め込む場合には、標準規格に従うために &lt;?php ?&gt; タグを使用する
+      必要があるでしょう。
+     </para>
+    </note> 
+   </para>
+   <para>
+    <example>
+     <title>PHP の開始タグと終了タグ</title>
+     <programlisting role="php">
+<![CDATA[
+1.  <?php echo 'XHTMLまたはXMLドキュメントを処理したい場合は、この方法が良いでしょう'; ?>
 
-2.  <? echo ("この方法は最も簡単で、SGMLの処理命令です\n"); ?>
-    <?= expression ?> は "<? echo expression ?>"のショートカットです。
-    
-3.  <script language="php">
-        echo ("(FrontPageのような) いくつかのエディタ は処理命令を好み
-        ません");
+2.  <script language="php">
+        echo '(FrontPageのような) いくつかのエディタ は処理命令を好み
+        ません';
     </script>
 
-4.  <% echo ("オプションでASP形式のタグを使用可能です"); %>
+3.  <? echo 'これは、SGML を処理する最もシンプルな方法です'; ?>
+    <?= expression ?> This is a shortcut for "<? echo expression ?>"
+
+4.  <% echo 'オプションでASP形式のタグを使用可能です'; %>
     <%= $variable; # これは、"<%echo .." のショートカットです。%>
 ]]>
      </programlisting>
     </example>
    </para>
-   
    <para>
-    最初の方法が推奨されます。なぜなら、
-    XHTMLのようなXMLに適応したコードでPHPを使用できるからです。
+    例の 1. と 2. のタグは常に利用可能です。中でも 1. のタグは最も一般的で
+    推奨される方法です。
    </para>
-
    <para>
-    2番目の方法は、短縮型のタグが有効な場合にのみ利用可能です。
-	短縮型のタグは、<function>short_tags</function> 関数を使用するか
-	(PHP 3のみ)、 PHPの設定ファイルに
-    <link linkend="ini.short-open-tag">short_open_tag</link>を設定する
-    か--enable-short-tags オプションを <command>configure</command> に
-    指定して PHP をコンパイルすることにより、有効にできます。
-    php.ini-distでは、デフォルトでこのオプションは有効となっていますが、
-    短縮形のタグの使用は推奨されません。
-   </para>
- 
-   <para>
-    4番目の方法は、ASP型式のタグが 
-    <link linkend="ini.asp-tags">asp_tags</link> の設定により有効となっ
-    ている場合にのみ使用可能です。
-
+    短縮型のタグ（例 3.）が有効なのは、&php.ini; 設定ファイルのディレクティブ
+    <link linkend="ini.short-open-tag">short_open_tag</link> が
+    有効になっている場合か PHP が <option>--enable-short-tags</option> 
+    オプションつきで configure されている場合のみです。
     <note>
      <para>
-      ASP 型のタグのサポートは、3.0.4で追加されました。
+      PHP 3 では、<function>short_tags</function> 関数を用いて
+      短縮型のタグを有効にすることもできます。<emphasis>これは
+      PHP 3 でのみ有効な方法です!</emphasis>
+     </para>
+    </note>
+   </para>    
+   <para>
+    <productname>ASP</productname> 型のタグ（例 4.）が有効なのは、
+    &php.ini; 設定ファイルのディレクティブ 
+    <link linkend="ini.asp-tags">asp_tags</link> が有効になっている場合のみです。
+    <note>
+     <para>
+      <productname>ASP</productname> 型のタグのサポートは、3.0.4 で追加されました。
      </para>
     </note>
    </para>
-
    <note>
     <para>
      再利用されるか、または、自分の制御下にないPHPサーバで運用される
@@ -136,130 +126,93 @@
      ようにしてください。
     </para>
    </note>
-
-   <para>
-    ブロックの終了タグは、直後に改行がある場合、それを含んだものになります。
-    また、終了タグには自動的にセミコロンが含まれていると認識されます。
-    従ってPHPコードの最終行にはセミコロンを記述する必要はありません。
-    ファイル終端におけるPHPブロックの終了タグはオプション(任意)です。
-   </para>
-
-   <para>
-    PHP は、次のような構造を使用可能です。
-    <example><title>高度なエスケープ処理</title>
-     <programlisting role="php">
-<![CDATA[
-<?php
-if ($expression) { 
-    ?>
-    <strong>This is true.</strong>
-    <?php 
-} else { 
-    ?>
-    <strong>This is false.</strong>
-    <?php 
-}
-?>
-]]>
-     </programlisting>
-    </example>
-    
-    このコードは期待通りに動作します。これは、PHPが?&gt; および
-    &lt;?phpの中のテキストを<function>echo</function>命令として処理す
-    るためです。この例はもちろん不自然なものですがPHPモードを抜ける
-    ことでテキストを出力させる方法は、それらを<function>echo</function>
-    や<function>print</function>等を使って出力させるより便利です。
-   </para>
   </sect1>
-
   <sect1 id="language.basic-syntax.instruction-separation">
    <title>命令の分離</title>
-
-   <simpara>
-    命令は、C や Perl と同様に分離されます。つまり、各文はセミコロンで
-    終了します。
-   </simpara>
-   
    <para>
-    閉じるタグ (?&gt;) も文の終わりの意味を有します。このため、以下の
-    文は等価です。
-    
+    C や Perl と同様に、PHP でもステートメントを区切りにはセミコロンが必要と
+    なります。PHP コードブロックの終了タグには自動的にセミコロンが含まれていると
+    認識されます。 従って PHP コードの最終行にはセミコロンを記述する必要はありません。
+    ブロックの終了タグは、直後に改行がある場合、それを含んだものになります。
     <informalexample>
      <programlisting role="php">
 <![CDATA[
 <?php
-    echo "This is a test";
+    echo 'テストです';
 ?>
 
-<?php echo "This is a test" ?>
+<?php echo 'テストです' ?>
 ]]>
      </programlisting>
     </informalexample>
-   </para>
+    <note>
+     <para>
+      ファイル終端における PHP ブロックの終了タグはオプション（任意）です。
+      出力バッファリングと <function>include</function> や
+      <function>require</function> を利用する際にはこの機能を使わないほうが
+      無難です。
+     </para>
+    </note>
+   </para> 
   </sect1>
-  
   <sect1 id="language.basic-syntax.comments">
-   <title>コメント</title>
-   
+   <title>コメント</title>   
    <para>
-    PHP は、'C', 'C++' および Unix シェル型のコメントをサポートします。
+    PHP は、'C', 'C++' および Unix シェル型（Perl 型）のコメントをサポートします。
     例えば、
     
     <informalexample>
      <programlisting role="php">
 <![CDATA[
 <?php
-echo "This is a test"; // C++型の単一行用のコメント
+echo 'テストです'; // C++型の単一行用のコメント
 /* 複数行用のコメント
    もう一行分のコメント */
-echo "This is yet another test";
-echo "One Final Test"; # シェル型のコメント
+echo 'もうひとつのテストです';
+echo '最後のテストです'; # シェル型のコメント
 ?>
 ]]>
      </programlisting>
     </informalexample>
    </para>
-   
    <simpara>
-    "一行"コメントは、改行またはPHPコードのブロックの終わり
+    "一行"コメントは、改行または PHP コードのブロックの終わり
     のうちどちらか最初にくる方までです。
+    つまり、<literal>// ?&gt;</literal> の後に続く HTML コードは
+    表示されるということです。?&gt; により PHP モードから抜け出して
+    HTML モードに戻ると、そこでは <literal>//</literal> は何の影響も
+    及ぼしません。<link linkend="ini.asp-tags">asp_tags</link> 
+    設定ディレクティブが有効になっている場合、<literal>// %&gt;</literal>
+    でも同じような動作になります。しかし、一行コメントの中の
+    <literal>&lt;/script&gt;</literal> では PHP モードから抜け出すことは
+    ありません。
    </simpara>
    <informalexample>
     <programlisting role="php">
 <![CDATA[
-<h1>This is an <?php # echo "simple";?> example.</h1>
-<p>The header above will say 'This is an example'.
+<h1>これは <?php # echo 'シンプルな';?> 例です。</h1>
+<p>上の見出しは 'これは例です。' となります。
 ]]>
     </programlisting>
    </informalexample>
-
    <simpara>
-    'C'型のコメントがネストしないように注意する必要があります。
+    'C' 型のコメントは、最初に <literal>*/</literal> が現れた時点で終了します。
+    'C' 型のコメントがネストしないように注意する必要があります。
     ネストは、大きなブロックをコメントアウトする際に生じます。
    </simpara>
-
-   <informalexample>
-    <programlisting role="php">
+   <para>
+    <informalexample>
+     <programlisting role="php">
 <![CDATA[
 <?php
  /* 
-    echo "This is a test"; /* このコメントが問題を生じます */
+    echo 'テストです'; /* このコメントが問題を生じます */
  */
 ?>
 ]]>
-    </programlisting>
-   </informalexample>
-
-   <simpara>
-    1行単位のコメント形式は、実際には、改行またはPHPコードブロックの
-    終わりのどちらか最初に来た方までをコメントとします。
-    これは、<literal>// ?&gt;</literal> の後にHTMLコードが来ると
-    表示されることを意味します。
-    ?&gt; は、PHPモードをスキップし、HTMLモードに戻します。
-    <literal>//</literal> は影響を与えません。
-    設定ディレクティブ <link linkend="ini.asp-tags">asp_tags</link> が
-    有効な場合、<literal>// %&gt;</literal> が指定されても同じ動作となります。
-   </simpara>
+     </programlisting>
+    </informalexample>
+   </para>
   </sect1>
  </chapter>
  

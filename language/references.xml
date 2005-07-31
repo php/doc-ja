@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.13 $ -->
-<!-- EN-Revision: 1.37 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.14 $ -->
+<!-- EN-Revision: 1.44 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: takagi -->
  <chapter id="language.references">
   <title>リファレンスの説明</title>
   
@@ -32,7 +33,7 @@ $a =& $b;
 ]]>
      </programlisting>
     </informalexample>
-    この場合、<varname>$a</varname>と<varname>$b</varname>は同じ変数を
+    この場合、<varname>$a</varname>と<varname>$b</varname>は同じ内容を
     指します。
     <note>
      <para>
@@ -206,7 +207,10 @@ foo($a);
     </informalexample>
     関数コールの際には、リファレンス記号がないことに注意してください。関
     数定義にのみリファレンス記号があります。リファレンスで正しく引数を
-    渡すには、関数定義のみで十分です。
+    渡すには、関数定義のみで十分です。以前のバージョンの PHP では
+    <literal>foo(&amp;$a);</literal> のような形式で &amp; を利用すると
+    "Call-time pass-by-reference" という警告が発生していましたが、
+    これは今では廃止されています。
   </para>
   <para>
     次のものはリファレンスで渡すことが可能です。
@@ -256,10 +260,10 @@ function bar() // & がないことに注意
         $a = 5;
         return $a;
 }
-foo(bar());
+foo(bar()); // PHP 5.1.0 以降、致命的なエラーが発生する
 
 foo($a = 5); // 式、変数ではない
-foo(5); // 定数、変数ではない
+foo(5); // 致命的なエラーが発生する
 ?>
 ]]>
      </programlisting>
@@ -272,8 +276,11 @@ foo(5); // 定数、変数ではない
    <title>リファレンスによる返り値</title>
    <para>
     リファレンスを返すことは、結合する変数を見付けるために関数を使用し
-    たい場合に便利です。リファレンスを返す場合、次の構文を使用して下さ
-    い。
+    たい場合に便利です。パフォーマンスを向上させるためだけの目的で
+    この機能を用いることは<emphasis>やめてください</emphasis>。
+    そのようなことをしなくても、PHP エンジンが自動的に最適化を行います。
+    リファレンスを返すのは、そうすべき妥当な理由がある場合に限られます!
+    リファレンスを返す場合、次の構文を使用して下さい。
     <informalexample>
      <programlisting role="php">
 <![CDATA[
@@ -300,6 +307,18 @@ $foo->x = 2;
      両方の場所で<literal>&amp;</literal>を使用する必要があります。
      <varname>$foo</varname>について行われたのは、通常の代入ではありま
      せん。
+    </simpara>
+   </note>
+   <note>
+    <simpara>
+     以下のような形式で関数からリファレンスを返そうとした場合:
+     <literal>return ($found_var);</literal> これは、あなたが望んでいるように
+     <emphasis>式</emphasis> の結果を返してくれることは<emphasis>ありません</emphasis>。
+     可能なことは、値へのリファレンスを返すことができるということだけで、
+     それ以外の何者でもありません。
+     PHP 4.4.0 および PHP 5.1.0 以降では、式の結果や <literal>new</literal>
+     演算子の結果をそのまま返そうとした場合に <constant>E_NOTICE</constant>
+     エラーが発生します。
     </simpara>
    </note>
   </sect1>

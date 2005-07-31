@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.37 $ -->
-<!-- EN-Revision: 1.110 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.38 $ -->
+<!-- EN-Revision: 1.123 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: takagi -->
 
  <chapter id="language.control-structures">
   <title>制御構造</title>
@@ -477,6 +478,11 @@ foreach(array_expression as $key => $value)
    2番目の形式も同様ですが、各ループで現在の要素のキーが変数
    <literal>$key</literal>に代入されるところが異なります。
   </simpara>
+   <simpara>
+    PHP 5 では、
+    <link linkend="language.oop5.iterations">オブジェクトのイタレーション</link>
+    を用いることもできます。
+   </simpara>
   <para>
    <note>
     <para>
@@ -490,8 +496,9 @@ foreach(array_expression as $key => $value)
   <para>
    <note>
     <para>
-     <literal>foreach</literal>は、指定した配列自体に対してではなく、
-     そのコピーに対して処理を行うことに注意してください。このため、
+     配列が <link linkend="language.references">リファレンス</link>
+     でない限り、<literal>foreach</literal>は、指定した配列自体に対してではなく、
+     そのコピーに対して処理を行います。このため、
      <function>each</function> 文のように配列のポインタ位置が変更され
      ることはなく、返される配列要素への変更は、元の配列には反映されません。
      しかし、元の配列の内部ポインタは、配列の処理に伴い前に進められます。
@@ -672,8 +679,8 @@ while (++$i) {
    <title><literal>continue</literal></title>
    <simpara>
     <literal>continue</literal>は、ループ構造において現在の繰り返しループ
-    の残りの処理をスキップし、次の繰り返しの最初から実行を続けるために
-    使用されます、
+    の残りの処理をスキップし、条件式を評価した後に
+    次の繰り返しの最初から実行を続けるために使用されます、
    </simpara>
    <note>
     <simpara>
@@ -1042,7 +1049,7 @@ function profile ($dump = FALSE)
     if ($dump) {
         $temp = $profile;
         unset($profile);
-        return($temp);
+        return $temp;
     }
 
     $profile[] = microtime();
@@ -1112,13 +1119,25 @@ print_r (profile(TRUE));
     さらに詳しい情報に関しては<link linkend="functions.returning-values">
     返り値</link>を参照してください。
   </simpara>
+  <para>
   <note>
    <simpara>
     <function>return</function>は関数ではなく言語構造であるため引数を
     括弧で囲う必要があるのは、引数に式が含まれている場合のみです。
-    値を返す際に、括弧で括らずそのままにしておくのが一般的です。
+    変数を返す際には、括弧で括らずそのままにしておくのが一般的です。
+    またそのほうが PHP にかかる負荷も低くなります。
    </simpara>
   </note>
+    <note>
+     <simpara>
+      変数をリファレンスで返す場合は、<emphasis>決して</emphasis>引数を
+      括弧で囲うべきではありません。そのようにすると正しく動作しません。
+      <literal>return ($a);</literal> とすると、変数を返すのではなく
+      <literal>($a)</literal> を評価した結果を返すことになります
+      （この場合は、もちろん <varname>$a</varname> の値です）。
+      </simpara>
+     </note>
+   </para>
  </sect1>
  
   <sect1 id="function.require">
@@ -1205,7 +1224,8 @@ require ('somefile.txt');
    <function>include</function>を使用すると、読み込むべきファイルが存在しない
    場合も処理が続行されます。<link linkend="ini.include-path">include_path
    </link>を適切に設定することも忘れないでください。
-   読みこまれたファイルで発生したパースエラーは処理を中断しないことに注意してください。
+   PHP 4.3.5 より前のバージョンでは include されたファイルにパースエラーが
+   あっても処理が続行されましたが、それ以降のバージョンでは処理を停止します。
   </simpara>
   <simpara>
    読み込むファイルはまずカレントのワーキングディレクトリからの相対パスとしてinclude_path 
@@ -1218,12 +1238,17 @@ require ('somefile.txt');
    <filename>b.php</filename> がまず
    <filename class="directory">/www/</filename>で探され、その後、
    <filename class="directory">/www/include/</filename>で探されます。
+   ファイル名が <literal>../</literal> で始まっている場合は、
+   カレントのワーキングディレクトリからの相対パスとしてinclude_path 
+   で探されるのみとなります。
   </simpara>
   <simpara>
    ファイルが読み込まれるとそのファイルに含まれるコードは、
    <function>include</function>もしくは<function>require</function>が実行された
    行の<link linkend="language.variables.scope">変数スコープ</link>を継承します。
    呼び出し側の行で利用可能である全ての変数は、読み込まれたファイル内で利用可能です。
+   しかし、読み込まれたファイル内で定義されている関数やクラスはすべて
+   グローバルスコープとなります。
   </simpara>
   <para>
    <example>
@@ -1469,12 +1494,41 @@ echo $bar; // 1が出力されます
     <function>include_once</function>を使用することを推奨します。
    </para>
    <simpara>
-    ファイルを"読み込む"ための他の方法としては
-    <function>fopen</function>や<function>file</function>、そして
-    <function>include</function>を
+    PHP ファイルの内容を変数に "include する" もうひとつの方法は、
     <link linkend="ref.outcontrol">出力制御関数</link>
-    と共に使用する方法があります。
+    を <function>include</function> とともに用いて
+    出力をキャプチャすることです。たとえば、
    </simpara>
+   <para>
+    <example>
+     <title>出力バッファリングを用い、 PHP ファイルの内容を文字列として読み込む</title>
+      <programlisting role="php">
+<![CDATA[
+<?php
+$string = get_include_contents('somefile.php');
+
+function get_include_contents($filename) {
+    if (is_file($filename)) {
+        ob_start();
+        include $filename;
+        $contents = ob_get_contents();
+        ob_end_clean();
+        return $contents;
+    }
+    return false;
+}
+
+?>
+]]>
+      </programlisting>
+    </example>
+   </para>
+   <para>
+    スクリプト中で自動的にファイルをインクルードするには、&php.ini; の
+    <link linkend="ini.auto-prepend-file">auto_prepend_file</link> および
+    <link linkend="ini.auto-append-file">auto_append_file</link>
+    オプションも参照ください。
+   </para>
 
    &note.language-construct;
 

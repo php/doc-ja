@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.24 $ -->
-<!-- EN-Revision: 1.54 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.25 $ -->
+<!-- EN-Revision: 1.64 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: takagi -->
 
  <chapter id="language.oop">
   <title>クラスとオブジェクト (PHP 4)</title>
@@ -19,24 +20,27 @@
 class Cart
 {
     var $items;  // 買い物カゴの中のアイテム
-   
+
     // $num 個の $artnr を買い物カゴに加えます
- 
+
     function add_item ($artnr, $num)
     {
         $this->items[$artnr] += $num;
     }
-   
+
     // $num 個の $artnr を買い物カゴから出します
- 
+
     function remove_item ($artnr, $num)
     {
         if ($this->items[$artnr] > $num) {
             $this->items[$artnr] -= $num;
             return true;
+        } elseif ($this->items[$artnr] == $num) {
+            unset($this->items[$artnr]);
+            return true;
         } else {
             return false;
-        }   
+        }
     }
 }
 ?>
@@ -53,8 +57,10 @@ class Cart
 
    <warning>
     <simpara>
-     複数のファイルや複数のPHPブロックで分割してクラスを定義定義することは
-     <emphasis>できません</emphasis>。以下の例は動作しません。
+     複数のファイルで分割してクラスを定義することは
+     <emphasis>できません</emphasis>。また、関数定義の内部分割されている
+     場合を除き、複数の PHP ブロックで分割してクラスを定義することも
+     <emphasis>できません</emphasis>。次の例は正しく動作しません:
     </simpara>
     <para>
      <informalexample>
@@ -65,6 +71,26 @@ class test {
 ?>
 <?php
     function test() {
+        print 'OK';
+    }
+}
+?>
+]]>
+      </programlisting>
+     </informalexample>
+    </para>
+    <simpara>
+     しかし、次の例は許されます:
+    </simpara>
+    <para>
+     <informalexample>
+      <programlisting role="php">
+<![CDATA[
+<?php
+class test {
+    function test() {
+        ?>
+        <?php
         print 'OK';
     }
 }
@@ -174,20 +200,19 @@ $another_cart->add_item("0815", 3);
    
    <para>
     <varname>$cart</varname>と<varname>$another_cart</varname>は共に関数 add_item()、
-    remove_item() と変数items を有しています。これらは、異なる関数およ
-    び変数です。オブジェクトは、ファイルシステムのディレクトリに似たよ
-    うなものであると考えられます。ファイルシステムでは、別のディレクト
-    リに置く限り、二つの異なるREADME.TXTを保持することが可能です。ディ
-    レクトリではトップディレクトリから各ファイルにアクセスするには、フ
-    ルパス名を入力する必要がありますが、これと全く同様にコールしたい関
-    数の完全な名前を指定する必要があります。PHPの用語では、最上位のディ
-    レクトリはグローバル名前空間であり、パス名のセパレータは、<literal>-&gt;</literal>
-    となります。つまり、<varname>$cart-&gt;items</varname> と 
-    <varname>$another_cart-&gt;items</varname> は、
-    二つの異なる変数です。<varname>$cart-&gt;items</varname>という名前の変数は、
-    <varname>$cart-&gt;$items</varname>ではない、つまり、
-    PHPの変数名はドル記号を一つだけ
-    有することに注意してください。
+    remove_item() と変数items を有しています。これらは、異なる関数および変数です。
+    オブジェクトは、ファイルシステムのディレクトリに似たようなものであると
+    考えられます。ファイルシステムでは、別のディレクトリに置く限り、
+    二つの異なる<filename>README.TXT</filename>を保持することが可能です。
+    ディレクトリではトップディレクトリから各ファイルにアクセスするには、
+    フルパス名を入力する必要がありますが、これと全く同様にコールしたい
+    関数の完全な名前を指定する必要があります。PHPの用語では、最上位の
+    ディレクトリはグローバル名前空間であり、パス名のセパレータは、
+    <literal>-&gt;</literal> となります。つまり、<varname>$cart-&gt;items</varname>
+    と <varname>$another_cart-&gt;items</varname> は、二つの異なる変数です。
+    <varname>$cart-&gt;items</varname>という名前の変数は、
+    <varname>$cart-&gt;$items</varname>ではない、つまり、PHP の変数名は
+    ドル記号を一つだけ有することに注意してください。
    </para>
 
    <informalexample>
@@ -223,6 +248,62 @@ $cart->$myvar = array("10" => 1);
     items の <varname>$artnr</varname> カウンタに <varname>$num</varname> を
     追加する」と読み変えることが可能です。
    </para>
+
+   <note>
+    <para>
+     擬似変数 <varname>$this</varname> は、メソッドが静的にコールされた場合に
+     常に定義されるわけではありません。しかし、はっきりしていることは: 
+     もしメソッドが別のオブジェクトから静的にコールされている場合は
+     <varname>$this</varname> が定義されるということです。
+     この場合、<varname>$this</varname> は呼び出し元のオブジェクトとなります。
+     これを説明したのが次の例です:
+     <informalexample>
+      <programlisting role="php">
+<![CDATA[
+<?php
+class A
+{
+    function foo()
+    {
+        if (isset($this)) {
+            echo '$this is defined (';
+            echo get_class($this);
+            echo ")\n";
+        } else {
+            echo "\$this is not defined.\n";
+        }
+    }
+}
+
+class B
+{
+    function bar()
+    {
+        A::foo();
+    }
+}
+
+$a = new A();
+$a->foo();
+A::foo();
+$b = new B();
+$b->bar();
+B::bar();
+?>
+]]>     
+      </programlisting>
+      &example.outputs;
+      <screen>
+<![CDATA[
+$this is defined (a)
+$this is not defined.
+$this is defined (b)
+$this is not defined.
+]]>
+      </screen>
+     </informalexample>
+    </para>
+   </note>
 
    <note>
     <para>
@@ -309,23 +390,14 @@ $ncart->add_item("10", 1);  // (籠から継承された機能)
   </sect1>
 
   <sect1 id="language.oop.constructor">
-   <title><literal>コンストラクタ</literal></title>
-
-   <caution>
-    <simpara>
-     PHP 3 と PHP 4 では、コンストラクタの動作は異なります。PHP 4の定
-     義の方が明らかに好ましいと言えます。
-    </simpara>
-   </caution>
+   <title>コンストラクタ</title>
 
    <para>
     コンストラクタは、<literal>new</literal>によりクラスの新しいインス
     タンスを作成する際に自動的にコールされるクラス関数です。
-    PHP 3では、ある関数が、クラス名と同じ名前を有している場合にコンス
-    トラクタになりました。PHP 4では、ある関数が、そのコンストラクタが
-    定義されているクラスと同じ名前を有している場合にコンストラクタにな
-    ります。これらの違いは僅かですが、重要な違いがあります。(以下、参
-    照)
+    ある関数が、クラス名と同じ名前を有している場合にコンストラクタに
+    なります。コンストラクタが存在しない場合、もし基底クラスの
+    コンストラクタが存在すれば、それがコールされます。
    </para>
  
    <informalexample>
@@ -359,7 +431,6 @@ class Auto_Cart extends Cart
     <programlisting role="php">
 <![CDATA[
 <?php
-// PHP 3 と PHP 4の両方で動作
 class Constructor_Cart extends Cart
 {
     function Constructor_Cart($item = "10", $num = 1)
@@ -369,11 +440,9 @@ class Constructor_Cart extends Cart
 }
  
 // しつこいが、前の例と同じものを買う
- 
 $default_cart = new Constructor_Cart;
  
 // 実際に買うものカゴに入れる...
- 
 $different_cart = new Constructor_Cart("20", 17);
 ?>
 ]]>
@@ -384,52 +453,6 @@ $different_cart = new Constructor_Cart("20", 17);
     <literal>@new</literal>のようにコンストラクタで発生するエラーの
     出力を抑制するために<literal>@</literal>演算子を使用することが
     可能です。例：<literal>@new</literal>
-   </para>
-
-   <caution>
-    <simpara>
-     PHP 3では、派生クラスとコンストラクタには複数の制約があります。こ
-     れらの制限を理解するために以下の例を注意して御覧ください。
-    </simpara> 
-   </caution>
-   
-   <informalexample>
-    <programlisting role="php">
-<![CDATA[
-class A
-{
-    function A()
-    {
-        echo "Aのコンストラクタです<br>\n";
-    }
-}
-
-class B extends A
-{
-    function C()
-    {
-        "通常の関数<br>\n";
-    }
-}
-
-// PHP 3ではコンストラクタはコールされません
-$b = new B;
-]]>
-    </programlisting>
-   </informalexample>
-
-   <para>
-    PHP 3では、上の例でコンストラクタはコールされません。PHP 3の規則で
-    は、「コンストラクタはクラスと同じ名前を有する関数です。」となりま
-    す。クラス名はBであり、クラスBの中にはB()という関数がないため、何
-    もおきません。
-   </para>
-   
-   <para>
-    PHP 3では、上の例でコンストラクタはコールされません。PHP 3の規則で
-    は、「コンストラクタはクラスと同じ名前を有する関数です。」となりま
-    す。クラス名はBであり、クラスBの中にはB()という関数がないため、何
-    もおきません。
    </para>
 
    <informalexample>
@@ -451,10 +474,6 @@ class A
 
 class B extends A
 {
-    function C()
-    {
-        echo "通常の関数です<br>\n";
-    }
 }
 
 // これにより、B() がコンストラクタとしてコールされます。
@@ -464,42 +483,27 @@ $b = new B;
    </informalexample>
    
    <para>
-    PHP 3では、クラスAの関数 B() は意図されていない場合でも、クラスB
-    のコンストラクタに突然なってしまいました。PHP 3の規則は次のように
-    なります。「コンストラクタはクラス名と同じ名前の関数である。」PHP
-    3は、この関数がクラスBで定義されているかとかその関数が継承されてい
-    るかどうかは考慮しません。
-   </para>
-   
-   <para>
-    これは、PHP 4では次のように規則が修正されました。「コンストラクタ
-    は、それが定義されているクラスと同じ名前の関数である」つまり、PHP
-    4では、クラスBが独自のコンストラクタ関数を持たない場合には、基底ク
-    ラスのコンストラクタがコールされ、「Aのコンストラクタです&lt;br&gt;」
-    と出力されます。
+    クラスAの関数 B() は、意図されていない場合でも突然クラスB の
+    コンストラクタになってしまいました。PHP 4 は、この関数が
+    クラスBで定義されているかとかその関数が継承されているかどうかは
+    考慮しません。
    </para>
    
    <caution>
     <simpara>
-     PHP 3 および PHP 4のどちらでも派生クラスのコンストラクタから基底
-     クラスのコンストラクタを自動的にコールすることはできません。
+     PHP 4 では派生クラスのコンストラクタから基底クラスの
+     コンストラクタを自動的にコールすることはできません。
      上流のコンストラクタを適切にコールするように伝播させることは
      あなたの責任でやるべきことです。
     </simpara>
    </caution>
    
-   <note>
-    <simpara>
-     PHP 3およびPHP 4には、デストラクタはありません。デストラクタの機
-     能の多くをシミュレーションするには、代わりに
-     <function>register_shutdown_function</function> を使用します。
-    </simpara>
-   </note>
-   
    <para>
     デストラクタは、<function>unset</function>またはスコープから
     でることにより、オブジェクトが破棄される度に自動的にコールされる関数です。
-    PHPにはデストラクタはありません。
+    PHPにはデストラクタはありません。デストラクタの機能の多くを
+    シミュレーションするには、代わりに
+     <function>register_shutdown_function</function> を使用します。
    </para>
   </sect1>
 
@@ -648,7 +652,7 @@ $b->example();
 
   <caution>
    <simpara>
-    以下の情報は、PHP 4でのみ有効です。
+    以下の情報は、PHP 4 以降でのみ有効です。
    </simpara>
   </caution>
 
@@ -945,9 +949,7 @@ $a->c->echoValue();
 ?>
 ]]>
      </programlisting>
-     <para>
-      この例の出力は以下のようになります。
-     </para>
+     &example.outputs;
      <screen>
 <![CDATA[
 class A: 10
@@ -1029,9 +1031,9 @@ compareObjects($o, $r);
 ?>
 ]]>
     </programlisting>
-   </example>
-   以下のような出力になります:
-   <screen>
+    &example.outputs;
+    <screen>
+<![CDATA[    
 同じ引数で生成されたインスタンスの比較
 o1 == o2 : TRUE
 o1 != o2 : FALSE
@@ -1049,7 +1051,9 @@ o1 == o2 : FALSE
 o1 != o2 : TRUE
 o1 === o2 : FALSE
 o1 !== o2 : TRUE
-   </screen>
+]]>
+    </screen>
+   </example>   
    比較のルールに基づいた結果が得られたと思います。
    その属性に同じ値を持ち、かつ同じクラスから生成されたインスタンスだけが
    等しいとみなされます。
@@ -1096,9 +1100,9 @@ compareObjects($u, $w);
 ?>     
 ]]>
     </programlisting>
-   </example>
-   Which gives the expected output:
-   <screen>
+    &example.outputs;
+    <screen>
+<![CDATA[
 Composite objects u(o,p) and v(q,p)
 o1 == o2 : TRUE
 o1 != o2 : FALSE
@@ -1110,7 +1114,9 @@ o1 == o2 : FALSE
 o1 != o2 : TRUE
 o1 === o2 : FALSE
 o1 !== o2 : TRUE
-   </screen>
+]]>
+    </screen>
+   </example>
   </para>
  </sect1>
 

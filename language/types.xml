@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.36 $ -->
-<!-- EN-Revision: 1.144 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.37 $ -->
+<!-- EN-Revision: 1.153 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: takagi -->
  <chapter id="language.types">
   <title>型</title>
   
@@ -379,14 +380,14 @@ integer     : [+-]?decimal
     </para>
     <warning>
      <para>
-      If invalid digit is passed to octal integer (i.e. 8 or 9), the rest of
-      the number is ignored.
+       8 進数の整数値として不正な数字（例: 8 または 9）が渡された場合、
+       数値の残りの部分は無視されます。
       <example>
-       <title>Octal weirdness</title>
+       <title>おかしな 8 進数</title>
        <programlisting role="php">
 <![CDATA[
 <?php
-var_dump(01090); // 010 octal = 8 decimal
+var_dump(01090); // 010（8 進数）= 8（10 進数）
 ?>
 ]]>
        </programlisting>
@@ -414,9 +415,9 @@ $large_number =  2147483648;
 var_dump($large_number);
 // 出力: float(2147483648)
 
-// 指定した16進表現整数も出力
-var_dump( 0x80000000 );
-// 出力: float(2147483648)
+// 指定した16進表現整数を出力できない
+var_dump( 0x100000000 );
+// 出力: int(2147483647)
 
 $million = 1000000;
 $large_number =  50000 * $million;
@@ -561,10 +562,12 @@ $c = 7E-10;
     </informalexample>
     規約:
     <informalexample>
-     <programlisting>
+     <programlisting role="php">
+<![CDATA[
 LNUM          [0-9]+
 DNUM          ([0-9]*[\.]{LNUM}) | ({LNUM}[\.][0-9]*)
 EXPONENT_DNUM ( ({LNUM} | {DNUM}) [eE][+-]? {LNUM})
+]]>
      </programlisting>
     </informalexample>
     floatの大きさはプラットフォーム依存です。ただし、通常はおよそ10
@@ -807,6 +810,24 @@ echo 'Variables do not $expand $either';
        適当な終了IDがみつからない場合、スクリプトの最終行を発生
        行とするパースエラーが発生します。
       </simpara>
+      <para>
+       ヒアドキュメント構文を、クラスのメンバの初期化に用いることはできません。
+       他の文字列構文を利用してください。
+       <example>
+        <title>間違った例</title>
+        <programlisting role="php">
+<![CDATA[
+<?php
+class foo {
+    public $bar = <<<EOT
+bar
+EOT;
+}
+?>
+]]>
+        </programlisting>
+       </example>
+      </para>
      </warning>
 
      <para>
@@ -1282,10 +1303,11 @@ echo $arr[12];    // 1
       <varname>key</varname> は、<type>整数</type> または
       <type>文字列</type>です。
       あるキーが、<type>整数</type>の標準的な表現形式である場合、
-      そのように解釈されます。(つまり、<literal>"8"</literal>は
+      そのように解釈されます(つまり、<literal>"8"</literal>は
       <literal>8</literal>として解釈されます。一方、
       <literal>"08"</literal>は<literal>"08"</literal>として解釈されま
-      す。)
+      す)。<varname>key</varname> に浮動小数点数値を指定すると、
+      その値は <type>integer</type> に切り詰められます。
       PHPにおいては添字配列と連想配列の間に違いはなく、配列型は１つだ
       けで、整数または文字列のインデックスを使用することができます。
      </para>
@@ -1444,9 +1466,8 @@ print_r($array);
 ?>
 ]]> 
        </programlisting>
-       <para>
-        上の例は以下のような出力となります。
-        <screen>
+       &example.outputs;
+       <screen>
 <![CDATA[
 Array
 (
@@ -1469,8 +1490,7 @@ Array
     [1] => 7
 )
 ]]>
-        </screen>
-       </para>
+       </screen>
       </informalexample>       
 
      </note>
@@ -1580,9 +1600,8 @@ for ($i = 0; $i < $count; $i++) {
 ]]>
        </programlisting>
       </informalexample>
-      <para>
-       上記の出力は次のようになります:
-       <screen>
+      &example.outputs;
+      <screen>
 <![CDATA[
 Checking 0: 
 Notice: Undefined index:  $i in /path/to/script.html on line 9
@@ -1600,8 +1619,7 @@ Notice: Undefined index:  $i in /path/to/script.html on line 11
 Bad: 
 Good: 2
 ]]>        
-       </screen>
-      </para>
+      </screen>
      </note>
      <para>
       この具体例を以下に示します。
@@ -1771,10 +1789,11 @@ $error_descriptions[8] = "This is just an informal notice";
    </sect2>
 
    <sect2 id="language.types.array.comparing">
-    <title>Comparing</title>
+    <title>比較</title>
     <para>
-     It is possible to compare arrays by <function>array_diff</function> and
-     by <link linkend="language.operators.array">Array operators</link>.
+     <function>array_diff</function> と 
+     <link linkend="language.operators.array">配列演算子</link>
+     を用いると、配列を比較することができます。
     </para>
    </sect2>
 
@@ -1872,9 +1891,7 @@ foreach ( $colors as $color ) {
 ?>
 ]]>
      </programlisting>
-     <para>
-      この例の出力は以下のようになります。
-     </para>
+     &example.outputs;
      <screen>
 <![CDATA[
 Do you like red?
@@ -1911,9 +1928,7 @@ print_r($colors);
 ?>
 ]]>
       </programlisting>
-      <para>
-       この例の出力は以下のようになります。
-      </para>
+      &example.outputs;
       <screen>
 <![CDATA[
 Array
@@ -1939,9 +1954,7 @@ print_r($firstquarter);
 ?>
 ]]>
       </programlisting>
-      <para>
-       この例の出力は以下のようになります。
-      </para>
+      &example.outputs;
       <screen>
 <![CDATA[
 Array 
@@ -2126,6 +2139,10 @@ echo $obj->scalar;  // outputs 'ciao'
     </simpara>
    </note>
    
+    <para>
+     <function>get_resource_type</function> も参照ください。
+    </para>
+
    <sect2 id="language.types.resource.casting">
     <title>リソースへの変換</title>
     
