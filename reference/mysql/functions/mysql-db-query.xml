@@ -1,49 +1,156 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- splitted from ./ja/functions/mysql.xml, last change in rev 1.1 -->
-<!-- EN-Revision: 1.2 Maintainer: hirokawa Status: ready -->
-  <refentry id="function.mysql-db-query">
-   <refnamediv>
-    <refname>mysql_db_query</refname>
-    <refpurpose>MySQLクエリーを送信する</refpurpose>
-   </refnamediv>
-   <refsect1>
-    <title>説明</title>
-     <methodsynopsis>
-      <type>resource</type><methodname>mysql_db_query</methodname>
-      <methodparam><type>string</type><parameter>database</parameter></methodparam>
-      <methodparam><type>string</type><parameter>query</parameter></methodparam>
-      <methodparam><type>resource</type><parameter>
-        <replaceable><optional>link_identifier</optional></replaceable>
-       </parameter></methodparam>
-     </methodsynopsis>
-    <para> 
-     クエリーの結果へのMySQL結果IDを返します。エラーの場合は、
-     &false;を返します。
-    </para>
-    <para> 
-     <function>mysql_db_query</function>は、データベースdatabaseを選択し、
-     そのデータベースに対してクエリーを実行します。
-     オプションのlink_identifierが指定されない場合、関数は、そのMySQL
-     サーバーに対してオープンされているリンクを探すことを試みます。
-     そのようなリンクが見つからない場合、
-     <function>mysql_connect</function>が引数なしでコールされた時と
-     同様にリンクを作成しようとします。
-    </para>
-    <para> 
-     <function>mysql_connect</function>と
-     <function>mysql_query</function>も参照ください。
-    </para>
-    <para>
-     <note>
-      <simpara>
-       この関数は、PHP 4.0.6以降古い関数となっています。この関数は使用
-       しないでください。替わりに<function>mysql_select_db</function>お
-       よび<function>mysql_query</function>を使用してください。
-      </simpara>
-     </note>
-    </para>
-   </refsect1>
-  </refentry>
+<!-- $Revision: 1.5 $ -->
+<!-- EN-Revision: 1.11 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: takagi -->
+<refentry id="function.mysql-db-query">
+ <refnamediv>
+  <refname>mysql_db_query</refname>
+  <refpurpose>MySQL クエリーを送信する</refpurpose>
+ </refnamediv>
+
+ <refsect1 role="description">
+  &reftitle.description;
+  <methodsynopsis>
+   <type>resource</type><methodname>mysql_db_query</methodname>
+   <methodparam><type>string</type><parameter>database</parameter></methodparam>
+   <methodparam><type>string</type><parameter>query</parameter></methodparam>
+   <methodparam choice="opt"><type>resource</type><parameter>link_identifier</parameter></methodparam>
+  </methodsynopsis>
+  <para>
+   <function>mysql_db_query</function> はデータベースを選択し、
+   そこでクエリーを実行します。
+  </para>
+ </refsect1>
+
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <para>
+   <variablelist>
+    <varlistentry>
+     <term><parameter>database</parameter></term>
+     <listitem>
+      <para>
+       選択するデータベース名。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>query</parameter></term>
+     <listitem>
+      <para>
+       MySQL クエリー。
+      </para>
+     </listitem>
+    </varlistentry>
+    &mysql.linkid.description;
+   </variablelist>
+  </para>
+ </refsect1>
+ 
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <para>
+   クエリーの結果を指す MySQL 結果リソースを正の値で返します。
+   エラー時には &false; を返します。また、
+   <literal>INSERT</literal>/<literal>UPDATE</literal>/<literal>DELETE</literal>
+   クエリーの場合には &true; または &false; を返し、これらはそれぞれ
+   クエリーが 成功した / 失敗した ことを示します。
+  </para>
+ </refsect1>
+
+ <refsect1 role="changelog">
+  &reftitle.changelog;
+  <para>
+   <informaltable>
+    <tgroup cols="2">
+     <thead>
+      <row>
+       <entry>&Version;</entry>
+       <entry>&Description;</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry>4.0.6</entry>
+       <entry>
+        この関数は廃止予定です。使用しないでください。かわりに
+        <function>mysql_select_db</function>
+        あるいは <function>mysql_query</function> を使用してください。
+       </entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </informaltable>
+  </para>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title><function>mysql_db_query</function> の別の例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+if (!$link = mysql_connect('mysql_host', 'mysql_user', 'mysql_password')) {
+    echo 'Could not connect to mysql';
+    exit;
+}
+
+if (!mysql_select_db('mysql_dbname', $link)) {
+    echo 'Could not select database';
+    exit;
+}
+
+$sql    = 'SELECT foo FROM bar WHERE id = 42';
+$result = mysql_query($sql, $link);
+
+if (!$result) {
+    echo "DB Error, could not query the database\n";
+    echo 'MySQL Error: ' . mysql_error();
+    exit;
+}
+
+while ($row = mysql_fetch_assoc($result)) {
+    echo $row['foo'];
+}
+
+mysql_free_result($result);
+
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+ </refsect1>
+
+ <refsect1 role="notes">
+  &reftitle.notes;
+  <note>
+   <para>
+    この関数の終了後、直前に選択されていたデータベースに自動的に戻ることは
+    <emphasis role="strong">ない</emphasis>ということに注意してください。
+    言い換えれば、<emphasis>一時的に</emphasis>別のデータベース上でクエリーを
+    実行するという目的でこの関数を利用することはできないということです。
+    もしそのような場合は、もとのデータベースに改めて接続しなおす必要があります。
+    この関数のかわりに、SQL クエリーの中で <literal>database.table</literal>
+    構文を用いたり <function>mysql_select_db</function> を利用したりすることが
+    強く推奨されています。
+   </para>
+  </note>
+ </refsect1>
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <para>
+   <simplelist>
+    <member><function>mysql_query</function></member>
+    <member><function>mysql_select_db</function></member>
+   </simplelist>
+  </para>
+ </refsect1>
+</refentry>
 
 <!-- Keep this comment at the end of the file
 Local variables:

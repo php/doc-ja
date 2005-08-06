@@ -1,89 +1,161 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- splitted from ./ja/functions/mysql.xml, last change in rev 1.1 -->
-<!-- EN-Revision: 1.62 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.5 $ -->
+<!-- EN-Revision: 1.15 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: takagi -->
   <refentry id="function.mysql-query">
    <refnamediv>
     <refname>mysql_query</refname>
-    <refpurpose>SQLクエリーをMySQLに送信する</refpurpose>
+    <refpurpose>MySQL クエリを送信する</refpurpose>
    </refnamediv>
-   <refsect1>
-    <title>説明</title>
-     <methodsynopsis>
-      <type>int</type><methodname>mysql_query</methodname>
-      <methodparam><type>string</type><parameter>query</parameter></methodparam>
-      <methodparam><type>int</type><parameter>
-	<replaceable><optional>link_identifier</optional></replaceable>
-       </parameter></methodparam>
-     </methodsynopsis>
-    <para> 
-     <function>mysql_query</function>は、
-     指定したlink_identifierが指すサーバー上の現在アクティブな
-     データベースにクエリーを送信します。
-     <parameter>link_identifier</parameter>が指定されない場合、
-     最後にオープンされたリンクが指定されたと仮定されます。
-     リンクが一度もオープンされていない場合、この関数は、
-     <function>mysql_connect</function> が引数無しでコールされた時と
-     同様にリンクを確立し、使用しようとします。
+
+   <refsect1 role="description">
+    &reftitle.description;
+    <methodsynopsis>
+     <type>resource</type><methodname>mysql_query</methodname>
+     <methodparam><type>string</type><parameter>query</parameter></methodparam>
+     <methodparam choice="opt"><type>resource</type><parameter>link_identifier</parameter></methodparam>
+    </methodsynopsis>
+    <para>
+     <function>mysql_query</function> は、クエリを送信します
+     （送信先は、<parameter>link_identifier</parameter> で指定された
+     サーバ上にある現在アクティブなデータベースです）。
+    </para>
+   </refsect1>
+
+   <refsect1 role="parameters">
+    &reftitle.parameters;
+    <para>
+     <variablelist>
+      <varlistentry>
+       <term><parameter>query</parameter></term>
+       <listitem>
+        <para>
+         SQL クエリ。
+        </para>
+        <para>
+         クエリ文字列は、セミコロンで終えてはいけません。
+        </para>
+       </listitem>
+      </varlistentry>
+      &mysql.linkid.description;
+     </variablelist>
+    </para>
+   </refsect1>
+
+   <refsect1 role="returnvalues">
+    &reftitle.returnvalues;
+    <para>
+     SELECT, SHOW, DESCRIBE や EXPLAIN 文では、
+     <function>mysql_query</function> は成功した場合に
+     <type>resource</type> を返します。エラー時には &false; を返します。
     </para>
     <para>
-     クエリー文字列は、セミコロンで終わる必要はありません。
+     それ以外の SQL 文 UPDATE, DELETE, DROP などでは、
+     <function>mysql_query</function> は成功した場合に
+     &true; 、エラー時に &false; を返します。
     </para>
     <para>
-     <function>mysql_query</function>は、クエリーが成功したかどうかを
-     表すために&true;(非ゼロ)または&false;を返します。
-     返り値&true;は、クエリーが正しく、サーバーにより実行されたことを
-     意味します。この返り値は、作用されたり、返される行の数に関する情報を
-     何も示しません。成功したが行に何も作用せず、行を何も返さないクエリーは
-     確実に有りえます。
+     返された結果にアクセスするためには、結果リソースを
+     <function>mysql_fetch_array</function> やその他の関数に渡します。
     </para>
     <para>
-     次のクエリーは、文法的には間違っており、
-     <function>mysql_query</function>は失敗し、&false;を返します。
+     SELECT 文によって返された行の数を知るには
+     <function>mysql_num_rows</function> を用います。また
+     DELETE, INSERT, REPLACE, または UPDATE 文で変更された行の数を
+     知るには <function>mysql_affected_rows</function> を用います。
+    </para>
+    <para>
+     クエリが参照するテーブルにアクセスする権限がない場合も
+     <function>mysql_query</function>は失敗し、&false; が返されます。
+    </para>
+   </refsect1>
+
+   <refsect1 role="examples">
+    &reftitle.examples;
+    <para>
      <example>
-      <title><function>mysql_query</function></title>
+      <title>間違ったクエリ</title>
+      <para>
+       次のクエリは文法的に間違っているので、
+       <function>mysql_query</function>は失敗し &false;を返します。
+      </para>
       <programlisting role="php">
-&lt;?php
-$result = mysql_query ("SELECT * WHERE 1=1")
-    or die ("Invalid query");
+<![CDATA[
+<?php
+$result = mysql_query('SELECT * WHERE 1=1');
+if (!$result) {
+    die('Invalid query: ' . mysql_error());
+}
+
 ?>
+]]>
       </programlisting>
      </example>
     </para>
     <para>
-     <literal>my_col</literal>がテーブル<literal>my_tbl</literal>の
-     のカラムでない場合、次のクエリーは意味をなしません。
-     この場合、<function>mysql_query</function>は失敗し、&false;を返します。
      <example>
-      <title><function>mysql_query</function></title>
+      <title>正しいクエリ</title>
+      <para>
+       次のクエリは正しいので、<function>mysql_query</function>
+       は <type>resource</type> を返します。
+      </para>
       <programlisting role="php">
-&lt;?php
-$result = mysql_query ("SELECT my_col FROM my_tbl")
-    or die ("Invalid query");
+<![CDATA[
+<?php
+// これはユーザが指定する。たとえば
+$firstname = 'fred';
+$lastname  = 'fox';
+
+// クエリの作成
+// これは SQL クエリを実行する最良の方法です。
+// さらなる例は、mysql_real_escape_string() を参照ください。
+$query = sprintf("SELECT firstname, lastname, address, age FROM friends WHERE firstname='%s' AND lastname='%s'",
+    mysql_real_escape_string($firstname),
+    mysql_real_escape_string($lastname));
+
+// クエリの実行
+$result = mysql_query($query);
+
+// 結果のチェック
+// MySQL に送られたクエリと返ってきたエラーをそのまま表示します。デバッグに便利です。
+if (!$result) {
+    $message  = 'Invalid query: ' . mysql_error() . "\n";
+    $message .= 'Whole query: ' . $query;
+    die($message);
+}
+
+// 結果の利用
+// $result をそのまま出力してもリソースの内部の情報にはアクセスできません。
+// 結果にたいして MySQL の関数を適用する必要があります。
+// mysql_result(), mysql_fetch_array(), mysql_fetch_row() なども参照ください。
+while ($row = mysql_fetch_assoc($result)) {
+    echo $row['firstname'];
+    echo $row['lastname'];
+    echo $row['address'];
+    echo $row['age'];
+}
+
+// 結果セットに関連付けられているリソースの開放
+// これは、スクリプトが終了する際に自動的に実行されます。
+mysql_free_result($result);
 ?>
+]]>
       </programlisting>
      </example>
     </para>
+   </refsect1>
+
+   <refsect1 role="seealso">
+    &reftitle.seealso;
     <para>
-     クエリーが参照するテーブルにアクセスする権限がない場合も
-     <function>mysql_query</function>は失敗し、&false;が返されます。
-    </para>
-    <para>
-     クエリが成功したと仮定すると(DELETE, INSERT, REPLACE, UPDATE文について)
-     作用を受けた行の数を得るために<function>mysql_affected_rows</function> 
-     をコールすることができます。SELECT文については、
-     <function>mysql_query</function>は、新規の結果IDを返します。
-     このIDは、<function>mysql_result</function>の引数とすることができます。
-     結果の処理を終えた後、結果を保持するリソースを
-     <function>mysql_free_result</function>により解放することが
-     可能です。
-    </para>
-    <para>
-     <function>mysql_affected_rows</function>、
-     <function>mysql_db_query</function>、
-     <function>mysql_free_result</function>、
-     <function>mysql_result</function>、
-     <function>mysql_select_db</function>、
-     <function>mysql_connect</function>も参照ください。
+     <simplelist>
+      <member><function>mysql_connect</function></member>
+      <member><function>mysql_error</function></member>
+      <member><function>mysql_real_escape_string</function></member>
+      <member><function>mysql_result</function></member>
+      <member><function>mysql_fetch_assoc</function></member>
+      <member><function>mysql_unbuffered_query</function></member>
+     </simplelist>
     </para>
    </refsect1>
   </refentry>

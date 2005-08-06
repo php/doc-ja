@@ -1,67 +1,128 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- splitted from ./ja/functions/mysql.xml, last change in rev 1.1 -->
-<!-- EN-Revision: 1.2 Maintainer: hirokawa Status: ready -->
-  <refentry id="function.mysql-data-seek">
-   <refnamediv>
-    <refname>mysql_data_seek</refname>
-    <refpurpose>内部的な結果ポインタを移動する</refpurpose>
-   </refnamediv>
-   <refsect1>
-    <title>説明</title>
-     <methodsynopsis>
-      <type>bool</type><methodname>mysql_data_seek</methodname>
-      <methodparam><type>resource</type><parameter>result_identifier</parameter></methodparam>
-      <methodparam><type>int</type><parameter>row_number</parameter></methodparam>
-     </methodsynopsis>
-    <para> 
-     &return.success;
-    </para>
-    <para> 
-     <function>mysql_data_seek</function>は、指定した結果ID 
-     (result_identifier)が指すMySQL結果の内部ポインタが指定した行番号
-     (row_number)を指すように移動します。
-     この後、<function>mysql_fetch_row</function>をコールした場合には、
-     ここで指定した行の内容が返されます。
-    </para>
-    <para>
-     <parameter>row_number</parameter> は、0から始まります。
-    </para>
-    <example>
-     <title>MySQLデータをシークする例</title>
-     <programlisting role="php">
+<!-- $Revision: 1.4 $ -->
+<!-- EN-Revision: 1.17 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: takagi -->
+<refentry id="function.mysql-data-seek">
+ <refnamediv>
+  <refname>mysql_data_seek</refname>
+  <refpurpose>内部的な結果ポインタを移動する</refpurpose>
+ </refnamediv>
+ <refsect1 role="description">
+  &reftitle.description;
+  <methodsynopsis>
+   <type>bool</type><methodname>mysql_data_seek</methodname>
+   <methodparam><type>resource</type><parameter>result</parameter></methodparam>
+   <methodparam><type>int</type><parameter>row_number</parameter></methodparam>
+  </methodsynopsis>
+  <para>
+   <function>mysql_data_seek</function> は、指定した結果 ID
+   （result_identifier）が指す MySQL 結果の内部ポインタが指定した行番号
+   （row_number）を指すように移動します。
+   この後、<function>mysql_fetch_row</function> をコールした場合には、
+   ここで指定した行の内容が返されます。
+  </para>
+  <para>
+   <parameter>row_number</parameter> は 0 から始まります。
+   <parameter>row_number</parameter> は 0 から
+   <function>mysql_num_rows</function> - 1 までの範囲にあるべきです。
+   しかし、もし結果セットが空（<function>mysql_num_rows</function> == 0）
+   の場合、0 へのシークは <link linkend="e-warning">E_WARNING</link> を
+   発生して失敗し、<function>mysql_data_seek</function> は &false; を返します。
+  </para>
+ </refsect1>
+ 
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <para>
+   <variablelist>
+    &mysql.result.description;
+    <varlistentry>
+     <term><parameter>row_number</parameter></term>
+     <listitem>
+      <para>
+       新しく結果ポインタを設定したい行番号です。
+      </para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
+  </para>
+ </refsect1>
+
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <para>
+   &return.success;
+  </para>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title><function>mysql_data_seek</function> の例</title>
+    <programlisting role="php">
 <![CDATA[
 <?php
-    $link = mysql_pconnect("kron", "jutta", "geheim")
-        or die("Could not connect");
-
-    mysql_select_db("samp_db")
-        or exit("Could not select database");
-
-    $query = "SELECT last_name, first_name FROM friends";
-    $result = mysql_query($query)
-        or die("Query failed");
-
-    // fetch rows in reverse order
-
-    for ($i = mysql_num_rows($result) - 1; $i >=0; $i--) {
-        if (!mysql_data_seek($result, $i)) {
-            echo "Cannot seek to row $i\n";
-            continue;
-        }
-
-        if(!($row = mysql_fetch_object($result)))
-            continue;
-
-        echo "$row->last_name $row->first_name<br />\n";
+$link = mysql_connect('localhost', 'mysql_user', 'mysql_password');
+if (!$link) {
+    die('接続できませんでした: ' . mysql_error());
+}
+$db_selected = mysql_select_db('sample_db');
+if (!$db_selected) {
+    die('データベースを選択できませんでした: ' . mysql_error());
+}
+$query = 'SELECT last_name, first_name FROM friends';
+$result = mysql_query($query);
+if (!$result) {
+    die('クエリは失敗しました: ' . mysql_error());
+}
+/* 行を逆順で取得する */
+for ($i = mysql_num_rows($result) - 1; $i >= 0; $i--) {
+    if (!mysql_data_seek($result, $i)) {
+        echo "行 $i をシークできません: " . mysql_error() . "\n";
+        continue;
     }
 
-    mysql_free_result($result);
+    if (!($row = mysql_fetch_assoc($result))) {
+        continue;
+    }
+
+    echo $row['last_name'] . ' ' . $row['first_name'] . "<br />\n";
+}
+
+mysql_free_result($result);
 ?>
 ]]>
-     </programlisting>
-    </example>
-   </refsect1>
-  </refentry>
+    </programlisting>
+   </example>
+  </para>
+ </refsect1>
+
+ <refsect1 role="notes">
+  &reftitle.notes;
+  <note>
+   <para>
+    <function>mysql_data_seek</function> は、
+    <function>mysql_query</function> との組み合わせでのみ利用可能です。
+    <function>mysql_unbuffered_query</function> と組み合わせることはできません。
+   </para>
+  </note>
+ </refsect1>
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <para>
+   <simplelist>
+    <member><function>mysql_query</function></member>
+    <member><function>mysql_num_rows</function></member>
+    <member><function>mysql_fetch_row</function></member>
+    <member><function>mysql_fetch_assoc</function></member>
+    <member><function>mysql_fetch_array</function></member>
+    <member><function>mysql_fetch_object</function></member>
+   </simplelist>
+  </para>
+ </refsect1>
+</refentry>
 
 <!-- Keep this comment at the end of the file
 Local variables:
