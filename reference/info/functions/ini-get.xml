@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- EN-Revision: 1.6 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.5 $ -->
+<!-- EN-Revision: 1.13 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: takagi -->
   <refentry id="function.ini-get">
    <refnamediv>
     <refname>ini_get</refname>
@@ -18,55 +20,83 @@
     <note>
      <title>boolean 値を探す場合</title>
      <para>
-      <literal>off</literal>というbooleanのini値は空文字列として返されます。
+      <literal>off</literal>というbooleanのini値は空文字列または"0"として返されます。
       一方で<literal>on</literal>のini値は"1"として返されます。
      </para>
     </note>
     <note>
      <title>メモリサイズの値を探す場合</title>
      <para>
-      <literal>upload_max_filesize</literal>のようなメモリサイズの値の場合、
-      &php.ini;上で簡単な注釈つきで格納されています。
-      <function>ini_get</function>は&php.ini;に格納されている正しい値を返しますが、
-      整数値を返すのでは<emphasis>ありません</emphasis>。
+      <link linkend="ini.upload-max-filesize">upload_max_filesize</link>
+      のようなメモリサイズの値の場合、
+      &php.ini;上で省略形で格納されています。
+      <function>ini_get</function>は&php.ini;に格納されている値を
+      そのままの形式で返します。整数表現に変換したりは<emphasis>しません</emphasis>。
       これらの値に通常の算術的な関数を施すと予期しない結果を
-      得てしまいます。
-      <informalexample>
-       <programlisting role="php">
+      得てしまいます。以下では、省略形の表記から本来のバイト数に変換する
+      PHP ソースのひとつの例を示しています。
+     </para>
+    </note>
+    <para>
+     <example>
+      <title><function>ini_get</function> のいくつかの例</title>
+      <programlisting role="php">
 <![CDATA[
 <?php
 /*
-Our php.ini contains the following settings:
+php.ini の設定は以下のようになっている:
 
 display_errors = On
 register_globals = Off
 post_max_size = 8M
 */
 
-print 'display_errors = ' . ini_get('display_errors') . "\n";
-print 'register_globals = ' . ini_get('register_globals') . "\n";
-print 'post_max_size = ' . ini_get('post_max_size') . "\n";
-print 'post_max_size+1 = ' . (ini_get('post_max_size')+1) . "\n"; 
+echo 'display_errors = ' . ini_get('display_errors') . "\n";
+echo 'register_globals = ' . ini_get('register_globals') . "\n";
+echo 'post_max_size = ' . ini_get('post_max_size') . "\n";
+echo 'post_max_size+1 = ' . (ini_get('post_max_size')+1) . "\n"; 
+echo 'post_max_size in bytes = ' . return_bytes(ini_get('post_max_size'));
 
-/*
-This script will produce:
+function return_bytes($val) {
+    $val = trim($val);
+    $last = strtolower($val{strlen($val)-1});
+    switch($last) {
+        // 'G' は、PHP 5.1.0 より有効となる
+        case 'g':
+            $val *= 1024;
+        case 'm':
+            $val *= 1024;
+        case 'k':
+            $val *= 1024;
+    }
 
-display_errors = 1
-register_globals = 
-post_max_size = 8M
-post_max_size+1 = 9
-*/
+    return $val;
+}
+
 ?>
 ]]>
        </programlisting>
-      </informalexample>
+       <para>
+        このスクリプトは以下のような出力をします:
+       </para>
+       <screen>
+<![CDATA[
+
+display_errors = 1
+register_globals = 0
+post_max_size = 8M
+post_max_size+1 = 9
+post_max_size in bytes = 8388608
+
+]]>
+       </screen>
+      </example>
      </para>
-    </note>
     <para>
      <function>get_cfg_var</function>,
      <function>ini_get_all</function>,
      <function>ini_restore</function>,
-     <function>ini_set</function>も参照してください。
+     および <function>ini_set</function> も参照してください。
     </para>
    </refsect1>
   </refentry>
