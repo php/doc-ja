@@ -1,212 +1,406 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.7 $ -->
-<!-- EN-Revision: 1.28 -->
-<!-- EN-Revision: 1.28 Maintainer: hirokawa Status: ready -->
-  <refentry id="function.mail">
-   <refnamediv>
-    <refname>mail</refname>
-    <refpurpose>メールの送信</refpurpose>
-   </refnamediv>
-   <refsect1>
-    <title>説明</title>
-     <methodsynopsis>
-      <type>bool</type><methodname>mail</methodname>
-      <methodparam><type>string</type><parameter>to</parameter></methodparam>
-      <methodparam><type>string</type><parameter>subject</parameter></methodparam>
-      <methodparam><type>string</type><parameter>message</parameter></methodparam>
-      <methodparam choice="opt"><type>string</type><parameter>additional_headers</parameter></methodparam>
-      <methodparam choice="opt"><type>string</type><parameter>additional_parameters</parameter></methodparam>
-     </methodsynopsis>
-    <simpara>
-     <function>mail</function>は<parameter>message</parameter>で
-     指定されたメッセージを<parameter>to</parameter>で指定された
-     受信者に自動的にメールします。<parameter>to</parameter>の中の
-     各アドレスをカンマで区切ることにより、複数の受信者を指定できます。
-     添付書類付きのemailおよび特別なコンテンツ型のemailはこの関数で送
-     信可能です。これは、MIMEエンコーディングにより可能です。詳細な
-     情報については、<ulink url="&url.email.mime.zend;">
-     Zend article</ulink>または<ulink url="&url.pear.package;Mail_Mime">
-     PEAR Mime Classes</ulink>を参照ください。
-    </simpara>
-     <simpara>
-     以下のRFCも有用でしょう。
-     <ulink url="&url.rfc;1896;">RFC 1896</ulink>,
-     <ulink url="&url.rfc;2045;">RFC 2045</ulink>,
-     <ulink url="&url.rfc;2046;">RFC 2046</ulink>,
-     <ulink url="&url.rfc;2047;">RFC 2047</ulink>,
-     <ulink url="&url.rfc;2048;">RFC 2048</ulink>,
-     <ulink url="&url.rfc;2049;">RFC 2049</ulink>
-    </simpara>
-    <para>
-     <function>mail</function> は、メールを配送エージェントに
-     渡すことに成功した場合に &true; 、それ以外の場合に &false; を返します。
-    </para>
-    <warning>
-     <para>
-      <function>mail</function>のWindows版実装は、UNIX版実装とは
-      多くの点で違います。
-      第一に、メッセージの生成にローカルのバイナリは使用せず、
-      ソケットを通じて直接操作するだけです。
-      これは<literal>MTA</literal>がネットワークソケットをlistenしている
-      必要があるということを意味します（ローカルホスト、リモートマシン
-      どちらでもかまいません）。
-      第二に、<literal>From:</literal>, <literal>Cc:</literal>,
-      <literal>Bcc:</literal>, <literal>Date:</literal>のようなカスタムヘッダは
-      <literal>MTA</literal>が初期段階で解釈するの
-      <emphasis role="strong">ではなく</emphasis>、
-      PHPによってパースされます。
-      PHP &lt; 4.3 では <literal>Cc:</literal>
-      （大文字小文字は区別されます）ヘッダ要素だけがサポートされていました。
-      <literal>PHP</literal> &gt;= 4.3 では全てヘッダ要素をサポートし、
-      もはやcase-sensitive（大文字小文字を区別する）ではありません。
-     </para>
-    </warning>
-    <para>
-     <example>
-      <title>メールを送信する</title>
-      <programlisting role="php">
-<![CDATA[
-<?php
-mail("joecool@example.com", "My Subject", "Line 1\nLine 2\nLine 3");
-?>
-]]>
-      </programlisting>
-     </example>
-    </para>
-    <simpara>
-     4番目の文字列が指定された場合、その文字列はヘッダの最後に挿入され
-     ます。通常、これはヘッダを追加する際に使用されます。複数のヘッダ
-     を追加する場合は、改行で区切ります。
-    </simpara>
-    <note>
-     <para>
-      複数のヘッダを区切る場合、<literal>\r\n</literal>を使用する必要
-      があります。ただし、いくつかのUnix MTA(Mail transfer agents)では
-      改行文字(<literal>\n</literal>)だけでも動作します。
-      Win32システムでは、Cc: ヘッダは大文字小文字を区別し、
-      <literal>Cc:</literal>と書く必要があります。
-     </para>
-    </note>
-    <para>
-     <example>
-      <title>追加ヘッダを付加してメールを送信する</title>
-      <programlisting role="php">
-<![CDATA[
-<?php
-mail("nobody@example.com", "the subject", $message,
-     "From: webmaster@{$_SERVER['SERVER_NAME']}\r\n" .
-     "Reply-To: webmaster@{$_SERVER['SERVER_NAME']}\r\n" .
-     "X-Mailer: PHP/" . phpversion());
-?>
-]]>
-      </programlisting>
-     </example>
-    </para>
-    <para>
-     パラメータ<parameter>additional_parameters</parameter>は、追加の
-     パラメータをメール送信プログラムに渡す際に使用可能です。
-     メール送信プログラムは、設定オプション
-     <literal>sendmail_path</literal>により設定されます。例えば、
-     sendmailを使用する際に<literal>-f</literal>オプションを使って
-     エンベロープのsenderアドレスを設定する際に
-     使用できます。この方法でエンベロープのsenderヘッダを設
-     定する際、'X-Warning'ヘッダが付加されないようにWebサーバを実行し
-     ているユーザをsendmail設定に追加しておく必要があるかもしれません。
-     <example>
-      <title>
-       追加ヘッダ及び追加コマンドラインパラメータを指定してメールを送信
-      </title>
-      <programlisting role="php">
-<![CDATA[
-<?php
-mail("nobody@example.com", "the subject", $message,
-     "From: webmaster@{$_SERVER['SERVER_NAME']}", "-fwebmaster@{$_SERVER['SERVER_NAME']}");
-?>
-]]>
-      </programlisting>
-     </example>
-    </para>
-    <note>
-     <para>
-      この5番目のパラメータは、PHP 4.0.5で追加されました。
-      PHP4.2.3以降、<link linkend="ini.safe-mode">セーフモード</link>
-      の場合このパラメータは無効です。もし使用しようとすると、
-      <function>mail</function>はwarningメッセージを発行して &false; を返します。
-     </para>
-    </note>
-    <para>
-     複雑なemailメッセージを作成する際に簡単な文字列結合を使用すること
-     も可能です。
-     <example>
-      <title>複雑なemailを送信する</title>
-      <programlisting role="php">
-<![CDATA[
-/* 送信先 */
-$to  = "Mary <mary@example.com>" . ", " ; // カンマで区切る
-$to .= "Kelly <kelly@example.com>";
+<!-- $Revision: 1.8 $ -->
+<!-- EN-Revision: 1.33 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: takagi -->
+<refentry id="function.mail">
+ <refnamediv>
+  <refname>mail</refname>
+  <refpurpose>メールを送信する</refpurpose>
+ </refnamediv>
 
-/* 題名 */
-$subject = "Birthday Reminders for August";
+ <refsect1 role="description">
+  &reftitle.description;
+  <methodsynopsis>
+   <type>bool</type><methodname>mail</methodname>
+   <methodparam><type>string</type><parameter>to</parameter></methodparam>
+   <methodparam><type>string</type><parameter>subject</parameter></methodparam>
+   <methodparam><type>string</type><parameter>message</parameter></methodparam>
+   <methodparam choice="opt"><type>string</type><parameter>additional_headers</parameter></methodparam>
+   <methodparam choice="opt"><type>string</type><parameter>additional_parameters</parameter></methodparam>
+  </methodsynopsis>
+  <para>
+   メールを送信します。
+  </para>
+ </refsect1>
 
-/* メッセージ */
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <para>
+   <variablelist>
+    <varlistentry>
+     <term><parameter>to</parameter></term>
+     <listitem>
+      <para>
+       メールの受信者。
+      </para>
+      <para>
+       <ulink url="&url.rfc;2822">RFC 2822</ulink> を満たす書式でなければ
+       なりません。例えば以下のようなものです。
+       <simplelist>
+        <member>user@example.com</member>
+        <member>user@example.com, anotheruser@example.com</member>
+        <member>User &lt;user@example.com&gt;</member>
+        <member>User &lt;user@example.com&gt;, Another User &lt;anotheruser@example.com&gt;</member>
+       </simplelist>
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>subject</parameter></term>
+     <listitem>
+      <para>
+       送信するメールの表題。
+      </para>
+      <caution>
+       <para>
+        改行を含んではいけません。含めてしまうとメールが正しく送信できません。
+       </para>
+      </caution>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>message</parameter></term>
+     <listitem>
+      <para>
+       送信するメッセージ。
+      </para>
+      <para>
+       改行コードは LF (\n) となります。各行の長さは 70 文字を超えては
+       いけません。
+      </para>
+      <caution>
+       <para>
+        （Windows のみ）PHP が SMTP サーバと直接通信をする際、ピリオドから
+        始まる行は無視されます。これを防ぐには、行頭のピリオドを
+        ピリオド 2 つに置き換えてください。
+        <programlisting role="php">
+<![CDATA[
+<?php
+$text = str_replace("\n.", "\n..", $text);
+?>
+]]>
+        </programlisting>
+       </para>
+      </caution>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>additional_headers</parameter>（オプション）</term>
+     <listitem>
+      <para>
+       メールヘッダの最後に挿入される文字列。
+      </para>
+      <para>
+       通常、これは追加のヘッダ（From、Cc、Bcc）のために用いられます。
+       複数のヘッダを追加する場合は CRLF（\r\n）で区切ります。
+      </para>
+      <note>
+       <para>
+        メールを送信する際には、<emphasis>必ず</emphasis> 
+        <literal>From</literal> ヘッダが含まれていなければなりません。
+        <parameter>additional_headers</parameter> パラメータで指定するか、
+        あるいは &php.ini; にデフォルト値を指定します。
+       </para>
+       <para>
+        指定しなかった場合は、以下のようなエラーメッセージが返ります
+        <literal>Warning: mail(): "sendmail_from" not
+        set in php.ini or custom "From:" header missing</literal> 。
+       </para>
+      </note>
+      <note>
+       <para>
+        メッセージが受信されなかった場合には、LF（\n）のみを使ってみてください。
+        Unix の MTA の中には、自動的に LF を CRLF に変換してしまう
+        ものがあります（もし CRLF を利用していた場合、CR が重複してしまいます）。
+        ただし、これは最後の手段です。というのも、これは
+        <ulink url="&url.rfc;2822">RFC 2822</ulink> に違反しているからです。
+       </para>
+      </note>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>additional_parameters</parameter>（オプション）</term>
+     <listitem>
+      <para>
+       パラメータ <parameter>additional_parameters</parameter> は、
+       追加のパラメータをメール送信プログラムに渡す際に使用可能です。
+       メール送信プログラムは、設定オプション
+       <literal>sendmail_path</literal> により設定されます。例えば、
+       sendmail を使用する際に <literal>-f</literal> オプションを使って
+       エンベロープの sender アドレスを設定する際に使用できます。
+      </para>
+      <para>
+       この方法でエンベロープの sender ヘッダ（-f）を設定する際は、
+       'X-Warning' ヘッダが付加されないように Web サーバの実行ユーザを
+       sendmail 設定に追加しておく必要があるかもしれません。
+       sendmail を利用している場合、これは <filename>/etc/mail/trusted-users</filename>
+       で設定します。
+      </para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
+  </para>
+ </refsect1>
+
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <para>
+   メール送信が受け入れられた場合に &true; 、それ以外の場合に &false;
+   を返します。
+  </para>
+  <para>
+   メールの配送が受け入れられたかどうかが基準であることに注意しましょう。
+   メールが実際にあて先に届いたかどうかでは「ありません」。
+  </para>
+ </refsect1>
+
+ <refsect1 role="changelog">
+  &reftitle.changelog;
+  <para>
+   <informaltable>
+    <tgroup cols="2">
+     <thead>
+      <row>
+       <entry>&Version;</entry>
+       <entry>&Description;</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry>4.3.0（Windows のみ）</entry>
+       <entry>
+        すべてのカスタムヘッダ（From、Cc、Bcc や Date など）がサポート
+        されるようになり、大文字・小文字を区別しないようになりました
+        （カスタムヘッダは MTA でパースされるのではなく PHP でパースされます。
+        PHP &lt; 4.3 では Cc ヘッダのみがサポートされており、大文字・小文字が
+        区別されていました）。
+       </entry>
+      </row>
+      <row>
+       <entry>4.2.3</entry>
+       <entry>
+        <link linkend="ini.safe-mode">safe_mode</link> 時には
+        <parameter>additional_parameters</parameter> パラメータを無効に
+        しました。もし用いられた場合には <function>mail</function> 関数は
+        警告メッセージを出して &false; を返します。
+       </entry>
+      </row>
+      <row>
+       <entry>4.0.5</entry>
+       <entry>
+        <parameter>additional_parameters</parameter> パラメータが追加されました。
+       </entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </informaltable>
+  </para>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title>メールを送信する</title>
+    <para>
+     <function>mail</function> を用いて単純なメールを送信する。
+    </para>
+    <programlisting role="php">
+<![CDATA[
+<?php
+// 本文
+$message = "Line 1\nLine 2\nLine 3";
+
+// 1 行が 70 文字を超える場合のため、wordwrap() を用いる
+$message = wordwrap($message, 70);
+
+// 送信する
+mail('caffinated@example.com', 'My Subject', $message);
+?>
+]]>
+    </programlisting>
+   </example>
+   <example>
+    <title>追加ヘッダを付加してメールを送信する</title>
+    <para>
+     基本ヘッダに加え、MUA に From および Reply-To アドレスを通知する。
+    </para>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$to      = 'nobody@example.com';
+$subject = 'the subject';
+$message = 'hello';
+$headers = 'From: webmaster@example.com' . "\r\n" .
+    'Reply-To: webmaster@example.com' . "\r\n" .
+    'X-Mailer: PHP/' . phpversion();
+
+mail($to, $subject, $message, $headers);
+?>
+]]>
+    </programlisting>
+   </example>
+   <example>
+    <title>追加ヘッダ及び追加コマンドラインパラメータを指定してメールを送信する</title>
+    <para>
+     <literal>sendmail_path</literal> を用いてメールを送信する際に利用する
+     追加パラメータとして、<parameter>additional_parameters</parameter>
+     が用いられます。
+    </para>
+    <programlisting role="php">
+<![CDATA[
+<?php
+mail('nobody@example.com', 'the subject', 'the message', null,
+   '-fwebmaster@example.com');
+?>
+]]>
+    </programlisting>
+   </example>
+   <example>
+    <title>HTML メールを送信する</title>
+    <para>
+     <function>mail</function> を用いて HTML メールを送信することも可能です。
+    </para>
+    <programlisting role="php">
+<![CDATA[
+<?php
+// 複数の受信者を指定
+$to  = 'aidan@example.com' . ', '; // カンマに注意
+$to .= 'wez@example.com';
+
+// 表題
+$subject = 'Birthday Reminders for August';
+
+// 本文
 $message = '
 <html>
 <head>
- <title>Birthday Reminders for August</title>
+  <title>Birthday Reminders for August</title>
 </head>
 <body>
-<p>Here are the birthdays upcoming in August!</p>
-<table>
- <tr>
-  <th>Person</th><th>Day</th><th>Month</th><th>Year</th>
- </tr>
- <tr>
-  <td>Joe</td><td>3rd</td><td>August</td><td>1970</td>
- </tr>
- <tr>
-  <td>Sally</td><td>17th</td><td>August</td><td>1973</td>
- </tr>
-</table>
+  <p>Here are the birthdays upcoming in August!</p>
+  <table>
+    <tr>
+      <th>Person</th><th>Day</th><th>Month</th><th>Year</th>
+    </tr>
+    <tr>
+      <td>Joe</td><td>3rd</td><td>August</td><td>1970</td>
+    </tr>
+    <tr>
+      <td>Sally</td><td>17th</td><td>August</td><td>1973</td>
+    </tr>
+  </table>
 </body>
 </html>
 ';
 
-/* HTMLメールを送信する場合、Content-typeヘッダを指定可能です。 */
-$headers  = "MIME-Version: 1.0\r\n";
-$headers .= "Content-type: text/html; charset=iso-8859-1\r\n";
+// HTML メールを送信するには Content-type ヘッダが必須
+$headers  = 'MIME-Version: 1.0' . "\r\n";
+$headers .= 'Content-type: text/html; charset=iso-8859-1' . "\r\n";
 
-/* 追加ヘッダ */
-$headers .= "To: Mary <mary@example.com>, Kelly <kelly@example.com>\r\n";
-$headers .= "From: Birthday Reminder <birthday@example.com>\r\n";
-$headers .= "Cc: birthdayarchive@example.com\r\n";
-$headers .= "Bcc: birthdaycheck@example.com\r\n";
+// 追加のヘッダ
+$headers .= 'To: Mary <mary@example.com>, Kelly <kelly@example.com>' . "\r\n";
+$headers .= 'From: Birthday Reminder <birthday@example.com>' . "\r\n";
+$headers .= 'Cc: birthdayarchive@example.com' . "\r\n";
+$headers .= 'Bcc: birthdaycheck@example.com' . "\r\n";
 
-/* ここでメールを送信する */
+// 送信する
 mail($to, $subject, $message, $headers);
+?>
 ]]>
-      </programlisting>
-     </example>
-    </para>
-    <note>
-     <para>
-      <parameter>to</parameter>または<parameter>subject</parameter>に
-      改行文字を含まないようにしてください。さもないと、正常に動作しない
-      可能性があります。
-     </para>
-    </note>
-    <note>
-     <para>
-      <parameter>to</parameter>引数には
-      &quot;Something &lt;someone@example.com&gt;&quot; の形式の
-      メールアドレスを与えることはできません。
-      MTA(特にWindows環境下の)と通信する際にmail関数はこれを適切にパースできません。
-     </para>
-    </note>
+    </programlisting>
     <para>
-     See also <function>imap_mail</function>.
+     <note>
+      <para>
+       HTML などの複雑なメールを送信する場合は、PEAR パッケージの
+       <ulink url="&url.pear.package;Mail">PEAR::Mail</ulink> を
+       利用することを推奨します。
+      </para>
+     </note>
     </para>
-   </refsect1>
-  </refentry>
+   </example>
+  </para>
+ </refsect1>
+
+ <refsect1 role="notes">    
+  &reftitle.notes;
+  <note>
+   <para>
+    <function>mail</function> の Windows 版実装は、Unix 版実装とは
+    多くの点で違います。
+    第一に、メッセージの生成にローカルのバイナリは使用せず、
+    ソケットを通じて直接操作するだけです。
+    これは <literal>MTA</literal> がネットワークソケットを listen している
+    必要があるということを意味します（ローカルホスト、リモートマシン
+    どちらでもかまいません）。
+   </para>
+   <para>
+    第二に、
+    <literal>From:</literal> や
+    <literal>Cc:</literal>・
+    <literal>Bcc:</literal>・
+    <literal>Date:</literal> のようなカスタムヘッダは
+    <literal>MTA</literal> では<emphasis role="strong">なく</emphasis>
+    PHP によってパースされます。
+   </para>
+   <para>
+    そのため、<parameter>to</parameter> 引数には
+    &quot;Something &lt;someone@example.com&gt;&quot; 形式の
+    メールアドレスを与えることはできません。
+    MTA と通信する際に mail コマンドはこれを適切にパースできません。
+   </para>
+  </note>
+  
+  <note>
+   <para>
+    添付ファイルや特殊な本文（HTML など）を含むメールも、この関数で
+    送信可能です。これは、MIME エンコーディングによって実現されています。
+    詳細な情報は
+    <ulink url="&url.email.mime.zend;">
+    Zend の記事</ulink> または <ulink url="&url.pear.package;Mail_Mime">
+    PEAR Mime クラス</ulink> を参照ください。
+   </para>
+  </note>
+
+  <note>
+   <para>
+    <function>mail</function> 関数は、大量のメールをループ内で送信するには
+    向いていないことに注意しましょう。この関数は 1 通のメールを送信するたびに
+    SMTP ソケットをいったん閉じて開きなおします。これは非効率的です。
+   </para>
+   <para>
+    大量のメールを送信する場合は、
+    <ulink url="&url.pear.package;Mail">PEAR::Mail</ulink> および
+    <ulink url="&url.pear.package;Mail_Mime">PEAR::Mail_Queue</ulink>
+    パッケージを参照ください。
+   </para>
+  </note>
+
+  <note>
+   <para>
+    以下の RFC も有用です。
+    <ulink url="&url.rfc;1896">RFC 1896</ulink>、
+    <ulink url="&url.rfc;2045">RFC 2045</ulink>、
+    <ulink url="&url.rfc;2046">RFC 2046</ulink>、
+    <ulink url="&url.rfc;2047">RFC 2047</ulink>、
+    <ulink url="&url.rfc;2048">RFC 2048</ulink>、
+    <ulink url="&url.rfc;2049">RFC 2049</ulink> および
+    <ulink url="&url.rfc;2822">RFC 2822</ulink>
+   </para>
+  </note>
+ </refsect1>
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <para>
+   <simplelist>
+    <member><function>imap_mail</function></member>
+    <member><ulink url="&url.pear.package;Mail">PEAR::Mail</ulink></member>
+    <member><ulink url="&url.pear.package;Mail_Mime">PEAR::Mail_Mime</ulink></member>
+   </simplelist>
+  </para>
+ </refsect1>
+</refentry>
 
 <!-- Keep this comment at the end of the file
 Local variables:
