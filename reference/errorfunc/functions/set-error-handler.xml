@@ -1,14 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.6 $ -->
-<!-- EN-Revision: 1.24 Maintainer: hirokawa Status: ready -->
- <refentry id="function.set-error-handler">
+<!-- $Revision: 1.7 $ -->
+<!-- EN-Revision: 1.30 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: takagi -->
+<refentry id="function.set-error-handler">
  <refnamediv>
   <refname>set_error_handler</refname>
   <refpurpose>
    ユーザ定義のエラーハンドラ関数を設定する
   </refpurpose>
  </refnamediv>
- <refsect1>
+
+ <refsect1 role="description">
   &reftitle.description;
   <methodsynopsis>
    <type>mixed</type><methodname>set_error_handler</methodname>
@@ -18,198 +20,278 @@
   <para>
    スクリプトのエラー処理を行うユーザ関数
    (<parameter>error_handler</parameter>)を設定します。
-   前に定義されたエラーハンドラ(ある場合)を含む文字列または
-   エラーの場合に &false; を返します。
-   前に定義されたハンドラがクラスメソッドの場合、この関数は、
-   クラスとメソッド名からなる添字配列を返します。
   </para>
   <para>
    この関数は、実行時のエラー処理をユーザが定義するために使用します。
-   例えば、致命的なエラーを発生した場合や、ある条件のもとに
-   (<function>trigger_error</function>を使用して)エラーを発生する必
-   要がある場合にデータやファイルを消去する必要があるようなアプリケー
-   ションがこの場合にあたります。
+   例えば、致命的なエラーの際にデータやファイルを消去する必要があるような
+   アプリケーションや、ある条件のもとに
+   (<function>trigger_error</function>を使用して)エラーを発生する必要がある
+   アプリケーションがこの場合にあたります。
   </para>
   <para>
-   二番目のパラメータ<parameter>error_types</parameter>は、PHP 5で導入され、
-   設定パラメータ
-   <link linkend="ini.error-reporting">error_reporting</link>と
-   全く同様に、表示するエラーを制御するために
-   <parameter>error_handler</parameter>起動をマスクする際に
-   使用可能です。
-   このマスクを指定しない場合、
-   <parameter>error_handler</parameter>は
-   <link
-    linkend="ini.error-reporting">error_reporting</link>の設定によらず
-   全てのエラーに関してコールされます。
+   PHP の標準のエラーハンドラは完全にバイパスされることに注意してください。
+   <function>error_reporting</function> の設定にかかわらず、どのような場合でも
+   ユーザが設定したエラーハンドラがコールされます。ただし、この場合でも
+   ハンドラで <function>error_reporting</function> のカレントの値を読み、
+   それにあわせて適切に動作させることは可能です。エラーを発生した命令の前に
+   <link linkend="language.operators.errorcontrol">@ エラー制御演算子
+   </link> が付加されている場合、この値は 0 となることには注意しましょう。
   </para>
   <para>
-   ユーザ関数は、二つの引数、エラーコードとエラーを記述する文字列を受け取る
-   必要があります。PHP 4.0.2 からオプションのパラメータとして3つの引数が
-   追加されています。これらは、エラーが発生したファイル名、エラーが発生した行、
-   発生したエラーのコンテキスト(エラーが発生した場所でのアクティブなシンボルテーブ
-   ルを指す配列)です。
-   関数は、以下のように表されます。
-   <methodsynopsis>
-    <methodname><replaceable>handler</replaceable></methodname>
-    <methodparam><type>int</type><parameter>errno</parameter></methodparam>
-    <methodparam><type>string</type><parameter>errstr</parameter></methodparam>
-    <methodparam choice="opt"><type>string</type><parameter>errfile</parameter></methodparam>
-    <methodparam choice="opt"><type>int</type><parameter>errline</parameter></methodparam>
-    <methodparam choice="opt"><type>array</type><parameter>errcontext</parameter></methodparam>
-   </methodsynopsis>
+   ユーザハンドラ関数は、必要に応じて <function>die</function> を
+   コールする責任があることにも注意しましょう。エラーハンドラ関数が
+   リターンした場合、スクリプトの実行は、エラーを発生した命令の次の命令に
+   継続されます。
+  </para>
+  <para>
+   以下のエラータイプは、ユーザ定義の関数では扱えません。
+   <constant>E_ERROR</constant>, <constant>E_PARSE</constant>,
+   <constant>E_CORE_ERROR</constant>, <constant>E_CORE_WARNING</constant>,
+   <constant>E_COMPILE_ERROR</constant>,
+   <constant>E_COMPILE_WARNING</constant> および
+   <function>set_error_handler</function> がコールされたファイルで発生した
+   大半の <constant>E_STRICT</constant> 。
+  </para>
+  <para>
+   (ファイルアップロードのように)スクリプトが実行される前にエラーが
+   発生した場合、カスタムエラーハンドラはコールされません。
+   これは、その時点では登録されていないためです。
+  </para>
+ </refsect1>
+
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <para>
    <variablelist>
     <varlistentry>
-     <term><parameter>errno</parameter></term>
+     <term><parameter>error_handler</parameter></term>
      <listitem>
-      <simpara>
-       The first parameter, <replaceable>errno</replaceable>, contains the
-       level of the error raised, as an integer.
-      </simpara>
+      <para>
+       ユーザ関数は、エラーコードとエラーを記述する文字列の 2 つの引数を
+       受け取る必要があります。さらにオプションのパラメータとして 3 つの引数が
+       追加されています。これらは、エラーが発生したファイル名、エラーが
+       発生した行、発生したエラーのコンテキスト(エラーが発生した場所での
+       アクティブなシンボルテーブルを指す配列)です。関数は以下のようになります。
+      </para>
+      <para>
+       <methodsynopsis>
+        <methodname><replaceable>handler</replaceable></methodname>
+        <methodparam><type>int</type><parameter>errno</parameter></methodparam>
+        <methodparam><type>string</type><parameter>errstr</parameter></methodparam>
+        <methodparam choice="opt"><type>string</type><parameter>errfile</parameter></methodparam>
+        <methodparam choice="opt"><type>int</type><parameter>errline</parameter></methodparam>
+        <methodparam choice="opt"><type>array</type><parameter>errcontext</parameter></methodparam>
+       </methodsynopsis>
+       <variablelist>
+        <varlistentry>
+         <term><parameter>errno</parameter></term>
+         <listitem>
+          <simpara>
+           最初のパラメータ <parameter>errno</parameter> は、発生させる
+           エラーのレベルを整数で格納します。
+          </simpara>
+         </listitem>
+        </varlistentry>
+        <varlistentry>
+         <term><parameter>errstr</parameter></term>
+         <listitem>
+          <simpara>
+           2 番目のパラメータ <parameter>errstr</parameter> は、
+           エラーメッセージを文字列で格納します。
+          </simpara>
+         </listitem>
+        </varlistentry>
+        <varlistentry>
+         <term><parameter>errfile</parameter></term>
+         <listitem>
+          <simpara>
+           3 番目のパラメータ <parameter>errfile</parameter> はオプションで、
+           エラーが発生したファイルの名前を文字列で格納します。
+          </simpara>
+         </listitem>
+        </varlistentry>
+        <varlistentry>
+         <term><parameter>errline</parameter></term>
+         <listitem>
+          <simpara>
+           4 番目のパラメータ <parameter>errline</parameter> はオプションで、
+           エラーが発生した行番号を整数で格納します。
+          </simpara>
+         </listitem>
+        </varlistentry>
+        <varlistentry>
+         <term><parameter>errcontext</parameter></term>
+         <listitem>
+          <simpara>
+           5 番目のパラメータ <parameter>errcontext</parameter> はオプションで、
+           エラーが発生した場所のアクティブシンボルテーブルを指す配列です。
+           つまり、エラーが発生したスコープ内でのすべての変数の内容を格納した
+           配列が <parameter>errcontext</parameter> だということです。
+          </simpara>
+         </listitem>
+        </varlistentry>
+       </variablelist>
+      </para>
      </listitem>
     </varlistentry>
     <varlistentry>
-     <term><parameter>errstr</parameter></term>
+     <term><parameter>error_types</parameter></term>
      <listitem>
-      <simpara>
-       The second parameter, <parameter>errstr</parameter>, contains the
-       error message, as a string.
-      </simpara>
+      <para>
+       設定パラメータ
+       <link linkend="ini.error-reporting">error_reporting</link>
+       で表示するエラーを制御するのと全く同様に、
+       <parameter>error_handler</parameter> の起動を制御する際に
+       使用可能です。
+       このマスクを指定しない場合、
+       <parameter>error_handler</parameter> は
+       <link
+        linkend="ini.error-reporting">error_reporting</link> の設定によらず
+       全てのエラーに関してコールされます。
+      </para>
      </listitem>
     </varlistentry>
-    <varlistentry>
-     <term><parameter>errfile</parameter></term>
-     <listitem>
-      <simpara>
-       The third parameter is optional, <parameter>errfile</parameter>,
-       which contains the filename that the error was raised in, as a string.
-      </simpara>
-     </listitem>
-    </varlistentry>
-    <varlistentry>
-     <term><parameter>errline</parameter></term>
-     <listitem>
-      <simpara>
-       The fourth parameter is optional, <parameter>errline</parameter>,
-       which contains the line number the error was raised at, as an integer.
-      </simpara>
-     </listitem>
-    </varlistentry>
-    <varlistentry>
-     <term><parameter>errcontext</parameter></term>
-     <listitem>
-      <simpara>
-       The fifth parameter is optional, <parameter>errcontext</parameter>,
-       which is an array that points to the active symbol table at the point
-       the error occurred.  In other words, <parameter>errcontext</parameter>
-       will contain an array of every variable that existed in the scope the
-       error was triggered in.
-      </simpara>
-     </listitem>
-    </varlistentry>
-   </variablelist>    
+   </variablelist>
   </para>
-  <note>
-   <simpara>
-    関数名の代わりにオブジェクトへのリファレンスとメソッド名を含む配列
-    を指定することもできます。(PHP 4.3.0以降)
-   </simpara>
-  </note>
-  <note>
-   <para>
-    以下のエラー型はユーザ定義関数では扱うことができません。
-    <constant>E_ERROR</constant>, <constant>E_PARSE</constant>,
-    <constant>E_CORE_ERROR</constant>, <constant>E_CORE_WARNING</constant>,
-    <constant>E_COMPILE_ERROR</constant>,
-    <constant>E_COMPILE_WARNING</constant>
-   </para>
-  </note>
+ </refsect1>
+
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
   <para>
-   以下の例では、エラーを発生することにより内部例外の処理を表示し、
-   ユーザ定義関数によりこれを処理します。
+   前に定義されたエラーハンドラ(ある場合)を含む文字列、または
+   エラーの場合には &false; を返します。
+   前に定義されたハンドラがクラスメソッドの場合、この関数は、
+   クラスとメソッド名からなる添字配列を返します。
+  </para>
+ </refsect1>
+
+ <refsect1 role="changelog">
+  &reftitle.changelog;
+  <para>
+   <informaltable>
+    <tgroup cols="2">
+     <thead>
+      <row>
+       <entry>&Version;</entry>
+       <entry>&Description;</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry>5.0.0</entry>
+       <entry>
+        <parameter>error_types</parameter> パラメータが追加されました。
+       </entry>
+      </row>
+      <row>
+       <entry>4.3.0</entry>
+       <entry>
+        <parameter>error_handler</parameter> として、関数名のかわりに
+        オブジェクトへのリファレンスとメソッド名を含む配列を指定することも
+        できます。
+       </entry>
+      </row>
+      <row>
+       <entry>4.0.2</entry>
+       <entry>
+        ユーザ定義関数 <parameter>error_handler</parameter> で 3 つの
+        オプションパラメータが利用できるようになりました。filename, line number, 
+        および context です。
+       </entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </informaltable>
+  </para>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
    <example>
     <title>
-     <function>set_error_handler</function>および
-     <function>trigger_error</function>によるエラー処理
+     <function>set_error_handler</function> および
+     <function>trigger_error</function> によるエラー処理
     </title>
+    <para>
+     以下の例では、エラーを発生させることによる内部例外の処理や
+     それらをユーザ定義関数で処理する方法を説明します。
+    </para>
     <programlisting role="php">
 <![CDATA[
 <?php
-
-// ユーザエラー定数による再定義 - PHP4 のみ
-define("FATAL",E_USER_ERROR);
-define("ERROR",E_USER_WARNING);
-define("WARNING",E_USER_NOTICE);
-
 // このスクリプトのエラー出力レベルを設定
-error_reporting (FATAL | ERROR | WARNING);
+error_reporting(E_USER_ERROR | E_USER_WARNING | E_USER_NOTICE);
 
 // エラーハンドラ関数
-function myErrorHandler ($errno, $errstr, $errfile, $errline) {
+function myErrorHandler($errno, $errstr, $errfile, $errline)
+{
   switch ($errno) {
-  case FATAL:
-    echo "<b>FATAL</b> [$errno] $errstr<br>\n";
-    echo "  Fatal error in line ".$errline." of file ".$errfile;
-    echo ", PHP ".PHP_VERSION." (".PHP_OS.")<br>\n";
-    echo "Aborting...<br>\n";
-    exit -1;
+  case E_USER_ERROR:
+    echo "<b>My ERROR</b> [$errno] $errstr<br />\n";
+    echo "  Fatal error in line $errline of file $errfile";
+    echo ", PHP " . PHP_VERSION . " (" . PHP_OS . ")<br />\n";
+    echo "Aborting...<br />\n";
+    exit(1);
     break;
-  case ERROR:
-    echo "<b>ERROR</b> [$errno] $errstr<br>\n";
+  case E_USER_WARNING:
+    echo "<b>My WARNING</b> [$errno] $errstr<br />\n";
     break;
-  case WARNING:
-    echo "<b>WARNING</b> [$errno] $errstr<br>\n";
+  case E_USER_NOTICE:
+    echo "<b>My NOTICE</b> [$errno] $errstr<br />\n";
     break;
-    default:
-    echo "Unkown error type: [$errno] $errstr<br>\n";
+  default:
+    echo "Unkown error type: [$errno] $errstr<br />\n";
     break;
   }
 }
 
 // エラー処理のテスト用関数
-function scale_by_log ($vect, $scale) {
-  if ( !is_numeric($scale) || $scale <= 0 )
-    trigger_error("log(x) for x <= 0 is undefined, you used: scale = $scale",
-      FATAL);
+function scale_by_log($vect, $scale)
+{
+  if (!is_numeric($scale) || $scale <= 0) {
+    trigger_error("log(x) for x <= 0 is undefined, you used: scale = $scale", E_USER_ERROR);
+  }
+
   if (!is_array($vect)) {
-    trigger_error("Incorrect input vector, array of values expected", ERROR);
+    trigger_error("Incorrect input vector, array of values expected", E_USER_WARNING);
     return null;
   }
+
   for ($i=0; $i<count($vect); $i++) {
     if (!is_numeric($vect[$i]))
-      trigger_error("Value at position $i is not a number, using 0 (zero)", 
-        WARNING);
-    $temp[$i] = log($scale) * $vect[$i];
+      trigger_error("Value at position $i is not a number, using 0 (zero)", E_USER_NOTICE);
+      $temp[$i] = log($scale) * $vect[$i];
+    }
+    return $temp;
   }
-  return $temp;
-}
 
 // 定義したエラーハンドラを設定する
 $old_error_handler = set_error_handler("myErrorHandler");
 
 // エラーを発生します。まず、数値でない項目が混ざった配列を定義します。
 echo "vector a\n";
-$a = array(2,3,"foo",5.5,43.3,21.11);
+$a = array(2,3, "foo", 5.5, 43.3, 21.11);
 print_r($a);
 
-// 次に警告を発生するような2番目の配列を生成します。
+// 次に警告を発生するような 2 番目の配列を生成します。
 echo "----\nvector b - a warning (b = log(PI) * a)\n";
 $b = scale_by_log($a, M_PI);
 print_r($b);
 
 // 配列の代わりに文字列を渡しており、問題を発生します。
-echo &quot;----\nvector c - an error\n&quot;;
-$c = scale_by_log(&quot;not array&quot;,2.3);
+echo "----\nvector c - an error\n";
+$c = scale_by_log("not array", 2.3);
 var_dump($c);
 
-// ゼロまたは負数の log が定義されないという致命的なエラーを発生します。
+// ゼロまたは負数の対数が定義されないという致命的なエラーを発生します。
 echo "----\nvector d - fatal error\n";
 $d = scale_by_log($a, -2.5);
 
 ?>
 ]]>
     </programlisting>
-    &example.outputs;
+    &example.outputs.similar;
     <screen>
 <![CDATA[
 vector a
@@ -241,48 +323,24 @@ NULL
 ----
 vector d - fatal error
 <b>FATAL</b> [256] log(x) for x <= 0 is undefined, you used: scale = -2.5<br />
-  Fatal error in line 36 of file trigger_error.php, PHP 4.0.2 (Linux)<br />
+Fatal error in line 36 of file trigger_error.php, PHP 4.0.2 (Linux)<br />
 Aborting...<br />
 ]]>
     </screen>
    </example>
   </para>
+ </refsect1>
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
   <para>
-   PHP の標準のエラーハンドラは完全にバイパスされることに注意して下
-   さい。<function>error_reporting</function> の設定は影響せず、どの
-   ような場合でもユーザが設定したエラーハンドラがコールされます。た
-   だし、この場合でもハンドラで <function>error_reporting</function>
-   のカレントの値を読み、適当に動作させることは可能です。エラーを発
-   生した命令の前に <link
-    linkend="language.operators.errorcontrol">@ エラー制御演算子
-   </link> が付加されている場合、この値は 0 となることには注意を要し
-   ます。
-  </para>
-  <para>
-   ユーザハンドラ関数は、要すれば <function>die</function> をコール
-   する責任があることにも注意を要します。エラーハンドラ関数がリター
-   ンした場合、スクリプトの実行は、エラーを発生した命令の次の命令に
-   継続されます。
-  </para>
-  <note>
-   <para>
-    (ファイルアップロードのように)スクリプトが実行される前にエラーが発
-    生した場合、カスタムエラーハンドラはコールされません。
-    これは、その時点では登録されていないためです。
-   </para>
-  </note>
-  <note>
-   <para>
-    二番目のパラメータ<parameter>error_types</parameter>は
-    PHP 5で追加されました。
-   </para>
-  </note>
-  <para>
-   <function>error_reporting</function>,
-   <function>restore_error_handler</function>,
-   <function>trigger_error</function>, および
-   <link linkend="errorfunc.constants">エラーレベル定数</link>
-   も参照ください。
+   <simplelist>
+    <member><function>error_reporting</function></member>
+    <member><function>restore_error_handler</function></member>
+    <member><function>trigger_error</function></member>
+    <member><link linkend="errorfunc.constants">エラーレベル定数</link></member>
+    <member>&seealso.callback;</member>
+   </simplelist>
   </para>
  </refsect1>
 </refentry>
