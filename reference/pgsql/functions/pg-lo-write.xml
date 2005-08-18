@@ -1,32 +1,111 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.3 $ -->
 <!-- splitted from ./ja/functions/pgsql.xml, last change in rev 1.1 -->
+<!-- EN-Revision: 1.8 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: takagi -->
 <refentry id="function.pg-lo-write">
  <refnamediv>
   <refname>pg_lo_write</refname>
   <refpurpose>ラージオブジェクトを書く</refpurpose>
  </refnamediv>
- <refsect1>
-  <title>説明</title>
+
+ <refsect1 role="description">
+  &reftitle.description;
   <methodsynopsis>
    <type>int</type><methodname>pg_lo_write</methodname>
    <methodparam><type>resource</type><parameter>large_object</parameter></methodparam>
    <methodparam><type>string</type><parameter>data</parameter></methodparam>
+   <methodparam choice="opt"><type>int</type><parameter>len</parameter></methodparam>
   </methodsynopsis>
   <para>
-   <function>pg_lo_write</function>は、変数
-   <parameter>data</parameter>からラージオブジェクトに書き込み、実際
-   に書きこんだバイト数を返します。エラーを生じた場合は&false;を返し
-   ます。<parameter>large_object</parameter>は、
-   <function>pg_lo_open</function>でオープンされたラージオブジェクト
-   のリソースです。
+   <function>pg_lo_write</function> は、ラージオブジェクトの
+   カレントのシーク位置にデータを書き込みます。
   </para>
   <para>
-   ラージオブジェクト(lo)インターフェイスを使用するには、トランザク
-   ションブロックの中に括る必要があります。
+   ラージオブジェクトインターフェースは、トランザクションブロックの中で
+   使用する必要があります。
   </para>
+  <note>
+   <para>
+    この関数は、以前は <function>pg_lowrite</function> と呼ばれていました。
+   </para>
+  </note>
+ </refsect1>
+
+ <refsect1 role="parameters">
+  &reftitle.parameters;
   <para>
-   <function>pg_lo_create</function>および
-   <function>pg_lo_open</function>も参照ください。
+   <variablelist>
+    <varlistentry>
+     <term><parameter>large_object</parameter></term>
+     <listitem>
+      <para>
+       <function>pg_lo_open</function> によって返された
+       PostgreSQL ラージオブジェクト (LOB) リソース。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>data</parameter></term>
+     <listitem>
+      <para>
+       ラージオブジェクトに書き込むデータ。<parameter>len</parameter> が
+       <parameter>data</parameter> の長さより小さく指定されている場合、
+       <parameter>len</parameter> バイトのみが書き込まれます。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>len</parameter></term>
+     <listitem>
+      <para>
+       書き込むデータの最大バイト数（オプション）。0 より大きく、かつ
+       <parameter>data</parameter> のサイズ以下でなければなりません。
+       デフォルトは <parameter>data</parameter> の長さです。
+      </para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
+  </para>
+ </refsect1>
+
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <para>
+   ラージオブジェクトに書き込んだバイト数を返します。
+   エラー時には &false; を返します。
+  </para>
+ </refsect1>
+ 
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title><function>pg_lo_write</function> の例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+   $doc_oid = 189762345;
+   $data = "This will overwrite the start of the large object.";
+   $database = pg_connect("dbname=jacarta");
+   pg_query($database, "begin");
+   $handle = pg_lo_open($database, $doc_oid, "w");
+   $data = pg_lo_write($handle, $data);
+   pg_query($database, "commit");
+?>
+]]>
+    </programlisting>
+   </example> 
+  </para>
+ </refsect1>
+ 
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <para>
+   <simplelist>
+    <member><function>pg_lo_create</function></member>
+    <member><function>pg_lo_open</function></member>
+   </simplelist>
   </para>
  </refsect1>
 </refentry>

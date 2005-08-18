@@ -1,30 +1,115 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.3 $ -->
 <!-- splitted from ./ja/functions/pgsql.xml, last change in rev 1.5 -->
+<!-- EN-Revision: 1.8 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: takagi -->
 <refentry id="function.pg-lo-export">
  <refnamediv>
   <refname>pg_lo_export</refname>
   <refpurpose>ラージオブジェクトをファイルにエクスポートする</refpurpose>
  </refnamediv>
- <refsect1>
-  <title>説明</title>
+
+ <refsect1 role="description">
+  &reftitle.description;
+  <methodsynopsis>
+   <type>bool</type><methodname>pg_lo_export</methodname>
+   <methodparam><type>resource</type><parameter>connection</parameter></methodparam>
+   <methodparam><type>int</type><parameter>oid</parameter></methodparam>
+   <methodparam><type>string</type><parameter>pathname</parameter></methodparam>
+  </methodsynopsis>
   <methodsynopsis>
    <type>bool</type><methodname>pg_lo_export</methodname>
    <methodparam><type>int</type><parameter>oid</parameter></methodparam>
    <methodparam><type>string</type><parameter>pathname</parameter></methodparam>
-   <methodparam choice="opt"><type>resource</type><parameter>connection</parameter></methodparam>
   </methodsynopsis>
   <para>
-   引数<parameter>oid</parameter>によりエクスポートするラージオブジェクトの
-   オブジェクトIDを指定し、引数<parameter>pathname</parameter>により
-   ファイルのパス名を指定します。エラーを発生した場合は&false;、それ以外
-   は&true;を返します。
-   </para>
+   <function>pg_lo_export</function> は PostgreSQL データベースから
+   ラージオブジェクトを取得し、その内容をローカルファイルシステム上の
+   ファイルに保存します。
+  </para>
+  <para>
+   ラージオブジェクトインターフェースは、トランザクションブロックの中で
+   使用する必要があります。
+  </para>
+  <note>
    <para>
-    ラージオブジェクト(lo)インターフェイスを使用するには、トランザク
-    ションブロックの中に括る必要があります。
+    この関数は、以前は <function>pg_loexport</function> と呼ばれていました。
    </para>
-   <para>
-   <function>pg_lo_import</function>も参照ください。
+  </note>
+ </refsect1>
+
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <para>
+   <variablelist>
+    <varlistentry>
+     <term><parameter>connection</parameter></term>
+     <listitem>
+      <para>
+       PostgreSQL データベース接続リソース。<parameter>connection</parameter>
+       が指定されていない場合はデフォルトの接続が使用されます。
+       デフォルトの接続は、直近の <function>pg_connect</function>
+       あるいは <function>pg_pconnect</function> によって作成されたものです。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>oid</parameter></term>
+     <listitem>
+      <para>
+       データベース内のラージオブジェクトの <varname>OID</varname> 。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>pathname</parameter></term>
+     <listitem>
+      <para>
+       ラージオブジェクトをクライアントのファイルシステムに書き込む際の
+       フルパスとファイル名。
+      </para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
+  </para>
+ </refsect1>
+
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <para>
+   &return.success;
+  </para>
+ </refsect1>
+ 
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title><function>pg_lo_export</function> の例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+   $database = pg_connect("dbname=jacarta");
+   pg_query($database, "begin");
+   $oid = pg_lo_create($database);
+   $handle = pg_lo_open($database, $oid, "w");
+   pg_lo_write($handle, "large object data");
+   pg_lo_close($handle);
+   pg_lo_export($database, $oid, '/tmp/lob.dat');
+   pg_query($database, "commit");
+?>
+]]>
+    </programlisting>
+   </example> 
+  </para>
+ </refsect1>
+ 
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <para>
+   <simplelist>
+    <member><function>pg_lo_import</function></member>
+   </simplelist>
   </para>
  </refsect1>
 </refentry>

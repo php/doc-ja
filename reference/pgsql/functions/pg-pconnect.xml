@@ -1,84 +1,141 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.6 $ -->
 <!-- splitted from ./ja/functions/pgsql.xml, last change in rev 1.1 -->
-<!-- EN-Revision: 1.82 Maintainer: hirokawa Status: ready -->
-  <refentry id="function.pg-pconnect">
-   <refnamediv>
-    <refname>pg_pconnect</refname>
-    <refpurpose>持続的なデータベース接続をオープンする</refpurpose>
-   </refnamediv>
-   <refsect1>
-    <title>説明</title>
-     <methodsynopsis>
-      <type>int</type><methodname>pg_pconnect</methodname>
-      <methodparam><type>string</type><parameter>connection_string</parameter></methodparam>
-     </methodsynopsis>
-    <para>
-     <function>pg_pconnect</function> はPostgreSQLへの接続をオープンし
-     ます。この関数は、他のPostgreSQL関数により必要とされる接続リソー
-     スを返します。
-    </para>
-    <para>
-     この関数は、成功すると接続IDを返し、接続ができなかった場合は
-     &false;を返します。引数は、引用符で括った文字列とする必要がありま
-     す。引数としては、<parameter>dbname</parameter>,
-     <parameter>port</parameter>, <parameter>host</parameter>, 
-     <parameter>tty</parameter>, <parameter>options</parameter>,
-     <parameter>user</parameter>, <parameter>password</parameter>が使
-     用可能です。
-    </para>
-     <example>
-     <title>pg_pconnectの使用</title>
-     <programlisting role="php">
+<!-- EN-Revision: 1.8 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: takagi -->
+<refentry id="function.pg-pconnect">
+ <refnamediv>
+  <refname>pg_pconnect</refname>
+  <refpurpose>持続的な PostgreSQL 接続をオープンする</refpurpose>
+ </refnamediv>
+
+ <refsect1 role="description">
+  &reftitle.description;
+  <methodsynopsis>
+   <type>resource</type><methodname>pg_pconnect</methodname>
+   <methodparam><type>string</type><parameter>connection_string</parameter></methodparam>
+   <methodparam choice="opt"><type>int</type><parameter>connect_type</parameter></methodparam>
+  </methodsynopsis>
+  <para>
+   <function>pg_pconnect</function> は PostgreSQL への接続を
+   オープンします。この関数は、他の PostgreSQL関数 が必要とする
+   接続リソースを返します。
+  </para>
+  <para>
+   既存の接続と同じ <parameter>connection_string</parameter> を用いて
+   <function>pg_pconnect</function> が 2 回目にコールされた場合は、
+   既存の接続を返します。ただし、<parameter>connect_type</parameter>
+   に <constant>PGSQL_CONNECT_FORCE_NEW</constant> を指定している場合は
+   除きます。
+  </para>
+  <para>
+   持続的接続を有効にするには、&php.ini; のディレクティブ <link
+   linkend="ini.pgsql.allow-persistent">pgsql.allow_persistent</link>
+   を &quot;On&quot; に設定する必要があります（デフォルトは On です）。
+   持続的接続の最大数は &php.ini; ディレクティブ <link
+   linkend="ini.pgsql.max-persistent">pgsql.max_persistent</link>
+   で設定可能です（デフォルトは制限無しを意味する -1 です）。
+   接続全体の数は &php.ini; ディレクティブ <link
+   linkend="ini.pgsql.max-links">pgsql.max_links</link> で設定可能です。
+  </para>
+  <para>
+   <function>pg_close</function> は、
+   <function>pg_pconnect</function> によりオープンされた持続的接続は
+   閉じません。
+  </para>
+ </refsect1>
+
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <para>
+   <variablelist>
+    <varlistentry>
+     <term><parameter>connection_string</parameter></term>
+     <listitem>
+      <para>
+       すべてデフォルトのパラメータを使用する場合には
+       <parameter>connection_string</parameter> を空にすることが可能です。
+       または 1 つ以上のパラメータを空白で区切って指定することも可能です。
+       個々のパラメータは <literal>keyword = value</literal> の形式で
+       設定します。等号の前後の空白はあってもなくてもかまいません。
+       空の値や空白を含む値を指定する場合は、その値をシングルクォートで
+       囲みます（例: <literal>keyword = 'a value'</literal>）。値の中に
+       シングルクォートやバックスラッシュが含まれる場合は、それらを
+       バックスラッシュでエスケープする必要があります（例: \' および \\）。
+      </para>
+      <para>
+       現在利用できるパラメータは以下のとおりです。
+       <parameter>host</parameter>, <parameter>hostaddr</parameter>, <parameter>port</parameter>,
+       <parameter>dbname</parameter>, <parameter>user</parameter>,
+       <parameter>password</parameter>, <parameter>connect_timeout</parameter>,
+       <parameter>options</parameter>, <parameter>tty</parameter>（無視されます）, <parameter>sslmode</parameter>,
+       <parameter>requiressl</parameter>（非推奨。代わりに <parameter>sslmode</parameter> を推奨します）
+       および <parameter>service</parameter> 。これらのうち実際にどの
+       パラメータが使えるかは、PostgreSQL のバージョンに依存します。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>connect_type</parameter></term>
+     <listitem>
+      <para>
+       <constant>PGSQL_CONNECT_FORCE_NEW</constant> が渡された場合は、
+       たとえ <parameter>connection_string</parameter> が既存の接続と
+       まったく同一であっても新しい接続をオープンします。
+      </para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
+  </para>
+ </refsect1>
+
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <para>
+   成功した場合に PostgreSQL の接続リソース、失敗した場合に &false; を返します。
+  </para>
+ </refsect1>
+ 
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title><function>pg_pconnect</function> の使用法</title>
+    <programlisting role="php">
 <![CDATA[
 <?php
-$dbconn = pg_pconnect ("dbname=mary");
+$dbconn = pg_pconnect("dbname=mary");
 // "mary"という名前のデータベースに接続
-$dbconn2 = pg_pconnect ("host=localhost port=5432 dbname=mary");
-// "localhost"上のポート"5432"で"mary"という名前のデータベースに接続
-$dbconn3 = pg_connect ("host=sheep port=5432 dbname=mary user=lamb password=foo");
-// ユーザ名をパスワードを指定してホスト"sheep"上の"mary"という名前のデータベースに接続
+
+$dbconn2 = pg_pconnect("host=localhost port=5432 dbname=mary");
+// "localhost"のポート"5432"にて"mary"という名前のデータベースに接続
+
+$dbconn3 = pg_pconnect("host=sheep port=5432 dbname=mary user=lamb password=foo");
+// ユーザ名とパスワードを指定してホスト"sheep"上の"mary"という名前のデータベースに接続
+
 $conn_string = "host=sheep port=5432 dbname=test user=lamb password=bar";
-$dbconn4 = pg_pconnect ($conn_string);
-// ユーザ名とパスワードを指定してホスト"sheep"上の"test"という名前のデータベースに接続
+$dbconn4 = pg_pconnect($conn_string);
+// ユーザ名とパスワードを指定してホスト"sheep"上の"test"という名前のデータベースへ接続
 ?>
 ]]>
-     </programlisting>
-    </example>
-    <para>
-     同じ引数で<function>pg_pconnect</function>への２回目のコールが行
-     われた場合、新規の接続はオープンされず、代わりに既にオープンされ
-     ている接続リソースが返されます。異なった接続パラメータ(すなわち別
-     のユーザ名)を使用する場合には、同じデータベースに複数の接続を行う
-     ことが可能です。
-    </para>
-    <para>
-     <function>pg_pconnect</function>の複数のパラメータを使用する構文
-     <command>$conn = pg_pconnect ("host", "port", "options", "tty",
-    "dbname")
-     </command>
-     は過去のものです。
-    </para>
-    <para>
-     持続的接続を有効にするには、php.iniのディレクティブ<link
-     linkend="ini.pgsql.allow-persistent">pgsql.allow_persistent</link>
-     を &quot;On&quot;に設定する必要があります。 (デフォルトはOnです)
-     持続的接続の最大数をphp.iniディレクティブ<link
-     linkend="ini.pgsql.max-persistent">pgsql.max_persistent</link>
-     で指定することも可能です。(デフォルトは制限無しを意味する-1です)
-     接続全体の数をphp.iniディレクティブ<link
-     linkend="ini.pgsql.max-links">pgsql.max_links</link> で設定可能で
-     す。
-    </para>
-    <para>
-     <function>pg_close</function> は、
-     <function>pg_pconnect</function>によりオープンされた持続的接続は
-     閉じません。 
-    </para>
-    <para>
-     <function>pg_connect</function>も参照ください。
-    </para>
-   </refsect1>
-  </refentry>
+    </programlisting>
+   </example>
+  </para>
+ </refsect1>
+ 
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <para>
+   <simplelist>
+    <member><function>pg_connect</function></member>
+    <member>
+     <link linkend="features.persistent-connections">
+     持続的データベース接続</link>
+    </member>
+   </simplelist>
+  </para>
+ </refsect1>
+</refentry>
 
 <!-- Keep this comment at the end of the file
 Local variables:

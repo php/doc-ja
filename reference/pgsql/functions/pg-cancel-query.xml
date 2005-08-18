@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.7 $ -->
 <!-- splitted from ./ja/functions/pgsql.xml, last change in rev 1.31 -->
-<!-- EN-Revision: 1.61 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 1.9 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: takagi -->
 <refentry id='function.pg-cancel-query'>
  <refnamediv>
   <refname>pg_cancel_query</refname>
@@ -8,21 +10,88 @@
    非同期クエリを取り消す
   </refpurpose>
  </refnamediv>
- <refsect1>
-  <title>説明</title>
+
+ <refsect1 role="description">
+  &reftitle.description;
   <methodsynopsis>
    <type>bool</type><methodname>pg_cancel_query</methodname>
    <methodparam><type>resource</type><parameter>connection</parameter></methodparam>
   </methodsynopsis>
   <para>
-   <function>pg_cancel_query</function>は、
-   <function>pg_send_query</function>により送信された非同期クエリをキャ
-   ンセルします。<function>pg_query</function>により実行されたクエリを
+   <function>pg_cancel_query</function> は、
+   <function>pg_send_query</function>・<function>pg_send_query_params</function>
+   あるいは <function>pg_send_execute</function> により送信された非同期クエリを
+   キャンセルします。<function>pg_query</function> により実行されたクエリを
    キャンセルすることはできません。
   </para>
+ </refsect1>
+
+ <refsect1 role="parameters">
+  &reftitle.parameters;
   <para>
-   <function>pg_send_query</function>,
-   <function>pg_connection_busy</function>も参照ください。
+   <variablelist>
+    <varlistentry>
+     <term><parameter>connection</parameter></term>
+     <listitem>
+      <para>
+       PostgreSQL データベース接続リソース。
+      </para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
+  </para>
+ </refsect1>
+
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+   <para>
+    &return.success;
+   </para>
+ </refsect1>
+ 
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title><function>pg_cancel_query</function> の例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+  $dbconn = pg_connect("dbname=publisher") or die("Could not connect");
+
+  if (!pg_connection_busy($dbconn)) {
+      pg_send_query($dbconn, "select * from authors; select count(*) from authors;");
+  }
+  
+  $res1 = pg_get_result($dbconn);
+  echo "First call to pg_get_result(): $res1\n";
+  $rows1 = pg_num_rows($res1);
+  echo "$res1 has $rows1 records\n\n";
+  
+  // 実行中のクエリをキャンセルする。もしまだ実行中なら、2 番目のクエリが
+  // 対象となるだろう。
+  pg_cancel_query($dbconn);
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+First call to pg_get_result(): Resource id #3
+Resource id #3 has 3 records
+]]>
+    </screen>
+   </example> 
+  </para>
+ </refsect1>
+ 
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <para>
+   <simplelist>
+    <member><function>pg_send_query</function></member>
+    <member><function>pg_connection_busy</function></member>
+   </simplelist>
   </para>
  </refsect1>
 </refentry>

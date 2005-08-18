@@ -1,62 +1,130 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.3 $ -->
+<!-- $Revision: 1.4 $ -->
 <!-- splitted from ./en/functions/pgsql.xml, last change in rev 1.2 -->
+<!-- EN-Revision: 1.11 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: takagi -->
 <refentry id="function.pg-query">
  <refnamediv>
   <refname>pg_query</refname>
   <refpurpose>クエリを実行する</refpurpose>
  </refnamediv>
- <refsect1>
-  <title>説明</title>
+
+ <refsect1 role="description">
+  &reftitle.description;
+  <methodsynopsis>
+   <type>resource</type><methodname>pg_query</methodname>
+   <methodparam><type>string</type><parameter>query</parameter></methodparam>
+  </methodsynopsis>
   <methodsynopsis>
    <type>resource</type><methodname>pg_query</methodname>
    <methodparam><type>resource</type><parameter>connection</parameter></methodparam>
    <methodparam><type>string</type><parameter>query</parameter></methodparam>
   </methodsynopsis>
   <para>
-   <function>pg_query</function>は、クエリが実行できた場合にクエリ結
-   果リソースを返します。失敗した場合や
-   <parameter>connection</parameter>が有効な接続でない場合に &false;
-   を返します。接続が有効な場合、エラーに関する詳細を
-   <function>pg_last_error</function> により取得することが可能です。
-   <function>pg_query</function>は、
-   <parameter>connection</parameter>リソースで指定されたPostgreSQLデー
-   タベースにSQL命令を送信します。
-   <parameter>connection</parameter>は、
-   <function>pg_connect</function>または
-   <function>pg_pconnect</function>から返された有効な接続である必要が
-   あります。この関数の返り値はクエリ結果のリソースであり、
-   <function>pg_fetch_array</function>のような他のPostgreSQL関数から
-   結果にアクセスする際に使用されます。
+   <function>pg_query</function> 指定したデータベース
+   <parameter>connection</parameter> 上で <parameter>query</parameter>
+   を実行します。
+  </para>
+  <para>
+   エラーが発生して &false; が返された場合、もし接続が正常なら
+   <function>pg_last_error</function> 関数を使用してエラーの詳細情報が
+   取得可能です。
+  </para>
+  <para>
    <note>
     <simpara>
-     <parameter>connection</parameter>は、
-     <function>pg_query</function>ではオプションのパラメータです。
-     <parameter>connection</parameter>が指定されない場合、デフォルトの
-     接続が使用されます。デフォルトの接続は、
-     <function>pg_connect</function>または
-     <function>pg_pconnect</function>でにより作成された直近の接続です。
-    </simpara>
-    <simpara>
-     <parameter>connection</parameter>は省略可能ですが、スクリプトのバ
-     グが発見しにくくなるため、推奨されません。
+     <parameter>connection</parameter>は省略可能ですが、それは推奨されません。
+     なぜならスクリプトのバグが発見しにくくなるためです。
     </simpara>
    </note>
   </para>
   <note>
    <para>
-    この関数は、<literal>pg_exec()</literal>と呼ばれていました。
-    <literal>pg_exec()</literal>は互換性確保のためにまだ使用可能ですが、
+    この関数は、以前は <function>pg_exec</function> と呼ばれていました。
+    <function>pg_exec</function> は互換性確保のためにまだ使用可能ですが、
     新しい名前を使用することが推奨されています。
    </para>
   </note>
+ </refsect1>
+
+ <refsect1 role="parameters">
+  &reftitle.parameters;
   <para>
-   <function>pg_connect</function>,
-   <function>pg_pconnect</function>,
-   <function>pg_fetch_array</function>,
-   <function>pg_fetch_object</function>,
-   <function>pg_num_rows</function>,
-   <function>pg_affected_rows</function>も参照ください。
+   <variablelist>
+    <varlistentry>
+     <term><parameter>connection</parameter></term>
+     <listitem>
+      <para>
+       PostgreSQL データベース接続リソース。<parameter>connection</parameter>
+       が指定されていない場合はデフォルトの接続が使用されます。
+       デフォルトの接続は、直近の <function>pg_connect</function>
+       あるいは <function>pg_pconnect</function> によって作成されたものです。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>query</parameter></term>
+     <listitem>
+      <para>
+       実行する 1 つまたは複数の SQL 文。
+      </para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
+  </para>
+ </refsect1>
+
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <para>
+    成功した場合にクエリ結果リソース、失敗した場合に &false; を返します。
+  </para>
+ </refsect1>
+ 
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title><function>pg_query</function> の例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+$conn = pg_pconnect("dbname=publisher");
+if (!$conn) {
+  echo "An error occured.\n";
+  exit;
+}
+
+$result = pg_query($conn, "SELECT author, email FROM authors");
+if (!$result) {
+  echo "An error occured.\n";
+  exit;
+}
+
+while ($row = pg_fetch_row($result)) {
+  echo "Author: $row[0]  E-mail: $row[1]";
+  echo "<br />\n";
+}
+ 
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+ </refsect1>
+ 
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <para>
+   <simplelist>
+    <member><function>pg_connect</function></member>
+    <member><function>pg_pconnect</function></member>
+    <member><function>pg_fetch_array</function></member>
+    <member><function>pg_fetch_object</function></member>
+    <member><function>pg_num_rows</function></member>
+    <member><function>pg_affected_rows</function></member>
+   </simplelist>
   </para>
  </refsect1>
 </refentry>

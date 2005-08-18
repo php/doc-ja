@@ -1,33 +1,105 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.5 $ -->
 <!-- splitted from ./ja/functions/pgsql.xml, last change in rev 1.31 -->
-<!-- EN-Revision: 1.61 Maintainer: hirokawa Status: ready -->
-  <refentry id='function.pg-escape-bytea'>
-   <refnamediv>
-    <refname>pg_escape_bytea</refname>
-    <refpurpose>
-     bytea型にバイナリをエスケープする
-    </refpurpose>
-   </refnamediv>
-   <refsect1>
-    <title>説明</title>
-     <methodsynopsis>
-      <type>string</type><methodname>pg_escape_bytea</methodname>
-      <methodparam><type>string</type><parameter>data</parameter></methodparam>
-     </methodsynopsis>
-    <para>
-     <function>pg_escape_string</function>は、byteaデータ型用に文字列
-     をエスケープします。この関数はエスケープされた文字列を返します。
-    </para>
-    <note>
-     <para>
-      この関数は、PostgreSQL 7.2以降を必要とします。
+<!-- EN-Revision: 1.9 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: takagi -->
+<refentry id='function.pg-escape-bytea'>
+ <refnamediv>
+  <refname>pg_escape_bytea</refname>
+  <refpurpose>
+   bytea フィールドに挿入するために文字列をエスケープする
+  </refpurpose>
+ </refnamediv>
+
+ <refsect1 role="description">
+  &reftitle.description;
+  <methodsynopsis>
+   <type>string</type><methodname>pg_escape_bytea</methodname>
+   <methodparam><type>string</type><parameter>data</parameter></methodparam>
+  </methodsynopsis>
+  <para>
+   <function>pg_escape_bytea</function> は、bytea 型のために文字列を
+   エスケープし、エスケープした文字列を返します。
+  </para>
+  <note>
+   <para>
+    bytea 型を <literal>SELECT</literal> した場合、PostgreSQL は '\' で
+    始まる 8 進数のバイト値（例: \032）を返します。これをユーザが手動で
+    コンバートすることを期待されています。
+   </para>
+   <para>
+    この関数は PostgreSQL 7.2 以降のバージョンを必要とします。PostgreSQL
+    7.2.0 および 7.2.1 では、マルチバイトのサポートを有効にした場合は
+    bytea の値をキャストする必要があります。例:
+    <literal>INSERT INTO test_table (image) VALUES ('$image_escaped'::bytea);
+    </literal> PostgreSQL 7.2.2 以降ではキャストする必要はありません。
+    クライアントとバックエンドの文字エンコーディングが一致しない場合は
+    例外で、この場合はマルチバイトストリームエラーが発生します。この
+    エラーを避けるためには bytea 型へのキャストが必要になります。
+   </para>
+  </note>
+ </refsect1>
+
+<refsect1 role="parameters">
+  &reftitle.parameters;
+  <para>
+   <variablelist>
+    <varlistentry>
+     <term><parameter>data</parameter></term>
+     <listitem>
+      <para>
+       bytea 型のカラムに挿入するテキストまたはバイナリデータを含む
+       文字列。
       </para>
-    </note>
-    <para>
-     <function>pg_escape_string</function>も参照ください。
-    </para>
-   </refsect1>
-  </refentry>
+     </listitem>
+    </varlistentry>
+   </variablelist>
+  </para>
+ </refsect1>
+
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <para>
+   エスケープされたデータを文字列で返します。
+  </para>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title><function>pg_escape_bytea</function> の例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php 
+  // データベースに接続する
+  $dbconn = pg_connect('dbname=foo');
+  
+  // バイナリファイルを読み込む
+  $data = file_get_contents('image1.jpg');
+  
+  // バイナリデータをエスケープする
+  $escaped = pg_escape_bytea($data);
+  
+  // それをデータベースに挿入する
+  pg_query("INSERT INTO gallery (name, data) VALUES ('Pine trees', '{$escaped}')";
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+ </refsect1>
+ 
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <para>
+   <simplelist>
+    <member><function>pg_unescape_bytea</function></member>
+    <member><function>pg_escape_string</function></member>
+   </simplelist>
+  </para>
+ </refsect1>
+</refentry>
 
 <!-- Keep this comment at the end of the file
 Local variables:

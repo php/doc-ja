@@ -1,45 +1,122 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.5 $ -->
 <!-- splitted from ./ja/functions/pgsql.xml, last change in rev 1.29 -->
-<!-- EN-Revision: 1.82 Maintainer: hirokawa Status: ready -->
-  <refentry id="function.pg-last-notice">
-   <refnamediv>
-    <refname>pg_last_notice</refname> 
-    <refpurpose>
-     PostgreSQLサーバからの直近の通知メッセージを返す
-    </refpurpose>
-   </refnamediv>
-   <refsect1>
-    <title>説明</title>
-     <methodsynopsis>
-      <type>string</type><methodname>pg_last_notice</methodname>
-      <methodparam><type>resource</type><parameter>connection</parameter></methodparam>
-     </methodsynopsis>
-    <para>
-     <function>pg_last_notice</function> は、
-     <parameter>connection</parameter>で指定したPostgreSQLサーバーから
-     の直近の通知メッセージを返します。PostgreSQLサーバは、トランザク
-     ションが継続できない時に通知メッセージを設定します。このため、
-     <function>pg_exec</function>による無意味なSQLの発行を
-     <function>pg_last_notice</function>により回避することが可能です。
-     他にもPostgreSQLサーバが通知メッセージを設定する場合があります。
-     プログラマは、トランザクションに関連するかによらず通知メッセージ
-     の内容をチェックするべきです。
-    </para>
-    <warning>
-     <para>
-      この関数は実験的なものであり、まだ完全に実装されていません。
-      <function>pg_last_notice</function> は、PHP 4.0.6で追加されまし
-      た。しかし、PHP 4.0.6 には通知メッセージ処理の問題があります。
-      <function>pg_last_notice</function>を使用しない場合でも
-      PHP 4.0.6 で PostgreSQLモジュールを使用することは推奨されません。
-     </para>
-    </warning>
-    <para>
-     <function>pg_exec</function> および
-     <function>pg_errormessage</function>も参照ください。
-    </para>
-   </refsect1>
-  </refentry>
+<!-- EN-Revision: 1.6 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: takagi -->
+<refentry id="function.pg-last-notice">
+ <refnamediv>
+  <refname>pg_last_notice</refname> 
+  <refpurpose>
+   PostgreSQL サーバからの直近の通知メッセージを返す
+  </refpurpose>
+ </refnamediv>
+
+ <refsect1 role="description">
+  &reftitle.description;
+  <methodsynopsis>
+   <type>string</type><methodname>pg_last_notice</methodname>
+   <methodparam><type>resource</type><parameter>connection</parameter></methodparam>
+  </methodsynopsis>
+  <para>
+   <function>pg_last_notice</function> は、<parameter>connection</parameter>
+   で指定した PostgreSQL サーバからの直近の通知メッセージを返します。
+   たとえば、テーブルに <literal>SERIAL</literal> カラムを作成する場合などに
+   PostgreSQL サーバは通知メッセージを送信します。
+  </para>
+  <para>
+   <function>pg_last_notice</function> でトランザクションに関連する通知
+   メッセージがあるかないかをチェックすることで、無意味なクエリの発行を
+   避けることが可能です。
+  </para>
+  <warning>
+   <para>
+    この関数は「実験的」なものであり、まだ完全に実装されていません。
+    <function>pg_last_notice</function> は PHP 4.0.6 で追加されました。
+    しかし、PHP 4.0.6 には通知メッセージ処理の問題があります。
+    <function>pg_last_notice</function> を使用しない場合でも
+    PHP 4.0.6 で PostgreSQL モジュールを使用することは推奨されません。
+   </para>
+   <para>
+    この関数は、PHP 4.3.0 で完全に実装されました。
+    PHP 4.3.0 より前のバージョンでは、データベースの接続パラメータを
+    無視していました。
+   </para>
+  </warning>
+  <para>
+   PHP 4.3.0 以降、&php.ini; で <literal>pgsql.ignore_notice</literal>
+   に 1 を指定することで、通知メッセージの追跡をしないようにすることが
+   可能です。
+  </para>
+  <para>
+   PHP 4.3.0 以降、&php.ini; で <literal>pgsql.log_notice</literal>
+   に 0 を指定することで、通知メッセージをログに記録しないようにすることが
+   可能です。<literal>pgsql.ignore_notice</literal> が 0 に設定されていない
+   限り、通知メッセージをログに記録することはできません。
+  </para>
+ </refsect1>
+ 
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <para>
+   <variablelist>
+    <varlistentry>
+     <term><parameter>connection</parameter></term>
+     <listitem>
+      <para>
+       PostgreSQL データベースの接続リソース。
+      </para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
+  </para>
+ </refsect1>
+
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <para>
+   指定された <parameter>connection</parameter> の直近の通知を文字列で
+   返します。エラー時には &false; を返します。
+  </para>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title><function>pg_last_error</function> の例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+  $pgsql_conn = pg_connect("dbname=mark host=localhost");
+  
+  $res = pg_query("CREATE TABLE test (id SERIAL)");
+  
+  $notice = pg_last_notice($pgsql_conn);
+  
+  echo $notice;
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+CREATE TABLE will create implicit sequence "test_id_seq" for "serial" column "test.id"
+]]>
+    </screen>
+   </example>
+  </para>
+ </refsect1>
+ 
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <para>
+   <simplelist>
+    <member><function>pg_query</function></member>
+    <member><function>pg_last_error</function></member>
+   </simplelist>
+  </para>
+ </refsect1>
+</refentry>
 
 <!-- Keep this comment at the end of the file
 Local variables:

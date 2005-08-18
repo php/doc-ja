@@ -1,113 +1,174 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.6 $ -->
 <!-- splitted from ./ja/functions/pgsql.xml, last change in rev 1.6 -->
-<!-- EN-Revision: 1.2 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 1.18 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: takagi -->
 <refentry id="function.pg-fetch-object">
  <refnamediv>
   <refname>pg_fetch_object</refname>
   <refpurpose>行をオブジェクトとして得る</refpurpose>
  </refnamediv>
- <refsect1>
-  <title>説明</title>
+
+ <refsect1 role="description">
+  &reftitle.description;
   <methodsynopsis>
    <type>object</type><methodname>pg_fetch_object</methodname>
    <methodparam><type>resource</type><parameter>result</parameter></methodparam>
-   <methodparam><type>int</type><parameter>row</parameter></methodparam>
+   <methodparam choice="opt"><type>int</type><parameter>row</parameter></methodparam>
    <methodparam choice="opt"><type>int</type><parameter>result_type</parameter></methodparam>
   </methodsynopsis>
-  <para> 
-   <function>pg_fetch_object</function>は、取得した行に対応するプロ
-   パティを有するオブジェクトを返します。この関数は、行がもうない場
-   合またはエラーには&false;を返します。
-  </para>
-  <para> 
-   <function>pg_fetch_object</function>は
-   <function>pg_fetch_array</function>に似ていますが、配列の代わりに
-   オブジェクトが返されという違いがあります。間接的に、このことはデー
-   タがオフセットではなくフィールド名によってのみアクセス可能である
-   ことを意味します。(数字はプロパティ名として使用できません。)
-  </para>
+  <methodsynopsis>
+   <type>object</type><methodname>pg_fetch_object</methodname>
+   <methodparam><type>resource</type><parameter>result</parameter></methodparam>
+   <methodparam choice="opt"><type>int</type><parameter>row</parameter></methodparam>
+   <methodparam choice="opt"><type>string</type><parameter>class_name</parameter></methodparam>
+   <methodparam choice="opt"><type>array</type><parameter>params</parameter></methodparam>
+  </methodsynopsis>
   <para>
-   <parameter>row</parameter> は、取得する行(レコード)番号です。最初の
-   レコードは0です。
+   <function>pg_fetch_object</function> は、取得した行のフィールド名に
+   対応するプロパティを有するオブジェクトを返します。オプションとして、
+   指定したクラスのコンストラクタにパラメータを渡してインスタンス化する
+   ことも可能です。
   </para>
+  &database.fetch-null;
   <para>
-   速度面では、この関数は、<function>pg_fetch_array</function>と同じであり、
-   <function>pg_fetch_row</function>とほとんど同じ程度です。
-   (違いはわずかです)
+   速度面では、この関数は <function>pg_fetch_array</function> と同じであり、
+   <function>pg_fetch_row</function> とほとんど同じ程度です
+   （違いはわずかです）。
   </para>
   <note>
    <para>
-    <parameter>result_type</parameter>に関して従来のバージョンのデフォ
-    ルト値は、PGSQL_BOTHでしたが、4.3.0から
-    <parameter>result_type</parameter>のデフォルトはPGSQL_ASSOCとなっ
-    ています。PHPではプロパティ名に数値を使用することはできないため、
-    プロパティ名に数値を使用することはできません。
-   </para>
-   <para>
-    <parameter>result_type</parameter>は、将来的なバージョンでは削除さ
-    れる可能性があります。
+    <parameter>row</parameter> は PHP 4.1.0 でオプションになりました。
    </para>
   </note>
+  <note>
+   <para>
+    <parameter>result_type</parameter> のデフォルト値は従来は PGSQL_BOTH
+    でしたが、4.3.0 からは PGSQL_ASSOCとなっています。PHP ではプロパティ名に
+    数値を使用することはできないためです。
+   </para>
+  </note>
+  <note>
+   <para>
+    <parameter>class_name</parameter> と <parameter>params</parameter> は
+    PHP 5.0 で追加されました。<parameter>result_type</parameter> を用いた
+    古い形式は、過去のバージョンとの互換性を保つために残されています。
+   </para>
+  </note>
+ </refsect1>
+
+ <refsect1 role="parameters">
+  &reftitle.parameters;
   <para>
-   <function>pg_query</function>, <function>pg_fetch_array</function>,
-   <function>pg_fetch_row</function>, <function>pg_fetch_result</function>
-   も参照ください。
+   <variablelist>
+    <varlistentry>
+     <term><parameter>result</parameter></term>
+     <listitem>
+      <para>
+       <function>pg_query</function>, <function>pg_query_params</function>
+       あるいは <function>pg_execute</function> から返される PostgreSQL の
+       クエリ結果リソース。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>row</parameter></term>
+     <listitem>
+      <para>
+       取得する行番号。最初の行は 0 です。指定されなかった場合、
+       次の行が取得されます。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>result_type</parameter></term>
+      <listitem>
+       <para>
+        非推奨で、無視されます。デフォルトは <constant>PGSQL_ASSOC</constant> です。
+       </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>class_name</parameter></term>
+      <listitem>
+       <para>
+        インスタンス化し、プロパティを設定して返り値とするクラスの名前。
+        指定しない場合は <literal>stdClass</literal> オブジェクトが返されます。
+       </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>params</parameter></term>
+      <listitem>
+       <para>
+        <parameter>class_name</parameter> オブジェクトのコンストラクタに
+        渡すオプションの配列。
+       </para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
+  </para>
+ </refsect1>
+
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <para>
+   結果の各フィールドに対応する属性を持つ <type>object</type> を返します。
+   データベースの <literal>NULL</literal> 値は &null; として返します。
   </para>
   <para>
+   <parameter>row</parameter> が結果の行数より大きい場合・行が存在しない場合
+   、そしてそれ以外のエラーが発生した場合は &false; を返します。
+  </para>
+ </refsect1>
+ 
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
    <example>
-    <title>Postgres によりオブジェクトを取得する</title>
+    <title><function>pg_fetch_object</function> の例</title>
     <programlisting role="php">
 <![CDATA[
 <?php 
-$database = "verlag";
-$db_conn = pg_connect ("host=localhost port=5432 dbname=$database");
-if (!$db_conn): ?>
-    <H1>Failed connecting to postgres database <? echo $database ?></H1> <?php
-    exit;
-endif;
- 
-$qu = pg_query ($db_conn, "SELECT * FROM verlag ORDER BY autor");
-$row = 0; // Postgresでは他のデータベースと異なり、行カウンタが必要
- 
-while ($data = pg_fetch_object ($qu, $row)) {
-    echo $data->autor." (";
-    echo $data->jahr ."): ";
-    echo $data->titel."<BR>";
-    $row++;
+
+$database = "store";
+
+$db_conn = pg_connect("host=localhost port=5432 dbname=$database");
+if (!$db_conn) {
+  echo "Failed connecting to postgres database $database\n";
+  exit;
 }
-?>
-<PRE>
-<?php
-$fields[] = Array ("autor", "Author");
-$fields[] = Array ("jahr",  "  Year");
-$fields[] = Array ("titel", " Title");
- 
-$row= 0; // Postgresでは他のデータベースと異なり、行カウンタが必要
-while ($data = pg_fetch_object ($qu, $row)) {
-    echo "----------\n";
-    reset ($fields);
-    while (list (,$item) = each ($fields)):
-        echo $item[1].": ".$data->$item[0]."\n";
-    endwhile;
-    $row++;
+
+$qu = pg_query($db_conn, "SELECT * FROM books ORDER BY author");
+
+
+while ($data = pg_fetch_object($qu)) {
+  echo $data->author . " (";
+  echo $data->year . "): ";
+  echo $data->title . "<br />";
 }
-echo "----------\n"; ?>
-</PRE> 
-<?php
-pg_free_result ($qu);
-pg_close ($db_conn);
+
+pg_free_result($qu);
+pg_close($db_conn);
+
 ?>
 ]]>
     </programlisting>
    </example>
   </para>
-  <note>
-   <para>
-    4.1.0以降、<parameter>row</parameter>はオプションとなっています。
-    <function>pg_fetch_object</function> をコールすることにより、内部
-    的なレコードカウンタは1増加します。
-   </para>
-  </note>
+ </refsect1>
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <para>
+   <simplelist>
+    <member><function>pg_query</function></member>
+    <member><function>pg_fetch_array</function></member>
+    <member><function>pg_fetch_assoc</function></member>
+    <member><function>pg_fetch_row</function></member>
+    <member><function>pg_fetch_result</function></member>
+   </simplelist>
+  </para>
  </refsect1>
 </refentry>
 

@@ -1,12 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.4 $ -->
+<!-- $Revision: 1.5 $ -->
+<!-- $Revision: 1.5 $ -->
+<!-- EN-Revision: 1.14 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: takagi -->
 <refentry id="function.pg-get-notify">
  <refnamediv>
   <refname>pg_get_notify</refname>
-  <refpurpose>データベース接続にpingを行う</refpurpose>
+  <refpurpose>SQL NOTIFY メッセージを取得する</refpurpose>
  </refnamediv>
- <refsect1>
-  <title>説明Description</title>
+
+ <refsect1 role="description">
+  &reftitle.description;
   <methodsynopsis>
    <type>array</type><methodname>pg_get_notify</methodname>
    <methodparam><type>resource</type><parameter>connection</parameter></methodparam>
@@ -15,37 +19,87 @@
   <para>
    <function>pg_get_notify</function>は、<literal>NOTIFY</literal> SQL
    コマンドにより送信された通知メッセージを取得します。
-   通知メッセージを取得するには、<literal>LISTEN</literal> SQLコマンド
-   を発行する必要があります。指定した接続に通知メッセージがある場合、
-   メッセージ名とバックエンドのプロセスIDを含む配列が返されます。
-   メッセージがない場合、&false; が返されます。
+   通知メッセージを取得するには、<literal>LISTEN</literal> SQL
+   コマンドを発行する必要があります。
   </para>
+ </refsect1>
+
+ <refsect1 role="parameters">
+  &reftitle.parameters;
   <para>
-   <function>pg_get_pid</function>も参照してください。
+   <variablelist>
+    <varlistentry>
+     <term><parameter>connection</parameter></term>
+     <listitem>
+      <para>
+       PostgreSQL データベースの接続リソース。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>result_type</parameter></term>
+     <listitem>
+      <para>
+       <parameter>result_type</parameter> は、返り値の形式を制御する
+       オプションのパラメータです。<parameter>result_type</parameter>
+       は定数であり、次の値のどれかとすることが可能です。
+       <constant>PGSQL_ASSOC</constant>、<constant>PGSQL_NUM</constant>
+       および <constant>PGSQL_BOTH</constant>。
+       <constant>PGSQL_NUM</constant> を使用すると、<function>pg_get_notify</function>
+       は数値添字の配列を返します。また、<constant>PGSQL_ASSOC</constant>
+       を使用すると連想配列形式で返します。<constant>PGSQL_BOTH</constant>
+       がデフォルト設定で、これは数値添字の配列と連想配列の両方を返します。
+      </para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
   </para>
+ </refsect1>
+
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <para>
+   <literal>NOTIFY</literal> メッセージ名とバックエンドの PID を含む
+   配列を返します。もし待ち受ける <literal>NOTIFY</literal> が存在しない
+   場合は then &false; を返します。
+  </para>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
   <para>
    <example>
-    <title>PostgreSQL NOTIFYメッセージの取得</title>
+    <title>PostgreSQL NOTIFY メッセージ</title>
     <programlisting role="php">
 <![CDATA[
 <?php 
-$conn = pg_pconnect ("dbname=publisher");
+$conn = pg_pconnect("dbname=publisher");
 if (!$conn) {
-    echo "An error occured.\n";
-    exit;
+  echo "An error occured.\n";
+  exit;
 }
 
-// 他のプロセスからの'author_updated'に関するメッセージを監視
-pq_query($conn, 'LISTEN author_updated;');
+// 他のプロセスからの 'author_updated' メッセージを監視する
+pg_query($conn, 'LISTEN author_updated;');
 $notify = pg_get_notify($conn);
-if (!$notify)
-    print("メッセージはありません。\n");
-else
-    print_r($notify);
+if (!$notify) {
+  echo "No messages\n";
+} else {
+  print_r($notify);
+}
 ?>
 ]]>
     </programlisting>
    </example>
+  </para>
+ </refsect1>
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <para>
+   <simplelist>
+    <member><function>pg_get_pid</function></member>
+   </simplelist>
   </para>
  </refsect1>
 </refentry>

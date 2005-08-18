@@ -1,77 +1,132 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- splitted from ./ja/functions/pgsql.xml, last change in rev 1.1 -->
-<!-- EN-Revision: 1.2 Maintainer: hirokawa Status: ready -->
-  <refentry id="function.pg-connect">
-   <refnamediv>
-    <refname>pg_connect</refname>
-    <refpurpose>PostgreSQL接続を開く</refpurpose>
-   </refnamediv>
-   <refsect1>
-    <title>説明</title>
-     <methodsynopsis>
-      <type>resource</type><methodname>pg_connect</methodname>
-      <methodparam><type>string</type><parameter>connection_string</parameter></methodparam>
-     </methodsynopsis>
-    <para>
-     <function>pg_connect</function> は、他のPostgreSQL関数で必要とさ
-     れる接続リソースを返します。
-    </para>
-    <para>
-     <function>pg_connect</function>は、
-     <parameter>connection_string</parameter>で指定したPostgreSQLデー
-     タベースへの接続をオープンします。この関数は、成功時に接続リソー
-     スを返します。接続できなかった場合には、&false;が返されます。
-     <parameter>connection_string</parameter>は、引用符で括った文字列
-     とする必要があります。
-     <example>
-      <title><function>pg_connect</function>の使用法</title>
-      <programlisting role="php">
+<!-- EN-Revision: 1.10 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: takagi -->
+<refentry id="function.pg-connect">
+ <refnamediv>
+  <refname>pg_connect</refname>
+  <refpurpose>PostgreSQL 接続をオープンする</refpurpose>
+ </refnamediv>
+
+ <refsect1 role="description">
+  &reftitle.description;
+  <methodsynopsis>
+   <type>resource</type><methodname>pg_connect</methodname>
+   <methodparam><type>string</type><parameter>connection_string</parameter></methodparam>
+   <methodparam choice="opt"><type>int</type><parameter>connect_type</parameter></methodparam>
+  </methodsynopsis>
+  <para>
+   <function>pg_connect</function> は、<parameter>connection_string</parameter>
+   で指定された情報を用いてデータベースとの接続をオープンします。
+  </para>
+  <para>
+   同じ <parameter>connection_string</parameter> 引数で 2 回
+   <function>pg_connect</function> 関数がコールされた場合は、
+   <parameter>connect_type</parameter> に
+   <constant>PGSQL_CONNECT_FORCE_NEW</constant> を指定していない限り
+   既存の接続が返されます。
+  </para>
+  <para>
+   複数のパラメータをサポートする古い構文
+   <command>$conn = pg_connect("host", "port", "options", "tty", "dbname")
+   </command>
+   は推奨されません。
+  </para>
+ </refsect1>
+
+<refsect1 role="parameters">
+  &reftitle.parameters;
+  <para>
+   <variablelist>
+    <varlistentry>
+     <term><parameter>connection_string</parameter></term>
+     <listitem>
+      <para>
+       すべてデフォルトのパラメータを使用する場合には
+       <parameter>connection_string</parameter> を空にすることが可能です。
+       または 1 つ以上のパラメータを空白で区切って指定することも可能です。
+       個々のパラメータは <literal>keyword = value</literal> の形式で
+       設定します。等号の前後の空白はあってもなくてもかまいません。
+       空の値や空白を含む値を指定する場合は、その値をシングルクォートで
+       囲みます（例: <literal>keyword = 'a value'</literal>）。値の中に
+       シングルクォートやバックスラッシュが含まれる場合は、それらを
+       バックスラッシュでエスケープする必要があります（例: \' および \\）。
+      </para>
+      <para>
+       現在利用できるパラメータは以下のとおりです。
+       <parameter>host</parameter>, <parameter>hostaddr</parameter>, <parameter>port</parameter>,
+       <parameter>dbname</parameter>, <parameter>user</parameter>,
+       <parameter>password</parameter>, <parameter>connect_timeout</parameter>,
+       <parameter>options</parameter>, <parameter>tty</parameter>（無視されます）, <parameter>sslmode</parameter>,
+       <parameter>requiressl</parameter>（非推奨。代わりに <parameter>sslmode</parameter> を推奨します）
+       および <parameter>service</parameter> 。これらのうち実際にどの
+       パラメータが使えるかは、PostgreSQL のバージョンに依存します。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>connect_type</parameter></term>
+     <listitem>
+      <para>
+       <constant>PGSQL_CONNECT_FORCE_NEW</constant> が渡された場合は、
+       たとえ <parameter>connection_string</parameter> が既存の接続と
+       まったく同一であっても新しい接続をオープンします。
+      </para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
+  </para>
+ </refsect1>
+
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <para>
+   成功した場合に PostgreSQL の接続リソース、失敗した場合に &false; を返します。
+  </para>
+ </refsect1>
+ 
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title><function>pg_connect</function> の使用法</title>
+    <programlisting role="php">
 <![CDATA[
 <?php
-$dbconn = pg_connect ("dbname=mary");
+$dbconn = pg_connect("dbname=mary");
 // "mary"という名前のデータベースに接続
-$dbconn2 = pg_connect ("host=localhost port=5432 dbname=mary");
+
+$dbconn2 = pg_connect("host=localhost port=5432 dbname=mary");
 // "localhost"のポート"5432"にて"mary"という名前のデータベースに接続
-$dbconn3 = pg_connect ("host=sheep port=5432 dbname=mary user=lamb password=baaaa");
-// ユーザ名とパスワードを指定してホスト"sheep"上の"mary"という名前のデー
-// タベースに接続
+
+$dbconn3 = pg_connect("host=sheep port=5432 dbname=mary user=lamb password=foo");
+// ユーザ名とパスワードを指定してホスト"sheep"上の"mary"という名前のデータベースに接続
+
 $conn_string = "host=sheep port=5432 dbname=test user=lamb password=bar";
-$dbconn4 = pg_connect ($conn_string);
-// ユーザ名とパスワードを指定してホスト"sheep"上の"test"という名前のデー
-// タベースへ接続
+$dbconn4 = pg_connect($conn_string);
+// ユーザ名とパスワードを指定してホスト"sheep"上の"test"という名前のデータベースへ接続
 ?>
 ]]>
-     </programlisting>
-     </example>
-      <parameter>connection_string</parameter>で利用可能な引数には、
-      <parameter>dbname</parameter>, <parameter>port</parameter>,
-      <parameter>host</parameter>, <parameter>tty</parameter>,
-      <parameter>options</parameter>, <parameter>user</parameter>,
-      <parameter>password</parameter>が含まれます。
-    </para>
-    <para>
-     同じ<parameter>connection_string</parameter>引数で2回
-     <function>pg_connect</function>関数がコールされた場合、新規の接続
-     はオープンされません。代わりに既にオープンされている接続リソース
-     が返されます。異なる接続パラメータ(すなわち別のユーザ名)を使用す
-     る場合には、同じデータベースに対して複数の接続をオープンすること
-     が可能です。
-    </para>
-    <para>
-     複数のパラメータをサポートする構文:
-     <command>$conn = pg_connect ("host", "port", "options", "tty", "dbname")
-     </command>
-     は過去のものであり、推奨されません。
-    </para>
-    <para>
-     <function>pg_pconnect</function>,
-     <function>pg_close</function>, <function>pg_host</function>,
-     <function>pg_port</function>, <function>pg_tty</function>,
-     <function>pg_options</function>, <function>pg_dbname</function>
-     も参照ください。
-    </para>
-   </refsect1>
-  </refentry>
+    </programlisting>
+   </example>
+  </para>
+ </refsect1>
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <para>
+   <simplelist>
+    <member><function>pg_pconnect</function></member>
+    <member><function>pg_close</function></member>
+    <member><function>pg_host</function></member>
+    <member><function>pg_port</function></member>
+    <member><function>pg_tty</function></member>
+    <member><function>pg_options</function></member>
+    <member><function>pg_dbname</function></member>
+   </simplelist>
+  </para>
+ </refsect1>
+</refentry>
 
 <!-- Keep this comment at the end of the file
 Local variables:

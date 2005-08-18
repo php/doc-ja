@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.6 $ -->
 <!-- splitted from ./ja/functions/pgsql.xml, last change in rev 1.31 -->
-<!-- EN-Revision: 1.2 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 1.13 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: takagi -->
 <refentry id='function.pg-send-query'>
  <refnamediv>
   <refname>pg_send_query</refname>
@@ -8,8 +10,9 @@
    非同期クエリを送信する
   </refpurpose>
  </refnamediv>
- <refsect1>
-  <title>説明</title>
+
+ <refsect1 role="description">
+  &reftitle.description;
   <methodsynopsis>
    <type>bool</type><methodname>pg_send_query</methodname>
    <methodparam><type>resource</type><parameter>connection</parameter></methodparam>
@@ -20,14 +23,17 @@
    <methodparam><type>string</type><parameter>query</parameter></methodparam>
   </methodsynopsis>
   <para>
-   <function>pg_send_query</function>は、<parameter>connection</parameter>
-   に非同期クエリを送信します。<function>pg_query</function>と異なり、
-   PostgreSQLに複数のクエリを送信することができ、
-   <function>pg_get_result</function>を用いて結果を一つずつ取得する
-   ことが可能です。スクリプトの実行は、クエリを実行中もブロックされません。
+   <function>pg_send_query</function> は、<parameter>connection</parameter>
+   に非同期クエリを送信します。<function>pg_query</function> とは異なり、
+   PostgreSQL へ一度に複数のクエリを送信することができ、
+   <function>pg_get_result</function> を用いて結果を一つずつ取得することが
+   可能です。
+  </para>
+  <para>
+   スクリプトの実行は、クエリを実行中もブロックされません。
    接続がビジーである(すなわち、クエリが実行中である)ことを調べるには、
-   <function>pg_connection_busy</function>を使用してください。
-   クエリは、<function>pg_cancel_query</function>をコールすることにより
+   <function>pg_connection_busy</function> を使用してください。
+   クエリは、<function>pg_cancel_query</function> をコールすることにより
    キャンセルすることが可能です。
   </para>
   <para>
@@ -36,11 +42,92 @@
    クエリがビジー状態の接続に送信された場合、最後のクエリが
    終了するまで待ち、全ての結果は破棄されます。
   </para>
+ </refsect1>
+ 
+ <refsect1 role="parameters">
+  &reftitle.parameters;
   <para>
-   <function>pg_query</function>,
-   <function>pg_cancel_query</function>,
-   <function>pg_get_result</function>,
-   <function>pg_connection_busy</function>も参照ください。
+   <variablelist>
+    <varlistentry>
+     <term><parameter>connection</parameter></term>
+     <listitem>
+      <para>
+       PostgreSQL データベース接続リソース。<parameter>connection</parameter>
+       が指定されていない場合はデフォルトの接続が使用されます。
+       デフォルトの接続は、直近の <function>pg_connect</function>
+       あるいは <function>pg_pconnect</function> によって作成されたものです。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>query</parameter></term>
+     <listitem>
+      <para>
+       実行するひとつまたは複数の SQL 文。
+      </para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
+  </para>
+ </refsect1>
+
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <para>&return.success;</para>
+  <para>
+   クエリの結果を利用するには <function>pg_get_result</function> を使用します。
+  </para>
+ </refsect1>
+ 
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title><function>pg_send_query</function> の例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+  $dbconn = pg_connect("dbname=publisher") or die("Could not connect");
+
+  if (!pg_connection_busy($dbconn)) {
+      pg_send_query($dbconn, "select * from authors; select count(*) from authors;");
+  }
+  
+  $res1 = pg_get_result($dbconn);
+  echo "First call to pg_get_result(): $res1\n";
+  $rows1 = pg_num_rows($res1);
+  echo "$res1 has $rows1 records\n\n";
+  
+  $res2 = pg_get_result($dbconn);
+  echo "Second call to pg_get_result(): $res2\n";
+  $rows2 = pg_num_rows($res2);
+  echo "$res2 has $rows2 records\n";
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+First call to pg_get_result(): Resource id #3
+Resource id #3 has 3 records
+
+Second call to pg_get_result(): Resource id #4
+Resource id #4 has 1 records
+]]>
+    </screen>
+   </example> 
+  </para>
+ </refsect1>
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <para>
+   <simplelist>
+    <member><function>pg_query</function></member>
+    <member><function>pg_cancel_query</function></member>
+    <member><function>pg_get_result</function></member>
+    <member><function>pg_connection_busy</function></member>
+   </simplelist>
   </para>
  </refsect1>
 </refentry>
