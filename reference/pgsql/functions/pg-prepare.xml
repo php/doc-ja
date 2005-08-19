@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.1 $ -->
+<!-- EN-Revision: 1.4 Maintainer: takagi Status: ready -->
+<refentry id="function.pg-prepare">
+ <refnamediv>
+  <refname>pg_prepare</refname>
+  <refpurpose>
+   指定したパラメータでプリペアドステートメントを作成するリクエストを
+   送信し、その完了を待つ
+  </refpurpose>
+ </refnamediv>
+
+ <refsect1 role="description">
+  &reftitle.description;
+  <methodsynopsis>
+   <type>resource</type><methodname>pg_prepare</methodname>
+   <methodparam><type>resource</type><parameter>connection</parameter></methodparam>
+   <methodparam><type>string</type><parameter>stmtname</parameter></methodparam>
+   <methodparam><type>string</type><parameter>query</parameter></methodparam>
+  </methodsynopsis>
+  <methodsynopsis>
+   <type>resource</type><methodname>pg_prepare</methodname>
+   <methodparam><type>string</type><parameter>stmtname</parameter></methodparam>
+   <methodparam><type>string</type><parameter>query</parameter></methodparam>
+  </methodsynopsis>
+  <para>
+    <function>pg_prepare</function> は、
+    <function>pg_execute</function> あるいは <function>pg_send_execute</function>
+    で後に実行するためのプリペアドステートメントを作成します。これにより、
+    繰り返し使用されるコマンドについての構文解析や実行計画作成が最初の
+    一度だけですみます。<function>pg_prepare</function> は PostgreSQL 7.4
+    以降の接続でのみ使用可能です。それ以前のバージョンでは失敗します。
+  </para>
+  <para>
+    この関数は <parameter>stmtname</parameter> という名前の
+    プリペアドステートメントを <parameter>query</parameter> 文字列から作成します。
+    この文字列には 1 つの SQL コマンドが含まれている必要があります。
+    <parameter>stmtname</parameter> を "" にすることで無名ステートメントを
+    作成することが可能で、既存の無名ステートメントは自動的に上書きされます。
+    それ以外の場合、もしカレントのセッションで既に定義済みのステートメント名を
+    使用した場合にはエラーとなります。パラメータを使用する際は、
+    <parameter>query</parameter> 内で $1、$2 のような形式で参照されます。
+  </para>
+  <para>
+    <function>pg_prepare</function> で使用するプリペアドステートメントは、
+    SQLの <literal>PREPARE</literal> 文を実行することでも作成可能です
+    （しかし、パラメータの型を事前に指定する必要がないという点で
+    <function>pg_prepare</function> のほうがより柔軟です）。
+    また、PHP にはプリペアドステートメントを削除する関数がありませんが、
+    この目的のためには SQLの <literal>DEALLOCATE</literal> 文が使用可能です。
+  </para>
+ </refsect1>
+
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <para>
+   <variablelist>
+    <varlistentry>
+     <term><parameter>connection</parameter></term>
+     <listitem>
+      <para>
+       PostgreSQL データベース接続リソース。<parameter>connection</parameter>
+       が指定されていない場合はデフォルトの接続が使用されます。
+       デフォルトの接続は、直近の <function>pg_connect</function>
+       あるいは <function>pg_pconnect</function> によって作成されたものです。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>stmtname</parameter></term>
+     <listitem>
+      <para>
+       プリペアドステートメントにつける名前。接続内で一意である必要があります。
+       "" が指定された場合は無名ステートメントが作成され、以前に定義された
+       無名ステートメントを上書きします。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>query</parameter></term>
+     <listitem>
+      <para>
+       パラメータ化した SQL 文。ひとつの文のみである必要があります
+       （複数の文をセミコロンで区切る形式は使用できません）。パラメータを
+       使用する際は $1、$2 などの形式で参照されます。
+      </para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
+  </para>
+ </refsect1>
+
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <para>
+   成功した場合にクエリ結果リソース、失敗した場合に &false; を返します。
+  </para>
+ </refsect1>
+ 
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title><function>pg_prepare</function> の使用法</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+// "mary"という名前のデータベースに接続
+$dbconn = pg_connect("dbname=mary");
+
+// 実行するクエリの準備
+$result = pg_prepare($dbconn, "my_query", 'SELECT * FROM shops WHERE name = $1');
+
+// プリペアドクエリを実行する。文字列 "Joe's Widgets" は
+// エスケープの必要がないことに注意
+$result = pg_execute($dbconn, "my_query", array("Joe's Widgets"));
+
+// 同一プリペアドクエリを別のパラメータで実行する
+$result = pg_execute($dbconn, "my_query", array("Clothes Clothes Clothes"));
+
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+ </refsect1>
+ 
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <para>
+   <simplelist>
+    <member><function>pg_execute</function></member>
+    <member><function>pg_send_execute</function></member>
+   </simplelist>
+  </para>
+ </refsect1>
+</refentry>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"../../../../manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
