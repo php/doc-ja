@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.3 $ -->
-<!-- EN-Revision: 1.10 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.4 $ -->
+<!-- EN-Revision: 1.11 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: shimooka -->
 
  <sect1 id="language.oop5.overloading">
@@ -16,6 +16,11 @@
    <link linkend="language.oop5.visibility">public</link>
    として定義されていなければなりません。
   </para>
+  <para>
+   PHP 5.1.0 以降、__isset や __unset メソッドを通じて
+   <function>isset</function> 関数や <function>unset</function>
+   関数を個々にオーバーロードする事も可能です。
+  </para>
 
   <sect2 id="language.oop5.overloading.members">
    <title>メンバーのオーバーロード</title>
@@ -29,6 +34,14 @@
     <type>mixed</type><methodname>__get</methodname>
     <methodparam><type>mixed</type><parameter>name</parameter></methodparam>
    </methodsynopsis>
+   <methodsynopsis>
+    <type>bool</type><methodname>__isset</methodname>
+    <methodparam><type>string</type><parameter>name</parameter></methodparam>
+   </methodsynopsis>
+   <methodsynopsis>
+    <type>void</type><methodname>__unset</methodname>
+    <methodparam><type>string</type><parameter>name</parameter></methodparam>
+   </methodsynopsis>
 
    <para>
     独自のクラスで定義されているカスタムコードを実行するために、
@@ -41,7 +54,7 @@
    </para>
 
    <example>
-    <title>__get と __set を使ったオーバーロードの例</title>
+    <title>__get, __set, __isset, __unset を使ったオーバーロードの例</title>
     <programlisting role="php">
 <![CDATA[
 <?php
@@ -50,9 +63,9 @@ class Setter
     public $n;
     private $x = array("a" => 1, "b" => 2, "c" => 3);
 
-    public function __get($nm)
+    private function __get($nm)
     {
-        print "Getting [$nm]\n";
+        echo "Getting [$nm]\n";
 
         if (isset($this->x[$nm])) {
             $r = $this->x[$nm];
@@ -63,9 +76,9 @@ class Setter
         }
     }
 
-    public function __set($nm, $val)
+    private function __set($nm, $val)
     {
-        print "Setting [$nm] to $val\n";
+        echo "Setting [$nm] to $val\n";
 
         if (isset($this->x[$nm])) {
             $this->x[$nm] = $val;
@@ -74,6 +87,20 @@ class Setter
             echo "Not OK!\n";
         }
     }
+
+    private function __isset($nm)
+    {
+        echo "Checking if $nm is set\n";
+
+        return isset($this->x[$nm]);
+    }
+
+    private function __unset($nm)
+    {
+        echo "Unsetting $nm\n";
+
+        unset($this->x[$nm]);
+    }
 }
 
 $foo = new Setter();
@@ -81,6 +108,15 @@ $foo->n = 1;
 $foo->a = 100;
 $foo->a++;
 $foo->z++;
+
+var_dump(isset($foo->a)); //true
+unset($foo->a);
+var_dump(isset($foo->a)); //false
+
+// this doesn't pass through the __isset() method
+// because 'n' is a public property
+var_dump(isset($foo->n));
+
 var_dump($foo);
 ?>
 ]]>
@@ -98,18 +134,24 @@ Getting [z]
 Nothing!
 Setting [z] to 1
 Not OK!
+
+Checking if a is set
+bool(true)
+Unsetting a
+Checking if a is set
+bool(false)
+bool(true)
+
 object(Setter)#1 (2) {
-    ["n"]=>
-    int(1)
-    ["x:private"]=>
-    array(3) {
-        ["a"]=>
-        int(101)
-        ["b"]=>
-        int(2)
-        ["c"]=>
-        int(3)
-    }
+  ["n"]=>
+  int(1)
+  ["x:private"]=>
+  array(2) {
+    ["b"]=>
+    int(2)
+    ["c"]=>
+    int(3)
+  }
 }
 ]]>
     </screen>
