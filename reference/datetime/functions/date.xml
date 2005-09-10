@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.7 $ -->
-<!-- EN-Revision: 1.18 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.8 $ -->
+<!-- EN-Revision: 1.22 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: shimooka -->
 <refentry id="function.date">
  <refnamediv>
@@ -22,24 +22,34 @@
    タイムスタンプが与えられない場合は、現在のローカル時刻が使われま
    す。つまり、<parameter>timestamp</parameter>はオプションであり
    そのデフォルト値は<function>time</function>の値です。
-   <note>
-    <para>
-     有効なタイムスタンプの範囲は通常       Fri, 13 Dec 1901
-     20:45:54 GMTからTue, 19 Jan 2038 03:14:07 GMTまでです。
-     (これらの日付は、32ビット符号付き整数の最小および最大値に対応し
-     ます。)
-     Windowsではこの範囲は1970年1月1日から2038年1月19日GMTに制限されます。
-    </para>
-   </note>
-   <note>
-    <para>
-     日付の文字列表現からタイムスタンプを生成するには、
-     <function>strtotime</function>を使用できる可能性があります。加
-     えて、いくつかのデータベースは、(MySQLの
-     <ulink url="&url.mysql.docs.date;">UNIX_TIMESTAMP</ulink> 関数の
-     ような)日付フォーマットからタイムスタンプに変換する関数を有しています。
-    </para>
-   </note>
+  <tip>
+   <para>
+    PHP 5.1.0 以降、<parameter>format</parameter> パラメータで標準的な
+    日付/時刻フォーマットを指定する際に有用な <link
+    linkend="datetime.constants">定数</link>がいくつか追加されました。
+    parameter.
+   </para>
+  </tip>
+  <note>
+   <para>
+    有効なタイムスタンプの範囲は、通常 Fri, 13 Dec 1901
+    20:45:54 GMT から Tue, 19 Jan 2038 03:14:07 GMT までです
+    （これらの日付は、32ビット符号付き整数の最小および最大値に
+    対応します）。
+    しかし、PHP 5.1 より前のバージョンでは、システム環境によっては
+    （例: Windows）この範囲が 1970 年 1 月 1 日から 2038 年 1 月 19 日
+    までに制限されます。
+   </para>
+  </note>
+  <note>
+   <para>
+    日付の文字列表現からタイムスタンプを生成するには、
+    <function>strtotime</function> が使用できるでしょう。
+    さらに、いくつかのデータベースは（MySQL の
+    <ulink url="&url.mysql.docs.date;">UNIX_TIMESTAMP</ulink> 関数の
+    ような）日付フォーマットからタイムスタンプへの変換関数を有しています。
+   </para>
+  </note>
   </para>
   <para>
    <table>
@@ -77,6 +87,12 @@
          <entry><literal>l</literal> (小文字の 'L')</entry>
        <entry>曜日。フルスペル形式。</entry>
        <entry><literal>Sunday</literal> から <literal>Saturday</literal></entry>
+      </row>
+      <row>
+       <entry><literal>N</literal></entry>
+       <entry>ISO-8601 形式の、曜日の数値表現
+       （PHP 5.1.0 で追加）。</entry>
+       <entry><literal>1</literal>（月曜日）から <literal>7</literal>（土曜日）</entry>
       </row>
       <row>
        <entry><literal>S</literal></entry>
@@ -148,6 +164,14 @@
        <entry><literal>1</literal>なら閏年。<literal>0</literal>なら閏年ではない。</entry>
       </row>
       <row>
+       <entry><literal>o</literal></entry>
+       <entry>ISO-8601 形式の年。これは
+        <literal>Y</literal> ほぼ同じだが、ISO 週番号
+        （<literal>W</literal>）が前年あるいは翌年に属する場合がある点で
+        異なる（PHP 5.1.0 で追加）。</entry>
+       <entry>例: <literal>1999</literal> あるいは <literal>2003</literal></entry>
+      </row>
+      <row>
        <entry><literal>Y</literal></entry>
        <entry>年。4 桁の数字。</entry>
        <entry>例: <literal>1999</literal>または<literal>2003</literal></entry>
@@ -213,6 +237,11 @@
        <entry>---</entry>
       </row>
       <row>
+       <entry><literal>e</literal></entry>
+       <entry>タイムゾーン識別子（PHP 5.1.0 で追加）</entry>
+       <entry>例: <literal>UTC</literal>, <literal>GMT</literal>, <literal>Atlantic/Azores</literal></entry>
+      </row>
+      <row>
        <entry><literal>I</literal> (大文字の i)</entry>
        <entry>サマータイム中か否か</entry>
        <entry><literal>1</literal>ならサマータイム中。 <literal>0</literal>ならそうではない。</entry>
@@ -269,14 +298,25 @@
     <programlisting role="php">
 <![CDATA[
 <?php
-// Prints something like: Wednesday
+// set the default timezone to use. Available since PHP 5.1
+date_default_timezone_set('UTC');
+
+
+// Prints something like: Monday
 echo date("l");
 
-// Prints something like: Wednesday 15th of January 2003 05:51:38 AM
-echo date("l dS of F Y h:i:s A");
+// Prints something like: Monday 15th of August 2005 03:12:46 PM
+echo date('l dS \of F Y h:i:s A');
 
 // Prints: July 1, 2000 is on a Saturday
 echo "July 1, 2000 is on a " . date("l", mktime(0, 0, 0, 7, 1, 2000));
+
+/* use the constants in the format parameter */
+// prints something like: Mon, 15 Aug 2005 15:12:46 UTC
+echo date(DATE_RFC822);
+
+// prints something like: 2000-07-01T00:00:00+0000
+echo date(DATE_ATOM, mktime(0, 0, 0, 7, 1, 2000));
 ?>
 ]]>
     </programlisting>
