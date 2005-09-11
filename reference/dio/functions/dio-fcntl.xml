@@ -1,86 +1,160 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- splitted from ./ja/functions/dio.xml, last change in rev 1.1 -->
-<!-- EN-Revision: 1.1 Maintainer: hirokawa Status: ready -->
-  <refentry id="function.dio-fcntl">
-   <refnamediv>
-    <refname>dio_fcntl</refname>
-    <refpurpose>fdについてCライブラリのfcntlを実行する</refpurpose>
-   </refnamediv>
-   <refsect1>
-    <title>説明</title>
-     <methodsynopsis>
-      <type>mixed</type><methodname>dio_fcntl</methodname>
-      <methodparam><type>resource</type><parameter>fd</parameter></methodparam>
-      <methodparam><type>int</type><parameter>cmd</parameter></methodparam>
-      <methodparam choice="opt"><type>mixed</type><parameter>arg</parameter></methodparam>
-     </methodsynopsis>
-    <para>
-     関数<function>dio_fcntl</function>は、ファイル記述子
-     <parameter>fd</parameter>において<parameter>cmd</parameter>で指定
-     された処理を行います。いくつかのコマンドでは、オプションの引数
-     <parameter>args</parameter>の指定が必要となります。
-    </para>
-    <para>
-     <parameter>cmd</parameter>がF_SETLKまたはF_SETLLWの場合、
-     <parameter>arg</parameter>は連想配列で、以下のキーを有します。
-     <itemizedlist>
-      <listitem>
-       <para>
-        "start" - ロック開始場所からのオフセット
-       </para>
-      </listitem>
-      <listitem>
-       <para>
-        "length" - ロック領域の大きさ。0はファイル終端を意味します。
-       </para>
-      </listitem>
-      <listitem>
-       <para>
-        "wenth" - l_startの相対位置指定: SEEK_SET, SEEK_END, SEEK_CUR
-        のどれかとします。
-       </para>
-      </listitem>
-      <listitem>
-       <para>
-        "type" - ロックの種類: F_RDLCK (読み込みロック), F_WRLCK
-        (書き込みロック),  F_UNLCK (ロック解除)のどれかとします。
-       </para>
-      </listitem>
-     </itemizedlist>
-    </para>
-    <para>
-     <parameter>cmd</parameter>は以下の処理のどれかとします。
-     <itemizedlist>
-      <listitem>
-       <para>
-        F_SETLK - ロックは設定またはクリアされます。lockが他の誰かに設
-        定されている場合、<function>dio_fcntl</function>は-1を返します。
-       </para>
-      </listitem>
-      <listitem>
-       <para>
-        F_SETLKW - F_SETLKと似ていますが、ロックが他の誰かに設定されて
-        いる場合、<function>dio_fcntl</function>はそのロックが解放され
-        るまで待ちます。
-       </para>
-      </listitem>
-      <listitem>
-       <para>
-        F_GETLK - <function>dio_fcntl</function>は、他の誰かがロックを
-        妨げる場合、(上記の)連想配列を返します。妨げるものがない場合、
-        キー"type"はF_UNLCKに設定されます。
-       </para>
-      </listitem>
-      <listitem>
-       <para>
-        F_DUPFD - <parameter>arg</parameter>以上で最小の数値の利用可能
-        なファイル記述子を探して返します。
-       </para>
-      </listitem>
-     </itemizedlist>
-    </para>
-   </refsect1>
-  </refentry>
+<!-- $Revision: 1.4 $ -->
+<!-- EN-Revision: 1.10 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: takagi -->
+<refentry id="function.dio-fcntl">
+ <refnamediv>
+  <refname>dio_fcntl</refname>
+  <refpurpose>fd について C ライブラリの fcntl を実行する</refpurpose>
+ </refnamediv>
+ <refsect1 role="description">
+  &reftitle.description;
+  <methodsynopsis>
+   <type>mixed</type><methodname>dio_fcntl</methodname>
+   <methodparam><type>resource</type><parameter>fd</parameter></methodparam>
+   <methodparam><type>int</type><parameter>cmd</parameter></methodparam>
+   <methodparam choice="opt"><type>mixed</type><parameter>args</parameter></methodparam>
+  </methodsynopsis>
+  <para>
+   関数 <function>dio_fcntl</function> は、ファイル記述子
+   <parameter>fd</parameter> において <parameter>cmd</parameter>
+   で指定された処理を行います。いくつかのコマンドでは、オプションの引数
+   <parameter>args</parameter> の指定が必要となります。
+  </para>
+  &note.no-windows;
+ </refsect1>
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <para>
+   <variablelist>
+    <varlistentry>
+     <term><parameter>fd</parameter></term>
+     <listitem>
+      <para>
+       <function>dio_open</function> が返すファイル記述子。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>cmd</parameter></term>
+     <listitem>
+      <para>
+       以下の処理のいずれか。
+       <itemizedlist>
+        <listitem>
+         <para>
+          <constant>F_SETLK</constant> - ロックが設定あるいはクリアされます。
+          ロックが他の誰かに設定されている場合、<function>dio_fcntl</function>
+          は -1 を返します。
+         </para>
+        </listitem>
+        <listitem>
+         <para>
+          <constant>F_SETLKW</constant> - <constant>F_SETLK</constant>
+          と似ていますが、ロックが他の誰かに設定されている場合は
+          <function>dio_fcntl</function> はそのロックが開放されるまで待ちます。
+         </para>
+        </listitem>
+        <listitem>
+         <para>
+          <constant>F_GETLK</constant> - <function>dio_fcntl</function> 
+          は、他の誰かがロックを妨げる場合、（上で述べた）連想配列を返します。
+          妨げるものがない場合、キー "type" は <constant>F_UNLCK</constant>
+          に設定されます。
+         </para>
+        </listitem>
+        <listitem>
+         <para>
+          <constant>F_DUPFD</constant> - <parameter>args</parameter>
+          以上で最小のファイル記述子を探し、それを返します。
+         </para>
+        </listitem>
+        <listitem>
+         <para>
+          <constant>F_SETFL</constant> - ファイル記述子のフラグを
+          <parameter>args</parameter> で指定した値に設定します。指定できる値は
+          <constant>O_APPEND</constant>、<constant>O_NONBLOCK</constant>
+          あるいは <constant>O_ASYNC</constant> のいずれかです。
+          <constant>O_ASYNC</constant> を使用するには、
+          <link linkend="ref.pcntl">PCNTL</link> 拡張モジュールが必要です。
+         </para>
+        </listitem>
+       </itemizedlist>
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>args</parameter></term>
+     <listitem>
+      <para>
+       <parameter>args</parameter> は連想配列で、
+       <parameter>cmd</parameter> が <constant>F_SETLK</constant> あるいは
+       <constant>F_SETLLW</constant> の際に以下のキーを保持します。
+       <itemizedlist>
+        <listitem>
+         <para>
+          "start" - ロックを開始するオフセット。
+         </para>
+        </listitem>
+        <listitem>
+         <para>
+          "length" - ロックする領域の大きさ。ゼロはファイルの終端までを意味します。
+         </para>
+        </listitem>
+        <listitem>
+         <para>
+          "wenth" - l_start の相対位置指定。
+          <constant>SEEK_SET</constant>、
+          <constant>SEEK_END</constant> および <constant>SEEK_CUR</constant>
+          のいずれか。
+         </para>
+        </listitem>
+        <listitem>
+         <para>
+          "type" - ロックの種類。<constant>F_RDLCK</constant>（読み込み
+          ロック）、<constant>F_WRLCK</constant>（書き込みロック）あるいは
+          <constant>F_UNLCK</constant>（ロック解除）のいずれか。
+         </para>
+        </listitem>
+       </itemizedlist>
+      </para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
+  </para>
+ </refsect1>
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <para>
+   C ライブラリをコールした結果を返します。
+  </para>
+ </refsect1>
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title>ロックの設定と解除</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+$fd = dio_open('/dev/ttyS0', O_RDWR);
+
+if (dio_fcntl($fd, F_SETLK, Array("type"=>F_WRLCK)) == -1) {
+   // ファイル記述子がロックされている
+   echo "ロックを解除できません。別のプロセスによってロックされています。";
+} else {
+   echo "ロックが正常に設定/解除できました。";
+}
+
+dio_close($fd);
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+ </refsect1>
+</refentry>
 
 <!-- Keep this comment at the end of the file
 Local variables:
