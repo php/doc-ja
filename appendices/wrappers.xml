@@ -1,20 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.8 $ -->
-<!-- EN-Revision: 1.49 Maintainer: hirokawa Status: working -->
+<!-- $Revision: 1.9 $ -->
+<!-- EN-Revision: 1.54 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: takagi -->
  <appendix id="wrappers">
   <title>サポートされるプロトコル/ラッパー</title>
   <para>
-   <function>fopen</function> and <function>copy</function>のようなファ
-   イルシステム関数で使用するためにPHPに組み込まれたURL型式のプロトコ
-   ルの一覧を示します。これらのラッパーに加えて、PHP 4.3.0以降では、PHP
-   スクリプトと<function>stream_wrapper_register</function> により、ユー
-   ザ独自のラッパーを書くことができます。
+   <function>fopen</function> および <function>copy</function> のような
+   ファイルシステム関数で使用するために PHP に組み込まれた、URL 型式の
+   プロトコルの一覧を示します。これらのラッパーに加え、PHP 4.3.0 以降では
+   PHP スクリプトと <function>stream_wrapper_register</function> によって
+   ユーザ独自のラッパーを書くことができます。
   </para>
 
   <section id="wrappers.file">
    <title>ファイルシステム</title>
    <simpara>
-    PHPの全バージョン。PHP 4.3.0以降では、<filename>file://</filename> を用いて明示的に指定
+    PHP の全バージョン。PHP 4.3.0 以降では <filename>file://</filename> を用いて明示的に指定します。
    </simpara>
 
    <itemizedlist>
@@ -28,19 +29,19 @@
    </itemizedlist>
    
    <simpara>
-    <filename>file://</filename> はPHPで使用されるデフォルトのラッパーで、
+    <filename>file://</filename> は PHP で使用されるデフォルトのラッパーで、
     ローカルファイルシステムを表します。
-    相対パス(/, \, \\,またはウインドウズのドライブ文字で始まらないパス)が指定された場合、
-    指定されたパスは、カレントのワーキングディレクトリに対して適用されます。
+    相対パス(/, \, \\,または Windows のドライブ文字で始まらないパス)が指定された場合、
+    指定されたパスは、現在の作業ディレクトリに対して適用されます。
     多くの場合、これは、スクリプトがあるディレクトリです。ただし、カレントディレクトリが
     変更されている場合を除きます。
-    CLI SAPIを使用した場合、このデフォルトはスクリプトがコールされたディレクトリとなります。
+    CLI SAPI を使用した場合、このデフォルトはスクリプトがコールされたディレクトリとなります。
    </simpara>
 
    <simpara>
     <function>fopen</function> や <function>file_get_contents</function>
-    のようないくつかの関数については、相対パスと同時に <literal>include_path</literal>も
-    検索されます。
+    のようないくつかの関数については、相対パスと同時に <literal>include_path</literal>
+    も検索されます。
    </simpara>
 
    <para>
@@ -55,7 +56,7 @@
       </thead>
       <tbody>
        <row>
-        <entry><link linkend="ini.allow-url-fopen">allow_url_fopen</link>で制約される</entry>
+        <entry><link linkend="ini.allow-url-fopen">allow_url_fopen</link> で制約される</entry>
         <entry>No</entry>
        </row>
        <row>
@@ -75,23 +76,23 @@
         <entry>Yes</entry>
        </row>
        <row>
-        <entry><function>stat</function>のサポート</entry>
+        <entry><function>stat</function> のサポート</entry>
         <entry>Yes</entry>
        </row>
        <row>
-        <entry><function>unlink</function>のサポート</entry>
+        <entry><function>unlink</function> のサポート</entry>
         <entry>Yes</entry>
        </row>
        <row>
-        <entry><function>rename</function>のサポート</entry>
+        <entry><function>rename</function> のサポート</entry>
         <entry>Yes</entry>
        </row>
        <row>
-        <entry><function>mkdir</function>のサポート</entry>
+        <entry><function>mkdir</function> のサポート</entry>
         <entry>Yes</entry>
        </row>
        <row>
-        <entry><function>rmdir</function>のサポート</entry>
+        <entry><function>rmdir</function> のサポート</entry>
         <entry>Yes</entry>
        </row>
       </tbody>
@@ -100,9 +101,64 @@
    </para>
   </section>
 
+ <section id="wrappers.socket">
+  <title>ソケット</title>
+  <para>
+   ここでは、ソケット越しに動作するラッパー
+   すなわち <literal>tcp</literal>、<literal>http</literal>
+   あるいは <literal>ftp</literal> でサポートされるオプションを扱います。
+  </para>
+  <para>
+   PHP 5.1.0 以降、ひとつのオプション <literal>bindto</literal> のみが
+   サポートされます。これは PHP がネットワークにアクセスする際の IP アドレス
+   （IPv4 あるいは IPv6 のどちらか）やポート番号を指定する際に使用されます。
+   その書式は <literal>ip:port</literal>（IP やポート番号に
+   <literal>0</literal> を指定すると、それをシステムに自動的に設定させる
+   ことができます）です。
+  </para>
+  <note>
+   <para>
+    FTP の通常の操作では 2 つのソケット接続を使用するので、
+    <literal>bindto</literal> オプションでポート番号を指定することができません。
+    そのため、FTP ラッパーでサポートされる唯一の書式は
+    <literal>ip:0</literal> となります。
+   </para>
+  </note>
+  <example>
+   <title>bindto オプションの使用例</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+// IP アドレス '192.168.0.100' でインターネットに接続する
+$opts = array('socket' =>
+            array('bindto' => '192.168.0.100:0'));
+
+
+// IP アドレス '192.168.0.100' とポート番号 '7000' でインターネットに接続する
+$opts = array('socket' =>
+            array('bindto' => '192.168.0.100:7000'));
+
+
+// ポート番号 '7000' でインターネットに接続する
+$opts = array('socket' =>
+            array('bindto' => '0:7000'));
+
+
+// コンテキストを作成し…
+$context = stream_context_create($opts);
+
+// …そしてデータを取得するためにそれを使用する
+echo file_get_contents('http://www.example.com', false, $context);
+
+?>
+]]>
+   </programlisting>
+  </example>
+ </section>
+
   <section id="wrappers.http">
    <title>HTTP と HTTPS</title>
-   <simpara>PHP 3, PHP 4, PHP 5。PHP 4.3.0以降では<filename>https://</filename></simpara>
+   <simpara>PHP 3, PHP 4, PHP 5。<filename>https://</filename> は PHP 4.3.0以降。</simpara>
    
    <itemizedlist>
     <listitem><simpara><filename>http://example.com</filename></simpara></listitem>
@@ -114,18 +170,18 @@
    </itemizedlist>
    
    <simpara>
-    HTTP 1.0によりHTTP GETメソッドを用いてファイル/リソースに読み込み
-    のみのアクセスが可能です。仮想ホストにホスト名でアクセスするために、
+    HTTP 1.0 により HTTP GET メソッドを用いてファイル/リソースに読み込みのみの
+    アクセスが可能です。仮想ホストにホスト名でアクセスするために、
     <literal>Host:</literal> ヘッダが送信されます。
-    iniファイルまたはストリームコンテキストにより、
-    <link linkend="ini.user-agent">user_agent</link>文字列を設定してい
-    る場合、リクエストの中にも含まれます。
+    ini ファイルまたはストリームコンテキストによって
+    <link linkend="ini.user-agent">user_agent</link> 文字列を設定している場合、
+    それはリクエストの中にも含まれます。
    </simpara>
    &warn.ssl-non-standard;
    <simpara>
-    PHP 4.0.5以降、リダイレクトがサポートされています。これ以前のバー
-    ジョンを使用している場合、URLの末尾にスラッシュを付ける必要があります。
-    (全てのリダイレクトが処理された後に)ドキュメント取得元のリソースのURLを知ることが
+    PHP 4.0.5 以降、リダイレクトがサポートされています。これ以前のバージョンを
+    使用している場合、URL の末尾にスラッシュを付ける必要があります。
+    (全てのリダイレクトが処理された後に)ドキュメント取得元のリソースの URL を知ることが
     重要な場合、ストリームから返された一連のレスポンスヘッダを処理する必要があります。
    </simpara>
    <informalexample>
@@ -136,15 +192,15 @@ $url = 'http://www.example.com/redirecting_page.php';
 
 $fp = fopen($url, 'r');
 
-/* PHP 4.3.0の場合、stream_get_meta_data()の代わりに
+/* PHP 4.3.0 の場合、stream_get_meta_data() の代わりに
    $http_response_header を使用してください　*/
 $meta_data = stream_get_meta_data($fp);
 foreach($meta_data['wrapper_data'] as $response) {
 
   /* リダイレクトされているか? */
-  if (substr(strtolower($response), 0, 10) == 'location: ') {
-    /* update $url with where we were redirected to */
-    $url = substr($response, 10);
+  if (substr(strtolower($response), 0, 18) == 'content-location: ') {
+    /* $url をリダイレクト先に書き換える */
+    $url = substr($response, 18);
   }
 
 }
@@ -154,17 +210,18 @@ foreach($meta_data['wrapper_data'] as $response) {
    </programlisting>
   </informalexample>
   <simpara>
-    ストリームにより、リソースの<emphasis>body</emphasis>にアクセスすることが
-    できます。ヘッダは、<varname>$http_response_header</varname>変数に保存されます。
-    PHP 4.3.0以降は、ヘッダは <function>stream_get_meta_data</function>
+    ストリームにより、リソースの <emphasis>body</emphasis> にアクセスすることが
+    できます。ヘッダは、<varname>$http_response_header</varname> 変数に保存されます。
+    PHP 4.3.0 以降は、ヘッダは <function>stream_get_meta_data</function>
     により取得できます。
    </simpara>
    <simpara>
-    HTTP接続は読み込みのみ可で、HTTPリソースにデータを書き込んだり、ファイルをコピーすることはできません。
+    HTTP 接続は読み込みのみ可で、HTTP リソースにデータを書き込んだり
+    ファイルをコピーしたりすることはできません。
    </simpara>
    <note>
    <simpara>
-     HTTPS は、PHP 4.3.0以降でOpenSSLのサポートを組み込んだ場合にサポートされます。
+     HTTPS は、PHP 4.3.0 以降で OpenSSL のサポートを組み込んだ場合にサポートされます。
     </simpara>
    </note>
    <para>
@@ -179,7 +236,7 @@ foreach($meta_data['wrapper_data'] as $response) {
       </thead>
       <tbody>
        <row>
-        <entry><link linkend="ini.allow-url-fopen">allow_url_fopen</link>の制限を受けるか</entry>
+        <entry><link linkend="ini.allow-url-fopen">allow_url_fopen</link> の制限を受けるか</entry>
         <entry>Yes</entry>
        </row>
        <row>
@@ -199,23 +256,23 @@ foreach($meta_data['wrapper_data'] as $response) {
         <entry>N/A</entry>
        </row>
        <row>
-        <entry><function>stat</function>をサポート</entry>
+        <entry><function>stat</function> をサポート</entry>
         <entry>No</entry>
        </row>
        <row>
-        <entry><function>unlink</function>をサポート</entry>
+        <entry><function>unlink</function> をサポート</entry>
         <entry>No</entry>
        </row>
        <row>
-        <entry><function>rename</function>をサポート</entry>
+        <entry><function>rename</function> をサポート</entry>
         <entry>No</entry>
        </row>
        <row>
-        <entry><function>mkdir</function>をサポート</entry>
+        <entry><function>mkdir</function> をサポート</entry>
         <entry>No</entry>
        </row>
        <row>
-        <entry><function>rmdir</function>をサポート</entry>
+        <entry><function>rmdir</function> をサポート</entry>
         <entry>No</entry>
        </row>
       </tbody>
@@ -224,7 +281,7 @@ foreach($meta_data['wrapper_data'] as $response) {
    </para>
    <para>
     <table>
-     <title>コンテクストのオプション (PHP 5.0.0以降)</title>
+     <title>コンテキストのオプション</title>
      <tgroup cols="3">
       <thead>
        <row>
@@ -237,77 +294,85 @@ foreach($meta_data['wrapper_data'] as $response) {
        <row>
         <entry><literal>method</literal></entry>
         <entry>
-         <constant>GET</constant>, <constant>POST</constant>, or
-         any other HTTP method supported by the remote server.
+         リモートサーバでサポートされる <constant>GET</constant>、
+         <constant>POST</constant> あるいはその他の HTTP メソッド。
         </entry>
         <entry><constant>GET</constant></entry>
        </row>
        <row>
         <entry><literal>header</literal></entry>
-        <entry>Additional headers to be sent during request.  Values
-         in this option will override other values (such as
-         <literal>User-agent:</literal>, <literal>Host:</literal>,
-         and <literal>Authentication:</literal>).
+        <entry>リクエストに付加されるヘッダ。ここで指定した値が
+         （<literal>User-agent:</literal>、<literal>Host:</literal>、
+         および <literal>Authentication:</literal> などの）他の値を
+         上書きすることもある。
         </entry>
         <entry></entry>
        </row>
        <row>
         <entry><literal>user_agent</literal></entry>
-        <entry>Value to send with User-Agent: header.  This value will
-         only be used if user-agent is <emphasis>not</emphasis> specified
-         in the <literal>header</literal> context option above.  
+        <entry>User-Agent: ヘッダとして送信する値。上で説明した
+         <literal>header</literal> オプションで user-agent が
+         定義されて<emphasis>いない</emphasis>場合のみ使用される。
        </entry>
         <entry>
-         &php.ini; setting: <literal>user_agent</literal>
+         &php.ini; での <literal>user_agent</literal> の設定
         </entry>
        </row>
        <row>
         <entry><literal>content</literal></entry>
         <entry>
-         ヘッダの後に送信する追加データ。通常、POSTまたはPUTリクエストの際に使用される。
+         ヘッダの後に送信する追加データ。通常、POST または PUT
+         リクエストの際に使用される。
         </entry>
         <entry></entry>
        </row>
        <row>
         <entry><literal>proxy</literal></entry>
         <entry>
-         URI specifying address of proxy server. (e.g. 
-         <literal>tcp://proxy.example.com:5100</literal> ).
+         プロキシサーバを示す URI（例: 
+         <literal>tcp://proxy.example.com:5100</literal>）。
         </entry>
         <entry></entry>
        </row>
        <row>
         <entry><literal>request_fulluri</literal></entry>
         <entry>
-         When set to &true;, the entire URI will be used when
-         constructing the request.  (i.e. 
-         <literal>GET http://www.example.com/path/to/file.html HTTP/1.0</literal>).
-         While this is a non-standard request format, some
-         proxy servers require it.
+         &true; を指定すると、リクエストを生成する際に完全な URI
+         （<literal>GET http://www.example.com/path/to/file.html HTTP/1.0</literal>）
+         が用いられる。これは標準のリクエストフォーマットではないが、
+         このようなフォーマットを要求するプロキシサーバも存在する。
         </entry>
         <entry>&false;</entry>
        </row>
+      <row>
+       <entry><literal>max_redirects</literal></entry>
+       <entry>
+        リダイレクトをたどる最大数。 PHP 5.1.0 で追加。
+       </entry>
+       <entry>20</entry>
+      </row>
       </tbody>
      </tgroup>
     </table>
    </para>
 
   <note>
-   <title>Underlying socket stream context options</title>
+   <title>基盤となるソケットストリームのコンテキストオプション</title>
    <simpara>
-    Additional context options may be supported by the 
-    <link linkend="transports.inet">underlying transport</link>
-    For <literal>http://</literal> streams, refer to context
-    options for the <literal>tcp://</literal> transport.  For
-    <literal>https://</literal> streams, refer to context options
-    for the <literal>ssl://</literal> transport.
+    これ以外のコンテキストオプションが
+    <link linkend="transports.inet">基盤となるトランスポート</link>
+    でサポートされています。
+    <literal>http://</literal> ストリームの場合は、<literal>tcp://</literal>
+    のコンテキストオプションを参照ください。
+    <literal>https://</literal> ストリームの場合は、<literal>ssl://</literal>
+    のコンテキストオプションを参照ください。
    </simpara>
   </note>
  </section>
 
  <section id="wrappers.ftp">
   <title>FTP と FTPS</title>
-   <simpara>PHP 3, PHP 4, PHP 5。PHP 4.3.0以降では <filename>ftps://</filename></simpara>
+   <simpara>PHP 3、PHP 4、PHP 5。<filename>ftps://</filename> は PHP 4.3.0 以降。</simpara>
    
    <itemizedlist>
     <listitem><simpara><filename>ftp://example.com/pub/file.txt</filename></simpara></listitem>
@@ -317,39 +382,38 @@ foreach($meta_data['wrapper_data'] as $response) {
    </itemizedlist>
    
   <simpara>
-    Allows read access to existing files and creation of new files
-    via FTP.  If the server does not support passive mode ftp, the
-    connection will fail.
+    FTP 経由でのファイルの読み込みと新しいファイルの作成を許可します。
+    サーバがパッシブモードの FTP をサポートしていない場合、接続は失敗します。
    </simpara>
   <simpara>
-    You can open files for either reading or writing, but not both
-    simultaneously.  If the remote file already exists on the ftp
-    server and you attempt to open it for writing but have not specified
-    the context option <literal>overwrite</literal>, the connection
-    will fail.  If you need to overwrite existing files over ftp,
-   specify the <literal>overwrite</literal> option in the context 
-    and open the file for writing.  Alternatively, you can
-    use the <link linkend="ref.ftp">FTP extension</link>.
+    読み込み用または書き込み用のどちらかでファイルをオープンすることが
+    可能ですが、それらを両方同時に指定することはできません。FTP サーバ上の
+    既存のファイルを書き込み用にオープンしようとした場合、もし
+    コンテキストオプション <literal>overwrite</literal> が指定されていなければ
+    接続は失敗します。既存のファイルを FTP 越しに上書きしたい場合は、
+    コンテキストオプション <literal>overwrite</literal> を指定したうえで
+    書き込み用にファイルをオープンします。別の方法としては、
+    <link linkend="ref.ftp">FTP 拡張モジュール</link> を使用することも可能です。
    </simpara>
   <note>
-    <title>Appending</title>
+    <title>追記</title>
     <simpara>
-     As of PHP 5.0.0 files may be appended via the
-     <literal>ftp://</literal> URL wrapper.  In prior versions, attempting
-    to append to a file via <literal>ftp://</literal> will result in failure.
+     PHP 5.0.0 では、<literal>ftp://</literal> URL ラッパー経由での
+     ファイルの追記が可能となりました。それ以前のバージョンでは
+     <literal>ftp://</literal> 経由でのファイルの追記は失敗していました。
     </simpara>
    </note>
    <simpara>
-    <filename>ftps://</filename> was introduced in PHP 4.3.0.  
-   It is the same as <filename>ftp://</filename>,
-    but attempts to negotiate a secure connection with the ftp server.
-    If the server does not support SSL, then the connection falls back
-    to regular unencrypted ftp.
+    <filename>ftps://</filename> は PHP 4.3.0 から有効になりました。
+    これは <filename>ftp://</filename> と同じですが、FTP サーバとの
+    安全な接続を確立しようと試みます。もしサーバが SSL をサポートして
+    いなければ、通常の（暗号化されない）FTP を使用します。
    </simpara>
    <note>
-   <simpara>FTPS is supported starting from PHP 4.3.0, if you
-     have compiled in support for OpenSSL.
-    </simpara>
+   <simpara>
+    FTPS のサポートは PHP 4.3.0 から始まりました。これを使用するには
+    OpenSSL サポートを含めて PHP をコンパイルする必要があります。
+   </simpara>
   </note>
    <para>
     <table>
@@ -364,57 +428,57 @@ foreach($meta_data['wrapper_data'] as $response) {
      </thead>
       <tbody>
        <row>
-        <entry>Restricted by <link linkend="ini.allow-url-fopen">allow_url_fopen</link>.</entry>
+        <entry><link linkend="ini.allow-url-fopen">allow_url_fopen</link> で制約される</entry>
         <entry>Yes</entry>
        <entry>Yes</entry>
        </row>
        <row>
-        <entry>Allows Reading</entry>
+        <entry>読み込み許可</entry>
        <entry>Yes</entry>
         <entry>Yes</entry>
        </row>
        <row>
-        <entry>Allows Writing</entry>
-       <entry>Yes (new files only)</entry>
-        <entry>Yes (new files/existing files with <parameter>overwrite</parameter>)</entry>
+        <entry>書き込み許可</entry>
+       <entry>Yes（新規ファイルのみ）</entry>
+        <entry>Yes（新規ファイル あるいは 既存のファイルで <parameter>overwrite</parameter> を指定）</entry>
        </row>
        <row>
-        <entry>Allows Appending</entry>
+        <entry>追加許可</entry>
         <entry>No</entry>
        <entry>Yes</entry>
        </row>
        <row>
-        <entry>Allows Simultaneous Reading and Writing</entry>
+        <entry>同時読み書き許可</entry>
         <entry>No</entry>
         <entry>No</entry>
        </row>
        <row>
-        <entry><function>stat</function>をサポート</entry>
+        <entry><function>stat</function> のサポート</entry>
        <entry>No</entry>
         <entry>
-         As of PHP 5.0.0: <function>filesize</function>, 
-         <function>filetype</function>, <function>file_exists</function>,
-         <function>is_file</function>, and <function>is_dir</function> elements only.
-         As of PHP 5.1.0: <function>filemtime</function>.
+         PHP 5.0.0 では <function>filesize</function>、
+         <function>filetype</function>、<function>file_exists</function>、
+         <function>is_file</function> および <function>is_dir</function> のみ。
+         PHP 5.1.0 で <function>filemtime</function>。
        </entry>
        </row>
        <row>
-        <entry><function>unlink</function>をサポート</entry>
+        <entry><function>unlink</function> のサポート</entry>
         <entry>No</entry>
         <entry>Yes</entry>
       </row>
        <row>
-        <entry><function>rename</function>をサポート</entry>
+        <entry><function>rename</function> のサポート</entry>
         <entry>No</entry>
         <entry>Yes</entry>
        </row>
        <row>
-       <entry><function>mkdir</function>をサポート</entry>
+       <entry><function>mkdir</function> のサポート</entry>
         <entry>No</entry>
         <entry>Yes</entry>
        </row>
        <row>
-        <entry><function>rmdir</function>をサポート</entry>
+        <entry><function>rmdir</function> のサポート</entry>
         <entry>No</entry>
         <entry>Yes</entry>
        </row>
@@ -424,7 +488,7 @@ foreach($meta_data['wrapper_data'] as $response) {
    </para>
    <para>
     <table>
-     <title>コンテキストオプション(PHP 5.0.0以降)</title>
+     <title>コンテキストオプション（PHP 5.0.0 以降）</title>
      <tgroup cols="3">
       <thead>
       <row>
@@ -437,25 +501,25 @@ foreach($meta_data['wrapper_data'] as $response) {
        <row>
         <entry><literal>overwrite</literal></entry>
         <entry>
-         Allow overwriting of already existing files on remote server.
-        Applies to write mode (uploading) only.
+         リモートサーバ上の既存のファイルに対する上書きを許可する。
+         書き込みモード（アップロード）時のみ有効。
         </entry>
-        <entry>&false; (Disabled)</entry>
+        <entry>&false;（無効）</entry>
        </row>
        <row>
         <entry><literal>resume_pos</literal></entry>
         <entry>
-         File offset at which to begin transfer.  
-         Applies to read mode (downloading) only.
+         転送を開始するファイル内の位置。
+         読み込みモード（ダウンロード）時のみ有効。
         </entry>
-        <entry>0 (Beginning of File)</entry>
+        <entry>0（ファイルの先頭）</entry>
        </row>
       <row>
-        <entry><literal>proxy</literal>(PHP 5.1.0 or greater)</entry>
+        <entry><literal>proxy</literal>（PHP 5.1.0 以降）</entry>
         <entry>
-         Proxy FTP request via http proxy server.
-         Applies to file read operations only.
-         Ex: <literal>tcp://squid.example.com:8000</literal>
+         FTP リクエストを、http プロキシサーバ経由で行う。
+         ファイルの読み込み操作にのみ適用される。
+         例: <literal>tcp://squid.example.com:8000</literal>
         </entry>
        <entry/>
        </row>
@@ -464,86 +528,88 @@ foreach($meta_data['wrapper_data'] as $response) {
     </table>
    </para>
    <note>
-    <title>Underlying socket stream context options</title>
+    <title>基盤となるソケットストリームのコンテキストオプション</title>
     <simpara>
-     Additional context options may be supported by the 
-     <link linkend="transports.inet">underlying transport</link>
-     For <literal>ftp://</literal> streams, refer to context
-     options for the <literal>tcp://</literal> transport.  For
-     <literal>ftps://</literal> streams, refer to context options
-     for the <literal>ssl://</literal> transport.
+     これ以外のコンテキストオプションが
+     <link linkend="transports.inet">基盤となるトランスポート</link>
+     でサポートされています。
+     <literal>ftp://</literal> ストリームの場合は、<literal>tcp://</literal>
+     のコンテキストオプションを参照ください。
+     <literal>ftps://</literal> ストリームの場合は、<literal>ssl://</literal>
+     のコンテキストオプションを参照ください。
     </simpara>
    </note>
   </section>
   
   <section id="wrappers.php">
-   <title>PHP入出力ストリーム</title>
+   <title>PHP 入出力ストリーム</title>
    <simpara>
-    PHP 3.0.13以降で、<filename>php://output</filename>。
-    および PHP 4.3.0以降で<filename>php://input</filename>、
-    PHP 5.0.0以降で<filename>php://filter</filename>
+    PHP 3.0.13 以降で、<filename>php://output</filename>。
+    および PHP 4.3.0 以降で <filename>php://input</filename>、
+    PHP 5.0.0 以降で <filename>php://filter</filename>
    </simpara>
    
    <itemizedlist>
     <listitem><simpara><filename>php://stdin</filename></simpara></listitem>
     <listitem><simpara><filename>php://stdout</filename></simpara></listitem>
     <listitem><simpara><filename>php://stderr</filename></simpara></listitem>
-   <listitem><simpara><filename>php://output</filename></simpara></listitem>
+    <listitem><simpara><filename>php://output</filename></simpara></listitem>
     <listitem><simpara><filename>php://input</filename></simpara></listitem>
     <listitem><simpara><filename>php://filter</filename></simpara></listitem>
    </itemizedlist>
    
    <simpara>
-   <filename>php://stdin</filename>, <filename>php://stdout</filename> 
-   and <filename>php://stderr</filename> allow access to
-   the corresponding input or output stream of the PHP process.
+   <filename>php://stdin</filename>、<filename>php://stdout</filename> 
+   および <filename>php://stderr</filename> は、PHP プロセスの
+   対応する入出力ストリームへのアクセスを許可します。
   </simpara>
   <simpara>
-   <filename>php://output</filename> allows you to write to the
-   output buffer mechanism in the same way as
-   <function>print</function> and <function>echo</function>.
+   <filename>php://output</filename> は、
+   <function>print</function> および <function>echo</function>
+   と同じ方法での出力バッファへの書き込みを許可します。
   </simpara>
   <simpara>
-   <filename>php://input</filename> allows you to read raw POST data.
-   It is a less memory intensive alternative to
-   <varname>$HTTP_RAW_POST_DATA</varname> and does not need any
-   special &php.ini; directives.
+   <filename>php://input</filename> は、POST の生データの読み込みを
+   許可します。これは <varname>$HTTP_RAW_POST_DATA</varname> に比べて
+   メモリ消費量が少なく、特別な &php.ini; ディレクティブを設定する
+   必要がありません。<filename>php://input</filename> は、
+   <literal>enctype="multipart/form-data"</literal> に対しては
+   使用できません。
   </simpara>
   <simpara>
-   <filename>php://stdin</filename> and
-   <filename>php://input</filename> are read-only, whereas
-   <filename>php://stdout</filename>,
-   <filename>php://stderr</filename> and
-   <filename>php://output</filename> are write-only.
+   <filename>php://stdin</filename> および
+   <filename>php://input</filename> は読み込み専用で、
+   <filename>php://stdout</filename>、
+   <filename>php://stderr</filename> および
+   <filename>php://output</filename> は書き込み専用です。
   </simpara>
 
   <simpara>
-   <filename>php://filter</filename> is a kind of meta-wrapper designed
-   to permit the application of filters to a stream at the time of 
-   opening.  This is useful with all-in-one file functions such as
-   <function>readfile</function>, <function>file</function>, and
-   <function>file_get_contents</function> where there is otherwise
-   no opportunity to apply a filter to the stream prior the contents
-   being read.
+   <filename>php://filter</filename> は、フィルタアプリケーションが
+   ストリームをオープンすることを許可するために設計されたメタラッパーです。
+   これは、<function>readfile</function>、<function>file</function>
+   および <function>file_get_contents</function> のようなオールインワンの
+   ファイル関数とともに使用すると有用です。これらの関数には、コンテンツが
+   読み込まれる前にストリームにフィルタを適用する手段がありません。
   </simpara>
   <simpara>
-   The <filename>php://filter</filename> target takes the following 
-   'parameters' as parts of its 'path'.
+   <filename>php://filter</filename> の対象は、以下のように
+   'parameters' を 'path' の一部として保持します。
   </simpara>
   <itemizedlist>
    <listitem>
     <para>
-     <literal>/resource=&lt;stream to be filtered&gt;</literal>
-     (<emphasis>required</emphasis>)  This parameter must be located at
-     the end of your <filename>php://filter</filename> specification and
-     should point to the stream which you want filtered.
+     <literal>/resource=&lt;フィルタの対象となるストリーム&gt;</literal>
+     （<emphasis>必須</emphasis>）このパラメータは、
+     <filename>php://filter</filename> 指定の最後に存在し、フィルタリング
+     したいストリームを指している必要があります。
      <informalexample>
       <programlisting role="php">
 <![CDATA[
 <?php
-/* This is equivalent to simply:
+/* これは単純に以下と同じです。
    readfile("http://www.example.com");
-   since no filters are actually specified */
+   なぜなら、実際のところ何のフィルタ処理も行われないからです。 */
 
 readfile("php://filter/resource=http://www.example.com");
 ?>
@@ -554,19 +620,19 @@ readfile("php://filter/resource=http://www.example.com");
    </listitem>
    <listitem>
     <para>
-     <literal>/read=&lt;filter list to apply to read chain&gt;</literal>
-     (<emphasis>optional</emphasis>)  This parameter takes one or more
-     filternames separated by the pipe character <literal>|</literal>.
+     <literal>/read=&lt;読み込みチェーンに適用するフィルタのリスト&gt;</literal>
+     （<emphasis>任意</emphasis>）このパラメータは 1 つ以上のフィルタ名を
+     パラメータとしてとり、それらはパイプ文字 <literal>|</literal> で区切られます。
      <informalexample>
       <programlisting role="php">
 <![CDATA[
 <?php
-/* This will output the contents of 
-   www.example.com entirely in uppercase */
+/* これは、www.example.com のすべての内容を
+   大文字に変換して出力します。 */
 readfile("php://filter/read=string.toupper/resource=http://www.example.com");
 
-/* This will do the same as above
-   but will also ROT13 encode it */
+/* これは上の例と同じですが、それに加えて
+   ROT13 エンコード処理を行います。 */
 readfile("php://filter/read=string.toupper|string.rot13/resource=http://www.example.com");
 ?>
 ]]>
@@ -576,16 +642,16 @@ readfile("php://filter/read=string.toupper|string.rot13/resource=http://www.exam
    </listitem>
    <listitem>
     <para>
-     <literal>/write=&lt;filter list to apply to write chain&gt;</literal>
-     (<emphasis>optional</emphasis>)  This parameter takes one or more
-     filternames separated by the pipe character <literal>|</literal>.
+     <literal>/write=&lt;書き込みチェーンに適用するフィルタのリスト&gt;</literal>
+     （<emphasis>任意</emphasis>）このパラメータは 1 つ以上のフィルタ名を
+     パラメータとしてとり、それらはパイプ文字 <literal>|</literal> で区切られます。
      <informalexample>
       <programlisting role="php">
 <![CDATA[
 <?php
-/* This will filter the string "Hello World"
-   through the rot13 filter, then write to
-   example.txt in the current directory */
+/* これは、文字列 "Hello World"
+   に対して rot13 フィルタを適用し、カレントディレクトリの
+   example.txt に書き込みます。 */
 file_put_contents("php://filter/write=string.rot13/resource=example.txt","Hello World");
 ?>
 ]]>
@@ -595,77 +661,76 @@ file_put_contents("php://filter/write=string.rot13/resource=example.txt","Hello 
    </listitem>
    <listitem>
     <simpara>
-     <literal>/&lt;filter list to apply to both chains&gt;</literal>
-     (<emphasis>optional</emphasis>)  Any filter lists which are not
-     prefixed specifically by <literal>read=</literal> or 
-     <literal>write=</literal> will be applied to both the read and
-     write chains (as appropriate).
+     <literal>/&lt;両方のチェーンに適用するフィルタのリスト&gt;</literal>
+     （<emphasis>任意</emphasis>）<literal>read=</literal> あるいは
+     <literal>write=</literal> の指定をされていないすべてのフィルタは、
+     読み込みチェーンと書き込みチェーンの両方に（適宜）適用されます。
     </simpara>
    </listitem>
   </itemizedlist>
   <para>
    <table>
     <title>
-     Wrapper Summary (For <literal>php://filter</literal>, 
-     refer to summary of wrapper being filtered.)
+     ラッパーの概要（<literal>php://filter</literal> については、
+     フィルタされる側のラッパーの概要を参照します）
     </title>
     <tgroup cols="2">
      <thead>
       <row>
-       <entry>Attribute</entry>
-       <entry>Supported</entry>
+       <entry>属性</entry>
+       <entry>サポートの有無</entry>
       </row>
      </thead>
      <tbody>
       <row>
-       <entry>Restricted by <link linkend="ini.allow-url-fopen">allow_url_fopen</link>.</entry>
+       <entry><link linkend="ini.allow-url-fopen">allow_url_fopen</link> で制約される</entry>
        <entry>No</entry>
       </row>
       <row>
-       <entry>Allows Reading</entry>
+       <entry>読み込み許可</entry>
        <entry>
-        <literal>php://stdin</literal> and 
-        <literal>php://input</literal> only.
+        <literal>php://stdin</literal> および
+        <literal>php://input</literal> のみ。
        </entry>
       </row>
       <row>
-       <entry>Allows Writing</entry>
+       <entry>書き込み許可</entry>
        <entry>
-        <literal>php://stdout</literal>,
-        <literal>php://stderr</literal>, and 
-        <literal>php://output</literal> only.
+        <literal>php://stdout</literal>、
+        <literal>php://stderr</literal> および
+        <literal>php://output</literal> のみ。
        </entry>
       </row>
       <row>
-       <entry>Allows Appending</entry>
+       <entry>追加許可</entry>
        <entry>
-        <literal>php://stdout</literal>,
-        <literal>php://stderr</literal>, and 
-        <literal>php://output</literal> only. (Equivalent to writing)
+        <literal>php://stdout</literal>、
+        <literal>php://stderr</literal> および
+        <literal>php://output</literal> のみ（書き込みと同じ）。
        </entry>
       </row>
       <row>
-       <entry>Allows Simultaneous Reading and Writing</entry>
-       <entry>No.  These wrappers are unidirectional.</entry>
+       <entry>同時読み書き許可</entry>
+       <entry>No. これらのラッパーは一方通行です。</entry>
       </row>
       <row>
-       <entry>Supports <function>stat</function></entry>
+       <entry><function>stat</function> のサポート</entry>
        <entry>No</entry>
       </row>
       <row>
-       <entry>Supports <function>unlink</function></entry>
+       <entry><function>unlink</function> のサポート</entry>
        <entry>No</entry>
       </row>
       <row>
-       <entry>Supports <function>rename</function></entry>
+       <entry><function>rename</function> のサポート</entry>
        <entry>No</entry>
       </row>
       <row>
-       <entry>Supports <function>mkdir</function></entry>
+       <entry><function>mkdir</function> のサポート</entry>
        <entry>No</entry>
       </row>
       <row>
-       <entry>Supports <function>rmdir</function></entry>
+       <entry><function>rmdir</function> のサポート</entry>
        <entry>No</entry>
       </row>
      </tbody>
@@ -676,7 +741,7 @@ file_put_contents("php://filter/write=string.rot13/resource=example.txt","Hello 
 
  <section id="wrappers.compression">
   <title>圧縮ストリーム</title>
-  <simpara><filename>zlib:</filename> PHP 4.0.4 - PHP 4.2.3 (systems with fopencookie only)</simpara>
+  <simpara><filename>zlib:</filename> PHP 4.0.4 - PHP 4.2.3 (fopencookie をサポートするシステムのみ)</simpara>
   <simpara><filename>compress.zlib://</filename> および <filename>compress.bzip2://</filename> PHP 4.3.0以降</simpara>
 
   <itemizedlist>
@@ -686,75 +751,75 @@ file_put_contents("php://filter/write=string.rot13/resource=example.txt","Hello 
   </itemizedlist>
 
    <simpara> 
-    <filename>zlib:</filename> は、<function>gzopen</function>と同様に
-    動作しますが、このストリームは<function>fread</function> および他
-    のファイルシステム関数と組み合わせて使用することができるところが異
-    なります。この機能ではファイル名に':'文字が含まれる曖昧さがあるた
-    め、PHP 4.3.0以降では古い機能となっています。代わりに
+    <filename>zlib:</filename> は <function>gzopen</function> と同様に
+    動作しますが、このストリームは <function>fread</function> および
+    他のファイルシステム関数と組み合わせて使用することができるところが
+    異なります。この機能ではファイル名に ':' 文字が含まれる曖昧さが
+    あるため、PHP 4.3.0 以降では古い機能となっています。代わりに
     <filename>compress.zlib://</filename> を使用してください。
    </simpara>
 
    <simpara>
-    <filename>compress.zlib://</filename>および
-    <filename>compress.bzip2://</filename>は、それぞれ
-    <function>gzopen</function> および <function>bzopen</function>と等価で、
-    fopencookieをサポートしないシステムの上でも動作します。
+    <filename>compress.zlib://</filename> および
+    <filename>compress.bzip2://</filename> は、それぞれ
+    <function>gzopen</function> および <function>bzopen</function> と等価で、
+    fopencookie をサポートしないシステムの上でも動作します。
    </simpara>
    <para>
     <table>
-     <title>Wrapper Summary</title>
+     <title>ラッパーの概要</title>
      <tgroup cols="2">
       <thead>
        <row>
-        <entry>Attribute</entry>
-        <entry>Supported</entry>
+        <entry>属性</entry>
+        <entry>サポートの有無</entry>
        </row>
       </thead>
       <tbody>
        <row>
-       <entry>Restricted by <link linkend="ini.allow-url-fopen">allow_url_fopen</link>.</entry>
+       <entry><link linkend="ini.allow-url-fopen">allow_url_fopen</link> で制約される</entry>
        <entry>No</entry>
       </row>
       <row>
-       <entry>Allows Reading</entry>
+       <entry>読み込み許可</entry>
        <entry>Yes</entry>
       </row>
       <row>
-       <entry>Allows Writing</entry>
+       <entry>書き込み許可</entry>
        <entry>Yes</entry>
       </row>
       <row>
-       <entry>Allows Appending</entry>
+       <entry>追加許可</entry>
        <entry>Yes</entry>
       </row>
       <row>
-       <entry>Allows Simultaneous Reading and Writing</entry>
+       <entry>同時読み書き許可</entry>
        <entry>No</entry>
       </row>
       <row>
-       <entry>Supports <function>stat</function></entry>
+       <entry><function>stat</function> のサポート</entry>
        <entry>
-        No, use the normal <literal>file://</literal> wrapper 
-        to stat compressed files.
+        No, 圧縮されたファイルの状態を知るには、通常の
+        <literal>file://</literal> ラッパーを使用します。
        </entry>
       </row>
       <row>
-       <entry>Supports <function>unlink</function></entry>
+       <entry><function>unlink</function> のサポート</entry>
        <entry>
-        No, use the normal <literal>file://</literal> wrapper 
-        to unlink compressed files.
+        No, 圧縮されたファイルを unlink するには、通常の
+        <literal>file://</literal> ラッパーを使用します。
        </entry>
       </row>
       <row>
-       <entry>Supports <function>rename</function></entry>
+       <entry><function>rename</function> のサポート</entry>
        <entry>No</entry>
       </row>
       <row>
-       <entry>Supports <function>mkdir</function></entry>
+       <entry><function>mkdir</function> のサポート</entry>
        <entry>No</entry>
       </row>
       <row>
-       <entry>Supports <function>rmdir</function></entry>
+       <entry><function>rmdir</function> のサポート</entry>
        <entry>No</entry>
       </row>
      </tbody>
@@ -763,14 +828,14 @@ file_put_contents("php://filter/write=string.rot13/resource=example.txt","Hello 
   </para>
  </section>
  <section id="wrappers.ssh2">
-  <title>Secure Shell 2</title>
+  <title>SSH2</title>
   <simpara>
    <filename>ssh2.shell://</filename>
    <filename>ssh2.exec://</filename>
    <filename>ssh2.tunnel://</filename>
    <filename>ssh2.sftp://</filename>
    <filename>ssh2.scp://</filename>
-   PHP 4.3.0 and up (PECL)
+   PHP 4.3.0 以降（PECL）
   </simpara>
 
   <itemizedlist>
@@ -781,22 +846,22 @@ file_put_contents("php://filter/write=string.rot13/resource=example.txt","Hello 
   </itemizedlist>
 
   <note>
-   <title>This wrapper is not enabled by default</title>
+   <title>このラッパーはデフォルトでは有効になっていません</title>
    <simpara>
-    In order to use the <filename>ssh2.*://</filename> wrappers you must install
-    the <ulink url="&url.pecl.package;ssh2">SSH2</ulink> extension
-    available from <ulink url="&url.pecl;">PECL</ulink>.
+    <filename>ssh2.*://</filename> ラッパーを使用するには、
+    <ulink url="&url.pecl;">PECL</ulink> から
+    <ulink url="&url.pecl.package;ssh2">SSH2</ulink> 拡張モジュールを
+    インストールする必要があります。
    </simpara>
   </note>
 
   <simpara>
-   In addition to accepting traditional URI login details, the ssh2 wrappers
-   will also reuse open connections by passing the connection resource in the
-   host portion of the URL.
+   ssh2 ラッパーでは、URL のホスト部分に接続リソースを渡すことで既にオープン
+   している接続を再利用することが可能です。
   </simpara>
 
   <example>
-   <title>Opening a stream from an active connection</title>
+   <title>アクティブな接続からストリームをオープンする</title>
    <programlisting role="php">
 <![CDATA[
 <?php
@@ -810,11 +875,11 @@ $stream = fopen("ssh2.tunnel://$session/remote.example.com:1234", 'r');
   </example>
   <para>
    <table>
-    <title>Wrapper Summary</title>
+    <title>ラッパーの概要</title>
     <tgroup cols="6">
      <thead>
       <row>
-       <entry>Attribute</entry>
+       <entry>属性</entry>
        <entry>ssh2.shell</entry>
        <entry>ssh2.exec</entry>
        <entry>ssh2.tunnel</entry>
@@ -824,7 +889,7 @@ $stream = fopen("ssh2.tunnel://$session/remote.example.com:1234", 'r');
      </thead>
      <tbody>
       <row>
-       <entry>Restricted by <link linkend="ini.allow-url-fopen">allow_url_fopen</link>.</entry>
+       <entry><link linkend="ini.allow-url-fopen">allow_url_fopen</link> で制約される</entry>
        <entry>Yes</entry>
        <entry>Yes</entry>
        <entry>Yes</entry>
@@ -832,7 +897,7 @@ $stream = fopen("ssh2.tunnel://$session/remote.example.com:1234", 'r');
        <entry>Yes</entry>
       </row>
       <row>
-       <entry>Allows Reading</entry>
+       <entry>読み込み許可</entry>
        <entry>Yes</entry>
        <entry>Yes</entry>
        <entry>Yes</entry>
@@ -840,7 +905,7 @@ $stream = fopen("ssh2.tunnel://$session/remote.example.com:1234", 'r');
        <entry>Yes</entry>
       </row>
       <row>
-       <entry>Allows Writing</entry>
+       <entry>書き込み許可</entry>
        <entry>Yes</entry>
        <entry>Yes</entry>
        <entry>Yes</entry>
@@ -848,31 +913,23 @@ $stream = fopen("ssh2.tunnel://$session/remote.example.com:1234", 'r');
        <entry>No</entry>
       </row>
       <row>
-       <entry>Allows Appending</entry>
+       <entry>追加許可</entry>
        <entry>No</entry>
        <entry>No</entry>
        <entry>No</entry>
-       <entry>Yes (When supported by server)</entry>
-       <entry>No</entry>
-      </row>
-      <row>
-       <entry>Allows Simultaneous Reading and Writing</entry>
-       <entry>Yes</entry>
-       <entry>Yes</entry>
-       <entry>Yes</entry>
-       <entry>Yes</entry>
+       <entry>Yes（サーバがサポートしている場合）</entry>
        <entry>No</entry>
       </row>
       <row>
-       <entry>Supports <function>stat</function></entry>
-       <entry>No</entry>
-       <entry>No</entry>
-       <entry>No</entry>
+       <entry>同時読み書き許可</entry>
+       <entry>Yes</entry>
+       <entry>Yes</entry>
+       <entry>Yes</entry>
        <entry>Yes</entry>
        <entry>No</entry>
       </row>
       <row>
-       <entry>Supports <function>unlink</function></entry>
+       <entry><function>stat</function> のサポート</entry>
        <entry>No</entry>
        <entry>No</entry>
        <entry>No</entry>
@@ -880,7 +937,7 @@ $stream = fopen("ssh2.tunnel://$session/remote.example.com:1234", 'r');
        <entry>No</entry>
       </row>
       <row>
-       <entry>Supports <function>rename</function></entry>
+       <entry><function>unlink</function> のサポート</entry>
        <entry>No</entry>
        <entry>No</entry>
        <entry>No</entry>
@@ -888,7 +945,7 @@ $stream = fopen("ssh2.tunnel://$session/remote.example.com:1234", 'r');
        <entry>No</entry>
       </row>
       <row>
-       <entry>Supports <function>mkdir</function></entry>
+       <entry><function>rename</function> のサポート</entry>
        <entry>No</entry>
        <entry>No</entry>
        <entry>No</entry>
@@ -896,7 +953,15 @@ $stream = fopen("ssh2.tunnel://$session/remote.example.com:1234", 'r');
        <entry>No</entry>
       </row>
       <row>
-       <entry>Supports <function>rmdir</function></entry>
+       <entry><function>mkdir</function> のサポート</entry>
+       <entry>No</entry>
+       <entry>No</entry>
+       <entry>No</entry>
+       <entry>Yes</entry>
+       <entry>No</entry>
+      </row>
+      <row>
+       <entry><function>rmdir</function> のサポート</entry>
        <entry>No</entry>
        <entry>No</entry>
        <entry>No</entry>
@@ -910,29 +975,29 @@ $stream = fopen("ssh2.tunnel://$session/remote.example.com:1234", 'r');
 
   <para>
    <table>
-    <title>Context options</title>
+    <title>コンテキストオプション</title>
     <tgroup cols="3">
      <thead>
       <row>
-       <entry>Name</entry>
-       <entry>Usage</entry>
-       <entry>Default</entry>
+       <entry>名前</entry>
+       <entry>使用法</entry>
+       <entry>デフォルト</entry>
       </row>
      </thead>
      <tbody>
       <row>
        <entry><literal>session</literal></entry>
-       <entry>Preconnected ssh2 resource to be reused</entry>
+       <entry>再利用する接続済みの ssh2 リソース</entry>
        <entry/>
       </row>
       <row>
        <entry><literal>sftp</literal></entry>
-       <entry>Preallocated sftp resource to be reused</entry>
+       <entry>再利用する割り当て済みの sftp リソース</entry>
        <entry/>
       </row>
       <row>
        <entry><literal>methods</literal></entry>
-       <entry>Key exchange, hostkey, cipher, compression, and MAC methods to use</entry>
+       <entry>Key exchange, hostkey, cipher, compression, および MAC methods</entry>
        <entry/>
       </row>
       <row>
@@ -942,47 +1007,47 @@ $stream = fopen("ssh2.tunnel://$session/remote.example.com:1234", 'r');
       </row>
       <row>
        <entry><literal>username</literal></entry>
-       <entry>Username to connect as</entry>
+       <entry>接続するユーザ名</entry>
        <entry></entry>
       </row>
       <row>
        <entry><literal>password</literal></entry>
-       <entry>Password to use with password authentication</entry>
+       <entry>パスワード認証に使用するパスワード</entry>
        <entry></entry>
       </row>
       <row>
        <entry><literal>pubkey_file</literal></entry>
-       <entry>Name of public key file to use for authentication</entry>
+       <entry>認証に使用する公開鍵ファイル</entry>
        <entry></entry>
       </row>
       <row>
        <entry><literal>privkey_file</literal></entry>
-       <entry>Name of private key file to use for authentication</entry>
+       <entry>認証に使用する秘密鍵ファイル</entry>
        <entry></entry>
       </row>
       <row>
        <entry><literal>env</literal></entry>
-       <entry>Associate array of environment variables to set</entry>
+       <entry>設定する環境変数の連想配列</entry>
        <entry></entry>
       </row>
       <row>
        <entry><literal>term</literal></entry>
-       <entry>Terminal emulation type to request when allocating a pty</entry>
+       <entry>pty を割り当てる際の端末エミュレート方式</entry>
        <entry></entry>
       </row>
       <row>
        <entry><literal>term_width</literal></entry>
-       <entry>Width of terminal requested when allocating a pty</entry>
+       <entry>pty を割り当てる際の端末の幅</entry>
        <entry></entry>
       </row>
       <row>
        <entry><literal>term_height</literal></entry>
-       <entry>Height of terminal requested when allocating a pty</entry>
+       <entry>pty を割り当てる際の端末の高さ</entry>
        <entry></entry>
       </row>
       <row>
        <entry><literal>term_units</literal></entry>
-       <entry>Units to use with term_width and term_height</entry>
+       <entry>term_width および term_height の単位</entry>
        <entry><constant>SSH2_TERM_UNIT_CHARS</constant></entry>
       </row>
      </tbody>
@@ -994,7 +1059,7 @@ $stream = fopen("ssh2.tunnel://$session/remote.example.com:1234", 'r');
  </section>
  <section id="wrappers.audio">
   <title>オーディオストリーム</title>
-  <simpara><filename>ogg://</filename> PHP 4.3.0以降(PECL) </simpara>
+  <simpara><filename>ogg://</filename> PHP 4.3.0 以降（PECL）</simpara>
 
   <itemizedlist>
    <listitem><simpara><filename>ogg://soundfile.ogg</filename></simpara></listitem>
@@ -1003,78 +1068,80 @@ $stream = fopen("ssh2.tunnel://$session/remote.example.com:1234", 'r');
   </itemizedlist>
 
   <note>
-   <title>This wrapper is not enabled by default</title>
+   <title>このラッパーはデフォルトでは有効になっていません</title>
    <simpara>
-    In order to use the <filename>ogg://</filename> wrapper you must install
-    the <ulink url="&url.pecl.package;oggvorbis">OGG/Vorbis</ulink> extension
-    available from <ulink url="&url.pecl;">PECL</ulink>.
+    <filename>ogg://</filename> ラッパーを使用するには、
+    <ulink url="&url.pecl;">PECL</ulink> から
+    <ulink url="&url.pecl.package;oggvorbis">OGG/Vorbis</ulink> 拡張モジュールを
+    インストールする必要があります。
    </simpara>
   </note>
 
   <simpara>
-   Files opened for reading via the <filename>ogg://</filename> wrapper
-   are treated as compressed audio encoded using the OGG/Vorbis codec.
-   Similarly, files opened for writing or appending via the 
-   <filename>ogg://</filename> wrapper are writen as compressed audio data.
-   <function>stream_get_meta_data</function>, when used on an OGG/Vorbis
-   file opened for reading will return various details about the stream
-   including the <parameter>vendor</parameter> tag, any included
-   <parameter>comments</parameter>, the number of 
-   <parameter>channels</parameter>, the sampling <parameter>rate</parameter>, 
-   and the encoding rate range described by: 
-   <parameter>bitrate_lower</parameter>, <parameter>bitrate_upper</parameter>,
-   <parameter>bitrate_nominal</parameter>, and <parameter>bitrate_window</parameter>.
+   <filename>ogg://</filename> ラッパー経由で読み込みモードでオープンされた
+   ファイルは、OGG/Vorbis コーデックでエンコードされた圧縮音声ファイルとして
+   扱われます。同様に、<filename>ogg://</filename> ラッパー経由で書き込みモード
+   あるいは追記モードでオープンされたファイルは、圧縮音声データとして
+   書き込まれます。読み込みモードでオープンした OGG/Vorbis ファイルに対して
+   <function>stream_get_meta_data</function> を適用した場合、以下のような
+   さまざまな情報を返します。
+   <parameter>vendor</parameter> タグ、<parameter>comments</parameter>、
+   多くの <parameter>channels</parameter>、サンプリングレート
+   <parameter>rate</parameter> 、
+   および以下のパラメータで指定されるエンコーディングレート。
+   <parameter>bitrate_lower</parameter>、<parameter>bitrate_upper</parameter>、
+   <parameter>bitrate_nominal</parameter>、<parameter>bitrate_window</parameter>
   </simpara>
 
   <para>
    <table>
-    <title>Wrapper Summary</title>
+    <title>ラッパーの概要</title>
     <tgroup cols="2">
      <thead>
       <row>
-       <entry>Attribute</entry>
-       <entry>Supported</entry>
+       <entry>属性</entry>
+       <entry>サポートの有無</entry>
       </row>
      </thead>
      <tbody>
       <row>
-       <entry>Restricted by <link linkend="ini.allow-url-fopen">allow_url_fopen</link>.</entry>
+       <entry><link linkend="ini.allow-url-fopen">allow_url_fopen</link> で制約される</entry>
        <entry>No</entry>
       </row>
       <row>
-       <entry>Allows Reading</entry>
+       <entry>読み込み許可</entry>
        <entry>Yes</entry>
       </row>
       <row>
-       <entry>Allows Writing</entry>
+       <entry>書き込み許可</entry>
        <entry>Yes</entry>
       </row>
       <row>
-       <entry>Allows Appending</entry>
+       <entry>追加許可</entry>
        <entry>Yes</entry>
       </row>
       <row>
-       <entry>Allows Simultaneous Reading and Writing</entry>
+       <entry>同時読み書き許可</entry>
        <entry>No</entry>
       </row>
       <row>
-       <entry>Supports <function>stat</function></entry>
+       <entry><function>stat</function> のサポート</entry>
        <entry>No</entry>
       </row>
       <row>
-       <entry>Supports <function>unlink</function></entry>
+       <entry><function>unlink</function> のサポート</entry>
        <entry>No</entry>
       </row>
       <row>
-       <entry>Supports <function>rename</function></entry>
+       <entry><function>rename</function> のサポート</entry>
        <entry>No</entry>
       </row>
       <row>
-       <entry>Supports <function>mkdir</function></entry>
+       <entry><function>mkdir</function> のサポート</entry>
        <entry>No</entry>
       </row>
       <row>
-       <entry>Supports <function>rmdir</function></entry>
+       <entry><function>rmdir</function> のサポート</entry>
        <entry>No</entry>
       </row>
      </tbody>
@@ -1083,25 +1150,25 @@ $stream = fopen("ssh2.tunnel://$session/remote.example.com:1234", 'r');
   </para>
   <para>
    <table>
-    <title>Context options</title>
+    <title>コンテキストオプション</title>
     <tgroup cols="3">
      <thead>
       <row>
-       <entry>Name</entry>
-       <entry>Usage</entry>
-       <entry>Default</entry>
-       <entry>Mode</entry>
+       <entry>名前</entry>
+       <entry>使用法</entry>
+       <entry>デフォルト</entry>
+       <entry>モード</entry>
       </row>
      </thead>
      <tbody>
       <row>
        <entry><literal>pcm_mode</literal></entry>
        <entry>
-        PCM encoding to apply while reading, one of:
-        <constant>OGGVORBIS_PCM_U8</constant>, <constant>OGGVORBIS_PCM_S8</constant>,
-        <constant>OGGVORBIS_PCM_U16_BE</constant>, <constant>OGGVORBIS_PCM_S16_BE</constant>,
-        <constant>OGGVORBIS_PCM_U16_LE</constant>, and <constant>OGGVORBIS_PCM_S16_LE</constant>.
-        (8 vs 16 bit, signed or unsigned, big or little endian)
+        読み込みの際に適用する PCM エンコーディング。以下のうちのひとつ。
+        <constant>OGGVORBIS_PCM_U8</constant>、<constant>OGGVORBIS_PCM_S8</constant>、
+        <constant>OGGVORBIS_PCM_U16_BE</constant>、<constant>OGGVORBIS_PCM_S16_BE</constant>、
+        <constant>OGGVORBIS_PCM_U16_LE</constant>、および <constant>OGGVORBIS_PCM_S16_LE</constant>
+        （8 ビットか 16 ビットか、符号付きか符号なしか、ビッグエンディアンかリトルエンディアンか）。
        </entry>
        <entry>OGGVORBIS_PCM_S16_LE</entry>
        <entry>Read</entry>
@@ -1109,7 +1176,7 @@ $stream = fopen("ssh2.tunnel://$session/remote.example.com:1234", 'r');
       <row>
        <entry><literal>rate</literal></entry>
        <entry>
-        Sampling rate of input data, expressed in Hz
+        入力データのサンプリングレート。Hz 単位。
        </entry>
        <entry>44100</entry>
        <entry>Write/Append</entry>
@@ -1117,8 +1184,8 @@ $stream = fopen("ssh2.tunnel://$session/remote.example.com:1234", 'r');
       <row>
        <entry><literal>bitrate</literal></entry>
        <entry>
-        When given as an integer, the fixed bitrate at which to encode. (16000 to 131072)
-        When given as a float, the variable bitrate quality to use. (-1.0 to 1.0)
+        整数値の場合、エンコードの際の固定ビットレート（16000 から 131072）。
+        浮動小数点値の場合、使用する可変ビットレート（-1.0 から 1.0）。
        </entry>
        <entry>128000</entry>
        <entry>Write/Append</entry>
@@ -1126,8 +1193,8 @@ $stream = fopen("ssh2.tunnel://$session/remote.example.com:1234", 'r');
       <row>
        <entry><literal>channels</literal></entry>
        <entry>
-        The number of audio channels to encode, typically 1 (Mono), or 2 (Stero).
-        May range as high as 16.
+        エンコードする音声チャネル数。一般には 1（モノラル）あるいは 2（ステレオ）。
+        最大 16 まで。
        </entry>
        <entry>2</entry>
        <entry>Write/Append</entry>
@@ -1135,7 +1202,7 @@ $stream = fopen("ssh2.tunnel://$session/remote.example.com:1234", 'r');
       <row>
        <entry><literal>comments</literal></entry>
        <entry>
-        An array of string values to encode into the track header.
+        エンコード時にトラックヘッダに入れる文字列の配列。
        </entry>
        <entry/>
        <entry>Write/Append</entry>
