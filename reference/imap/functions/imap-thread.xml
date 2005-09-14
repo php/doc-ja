@@ -1,22 +1,69 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.4 $ -->
 <!-- splitted from ./ja/functions/imap.xml, last change in rev 1.5 -->
-<!-- EN-Revision: 1.58 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 1.5 Maintainer: hirokawa Status: ready -->
   <refentry id='function.imap-thread'>
    <refnamediv>
     <refname>imap_thread</refname>
     <refpurpose>
-     REFERENCESツリーによりスレッド化して返す
+     スレッド化したメッセージのツリーを返す
     </refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
      <methodsynopsis>
-      <type>int</type><methodname>imap_thread</methodname>
-      <methodparam><type>int</type><parameter>stream_id</parameter></methodparam>
-      <methodparam choice="opt"><type>int</type><parameter>flags</parameter></methodparam>
+      <type>array</type><methodname>imap_thread</methodname>
+      <methodparam><type>resource</type><parameter>stream_id</parameter></methodparam>
+      <methodparam choice="opt"><type>int</type><parameter>options</parameter></methodparam>
      </methodsynopsis>
     <para>
-     &warn.undocumented.func;
+     <function>imap_thread</function> は、<literal>REFERENCES</literal>
+     でスレッド化したメッセージのツリーを含む連想配列を返します。
+     エラー時には &false; を返します。
+    </para>
+    <para>
+     現在のメールボックス内のすべてのメッセージが、結果の配列の 3 つの
+     エントリで表されます。
+     <itemizedlist>
+      <listitem><para>
+       <varname>$thread["XX.num"]</varname> - 現在のメッセージ番号。
+      </para></listitem>
+      <listitem><para>
+       <varname>$thread["XX.next"]</varname>
+      </para></listitem>
+      <listitem><para>
+       <varname>$thread["XX.branch"]</varname> 
+      </para></listitem>
+     </itemizedlist>
+    </para>
+    <para>
+     <example>
+      <title><function>imap_thread</function> の例</title>
+      <programlisting role="php">
+<![CDATA[
+<?php
+
+// ここでは、ニュースグループのスレッドを HTML で出力します。
+
+$nntp = imap_open('{news.example.com:119/nntp}some.newsgroup', '', '');
+$threads = imap_thread($nntp);
+
+foreach ($thread as $key => $val) {
+  $tree = explode('.', $key);
+  if ($tree[1] == 'num') {
+    $header = imap_headerinfo($nntp, $val);
+    echo "<ul>\n\t<li>" . $header->fromaddress . "\n";
+  } elseif ($tree[1] == 'branch') {
+    echo "\t</li>\n</ul>\n";
+  }
+}
+
+imap_close($nntp);
+
+?>
+]]>
+      </programlisting>
+     </example>
     </para>
    </refsect1>
   </refentry>

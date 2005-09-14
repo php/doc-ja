@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.4 $ -->
 <!-- splitted from ./ja/functions/imap.xml, last change in rev 1.18 -->
-<!-- EN-Revision: 1.33 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 1.9 Maintainer: hirokawa Status: ready -->
   <refentry id="function.imap-fetch-overview">
    <refnamediv>
     <refname>imap_fetch_overview</refname>
@@ -12,13 +13,16 @@
     <title>説明</title>
      <methodsynopsis>
       <type>array</type><methodname>imap_fetch_overview</methodname>
-      <methodparam><type>int</type><parameter>imap_stream</parameter></methodparam>
+      <methodparam><type>resource</type><parameter>imap_stream</parameter></methodparam>
       <methodparam><type>string</type><parameter>sequence</parameter></methodparam>
+      <methodparam choice="opt"><type>int</type><parameter>options</parameter></methodparam>
      </methodsynopsis>
     <para>
-     この関数はメールヘッダを取得し、その内容の概要を返します。
-     オブジェクトの配列を返します。
-     各ヘッダを次のように記述するオブジェクトの配列を返します。
+     この関数は、指定された <parameter>sequence</parameter> のメールヘッダを
+     取得してその内容の概要を返します。<parameter>sequence</parameter> には
+     メッセージのインデックスか、もし <parameter>flags</parameter> に
+     FT_UID が含まれている場合は UID が含まれます。返り値はオブジェクトの
+     配列で、それぞれがひとつのメッセージのヘッダを表します。
      <itemizedlist>
       <listitem>
        <simpara>
@@ -32,62 +36,72 @@
       </listitem>
       <listitem>
        <simpara>
+        to - 受信者
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
         date - 送信日
        </simpara>
       </listitem>
       <listitem>
        <simpara>
-        message_id - メッセージID 
+        message_id - Message-ID 
        </simpara>
       </listitem>
       <listitem>
        <simpara>
-        references - このメッセージIDへのリファレンス
+        references - このメッセージ ID への参照です
        </simpara>
       </listitem>
       <listitem>
        <simpara>
-        size - サイズ(バイト数)
+        in_reply_to - このメッセージ ID への返信です
        </simpara>
       </listitem>
       <listitem>
        <simpara>
-        uid - メールボックスにおけるこのメッセージのUID
+        size - サイズ（バイト数）
        </simpara>
       </listitem>
       <listitem>
        <simpara>
-        msgno - メールボックスにおけるこのメッセージのメッセージ番号
+        uid - メールボックスにおけるこのメッセージの UID
        </simpara>
       </listitem>
       <listitem>
        <simpara>
-        recent - このメッセージのrecentフラグの有無
+        msgno - メールボックスにおけるこのメッセージのシーケンス番号
        </simpara>
       </listitem>
       <listitem>
        <simpara>
-        flagged -  このメッセージのフラグの有無
+        recent - このメッセージには recent フラグが立てられています
        </simpara>
       </listitem>
       <listitem>
        <simpara>
-        answered -  このメッセージの返信済フラグの有無
+        flagged -  フラグが立てられています
        </simpara>
       </listitem>
       <listitem>
        <simpara>
-        deleted -  このメッセージの削除フラグの有無
+        answered -  返信済みフラグが立てられています
        </simpara>
       </listitem>
       <listitem>
        <simpara>
-        seen -  このメッセージの既読フラグの有無
+        deleted -  削除フラグが立てられています
        </simpara>
       </listitem>
       <listitem>
        <simpara>
-        draft -  このメッセージのドラフトフラグの有無
+        seen -  既読フラグが立てられています
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+        draft -  草稿フラグが立てられています
        </simpara>
       </listitem>
      </itemizedlist>
@@ -97,22 +111,20 @@
       <title><function>imap_fetch_overview</function> の例</title>
       <programlisting role="php">
 <![CDATA[
-$mbox = imap_open("{your.imap.host:143}","username","password")
-     or die("can't connect: ".imap_last_error());
+<?php
+$mbox = imap_open("{your.imap.host:143}", "username", "password")
+     or die("can't connect: " . imap_last_error());
  
-$overview = imap_fetch_overview($mbox,"2,4:6",0);
+$overview = imap_fetch_overview($mbox, "2,4:6", 0);
  
-if(is_array($overview)) {
-        reset($overview);
-        while( list($key,$val) = each($overview)) {
-                print     $val->msgno
-                . " - " . $val->date
-                . " - " . $val->subject
-                . "\n";
-        }
+if (is_array($overview)) {
+    foreach ($overview as $val) {
+        echo "$val->msgno - $val->date - $val->subject\n";
+    }
 }
  
 imap_close($mbox);
+?>
 ]]>
       </programlisting>
      </example>

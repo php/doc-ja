@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.5 $ -->
 <!-- splitted from ./ja/functions/imap.xml, last change in rev 1.1 -->
-<!-- EN-Revision: 1.2 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 1.13 Maintainer: hirokawa Status: ready -->
   <refentry id="function.imap-get-quota">
    <refnamediv>
     <refname>imap_get_quota</refname>
@@ -12,49 +13,98 @@
     <title>説明</title>
      <methodsynopsis>
       <type>array</type><methodname>imap_get_quota</methodname>
-      <methodparam><type>int</type><parameter>imap_stream</parameter></methodparam>
+      <methodparam><type>resource</type><parameter>imap_stream</parameter></methodparam>
       <methodparam><type>string</type><parameter>quota_root</parameter></methodparam>
      </methodsynopsis>
     <para>
-     指定したメールボックスのlimitとusageをキーとした整数値を配列とし
-     て返します。limitの値は、このメールボックスで最大使用可能な大きさ
-     を表します。usageの値は、このメールボックスの現在の使用状況を示し
-     ます。失敗した場合に &false; を返します。
+     指定したメールボックスの limit と usage をキーとした整数値を配列として
+     返します。limit の値は、このメールボックスで最大使用可能な大きさを
+     表します。usage の値は、このメールボックスの現在の使用状況を示します。
+     失敗した場合に &false; を返します。
     </para>
     <para>
-     この関数は、現在、c-client2000 を使用しているユーザのみ使用可能で
-     す。
+     この関数は、現在、c-client2000 を使用しているユーザのみ使用可能です。
     </para>
     <para>
-     <parameter>imap_stream</parameter> は、
-     <function>imap_status</function>から返された値とする必要がありま
-     す。クオータ関数を使用するには、このストリームをメール管理者とし
-     てオープンする必要があります。<parameter>quota_root</parameter>
-     は、通常、user.name という形式にする必要があります。ただし、name
-     は情報を取得したいメールボックスの名前です。
+     注意: この関数を使用するには、メールストリームをメール管理者として
+     オープンする必要があります。この関数の非管理者向けバージョンは、
+     PHP の <function>imap_get_quotaroot</function> 関数を参照ください。
+    </para>
+    <para>
+     <parameter>imap_stream</parameter> は <function>imap_open</function>
+     のコールにより返された値とする必要があります。注意: get_quota 関数を
+     使用するには、このストリームをメール管理者ユーザとしてオープンする
+     必要があります。<parameter>quota_root</parameter> は、通常
+     user.name という形式にする必要があります。name は、情報を取得したい
+     メールボックスの名前です。
+     about.
     </para>
     <para>
      <example>
-      <title><function>imap_get_quota</function>の例</title>
+      <title><function>imap_get_quota</function> の例</title>
       <programlisting role="php">
 <![CDATA[
-$mbox = imap_open("{your.imap.host}","mailadmin","password",OP_HALFOPEN)
-      || die("接続できません: ".imap_last_error());
+<?php
+$mbox = imap_open("{your.imap.host}", "mailadmin", "password", OP_HALFOPEN)
+      or die("接続できません: " . imap_last_error());
  
 $quota_value = imap_get_quota($mbox, "user.kalowsky");
-if(is_array($quota_value)) {
-    print "Usage level is: " . $quota_value['usage'];
-    print "Limit level is: " . $quota_value['limit'];
+if (is_array($quota_value)) {
+    echo "Usage level is: " . $quota_value['usage'];
+    echo "Limit level is: " . $quota_value['limit'];
 } 
  
-imap_close($mbox);
+imap_close($mbox); 
+?>
 ]]>
       </programlisting>
      </example>
     </para>
     <para>
-     <function>imap_open</function>,
-     <function>imap_set_quota</function> も参照ください。
+     PHP 4.3 では、この関数は RFC 2087 で述べられている機能をより適切に
+     反映するようになっています。返り値の配列からはサポートするリソース
+     （例:メッセージ、あるいはサブフォルダ）数の制限をなくし、名前つき
+     リソースを独立した配列のキーとして受信するようにしました。
+     各キーの値は配列となっており、その中に usage と values の値が格納
+     されています。下の例で、この新しい返り値の形式を示します。
+    </para>
+    <para>
+     過去との互換性を保つため、旧来のアクセス方法も使用可能です。しかし
+     新しい方法に変更することを推奨します。
+    </para>
+    <para>
+     <example>
+      <title>4.3 以降のバージョンでの <function>imap_get_quota</function>
+      の例</title>
+      <programlisting role="php"> 
+<![CDATA[
+<?php
+$mbox = imap_open("{your.imap.host}", "mailadmin", "password", OP_HALFOPEN)
+      or die("接続できません: " . imap_last_error());
+       
+$quota_values = imap_get_quota($mbox, "user.kalowsky");
+if (is_array($quota_values)) {
+   $storage = $quota_values['STORAGE'];
+   echo "STORAGE usage level is: " .  $storage['usage'];
+   echo "STORAGE limit level is: " .  $storage['limit'];
+
+   $message = $quota_values['MESSAGE']; 
+   echo "MESSAGE usage level is: " .  $message['usage'];
+   echo "MESSAGE limit is: " .  $message['limit'];
+
+   /* ...  */ 
+} 
+
+imap_close($mbox); 
+?>
+]]>
+      </programlisting>
+     </example>
+    </para>
+    <para>
+     <function>imap_open</function>、
+     <function>imap_set_quota</function> および
+     <function>imap_get_quotaroot</function> も参照ください。
     </para>
    </refsect1>
   </refentry>

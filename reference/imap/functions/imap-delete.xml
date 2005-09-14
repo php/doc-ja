@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.4 $ -->
 <!-- splitted from ./ja/functions/imap.xml, last change in rev 1.1 -->
-<!-- EN-Revision: 1.2 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 1.8 Maintainer: hirokawa Status: ready -->
   <refentry id="function.imap-delete">
    <refnamediv>
     <refname>imap_delete</refname>
@@ -11,48 +12,67 @@
    <refsect1>
     <title>説明</title>
      <methodsynopsis>
-      <type>int</type><methodname>imap_delete</methodname>
+      <type>bool</type><methodname>imap_delete</methodname>
       <methodparam><type>int</type><parameter>imap_stream</parameter></methodparam>
       <methodparam><type>int</type><parameter>msg_number</parameter></methodparam>
-      <methodparam><type>int</type><parameter>
-	<replaceable><optional>flags</optional></replaceable>
-       </parameter></methodparam>
+      <methodparam choice="opt"><type>int</type><parameter>options</parameter></methodparam>
      </methodsynopsis>
     <para>
-     &true;を返します。
-    </para>
-    <para>
+     Returns &true;.
+    </para> 
+    <para> 
      <function>imap_delete</function> 関数は、
-     <parameter>msg_number</parameter>が指す削除する予定のメッセージを
-     マークします。オブションのパラメータ<parameter>flags</parameter>
-     で指定可能なオプションは<parameter>FT_UID</parameter>のみです。
-     このオプションは、引数<parameter>msg_number</parameter>を
-     <parameter>UID</parameter>として処理することを関数に指定します。
+     <parameter>msg_number</parameter> が指すメッセージに削除予定の
+     マークをします。オブションのパラメータ <parameter>flags</parameter>
+     で指定可能なオプションは <parameter>FT_UID</parameter> のみです。
+     このオプションは、引数 <parameter>msg_number</parameter> を
+     <parameter>UID</parameter> として処理することを関数に指示します。
      削除マークを付けられたメッセージは、
-     <function>imap_expunge</function>がコールされるか
-     <function>imap_close</function>にCL_EXPUNGEを付けてコールされるか
+     <function>imap_expunge</function> がコールされるか
+     <function>imap_close</function> に CL_EXPUNGE を付けてコールされるか
      のどちらかが行われるまでメールボックスに残ったままになります。
     </para>
+    <note>
+     <para>
+      POP3 メールボックスは、コネクション間で保存可能なメッセージフラグを
+      持っていません。そのため、削除マークをつけたメッセージを本当に削除する
+      ためには、同一の接続内で <function>imap_expunge</function> をコールする
+      必要があります。
+     </para>
+    </note>
     <para>     
      <example>
-      <title><function>imap_delete</function>の例</title>
+      <title><function>imap_delete</function> の例</title>
       <programlisting role="php">
 <![CDATA[
-$mbox = imap_open ("{your.imap.host}INBOX", "username", "password")
-    or die ("can't connect: " . imap_last_error());
+<?php
 
-$check = imap_mailboxmsginfo ($mbox);
-print "Messages before delete: " . $check->Nmsgs . "<br>\n" ;
-imap_delete ($mbox, 1);
-$check = imap_mailboxmsginfo ($mbox);
-print "Messages after  delete: " . $check->Nmsgs . "<br>\n" ;
-imap_expunge ($mbox);
-$check = imap_mailboxmsginfo ($mbox);
-print "Messages after expunge: " . $check->Nmsgs . "<br>\n" ;
-imap_close ($mbox);
+$mbox = imap_open("{your.imap.host}INBOX", "username", "password")
+    or die("Can't connect: " . imap_last_error());
+
+$check = imap_mailboxmsginfo($mbox);
+echo "Messages before delete: " . $check->Nmsgs . "<br />\n";
+
+imap_delete($mbox, 1);
+
+$check = imap_mailboxmsginfo($mbox);
+echo "Messages after  delete: " . $check->Nmsgs . "<br />\n";
+
+imap_expunge($mbox);
+
+$check = imap_mailboxmsginfo($mbox);
+echo "Messages after expunge: " . $check->Nmsgs . "<br />\n";
+
+imap_close($mbox);
+?>
 ]]>
       </programlisting>
      </example>
+    </para>
+    <para>
+     <function>imap_undelete</function>、
+     <function>imap_expunge</function> および
+     <function>imap_close</function> も参照ください。
     </para>
    </refsect1>
   </refentry>

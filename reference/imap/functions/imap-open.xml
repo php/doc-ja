@@ -1,145 +1,276 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.4 $ -->
 <!-- splitted from ./ja/functions/imap.xml, last change in rev 1.1 -->
-<!-- EN-Revision: 1.2 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 1.9 Maintainer: hirokawa Status: ready -->
   <refentry id="function.imap-open">
    <refnamediv>
     <refname>imap_open</refname>
     <refpurpose>
-     メールボックスへのIMAPストリームをオープンする
+     メールボックスへの IMAP ストリームをオープンする
     </refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
      <methodsynopsis>
-      <type>int</type><methodname>imap_open</methodname>
+      <type>resource</type><methodname>imap_open</methodname>
       <methodparam><type>string</type><parameter>mailbox</parameter></methodparam>
       <methodparam><type>string</type><parameter>username</parameter></methodparam>
       <methodparam><type>string</type><parameter>password</parameter></methodparam>
-      <methodparam><type>int</type><parameter>
-	<replaceable><optional>flags</optional></replaceable>
-       </parameter></methodparam>
+      <methodparam choice="opt"><type>int</type><parameter>options</parameter></methodparam>
      </methodsynopsis>
     <para>
-     成功するとIMAPストリームを返し、失敗すると&false;を返します。この関
-     数は、POP3やNNTPサーバーへのストリームをオープンする際にも使用可
-     能です。しかし、いくつかの関数および機能はIMAPサーバーでは利用で
-     きません。
+     成功した場合は IMAP ストリームを、失敗した場合は &false; を返します。
+     この関数は、POP3 や NNTP サーバへのストリームをオープンする際にも
+     使用可能です。しかし、いくつかの関数および機能は IMAP サーバでしか
+     利用できません。
     </para>
     <para>
-     メールボックス名(mailbox)は、サーバー名の部分と使用するサーバーに
-     おけるメールボックスへのパスから構成されます。特別な名前INBOXは、
-     カレントのユーザの個人メールボックスを意味します。サーバー部は'{'
-     および'}'で括られ、サーバー名またはIPアドレス、オプションの':'か
-     ら始まるポート指定子、('/'で始まる)オプションのプロトコル指定子か
-     ら構成されます。サーバー部は、全てのmailboxパラメータで必須です。
-     ASCII空間で出力可能な文字以外の外国文字を含むメールボックス名は
-     <function>imap_utf7_encode</function>でエンコードする必要がありま
-     す。
+     メールボックス名(mailbox)は、サーバ名の部分と使用するサーバにおける
+     メールボックスへのパスから構成されます。特別な名前 INBOX は、
+     カレントユーザの個人メールボックスを意味します。サーバ部は '{'
+     および '}' で括られ、サーバ名または IP アドレス、オプションの ':'
+     から始まるポート指定子、('/' で始まる)オプションのプロトコル指定子
+     から構成されます。サーバ部は、全ての mailbox パラメータで必須です。
+     ASCII 空間で出力可能な文字以外の外国文字を含むメールボックス名は
+     <function>imap_utf7_encode</function> でエンコードする必要があります。
     </para>
     <para>
-     オプションは、ビットマスクであり、以下の組み合わせとなります。
+     <literal>{</literal> で始まる名前はすべてリモート名で、
+     <literal>"{" remote_system_name [":" port] [flags] "}"
+     [mailbox_name]</literal> のような形式となります。
      <itemizedlist>
       <listitem>
        <simpara>
-	OP_READONLY - メールボックスを読みこみのみ可でオープン
+        <literal>remote_system_name</literal> - Internet ドメイン名
+        あるいは括弧でかこまれたサーバの IP アドレス。
        </simpara>
       </listitem>
       <listitem>
        <simpara>
-	OP_ANONYMOUS - news に関して.newsrcの使用・更新をしない(NNTPのみ)
+        <literal>port</literal> - オプションの TCP ポート番号。デフォルトは
+        そのサービスのデフォルトポート。
        </simpara>
       </listitem>
       <listitem>
        <simpara>
-	OP_HALFOPEN - IMAPおよびNNTP名について、接続をオープンするがメールボックスをオープンしない
+        <literal>flags</literal> - オプションのフラグ。以下の表を参照ください。
        </simpara>
       </listitem>
       <listitem>
        <simpara>
-	CL_EXPUNGE - メールボックスを閉じた際に、自動的にメールボックスを削除する
+        <literal>mailbox_name</literal> - リモートメールボックス名。デフォルトは INBOX 。
        </simpara>
       </listitem>
      </itemizedlist>
     </para>
     <para>
-     ローカルマシンのポート143で実行しているIMAPサーバーに接続
-     する際には、以下のようにします。
-     <informalexample>
-      <programlisting role="php">
-<![CDATA[
-$mbox = imap_open ("{localhost:143}INBOX", "user_id", "password");
-]]>
-      </programlisting>
-     </informalexample>
-      ローカルマシンのポート110で実行しているPOP3サーバーに接続する際には、
-     以下のようにします。
-     <informalexample>
-      <programlisting>
-<![CDATA[
-$mbox = imap_open ("{localhost:110/pop3}INBOX", "user_id", "password");
-]]>
-      </programlisting>
-     </informalexample>
-     SSL IMAPまたはPOP3サーバに接続するには、/sslをプロトコル指定子の
-     後に追加します。
-     <informalexample>
-      <programlisting role="php">
-<![CDATA[
-$mbox = imap_open ("{localhost:993/imap/ssl}INBOX", "user_id", "password");
-]]>
-      </programlisting>
-     </informalexample>
-     自分でサインした証明書でSSL IMAPまたはPOP3サーバに接続するには、
-     プロトコル指定の後に /ssl/novalidate-cert を追加します。
-     <informalexample>
-      <programlisting role="php">
-<![CDATA[
-$mbox = imap_open ("{localhost:995/pop3/ssl/novalidate-cert}", "user_id", "password");
-]]>
-      </programlisting>
-     </informalexample>
-     ローカルマシンのポート119で実行しているNNTPサーバーに接続する際には、
-     以下のようにします。
-     <informalexample>
-      <programlisting>
-<![CDATA[
-$nntp = imap_open ("{localhost:119/nntp}comp.test", "", "");
-]]>
-      </programlisting>
-     </informalexample>
-     リモートサーバーに接続するには、"localhost" を接続したいサーバーの
-     名前または IP アドレスに代えてください。
+     <table>
+      <title>オプションのフラグ名</title>
+      <tgroup cols="2">
+       <thead>
+        <row>
+         <entry>フラグ</entry>
+         <entry>説明</entry>
+        </row>
+       </thead>
+       <tbody>
+        <row>
+         <entry><literal>/service=</literal><emphasis>service</emphasis></entry>
+         <entry>メールボックスにアクセスするサービス。デフォルトは "imap" 。</entry>
+        </row>
+        <row>
+         <entry><literal>/user=</literal><emphasis>user</emphasis></entry>
+         <entry>サーバへのログイン時のユーザ名。</entry>
+        </row>
+        <row>
+         <entry><literal>/authuser=</literal><emphasis>user</emphasis></entry>
+         <entry>リモートの認証ユーザ。指定されていた場合は、このユーザのパスワードが
+          認証に使用されます（例: administrator）。</entry>
+        </row>
+        <row>
+         <entry><literal>/anonymous</literal></entry>
+         <entry>匿名ユーザとしてアクセスします。</entry>
+        </row>
+        <row>
+         <entry><literal>/debug</literal></entry>
+         <entry>プロトコルの通信内容をアプリケーションのデバッグログに記録します。</entry>
+        </row>
+        <row>
+         <entry><literal>/secure</literal></entry>
+         <entry>ネットワーク越しにプレーンテキストのパスワードを送信しません。</entry>
+        </row>
+        <row>
+         <entry><literal>/imap</literal>、<literal>/imap2</literal>、
+          <literal>/imap2bis</literal>、<literal>/imap4</literal>、
+          <literal>/imap4rev1</literal></entry>
+         <entry>/service=imap と同じです。</entry>
+        </row>
+        <row>
+         <entry><literal>/pop3</literal></entry>
+         <entry>/service=pop3 と同じです。</entry>
+        </row>
+        <row>
+         <entry><literal>/nntp</literal></entry>
+         <entry>/service=nntp と同じです。</entry>
+        </row>
+        <row>
+         <entry><literal>/norsh</literal></entry>
+         <entry>事前に認証済みの IMAP セッションを確立する際に、rsh や ssh
+          を使用しません。</entry>
+        </row>
+        <row>
+         <entry><literal>/ssl</literal></entry>
+         <entry>セッションの暗号化に SSL（Secure Socket Layer）を使用します。</entry>
+        </row>
+        <row>
+         <entry><literal>/validate-cert</literal></entry>
+         <entry>TLS/SSL サーバの証明書を検証します（デフォルトの挙動です）。</entry>
+        </row>
+        <row>
+         <entry><literal>/novalidate-cert</literal></entry>
+         <entry>TLS/SSL サーバの証明書を検証しません。サーバが自己証明の
+          証明書を使用している際に必要となります。</entry>
+        </row>
+        <row>
+         <entry><literal>/tls</literal></entry>
+         <entry>セッションの暗号化に start-TLS の使用を強制し、それを
+          サポートしていないサーバとの接続を拒否します。</entry>
+        </row>
+        <row>
+         <entry><literal>/notls</literal></entry>
+         <entry>たとえサーバがそれをサポートしていたとしても、
+          セッションで start-TLS による暗号化を使用しません。</entry>
+        </row>
+        <row>
+         <entry><literal>/readonly</literal></entry>
+         <entry>読み込み専用でのメールボックスのオープンを要求します（IMAP のみ。
+          NNTP では無視され、SMTP および POP3 ではエラーとなります）。</entry>
+        </row>
+       </tbody>
+      </tgroup>
+     </table>
+    </para>
+    <para>
+     <parameter>options</parameter> はビットマスクであり、以下の組み合わせとなります。
+     <itemizedlist>
+      <listitem>
+       <simpara>
+        <constant>OP_READONLY</constant> - メールボックスを読み込み専用でオープンします。
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+        <constant>OP_ANONYMOUS</constant> - news に関して
+        <filename>.newsrc</filename> を使用せず、更新もしません（NNTP のみ）。
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+        <constant>OP_HALFOPEN</constant> - IMAP 及び NNTP 名について、
+        接続をオープンしますがメールボックスはオープンしません。
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+        <constant>CL_EXPUNGE</constant> - メールボックスを閉じる際に、
+        自動的にメールボックスを削除します（<function>imap_delete</function>
+        および <function>imap_expunge</function> も参照ください）。
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+        <constant>OP_DEBUG</constant> - プロトコルネゴシエーションをデバッグします。
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+        <constant>OP_SHORTCACHE</constant> - 短い（elt-only）キャッシングを行います。
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+        <constant>OP_SILENT</constant> - イベントを受信しません（内部で使用します）。
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+        <constant>OP_PROTOTYPE</constant> - ドライバのプロトタイプを返します。
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+        <constant>OP_EXPUNGE</constant> - リサイクルストリームを削除します。
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+        <constant>OP_SECURE</constant> - セキュアでない認証を行いません。
+       </simpara>
+      </listitem>
+     </itemizedlist>
     </para>
     <para>
      <example>
-      <title><function>imap_open</function>の例</title>
-      <programlisting>
+      <title><function>imap_open</function> のさまざまな使用例</title>
+      <programlisting role="php">
 <![CDATA[
-$mbox = imap_open ("{your.imap.host:143}", "username", "password");
+<?php
+// ローカルマシンのポート 143 で稼動している IMAP サーバに接続するには
+// 以下のようにします。
+$mbox = imap_open("{localhost:143}INBOX", "user_id", "password");
 
-echo "<p><h1>Mailboxes</h1>\n";
-$folders = imap_listmailbox ($mbox, "{your.imap.host:143}", "*");
+// ローカルマシンのポート 110 で稼動している POP3 サーバに接続するには、
+$mbox = imap_open ("{localhost:110/pop3}INBOX", "user_id", "password");
+
+// SSL IMAP あるいは POP3 サーバに接続するには、プロトコル指定のあとに
+// /ssl を追加します。
+$mbox = imap_open ("{localhost:993/imap/ssl}INBOX", "user_id", "password");
+
+// 自分でサインした証明書で SSL IMAP あるいは POP3 サーバに接続するには、
+// プロトコル指定のあとに /ssl/novalidate-cert を追加します。
+$mbox = imap_open ("{localhost:995/pop3/ssl/novalidate-cert}", "user_id", "password");
+
+// ローカルマシンのポート 119 で稼動している NNTP サーバに接続するには、
+$nntp = imap_open ("{localhost:119/nntp}comp.test", "", "");
+// リモートサーバに接続する際は、"localhost" を接続したいサーバの
+// 名前または IP アドレスに置き換えます。
+?>
+]]>
+      </programlisting>
+     </example>
+     </para>
+    <para>
+     <example>
+      <title><function>imap_open</function> の例</title>
+      <programlisting role="php">
+<![CDATA[
+<?php
+$mbox = imap_open("{your.imap.host:143}", "username", "password");
+
+echo "<h1>Mailboxes</h1>\n";
+$folders = imap_listmailbox($mbox, "{your.imap.host:143}", "*");
 
 if ($folders == false) {
-    echo "Call failed<br>\n";
+    echo "コールが失敗しました<br />\n";
 } else {
-    while (list ($key, $val) = each ($folders)) {
-        echo $val."<br>\n";
+    foreach ($folders as $val) {
+        echo $val . "<br />\n";
     }
 }
 
-echo "<p><h1>Headers in INBOX</h1>\n";
-$headers = imap_headers ($mbox);
+echo "<h1>INBOX のヘッダ</h1>\n";
+$headers = imap_headers($mbox);
 
 if ($headers == false) {
-    echo "Call failed<br>\n";
+    echo "コールが失敗しました<br />\n";
 } else {
-    while (list ($key,$val) = each ($headers)) {
-        echo $val."<br>\n";
+    foreach ($headers as $val) {
+        echo $val . "<br />\n";
     }
 }
 
 imap_close($mbox);
+?>
 ]]>
       </programlisting>
      </example>
