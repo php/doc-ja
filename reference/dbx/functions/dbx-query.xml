@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.5 $ -->
 <!-- splitted from ./ja/functions/dbx.xml, last change in rev 1.1 -->
-<!-- EN-Revision: 1.3 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 1.18 Maintainer: hirokawa Status: ready -->
   <refentry id="function.dbx-query">
    <refnamediv>
     <refname>dbx_query</refname>
@@ -9,141 +10,315 @@
    <refsect1>
     <title>説明</title>
      <methodsynopsis>
-      <type>dbx_result_object</type><methodname>dbx_query</methodname>
-      <methodparam><type>dbx_link_object</type><parameter>link_identifier</parameter></methodparam>
+      <type>mixed</type><methodname>dbx_query</methodname>
+      <methodparam><type>object</type><parameter>link_identifier</parameter></methodparam>
       <methodparam><type>string</type><parameter>sql_statement</parameter></methodparam>
-      <methodparam choice="opt"><type>long</type><parameter>flags</parameter></methodparam>
+      <methodparam choice="opt"><type>int</type><parameter>flags</parameter></methodparam>
      </methodsynopsis>
-   &warn.experimental;
-    <para>
-     成功時にdbx_result_objectまたは1を返します。結果オブジェクトは、
-     SQL命令が結果を返す場合にのみ返されます。エラーの場合には、0を返
-     します。パラメータ <parameter>flags</parameter> は、返される情報
-     の量を制御するために使用されます。定数 DBX_RESULT_INFO,
-     DBX_RESULT_INDEX, DBX_RESULT_ASSOC またはこれらの論理和を組み合わ
-     せることが可能です。DBX_RESULT_INFO を指定するとフィールド名およ
-     びフィールド型のようなカラムに関する情報が提供されます。
-     DBX_RESULT_INDEX により、結果は(data[2][3]のような、ただし、2はレ
-     コード番号、3はカラム番号)2次元の配列で返されます。ただし、最初の
-     レコードおよびカラム番号は0から始まります。
-     DBX_RESULT_ASSOC により、フィールド名にカラム添字が関連付けられま
-     す。パラメータ<parameter>flags</parameter> によらず
-     DBX_RESULT_INDEXは常に返されることに注意してください。
-     DBX_RESULT_ASSOC が指定された場合、DBX_RESULT_INFOは指定されない
-     場合でも返されます。これは、DBX_RESULT_INDEX,DBX_RESULT_INDEX |
-     DBX_RESULT_INFO および DBX_RESULT_INDEX | DBX_RESULT_INFO |
-     DBX_RESULT_ASSOC の組み合わせのみが結果的に使用可能であることを意
-     味します。 <parameter>flags</parameter> が指定されない場合、この
-     最後の組み合わせがデフォルトです。連想配列で参照される結果は、添
-     字番号の結果へのリファレンスです。このため、
-     <literal>data[0][0]</literal> を修正した場合、
-     <literal>data[0]['fieldnameforfirstcolumn']</literal> も同時に修
-     正されます。
-    </para>
-    <para>
-     dbx_result_object には、5つのメンバがあります。
-     (<parameter>flags</parameter>によっては4つの場合もあります)これら
-     は、'handle', 'cols', 'rows', 'info'(オプション), 'data'です。
-     handle は、指定したモジュールに関する有効な結果IDであり、次のよう
-     にモジュール専用関数で使用可能です。
-    </para>
-    <para>
-     <informalexample role="php">
-      <programlisting>
-<![CDATA[
-$result = dbx_query ($link, "SELECT id FROM tbl");
-mysql_field_len ($result->handle, 0);
-]]>
-      </programlisting>
-     </informalexample>
-    </para>
-    <para>
-     メンバ cols および rows は、それぞれカラム(またはフィールド)番号
-     および行(またはレコード)番号です。例えば、
-    </para>
-    <para>
-     <informalexample>
-      <programlisting role="php">
-<![CDATA[
-$result = dbx_query ($link, "SELECT id FROM tbl");
-echo "result size: " . $result->rows . " x " . $result->cols . "<br>\n";
-]]>
-      </programlisting>
-     </informalexample>
-    </para>
-    <para>
-     メンバinfoは、DBX_RESULT_INFOまたはDBX_RESULT_ASSOCが
-     <parameter>flags</parameter>パラメータで指定された場合のみ返され
-     ます。このメンバは2次元配列で、カラム情報を取得するために二つのレ
-     コード("name"と"type")を有しています。例えば、
-    </para>
-    <para>
-     <informalexample>
-      <programlisting role="php">
-<![CDATA[
-$result = dbx_query ($link, "SELECT id FROM tbl");
-echo "column name: " . $result->info["name"][0] . "<br>\n";
-echo "column type: " . $result->info["type"][0] . "<br>\n";
-]]>
-      </programlisting>
-     </informalexample>
-    </para>
-    <para>
-     メンバdataには、実際の結果が含まれます。そして、カラム名も同様に
-     関連しています。DBX_RESULT_ASSOCが設定された場合、
-     <literal>$result->data[2]["fieldname"]</literal>を使用することが
-     可能です。
-    </para>
+    <simpara>
+     <function>dbx_query</function> は、成功した場合に オブジェクトあるいは
+     <literal>1</literal>、失敗した場合に <literal>0</literal> を返します。
+     結果オブジェクトが返されるのは、<parameter>sql_statement</parameter>
+     で指定されたクエリが結果セットを生成する場合（例: SELECT クエリ。結果が
+     0 件の場合も含む）のみです。
+    </simpara>
     <example>
-     <title><function>dbx_query</function> の例</title>
+     <title>返り値を処理する方法</title>
      <programlisting role="php">
 <![CDATA[
 <?php
-$link = dbx_connect ("odbc", "", "db", "username", "password")
-    or die ("Could not connect");
-$result = dbx_query ($link, "SELECT id, parentid, description FROM tbl");
-if ($result==0) echo "Query failed\n<br>";
-elseif ($result==1) {
-    echo "Query executed successfully\n<br>";
+$link   = dbx_connect(DBX_ODBC, "", "db", "username", "password")
+    or die("接続できません");
+
+$result = dbx_query($link, 'SELECT id, parentid, description FROM table');
+
+if (is_object($result) ) {
+    // ... ここで何かを行います。詳細は以下の例で示します。 ...
+    // まず、フィールド名とデータ型を表示します。
+    // 次に、返されたフィールド値をもとに表を作成します。
 } else {
-    $rows=$result->rows;
-    $cols=$result->cols;
-    echo "<p>table dimension: {$result->rows} x {$result->cols}<br><table border=1>\n";
-    echo "<tr>";
-    for ($col=0; $col<$cols; ++$col) {
-        echo "<td>-{$result->info["name"][$col]}-<br>-{$result->info["type"][$col]}-</td>";
-    }
-    echo "</tr>\n";
-    for ($row=0; $row<$rows; ++$row){
-        echo "<tr>";
-        for ($col=0; $col<$cols; ++$col) {
-            echo "<td>-{$result->data[$row][$col]}-</td>";
-        }
-        echo "</tr>\n";
-    }
-    echo "</table><p>\n";
-    echo "table dimension: {$result->rows} x id, parentid, description<br><table border=1>\n";
-    for ($row=0; $row<$rows; ++$row) {
-        echo "<tr>";
-        echo "<td>-{$result->data[$row]["id"]}-</td>";
-        echo "<td>-{$result->data[$row]["parentid"]}-</td>";
-        echo "<td>-{$result->data[$row]["description"]}-</td>";
-        echo "</tr>\n";
-    }
-    echo "</table><p>\n";
+    exit("クエリが失敗");
 }
+
 dbx_close($link);
 ?>
 ]]>
      </programlisting>
     </example>
+    <para>
+     <parameter>flags</parameter> パラメータは、返される情報の量を制御する
+     ために使用されます。以下の定数の組み合わせを、論理 OR 演算子
+     (|) で連結したものとなります。DBX_COLNAMES_* フラグは &php.ini;
+     の dbx.colnames_case 設定を上書きします。
+     <variablelist>
+      <varlistentry>
+       <term>
+        <constant>DBX_RESULT_INDEX</constant>
+       </term>
+       <listitem>
+        <simpara>
+         これは<emphasis>常に</emphasis>設定され、結果に 2 次元配列 の
+         <property>data</property> プロパティを含めます。たとえば
+         <literal>data[2][3]</literal> では <literal>2</literal> が行番号
+         （レコード番号）を表し、<literal>3</literal> がカラム番号
+         （フィールド番号）を表します。最初の行やカラムの番号は 0 です。
+        </simpara>
+        <simpara>
+         <constant>DBX_RESULT_ASSOC</constant> が指定された場合、返される
+         オブジェクトには <constant>DBX_RESULT_INFO</constant> に関連する
+         情報が（指定していなくても）含まれます。
+        </simpara>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term>
+        <constant>DBX_RESULT_INFO</constant>
+       </term>
+       <listitem>
+        <simpara>
+         カラムに関する情報、つまりフィールド名とフィールドの型を含めます。
+        </simpara>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term>
+        <constant>DBX_RESULT_ASSOC</constant>
+       </term>
+       <listitem>
+        <simpara>
+         返されるオブジェクトの <property>data</property> プロパティの
+         キーとして、関連するカラム名の値がアクセスされます。
+        </simpara>
+        <simpara>
+         関連付けられた結果は数値添字となっているので、
+         <literal>data[0][0]</literal> を変更すると
+         <literal>data[0]['最初のカラムのフィールド名']</literal> も同様に
+         変更されます。
+        </simpara>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term>
+        <constant>DBX_RESULT_UNBUFFERED</constant> (PHP 5)
+       </term>
+       <listitem>
+        <simpara>
+         このフラグは <property>data</property> プロパティを作成せず、
+         <property>rows</property> プロパティの初期値を 0 に設定します。
+         結果セットが大きくなる場合にこのフラグを使用し、
+         <function>dbx_fetch_row</function> を使用して結果を 1 行ごとに
+         取得してください。
+        </simpara>
+        <simpara>
+         <function>dbx_fetch_row</function> 関数は、このクエリで設定した
+         フラグの内容を反映じた行を返します。また、この関数がコールされる
+         たびに <property>rows</property> が更新されます。
+        </simpara>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term>
+        <constant>DBX_COLNAMES_UNCHANGED</constant> (PHP 4.3.0 以降で有効)
+       </term>
+       <listitem>
+        <simpara>
+         返されるカラム名の大文字小文字を変更しません。
+        </simpara>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term>
+        <constant>DBX_COLNAMES_UPPERCASE</constant> (PHP 4.3.0 以降で有効)
+       </term>
+       <listitem>
+        <simpara>
+         返されるカラム名を大文字に変更します。
+        </simpara>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term>
+        <constant>DBX_COLNAMES_LOWERCASE</constant> (PHP 4.3.0 以降で有効)
+       </term>
+       <listitem>
+        <simpara>
+         返されるカラム名を小文字に変更します。
+        </simpara>
+       </listitem>
+      </varlistentry>
+     </variablelist>
+     <parameter>flags</parameter> パラメータの実際の値にかかわらず、常に
+     <constant>DBX_RESULT_INDEX</constant> が有効となることに注意しましょう。
+     つまり、結果的に使用可能なのは以下の組み合わせだけであるということです。
+     <itemizedlist>
+      <listitem>
+       <simpara>
+        <constant>DBX_RESULT_INDEX</constant>
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+        <constant>DBX_RESULT_INDEX</constant> |
+        <constant>DBX_RESULT_INFO</constant>
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
+        <constant>DBX_RESULT_INDEX</constant> |
+        <constant>DBX_RESULT_INFO</constant> |
+        <constant>DBX_RESULT_ASSOC</constant> -
+        <parameter>flags</parameter> を指定しなかった場合、これがデフォルトです。
+       </simpara>
+      </listitem>
+     </itemizedlist>
+    </para>
+    <para>
+     返される<varname>object</varname> は、<parameter>flags</parameter>
+     の設定により 4 つまたは 5 つのプロパティを保持します。
+     <variablelist>
+      <varlistentry>
+       <term>
+        <property>handle</property>
+       </term>
+       <listitem>
+        <para>
+         接続したデータベースの有効なハンドルで、モジュール専用関数で
+         （必要ならば）使用されます。
+         <informalexample>
+          <programlisting role="php">
+<![CDATA[
+<?php
+$result = dbx_query($link, "SELECT id FROM table");
+mysql_field_len($result->handle, 0);
+?>
+]]>
+          </programlisting>
+         </informalexample>
+        </para>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term>
+        <property>cols</property> および <property>rows</property>
+       </term>
+       <listitem>
+        <para>
+         これらは、それぞれカラム数（フィールド数）および行数（レコード数）
+         を表します。
+         <informalexample>
+          <programlisting role="php">
+<![CDATA[
+<?php
+$result = dbx_query($link, 'SELECT id FROM table');
+echo $result->rows; // レコード数
+echo $result->cols; // フィールド数
+?>
+]]>
+          </programlisting>
+         </informalexample>
+        </para>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term>
+        <property>info</property> (オプション)
+       </term>
+       <listitem>
+        <simpara>
+         <parameter>flags</parameter> パラメータに
+         <constant>DBX_RESULT_INFO</constant> あるいは
+         <constant>DBX_RESULT_ASSOC</constant> が指定されている場合のみ
+         返されます。2 次元の配列で、2 つのキー（<literal>name</literal>
+         および <literal>type</literal>）を持ち、カラムの情報を取得するために
+         使用します。
+        </simpara>
+        <example>
+         <title>各フィールドの名前と型を一覧表示する</title>
+         <programlisting role="php">
+<![CDATA[
+<?php
+$result = dbx_query($link, 'SELECT id FROM table',
+                     DBX_RESULT_INDEX | DBX_RESULT_INFO);
+
+for ($i = 0; $i < $result->cols; $i++ ) {
+    echo $result->info['name'][$i] . "\n";
+    echo $result->info['type'][$i] . "\n";  
+}
+?>
+]]>
+         </programlisting>
+        </example>
+       </listitem>
+      </varlistentry>
+      <varlistentry>
+       <term>
+        <property>data</property>
+       </term>
+       <listitem>
+        <simpara>
+         このプロパティには結果のデータが含まれます。<parameter>flags</parameter>
+         の設定によってはこのデータはカラム名と関連付けられているでしょう。
+         <constant>DBX_RESULT_ASSOC</constant> が設定されていた場合、
+         <literal>$result->data[2]["field_name"]</literal> のように使用可能です。
+        </simpara>
+        <example>
+         <title>data プロパティの内容を HTML テーブルで表示する</title>
+         <programlisting role="php">
+<![CDATA[
+<?php
+$result = dbx_query($link, 'SELECT id, parentid, description FROM table');
+
+echo "<table>\n";
+foreach ($result->data as $row) {
+    echo "<tr>\n";
+    foreach ($row as $field) {
+        echo "<td>$field</td>";
+    }
+    echo "</tr>\n";
+}
+echo "</table>\n";
+?>
+]]>
+         </programlisting>
+        </example>
+        <example>
+         <title>UNBUFFERED クエリを処理する</title>
+         <programlisting role="php">
+<![CDATA[
+<?php
+
+$result = dbx_query ($link, 'SELECT id, parentid, description FROM table', DBX_RESULT_UNBUFFERED);
+
+echo "<table>\n";
+while ($row = dbx_fetch_row($result)) {
+    echo "<tr>\n";
+    foreach ($row as $field) {
+        echo "<td>$field</td>";
+    }
+    echo "</tr>\n";
+}
+echo "</table>\n";
+
+?>
+]]>
+         </programlisting>
+        </example>
+      </listitem>
+      </varlistentry>
+     </variablelist>
+    </para>
     <note>
      <para>
       モジュール毎のドキュメントも参照ください。
      </para>
+     <para>
+      Oracle データベースでは、クエリ結果のカラム名は小文字で返されます。
+     </para>
     </note>
     <para>
-     <function>dbx_connect</function>も参照ください。
+     <function>dbx_escape_string</function>、
+     <function>dbx_fetch_row</function> および
+     <function>dbx_connect</function> も参照ください。
     </para>
    </refsect1>
   </refentry>

@@ -1,48 +1,61 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.5 $ -->
 <!-- splitted from ./ja/functions/dbx.xml, last change in rev 1.1 -->
-<!-- EN-Revision: 1.3 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 1.5 Maintainer: hirokawa Status: ready -->
   <refentry id="function.dbx-sort">
    <refnamediv>
     <refname>dbx_sort</refname>
     <refpurpose>
-     カスタマイズされたsort関数により、dbx_queryから結果をソートする
+     カスタマイズされたソート関数により、dbx_query から結果をソートする
     </refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
      <methodsynopsis>
-      <type>boolean</type><methodname>dbx_sort</methodname>
-      <methodparam><type>dbx_result_object</type><parameter>result</parameter></methodparam>
+      <type>bool</type><methodname>dbx_sort</methodname>
+      <methodparam><type>object</type><parameter>result</parameter></methodparam>
       <methodparam><type>string</type><parameter>user_compare_function</parameter></methodparam>
      </methodsynopsis>
-   &warn.experimental;
     <para>
-     成功時に&true;、エラー時に&false;を返します。
+     &return.success;
     </para>
+    <note>
+     <simpara>
+      可能ならば、<function>dbx_sort</function> を使用するよりも
+      <literal>SQL</literal> の <literal>ORDER BY</literal> 句を
+      使用することを推奨します。
+     </simpara>
+    </note>
     <example>
-     <title><function>dbx_sort</function>の例</title>
+     <title><function>dbx_sort</function> の例</title>
      <programlisting role="php">
 <![CDATA[
 <?php
-function user_re_order ($a, $b) {
-    $rv = dbx_cmp_desc ($a, $b, "parentid");
-    if (!$rv) $rv = dbx_cmp_asc ($a, $b, "id");
+function user_re_order($a, $b) 
+{
+    $rv = dbx_compare($a, $b, "parentid", DBX_CMP_DESC);
+    if (!$rv) {
+        $rv = dbx_compare($a, $b, "id", DBX_CMP_NUMBER);
+    }
     return $rv;
 }
 
-$link = dbx_connect ("odbc", "", "db", "username", "password")
-    or die ("接続できません");
-$result = dbx_query ($link, "SELECT id, parentid, description FROM tbl ORDER BY id");
-echo "結果は、idでソートされています<br>";
-dbx_sort ($result, "user_re_order");
-echo "結果はparentidで(降順に)ソートされ、続いて、idでソートされます<br>";
-dbx_close ($link);
+$link   = dbx_connect(DBX_ODBC, "", "db", "username", "password")
+    or die("接続できません");
+
+$result = dbx_query($link, "SELECT id, parentid, description FROM tbl ORDER BY id");
+    // $result のデータは id で並べ替えられます
+
+dbx_sort($result, "user_re_order");
+    // $result のデータは、まず parentid の降順で並べ替えられ、次に id で並べ替えられます
+
+dbx_close($link);
 ?>
 ]]>
      </programlisting>
     </example>
     <para>
-     <function>dbx_compare</function>も参照ください。
+     <function>dbx_compare</function> も参照ください。
     </para>
    </refsect1>
   </refentry>
