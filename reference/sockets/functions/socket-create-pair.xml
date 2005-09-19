@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.4 $ -->
 <!-- splitted from ./ja/functions/sockets.xml, last change in rev 1.10 -->
-<!-- EN-Revision: 1.27 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 1.12 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: takagi -->
   <refentry id="function.socket-create-pair">
    <refnamediv>
     <refname>socket_create_pair</refname>
-    <refpurpose>
-     区別できないソケットの組を作成し、fdに保存する
-    </refpurpose>
+    <refpurpose>区別できないソケットの組を作成し、配列に保存する</refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
@@ -15,11 +15,229 @@
       <methodparam><type>int</type><parameter>domain</parameter></methodparam>
       <methodparam><type>int</type><parameter>type</parameter></methodparam>
       <methodparam><type>int</type><parameter>protocol</parameter></methodparam>
-      <methodparam><type>array</type><parameter>&amp;fd</parameter></methodparam>
+      <methodparam><type>array</type><parameter role="reference">fd</parameter></methodparam>
      </methodsynopsis>
-     &warn.experimental.func;
     <para>
-     &warn.undocumented.func;
+     <function>socket_create_pair</function> は、接続されており区別できない
+     2 つのソケットを作成し、それを <parameter>fd</parameter> に保存します。
+     この関数は、一般に IPC（InterProcess Communication: プロセス間通信）
+     で使用します。
+    </para>
+    <para>
+     <parameter>domain</parameter> は、ソケットで使用するプロトコルの
+     種類を指定します。
+    </para>
+    <table>
+    <title>使用可能な アドレス/プロトコル の種類</title>
+    <tgroup cols="2">
+     <thead>
+      <row>
+       <entry>ドメイン</entry>
+       <entry>説明</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry>AF_INET</entry>
+       <entry>
+        IPv4 Internet に基づいたプロトコルです。TCP および UDP が一般的に
+        使用されます。Windows でのみサポートされます。
+       </entry>
+      </row>
+      <row>
+       <entry>AF_INET6</entry>
+       <entry>
+        IPv6 Internet に基づいたプロトコルです。TCP および UDP が一般的に
+        使用されます。PHP 5.0.0 以降でサポートされるようになりました。
+        Windows でのみサポートされます。
+       </entry>
+      </row>
+      <row>
+       <entry>AF_UNIX</entry>
+       <entry>
+        ローカル通信プロトコルです。効率的でオーバーヘッドが少なく、
+        IPC（プロセス間通信）に適した形式です。
+       </entry>
+      </row>
+     </tbody>
+    </tgroup>
+    </table>
+    <para>
+     <parameter>type</parameter> では、ソケットが使用する通信の形式を
+     選択します。
+    </para>
+    <table>
+    <title>使用可能なソケットの型</title>
+    <tgroup cols="2">
+     <thead>
+      <row>
+       <entry>型</entry>
+       <entry>説明</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry>SOCK_STREAM</entry>
+       <entry>
+         シーケンシャルで信頼性が高く、完全双方向であるコネクションベースの
+         バイトストリームです。帯域外のデータ転送機能がサポートされて
+         いるかもしれません。TCP プロトコルは、このソケット型に基づいています。
+       </entry>
+      </row>
+      <row>
+       <entry>SOCK_DGRAM</entry>
+       <entry>
+         データグラム（コネクションレスで信頼性の低い、固定長メッセージ）
+         をサポートします。UDP プロトコルは、このソケット型に基づいています。
+       </entry>
+      </row>
+        <row>
+       <entry>SOCK_SEQPACKET</entry>
+       <entry>
+         シーケンシャルで信頼性の高い、双方向のコネクションベースの
+         データ転送で、固定長のデータグラムを取り扱います。
+         利用する側は、1 度の読み込みコールでパケット全体を読み込む必要が
+         あります。
+       </entry>
+      </row>
+      <row>
+       <entry>SOCK_RAW</entry>
+       <entry>
+         ネットワーク上のデータを直接扱います。独自のプロトコルを実装する
+         際などに、この特殊な型が使用可能です。このソケット型の一般的な
+         使用法は、ICMP リクエスト（ping や traceroute など）を扱うことです。
+       </entry>
+      </row>
+      <row>
+       <entry>SOCK_RDM</entry>
+       <entry>
+         信頼性の高いデータグラム層で、データの到着順を保証しません。
+         ほとんどの OS 上では、これは実装されていません。
+       </entry>
+      </row>
+     </tbody>
+    </tgroup>
+    </table>
+    <para>
+     <parameter>protocol</parameter> は、指定した <parameter>domain</parameter>
+     の中の特定のプロトコルを指定します。これは、返されるソケットとの通信に
+     使用されます。使用可能な値の名前は <function>getprotobyname</function>
+     で取得可能です。もし要求されるプロトコルが TCP あるいは UDP の場合、
+     対応する定数 <constant>SOL_TCP</constant> および <constant>SOL_UDP</constant>
+     も使用可能です。
+    </para>
+    <table>
+    <title>通信プロトコル</title>
+    <tgroup cols="2">
+     <thead>
+      <row>
+       <entry>名前</entry>
+       <entry>説明</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry>icmp</entry>
+       <entry>
+        Internet Control Message Protocol は、データグラム通信において
+        ゲートウェイとホストの間でエラーの報告をする際に使用されます。
+        ICMP を使用するアプリケーションの例は
+        "ping" コマンドです（最近のほとんどの OS に搭載されています）。
+       </entry>
+      </row>
+      <row>
+       <entry>udp</entry>
+       <entry>
+        User Datagram Protocol はコネクションレスの信頼できないプロトコルで、
+        固定長のレコードを扱います。この特徴のおかげで、UDP プロトコルの
+        オーバーヘッドは最小限ですみます。
+       </entry>
+      </row>
+        <row>
+       <entry>tcp</entry>
+       <entry>
+        Transmission Control Protocol は信頼性の高い、コネクションに基づいた、
+        ストリーム試行の完全双方向プロトコルです。TCP は、すべての
+        データパケットが送信した順にきちんと受け取られることを保証します。
+        通信の途中でパケットが失われた場合は、受け取り先ホストがパケットを
+        認識できるまで TCP は自動的にそのパケットを再送信します。
+        信頼性とパフォーマンスのため、TCP 実装はその下層のデータグラム通信
+        レイヤにおいて適当なバイト数でデータを区切っています。そのため、
+        TCP アプリケーションはレコードの一部のみが送られてくる場合が
+        ありうることを想定しておかねばなりません。
+       </entry>
+      </row>
+     </tbody>
+    </tgroup>
+    </table>
+    <para>
+    <example>
+    <title><function>socket_create_pair</function> の例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$sockets = array();
+/* ソケットの組の設定 */
+if (!socket_create_pair(AF_UNIX, SOCK_STREAM, 0, $sockets)) {
+    echo socket_strerror(socket_last_error());
+}
+/* データの送受信 */
+if (!socket_write($sockets[0], "ABCdef123\n", strlen("ABCdef123\n"))) {
+    echo socket_strerror(socket_last_error());
+}
+if (!$data = socket_read($sockets[1], strlen("ABCdef123\n"), PHP_BINARY_READ)) {
+    echo socket_strerror(socket_last_error());
+}
+var_dump($data);
+
+/* ソケットのクローズ */
+socket_close($sockets[0]);
+socket_close($sockets[1]);
+?>
+]]>
+    </programlisting>
+    </example>
+    </para>
+    <para>
+    <example>
+    <title><function>socket_create_pair</function> での IPC の例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$ary = array();
+$strone = 'Message From Parent.';
+$strtwo = 'Message From Child.';
+if (!socket_create_pair(AF_UNIX, SOCK_STREAM, 0, $ary)) {
+    echo socket_strerror(socket_last_error());
+}
+$pid = pcntl_fork();
+if ($pid == -1) {
+    echo 'プロセスを fork できません。';
+} elseif ($pid) {
+    /* 親プロセス */
+    socket_close($ary[0]);
+    if (!socket_write($ary[1], $strone, strlen($strone))) {
+        echo socket_strerror(socket_last_error());
+    }
+    if (socket_read($ary[1], strlen($strtwo), PHP_BINARY_READ) == $strtwo) {
+        echo "Recieved $strtwo\n";
+    }
+    socket_close($ary[1]);
+} else {
+    /* 子プロセス */
+    socket_close($ary[1]);
+    if (!socket_write($ary[0], $strtwo, strlen($strtwo))) {
+        echo socket_strerror(socket_last_error());
+    }
+    if (socket_read($ary[0], strlen($strone), PHP_BINARY_READ) == $strone) {
+        echo "Recieved $strone\n";
+    }
+    socket_close($ary[0]);
+}
+?>
+]]>
+    </programlisting>
+    </example>
     </para>
    </refsect1>
   </refentry>

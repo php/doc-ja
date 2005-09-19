@@ -1,54 +1,143 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.7 $ -->
 <!-- splitted from ./ja/functions/sockets.xml, last change in rev 1.7 -->
-<!-- EN-Revision: 1.5 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 1.9 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: takagi -->
 <refentry id="function.socket-bind">
  <refnamediv>
   <refname>socket_bind</refname>
   <refpurpose>ソケットに名前をバインドする</refpurpose>
  </refnamediv>
- <refsect1>
-  <title>説明</title>
+
+ <refsect1 role="description">
+  &reftitle.description;
   <methodsynopsis>
    <type>bool</type><methodname>socket_bind</methodname>
    <methodparam><type>resource</type><parameter>socket</parameter></methodparam>
    <methodparam><type>string</type><parameter>address</parameter></methodparam>
    <methodparam choice="opt"><type>int</type><parameter>port</parameter></methodparam>
   </methodsynopsis>
-  &warn.experimental.func;
   <para>
-   <function>socket_bind</function>は、
-   <parameter>address</parameter>で指定した名前を
-   <parameter>socket</parameter>で指定したソケットにバインドします。
-   このソケットは、<function>socket_create</function>で作成した有効なソケッ
-   ト記述子である必要があります。
+   <parameter>address</parameter> で指定した名前を
+   <parameter>socket</parameter> で指定したソケットにバインドします。
   </para>
+ </refsect1>
+
+ <refsect1 role="parameters">
+  &reftitle.parameters;
   <para>
-   パラメータ<parameter>address</parameter> には、
-   ソケットの種類が<constant>AF_INET</constant>の場合、4-ドット表記の
-   IPアドレス(例:<literal>127.0.0.1</literal>)、
-   <constant>AF_UNIX</constant>の場合はUNIXドメインソケットのパス名を
-   指定します。
+   <variablelist>
+    <varlistentry>
+     <term><parameter>socket</parameter></term>
+     <listitem>
+      <para>
+       <function>socket_create</function> で作成した有効なソケット記述子。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>address</parameter></term>
+     <listitem>
+      <para>
+       ソケットの種類が <constant>AF_INET</constant> の場合、
+       <parameter>address</parameter> はドットで 4 つに区切られた表記
+       （例: <literal>127.0.0.1</literal>）の IP アドレス。
+      </para>
+      <para>
+       ソケットの種類が <constant>AF_UNIX</constant> の場合、
+       <parameter>address</parameter> は Unix ドメインソケット
+       （例: <filename>/tmp/my.sock</filename>）。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>port</parameter>（オプション）</term>
+     <listitem>
+      <para>
+       パラメータ <parameter>port</parameter> は
+       <constant>AF_INET</constant> ソケットに接続する場合にのみ使用され、
+       接続するリモートホストのポートを指定します。
+      </para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
   </para>
+ </refsect1>
+
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <para>&return.success;</para>
   <para>
-   パラメータ<parameter>port</parameter>は、
-   <constant>AF_INET</constant>ソケットに接続する場合にのみ使用され、
-   接続するリモートホストのポートを指定します。
-  </para>
-  <para>
-   &return.success; エラーコードは、
-   <function>socket_last_error</function>により取得できます。
+   エラーコードは <function>socket_last_error</function> により取得できます。
    このコードを <function>socket_strerror</function> に渡すことにより、
    エラー内容を表すテキストを得ることができます。
-   <function>socket_last_error</function>は、Windows 9x/MEマシンに属し
-   ないソケットを誤ったアドレスにバインドしようとした場合には、無効な
-   エラーコードを返すことが報告されていますので注意してください。
   </para>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
   <para>
-   <function>socket_connect</function>,
-   <function>socket_listen</function>,
-   <function>socket_create</function>,
-   <function>socket_last_error</function>,
-   <function>socket_strerror</function>も参照ください。
+   <example>
+    <title><function>socket_bind</function> を使用してソースアドレスを指定する</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+// 新しいソケットを作成する
+$sock = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
+
+// コンピュータが所有する IP アドレスリストの例
+$sourceips['kevin']    = '127.0.0.1';
+$sourceips['madcoder'] = '127.0.0.2';
+
+// ソースアドレスをバインドする
+socket_bind($sock, $sourceips['madcoder']);
+
+// 接続先アドレスと接続する
+socket_connect($sock, '127.0.0.1', 80);
+
+// 書き込む
+$request = 'GET / HTTP/1.1' . "\r\n" .
+           'Host: example.com' . "\r\n\r\n";
+socket_write($sock, $request);
+
+// 閉じる
+socket_close($sock);
+
+?> 
+]]>
+    </programlisting>
+   </example>
+  </para>
+ </refsect1>
+
+ <refsect1 role="notes">
+  &reftitle.notes;
+  <note>
+   <para>
+    この関数は、
+    <function>socket_connect</function> の前に実行されている必要があります。
+   </para>
+  </note>
+  <note>
+   <para>
+    Windows 9x/ME 互換性の注意:
+    マシンに属しないアドレスにソケットをバインドしようとした場合、
+    <function>socket_last_error</function> は
+    無効なエラーコードを返すことがあります。
+   </para>
+  </note>
+ </refsect1>
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <para>
+   <simplelist>
+    <member><function>socket_connect</function></member>
+    <member><function>socket_listen</function></member>
+    <member><function>socket_create</function></member>
+    <member><function>socket_last_error</function></member>
+    <member><function>socket_strerror</function></member>
+   </simplelist>
   </para>
  </refsect1>
 </refentry>
