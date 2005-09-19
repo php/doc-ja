@@ -1,23 +1,165 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.4 $ -->
 <!-- splitted from ./ja/functions/openssl.xml, last change in rev 1.12 -->
-<!-- EN-Revision: 1.19 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 1.14 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: takagi -->
   <refentry id="function.openssl-csr-new">
    <refnamediv>
     <refname>openssl_csr_new</refname>
-    <refpurpose>秘密キーとCSRを生成する</refpurpose>
+    <refpurpose>CSR を作成する</refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
      <methodsynopsis>
-      <type>bool</type><methodname>openssl_csr_new</methodname>
+      <type>mixed</type><methodname>openssl_csr_new</methodname>
       <methodparam><type>array</type><parameter>dn</parameter></methodparam>
-      <methodparam><type>resource</type><parameter>privkey</parameter></methodparam>
-      <methodparam choice="opt"><type>array</type><parameter>extraattribs</parameter></methodparam>
+      <methodparam><type>resource</type><parameter role="reference">privkey</parameter></methodparam>
       <methodparam choice="opt"><type>array</type><parameter>configargs</parameter></methodparam>
+      <methodparam choice="opt"><type>array</type><parameter>extraattribs</parameter></methodparam>
      </methodsynopsis>
-     &warn.experimental.func;
     <para>
-     &warn.undocumented.func;
+     <function>openssl_csr_new</function> は、新しい CSR (Certificate Signing Request)
+     を <parameter>dn</parameter> の情報に基づいて作成します。dn は、証明書で
+     使用される識別名です。
+    </para>
+    <para>
+     <parameter>privkey</parameter> には、事前に <function>openssl_pkey_new</function>
+     （あるいはその他の openssl_pkey 系の関数）で作成した秘密鍵を設定します。
+     これに対応する公開鍵が、CSR への署名に使用されます。
+    </para>
+    <para>
+     <parameter>extraattribs</parameter> は、CSR に関する追加の設定情報を
+     設定するためにしようします。<parameter>dn</parameter> および
+     <parameter>extraattribs</parameter> はどちらも連想配列で、それらの
+     キーが OID に変換されたうえでリクエストの関連する部分に適用されます。
+    </para>
+    &reference.openssl.note-openssl-cnf;
+    <para>
+     デフォルトでは、システムの <literal>openssl.conf</literal> の設定に
+     したがってリクエストが初期化されます。<parameter>configargs</parameter>
+     のキー <literal>config_section_section</literal> を設定することで、この
+     デフォルト項目を変更することが可能です。また、キー <literal>config</literal>
+     に別の openssl 設定ファイルを指定することで別の設定を使用することも可能です。
+     もし <parameter>configargs</parameter> に以下の表のキーが存在すれば、それらは
+     The following keys, if present in <parameter>configargs</parameter>
+     <literal>openssl.conf</literal> の対応する項目と同じ働きをします。
+
+     <table>
+      <title>設定の上書き</title>
+      <tgroup cols="3">
+       <thead>
+        <row>
+         <entry><parameter>configargs</parameter> のキー</entry>
+         <entry>型</entry>
+         <entry><literal>openssl.conf</literal> で同等の意味を持つ項目</entry>
+         <entry>説明</entry>
+        </row>
+       </thead>
+       <tbody>
+        <row>
+         <entry>digest_alg</entry>
+         <entry><type>string</type></entry>
+         <entry>default_md</entry>
+         <entry>使用するダイジェストメソッドを選択します</entry>
+        </row>
+        <row>
+         <entry>x509_extensions</entry>
+         <entry><type>string</type></entry>
+         <entry>x509_extensions</entry>
+         <entry>x509 証明書を作成する際に使用する拡張モジュールを
+         選択します</entry>
+        </row>
+        <row>
+         <entry>req_extensions</entry>
+         <entry><type>string</type></entry>
+         <entry>req_extensions</entry>
+         <entry>CSR を作成する際に使用する拡張モジュールを選択します</entry>
+        </row>
+        <row>
+         <entry>private_key_bits</entry>
+         <entry><type>string</type></entry>
+         <entry>default_bits</entry>
+         <entry>秘密鍵を作成する際に使用するビット数を指定します</entry>
+        </row>
+        <row>
+         <entry>private_key_type</entry>
+         <entry><type>integer</type></entry>
+         <entry>none</entry>
+         <entry>作成する秘密鍵の型を指定します。以下の定数
+          <constant>OPENSSL_KEYTYPE_DSA</constant>、
+          <constant>OPENSSL_KEYTYPE_DH</constant> あるいは
+          <constant>OPENSSL_KEYTYPE_RSA</constant> からひとつ選択します。
+          デフォルト値は <constant>OPENSSL_KEYTYPE_RSA</constant> で、
+          現時点でサポートしているのはこの型のみです。
+         </entry>
+        </row>
+        <row>
+         <entry>encrypt_key</entry>
+         <entry><type>boolean</type></entry>
+         <entry>encrypt_key</entry>
+         <entry>（パスフレーズとともに）エクスポートされるキーを暗号化するか?</entry>
+        </row>
+       </tbody>
+      </tgroup>
+     </table>
+    </para>
+    <simpara>
+     &return.success;
+    </simpara>
+    <para>
+     <example>
+      <title><function>openssl_csr_new</function> の例 -
+       自己署名の証明書を作成する</title>
+      <programlisting role="php">
+<![CDATA[
+<?php
+// 証明書で使用する識別名を指定します。
+// ご自分の環境に応じて、名前や会社名を変更する必要があります。
+// より厳密に言うなら、あなたが証明書を作成しようとしている個人あるいは
+// 組織の名前と会社名です。
+// SSL 証明書では、通常は証明書を使用するドメイン名を commonName に
+// 指定します。しかし S/MIME 証明書では、証明書を使用する個人の名前を
+// commonName に指定します。
+$dn = array(
+    "countryName" => "UK",
+    "stateOrProvinceName" => "Somerset",
+    "localityName" => "Glastonbury",
+    "organizationName" => "The Brain Room Limited",
+    "organizationalUnitName" => "PHP Documentation Team",
+    "commonName" => "Wez Furlong",
+    "emailAddress" => "wez@example.com"
+);
+
+// 新しい秘密鍵（および公開鍵）のペアを作成します
+$privkey = openssl_pkey_new();
+
+// 証明書への署名要求を作成します
+$csr = openssl_csr_new($dn, $privkey);
+
+// 認証局があなたの申請を受け付けてくれるまでは、自己署名の証明書を
+// 作成したくなるでしょう。
+// これは、365 日間有効な自己署名の証明書を作成します。
+$sscert = openssl_csr_sign($csr, null, $privkey, 365);
+
+// ここで、Web サーバやメールサーバ、メールクライアント（証明書の使用方法に
+// 依存します）にインストールするために、
+// 作成した秘密鍵・CSR および自己署名の証明書を保存したくなることでしょう。
+// この例では、これらを変数に格納する方法を示します。とはいえ、もちろん
+// それを直接ファイルに保存することも可能です。
+// 一般的には、CSR を認証局に送り、「正式な」証明書として証明してもらう
+// ことになります。
+openssl_csr_export($csr, $csrout) and var_dump($csrout);
+openssl_x509_export($sscert, $certout) and var_dump($certout);
+openssl_pkey_export($privkey, $pkeyout, "mypassword") and var_dump($pkeyout);
+
+// 発生したエラーを表示します。
+while (($e = openssl_error_string()) !== false) {
+    echo $e . "\n";
+}
+?>
+]]>
+      </programlisting>
+     </example>
     </para>
    </refsect1>
   </refentry>

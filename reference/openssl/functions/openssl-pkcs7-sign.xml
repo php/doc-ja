@@ -1,62 +1,62 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.5 $ -->
 <!-- splitted from ./ja/functions/openssl.xml, last change in rev 1.5 -->
-<!-- EN-Revision: 1.4 Maintainer: hirokawa Status: ready -->
-  <refentry id="function.openssl-pkcs7-sign">
-   <refnamediv>
-    <refname>openssl_pkcs7_sign</refname>
-    <refpurpose>S/MIME メッセージにサインする</refpurpose>
-   </refnamediv>
-   <refsect1>
-    <title>説明</title>
-     <methodsynopsis>
-      <type>bool</type><methodname>openssl_pkcs7_sign</methodname>
-      <methodparam><type>string</type><parameter>infilename</parameter></methodparam>
-      <methodparam><type>string</type><parameter>outfilename</parameter></methodparam>
-      <methodparam><type>mixed</type><parameter>signcert</parameter></methodparam>
-      <methodparam><type>mixed</type><parameter>privkey</parameter></methodparam>
-      <methodparam><type>array</type><parameter>headers</parameter></methodparam>
-      <methodparam choice="opt"><type>long</type><parameter>flags</parameter></methodparam>
-      <methodparam choice="opt"><type>string</type><parameter>extracertsfilename</parameter></methodparam>
-     </methodsynopsis>
-     &warn.experimental.func;
-    <para>
-     <function>openssl_pkcs7_sign</function>は、
-     <parameter>infilename</parameter> という名前のファイルの内容につ
-     いて、パラメータ <parameter>signcert</parameter> および
-     <parameter>privkey</parameter> で指定した証明書と公開キーを用いて
-     サインをします。
-     <parameter>signcert</parameter> and <parameter>privkey</parameter>
-    </para>
-    <para>
-     <parameter>headers</parameter> は、ヘッダの配列です。このヘッダは、
-     サインされた後、データの前に付加されます。(このパラメータの形式の
-     詳細については、<function>openssl_pkcs7_encrypt</function> を参照
-     ください。)
-    </para>
-    <para>
-     <parameter>flags</parameter> を出力を変更するために使用することが
-     可能です。<link linkend="openssl.pkcs7.flags">PKCS7 定数</link>
-     を参照ください。これが指定されない場合、デフォルトの PKCS7_DETACHED
-     になります。
-    </para>
-    <para>
-     <parameter>extracerts</parameter> には、サインに含めるための他の
-     一連の証明書を記述したファイル名を指定します。これは、例えば、送
-     信者が使用した証明書を受信者が検証しやすくするために使用すること
-     が可能です。
-    </para>
+<!-- EN-Revision: 1.14 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: takagi -->
+ <refentry id="function.openssl-pkcs7-sign">
+  <refnamediv>
+   <refname>openssl_pkcs7_sign</refname>
+   <refpurpose>S/MIME メッセージにサインする</refpurpose>
+  </refnamediv>
+  <refsect1>
+   <title>説明</title>
+    <methodsynopsis>
+     <type>bool</type><methodname>openssl_pkcs7_sign</methodname>
+     <methodparam><type>string</type><parameter>infilename</parameter></methodparam>
+     <methodparam><type>string</type><parameter>outfilename</parameter></methodparam>
+     <methodparam><type>mixed</type><parameter>signcert</parameter></methodparam>
+     <methodparam><type>mixed</type><parameter>privkey</parameter></methodparam>
+     <methodparam><type>array</type><parameter>headers</parameter></methodparam>
+     <methodparam choice="opt"><type>int</type><parameter>flags</parameter></methodparam>
+     <methodparam choice="opt"><type>string</type><parameter>extracerts</parameter></methodparam>
+    </methodsynopsis>
+   <para>
+    <function>openssl_pkcs7_sign</function> は、
+    <parameter>infilename</parameter> という名前のファイルの内容について
+    パラメータ <parameter>signcert</parameter> および
+    <parameter>privkey</parameter> で指定した証明書と公開鍵を用いて
+    サインをします。
+   </para>
+   <para>
+    <parameter>headers</parameter> は、ヘッダの配列です。このヘッダは、
+    サインされた後でデータの前に付加されます（このパラメータの形式の
+    詳細については <function>openssl_pkcs7_encrypt</function> を参照
+    ください）。
+   </para>
+   <para>
+    <parameter>flags</parameter> を出力を変更するために使用することが
+    可能です。<link linkend="openssl.pkcs7.flags">PKCS7 定数</link>
+    を参照ください。これが指定されない場合、デフォルトの PKCS7_DETACHED
+    になります。
+   </para>
+   <para>
+    <parameter>extracerts</parameter> には、サインに含めるための他の
+    一連の証明書を記述したファイル名を指定します。これは、例えば
+    送信者が使用した証明書を受信者が検証しやすくするために使用すること
+    が可能です。
+   </para>
     <para>
      <example>
       <title><function>openssl_pkcs7_sign</function> の例</title>
       <programlisting role="php">
 <![CDATA[
+<?php
 // 受信者が送信者を確認できるようにサインしたいメッセージ
 $data = <<<EOD
 
 You have my authorization to spend $10,000 on dinner expenses.
 
 The CEO
-HQ
 EOD;
 // ファイルにメッセージを保存
 $fp = fopen("msg.txt", "w");
@@ -64,25 +64,21 @@ fwrite($fp, $data);
 fclose($fp);
 // 暗号化
 if (openssl_pkcs7_sign("msg.txt", "signed.txt", "mycert.pem",
-    array("mycert.pem", "mypassphrase"),
-    array("To" => "joes@sales.com", // keyed syntax
-          "From: HQ <ceo@sales.com>", // indexed syntax
-          "Subject" => "Eyes only"))
-{
+    array("file://mycert.pem", "mypassphrase"),
+    array("To" => "joes@example.com", // keyed syntax
+          "From: HQ <ceo@example.com>", // indexed syntax
+          "Subject" => "Eyes only")
+    )) {
     // メッセージはサインされました。送信しましょう!
     exec(ini_get("sendmail_path") . " < signed.txt");
 }
+?>
 ]]>
       </programlisting>
      </example>
     </para>
-    <note>
-     <para>
-      この関数は、PHP 4.0.6 で追加されました。
-     </para>
-    </note>
-   </refsect1>
-  </refentry>
+  </refsect1>
+ </refentry>
 
 <!-- Keep this comment at the end of the file
 Local variables:

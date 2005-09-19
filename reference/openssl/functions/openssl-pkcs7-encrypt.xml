@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.4 $ -->
 <!-- splitted from ./ja/functions/openssl.xml, last change in rev 1.5 -->
-<!-- EN-Revision: 1.4 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 1.10 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: takagi -->
   <refentry id="function.openssl-pkcs7-encrypt">
    <refnamediv>
     <refname>openssl_pkcs7_encrypt</refname>
@@ -10,36 +12,38 @@
     <title>説明</title>
      <methodsynopsis>
       <type>bool</type><methodname>openssl_pkcs7_encrypt</methodname>
-      <methodparam><type>string</type><parameter>infilename</parameter></methodparam>
-      <methodparam><type>string</type><parameter>outfilename</parameter></methodparam>
+      <methodparam><type>string</type><parameter>infile</parameter></methodparam>
+      <methodparam><type>string</type><parameter>outfile</parameter></methodparam>
       <methodparam><type>mixed</type><parameter>recipcerts</parameter></methodparam>
       <methodparam><type>array</type><parameter>headers</parameter></methodparam>
-      <methodparam choice="opt"><type>long</type><parameter>flags</parameter></methodparam>
+      <methodparam choice="opt"><type>int</type><parameter>flags</parameter></methodparam>
+      <methodparam choice="opt"><type>int</type><parameter>cipherid</parameter></methodparam>
      </methodsynopsis>
-     &warn.experimental.func;
     <para>
      <function>openssl_pkcs7_encrypt</function> は、
-     <parameter>infilename</parameter> という名前のファイルの内容を
-     RC2 40ビット暗号により暗号化します。この内容は、
-     <parameter>recipcerts</parameter> で指定した意図する受信者によっ
-     てのみ読むことが可能です。<parameter>recipcerts</parameter> は、
+     <parameter>infile</parameter> という名前のファイルの内容を
+     RC2 40 ビット暗号により暗号化します。この内容は、
+     <parameter>recipcerts</parameter> で指定した意図する受信者によってのみ
+     読むことが可能です。<parameter>recipcerts</parameter> は、
      X.509 証明書または X.509 証明書の配列です。
-     <parameter>headers</parameter> は、暗号化された後にデータの前に付
-     加されるヘッダの配列です。<parameter>flags</parameter> はオプショ
-     ンとして使用可能であり、エンコード処理を変更するために指定されま
-     す。<link linkend="openssl.pkcs7.flags">PKCS7定数</link>を参照下
-     さい。<parameter>headers</parameter> は、ヘッダ名をキーとする連想
-     配列または添字配列であり、各要素には、各ヘッダ行が一行ずつ含まれ
-     ています。
+     <parameter>headers</parameter> は、暗号化された後にデータの前に
+     付加されるヘッダの配列です。<parameter>flags</parameter> は
+     オプションとして使用可能であり、エンコード処理を変更するために
+     指定されます。<link linkend="openssl.pkcs7.flags">PKCS7 定数</link>を
+     参照ください。<parameter>headers</parameter> はヘッダ名をキーとする
+     連想配列または添字配列であり、各要素には、各ヘッダ行が一行ずつ
+     含まれています。
+     PHP 5 以降、<parameter>cipherid</parameter> で暗号を選択可能です。
     </para>
     <para>
      <example>
       <title><function>openssl_pkcs7_encrypt</function> の例</title>
       <programlisting role="php">
 <![CDATA[
-// 暗号化するメッセージを nighthawk という名前の外部の秘密のエー
-// ジェントに送信します。送信先の証明書をファイル nighthawk.pem に有し
-// ています。
+<?php
+// 暗号化するメッセージを nighthawk という名前の外部の秘密の
+// エージェントに送信します。送信先の証明書をファイル nighthawk.pem に
+// 有しています。
 $data = <<<EOD
 Nighthawk,
 
@@ -50,28 +54,29 @@ to collect your forged passport!
 
 HQ
 EOD;
+
+// キーを読み込む
+$key = file_get_contents("nighthawk.pem");
+
 // ファイルにメッセージを保存
 $fp = fopen("msg.txt", "w");
 fwrite($fp, $data);
 fclose($fp);
+
 // メッセージを暗号化
-if (openssl_pkcs7_encrypt("msg.txt", "enc.txt", "nighthawk.pem",
-    array("To" => "nighthawk@agent.com", // 連想配列の構文
-          "From: HQ <hq@cia.com>", // 添字配列の構文
-          "Subject" => "Eyes only")))
-{
+if (openssl_pkcs7_encrypt("msg.txt", "enc.txt", $key,
+    array("To" => "nighthawk@example.com", // 連想配列の構文
+          "From: HQ <hq@example.com>", // 添字配列の構文
+          "Subject" => "Eyes only"))) {
     // メッセージを暗号化し、送信します!
     exec(ini_get("sendmail_path") . " < enc.txt");
 }
+?>
 ]]>
       </programlisting>
      </example>
     </para>
-    <note>
-     <para>
-      この関数は、PHP 4.0.6 で追加されました。
-     </para>
-    </note>
+
    </refsect1>
   </refentry>
 

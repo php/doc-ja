@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.5 $ -->
 <!-- splitted from ./ja/functions/openssl.xml, last change in rev 1.1 -->
-<!-- EN-Revision: 1.1 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 1.7 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: takagi -->
   <refentry id="function.openssl-seal">
    <refnamediv>
     <refname>openssl_seal</refname>
@@ -11,53 +13,54 @@
      <methodsynopsis>
       <type>int</type><methodname>openssl_seal</methodname>
       <methodparam><type>string</type><parameter>data</parameter></methodparam>
-      <methodparam><type>string</type><parameter>sealed_data</parameter></methodparam>
-      <methodparam><type>array</type><parameter>env_keys</parameter></methodparam>
+      <methodparam><type>string</type><parameter role="reference">sealed_data</parameter></methodparam>
+      <methodparam><type>array</type><parameter role="reference">env_keys</parameter></methodparam>
       <methodparam><type>array</type><parameter>pub_key_ids</parameter></methodparam>
      </methodsynopsis>
-     &warn.experimental.func;
     <para>
-     成功時にシール(暗号化)されたデータの長さ、エラー時に&false;を返しま
-     す。成功時には、暗号化されたデータが
-     <parameter>sealed_data</parameter>に、エンベロープキーが
+     成功時にシール(暗号化)されたデータの長さ、エラー時に &false;
+     を返します。成功時には、暗号化されたデータが
+     <parameter>sealed_data</parameter> に、エンベロープキーが
      <parameter>env_keys</parameter> に返されます。
+
     </para>
     <para>
-     <function>openssl_seal</function> は、ランダムに生成された秘密キー
-     により RC4 を使用して <parameter>data</parameter>をシール(暗号化)
-     します。このキーは、<parameter>pub_key_ids</parameter> をIDとする
-     各公開キーで暗号化されます。これは、暗号化されたデータを複数の受
-     信者に送信できることを意味します。(この際、各受信者は送信側に公開
-     キーを提供します。)各受信者は、暗号化されたデータとその受信者の公
-     開キーで暗号化されたエンベロープキーを受け取る必要があります。
+     <function>openssl_seal</function> は、ランダムに生成された秘密鍵に
+     より RC4 を使用して <parameter>data</parameter> をシール(暗号化)
+     します。このキーは、<parameter>pub_key_ids</parameter> を ID とする
+     公開鍵で暗号化されます。これは、暗号化されたデータを複数の受信者に
+     送信できることを意味します（この際、各受信者は送信側に公開鍵を
+     提供します）。各受信者は、暗号化されたデータとその受信者の
+     公開鍵で暗号化されたエンベロープキーを受け取る必要があります。
     </para>
     <para>
      <example>
       <title><function>openssl_seal</function> の例</title>
       <programlisting role="php">
 <![CDATA[
+<?php
 // $data には、暗号化されるデータが含まれていると仮定
 
-// 受信者の公開キーを取得し、使用可能にする
+// 受信者の公開鍵を取得し、使用可能にする
 $fp = fopen("/src/openssl-0.9.6/demos/maurice/cert.pem", "r");
 $cert = fread($fp, 8192);
 fclose($fp);
 $pk1 = openssl_get_publickey($cert);
-
-// 2番目の受信者についても同様
+// 2 番目の受信者についても同様
 $fp = fopen("/src/openssl-0.9.6/demos/sign/cert.pem", "r");
 $cert = fread($fp, 8192);
 fclose($fp);
 $pk2 = openssl_get_publickey($cert);
 
-// メッセージを暗号化。$pk1 および $pk2 の所有者のみが、暗号化された
-// データをそれぞれエンベロープキー$ekeys[0]および$ekeys[1]で復号化す
-// ることが可能
-openssl_seal($data, $sealed, $ekeys, array($pk1,$pk2));
+// メッセージを暗号化。$pk1 および $pk2 の所有者のみが、$sealed を
+// データをそれぞれ $ekeys[0] および $ekeys[1] で復号化することが
+// 可能
+openssl_seal($data, $sealed, $ekeys, array($pk1, $pk2));
 
 // キーをメモリから開放する
 openssl_free_key($pk1);
 openssl_free_key($pk2);
+?>
 ]]>
       </programlisting>
      </example>

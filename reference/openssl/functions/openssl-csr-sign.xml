@@ -1,24 +1,85 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.4 $ -->
 <!-- splitted from ./ja/functions/openssl.xml, last change in rev 1.12 -->
-<!-- EN-Revision: 1.19 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 1.10 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: takagi -->
   <refentry id="function.openssl-csr-sign">
    <refnamediv>
     <refname>openssl_csr_sign</refname>
-    <refpurpose>他のCERTで証明書をサインする</refpurpose>
+    <refpurpose>他の CERT（あるいは自分自身）で証明書をサインする</refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
      <methodsynopsis>
       <type>resource</type><methodname>openssl_csr_sign</methodname>
       <methodparam><type>mixed</type><parameter>csr</parameter></methodparam>
-      <methodparam><type>mixed</type><parameter>x509</parameter></methodparam>
+      <methodparam><type>mixed</type><parameter>cacert</parameter></methodparam>
       <methodparam><type>mixed</type><parameter>priv_key</parameter></methodparam>
-      <methodparam><type>long</type><parameter>days</parameter></methodparam>
+      <methodparam><type>int</type><parameter>days</parameter></methodparam>
+      <methodparam choice="opt"><type>array</type><parameter>configargs</parameter></methodparam>
+      <methodparam choice="opt"><type>int</type><parameter>serial</parameter></methodparam>
      </methodsynopsis>
-     &warn.experimental.func;
     <para>
-     &warn.undocumented.func;
+     <function>openssl_csr_sign</function> は、事前に
+     <function>openssl_csr_new</function> で作成した <parameter>csr</parameter>
+     を用いて x509 証明書リソースを作成します。
+     <filename>file://path/to/csr</filename> 、あるいは
+     <function>openssl_csr_export</function> で生成した文字列で指定した場合は
+     PEM エンコードされた CSR も使用可能です。
+     作成された証明書は <parameter>cacert</parameter> で署名されます。
+     <parameter>cacert</parameter> が &null; の場合は、自己署名の
+     証明書となります。<parameter>priv_key</parameter> は
+     <parameter>cacert</parameter> に対応する秘密鍵です。
+     <parameter>days</parameter> は、作成された証明書の有効期限を日数で
+     指定します。<parameter>configargs</parameter> で証明書の詳細設定が
+     可能です。<parameter>configargs</parameter> についての詳細な情報は
+     <function>openssl_csr_new</function> を参照ください。
+     PHP 4.3.3 以降、発行された証明書のシリアル番号を
+     <parameter>serial</parameter> で指定可能です。以前のバージョンでは
+     この値は常に 0 でした。
     </para>
+    <para>
+     成功した場合に x509 証明書リソース、失敗した場合に &false; を返します。
+    </para>
+    &reference.openssl.note-openssl-cnf;
+    <para>
+     <example>
+      <title><function>openssl_csr_sign</function> の例 -
+       CSR に署名する（あなた自身の CA を作成する）</title>
+      <programlisting role="php">
+<![CDATA[
+<?php
+// このスクリプトでは、前のページのテキストエリアから受け取った
+// CSR を利用すると仮定します。
+$csrdata = $_POST["CSR"];
+
+// これから、私たち自身 "certificate authority" 証明書を使用して
+// 署名を行います。どんな証明書でも署名は可能ですが、署名された
+// 証明書がソフトウェアやユーザに信頼されない限り、その手続きは
+// 無意味です。
+
+// CA cert および秘密鍵が必要です。
+$cacert = "file://path/to/ca.crt";
+$privkey = array("file://path/to/ca.key", "your_ca_key_passphrase");
+
+$userscert = openssl_csr_sign($csrdata, $cacert, $privkey, 365);
+
+// 作成された証明書を表示します。これをコピーして、
+// ローカル設定（たとえば SSL サーバへの接続設定ファイルなど）
+// に貼り付けます。
+openssl_x509_export($usercert, $certout);
+echo $certout;
+
+// 発生したエラーをすべて表示します。
+while (($e = openssl_error_string()) !== false) {
+    echo $e . "\n";
+}
+?>
+]]>
+      </programlisting>
+     </example>
+    </para>
+
    </refsect1>
   </refentry>
 
