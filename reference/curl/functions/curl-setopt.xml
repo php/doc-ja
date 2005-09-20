@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.5 $ -->
-<!-- EN-Revision: 1.16 Maintainer: hirokawa Status: working -->
+<!-- $Revision: 1.6 $ -->
+<!-- EN-Revision: 1.20 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: takagi -->
 <refentry id="function.curl-setopt">
  <refnamediv>
   <refname>curl_setopt</refname>
-  <refpurpose>CURL転送用オプションを設定する</refpurpose>
+  <refpurpose>CURL 転送用オプションを設定する</refpurpose>
  </refnamediv>
  <refsect1>
   <title>説明</title>
@@ -15,40 +16,64 @@
    <methodparam><type>mixed</type><parameter>value</parameter></methodparam>
   </methodsynopsis>
   <para>
-   <parameter>ch</parameter>パラメータで指定したCURLセッションの
+   <parameter>ch</parameter> パラメータで指定した CURL セッションの
    オプションを設定します。
    パラメータ <parameter>option</parameter> には設定するオプションを指定し、
    <parameter>value</parameter> には
-   <parameter>option</parameter>で指定したオプションの値を指定します。
+   <parameter>option</parameter> で指定したオプションの値を指定します。
   </para>
   <para>
    <parameter>value</parameter> には、
-   <parameter>option</parameter>の以下の値に関して
-   bool値を指定する必要があります。
+   <parameter>option</parameter> の以下の値に関して
+   bool 値を指定する必要があります。
    <informaltable>
     <tgroup cols="3">
      <thead>
       <row>
        <entry>オプション</entry>
-       <entry><parameter>value</parameter>への設定値</entry>
+       <entry><parameter>value</parameter> への設定値</entry>
        <entry>注記</entry>
       </row>
      </thead>
      <tbody>
       <row>
+       <entry><constant>CURLOPT_AUTOREFERER</constant></entry>
+       <entry>
+        &true; を設定すると、<literal>Location:</literal> によるリダイレクトを
+        たどる際には自動的に <literal>Referer:</literal> フィールドをリクエストに
+        追加します。
+       </entry>
+       <entry>
+        PHP 5.1.0 以降で有効です。
+       </entry>
+      </row>
+      <row>
        <entry><constant>CURLOPT_BINARYTRANSFER</constant></entry>
        <entry>
-        &true; to return the raw output when
-        <constant>CURLOPT_RETURNTRANSFER</constant> is used.
+        &true; を設定すると、<constant>CURLOPT_RETURNTRANSFER</constant>
+        が使用された場合に出力結果を何も加工せずに返します。
        </entry>
        <entry>
        </entry>
       </row>
       <row>
+       <entry><constant>CURLOPT_COOKIESESSION</constant></entry>
+       <entry>
+        &true; を設定すると、クッキーの "セッション" を新しく開始します。
+        以前のセッションで読み込まれていた "セッションクッキー" は無視するよう、
+        libcurl に指示します。デフォルトでは、それがセッションクッキーであるか
+        どうかにかかわらず libcurl はすべてのクッキーを読み込んで保存します。
+        セッションクッキーとは、有効期限が指定されておらず "セッション" の間のみ
+        有効であるクッキーのことです。
+       </entry>
+       <entry>
+        PHP 5.1.0 以降で有効です。
+       </entry>
+      </row>
+      <row>
        <entry><constant>CURLOPT_CRLF</constant></entry>
        <entry>
-        &true; to convert Unix newlines to CRLF newlines
-        on transfers.
+        &true; を設定すると、転送時に Unix 形式の改行を CRLF 形式に変換します。
        </entry>
        <entry>
        </entry>
@@ -56,8 +81,9 @@
       <row>
        <entry><constant>CURLOPT_DNS_USE_GLOBAL_CACHE</constant></entry>
        <entry>
-        &true; to use a global DNS cache. This option is
-        not thread-safe and is enabled by default.
+        &true; を設定すると、グローバル DNS キャッシュを利用します。
+        このオプションはスレッドセーフではありません。また、デフォルトで
+        有効になっています。
        </entry>
        <entry>
        </entry>
@@ -65,9 +91,9 @@
       <row>
        <entry><constant>CURLOPT_FAILONERROR</constant></entry>
        <entry>
-        &true; to fail silently if the HTTP code returned
-        is greater than 300. The default behavior is to return the page
-        normally, ignoring the code.
+        &true; を設定すると、HTTP で 300 より大きいコードが返ってきた際に
+        処理失敗と判断し、何もしません。デフォルトでは、コードの値を無視して
+        ページの内容を取得します。
        </entry>
        <entry>
        </entry>
@@ -75,10 +101,9 @@
       <row>
        <entry><constant>CURLOPT_FILETIME</constant></entry>
        <entry>
-        &true; to attempt to retrieve the modification
-        date of the remote document. You can then retrieve this value using
-        the <parameter>CURLINFO_FILETIME</parameter> option with
-        <function>curl_getinfo</function>.
+        &true; を設定すると、ドキュメントの更新日時を取得しようと試みます。
+        この値を取得するには、<function>curl_getinfo</function> で
+        <parameter>CURLINFO_FILETIME</parameter> オプションを用います。
        </entry>
        <entry>
        </entry>
@@ -86,11 +111,11 @@
         <row>
          <entry><constant>CURLOPT_FOLLOWLOCATION</constant></entry>
          <entry>
-          &true; to follow any
-          <literal>"Location: "</literal> header that the server sends as
-          part of the HTTP header (note this is recursive, PHP will follow as
-          many <literal>"Location: "</literal> headers that it is sent,
-          unless <constant>CURLOPT_MAXREDIRS</constant> is set).
+          &true; を設定すると、サーバが HTTP ヘッダの一部として送ってくる
+          <literal>"Location: "</literal> ヘッダの内容をたどります
+          （これは再帰的に行われます。<constant>CURLOPT_MAXREDIRS</constant>
+          が指定されていない限り、送ってくる <literal>"Location: "</literal>
+          ヘッダの内容をずっとたどり続けることに注意しましょう）。
          </entry>
          <entry>
          </entry>
@@ -98,8 +123,8 @@
         <row>
          <entry><constant>CURLOPT_FORBID_REUSE</constant></entry>
          <entry>
-          &true; to force the connection to explicitly
-          close when it has finished processing, and not be pooled for reuse.
+          &true; を設定すると、処理が終了した際に明示的に接続を切断します。
+          接続を再利用しません。
          </entry>
          <entry>
          </entry>
@@ -107,8 +132,8 @@
         <row>
          <entry><constant>CURLOPT_FRESH_CONNECT</constant></entry>
          <entry>
-          &true; to force the use of a new connection
-          instead of a cached one.
+          &true; を設定すると、キャッシュされている接続を利用せずに
+          新しい接続を確立します。
          </entry>
          <entry>
          </entry>
@@ -116,19 +141,21 @@
         <row>
          <entry><constant>CURLOPT_FTP_USE_EPRT</constant></entry>
          <entry>
-          &true; to use EPRT (and LPRT) when doing active
-          FTP downloads. Use &false; to disable EPRT and LPRT and use PORT
+          &true; を設定すると、FTP のダウンロードに EPRT（および LPRT）
+          を利用します。&false; の場合は EPRT・LPRT を無効にして PORT
+          を利用します。
           only.
          </entry>
          <entry>
+          PHP 5.0.0 で追加されました。
          </entry>
         </row>
         <row>
          <entry><constant>CURLOPT_FTP_USE_EPSV</constant></entry>
          <entry>
-          &true; to first try an EPSV command for FTP
-          transfers before reverting back to PASV. Set to &false;
-          to disable EPSV.
+          &true; を設定すると、FTP 転送の際にまず EPSV コマンドの利用を
+          試みます。失敗した場合は PASV を利用します。&false; を設定すると、
+          EPSV を無効にします。
          </entry>
          <entry>
          </entry>
@@ -136,8 +163,7 @@
         <row>
          <entry><constant>CURLOPT_FTPAPPEND</constant></entry>
          <entry>
-          &true; to append to the remote file instead of
-          overwriting it.
+          &true; を設定すると、リモートファイルを上書きせずに追記します。
          </entry>
          <entry>
          </entry>
@@ -145,8 +171,7 @@
         <row>
          <entry><constant>CURLOPT_FTPASCII</constant></entry>
          <entry>
-          An alias of
-          <constant>CURLOPT_TRANSFERTEXT</constant>. Use that instead.
+          <constant>CURLOPT_TRANSFERTEXT</constant> のエイリアスです。
          </entry>
          <entry>
          </entry>
@@ -154,8 +179,7 @@
         <row>
          <entry><constant>CURLOPT_FTPLISTONLY</constant></entry>
          <entry>
-          &true; to only list the names of an FTP
-          directory.
+          &true; を設定すると、FTP でディレクトリ名のみ表示します。
          </entry>
          <entry>
          </entry>
@@ -163,7 +187,7 @@
         <row>
          <entry><constant>CURLOPT_HEADER</constant></entry>
          <entry>
-          &true; to include the header in the output.
+          &true; を設定すると、ヘッダの内容も出力します。
          </entry>
          <entry>
          </entry>
@@ -171,9 +195,9 @@
         <row>
          <entry><constant>CURLOPT_HTTPGET</constant></entry>
          <entry>
-          &true; to reset the HTTP request method to GET.
-          Since GET is the default, this is only necessary if the request
-          method has been changed.
+          &true; を設定すると、HTTP のリクエスト形式を GET に戻します。
+          GET はデフォルト設定なので、リクエスト形式が変更されている
+          場合にのみ必要となります。
          </entry>
          <entry>
          </entry>
@@ -181,7 +205,7 @@
         <row>
          <entry><constant>CURLOPT_HTTPPROXYTUNNEL</constant></entry>
          <entry>
-          &true; to tunnel through a given HTTP proxy.
+          &true; を設定すると、指定された HTTP プロキシを利用します。
          </entry>
          <entry>
          </entry>
@@ -189,8 +213,7 @@
         <row>
          <entry><constant>CURLOPT_MUTE</constant></entry>
          <entry>
-          &true; to be completely silent with regards to
-          the CURL functions.
+          &true; を設定すると、CURL 関数に関連する出力を完全に抑えます。
          </entry>
          <entry>
          </entry>
@@ -198,9 +221,8 @@
         <row>
          <entry><constant>CURLOPT_NETRC</constant></entry>
          <entry>
-          &true; to scan your <filename>~/.netrc</filename>
-          file to find your username and password for the remote site that
-          you're establishing a connection with.
+          &true; を設定すると、リモートサイトと接続を確立する際に用いる
+          ユーザ名やパスワードを、<filename>~/.netrc</filename> から取得します。
          </entry>
          <entry>
          </entry>
@@ -208,7 +230,7 @@
         <row>
          <entry><constant>CURLOPT_NOBODY</constant></entry>
          <entry>
-          &true; to exclude the body from the output.
+          &true; を設定すると、出力からの本文を削除します。
          </entry>
          <entry>
          </entry>
@@ -216,11 +238,11 @@
         <row>
          <entry><constant>CURLOPT_NOPROGRESS</constant></entry>
          <entry>
-          &true; to disable the progress meter for CURL transfers.
+          &true; を設定すると、CURL 転送の進捗状況表示を無効にします。
           <note>
            <para>
-            PHP automatically sets this option to &true;, this should only be
-            changed for debugging purposes.
+            PHP は、このオプションを自動的に &true; に設定します。
+            これを変更するのは、デバッグ時のみにすべきです。
            </para>
           </note>
          </entry>
@@ -230,20 +252,20 @@
         <row>
          <entry><constant>CURLOPT_NOSIGNAL</constant></entry>
          <entry>
-          &true; to ignore any CURL function that causes a
-          signal to be sent to the PHP process. This is turned on by default
-          in multi-threaded SAPIs so timeout options can still be used.
+          &true; を設定すると、CURL 関数が PHP プロセスに送信するシグナルを
+          無視します。マルチスレッド SAPI ではデフォルトで on となっており、
+          そのためタイムアウトオプションもまだ利用されています。
          </entry>
          <entry>
-          Added in CURL 7.10.
+          CURL 7.10 で追加されました。
          </entry>
         </row>
         <row>
          <entry><constant>CURLOPT_POST</constant></entry>
          <entry>
-          &true; to do a regular HTTP POST. This POST is the
-          normal <literal>application/x-www-form-urlencoded</literal> kind,
-          most commonly used by HTML forms.
+          &true; を設定すると、HTTP POST を行います。POST は、
+          <literal>application/x-www-form-urlencoded</literal> 形式で
+          行われます。これは一般的な HTML のフォームと同じ形式です。
          </entry>
          <entry>
          </entry>
@@ -251,9 +273,10 @@
         <row>
          <entry><constant>CURLOPT_PUT</constant></entry>
          <entry>
-          &true; to HTTP PUT a file. The file to PUT must
-          be set with <constant>CURLOPT_INFILE</constant> and
-          <constant>CURLOPT_INFILESIZE</constant>.
+          &true; を設定すると、HTTP PUT を行います。PUT するファイルは
+          <constant>CURLOPT_INFILE</constant> および
+          <constant>CURLOPT_INFILESIZE</constant> で指定されている必要が
+          あります。
          </entry>
          <entry>
          </entry>
@@ -261,9 +284,8 @@
         <row>
          <entry><constant>CURLOPT_RETURNTRANSFER</constant></entry>
          <entry>
-          &true; to return the transfer as a string of the
-          return value of <function>curl_exec</function> instead of outputting
-          it out directly.
+          &true; を設定すると、<function>curl_exec</function> の返り値を
+          文字列で返します。通常はデータを直接出力します。
          </entry>
          <entry>
          </entry>
@@ -271,28 +293,26 @@
         <row>
          <entry><constant>CURLOPT_SSL_VERIFYPEER</constant></entry>
          <entry>
-          &false; to stop CURL from verifying the peer's
-          certificate. Alternate certificates to verify against can be
-          specified with the <constant>CURLOPT_CAINFO</constant> option
-          or a certificate directory can be specified with the
-          <constant>CURLOPT_CAPATH</constant> option.
-          <constant>CURLOPT_SSL_VERIFYHOST</constant> may also need to be
-          &true; or &false; if
-          <constant>CURLOPT_SSL_VERIFYPEER</constant> is disabled (it
-          defaults to 2).
+          &false; を設定すると、CURL はサーバ証明書の検証を行いません。
+          別の証明書を <constant>CURLOPT_CAINFO</constant> オプションで
+          指定するか、<constant>CURLOPT_CAPATH</constant> オプションで
+          証明ディレクトリを指定します。
+          <constant>CURLOPT_SSL_VERIFYPEER</constant> を無効にする場合、
+          <constant>CURLOPT_SSL_VERIFYHOST</constant> もまた
+          &true; あるいは &false; にする必要があります（デフォルトは 2 です）。
          </entry>
          <entry>
-          &true; by default as of CURL 7.10. Default bundle installed as of
-          CURL 7.10.
+          CURL 7.10 以降、デフォルト値は &true; です。また、デフォルトで
+          インストールされています。
          </entry>
         </row>
         <row>
          <entry><constant>CURLOPT_TRANSFERTEXT</constant></entry>
          <entry>
-          &true; to use ASCII mode for FTP transfers.
-          For LDAP, it retrieves data in plain text instead of HTML. On
-          Windows systems, it will not set <literal>STDOUT</literal> to binary
-          mode.
+          &true; を設定すると、FTP 転送を ASCII モードで行います。
+          LDAP の場合は、データを HTML ではなくプレーンテキストで取得します。
+          Windows システムでは <literal>STDOUT</literal> に対してバイナリモードを
+          設定しないでください。
          </entry>
          <entry>
          </entry>
@@ -300,10 +320,9 @@
         <row>
          <entry><constant>CURLOPT_UNRESTRICTED_AUTH</constant></entry>
          <entry>
-          &true; to keep sending the username and password
-          when following locations (using
-          <constant>CURLOPT_FOLLOWLOCATION</constant>), even when the
-          hostname has changed.
+          &true; を設定すると、（<constant>CURLOPT_FOLLOWLOCATION</constant>
+          を利用して）場所をたどっていく際にユーザ名とパスワードを送信し続けます。
+          これは、たとえホスト名が変わっても続けられます。
          </entry>
          <entry>
          </entry>
@@ -311,7 +330,7 @@
         <row>
          <entry><constant>CURLOPT_UPLOAD</constant></entry>
          <entry>
-          &true; to prepare for an upload.
+          &true; を設定すると、アップロードの準備をします。
          </entry>
          <entry>
          </entry>
@@ -319,9 +338,10 @@
         <row>
          <entry><constant>CURLOPT_VERBOSE</constant></entry>
          <entry>
-          &true; to output verbose information. Writes
-          output to <literal>STDERR</literal>, or the file specified using
-          <constant>CURLOPT_STDERR</constant>.
+          &true; を設定すると、詳細な情報を出力します。情報は
+          <literal>STDERR</literal> か、または
+          <constant>CURLOPT_STDERR</constant> で指定したファイルに
+          出力されます。
          </entry>
          <entry>
          </entry>
@@ -332,14 +352,14 @@
     </para>
   <para>
    <parameter>value</parameter> には、
-   <parameter>option</parameter>の以下の値に関して
+   <parameter>option</parameter> の以下の値に関して
    整数値を指定する必要があります。
    <informaltable>
     <tgroup cols="3">
      <thead>
       <row>
        <entry>オプション</entry>
-       <entry><parameter>value</parameter>への設定値</entry>
+       <entry><parameter>value</parameter> への設定値</entry>
        <entry>注記</entry>
       </row>
      </thead>
@@ -347,21 +367,20 @@
         <row>
          <entry><constant>CURLOPT_BUFFERSIZE</constant></entry>
          <entry>
-          The size of the buffer to use for each read. There is no guarantee
-          this request will be fulfilled, however.
+          1 回の読み込みに用いるバッファのサイズ。しかしながら、必ず
+          このバッファいっぱいまで読み込まれることを保証するものではありません。
          </entry>
          <entry>
-          Added in CURL 7.10.
+          CURL 7.10 および PHP 5.0.0 で追加されました。
          </entry>
         </row>
         <row>
          <entry><constant>CURLOPT_CLOSEPOLICY</constant></entry>
          <entry>
-          Either
-          <parameter>CURLCLOSEPOLICY_LEAST_RECENTLY_USED</parameter> or
-          <parameter>CURLCLOSEPOLICY_OLDEST</parameter>.
-          There are three other <literal>CURLCLOSEPOLICY_</literal>
-          constants, but CURL does not support them yet.
+          <parameter>CURLCLOSEPOLICY_LEAST_RECENTLY_USED</parameter> あるいは
+          <parameter>CURLCLOSEPOLICY_OLDEST</parameter> です。
+          他にも 3 つの <literal>CURLCLOSEPOLICY_</literal> 定数が存在しますが、
+          CURL はそれらをまだサポートしていません。
          </entry>
          <entry>
          </entry>
@@ -369,8 +388,7 @@
         <row>
          <entry><constant>CURLOPT_CONNECTTIMEOUT</constant></entry>
          <entry>
-          The number of seconds to wait whilst trying to connect. Use 0 to
-          wait indefinitely.
+          接続の試行を待ち続ける秒数。0 は永遠に待ち続けることを意味します。
          </entry>
          <entry>
          </entry>
@@ -378,8 +396,8 @@
         <row>
          <entry><constant>CURLOPT_DNS_CACHE_TIMEOUT</constant></entry>
          <entry>
-          The number of seconds to keep DNS entries in memory. This
-          option is set to 120 (2 minutes) by default.
+          DNS エントリをメモリ内に保持し続ける秒数。デフォルトでは
+          120（2 分）に設定されています。
          </entry>
          <entry>
          </entry>
@@ -387,13 +405,13 @@
         <row>
          <entry><constant>CURLOPT_FTPSSLAUTH</constant></entry>
          <entry>
-          The FTP authentication method (when is activated):
-          <literal>CURLFTPAUTH_SSL</literal> (try SSL first),
-          <literal>CURLFTPAUTH_TLS</literal> (try TLS first), or
-          <literal>CURLFTPAUTH_DEFAULT</literal> (let CURL decide).
+          （使用可能な場合の）FTP 認証方法。
+          <literal>CURLFTPAUTH_SSL</literal>（まず SSL を試す）、
+          <literal>CURLFTPAUTH_TLS</literal>（まず TLS を試す）あるいは
+          <literal>CURLFTPAUTH_DEFAULT</literal>（CURL が決める）のいずれかです。
          </entry>
          <entry>
-          Added in CURL 7.12.2 and available since PHP 5.1.0
+          CURL 7.12.2 および PHP 5.1.0 で追加されました。
          </entry>
         </row>
         <row>
@@ -411,36 +429,38 @@
          <entry><constant>CURLOPT_HTTPAUTH</constant></entry>
          <entry>
           <para>
-           The HTTP authentication method(s) to use. The options are:
-           <parameter>CURLAUTH_BASIC</parameter>,
-           <parameter>CURLAUTH_DIGEST</parameter>,
-           <parameter>CURLAUTH_GSSNEGOTIATE</parameter>,
-           <parameter>CURLAUTH_NTLM</parameter>,
-           <parameter>CURLAUTH_ANY</parameter>, and
-           <parameter>CURLAUTH_ANYSAFE</parameter>.
+           使用する HTTP 認証方法。以下の中から選びます。
+           <parameter>CURLAUTH_BASIC</parameter>、
+           <parameter>CURLAUTH_DIGEST</parameter>、
+           <parameter>CURLAUTH_GSSNEGOTIATE</parameter>、
+           <parameter>CURLAUTH_NTLM</parameter>、
+           <parameter>CURLAUTH_ANY</parameter> および
+           <parameter>CURLAUTH_ANYSAFE</parameter>。
           </para>
           <para>
-           You can use the bitwise <literal>|</literal> (or) operator to combine
-           more than one method. If you do this, CURL will poll the server to see
-           what methods it supports and pick the best one.
+           2 つ以上の方法を組み合わせるには、ビット演算子 <literal>|</literal>（or）
+           を使用します。このような場合、CURL はサーバがサポートしている方法を
+           問い合わせたうえで最適な方法を選択します。
           </para>
           <para>
-           <parameter>CURLAUTH_ANY</parameter> is an alias for
-           <literal>CURLAUTH_BASIC | CURLAUTH_DIGEST | CURLAUTH_GSSNEGOTIATE | CURLAUTH_NTLM</literal>.
+           <parameter>CURLAUTH_ANY</parameter> は
+           <literal>CURLAUTH_BASIC | CURLAUTH_DIGEST | CURLAUTH_GSSNEGOTIATE | CURLAUTH_NTLM</literal>
+           のエイリアスです。
           </para>
           <para>
-           <parameter>CURLAUTH_ANYSAFE</parameter> is an alias for
-           <literal>CURLAUTH_DIGEST | CURLAUTH_GSSNEGOTIATE | CURLAUTH_NTLM</literal>.
+           <parameter>CURLAUTH_ANYSAFE</parameter> は
+           <literal>CURLAUTH_DIGEST | CURLAUTH_GSSNEGOTIATE | CURLAUTH_NTLM</literal>
+           のエイリアスです。
           </para>
          </entry>
          <entry>
+          PHP 5.0.0 で追加されました。
          </entry>
         </row>
         <row>
          <entry><constant>CURLOPT_INFILESIZE</constant></entry>
          <entry>
-          The expected size, in bytes, of the file when uploading a file to a
-          remote site.
+          ファイルをリモートサイトにアップロードする際のファイルサイズ。
          </entry>
          <entry>
          </entry>
@@ -448,9 +468,9 @@
         <row>
          <entry><constant>CURLOPT_LOW_SPEED_LIMIT</constant></entry>
          <entry>
-          The transfer speed, in bytes per second, that the transfer should be
-          below during <constant>CURLOPT_LOW_SPEED_TIME</constant> seconds
-          for PHP to consider the transfer too slow and abort.
+          1 秒あたりのバイト数で、転送速度がこれより遅い期間が
+          <constant>CURLOPT_LOW_SPEED_TIME</constant> 秒以上続いた場合に
+          PHP は転送を終了します。
          </entry>
          <entry>
          </entry>
@@ -458,9 +478,9 @@
         <row>
          <entry><constant>CURLOPT_LOW_SPEED_TIME</constant></entry>
          <entry>
-          The number of seconds the transfer should be below
-          <constant>CURLOPT_LOW_SPEED_LIMIT</constant> for PHP to consider
-          the transfer too slow and abort.
+          転送速度が <constant>CURLOPT_LOW_SPEED_LIMIT</constant> より遅い
+          期間がどれだけ続いた場合に転送を異常終了させるかを、秒単位で指定
+          します。
          </entry>
          <entry>
          </entry>
@@ -468,10 +488,9 @@
         <row>
          <entry><constant>CURLOPT_MAXCONNECTS</constant></entry>
          <entry>
-          The maximum amount of persistent connections that are allowed.
-          When the limit is reached,
-          <constant>CURLOPT_CLOSEPOLICY</constant> is used to determine
-          which connection to close.
+          許可される持続的接続の最大数。もしこの値に達した場合、
+          どの接続を閉じるのかを <constant>CURLOPT_CLOSEPOLICY</constant>
+          によって決定します。
          </entry>
          <entry>
          </entry>
@@ -479,8 +498,8 @@
         <row>
          <entry><constant>CURLOPT_MAXREDIRS</constant></entry>
          <entry>
-          The maximum amount of HTTP redirections to follow. Use this option
-          alongside <constant>CURLOPT_FOLLOWLOCATION</constant>.
+          HTTP のりダイレクト先を追いかける最大値。
+          <constant>CURLOPT_FOLLOWLOCATION</constant> とあわせて使用します。
          </entry>
          <entry>
          </entry>
@@ -488,7 +507,7 @@
         <row>
          <entry><constant>CURLOPT_PORT</constant></entry>
          <entry>
-          An alternative port number to connect to.
+          接続先のポート番号。
          </entry>
          <entry>
          </entry>
@@ -496,39 +515,40 @@
         <row>
          <entry><constant>CURLOPT_PROXYAUTH</constant></entry>
          <entry>
-         The HTTP authentication method(s) to use for the proxy connection.
-         Use the same bitmasks as described in
-         <constant>CURLOPT_HTTPAUTH</constant>. For proxy authentication,
-         only <parameter>CURLAUTH_BASIC</parameter> and
-         <parameter>CURLAUTH_NTLM</parameter> are currently supported.
+         プロキシ接続に使用する HTTP 認証の方法。
+         <constant>CURLOPT_HTTPAUTH</constant> で説明したのと同じオプションを
+         指定可能です。プロキシ認証でサポートされているのは、今のところ
+         <parameter>CURLAUTH_BASIC</parameter> および
+         <parameter>CURLAUTH_NTLM</parameter> のみです。
          </entry>
          <entry>
-          Added in CURL 7.10.7 and PHP 5.1.0.
+          CURL 7.10.7 および PHP 5.1.0 で追加されました。
          </entry>
         </row>
         <row>
          <entry><constant>CURLOPT_PROXYPORT</constant></entry>
          <entry>
-          The port number of the proxy to connect to. This port number can
-          also be set in <constant>CURLOPT_PROXY</constant>.
+          プロキシ接続のポート番号。このポート番号は、
+          <constant>CURLOPT_PROXY</constant> で指定することも可能です。
          </entry>
          <entry>
+          PHP 5.0.0 で追加されました。
          </entry>
         </row>
         <row>
          <entry><constant>CURLOPT_PROXYTYPE</constant></entry>
          <entry>
-          Either <parameter>CURLPROXY_HTTP</parameter> (default) or
-          <parameter>CURLPROXY_SOCKS5</parameter>.
+          <parameter>CURLPROXY_HTTP</parameter>（デフォルト）あるいは
+          <parameter>CURLPROXY_SOCKS5</parameter>。
          </entry>
          <entry>
-          Added in CURL 7.10.
+          CURL 7.10 および PHP 5.0.0 で追加されました。
          </entry>
         </row>
         <row>
          <entry><constant>CURLOPT_RESUME_FROM</constant></entry>
          <entry>
-          The offset, in bytes, to resume a transfer from.
+          転送を途中から再開する場合のバイトオフセット。
          </entry>
          <entry>
          </entry>
@@ -536,10 +556,8 @@
         <row>
          <entry><constant>CURLOPT_SSL_VERIFYHOST</constant></entry>
          <entry>
-          1 to check the existence of a common name in the
-          SSL peer certificate. 2 to check the existence of
-          a common name and also verify that it matches the hostname
-          provided.
+          1 は SSL ピア証明書に一般名が存在するかどうかを調べます。
+          2 はそれに加え、その名前がホスト名と一致することを検証します。
          </entry>
          <entry>
          </entry>
@@ -547,8 +565,9 @@
         <row>
          <entry><constant>CURLOPT_SSLVERSION</constant></entry>
          <entry>
-          The SSL version (2 or 3) to use. By default PHP will try to determine
-          this itself, although in some cases you must set this manually.
+          使用する SSL のバージョン（2 あるいは 3）。デフォルトでは
+          PHP が自動的に判断しますが、これを手動で設定する必要がある
+          場合もあります。
          </entry>
          <entry>
          </entry>
@@ -556,24 +575,25 @@
         <row>
          <entry><constant>CURLOPT_TIMECONDITION</constant></entry>
          <entry>
-          How <constant>CURLOPT_TIMEVALUE</constant> is treated.
-          Use <parameter>CURL_TIMECOND_IFMODSINCE</parameter> to return the
-          page only if it has been modified since the time specified in
-          <constant>CURLOPT_TIMEVALUE</constant>. If it hasn't been modified,
-          a <literal>"304 Not Modified"</literal> header will be returned
-          assuming <constant>CURLOPT_HEADER</constant> is &true;.
-          Use <parameter>CURL_TIMECOND_ISUNMODSINCE</parameter> for the reverse
-          effect. <parameter>CURL_TIMECOND_IFMODSINCE</parameter> is the
-          default.
+          <constant>CURLOPT_TIMEVALUE</constant> の扱いを決定します。
+          <constant>CURLOPT_TIMEVALUE</constant> で指定した時刻以降に
+          変更されたページのみを返す場合は
+          <parameter>CURL_TIMECOND_IFMODSINCE</parameter> を使用します。
+          <constant>CURLOPT_HEADER</constant> が &true; だと仮定すると、
+          ページが変更されていない場合は
+          <literal>"304 Not Modified"</literal> ヘッダが返されます。
+          <parameter>CURL_TIMECOND_ISUNMODSINCE</parameter> は反対の意味です。
+          デフォルトは <parameter>CURL_TIMECOND_IFMODSINCE</parameter>
+          です。
          </entry>
          <entry>
-          Added in PHP 5.1.0.
+          PHP 5.1.0 で追加されました。
          </entry>
         </row>
         <row>
          <entry><constant>CURLOPT_TIMEOUT</constant></entry>
          <entry>
-          The maximum number of seconds to allow CURL functions to execute.
+          CURL 関数の実行にかけられる時間の最大値。
          </entry>
          <entry>
          </entry>
@@ -581,9 +601,9 @@
         <row>
          <entry><constant>CURLOPT_TIMEVALUE</constant></entry>
          <entry>
-          The time in seconds since January 1st, 1970. The time will be used
-          by <constant>CURLOPT_TIMECONDITION</constant>. By default,
-          <parameter>CURL_TIMECOND_IFMODSINCE</parameter> is used.
+          1970 年 1 月 1 日からの経過秒数。この値は
+          <constant>CURLOPT_TIMECONDITION</constant> で使用されます。デフォルトでは
+          <parameter>CURL_TIMECOND_IFMODSINCE</parameter> が設定されます。
          </entry>
          <entry>
          </entry>
@@ -601,7 +621,7 @@
      <thead>
       <row>
        <entry>オプション</entry>
-       <entry><parameter>value</parameter>への設定値</entry>
+       <entry><parameter>value</parameter> への設定値</entry>
        <entry>注記</entry>
       </row>
      </thead>
@@ -609,9 +629,9 @@
         <row>
          <entry><constant>CURLOPT_CAINFO</constant></entry>
          <entry>
-          The name of a file holding one or more certificates to verify the
-          peer with. This only makes sense when used in combination with
-          <constant>CURLOPT_SSL_VERIFYPEER</constant>.
+          接続先を検証するための証明書を保持するファイル名。
+          これは <constant>CURLOPT_SSL_VERIFYPEER</constant> を使用する場合に
+          のみ意味を持ちます。
          </entry>
          <entry>
          </entry>
@@ -619,8 +639,8 @@
         <row>
          <entry><constant>CURLOPT_CAPATH</constant></entry>
          <entry>
-          A directory that holds multiple CA certificates. Use this option
-          alongside <constant>CURLOPT_SSL_VERIFYPEER</constant>.
+          複数の証明書ファイルを保持するディレクトリ。このオプションは
+          <constant>CURLOPT_SSL_VERIFYPEER</constant> とともに使用します。
          </entry>
          <entry>
          </entry>
@@ -628,8 +648,8 @@
         <row>
          <entry><constant>CURLOPT_COOKIE</constant></entry>
          <entry>
-          The contents of the <literal>"Set-Cookie: "</literal> header to be
-          used in the HTTP request.
+          HTTP リクエストにおける
+          <literal>"Set-Cookie: "</literal> ヘッダの内容。
          </entry>
          <entry>
          </entry>
@@ -637,9 +657,9 @@
         <row>
          <entry><constant>CURLOPT_COOKIEFILE</constant></entry>
          <entry>
-          The name of the file containing the cookie data. The cookie file can
-          be in Netscape format, or just plain HTTP-style headers dumped into
-          a file.
+          クッキーのデータを保持するファイルの名前。クッキーファイルは、
+          Netscape フォーマットあるいは HTTP ヘッダを単純にファイルに
+          ダンプしたものが使用可能です。
          </entry>
          <entry>
          </entry>
@@ -647,8 +667,7 @@
         <row>
          <entry><constant>CURLOPT_COOKIEJAR</constant></entry>
          <entry>
-          The name of a file to save all internal cookies to when the
-          connection closes.
+          接続を閉じる際に、すべての内部クッキーを保存するファイルの名前。
          </entry>
          <entry>
          </entry>
@@ -656,19 +675,19 @@
         <row>
          <entry><constant>CURLOPT_CUSTOMREQUEST</constant></entry>
          <entry>
-          A custom request method to use instead of
-          <literal>"GET"</literal> or <literal>"HEAD"</literal> when doing
-          a HTTP request. This is useful for doing
-          <literal>"DELETE"</literal> or other, more obscure HTTP requests.
-          Valid values are things like <literal>"GET"</literal>,
-          <literal>"POST"</literal>, <literal>"CONNECT"</literal> and so on;
-          i.e. Do not enter a whole HTTP request line here. For instance,
-          entering <literal>"GET /index.html HTTP/1.0\r\n\r\n"</literal>
-          would be incorrect.
+          HTTP リクエストで
+          <literal>"GET"</literal> あるいは <literal>"HEAD"</literal> 以外に
+          使用するカスタムメソッド。これが有用なのは、<literal>"DELETE"</literal>
+          やその他のあまり知られていない HTTP リクエストを実行する場合です。
+          使用可能な値は <literal>"GET"</literal>、
+          <literal>"POST"</literal>、<literal>"CONNECT"</literal> などです。
+          HTTP リクエストの内容をすべて指定するわけではありません。つまり、
+          <literal>"GET /index.html HTTP/1.0\r\n\r\n"</literal> のような
+          記述は間違いだということです。
           <note>
            <para>
-            Don't do this without making sure your server supports the custom
-            request method first.
+            使用しようとしているメソッドをサーバがサポートしていることを
+            確かめるまで、これを使用しないでください。
            </para>
           </note>
          </entry>
@@ -678,8 +697,9 @@
         <row>
          <entry><constant>CURLOPT_EGBSOCKET</constant></entry>
          <entry>
-          Like <constant>CURLOPT_RANDOM_FILE</constant>, except a filename
-          to an Entropy Gathering Daemon socket.
+          <constant>CURLOPT_RANDOM_FILE</constant> と似ていますが、
+          Entropy Gathering Daemon ソケットを使用してファイル名を生成する点が
+          違います。
          </entry>
          <entry>
          </entry>
@@ -687,24 +707,25 @@
         <row>
          <entry><constant>CURLOPT_ENCODING</constant></entry>
          <entry>
-          The contents of the <literal>"Accept-Encoding: "</literal> header.
-          This enables decoding of the response. Supported encodings are
-          <literal>"identity"</literal>, <literal>"deflate"</literal>, and
-          <literal>"gzip"</literal>. If an empty string, <literal>""</literal>,
-          is set, a header containing all supported encoding types is sent.
+          <literal>"Accept-Encoding: "</literal> ヘッダの内容。
+          これにより、応答のデコードを可能にします。サポートされる
+          エンコーディングは <literal>"identity"</literal>、
+          <literal>"deflate"</literal> および <literal>"gzip"</literal>
+          です。もし空文字列 <literal>""</literal> が指定された場合、
+          サポートされるエンコーディングをすべて含むヘッダが送信されます。
          </entry>
          <entry>
+          CURL 7.10 で追加されました。
          </entry>
         </row>
         <row>
          <entry><constant>CURLOPT_FTPPORT</constant></entry>
          <entry>
-          The value which will be used to get the IP address to use
-          for the FTP "POST" instruction. The "POST" instruction tells
-          the remote server to connect to our specified IP address.  The
-          string may be a plain IP address, a hostname, a network
-          interface name (under Unix), or just a plain '-' to use the
-          systems default IP address.
+          FTP で "POST" を使用するための IP アドレスを取得する際に使用される値。
+          "POST" は、リモートサーバに対してこちらが指定した IP アドレスに
+          接続するよう指示します。この値に設定できる内容は IP アドレス、ホスト名、
+          ネットワークインターフェース名（Unix）、あるいは単に '-' を指定する
+          ことでシステムのデフォルト IP アドレスを指定します。
          </entry>
          <entry>
          </entry>
@@ -712,8 +733,8 @@
         <row>
          <entry><constant>CURLOPT_INTERFACE</constant></entry>
          <entry>
-          The name of the outgoing network interface to use. This can be an
-          interface name, an IP address or a host name.
+          使用するネットワークインターフェースの名前。
+          インターフェース名、IP アドレスあるいはホスト名が指定可能です。
          </entry>
          <entry>
          </entry>
@@ -721,16 +742,16 @@
         <row>
          <entry><constant>CURLOPT_KRB4LEVEL</constant></entry>
          <entry>
-          The KRB4 (Kerberos 4) security level. Any of the following values
-          (in order from least to most powerful) are valid:
-          <literal>"clear"</literal>,
-          <literal>"safe"</literal>,
-          <literal>"confidential"</literal>,
-          <literal>"private".</literal>.
-          If the string does not match one of these,
-          <literal>"private"</literal> is used. Setting this option to &null;
-          will disable KRB4 security. Currently KRB4 security only works
-          with FTP transactions.
+          KRB4（Kerberos 4）セキュリティレベル。以下の値のいずれか
+          （セキュリティの低い順です）が指定可能です。
+          <literal>"clear"</literal>、
+          <literal>"safe"</literal>、
+          <literal>"confidential"</literal>、
+          <literal>"private"</literal>。
+          文字列がこれらのどれでもなかった場合は、
+          <literal>"private"</literal> が使用されます。このオプションを &null;
+          にすると KRB4 セキュリティを無効にします。現時点では、KRB4
+          セキュリティは FTP 転送にのみ使用可能です。
          </entry>
          <entry>
          </entry>
@@ -738,7 +759,7 @@
         <row>
          <entry><constant>CURLOPT_POSTFIELDS</constant></entry>
          <entry>
-          The full data to post in a HTTP "POST" operation.
+          HTTP "POST" で送信するすべてのデータ。
          </entry>
          <entry>
          </entry>
@@ -746,7 +767,7 @@
         <row>
          <entry><constant>CURLOPT_PROXY</constant></entry>
          <entry>
-          The HTTP proxy to tunnel requests through.
+          リクエストを経由させる HTTP プロキシ。
          </entry>
          <entry>
          </entry>
@@ -754,9 +775,8 @@
         <row>
          <entry><constant>CURLOPT_PROXYUSERPWD</constant></entry>
           <entry>
-           A username and password formatted as
-           <literal>"[username]:[password]"</literal> to use for the
-           connection to the proxy.
+           プロキシに接続するためのユーザ名とパスワード。
+           <literal>"[username]:[password]"</literal> 形式で指定します。
          </entry>
          <entry>
          </entry>
@@ -764,7 +784,7 @@
         <row>
          <entry><constant>CURLOPT_RANDOM_FILE</constant></entry>
          <entry>
-          A filename to be used to seed the random number generator for SSL.
+          使用するファイル名を、SSL の乱数生成器を使用して作成します。
          </entry>
          <entry>
          </entry>
@@ -772,10 +792,10 @@
         <row>
          <entry><constant>CURLOPT_RANGE</constant></entry>
          <entry>
-          Range(s) of data to retrieve in the format
-          <literal>"X-Y"</literal> where X or Y are optional. HTTP transfers
-          also support several intervals, separated with commas in the format
-          <literal>"X-Y,N-M"</literal>.
+          取得するデータの範囲を
+          <literal>"X-Y"</literal> 形式で指定します。X あるいは Y は省略可能です。
+          HTTP 転送では、いくつかの範囲をカンマで区切った
+          <literal>"X-Y,N-M"</literal> のような形式もサポートしています。
          </entry>
          <entry>
          </entry>
@@ -783,8 +803,8 @@
         <row>
          <entry><constant>CURLOPT_REFERER</constant></entry>
          <entry>
-          The contents of the <literal>"Referer: "</literal> header to be used
-          in a HTTP request.
+          HTTP リクエストで使用される <literal>"Referer: "</literal>
+          ヘッダの内容。
          </entry>
          <entry>
          </entry>
@@ -792,9 +812,9 @@
         <row>
          <entry><constant>CURLOPT_SSL_CIPHER_LIST</constant></entry>
          <entry>
-          A list of ciphers to use for SSL. For example,
-          <literal>RC4-SHA</literal> and <literal>TLSv1</literal> are valid
-          cipher lists.
+          SSL で使用する暗号のリスト。例えば
+          <literal>RC4-SHA</literal> および <literal>TLSv1</literal> が
+          使用可能です。
          </entry>
          <entry>
          </entry>
@@ -802,7 +822,7 @@
         <row>
          <entry><constant>CURLOPT_SSLCERT</constant></entry>
          <entry>
-          The name of a file containing a PEM formatted certificate.
+          PEM フォーマットの証明書を含むファイルの名前。
          </entry>
          <entry>
          </entry>
@@ -810,8 +830,8 @@
         <row>
          <entry><constant>CURLOPT_SSLCERTPASSWD</constant></entry>
          <entry>
-          The password required to use the
-          <constant>CURLOPT_SSLCERT</constant> certificate.
+          <constant>CURLOPT_SSLCERT</constant> 証明書を使用する際に
+          必要なパスワード。
          </entry>
          <entry>
          </entry>
@@ -819,19 +839,19 @@
         <row>
          <entry><constant>CURLOPT_SSLCERTTYPE</constant></entry>
          <entry>
-          The format of the certificate. Supported formats are
-          <literal>"PEM"</literal> (default), <literal>"DER"</literal>,
-          and <literal>"ENG"</literal>.
+          証明書の形式。サポートされるフォーマットは
+          <literal>"PEM"</literal>（デフォルト）、<literal>"DER"</literal>
+          および <literal>"ENG"</literal> です。
          </entry>
          <entry>
-          Added in CURL 7.9.3.
+          CURL 7.9.3 および PHP 5.0.0 で追加されました。
          </entry>
         </row>
         <row>
          <entry><constant>CURLOPT_SSLENGINE</constant></entry>
          <entry>
-          The identifier for the crypto engine of the private SSL key
-          specified in <constant>CURLOPT_SSLKEY</constant>.
+          <constant>CURLOPT_SSLKEY</constant> で指定した SSL 秘密鍵の
+          暗号化エンジンの ID 。
          </entry>
          <entry>
          </entry>
@@ -839,8 +859,7 @@
         <row>
          <entry><constant>CURLOPT_SSLENGINE_DEFAULT</constant></entry>
          <entry>
-          The identifier for the crypto engine used for asymmetric crypto
-          operations.
+          非対称暗号化で使用する暗号化エンジンの ID 。
          </entry>
          <entry>
          </entry>
@@ -848,7 +867,7 @@
         <row>
          <entry><constant>CURLOPT_SSLKEY</constant></entry>
          <entry>
-          The name of a file containing a private SSL key.
+          SSL 秘密鍵を含むファイルの名前。
          </entry>
          <entry>
          </entry>
@@ -856,12 +875,12 @@
         <row>
          <entry><constant>CURLOPT_SSLKEYPASSWD</constant></entry>
          <entry>
-          The secret password needed to use the private SSL key specified in
-          <constant>CURLOPT_SSLKEY</constant>.
+          <constant>CURLOPT_SSLKEY</constant> で指定した SSL 秘密鍵を
+          使用するために必要なパスワード。
           <note>
            <para>
-            Since this option contains a sensitive password, remember to keep
-            the PHP script it is contained within safe.
+            このオプションには重要なパスワードが含まれます。PHP スクリプトを
+            安全な状態におくことを忘れないでください。
            </para>
           </note>
          </entry>
@@ -871,10 +890,10 @@
         <row>
          <entry><constant>CURLOPT_SSLKEYTYPE</constant></entry>
          <entry>
-          The key type of the private SSL key specified in
-          <constant>CURLOPT_SSLKEY</constant>. Supported key types are
-          <literal>"PEM"</literal> (default), <literal>"DER"</literal>,
-          and <literal>"ENG"</literal>.
+          <constant>CURLOPT_SSLKEY</constant> で指定した SSL 秘密鍵の
+          形式。サポートされる型は以下のとおりです。
+          <literal>"PEM"</literal>（デフォルト）、<literal>"DER"</literal>
+          および <literal>"ENG"</literal> 。
          </entry>
          <entry>
          </entry>
@@ -882,8 +901,8 @@
         <row>
          <entry><constant>CURLOPT_URL</constant></entry>
          <entry>
-          The URL to fetch. You can also set this when initializing a
-          session with <function>curl_init</function>.
+          取得する URL 。<function>curl_init</function> でセッションを
+          初期化する際に指定することも可能です。
          </entry>
          <entry>
          </entry>
@@ -891,8 +910,8 @@
         <row>
          <entry><constant>CURLOPT_USERAGENT</constant></entry>
          <entry>
-          The contents of the <literal>"User-Agent: "</literal> header to be
-          used in a HTTP request.
+          HTTP リクエストで使用される <literal>"User-Agent: "</literal>
+          ヘッダの内容。
          </entry>
          <entry>
          </entry>
@@ -900,9 +919,8 @@
         <row>
          <entry><constant>CURLOPT_USERPWD</constant></entry>
          <entry>
-          A username and password formatted as
-          <literal>"[username]:[password]"</literal> to use for the
-          connection.
+          接続に使用するユーザ名とパスワード。
+          <literal>"[username]:[password]"</literal> 形式で指定します。
          </entry>
          <entry>
          </entry>
@@ -913,14 +931,14 @@
     </para>
   <para>
    <parameter>value</parameter> には、
-   <parameter>option</parameter>の以下の値に関して
+   <parameter>option</parameter> の以下の値に関して
    配列を指定する必要があります。
    <informaltable>
     <tgroup cols="3">
      <thead>
       <row>
        <entry>オプション</entry>
-       <entry><parameter>value</parameter>への設定値</entry>
+       <entry><parameter>value</parameter> への設定値</entry>
        <entry>注記</entry>
       </row>
        </thead>
@@ -928,17 +946,17 @@
         <row>
          <entry><constant>CURLOPT_HTTP200ALIASES</constant></entry>
          <entry>
-          An array of HTTP 200 responses that will be treated as valid
-          responses and not as errors.
+          エラーではなく正常な応答として扱われる、HTTP 200 レスポンスの
+          配列。
          </entry>
          <entry>
-          Added in CURL 7.10.3.
+          CURL 7.10.3 および PHP 5.0.0 で追加されました。
          </entry>
         </row>
         <row>
          <entry><constant>CURLOPT_HTTPHEADER</constant></entry>
          <entry>
-          An array of HTTP header fields to set.
+          設定する HTTP ヘッダフィールドの配列。
          </entry>
          <entry>
          </entry>
@@ -946,8 +964,7 @@
         <row>
          <entry><constant>CURLOPT_POSTQUOTE</constant></entry>
          <entry>
-          An array of FTP commands to execute on the server after the FTP
-          request has been performed.
+          FTP リクエストの実行後に、サーバ上で実行する FTP コマンドの配列。
          </entry>
          <entry>
          </entry>
@@ -955,8 +972,7 @@
         <row>
          <entry><constant>CURLOPT_QUOTE</constant></entry>
          <entry>
-          An array of FTP commands to execute on the server prior to the FTP
-          request.
+          FTP リクエストの前にサーバ上で実行する FTP コマンドの配列。
          </entry>
          <entry>
          </entry>
@@ -966,24 +982,24 @@
      </informaltable>
     </para>
     <para>
-     <parameter>value</parameter> should be a stream resource (using
-     <function>fopen</function>, for example) for the following values of the
-     <parameter>option</parameter> parameter:
+     <parameter>value</parameter> はストリームリソース（例えば
+     <function>fopen</function> が作成するもの）であり、以下の
+     <parameter>option</parameter> パラメータに設定します。
      <informaltable>
       <tgroup cols="3">
        <thead>
         <row>
-         <entry>Option</entry>
-         <entry>Set <parameter>value</parameter> to</entry>
-         <entry>Notes</entry>
+         <entry>オプション</entry>
+         <entry><parameter>value</parameter> に設定する内容</entry>
+         <entry>注釈</entry>
         </row>
        </thead>
        <tbody>
         <row>
          <entry><constant>CURLOPT_FILE</constant></entry>
          <entry>
-          The file that the transfer should be written to. The default
-          is <literal>STDOUT</literal> (the browser window).
+          転送内容が書き込まれるファイル。デフォルトは <literal>STDOUT</literal>
+          （ブラウザウィンドウ）。
          </entry>
          <entry>
          </entry>
@@ -991,7 +1007,7 @@
         <row>
          <entry><constant>CURLOPT_INFILE</constant></entry>
          <entry>
-          The file that the transfer should be read from when uploading.
+          アップロード時に転送内容を読み込むファイル。
          </entry>
          <entry>
          </entry>
@@ -999,8 +1015,7 @@
         <row>
          <entry><constant>CURLOPT_STDERR</constant></entry>
          <entry>
-          An alternative location to output errors to instead of
-          <literal>STDERR</literal>.
+          <literal>STDERR</literal> の代わりにエラーを出力する場所。
          </entry>
          <entry>
          </entry>
@@ -1008,7 +1023,7 @@
         <row>
          <entry><constant>CURLOPT_WRITEHEADER</constant></entry>
          <entry>
-          The file that the header part of the transfer is written to.
+          転送のヘッダ部分が書き込まれるファイル。
          </entry>
          <entry>
          </entry>
@@ -1019,14 +1034,14 @@
     </para>
   <para>
    <parameter>value</parameter> には、
-   <parameter>option</parameter>の以下の値に関して
+   <parameter>option</parameter> の以下の値に関して
    有効なコールバック関数の名前を指定する必要があります。
    <informaltable>
     <tgroup cols="3">
      <thead>
       <row>
        <entry>オプション</entry>
-       <entry><parameter>value</parameter>への設定値</entry>
+       <entry><parameter>value</parameter> への設定値</entry>
        <entry>注記</entry>
       </row>
      </thead>
@@ -1034,11 +1049,11 @@
       <row>
        <entry><constant>CURLOPT_HEADERFUNCTION</constant></entry>
        <entry>
-        The name of a callback function where the callback function takes
-        two parameters. The first is the CURL resource, the second is a
-        string with the header data to be written. Using this callback
-        function, it becomes your responsibility to write the header data.
-        Return the number of bytes written.
+        コールバック関数の名前で、このコールバック関数は 2 つの引数を
+        とります。最初のパラメータは CURL リソースで、2 番目は書き込む
+        ヘッダデータの文字列です。このコールバック関数を使用するにあたり、
+        ヘッダデータを書き込む処理を実装するのはあなたの役目となります。
+        書き込んだデータのバイト数を返します。
        </entry>
        <entry>
        </entry>
@@ -1046,10 +1061,10 @@
       <row>
        <entry><constant>CURLOPT_PASSWDFUNCTION</constant></entry>
        <entry>
-        The name of a callback function where the callback function takes
-        three parameters. The first is the CURL resource, the second is a
-        string containing a password prompt, and the third is the maximum
-        password length. Return the string containing the password.
+        コールバック関数の名前で、このコールバック関数は 3 つの引数を
+        とります。最初のパラメータは CURL リソースで、2 番目はパスワード
+        プロンプトの文字列、そして 3 番目はパスワードの最大長です。
+        入力されたパスワードを文字列で返します。
        </entry>
        <entry>
        </entry>
@@ -1057,11 +1072,12 @@
       <row>
        <entry><constant>CURLOPT_READFUNCTION</constant></entry>
        <entry>
-        The name of a callback function where the callback function takes
-        two parameters. The first is the CURL resource, and the second is a
-        string with the data to be read. Using this callback function, it
-        becomes your responsibility to read the data. Return the number of
-        bytes read. Return 0 to signal <literal>EOF</literal>.
+        コールバック関数の名前で、このコールバック関数は 2 つの引数を
+        とります。最初のパラメータは CURL リソースで、2 番目は読み込む
+        データの文字列です。このコールバック関数を使用するにあたり、
+        データを読み込む処理を実装するのはあなたの役目となります。
+        読み込んだデータのバイト数を返します。<literal>EOF</literal>
+        シグナルを受け取った場合は 0 を返します。
        </entry>
        <entry>
        </entry>
@@ -1069,11 +1085,12 @@
       <row>
        <entry><constant>CURLOPT_WRITEFUNCTION</constant></entry>
        <entry>
-        The name of a callback function where the callback function takes
-        two parameters. The first is the CURL resource, and the second is a
-        string with the data to be written. Using this callback function, it
-        becomes your responsibility to write the data. Must return the exact
-        number of bytes written or this will fail.
+        コールバック関数の名前で、このコールバック関数は 2 つの引数を
+        とります。最初のパラメータは CURL リソースで、2 番目は書き込む
+        データの文字列です。このコールバック関数を使用するにあたり、
+        データを書き込む処理を実装するのはあなたの役目となります。
+        書き込んだデータの正確なバイト数を返す必要があり、さもないと
+        この関数は失敗します。
        </entry>
        <entry>
        </entry>
@@ -1085,22 +1102,22 @@
   <para>
    <example>
     <title>
-     新規にCURLセッションを初期化、Webページを取得する
+     新規に CURL セッションを初期化、Web ページを取得する
     </title>
     <programlisting role="php">
 <![CDATA[
 <?php
-// create a new CURL resource
+// 新しい CURL リソースを作成します
 $ch = curl_init();
 
-// set URL and other appropriate options
+// URL その他のオプションを適切に設定します
 curl_setopt($ch, CURLOPT_URL, "http://www.example.com/");
 curl_setopt($ch, CURLOPT_HEADER, false);
 
-// grab URL and pass it to the browser
+// URL の内容を取得し、ブラウザに渡します
 curl_exec($ch);
 
-// close CURL resource, and free up system resources
+// CURL リソースを閉じ、システムリソースを開放します
 curl_close($ch);
 ?>
 ]]>
