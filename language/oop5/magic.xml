@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.7 $ -->
-<!-- EN-Revision: 1.10 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.8 $ -->
+<!-- EN-Revision: 1.11 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: shimooka -->
 
 <sect1 id="language.oop5.magic">
@@ -21,7 +21,7 @@
   <literal>__toString</literal>,
    <link linkend="language.oop5.cloning">__clone</link> および
    <link linkend="language.oop5.autoload">__autoload</link>
-  は、PHPクラスにおける特殊関数の名前です。
+  は、PHP クラスにおける特殊関数の名前です。
   これらの関数に関連する特別な機能を使用する場合を除き、
   クラス内にこれらの名前を有する関数を作成してはいけません。
  </para>
@@ -38,7 +38,7 @@
   <title><literal>__sleep</literal> と <literal>__wakeup</literal></title>
   <para>
    <function>serialize</function> は、クラスに
-   特殊な名前<literal>__sleep</literal>を有数関数があるかどうかを
+   特殊な名前 <literal>__sleep</literal> を有する関数があるかどうかを
    調べます。もしある場合には、この関数がシリアル化の前に実行されます。
    この関数によりオブジェクトのクリンナップを行うことができ、
    シリアル化するオブジェクトの全ての変数の名前を有する配列を返す
@@ -47,29 +47,67 @@
   <para>
    意図される <literal>__sleep</literal> の使用法は、
    オブジェクトが有する可能性があるデータベース接続に関係しており、
-   ペンディングされたデータベースのコミットをオコナッ足り、
+   ペンディングされたデータベースのコミットを行ったり、
    同様のクリンナップタスクを行ったりするものです。
    また、この関数は、オブジェクトのサイズが非常に大きく、全体を
    保存することができない場合にも便利です。
   </para>
   <para>
    逆に、<function>unserialize</function> は、
-   特殊な名前<literal>__wakeup</literal>を有する
+   特殊な名前 <literal>__wakeup</literal> を有する
    関数の存在を調べます。
-   もし、存在する場合、この関数は、オブジェクトが有する可能性が
+   もし存在する場合、この関数は、オブジェクトが有する可能性が
    あるあらゆるリソースを再構築することができます。
   </para>
   <para>
-   意図される<literal>__wakeup</literal>の使用法は、
+   意図される <literal>__wakeup</literal> の使用法は、
    シリアル化の際に失われたデータベース接続を再度確立したり、
    その他の再初期化を行うことです。
   </para>
+   <example>
+    <title>Sleep および wakeup</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+class Connection {
+    protected $link;
+    private $server, $username, $password, $db;
+    
+    public function __construct($server, $username, $password, $db)
+    {
+        $this->server = $server;
+        $this->username = $username;
+        $this->password = $password;
+        $this->db = $db;
+        $this->connect();
+    }
+    
+    private function connect()
+    {
+        $this->link = mysql_connect($this->server, $this->username, $this->password);
+        mysql_select_db($this->db, $this->link);
+    }
+    
+    public function __sleep()
+    {
+        mysql_close($this->link);
+    }
+    
+    public function __wakeup()
+    {
+        $this->connect();
+    }
+}
+?>
+]]>
+    </programlisting>
+   </example>
  </sect2>
 
  <sect2 id="language.oop5.magic.tostring">
   <title><literal>__toString</literal></title>
   <para>
-   <literal>__toString</literal>メソッドにより、
+   <literal>__toString</literal> メソッドにより、
    クラスが文字列に変換される際の動作を決めることができます。
   </para>
   <example>
