@@ -1,88 +1,124 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.6 $ -->
 <!-- splitted from ./ja/functions/dir.xml, last change in rev 1.1 -->
-<!-- EN-Revision: 1.4 Maintainer: hirokawa Status: ready -->
-  <refentry id="function.readdir">
-   <refnamediv>
-    <refname>readdir</refname>
-    <refpurpose>ディレクトリ・ハンドルからのエントリ読み込み</refpurpose>
-   </refnamediv>
-   <refsect1>
-    <title>説明</title>
-     <methodsynopsis>
-      <type>string</type><methodname>readdir</methodname>
-      <methodparam><type>resource</type><parameter>dir_handle</parameter></methodparam>
-     </methodsynopsis>
+<!-- EN-Revision: 1.9 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: takagi -->
+<refentry id="function.readdir">
+ <refnamediv>
+  <refname>readdir</refname>
+  <refpurpose>ディレクトリハンドルからエントリを読み込む</refpurpose>
+ </refnamediv>
+
+ <refsect1 role="description">
+  &reftitle.description;
+  <methodsynopsis>
+   <type>string</type><methodname>readdir</methodname>
+   <methodparam><type>resource</type><parameter>dir_handle</parameter></methodparam>
+  </methodsynopsis>
+  <para>
+   ディレクトリから次のファイルのファイル名を返します。
+   ファイル名はファイルシステム上に格納されている順番で返されます。
+  </para>
+ </refsect1>
+
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <para>
+   <variablelist>
+    <varlistentry>
+     <term><parameter>dir_handle</parameter></term>
+     <listitem>
+      <para>
+       <function>opendir</function> で事前にオープンした
+       ディレクトリハンドルの <type>resource</type> 。
+      </para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
+  </para>
+ </refsect1>
+
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <para>
+   成功した場合にファイル名、失敗した場合に &false; を返します。
+  </para> 
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title>ディレクトリ内の全てのファイルのリストを得る</title>
     <para>
-     ディレクトリから次のファイルのファイル名を返します。
-     ファイル名はファイルシステム上に格納されている順番で返されます。
+     以下の例で、<function>readdir</function> の返り値をどのように調べているかに
+     注目してください。返り値が &false; と一致することを、明示的に
+     （値が等しく、かつ型も等しい - 詳細は <link linkend="language.operators.comparison">
+     比較演算子</link> を参照ください）調べています。なぜなら、そうしないと
+     &false; と評価されてしまうディレクトリエントリ
+     （例: "0" という名前のディレクトリ）があった場合にループが
+     とまってしまうからです。
     </para>
-    <para>
-     <function>readdir</function>の戻り値は以下の例のように
-     チェックされることに注目してください。
-     We are explicitly
-     testing whether the return value is identical to (equal to and of
-     the same type as--see <link
-     linkend="language.operators.comparison">Comparison
-     Operators</link> for more information) &false; since otherwise,
-     any directory entry whose name evaluates to &false; will stop the
-     loop (e.g. a directory named "0").
-    </para>
-    <para>
-     <example>
-      <title>カレントディレクトリにある全ファイルのリストを得る</title>
-      <programlisting role="php">
+    <programlisting role="php">
 <![CDATA[
-// Note that !== did not exist until 4.0.0-RC2
 <?php
+// 4.0.0-RC2 より前のバージョンでは、!== は存在しないことに注意しましょう
+
 if ($handle = opendir('/path/to/files')) {
     echo "Directory handle: $handle\n";
     echo "Files:\n";
 
-    /* This is the correct way to loop over the directory. */
-    while (false !== ($file = readdir($handle))) { 
+    /* ディレクトリをループする際の正しい方法です */
+    while (false !== ($file = readdir($handle))) {
         echo "$file\n";
     }
 
-    /* This is the WRONG way to loop over the directory. */
-    while ($file = readdir($handle)) { 
+    /* ディレクトリをループする際の「間違った」方法です */
+    while ($file = readdir($handle)) {
         echo "$file\n";
     }
 
-    closedir($handle); 
+    closedir($handle);
 }
 ?>
 ]]>
-      </programlisting>
-     </example>
-    </para>
-    <para>
-     <function>readdir</function> は、エントリ <literal>.</literal> および 
-     <literal>..</literal> を返すことに
-     注意してください。これらを必要としない場合には、次のように取り除いて下さい。
-     <example>
-      <title>
-       現在のディレクトリの <literal>.</literal> および <literal>..</literal> を
-       除いた全てのファイルの一覧を表示。
-      </title>
-      <programlisting role="php">
+    </programlisting>
+   </example>
+  </para>
+  <para>
+   <example>
+    <title>
+     カレントディレクトリの全てのファイルを一覧する。ただし <literal>.</literal>
+     および <literal>..</literal> は取り除く
+    </title>
+    <programlisting role="php">
 <![CDATA[
-<?php 
+<?php
 if ($handle = opendir('.')) {
-    while (false !== ($file = readdir($handle))) { 
-        if ($file != "." && $file != "..") { 
-            echo "$file\n"; 
-        } 
+    while (false !== ($file = readdir($handle))) {
+        if ($file != "." && $file != "..") {
+            echo "$file\n";
+        }
     }
-    closedir($handle); 
+    closedir($handle);
 }
 ?>
 ]]>
-      </programlisting>
-     </example>
-    </para>
-    <para>See also <function>is_dir</function>, and <function>glob</function>.</para>
-   </refsect1>
-  </refentry>
+    </programlisting>
+   </example>
+  </para>
+ </refsect1>
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <para>
+   <simplelist>
+    <member><function>is_dir</function></member>
+    <member><function>glob</function></member>
+   </simplelist>
+  </para>
+ </refsect1>
+</refentry>
 
 <!-- Keep this comment at the end of the file
 Local variables:
