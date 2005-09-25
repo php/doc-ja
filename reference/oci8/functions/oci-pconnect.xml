@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<!-- $Revision: 1.1 $ -->
-<!-- EN-Revision: 1.6 Maintainer: shimooka Status: ready -->
+<!-- $Revision: 1.2 $ -->
+<!-- EN-Revision: 1.8 Maintainer: shimooka Status: ready -->
   <refentry id="function.oci-pconnect">
    <refnamediv>
     <refname>oci_pconnect</refname>
@@ -18,6 +18,26 @@
     <para>
      <function>oci_pconnect</function> は、Oracle
      サーバへの持続的接続を生成し、ログオンします。
+     持続的接続はキャッシュされ、リクエスト間で再利用されることで、
+     各ページロードのオーバーヘッドを軽減します。
+     典型的な PHP アプリケーションでは、Apache の子プロセス
+     (もしくは PHP FastCGI/CGI プロセス) ごとに
+     Oracle サーバに対してオープンされた単一の持続的接続を有します。
+     より詳細な情報については、<link
+     linkend="features.persistent-connections">持続的データベース接続</link>
+     のセクションを参照してください。
+    </para>
+    <note>
+     <simpara>
+      OCI8 拡張モジュールのバージョン 1.1 から、持続的 Oracle
+      接続の生存時間と最大数が次の設定値を設定することで調整可能になりました:
+      <link
+       linkend="ini.oci8.persistent_timeout">oci8.persistent_timeout</link>,
+      <link linkend="ini.oci8.ping_interval">oci8.ping_interval</link>,
+      <link linkend="ini.oci8.max_persistent">oci8.max_persistent</link> 。
+     </simpara>
+    </note>
+    <para>
      オプションの3番目のパラメータには、ローカル Oracle インスタンスの名前か
      <filename>tnsnames.ora</filename>
      における接続先のエントリ名を指定することができます。
@@ -27,19 +47,36 @@
      インスタンス) または <literal>TWO_TASK</literal>
      (<filename>tnsnames.ora</filename>) を使用します。
     </para>
+    <para>
+     パラメータ <parameter>session_mode</parameter> はバージョン
+     1.1 からり用可能で、次の値を受け付けます:
+     <constant>OCI_DEFAULT</constant>,
+     <constant>OCI_SYSOPER</constant>, <constant>OCI_SYSDBA</constant> 。
+     <constant>OCI_SYSOPER</constant> もしくは
+     <constant>OCI_SYSDBA</constant> のいずれかが指定された場合、
+     <function>oci_connect</function> は外部の信用を利用して
+     権限付きの接続を確立しようとします。
+     デフォルトでは権限付きの接続は無効です。有効にするためには、<link
+      linkend="ini.oci8.privileged_connect">oci8.privileged_connect</link>
+     をオンにしてください。
+    </para>
+    <note>
+     <simpara>
+      もし PHP を Oracle Instant Client と併用している場合、
+      次に解説されている簡単な接続ネーミングメソッドを使用することができます:
+      <ulink url="&url.oracle.oic.connect;">&url.oracle.oic.connect;</ulink> 。
+      基本的にデータベース名として "//db_host[:port]/database_name"
+      を指定できることを意味します。しかし、
+      古いネーミング方法を使用したい場合、<constant>ORACLE_HOME</constant>
+      もしくは <constant>TNS_ADMIN</constant> のいずれかを設定
+      <emphasis>しなければなりません</emphasis>。
+     </simpara>
+    </note>
     &oci.charset;
     <para>
      <function>oci_pconnect</function> は接続 ID を返し、
      エラーが発生した場合は &false; を返します。
     </para>
-    <note>
-     <para>
-      これらのリンクの種類はPHPをモジュールバージョンとして使用している場合のみ
-      動作することに注意してください。さらなる情報は
-      <link linkend="features.persistent-connections">持続的データベース接続
-      </link> のセクションにありますので参照ください。
-     </para>
-    </note>
     <note>
      <para>
       PHP バージョン 5.0.0 以前では、代わりに

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<!-- $Revision: 1.1 $ -->
-<!-- EN-Revision: 1.6 Maintainer: shimooka Status: ready -->
+<!-- $Revision: 1.2 $ -->
+<!-- EN-Revision: 1.8 Maintainer: shimooka Status: ready -->
   <refentry id="function.oci-connect">
    <refnamediv>
     <refname>oci_connect</refname>
@@ -14,6 +14,7 @@
       <methodparam><type>string</type><parameter>password</parameter></methodparam>
       <methodparam choice="opt"><type>string</type><parameter>db</parameter></methodparam>
       <methodparam choice="opt"><type>string</type><parameter>charset</parameter></methodparam>
+      <methodparam choice="opt"><type>int</type><parameter>session_mode</parameter></methodparam>
      </methodsynopsis>
     <para>
      <function>oci_connect</function> は他のほとんどの OCI コールで必要な
@@ -27,15 +28,41 @@
      インスタンス)または <constant>TWO_TASK</constant>
      (<filename>tnsnames.ora</filename>) を使用します。
     </para>
+    <para>
+     パラメータ <parameter>session_mode</parameter> はバージョン
+     1.1 からり用可能で、次の値を受け付けます:
+     <constant>OCI_DEFAULT</constant>,
+     <constant>OCI_SYSOPER</constant>, <constant>OCI_SYSDBA</constant> 。
+     <constant>OCI_SYSOPER</constant> もしくは
+     <constant>OCI_SYSDBA</constant> のいずれかが指定された場合、
+     <function>oci_connect</function> は外部の信用を利用して
+     権限付きの接続を確立しようとします。
+     デフォルトでは権限付きの接続は無効です。有効にするためには、<link
+      linkend="ini.oci8.privileged_connect">oci8.privileged_connect</link>
+     をオンにしてください。
+    </para>
     <note>
      <simpara>
-      もし、あるパラメータを使用した接続がすでに確立されていた場合、
-      <function>oci_connect</function> は接続を再確立
-      <emphasis>しません</emphasis>。
-      この場合、<function>oci_connect</function> はすでにオープンされた接続の
-      ID を返します。
-      これは、トランザクションを分けるためにこの関数を使うことはできない、
-      ということを意味しています。全くの新しい接続を確立するためには、
+      もし PHP を Oracle Instant Client と併用している場合、
+      次に解説されている簡単な接続ネーミングメソッドを使用することができます:
+      <ulink url="&url.oracle.oic.connect;">&url.oracle.oic.connect;</ulink> 。
+      基本的にデータベース名として "//db_host[:port]/database_name"
+      を指定できることを意味します。しかし、
+      古いネーミング方法を使用したい場合、<constant>ORACLE_HOME</constant>
+      もしくは <constant>TNS_ADMIN</constant> のいずれかを設定
+      <emphasis>しなければなりません</emphasis>。
+     </simpara>
+    </note>
+    <note>
+     <simpara>
+      同じパラメータを使用して 2 回目やそれ以降に
+      <function>oci_connect</function> がコールされた場合、
+      最初のコールで返された接続ハンドルを返します。
+      これは 1 つのハンドルに対して発行されたクエリは、
+      他のハンドルにも適用されることを意味します。なぜなら、
+      これらは <emphasis>同じ</emphasis> ハンドルだからです。
+      この動作は以下の例 1 で例示されています。
+      もしトランザクション的にお互い独立した 2 つのハンドルが必要な場合、
       <function>oci_new_connect</function> を使用してください。
      </simpara>
     </note>
@@ -148,9 +175,11 @@ echo "</pre>";
       <function>oci_connect</function> への別名として残されていますが、
       推奨されません。
      </para>
-    </note>    <simpara>
+    </note>
+    <simpara>
      <function>oci_pconnect</function>,
-     <function>oci_new_connect</function> も参照ください。
+     <function>oci_new_connect</function>,
+     <function>oci_close</function> も参照ください。
     </simpara>
    </refsect1>
   </refentry>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<!-- $Revision: 1.1 $ -->
-<!-- EN-Revision: 1.5 Maintainer: shimooka Status: ready -->
+<!-- $Revision: 1.2 $ -->
+<!-- EN-Revision: 1.7 Maintainer: shimooka Status: ready -->
 <refentry id="function.oci-new-connect">
    <refnamediv>
     <refname>oci_new_connect</refname>
@@ -9,15 +9,24 @@
    <refsect1>
     <title>説明</title>
      <methodsynopsis>
-      <type>resource</type><methodname>oci_new_connect</methodname>
+      <type>resource</type><methodname>oci_connect</methodname>
       <methodparam><type>string</type><parameter>username</parameter></methodparam>
       <methodparam><type>string</type><parameter>password</parameter></methodparam>
       <methodparam choice="opt"><type>string</type><parameter>db</parameter></methodparam>
       <methodparam choice="opt"><type>string</type><parameter>charset</parameter></methodparam>
+      <methodparam choice="opt"><type>int</type><parameter>session_mode</parameter></methodparam>
      </methodsynopsis>
     <para>
      <function>oci_new_connect</function> は Oracle
-     サーバへの新規接続を作成し、ログオンします。
+     サーバへの新規接続を確立しログオンします。
+     <function>oci_connect</function> や <function>oci_pconnect</function>
+     と異なり、<function>oci_new_connect</function>
+     は接続をキャッシュしません。また、
+     常に新しくオープンされた接続ハンドルを返します。
+     これは、もしアプリケーションが
+     2 セットのクエリ間でトランザクション的な独立を必要とする場合に有効です。
+    </para>
+    <para>
      オプションの3番目のパラメータには、ローカルOracleインスタンスの名前か
      <filename>tnsnames.ora</filename>
      における接続先のエントリ名を指定することができます。
@@ -27,14 +36,32 @@
      インスタンス)または <literal>TWO_TASK</literal>
      (<filename>tnsnames.ora</filename>) を使用します。
     </para>
-    &oci.charset;
     <para>
-     <function>oci_new_connect</function> は強制的に新規接続を作成します。
-     一連のトランザクションを独立して実行する必要がある場合にこの関数を
-     使用する必要があります。デフォルトでは、接続は共有され、続いて
-     <function>oci_connect</function> をコールした場合は同じ接続
-     ID が返されます。
+     パラメータ <parameter>session_mode</parameter> はバージョン
+     1.1 からり用可能で、次の値を受け付けます:
+     <constant>OCI_DEFAULT</constant>,
+     <constant>OCI_SYSOPER</constant>, <constant>OCI_SYSDBA</constant> 。
+     <constant>OCI_SYSOPER</constant> もしくは
+     <constant>OCI_SYSDBA</constant> のいずれかが指定された場合、
+     <function>oci_connect</function> は外部の信用を利用して
+     権限付きの接続を確立しようとします。
+     デフォルトでは権限付きの接続は無効です。有効にするためには、<link
+      linkend="ini.oci8.privileged_connect">oci8.privileged_connect</link>
+     をオンにしてください。
     </para>
+    <note>
+     <simpara>
+      もし PHP を Oracle Instant Client と併用している場合、
+      次に解説されている簡単な接続ネーミングメソッドを使用することができます:
+      <ulink url="&url.oracle.oic.connect;">&url.oracle.oic.connect;</ulink> 。
+      基本的にデータベース名として "//db_host[:port]/database_name"
+      を指定できることを意味します。しかし、
+      古いネーミング方法を使用したい場合、<constant>ORACLE_HOME</constant>
+      もしくは <constant>TNS_ADMIN</constant> のいずれかを設定
+      <emphasis>しなければなりません</emphasis>。
+     </simpara>
+    </note>
+    &oci.charset;
     <para>
      以下の例は、接続がどのように分割されるかを示すものです。
      <example>
