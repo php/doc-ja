@@ -1,45 +1,121 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- EN-Revision: 1.7 Maintainer: hirokawa Status: ready -->
-<!-- $Revision: 1.2 $ -->
+<!-- EN-Revision: 1.18 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.3 $ -->
+<!-- CREDITS: takagi -->
   <refentry id="function.mysqli-autocommit">
    <refnamediv>
     <refname>mysqli_autocommit</refname>
+    <refname>mysqli->autocommit</refname>
     <refpurpose>データベース更新の自動コミットをオンまたはオフにする</refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
+    <para>手続き型:</para>
+    <methodsynopsis>
+     <type>bool</type><methodname>mysqli_autocommit</methodname>
+     <methodparam><type>mysqli</type><parameter>link</parameter></methodparam>
+     <methodparam><type>bool</type><parameter>mode</parameter></methodparam>
+    </methodsynopsis>
+    <para>オブジェクト指向型（メソッド）:</para>
+    <classsynopsis>
+     <ooclass><classname>mysqli</classname></ooclass>
      <methodsynopsis>
-      <type>bool</type><methodname>mysqli_autocommit</methodname>
-      <methodparam><type>resource</type><parameter>link</parameter></methodparam>
+      <type>bool</type><methodname>autocommit</methodname>
       <methodparam><type>bool</type><parameter>mode</parameter></methodparam>
-     </methodsynopsis>
+    </methodsynopsis>
+    </classsynopsis>
     <para>
-     <function>mysqli_autocommit</function>は<parameter>link</parameter>で
-     指定されたデータベース接続リソースに対するクエリーの
+     <function>mysqli_autocommit</function> は、<parameter>link</parameter> で
+     指定されたデータベース接続リソースに対するクエリの
      自動コミットモードをオンまたはオフにします。
     </para>
+    <note>
+     <para>
+      <function>mysqli_autocommit</function> は、トランザクションに
+      対応していないテーブル型（MyISAM あるいは ISAM など）では
+      動作しません。
+     </para>
+     <para>
+      現在の自動コミットモードを知るには、SQL コマンド
+      'SELECT @@autocommit' を使用します。
+     </para>
+    </note>
+   </refsect1>
+   <refsect1>
+    &reftitle.returnvalues;
     <para>
      &return.success;
     </para>
+   </refsect1>
+   <refsect1>
+    &reftitle.seealso;
     <para>
-     <example>
-      <title>mysqli_autocommit 関数の使用例</title>
-      <programlisting role="php">
+     <function>mysqli_commit</function>&listendand;
+     <function>mysqli_rollback</function>.
+    </para>
+   </refsect1>
+   <refsect1>
+    &reftitle.examples;
+    <example>
+     <title>オブジェクト指向型</title>
+     <programlisting role="php">
 <![CDATA[
 <?php
+$mysqli = new mysqli("localhost", "my_user", "my_password", "world");
 
-    /* データベースへ接続 */
-    $link = mysqli_connect("localhost", "user", "pass");
-    mysqli_select_db("mydb");
-    
-    /* 自動コミットをオンにする */
-    mysqli_autocommit($link, true);
+if (mysqli_connect_errno()) {
+    printf("Connect failed: %s\n", mysqli_connect_error());
+    exit();
+}
 
+/* 自動コミットを on にします */
+$mysqli->autocommit(TRUE);
+
+if ($result = $mysqli->query("SELECT @@autocommit")) {
+    $row = $result->fetch_row();
+    printf("Autocommit is %s\n", $row[0]);
+    $result->free();
+}
+
+/* 接続を閉じます */
+$mysqli->close();
 ?>
 ]]>
-      </programlisting>
-     </example>
-    </para>
+     </programlisting>
+    </example>
+    <example>
+     <title>手続き型</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+$link = mysqli_connect("localhost", "my_user", "my_password", "world");
+
+if (!$link) {
+    printf("Can't connect to localhost. Error: %s\n", mysqli_connect_error());
+    exit();
+}
+
+/* 自動コミットを on にします */
+mysqli_autocommit($link, TRUE);
+
+if ($result = mysqli_query($link, "SELECT @@autocommit")) {
+    $row = mysqli_fetch_row($result);
+    printf("Autocommit is %s\n", $row[0]);
+    mysqli_free_result($result);
+}
+
+/* 接続を閉じます */
+mysqli_close($link);
+?>
+]]>
+     </programlisting>
+    </example> 
+    &example.outputs;
+    <screen>
+<![CDATA[
+Autocommit is 1
+]]>
+    </screen>
    </refsect1>
   </refentry>
 

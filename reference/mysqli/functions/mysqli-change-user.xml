@@ -1,40 +1,50 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- EN-Revision: 1.6 Maintainer: hirokawa Status: ready -->
-<!-- $Revision: 1.2 $ -->
+<!-- EN-Revision: 1.14 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.3 $ -->
+<!-- CREDITS: takagi -->
   <refentry id="function.mysqli-change-user">
    <refnamediv>
     <refname>mysqli_change_user</refname>
-    <refpurpose>指定されたデータベース接続のユーザー名を変更する</refpurpose>
+    <refname>mysqli->change_user</refname>
+    <refpurpose>指定されたデータベース接続のユーザ名を変更する</refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
+    <para>手続き型:</para>
+    <methodsynopsis>
+     <type>bool</type><methodname>mysqli_change_user</methodname>
+     <methodparam><type>mysqli</type><parameter>link</parameter></methodparam>
+     <methodparam><type>string</type><parameter>user</parameter></methodparam>
+     <methodparam><type>string</type><parameter>password</parameter></methodparam>
+     <methodparam><type>string</type><parameter>database</parameter></methodparam>
+    </methodsynopsis>
+    <para>オブジェクト指向型（メソッド）:</para>
+    <classsynopsis>
+     <ooclass><classname>mysqli</classname></ooclass>
      <methodsynopsis>
-      <type>bool</type><methodname>mysqli_change_user</methodname>
-      <methodparam><type>resource</type><parameter>link</parameter></methodparam>
+      <type>bool</type><methodname>change_user</methodname>
       <methodparam><type>string</type><parameter>user</parameter></methodparam>
       <methodparam><type>string</type><parameter>password</parameter></methodparam>
       <methodparam><type>string</type><parameter>database</parameter></methodparam>
      </methodsynopsis>
+    </classsynopsis>     
     <para>
-     <function>mysqli_change_user</function>は<parameter>link</parameter>
-     引数で指定されたデータベース接続のユーザー名を変更し、
-     <parameter>database</parameter>引数で指定されたデータベース
-     をカレントにセットします。
+     <function>mysqli_change_user</function> は <parameter>link</parameter>
+     引数で指定されたデータベース接続のユーザ名を変更し、
+     <parameter>database</parameter> 引数で指定されたデータベースを
+     カレントにセットします。
     </para>
     <para>
-     &return.success;
-    </para>
-    <para>
-     <parameter>database</parameter>引数には &null; 値を渡すこともできます。
-     その場合ユーザーの変更だけでデータベースの選択はされません。
+     <parameter>database</parameter> 引数には &null; 値を渡すこともできます。
+     その場合ユーザの変更だけでデータベースの選択はされません。
      そのようなケースでデータベースを選択したい場合には
-     <function>mysqli_select_db</function>関数を使用してください。
+     <function>mysqli_select_db</function> 関数を使用してください。
     </para>
     <para>
-     ユーザーを正しく変更するには<parameter>username</parameter>と
-     <parameter>password</parameter>引数を正しく渡す必要があります。
-     またそのユーザーは対象のデータベースに対する適切なパーミッションを
-     持っている必要があります。何であれ認証に失敗するとカレントのユーザーの
+     ユーザーを正しく変更するには、<parameter>username</parameter> と
+     <parameter>password</parameter> 引数を正しく渡す必要があります。
+     またそのユーザが対象のデータベースに対する適切なパーミッションを
+     持っている必要があります。どんな理由であれ、認証に失敗するとカレントユーザの
      認証が継続されます。
     </para>
     <note>
@@ -42,29 +52,114 @@
       このコマンドを使用すると、常に、カレントのデータベース接続は
       あたかも完全に新しいデータベース接続であるかのようになります。
       これにより、全てのアクティブなトランザクションはロールバックされ、
-      一次テーブルは全てクローズされ、ロックされたテーブルはすべて
+      一時テーブルは全てクローズされ、ロックされたテーブルはすべて
       開放されます。
      </para>
     </note>
+   </refsect1>
+   <refsect1>
+    &reftitle.returnvalues;
     <para>
+     &return.success;
+    </para>
+   </refsect1>
+   <refsect1>
+    &reftitle.seealso;
+    <para>
+     <function>mysqli_connect</function>&listendand;
+     <function>mysqli_select_db</function>.
+    </para>
+   </refsect1>
+   <refsect1>
+    &reftitle.examples;
      <example>
-      <title>mysqli_change_user 関数の使用例</title>
+      <title>オブジェクト指向型</title>
       <programlisting role="php">
 <![CDATA[
 <?php
 
-    /* foo@localhost としてデータベースに接続し、 foo_dbを選択 */
-    $link = mysqli_connect("localhost", "foo", "pass");
-    mysqli_select_db("foo_db");
+/* データベース test に接続します */
+$mysqli = new mysqli("localhost", "my_user", "my_password", "test");
 
-    /* ユーザーをbar@localhostに、またデフォルトのデータベースをbar_dbに変更 */
-    mysqli_change_user($link, "bar", "otherpass", "bar_db");
+/* 接続をチェックします */
+if (mysqli_connect_errno()) {
+    printf("Connect failed: %s\n", mysqli_connect_error());
+    exit();
+}
 
+/* 変数 a を設定します */
+$mysqli->query("SET @a:=1");
+                                         
+/* すべてをリセットし、新しいデータベースを選択します */
+$mysqli->change_user("my_user", "my_password", "world");
+
+if ($result = $mysqli->query("SELECT DATABASE()")) {
+    $row = $result->fetch_row();
+    printf("デフォルトデータベース: %s\n", $row[0]);
+    $result->close();
+}
+
+if ($result = $mysqli->query("SELECT @a")) {
+    $row = $result->fetch_row();
+    if ($row[0] === NULL) {
+        printf("変数 a の値は NULL\n");
+    }
+    $result->close();
+}
+
+/* 接続を閉じます */
+$mysqli->close();
 ?>
 ]]>
       </programlisting>
      </example>
-    </para>
+     <example>
+      <title>手続き型</title>
+      <programlisting role="php">
+<![CDATA[
+<?php
+/* データベース test に接続します */
+$link = mysqli_connect("localhost", "my_user", "my_password", "test");
+
+/* 接続をチェックします */
+if (!$link) {
+    printf("Connect failed: %s\n", mysqli_connect_error());
+    exit();
+}
+
+/* 変数 a を設定します */
+mysqli_query($link, "SET @a:=1");
+                                         
+/* すべてをリセットし、新しいデータベースを選択します */
+mysqli_change_user($link, "my_user", "my_password", "world");
+
+if ($result = mysqli_query($link, "SELECT DATABASE()")) {
+    $row = mysqli_fetch_row($result);
+    printf("デフォルトデータベース: %s\n", $row[0]);
+    mysqli_free_result($result);
+}
+
+if ($result = mysqli_query($link, "SELECT @a")) {
+    $row = mysqli_fetch_row($result);
+    if ($row[0] === NULL) {
+        printf("変数 a の値は NULL\n");
+    }
+    mysqli_free_result($result);
+}
+
+/* close connection */
+mysqli_close($link);
+?>
+]]>
+     </programlisting>
+    </example>
+    &example.outputs;
+    <screen>
+<![CDATA[
+デフォルトデータベース: world
+変数 a の値は NULL
+]]>
+    </screen>
    </refsect1>
   </refentry>
 
