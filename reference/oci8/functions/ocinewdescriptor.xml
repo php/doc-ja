@@ -1,160 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-
-DO NOT TRANSLATE THIS FILE.
-THE FUNCTION IT DESCRIBES WAS RENAMED AND THIS NAME IS DEPRECATED.
-PLEASE, TRANSLATE THE APPROPRIATE NEW FILE.
-
--->
-<!-- splitted from ./ja/functions/oci8.xml, last change in rev 1.1 -->
-<!-- EN-Revision: 1.14 Maintainer: shimooka Status: ready -->
+<!-- $Revision: 1.5 $ -->
+<!-- EN-Revision: 1.16 Maintainer: shimooka Status: ready -->
 <!-- CREDITS: hirokawa -->
-  <refentry id="function.ocinewdescriptor">
-   <refnamediv>
-    <refname>ocinewdescriptor</refname>
-    <refpurpose>
-     空の新規ディスクリプタLOB/FILE(LOBがデフォルト)を初期化する
-    </refpurpose>
-   </refnamediv>
-   <refsect1>
-    <title>説明</title>
-     <methodsynopsis>
-      <type>OCI-Lob</type><methodname>ocinewdescriptor</methodname>
-      <methodparam><type>resource</type><parameter>connection</parameter></methodparam>
-      <methodparam choice="opt"><type>int</type><parameter>type</parameter></methodparam>
-     </methodsynopsis>
-    <para>
-     <function>ocinewdescriptor</function> は、固定したディスクリプタまたは
-     LOBロケータに記憶領域を確保します。
-     <parameter>type</parameter> で指定可能な値は、
-     <constant>OCI_D_FILE</constant>,
-     <constant>OCI_D_LOB</constant>,
-     <constant>OCI_D_ROWID</constant>
-     です。
-     LOBディスクリプタの場合、メソッドload, save, savefileがディスクリプタに
-     関連付けられています。BFILE の場合、load メソッドのみが存在します。2番目の
-     例に使用の際のヒントを示します。
-    </para>
-    <para>
-    <example>
-      <title><function>ocinewdescriptor</function> の例</title>
-      <programlisting role="php">
-<![CDATA[
-<?php
-    /* このスクリプトは HTML フォームからコールされる前提で作成
-     * されており、$user, $passwor, $table, $where, $commitsize
-     * がフォームから渡されることを前提にしています。
-     * このスクリプトは、ROWID を用いて選択された行を削除し、
-     * $commitsize 行毎にコミットします。
-     * (ロールバックがないので、注意して使用してください。)
-     */
-    $conn = OCILogon($user, $password);
-    $stmt = OCIParse($conn, "select rowid from $table $where");
-    $rowid = OCINewDescriptor($conn, OCI_D_ROWID);
-    OCIDefineByName($stmt, "ROWID", &$rowid);
-    OCIExecute($stmt);
-    while (OCIFetch($stmt)) {
-       $nrows = OCIRowCount($stmt);
-       $delete = OCIParse($conn, "delete from $table where ROWID = :rid");
-       OCIBindByName($delete, ":rid", &$rowid, -1, OCI_B_ROWID);
-       OCIExecute($delete);
-       echo "$nrows\n";
-       if (($nrows % $commitsize) == 0) {
-           OCICommit($conn);
-       }
-    }
-    $nrows = OCIRowCount($stmt);
-    echo "$nrows deleted...\n";
-    OCIFreeStatement($stmt);
-    OCILogoff($conn);
-?>
-]]>
-      </programlisting>
-      <programlisting role="php">
-<![CDATA[
-<?php
-    /* このスクリプトやLOB カラムにファイルをアップロードする例を示します。
-     * LOBカラムにアップロードを行うこの例に関するフォームは、
-     * <form action="upload.php3" method="post" enctype="multipart/form-data">
-     * <input type="file" name="lob_upload" />
-     * ... のようなものが使用されます。
-     */
-  if (!isset($lob_upload) || $lob_upload == 'none'){
-?>
-<form action="upload.php" method="post" enctype="multipart/form-data">
-Upload file: <input type="file" name="lob_upload" /><br />
-<input type="submit" value="Upload" /> - <input type="reset" value="Reset" />
-</form>
-<?php
-  } else {
+<refentry id="function.ocinewscriptor">
+ <refnamediv>
+  <refname>ocinewscriptor</refname>
+  <refpurpose><function>oci_new_descriptor</function> &Alias;</refpurpose>
+ </refnamediv>
 
-     // $lob_upload はアップロードファイルのテンポラリファイル名を有しています。
-     // もしセキュアなアップロードを行いたいならば、
-     // ファイルアップロードのセクションを参照してください。
-
-     $conn = OCILogon($user, $password);
-     $lob = OCINewDescriptor($conn, OCI_D_LOB);
-     $stmt = OCIParse($conn, "insert into $table (id, the_blob)
-               values(my_seq.NEXTVAL, EMPTY_BLOB()) returning the_blob into :the_blob");
-     OCIBindByName($stmt, ':the_blob', &$lob, -1, OCI_B_BLOB);
-     OCIExecute($stmt, OCI_DEFAULT);
-     if ($lob->savefile($lob_upload)){
-        OCICommit($conn);
-        echo "Blob のアップロードは成功しました\n";
-     }else{
-        echo "Blob をアップロードできませんでした\n";
-     }
-     OCIFreeDesc($lob);
-     OCIFreeStatement($stmt);
-     OCILogoff($conn);
-  }
-?>
-]]>
-     </programlisting>
-    </example>
-    <example>
-     <title>ocinewdescriptor</title>
-     <programlisting>
-<![CDATA[
-<?php
-    /* 入力パラメータとして clob を含む PL/SQLストアドプロシージャを
-     * コールする (PHP 4 >= 4.0.6) 。
-     * PL/SQL ストアドプロシージャのシグネチャは次の通り。
-     *
-     * PROCEDURE save_data
-     *   Argument Name                  Type                    In/Out Default?
-     *   ------------------------------ ----------------------- ------ --------
-     *   KEY                            NUMBER(38)              IN
-     *   DATA                           CLOB                    IN
-     *
-     */
-
-    $conn = OCILogon($user, $password);
-    $stmt = OCIParse($conn, "begin save_data(:key, :data); end;");
-    $clob = OCINewDescriptor($conn, OCI_D_LOB);
-    OCIBindByName($stmt, ':key', $key);
-    OCIBindByName($stmt, ':data', $clob, -1, OCI_B_CLOB);
-    $clob->WriteTemporary($data);
-    OCIExecute($stmt, OCI_DEFAULT);
-    OCICommit($conn);
-    $clob->close();
-    $clob->free();
-    OCIFreeStatement($stmt);
-?>
-]]>
-      </programlisting>
-     </example>
-    </para>
-    <note>
-     <para>
-      この関数は PHP >= 5.0.0 以降 <function>oci_new_descriptor</function>
-      に改名されました。
-      下位互換性のため、 <function>ocinewdescriptor</function>
-      も使用することができますが、推奨されません。
-     </para>
-    </note>
-   </refsect1>
-  </refentry>
+ <refsect1 role="description">
+  &reftitle.description;
+  <simpara>
+   &info.function.alias;
+   <function>oci_new_descriptor</function>.
+  </simpara>
+ </refsect1>
+</refentry>
 
 <!-- Keep this comment at the end of the file
 Local variables:
