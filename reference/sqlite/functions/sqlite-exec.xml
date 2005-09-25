@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.2 $ -->
-<!-- EN-Revision: 1.9 Maintainer: shimooka Status: ready -->
+<!-- $Revision: 1.3 $ -->
+<!-- EN-Revision: 1.10 Maintainer: shimooka Status: ready -->
 <refentry id="function.sqlite-exec">
  <refnamediv>
   <refname>sqlite_exec</refname>
@@ -16,6 +16,7 @@
    <type>bool</type><methodname>sqlite_exec</methodname>
    <methodparam><type>resource</type><parameter>dbhandle</parameter></methodparam>
    <methodparam><type>string</type><parameter>query</parameter></methodparam>
+   <methodparam choice="opt"><type>string</type><parameter role="reference">error_msg</parameter></methodparam>
   </methodsynopsis>
   <methodsynopsis>
    <type>bool</type><methodname>sqlite_exec</methodname>
@@ -28,6 +29,7 @@
    <methodsynopsis>
     <type>bool</type><methodname>queryExec</methodname>
     <methodparam><type>string</type><parameter>query</parameter></methodparam>
+    <methodparam choice="opt"><type>string</type><parameter role="reference">error_msg</parameter></methodparam>
    </methodsynopsis>
   </classsynopsis>
   <para>
@@ -50,6 +52,17 @@
   <para>
    <variablelist>
     <varlistentry>
+     <term><parameter>dbhandle</parameter></term>
+     <listitem>
+      <para>
+       SQLite データベースリソース。手続きに従って、
+       <function>sqlite_open</function> から返されます。
+       このパラメータは、
+       オブジェクト指向言語型メソッドを使用する場合は不要です。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
      <term><parameter>query</parameter></term>
      <listitem>
       <para>
@@ -58,13 +71,12 @@
      </listitem>
     </varlistentry>
     <varlistentry>
-     <term><parameter>dbhandle</parameter></term>
+     <term><parameter>error_msg</parameter></term>
      <listitem>
       <para>
-       SQLite データベースリソース。手続きに従って、
-       <function>sqlite_open</function> から返されます。
-       このパラメータは、
-       オブジェクト指向言語型メソッドを使用する場合は不要です。
+       エラーが発生した場合、指定された変数に詰め込まれます。
+       SQL 文法エラーは <function>sqlite_last_error</function>
+       関数では取得できないので、これは特に重要です。
       </para>
      </listitem>
     </varlistentry>
@@ -84,6 +96,31 @@
   &sqlite.case-fold;
  </refsect1>
 
+ <refsect1 role="changelog">
+  &reftitle.changelog;
+  <para>
+   <informaltable>
+    <tgroup cols="2">
+     <thead>
+      <row>
+       <entry>&Version;</entry>
+       <entry>&Description;</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry>5.1.0</entry>
+       <entry>
+        <parameter>error_msg</parameter> パラメータが追加されました。
+       </entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </informaltable>
+  </para>
+ </refsect1>
+
+
  <refsect1 role="examples">
   &reftitle.examples;
   <para>
@@ -93,13 +130,14 @@
 <![CDATA[
 <?php
 $dbhandle = sqlite_open('mysqlitedb');
-$query = sqlite_exec($dbhandle, "UPDATE users SET email='jDoe@example.com' WHERE username='jDoe'");
+$query = sqlite_exec($dbhandle, "UPDATE users SET email='jDoe@example.com' WHERE username='jDoe'", $error);
 if (!$query) {
-    exit('Error in query.');
+    exit("Error in query: '$error'");
 } else {
     echo 'Number of rows modified: ', sqlite_changes($dbhandle);
 }
-?>]]>
+?>
+]]>
     </programlisting>
    </example>
   </para>
@@ -110,13 +148,14 @@ if (!$query) {
 <![CDATA[
 <?php
 $dbhandle = new SQLiteDatabase('mysqlitedb');
-$query = $dbhandle->queryExec("UPDATE users SET email='jDoe@example.com' WHERE username='jDoe'");
+$query = $dbhandle->queryExec("UPDATE users SET email='jDoe@example.com' WHERE username='jDoe'", $error);
 if (!$query) {
-    exit('Error in query.');
+    exit("Error in query: '$error'");
 } else {
     echo 'Number of rows modified: ', $dbhandle->changes();
 }
-?>]]>
+?>
+]]>
     </programlisting>
    </example>
   </para>
