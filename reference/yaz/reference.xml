@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.3 $ -->
+<!-- $Revision: 1.4 $ -->
+<!-- EN-Revision: 1.20 Maintainer: hirokawa Status: ready -->
+<!-- Purpose: remote.other -->
+<!-- Membership: pecl, external -->
+
  <reference id="ref.yaz">
   <title>YAZ 関数</title>
   <titleabbrev>YAZ</titleabbrev>
@@ -8,26 +12,31 @@
    <section id="yaz.intro">
     &reftitle.intro;
     <para>
-     この拡張モジュールは、情報取得用のZ39.50プロトコルを実装する
-     <productname>YAZ</productname>ツールキットへのPHPインターフェース
-     を提供するものです。この拡張モジュールにより、Z39.50ターゲット(サー
-     バー)を並列に検索またはスキャンするZ39.50オリジン(クライアント)を
+     この拡張モジュールは、情報取得用の Z39.50 プロトコルを実装する
+     <productname>YAZ</productname> ツールキットへの PHP インターフェースを
+     提供するものです。この拡張モジュールにより、Z39.50 ターゲット（サーバ）
+     を並列に検索またはスキャンする Z39.50 オリジン（クライアント）を
      容易に実装することが可能になります。
     </para>
     <para>
-     このモジュールはZ39.50 の複雑さを隠蔽するため、使用法がかなり容
-     易になります。PHPで利用可能な様々なSQL APIにより提供されているも
-     のに非常によく似たステートレスな持続的接続がサポートされています。
-     これにより、セッションはステートレスですが、ユーザ間で共有され、
-     これにより多くの場合に接続および初期化手順が保存されます。
+     このモジュールは Z39.50 の複雑さを隠蔽するため、使用法がかなり容易に
+     なります。PHP で利用可能な様々な RDB の API により提供されているものに
+     非常によく似た、ステートレスな持続的接続がサポートされています。
+     これは、セッションはステートレスですが、ユーザ間で共有されるということを
+     意味します。これにより多くの場合に接続および初期化手順が保存されます。
     </para>
     <para>
      <productname>YAZ</productname> は、<ulink
-     url="&url.yaz;">&url.yaz;</ulink>で取得可能です。この拡張モジュー
-     ルに関する新しい情報、スクリプトの例等を
-     <ulink url="&url.yaz-phpyaz;">&url.yaz-phpyaz;</ulink>にて
+     url="&url.yaz;">&url.yaz;</ulink> で取得可能です。この拡張モジュールに
+     関する新しい情報、スクリプトの例等を
+     <ulink url="&url.yaz-phpyaz;">&url.yaz-phpyaz;</ulink> にて
      参照可能です。
     </para>
+    <note>
+     <para>
+      &pecl.moved-ver;5.0.0.
+     </para>
+    </note>
    </section>
 
    &reference.yaz.configure;
@@ -51,43 +60,48 @@
      正の整数で特定の接続のIDを表します。
     </para>
     <para>
+     以下のスクリプトは、API の並列検索機能のデモです。引数を指定せずに
+     コールした場合、この関数はクエリフォームを出力します。そうでない場合
+     （引数を指定した場合）は、配列 <literal>host</literal> にあるターゲットを
+     検索します。
+    </para>
+    <para>
      <example>
-      <title>YAZによる並列検索</title>
-      <simpara>
-       以下のスクリプトは、APIの並列検索機能のデモです。引数を指定せず
-       にコールした場合、この関数は、クエリフォームを出力します。そう
-       でない場合(引数を指定した場合)は、配列hostにあるターゲットを検
-       索します。
-      </simpara>
+      <title>YAZ による並列検索</title>
       <programlisting role="php">
 <![CDATA[
-$num_hosts = count ($host);
-if (empty($term) || count($host) == 0) {
+<?php
+$host=$_REQUEST[host];
+$query=$_REQUEST[query];
+$num_hosts = count($host);
+if (empty($query) || count($host) == 0) {
     echo '<form method="get">
     <input type="checkbox"
-    name="host[]" value="bagel.indexdata.dk/gils">
+    name="host[]" value="bagel.indexdata.dk/gils" />
         GILS test
     <input type="checkbox"
-    name="host[]" value="localhost:9999/Default">
+    name="host[]" value="localhost:9999/Default" />
         local test
-    <input type="checkbox" checked="1"
-    name="host[]" value="z3950.bell-labs.com/books">
-        BELL Labs Library
-    <br>
+    <input type="checkbox" checked="checked"
+    name="host[]" value="z3950.loc.gov:7090/voyager" />
+        Library of Congress
+    <br />
     RPN Query:
-    <input type="text" size="30" name="term">
-    <input type="submit" name="action" value="Search">
+    <input type="text" size="30" name="query" />
+    <input type="submit" name="action" value="Search" />
+    </form>
     ';        
 } else {
-    echo 'You searced for ' . htmlspecialchars($term) . '<br>';
+    echo 'You searched for ' . htmlspecialchars($query) . '<br />';
     for ($i = 0; $i < $num_hosts; $i++) {
         $id[] = yaz_connect($host[$i]);
-        yaz_syntax($id[$i],"sutrs");
-        yaz_search($id[$i],"rpn",$term);
+	yaz_syntax($id[$i], "usmarc");
+        yaz_range($id[$i], 1, 10);
+        yaz_search($id[$i], "rpn", $query);
     }
     yaz_wait();
     for ($i = 0; $i < $num_hosts; $i++) {
-        echo '<hr>' . $host[$i] . ":";
+        echo '<hr />' . $host[$i] . ':';
         $error = yaz_error($id[$i]);
         if (!empty($error)) {
             echo "Error: $error";
@@ -97,15 +111,16 @@ if (empty($term) || count($host) == 0) {
         }
         echo '<dl>';
         for ($p = 1; $p <= 10; $p++) {
-            $rec = yaz_record($id[$i],$p,"string");
+            $rec = yaz_record($id[$i], $p, "string");
             if (empty($rec)) continue;
             echo "<dt><b>$p</b></dt><dd>";
-            echo ereg_replace("\n", "<br>\n",$rec);
+            echo nl2br($rec);
             echo "</dd>";
         }
         echo '</dl>';
     }
 }
+?>
 ]]>
       </programlisting>
      </example>

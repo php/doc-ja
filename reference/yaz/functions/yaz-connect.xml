@@ -1,84 +1,198 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.5 $ -->
 <!-- splitted from ./ja/functions/yaz.xml, last change in rev 1.1 -->
-<!-- EN-Revision: 1.1 Maintainer: hirokawa Status: ready -->
-  <refentry id="function.yaz-connect">
-   <refnamediv>
-    <refname>yaz_connect</refname>
-    <refpurpose>
-     ターゲットへの接続およびZ接続を準備する。
-    </refpurpose>
-   </refnamediv>
-   <refsect1>
-    <title>説明</title>
-     <methodsynopsis>
-      <type>int</type><methodname>yaz_connect</methodname>
-      <methodparam><type>string</type><parameter>zurl</parameter></methodparam>
-      <methodparam choice="opt"><type>mixed</type><parameter>options</parameter></methodparam>
-     </methodsynopsis>
-    <para>
-     <function>yaz_connect</function> は、Z39.50 ターゲットへの接続を
-     準備します。引数 zurl はhost[:port][/database]という形式です。
-     port が省略された場合、210が使用されます。databaseが省略された場
-     合 Default が使用されます。この関数は、非ブロックモードで動作し、
-     ソケットを作成しようとしません。単に後で
-     <function>yaz_wait</function>がコールされた際に接続を実行する準備
-     を行うだけです。
-    </para>
-    <para>
-     2番目の引数、<parameter>options</parameter>に文字列が指定された場合、
-     Z39.50 V2認証文字列(OpenAuth)として処理されます。
-    </para>
-    <para>
-     <parameter>options</parameter> に配列が指定された場合、その配列の内
-     容はオプションとして処理されます。配列オプションは、PHP 4.1.0以降
-     でのみサポートされることに注意してください。
-
-     <variablelist>
-      <title><function>yaz_connect</function> オプション</title>
-      <varlistentry><term>user</term><listitem>
-	<simpara>認証用のユーザ名
-	</simpara></listitem>
-      </varlistentry>
-      <varlistentry><term>group</term><listitem>
-	<simpara>認証用のグループ
-	</simpara></listitem>
-      </varlistentry>
-      <varlistentry><term>password</term><listitem>
-	<simpara>認証用のパスワード
-	</simpara></listitem>
-      </varlistentry>
-      <varlistentry><term>cookie</term><listitem>
-	<simpara>セッションクッキー (YAZ proxy).
-	</simpara></listitem>
-      </varlistentry>
-      <varlistentry><term>proxy</term><listitem>
-	<simpara>接続用プロキシ (YAZ proxy).
-	</simpara></listitem>
-      </varlistentry>
-      <varlistentry><term>persistent</term><listitem>
-	<simpara>
-	 論理値。&true; の場合、接続は持続的となります。&false; の
-	 場合、接続は持続的ではありません。デフォルトで、接続は
-	 持続的です。
-	</simpara>
-       </listitem>
-      </varlistentry>
-      <varlistentry><term>piggyback</term><listitem>
-	<simpara>
-	 論理値。&true; の場合、検索時のpiggybackが有効になります。
-	 &false; の場合、piggybackが無効になります。デフォルトでは、
-	 piggyback は有効です。piggybackを有効にするとより効率的となり、
-	 通常、レコードを最初に取得する際のネットワーク往復時間を節約
-	 することが可能です。しかし、少数の Z39.50ターゲットは
-	 piggybackをサポートしていないか、エレメント集合名を無視します。
-	 この場合、piggybackを無効とする必要があります。
-	</simpara>
-       </listitem>
-      </varlistentry>
-     </variablelist>
-    </para>
-   </refsect1>
-  </refentry>
+<!-- EN-Revision: 1.13 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: takagi -->
+<refentry id="function.yaz-connect">
+ <refnamediv>
+  <refname>yaz_connect</refname>
+  <refpurpose>
+   Z39.50 サーバへの接続を準備する
+  </refpurpose>
+ </refnamediv>
+ <refsect1 role="description">
+  &reftitle.description;
+  <methodsynopsis>
+   <type>mixed</type><methodname>yaz_connect</methodname>
+   <methodparam><type>string</type><parameter>zurl</parameter></methodparam>
+   <methodparam choice="opt"><type>mixed</type><parameter>options</parameter></methodparam>
+  </methodsynopsis>
+  <para>
+   この関数は、成功した場合に接続リソース、失敗した場合にゼロを返します。
+  </para>
+  <para>
+   <function>yaz_connect</function> は Z39.50 サーバへの接続を準備します。
+   この関数は非ブロックモードで動作し、接続を確立しようとしません
+   - 単にあとで <function>yaz_wait</function> がコールされた際に
+   接続を実行する準備を行うだけです。
+  </para>
+  <note>
+   <para>
+    <ulink url="&url.yaz-proxy;">YAZ プロキシ</ulink>
+    は、フリーで使用可能な Z39.50 のプロキシです。
+   </para>
+  </note>
+ </refsect1>
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <para>
+   <variablelist>
+    <varlistentry>
+     <term><parameter>zurl</parameter></term>
+     <listitem>
+      <para>
+       <literal>host[:port][/database]</literal> という形式の文字列です。
+       port が省略された場合、210 が使用されます。database が省略された
+       場合、<literal>Default</literal> が使用されます。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>options</parameter></term>
+     <listitem>
+      <para>
+       文字列が指定された場合、
+       Z39.50 V2 認証文字列(OpenAuth)として処理されます。
+      </para>
+      <para>
+       配列が指定された場合、その配列の内容はオプションとして処理されます。
+       <variablelist>
+        <varlistentry>
+         <term>user</term>
+         <listitem>
+          <para>
+           認証用のユーザ名
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry>
+         <term>group</term>
+         <listitem>
+          <para>
+           認証用のグループ
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry>
+         <term>password</term>
+          <listitem>
+           <para>
+            認証用のパスワード
+           </para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+         <term>cookie</term>
+         <listitem>
+          <para>
+           セッションクッキー（YAZ プロキシ）
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry>
+         <term>proxy</term>
+         <listitem>
+          <para>
+           接続用プロキシ（YAZ プロキシ）
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry>
+         <term>persistent</term>
+         <listitem>
+          <para>
+           論理値。&true; の場合、接続は持続的となります。&false; の
+           場合、接続は持続的ではありません。デフォルトでは
+           接続は持続的です。
+          </para>
+          <note>
+           <para>
+            持続的な接続をオープンした場合、後でそれを
+            <function>yaz_close</function> によってクローズすることは
+            できません。
+           </para>
+          </note>
+         </listitem>
+        </varlistentry>
+        <varlistentry>
+         <term>piggyback</term>
+         <listitem>
+          <para>
+           論理値。&true; の場合、検索時の piggyback が有効になります。
+           &false; の場合、piggyback が無効になります。デフォルトでは
+           piggyback は有効です。
+          </para>
+          <para>
+           piggyback を有効にするとより効率的となり、
+           通常、レコードを最初に取得する際のネットワーク往復時間を
+           節約することが可能です。しかし、少数の Z39.50 ターゲットは
+           piggyback をサポートしていないか、エレメント集合名を無視します。
+           この場合、piggyback を無効とする必要があります。
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry>
+         <term>charset</term>
+         <listitem>
+          <para>
+           Z39.50 の言語および文字セットネゴシエーションに使用する
+           文字セットを指定する文字列。以下のような文字列を使用します。
+           <literal>ISO-8859-1</literal>、<literal>UTF-8</literal>、
+           <literal>UTF-16</literal> 。
+          </para>
+          <para>
+           ほとんどの Z39.50 サーバはこの機能をサポートしません（そのため、
+           無視されます）。ほとんどのサーバは、クエリやメッセージに
+           ISO-8859-1 エンコーディングを使用します。MARC21/USMARC レコードは
+           この設定の影響を受けません。
+          </para>
+         </listitem>
+        </varlistentry>
+       </variablelist>
+      </para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
+  </para>
+ </refsect1>
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <para>
+   成功した場合に接続リソース、エラー時に &false; を返します。
+  </para>
+ </refsect1>
+ <refsect1 role="changelog">
+  &reftitle.changelog;
+  <para>
+   <informaltable>
+    <tgroup cols="2">
+     <thead>
+      <row>
+       <entry>&Version;</entry>
+       <entry>&Description;</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry>4.1.0</entry>
+       <entry>
+        <parameter>options</parameter> が追加されました。
+       </entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </informaltable>
+  </para>
+ </refsect1>
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <para>
+   <simplelist>
+    <member><function>yaz_close</function></member>
+   </simplelist>
+  </para>
+ </refsect1>
+</refentry>
 
 <!-- Keep this comment at the end of the file
 Local variables:

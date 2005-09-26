@@ -1,34 +1,290 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.4 $ -->
 <!-- splitted from ./ja/functions/yaz.xml, last change in rev 1.1 -->
-<!-- EN-Revision: 1.1 Maintainer: hirokawa Status: ready -->
-  <refentry id="function.yaz-record">
-   <refnamediv>
-    <refname>yaz_record</refname>
-    <refpurpose>レコードを返す</refpurpose>
-   </refnamediv>
-   <refsect1>
-    <title>説明</title>
-     <methodsynopsis>
-      <type>int</type><methodname>yaz_record</methodname>
-      <methodparam><type>int</type><parameter>id</parameter></methodparam>
-      <methodparam><type>int</type><parameter>pos</parameter></methodparam>
-      <methodparam><type>string</type><parameter>type</parameter></methodparam>
-     </methodsynopsis>
-    <para>
-     指定した位置のレコードまたはレコードが指定位置に存在しない場合に
-     空の文字列を返します。
-    </para>
-    <para>
-     <function>yaz_record</function> 関数は、カレントの結果セット指定
-     した位置にあるレコードを調べます。指定した位置にデータベースレコー
-     ドが存在しない場合には、空の文字列が返されます。引数 type は返さ
-     れるレコードの形式を指定します。
-     type が "string" の場合、(XMLおよびSUTRS用に)出力可能な文字列表現
-     でレコードが返されます。typeが"array"の場合、(構造化されたレコー
-     ド用に)配列表現でレコードが返されます。
-    </para>
-   </refsect1>
-  </refentry>
+<!-- EN-Revision: 1.11 Maintainer: hirokawa Status: working -->
+<!-- CREDITS: takagi -->
+<refentry id="function.yaz-record">
+ <refnamediv>
+  <refname>yaz_record</refname>
+  <refpurpose>レコードを返す</refpurpose>
+ </refnamediv>
+ <refsect1 role="description">
+  &reftitle.description;
+  <methodsynopsis>
+   <type>string</type><methodname>yaz_record</methodname>
+   <methodparam><type>resource</type><parameter>id</parameter></methodparam>
+   <methodparam><type>int</type><parameter>pos</parameter></methodparam>
+   <methodparam><type>string</type><parameter>type</parameter></methodparam>
+  </methodsynopsis>
+  <para>
+   <function>yaz_record</function> 関数は、現在の結果セットの
+   <parameter>pos</parameter> で指定した位置にあるレコードを調べます。
+  </para>
+ </refsect1>
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <para>
+   <variablelist>
+    <varlistentry>
+     <term><parameter>id</parameter></term>
+     <listitem>
+      <para>
+       <function>yaz_connect</function> が返す接続リソース。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>pos</parameter></term>
+     <listitem>
+      <para>
+       レコードの位置。結果セット内の位置は 1, 2, ... $hits で表されます。
+       ここで、$hits は <function>yaz_hits</function> が返す値です。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>type</parameter></term>
+     <listitem>
+      <para>
+       <parameter>type</parameter> は、返されるレコードの型を指定します。
+      </para>
+      <note>
+       <para>
+        Z39.50/SRW サーバから適切な形式でレコードが返されたことを
+        確認するのは、アプリケーション側の役目です。このパラメータは
+        単にクライアント側（PHP/YAZ 内）での型変換についてのみ設定します。
+       </para>
+      </note>
+      <para>
+       レコードを文字列/配列に変換することに加え、PHP/YAZ はレコードの
+       文字セットを変換することも可能です。
+       特に USMARC/MARC21 の場合に文字セット変換が推奨されます。なぜなら
+       これらは一般的に結果を MARC-8 文字セットで返しますが、ブラウザでは
+       この文字セットがサポートされていないからです。変換を指定するには、
+       <literal>; charset=</literal><replaceable>from</replaceable><literal>,
+       </literal><replaceable>to</replaceable> を追加します。
+       <replaceable>from</replaceable> はレコードの元の文字セットで、
+       <replaceable>to</replaceable> は結果の文字セット（PHP によって
+       表示されるもの）です。
+      </para>
+      <variablelist>
+       <varlistentry>
+        <term><literal>string</literal></term>
+        <listitem>
+         <para>
+          レコードは、単純な形式の文字列で返されます。
+          このモードではすべての MARC レコードが ISO2709 の行単位
+          フォーマットに変換されますが、これは非常に読みにくいものです。
+          XML レコードおよび SUTRS は、本来のフォーマットのまま返されます。
+          GRS-1 は（醜い）行単位フォーマットで返されます。
+         </para>
+         <para>
+          このフォーマットが役に立つのは、結果を手っ取り早く表示したい場合 -
+          デバッグ中など - の場合です。適切な形式で表示するのには適していません。
+         </para>
+        </listitem>
+       </varlistentry>
+       <varlistentry>
+        <term><literal>xml</literal></term>
+        <listitem>
+         <para>
+          レコードは、可能ならば XML 文字列として返されます。
+          このモードでは、すべての MARC レコードは
+          <ulink url="&url.yaz-marcxml;">MARCXML</ulink> に変換されます。
+          XML レコードおよび SUTRS は、本来のフォーマットのままで返されます。
+          GRS-1 はサポートしていません。
+         </para>
+         <para>
+          このフォーマットは <parameter>string</parameter> と似ていますが、
+          MARC レコードが MARCXML に変換される点が違います。
+         </para>
+         <para>
+          このフォーマットは、レコードが XML パーサや XSLT プロセッサに
+          渡される場合に役立ちます。
+         </para>
+        </listitem>
+       </varlistentry>
+       <varlistentry>
+        <term><literal>raw</literal></term>
+        <listitem>
+         <para>
+          レコードは、その本来のフォーマットのままで返されます。
+          MARC、XML および SUTRS で使用可能です。GRS-1 では動作しません。
+         </para>
+         <para>
+          MARC レコードは ISO2709 文字列として返されます。XML および SUTRS
+          は文字列として返されます。
+         </para>
+        </listitem>
+       </varlistentry>
+       <varlistentry>
+        <term><literal>syntax</literal></term>
+        <listitem>
+         <para>
+          レコードの構文が文字列で返されます。たとえば
+          <literal>USmarc</literal>、<literal>GRS-1</literal>、
+          <literal>XML</literal> などです。
+         </para>
+        </listitem>
+       </varlistentry>
+       <varlistentry>
+        <term><literal>database</literal></term>
+        <listitem>
+         <para>
+          レコードの該当位置に関連するデータベースの名前を文字列で返します。
+         </para>
+        </listitem>
+       </varlistentry>
+       <varlistentry>
+        <term><literal>array</literal></term>
+        <listitem>
+         <para>
+          レコードは、GRS-1 の構造を反映した配列で返されます。
+          この型は MARC および GRS-1 で使用可能です。XML、SUTRS
+          はサポートされておらず、実際のレコードが XML あるいは SUTRS
+          であった場合は空文字列が返されます。
+         </para>
+         <para>
+          返される配列には、GRS-1 の各リーフ/内部ノードに対応するリストが
+          含まれます。個々のリスト内にもリストがあり、
+          最初の要素が <emphasis>path</emphasis> でその次が
+          <emphasis>data</emphasis> です（もし data が存在する場合）。
+         </para>
+         <para>
+          path は、ルートから各リーフまでの（構造化された GRS-1 レコードの）
+          ツリーコンポーネントの一覧を保持します。各コンポーネントはタグ型で、
+          タグの値は
+          <literal>(</literal><replaceable>type</replaceable><literal>,</literal>
+          <replaceable>value</replaceable> のような形式のペアとなります。
+         </para>
+         <para>
+          tags 文字列は、一般に type 3 の tag に対応します。
+          MARC は配列で返すことも可能です（内部で GRS-1 に変換されます）。
+         </para>
+        </listitem>
+       </varlistentry>
+      </variablelist>
+     </listitem>
+    </varlistentry>
+   </variablelist>
+  </para>
+ </refsect1>
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <para>    
+   位置 <parameter>pos</parameter> のレコードを返します。もし指定した位置に
+   レコードが存在しない場合は空文字列を返します。
+  </para>
+  <para>
+   もし指定した位置にデータベースのレコードが存在しない場合、
+   空文字列が返されます。
+  </para>
+ </refsect1>
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <example>
+   <title>GRS-1 レコードの配列</title>
+   <para>
+    このような GRS-1 レコードを想定します。
+    <screen>
+<![CDATA[
+(4,52)Robert M. Pirsig
+(4,70)
+      (4,90)
+            (2,7)Transworld Publishers, ltd.
+]]>
+    </screen>
+    このレコードは、ルートに 2 つのノードを持っています。ルートレベルの
+    最初の要素は (4,52) [tag type 4, tag value 52] で、そのデータは
+    <literal>Robert M. Pirsig</literal> です。ルートレベルの 2 番目の
+    要素 (4,70) はサブツリーを持っており、そこにはひとつの要素
+    (4,90) があります。(4,90) はまた別のサブツリー (2,7) を持っており、
+    そのデータは <literal>Transworld Publishers, ltd.</literal> です。
+   </para>
+   <para>
+    このレコードが $p の位置にあるとすると、
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+$ar = yaz_record($id, $p, "array");
+print_r($ar);
+
+?>
+]]>
+    </programlisting>
+    この出力は以下のようになります。
+    <screen>
+<![CDATA[
+Array
+(
+    [0] => Array
+        (
+            [0] => (4,52)
+            [1] => Robert M. Pirsig
+        )
+    [1] => Array
+        (
+            [0] => (4,70)
+        )
+    [2] => Array
+        (
+            [0] => (4,70)(4,90)
+        )
+    [3] => Array
+        (
+            [0] => (4,70)(4,90)(2,7)
+            [1] => Transworld Publishers, ltd.
+        )
+)      
+]]>
+    </screen>
+   </para>
+  </example>
+  <example>
+   <title>MARCXML の使用</title>
+   <para>
+    この PHP コードは、MARC21/USMARC レコードを MARCXML として返します。
+    元のレコードは marc-8（ほとんどの XML パーサはこれを理解できません）なので、
+    これを UTF-8（すべての XML パーサはこれを理解できなければなりません）
+    に変換します。
+    <programlisting role="php">
+<![CDATA[
+<?php
+$rec = yaz_record($id, $p, "xml; charset=marc-8,utf-8");
+?>
+]]>
+    </programlisting>
+   </para>
+   <para>
+    レコード <literal>$rec</literal> は
+    <link linkend="ref.xslt">Sablotron XSLT</link> を使用して
+    以下のように処理可能です。
+   </para>
+   <para>
+    <programlisting role="php">
+<![CDATA[ 
+<?php
+
+$xslfile = 'display.xsl';
+$processor = xslt_create();
+$parms = array('/_xml' => $rec);
+$res = xslt_process($processor, 'arg:/_xml', $xslfile, NULL, $parms);
+xslt_free($processor);
+$res = preg_replace("'</?html[^>]*>'", '', $res);
+echo $res;
+
+?>
+]]>
+    </programlisting>
+   </para>
+   <para>
+    PHP 5 では、Sablotron XSLT ではなく <link linkend="ref.xsl">XSL</link>
+    拡張モジュールが使用される必要があります。
+   </para>
+  </example>
+ </refsect1>
+</refentry>
 
 <!-- Keep this comment at the end of the file
 Local variables:
