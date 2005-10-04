@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.4 $ -->
+<!-- $Revision: 1.5 $ -->
 <!-- splitted from ./en/functions/pgsql.xml, last change in rev 1.2 -->
-<!-- EN-Revision: 1.11 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 1.13 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi -->
 <refentry id="function.pg-query">
  <refnamediv>
@@ -66,13 +66,17 @@
      <term><parameter>query</parameter></term>
      <listitem>
       <para>
-       実行する 1 つまたは複数の SQL 文。
+       実行する 1 つまたは複数の SQL 文。複数の文が関数に渡された場合は、
+       明示的に BEGIN/COMMIT コマンドを指定していない限りはそれらの文は
+       ひとつのトランザクションとして実行されます。しかし、1 回のコールで
+       複数のトランザクションを実行することは推奨されません。
       </para>
      </listitem>
     </varlistentry>
    </variablelist>
   </para>
  </refsect1>
+
 
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
@@ -107,6 +111,28 @@ while ($row = pg_fetch_row($result)) {
   echo "<br />\n";
 }
  
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+  <para>
+   <example>
+    <title><function>pg_query</function> で複数の文を使用する例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+$conn = pg_pconnect("dbname=publisher");
+
+// これらの文がひとつのトランザクションとして実行されます
+
+$query = "UPDATE authors SET author=UPPER(author) WHERE id=1;";
+$query .= "UPDATE authors SET author=LOWER(author) WHERE id=2;";
+$query .= "UPDATE authors SET author=NULL WHERE id=3;";
+
+pg_query($conn, $query);
+
 ?>
 ]]>
     </programlisting>
