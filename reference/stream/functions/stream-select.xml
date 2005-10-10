@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- $Revision: 1.7 $ -->
-<!-- EN-Revision: 1.3 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.8 $ -->
+<!-- EN-Revision: 1.12 Maintainer: hirokawa Status: ready -->
   <refentry id="function.stream-select">
    <refnamediv>
     <refname>stream_select</refname>
@@ -11,9 +11,9 @@
     <title>説明</title>
      <methodsynopsis>
       <type>int</type><methodname>stream_select</methodname>
-      <methodparam><type>resource</type><parameter>&amp;read</parameter></methodparam>
-      <methodparam><type>resource</type><parameter>&amp;write</parameter></methodparam>
-      <methodparam><type>resource</type><parameter>&amp;except</parameter></methodparam>
+      <methodparam><type>array</type><parameter role="reference">read</parameter></methodparam>
+      <methodparam><type>array</type><parameter role="reference">write</parameter></methodparam>
+      <methodparam><type>array</type><parameter role="reference">except</parameter></methodparam>
       <methodparam><type>int</type><parameter>tv_sec</parameter></methodparam>
       <methodparam choice="opt"><type>int</type><parameter>tv_usec</parameter></methodparam>
      </methodsynopsis>
@@ -25,10 +25,10 @@
     <simpara>
      <parameter>read</parameter> 配列に列挙されたストリームに対しては、
      何らかのデータがそのストリーム内で読み出せる状態にあるかどうか
-     監視が行われます。
+     監視が行われます
      (より正確にいえば、ブロックしないで読み出せる状態かどうか -
       特にストリームが EOF に達したかどうか、です。このとき、
-      <function>fread</function> は長さ 0 の文字列を返します。)
+      <function>fread</function> は長さ 0 の文字列を返します)。
     </simpara>
     <simpara>
      <parameter>write</parameter> 配列に列挙されたストリームに対しては、
@@ -36,12 +36,58 @@
     </simpara>
     <simpara>
      <parameter>except</parameter> 配列に列挙されたストリームに対しては、
-     例外が発生したかどうかの監視が行われます。
+     重大な例外（"帯域外の"）データが発生したかどうかの監視が行われます。
     </simpara>
+    <note>
+     <para>
+      <function>stream_select</function> の終了時には、
+      どのストリームの状態が実際に変化したのかが分かるよう、
+      配列 <parameter>read</parameter>、<parameter>write</parameter> および
+      <parameter>except</parameter> に変更が加えられます。
+     </para>
+    </note>
+    <simpara>
+     <parameter>tv_sec</parameter> と <parameter>tv_usec</parameter>
+     は、一体となって、<emphasis>timeout</emphasis> パラメータを表現します。
+     <parameter>tv_sec</parameter> は秒数を指定し、一方
+     <parameter>tv_usec</parameter> はマイクロ秒数を指定します。
+     <emphasis>timeout</emphasis> は、<function>stream_select</function>
+     の実行から戻るまでの時間の上限です。
+     <parameter>tv_sec</parameter> および <parameter>tv_usec</parameter>
+     の両方に <literal>0</literal> を指定すると 
+     <function>stream_select</function> はデータを待たずに一瞬で戻ります。
+     これは現在のストリームの状態を示します。
+     <parameter>tv_sec</parameter> が &null; (タイムアウトなし) の場合、
+     <function>stream_select</function> はブロックしつづけ、調べている
+     ストリームのひとつでイベントが発生する（あるいはシグナルがシステム
+     コールを中断する）まで終了しません。
+    </simpara>
+    <simpara>
+     成功した場合 <function>stream_select</function> は、変更された
+     配列に何個のストリームリソースが格納されたかを示す数を返します。
+     もしタイムアウトの時間内に何も規定された事象が起こらなかった場合は
+     0 になることもあります。エラーの際は &false; を返し、警告を発生させます
+     （システムコールが別のシグナルによって中断された場合などに起こりえます）。
+    </simpara>
+
     <warning>
      <para>
-      関数の終了時には、どのストリームの状態が実際に変化したのかが
-      分かるよう、これらの配列に変更が加えられます。
+      タイムアウト値に <literal>0</literal> を指定すると、ストリームの
+      状態を即時に取得することが可能です。しかし、ループ内でタイムアウト
+      <literal>0</literal> を指定するのは良い考えではありません。
+      そうすると大量の CPU 時間を消費してしまいます。
+     </para>
+     <para>
+      タイムアウト値を数秒にするとかなりましになります。しかし、どうしても
+      他のコードを同時に実行させながらチェックをする必要がある場合には、
+      少なくとも <literal>200000</literal> マイクロ秒以上のタイムアウトを
+      設定するようにしましょう。これであなたのスクリプトの CPU 使用量を
+      抑えることができます。
+     </para>
+     <para>
+      タイムアウト値は、あくまでも経過時間の最大値であることを覚えておきましょう。
+      <function>stream_select</function> は、指定したストリームが使用可能に
+      なるとすぐに結果を返します。
      </para>
     </warning>
     <simpara>
@@ -53,17 +99,22 @@
      可能性があることに注意してください。
     </simpara>
     <para>
-     例:
+     この例では、<parameter>$stream1</parameter> あるいは
+     <parameter>$stream2</parameter> のどちらかに読み込めるデータが
+     到達したかどうかを調べます。
+     タイムアウトが <literal>0</literal> なので、すぐに結果を返します。
      <programlisting role="php">
 <![CDATA[
+<?php
 /* read 配列を用意 */
 $read = array($stream1, $stream2);
 
 if (false === ($num_changed_streams = stream_select($read, $write = NULL, $except = NULL, 0))) {
     /* エラー処理 */
-else if ($num_changed_streams > 0) {
+} elseif ($num_changed_streams > 0) {
     /* 少なくとも 1 つのストリームに何らかの事象が起こりました。*/
 }
+?>
 ]]>
      </programlisting>
     </para>
@@ -75,28 +126,13 @@ else if ($num_changed_streams > 0) {
       式を指定してください:
       <programlisting role="php">
 <![CDATA[
+<?php
 stream_select($r, $w, $e = NULL, 0);
+?>
 ]]>
      </programlisting>
      </para>
     </note>
-    <simpara>
-     <parameter>tv_sec</parameter> と <parameter>tv_usec</parameter>
-     は、一体となって、<emphasis>timeout</emphasis> パラメータを表現します。
-     <emphasis>timeout</emphasis> は、<function>stream_select</function>
-     の実行から戻るまでの時間の上限です。
-     <parameter>tv_sec</parameter> に 0 を指定すると 
-     <function>stream_select</function> から一瞬で戻ります。
-     これはポーリングを実現するのに向いています。
-     <parameter>tv_sec</parameter> が &null; (タイムアウトなし) の場合、
-     <function>stream_select</function> はブロックしつづけます。
-    </simpara>
-    <simpara>
-     成功した場合 <function>stream_select</function> は、変更された
-     配列に何個のストリームリソースが格納されたかを示す数を返します。
-     もしタイムアウトの時間内に何も規定された事象が起こらなかった場合は
-     0 になることもあります。エラーの際は &false; を返します。
-    </simpara>
     <note>
      <para>
      エラーかどうかをチェックするには <literal>===</literal> を使ってください。
@@ -105,43 +141,34 @@ stream_select($r, $w, $e = NULL, 0);
      と評価されてしまうからです:
      <programlisting role="php">
 <![CDATA[
+<?php
 if (false === stream_select($r, $w, $e = NULL, 0)) {
     echo "stream_select() に失敗しました\n";
 }
+?>
 ]]>
      </programlisting>
      </para>
     </note>
     <note>
      <para>
-      幾つかのストリームの実装は、注意深く扱わなくてはならないことに
-      気をつけてください。基本的なルールとしては、次のようなものがあります。
-      <itemizedlist>
-       <listitem>
-        <simpara>
-         なるべく <function>stream_select</function> はタイムアウト
-         なしで用いてください。もし有効なデータが到着していなかったとしたら、
-         あなたのスクリプト内ではどうすることもできないはずだからです。
-         タイムアウトに依存するコードは概ね移植可能性が低く、
-         デバッグも大変です。
-        </simpara>
-       </listitem>
-       <listitem>
-        <simpara>
-         配列に返されたストリームに対して読み込みまたは書き込み操作を行う際に、
-         必ずしもあなたの希望しただけデータが読まれたり書かれたりはしないことに
-         注意してください。たった 1 バイトしか読み出せない場合も、書き込めない
-         場合もあるのです。
-        </simpara>
-       </listitem>
-      </itemizedlist>
+      配列に返されたストリームに対して読み込みまたは書き込み操作を行う際に、
+      必ずしもあなたの希望しただけデータが読まれたり書かれたりはしないことに
+      注意してください。たった 1 バイトしか読み出せない場合も、書き込めない
+      場合もあるのです。
      </para>
     </note>
     <note>
-     <title>Windows 98 に関する注意</title>
      <para>
-      <function>stream_select</function> を <function>proc_open</function>
-      に対して行った場合、Windows 98 ではデータが失われる可能性があります。
+      Windows の互換性: Windows 98 では、
+      <function>proc_open</function> が返すパイプに対して
+      <function>stream_select</function> を使用すると
+      データが失われる可能性があります。
+     </para>
+     <para>
+      Windows では、<function>proc_open</function> が返すファイル記述子に
+      対して <function>stream_select</function> を使用すると
+      失敗して &false; を返すことがあります。
      </para>
     </note>
     <para>

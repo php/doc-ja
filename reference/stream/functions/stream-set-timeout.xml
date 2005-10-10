@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- $Revision: 1.4 $ -->
+<!-- $Revision: 1.5 $ -->
 <!-- splitted from ./en/functions/network.xml, last change in rev 1.18 -->
-<!-- EN-Revision: 1.1 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 1.8 Maintainer: hirokawa Status: ready -->
   <refentry id="function.stream-set-timeout">
    <refnamediv>
     <refname>stream_set_timeout</refname>
@@ -13,28 +13,43 @@
       <type>bool</type><methodname>stream_set_timeout</methodname>
       <methodparam><type>resource</type><parameter>stream</parameter></methodparam>
       <methodparam><type>int</type><parameter>seconds</parameter></methodparam>
-      <methodparam><type>int</type><parameter>microseconds</parameter></methodparam>
+      <methodparam choice="opt"><type>int</type><parameter>microseconds</parameter></methodparam>
      </methodsynopsis>
     <para>
      <parameter>stream</parameter> にタイムアウトの値を設定します。
      この値は、<parameter>seconds</parameter> と
-     <parameter>microseconds</parameter> の和で表されます。
+     <parameter>microseconds</parameter> の和で表されます。&return.success;
+    </para>
+    <para>
+     ストリームがタイムアウトとなった場合は、
+     <function>stream_get_meta_data</function> が返す配列のキー 'timed_out'
+     の値が &true; に設定されます。エラーや警告が発生していなくても
+     同様になります。
+    </para>
+    <para>
      <example>
       <title><function>stream_set_timeout</function> の例</title>
        <programlisting role="php">
 <![CDATA[
 <?php
 $fp = fsockopen("www.example.com", 80);
-if(!$fp) {
+if (!$fp) {
     echo "開けません\n";
 } else {
-    fputs($fp, "GET / HTTP/1.0\n\n");
-    $start = time();
+
+    fwrite($fp, "GET / HTTP/1.0\r\n\r\n");
     stream_set_timeout($fp, 2);
     $res = fread($fp, 2000);
-    var_dump(stream_get_meta_data($fp));
+
+    $info = stream_get_meta_data($fp);
     fclose($fp);
-    print $res;
+
+    if ($info['timed_out']) {
+        echo 'Connection timed out!';
+    } else {
+        echo $res;
+    }
+
 }
 ?>
 ]]>

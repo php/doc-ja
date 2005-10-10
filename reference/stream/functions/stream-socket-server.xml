@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- $Revision: 1.6 $ -->
-<!-- EN-Revision: 1.4 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.7 $ -->
+<!-- EN-Revision: 1.17 Maintainer: hirokawa Status: ready -->
   <refentry id="function.stream-socket-server">
    <refnamediv>
     <refname>stream_socket_server</refname>
@@ -13,8 +13,8 @@
      <methodsynopsis>
       <type>resource</type><methodname>stream_socket_server</methodname>
       <methodparam><type>string</type><parameter>local_socket</parameter></methodparam>
-      <methodparam choice="opt"><type>int</type><parameter>&amp;errno</parameter></methodparam>
-      <methodparam choice="opt"><type>string</type><parameter>&amp;errstr</parameter></methodparam>
+      <methodparam choice="opt"><type>int</type><parameter role="reference">errno</parameter></methodparam>
+      <methodparam choice="opt"><type>string</type><parameter role="reference">errstr</parameter></methodparam>
       <methodparam choice="opt"><type>int</type><parameter>flags</parameter></methodparam>
       <methodparam choice="opt"><type>resource</type><parameter>context</parameter></methodparam>
      </methodsynopsis>
@@ -38,6 +38,12 @@
      デフォルトの値は、<constant>STREAM_SERVER_BIND</constant> |
      <constant>STREAM_SERVER_LISTEN</constant> です。
     </para>
+    <note>
+     <para>
+      UDP ソケットに対しては、<constant>STREAM_SERVER_BIND</constant> を
+      <parameter>flags</parameter> パラメータとして使用する必要があります。
+     </para>
+    </note>
     <para>
      この関数は、ソケットのみを作成します。接続待ちの状態に入るには、
      <function>stream_socket_accept</function> 関数を使います。
@@ -46,10 +52,11 @@
      もし失敗した場合は、&false; を返し、その時オプションの
      <parameter>errno</parameter> と <parameter>errstr</parameter>
      パラメータが存在するときは、そこにシステムレベルの
-     <literal>connect</literal> コールにおいて発生した実際のシステムレベルの
-     エラーを返します。
+     <literal>socket()</literal>、<literal>bind()</literal> および
+     <literal>listen()</literal> のコールにおいて発生した
+     実際のシステムレベルのエラーを返します。
      もし、<parameter>errno</parameter> に返された値が <literal>0</literal>
-     で、かつ &false; が返された場合、<literal>connect()</literal>
+     で、かつ &false; が返された場合、<literal>bind()</literal>
      コールを行う前にエラーが発生したことを示しており、これは多くの場合
      ソケットの初期化に失敗したことを示しています。
      <parameter>errno</parameter> と <parameter>errstr</parameter>
@@ -64,19 +71,18 @@
      を参照ください。
     </para>
     <para>
-     <function>stream_socket_server</function>.
      <example>
-      <title><function>stream_socket_server</function> の例</title>
+      <title>TCP サーバソケットの使用</title>
       <programlisting role="php">
 <![CDATA[
 <?php
 $socket = stream_socket_server("tcp://0.0.0.0:8000", $errno, $errstr);
 if (!$socket) {
-  echo "$errstr ($errno)<br>\n";
+  echo "$errstr ($errno)<br />\n";
 } else {
   while ($conn = stream_socket_accept($socket)) {
-    fputs ($conn, 'Thank you for connecting to my server. The local time is ' . date('n/j/Y g:i a') . "\n");
-    fclose ($conn);
+    fwrite($conn, 'The local time is ' . date('n/j/Y g:i a') . "\n");
+    fclose($conn);
   }
   fclose($socket);
 }
@@ -84,39 +90,46 @@ if (!$socket) {
 ]]>
       </programlisting>
      </example>
+    </para>
+    <para>
      下記の例は、PHP のスクリプトが、どうやって
      <function>stream_socket_client</function> で示したような、
      問い合わせに応答するタイムサーバとして機能するかを示したものです。
      <note>
-      <simpara>1024 番よりも小さいポート番号のサーバソケットを作成する場合、
+      <simpara>
+       1024 番よりも小さいポート番号のサーバソケットを作成する場合、
        多くのシステムでは root 権限が必要となります。
       </simpara>
      </note>
      <example>
-     <title>UDP サーバソケットを利用する</title>
-     <programlisting role="php">
+      <title>UDP サーバソケットを利用する</title>
+      <programlisting role="php">
 <![CDATA[
 <?php
-$socket = stream_socket_server("udp://0.0.0.0:13", $errno, $errstr);
+$socket = stream_socket_server("udp://127.0.0.1:1113", $errno, $errstr, STREAM_SERVER_BIND);
 if (!$socket) {
-    echo "ERROR: $errno - $errstr<br>\n";
-} else {
-  while ($conn = stream_socket_accept($socket)) {
-    fwrite($conn, date("D M j H:i:s Y\r\n"));
-    fclose($conn);
-  }
-  fclose($socket);
+    die("$errstr ($errno)");
 }
+
+do {
+    $pkt = stream_socket_recvfrom($socket, 1, 0, $peer);
+    echo "$peer\n";
+    stream_socket_sendto($socket, date("D M j H:i:s Y\r\n"), 0, $peer);
+} while ($pkt !== false);
+
 ?>
+
 ]]>
-     </programlisting>
+      </programlisting>
      </example>
-     &ipv6.brackets;
+     </para>
+    &ipv6.brackets;
+    <para>
      <function>stream_socket_client</function>, 
      <function>stream_set_blocking</function>,
      <function>stream_set_timeout</function>, 
      <function>fgets</function>,
-     <function>fgetss</function>, <function>fputs</function>,
+     <function>fgetss</function>, <function>fwrite</function>,
      <function>fclose</function>, <function>feof</function>,
      と <link linkend="ref.curl">Curl 拡張モジュール</link> も参照ください。
     </para>
