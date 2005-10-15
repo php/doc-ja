@@ -1,26 +1,49 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.4 $ -->
+<!-- $Revision: 1.5 $ -->
+<!-- EN-Revision: 1.10 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: takagi -->
+<!-- Purpose: fileprocess.process -->
+<!-- Membership: bundled -->
+
  <reference id="ref.pcntl">
   <title>プロセス制御関数</title>
   <titleabbrev>PCNTL</titleabbrev>
+
   <partintro>
    <section id="pcntl.intro">
     &reftitle.intro;
     <para>
-     PHPがサポートするプロセス制御関数は、UNIX形式のプロセス生成、プロ
-     セス実行、シグナル処理、プロセス終了機能を実装しています。
-     プロセス制御は、Webサーバ環境で有効にするべきではなく、プロセス制
-     御関数のどれかがWebサーバ環境で使用された場合には、予期しない結果
-     を生じる可能性があります。
+     PHP がサポートするプロセス制御関数は、Unix 形式のプロセス生成、
+     プロセス実行、シグナル処理、プロセス終了機能を実装しています。
+     プロセス制御は Web サーバ環境で有効にするべきではなく、プロセス
+     制御関数のどれかが Web サーバ環境で使用された場合には、予期しない結果を
+     生じる可能性があります。
     </para>
     <para>
-     この文書は、プロセス制御関数の一般的な使用法を説明しようとするもの
-     です。UNIXのプロセス制御に関する詳細な情報については、fork(2),
-     waitpid(2) and signal(2)のようなシステムのドキュメントや、
-     <citation>Advanced Programming in the UNIX Environment by
-      W. Richard Stevens (Addison-Wesley)</citation>のような優れた参考書
-     を読まれることを推奨します。
+     この文書は、プロセス制御関数の一般的な使用法を説明しようとするものです。
+     Unix のプロセス制御に関する詳細な情報については、fork(2),
+     waitpid(2) および signal(2) のようなシステムのドキュメントや、
+     W. Richard Stevens による Advanced Programming in the UNIX Environment (Addison-Wesley)
+     のような優れた参考書を読まれることを推奨します。
     </para>
+    <para>
+     現在 PCNTL はシグナルハンドルコールバックの仕組みとして ticks を
+     使用しており、これは以前の仕組みよりずっと高速です。この変更は
+     "user ticks" を使用するのと同じことです。<function>declare</function>
+     を使用して、プログラム中でコールバックの発生を許可する場所を指定する
+     必要があります。これにより、非同期のイベントを処理する際の
+     オーバーヘッドを最小限に抑えることが可能となります。以前は、pcntl を
+     有効にして PHP をコンパイルすると、pcntl の使用の有無にかかわらず
+     常にこのオーバーヘッドの被害を被っていたのです。
+    </para>
+    <para>
+     PHP 4.3.0 より前のバージョンで pcntl を使用していたすべてのスクリプトに
+     ついて、1 点だけ修正する必要があります。それは、コールバックを許可
+     したい場所に <function>declare</function> を使用するか、あるいは
+     <function>declare</function> の新しいグローバル書式を使用して
+     スクリプト全体で ticks を有効にすることです。
+    </para>
+
     &note.no-windows.extension;
    </section>
 
@@ -46,18 +69,18 @@
    <section id="pcntl.example">
     &reftitle.examples;
     <para>
-     この例は、シグナルハンドラを有するデーモンプロセスをフォークオフ
-     します。
+     この例は、シグナルハンドラを有するデーモンプロセスをフォークします。
     </para>
     <example>
      <title>プロセス制御の例</title>
      <programlisting role="php">
 <![CDATA[
 <?php
+declare(ticks=1);
 
 $pid = pcntl_fork();
 if ($pid == -1) {
-     die("could not fork"); 
+     die("fork できません"); 
 } else if ($pid) {
      exit(); // 親プロセスの場合
 } else {
@@ -69,20 +92,17 @@ if (!posix_setsid()) {
     die("could not detach from terminal");
 }
 
-// シグナルハンドラを設定
-pcntl_signal(SIGTERM, "sig_handler");
-pcntl_signal(SIGHUP, "sig_handler");
-
 // 無限ループでタスク実行
-while(1) {
+while (1) {
 
     // 何か面白いことをここで行う
 
 }
 
-function sig_handler($signo) {
+function sig_handler($signo) 
+{
 
-     switch($signo) {
+     switch ($signo) {
          case SIGTERM:
              // 終了タスクを処理
              exit;
@@ -96,6 +116,10 @@ function sig_handler($signo) {
 
 }
 
+// シグナルハンドラを設定
+pcntl_signal(SIGTERM, "sig_handler");
+pcntl_signal(SIGHUP, "sig_handler");
+
 ?>
 ]]>
      </programlisting>
@@ -105,8 +129,8 @@ function sig_handler($signo) {
    <section id="pcntl.seealso">
     &reftitle.seealso;
     <para>
-     <link linkend="ref.posix">POSIX関数</link>の節を参照することも有
-     用でしょう。
+     <link linkend="ref.posix">POSIX 関数</link>の節を参照することも
+     有用でしょう。
     </para>
    </section>
 

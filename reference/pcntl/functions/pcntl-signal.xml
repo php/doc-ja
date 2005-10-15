@@ -1,80 +1,115 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.5 $ -->
 <!-- splitted from ./ja/functions/pcntl.xml, last change in rev 1.1 -->
-<!-- EN-Revision: 1.2 Maintainer: hirokawa Status: ready -->
-  <refentry id="function.pcntl-signal">
-   <refnamediv>
+<!-- EN-Revision: 1.8 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: takagi -->
+ <refentry id="function.pcntl-signal">
+  <refnamediv>
    <refname>pcntl_signal</refname>
-    <refpurpose>シグナルハンドラを設定する</refpurpose>
-   </refnamediv>
-   <refsect1>
-    <title>説明</title>
-     <methodsynopsis>
-      <type>bool</type><methodname>pcntl_signal</methodname>
-      <methodparam><type>int</type><parameter>signo</parameter></methodparam>
-      <methodparam><type>mixed</type><parameter>handle</parameter></methodparam>
-     </methodsynopsis>
+   <refpurpose>シグナルハンドラを設定する</refpurpose>
+  </refnamediv>
+  <refsect1>
+   <title>説明</title>
+    <methodsynopsis>
+     <type>bool</type><methodname>pcntl_signal</methodname>
+     <methodparam><type>int</type><parameter>signo</parameter></methodparam>
+     <methodparam><type>callback</type><parameter>handle</parameter></methodparam>
+     <methodparam choice="opt"><type>bool</type><parameter>restart_syscalls</parameter></methodparam>
+    </methodsynopsis>
+   <para>
+    <function>pcntl_signal</function> 関数は、<parameter>signo</parameter>
+    が指すシグナルに関するハンドラを設定します。
+    <parameter>handler</parameter> で指定するシグナルハンドラは、
+    ユーザ定義関数の名前、あるいは次の 2 つのグローバル定数 SIG_IGN
+    あるいは SIG_DFL のうちのいずれかとなります。
+    オプションの <parameter>restart_syscalls</parameter> では、
+    再起動のシステムコールに対応するかどうかを設定します。デフォルトは
+    &true; です。
+   </para>
+   <para>
+    &return.success;
+   </para>
+   <note>
     <para>
-     The <function>pcntl_signal</function> function installs a new
-     signal handler for the signal indicated by
-     <parameter>signo</parameter>.  The signal handler is set to
-     <parameter>handler</parameter> which may be the name of a user
-     created function, or either of the two global constants SIG_IGN
-     or SIG_DFL.
+     オプションの <parameter>restart_syscalls</parameter> パラメータは
+     PHP 4.3.0 以降で使用可能です。
     </para>
+   </note>
+   <note>
     <para>
-     <function>pcntl_signal</function> returns &true; on success or
-      &false; on failure.
+     PHP 4.3.0 以降では、オブジェクトのメソッドをコールバックとして使用する
+     ことが可能です。オブジェクトのメソッドをハンドラとして指定した場合には、
+     そのハンドラを別のものに変えたりスクリプトが終了したりするまでは
+     オブジェクトの参照カウントが増加しないことに注意しましょう。
     </para>
-    <example>
-     <title><function>pcntl_signal</function> Example</title>
-     <programlisting role="php">
+   </note>
+   <example>
+    <title><function>pcntl_signal</function> の例</title>
+    <programlisting role="php">
 <![CDATA[
 <?php
+// PHP 4.3.0 以降では tick の使用が要求されます
+declare(ticks = 1);
 
-// signal handler function
-function sig_handler($signo) {
+// シグナルハンドラ関数
+function sig_handler($signo) 
+{
 
-     switch($signo) {
+     switch ($signo) {
          case SIGTERM:
-             // handle shutdown tasks
+             // シャットダウンの処理
              exit;
              break;
          case SIGHUP:
-             // handle restart tasks
+             // 再起動の処理
              break;
          case SIGUSR1:
-             print "Caught SIGUSR1...\n";
+             echo "SIGUSR1 を受け取りました...\n";
              break;
          default:
-             // handle all other signals
+             // それ以外のシグナルの処理
      }
 
 }
 
-print "Installing signal handler...\n";
+echo "シグナルハンドラを設定します...\n";
 
-// setup signal handlers
+// シグナルハンドラを設定します
 pcntl_signal(SIGTERM, "sig_handler");
-pcntl_signal(SIGHUP, "sig_handler");
+pcntl_signal(SIGHUP,  "sig_handler");
 pcntl_signal(SIGUSR1, "sig_handler");
 
-print "Generating signal SIGTERM to self...\n";
+// あるいは PHP 4.3.0 以降ならオブジェクトも指定できます
+// pcntl_signal(SIGUSR1, array($obj, "do_something");
 
-// send SIGUSR1 to current process id
+echo"自分自身に SIGTERM シグナルを送信します...\n";
+
+// SIGUSR1 をカレントのプロセス ID に送信します
 posix_kill(posix_getpid(), SIGUSR1);
 
-print "Done\n"
+echo "終了\n"
 
 ?>
 ]]>
-     </programlisting>
-    </example>
+    </programlisting>
+   </example>
+   <note>
     <para>
-     <function>pcntl_fork</function>および
-     <function>pcntl_waitpid</function>も参照ください。
+     PHP 4.3.0 以降、PCNTL はシグナルハンドルコールバックの仕組みとして ticks
+     を使用しており、これは以前の仕組みよりずっと高速です。この変更は
+     "<link linkend="control-structures.declare.ticks">user ticks</link>"
+     を使用するのと同じことです。上の例で示したように、
+     <link linkend="control-structures.declare">declare()</link> を使用して
+     プログラム中でコールバックの発生を許可する場所を指定し、シグナルハンドラが
+     正しく動作するようにする必要があります。
     </para>
-   </refsect1>
-  </refentry>
+   </note>
+   <para>
+    <function>pcntl_fork</function> および
+    <function>pcntl_waitpid</function> も参照ください。
+   </para>
+  </refsect1>
+ </refentry>
 
 <!-- Keep this comment at the end of the file
 Local variables:
