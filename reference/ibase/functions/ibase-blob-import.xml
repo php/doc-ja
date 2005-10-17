@@ -1,22 +1,68 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.4 $ -->
 <!-- splitted from ./ja/functions/ibase.xml, last change in rev 1.17 -->
-<!-- EN-Revision: 1.39 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 1.7 Maintainer: hirokawa Status: ready -->
   <refentry id='function.ibase-blob-import'>
    <refnamediv>
     <refname>ibase_blob_import</refname>
     <refpurpose>
-     blobを生成し、ファイルをコピーし、閉じる
+     blob を生成し、ファイルをコピーし、閉じる
     </refpurpose>
    </refnamediv>
    <refsect1>
     <title>説明</title>
      <methodsynopsis>
       <type>string</type><methodname>ibase_blob_import</methodname>
-      <methodparam choice="opt"><type>int</type><parameter>link_identifier</parameter></methodparam>
-      <methodparam><type>int</type><parameter>file_id</parameter></methodparam>
+      <methodparam><type>resource</type><parameter>link_identifier</parameter></methodparam>
+      <methodparam><type>resource</type><parameter>file_handle</parameter></methodparam>
+     </methodsynopsis>
+     <methodsynopsis>
+      <type>string</type><methodname>ibase_blob_import</methodname>
+      <methodparam><type>resource</type><parameter>file_handle</parameter></methodparam>
      </methodsynopsis>
     <para>
-     &warn.undocumented.func;
+     この関数は BLOB を作成し、その中にファイルのすべての内容を読み込み、
+     それを閉じ、関連付けられた BLOB ID を返します。ファイルハンドルは
+     <function>fopen</function> が返すハンドルです。失敗した場合には
+     &false; を返します。
+    </para>
+    <para>
+     <example>
+      <title><function>ibase_blob_import</function> の例</title>
+      <programlisting role="php">
+<![CDATA[
+<?php
+$dbh = ibase_connect($host, $username, $password);
+$filename = '/tmp/bar';
+
+$fd = fopen($filename, 'r');
+if ($fd) {
+
+    $blob = ibase_blob_import($dbh, $fd);
+    fclose($fd);
+
+    if (!is_string($blob)) {
+        // インポートに失敗しました
+    } else {
+        $query = "INSERT INTO foo (name, data) VALUES ('$filename', ?)";
+        $prepared = ibase_prepare($dbh, $query);
+        if (!ibase_execute($prepared, $blob)) {
+            // レコードの挿入に失敗しました
+        }
+    }
+} else {
+    // データファイルをオープンできませんでした
+}
+?>
+]]>
+      </programlisting>
+     </example>
+    </para>
+    <para>
+     <function>ibase_blob_add</function>、
+     <function>ibase_blob_cancel</function>、
+     <function>ibase_blob_close</function> および
+     <function>ibase_blob_create</function> も参照ください。
     </para>
    </refsect1>
   </refentry>

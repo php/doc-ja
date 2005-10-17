@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.4 $ -->
 <!-- splitted from ./ja/functions/ibase.xml, last change in rev 1.1 -->
-<!-- EN-Revision: 1.2 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 1.10 Maintainer: hirokawa Status: ready -->
   <refentry id="function.ibase-execute">
    <refnamediv>
     <refname>ibase_execute</refname>
@@ -9,36 +10,59 @@
    <refsect1>
     <title>説明</title>
      <methodsynopsis>
-      <type>int</type><methodname>ibase_execute</methodname>
-      <methodparam><type>int</type><parameter>query</parameter></methodparam>
-      <methodparam><type>int</type><parameter>
-	<replaceable><optional>bind_args</optional></replaceable>
-       </parameter></methodparam>
+      <type>resource</type><methodname>ibase_execute</methodname>
+      <methodparam><type>resource</type><parameter>query</parameter></methodparam>
+      <methodparam choice="opt"><type>mixed</type><parameter>bind_arg</parameter></methodparam>
+      <methodparam choice="opt"><type>mixed</type><parameter>...</parameter></methodparam>
      </methodsynopsis>
     <para>
-     <function>ibase_prepare</function>により事前に準備されたクエリを
-     実行します。いくつかのパラメータが変わるだけで同じクエリーを
+     <function>ibase_prepare</function> により事前に準備されたクエリを
+     実行します。クエリがエラーを発生させた場合は  &false; を返します。
+     クエリが成功し、結果セット(空のセットとなる可能性もありえます)を
+     返した場合(SELECT クエリなど)は結果 ID を返します。クエリが成功し、
+     結果セットが返されなかった場合は &true; を返します。
+    </para>
+    <para>
+     いくつかのパラメータが変わるだけで同じクエリを
      複数回実行する場合には、この関数は
-     <function>ibase_query</function>を使用するよりもずっと効率的です。
-     <informalexample>
+     <function>ibase_query</function> を使用するよりもずっと効率的です。
+    </para>
+    <para>
+     <example>
+      <title><function>ibase_execute</function> の例</title>
       <programlisting role="php">
 <![CDATA[
 <?php
-       $updates = array(
-           1 => 'Eric',
-           5 => 'Filip',
-           7 => 'Larry'
-       );
+   
+$dbh = ibase_connect($host, $username, $password); 
 
-       $query = ibase_prepare("UPDATE FOO SET BAR = ? WHERE BAZ = ?");
+$updates = array(
+    1 => 'Eric',
+    5 => 'Filip',
+    7 => 'Larry'
+);
 
-       while (list($baz, $bar) = each($updates)) {
-       ibase_execute($query, $bar, $baz);
-       }
+$query = ibase_prepare($dbh, "UPDATE FOO SET BAR = ? WHERE BAZ = ?");
+
+foreach ($updates as $baz => $bar) {
+    ibase_execute($query, $bar, $baz);
+}
+
 ?>
 ]]>
       </programlisting>
-     </informalexample>
+     </example>
+    </para>
+    <note>
+      <para>
+      PHP 5.0.0 以降では、この関数はクエリによって変更された行の数を
+      返します(行を変更するクエリで、結果が 0 より大きかった場合)。
+      クエリは成功したが、どの行も変更されなかった場合(例: 存在しない
+      行に対する UPDATE)は &true; を返します。
+      </para>
+    </note>
+    <para>
+    <function>ibase_query</function> も参照ください。
     </para>
    </refsect1>
   </refentry>
