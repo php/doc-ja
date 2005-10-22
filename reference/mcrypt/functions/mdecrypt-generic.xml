@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.6 $ -->
 <!-- splitted from ./ja/functions/mcrypt.xml, last change in rev 1.5 -->
-<!-- EN-Revision: 1.7 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 1.6 Maintainer: hirokawa Status: ready -->
   <refentry id="function.mdecrypt-generic">
    <refnamediv>
     <refname>mdecrypt_generic</refname>
@@ -14,9 +15,9 @@
       <methodparam><type>string</type><parameter>data</parameter></methodparam>
      </methodsynopsis>
     <para>
-     この関数は、データを復号化します。データのパディングが行われるた
-     め、返される文字列の長さは暗号化前の文字列の長さよりも長くなる可
-     能性があることに注意してください。
+     この関数は、データを復号化します。データのパディングが行われるため、
+     返される文字列の長さは暗号化前の文字列よりも長くなる可能性があることに
+     注意してください。
     </para>
     <para>
      <example>
@@ -24,27 +25,60 @@
       <programlisting role="php">
 <![CDATA[
 <?php
-$iv_size = mcrypt_enc_get_iv_size ($td));
-$iv = @mcrypt_create_iv ($iv_size, MCRYPT_RAND);
+    /* データ */
+    $key = 'this is a very long key, even too long for the cipher';
+    $plain_text = 'very important data';
+   
+    /* モジュールをオープンし、IV を作成します */ 
+    $td = mcrypt_module_open('des', '', 'ecb', '');
+    $key = substr($key, 0, mcrypt_enc_get_key_size($td));
+    $iv_size = mcrypt_enc_get_iv_size($td);
+    $iv = mcrypt_create_iv($iv_size, MCRYPT_RAND);
 
-if (@mcrypt_generic_init ($td, $key, $iv) != -1)
-{
-    $c_t = mcrypt_generic ($td, $plain_text);
-    @mcrypt_generic_init ($td, $key, $iv);
-    $p_t = mdecrypt_generic ($td, $c_t);
-}
-if (strncmp ($p_t, $plain_text, strlen($plain_text)) == 0)
-    echo "ok";
-else
-    echo "error";
+    /* 暗号化ハンドルを初期化します */
+    if (mcrypt_generic_init($td, $key, $iv) != -1) {
+
+        /* データを暗号化します */
+        $c_t = mcrypt_generic($td, $plain_text);
+        mcrypt_generic_deinit($td);
+
+        /* 復号化のため、バッファを再度初期化します */
+        mcrypt_generic_init($td, $key, $iv);
+        $p_t = mdecrypt_generic($td, $c_t);
+
+        /* 後始末をします */
+        mcrypt_generic_deinit($td);
+        mcrypt_module_close($td);
+    }
+
+    if (strncmp($p_t, $plain_text, strlen($plain_text)) == 0) {
+        echo "ok\n";
+    } else {
+        echo "error\n";
+    }
 ?>
 ]]>
       </programlisting>
-      <para>
-       上記の例は、暗号化前のデータと復号化したデータと同じであるかどう
-       かを調べる方法を示すものです。
-      </para>
      </example>
+    </para>
+    <para>
+     上記の例は、暗号化前のデータと復号化したデータと同じであるかどうかを
+     調べる方法を示すものです。データを復号化する前に
+     <function>mcrypt_generic_init</function> で暗号化バッファを再度
+     初期化しておくことが重要です。
+    </para>
+    <para>
+     この関数をコールする前に、常に
+     <function>mcrypt_generic_init</function> でキーと IV を使用して
+     復号化ハンドルを初期化しておくべきです。暗号化が終了した際には
+     <function>mcrypt_generic_deinit</function> をコールして暗号化
+     バッファを開放すべきです。
+     <function>mcrypt_module_open</function> の例を参照ください。
+    </para>
+    <para>
+     <function>mcrypt_generic</function>、
+     <function>mcrypt_generic_init</function> および
+     <function>mcrypt_generic_deinit</function> も参照ください。
     </para>
    </refsect1>
   </refentry>

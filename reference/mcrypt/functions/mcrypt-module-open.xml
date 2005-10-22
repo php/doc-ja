@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.4 $ -->
 <!-- splitted from ./ja/functions/mcrypt.xml, last change in rev 1.17 -->
-<!-- EN-Revision: 1.7 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 1.9 Maintainer: hirokawa Status: ready -->
   <refentry id="function.mcrypt-module-open">
    <refnamediv>
     <refname>mcrypt_module_open</refname>
@@ -18,14 +19,12 @@
       <methodparam><type>string</type><parameter>mode_directory</parameter></methodparam>
      </methodsynopsis>
     <para>
-     この関数は、使用するアルゴリズムおよびモードのモジュールをオープ
-     ンします。アルゴリズム名は、"twofish" または定数 MCRYPT_暗号名に
-     より algorithm で指定します。
-     ライブラリは<function>mcrypt_module_close</function>をコールする
-     ことによりクローズされますが、
-     <function>mcrypt_generic_end</function>をコールする場合には、この
-     関数をコールする必要はありません。通常、この関数は暗号化ディスク
-     クリプタを返し、エラーの際に&false;を返します。
+     この関数は、使用するアルゴリズムおよびモードのモジュールをオープン
+     します。アルゴリズム名は、"twofish" または定数 MCRYPT_暗号名により
+     algorithm で指定します。
+     ライブラリは <function>mcrypt_module_close</function> をコールする
+     ことによりクローズされます。通常、この関数は暗号化記述子を返し、
+     エラーの際に &false; を返します。
     </para>
     <para>
      暗号化モジュールの位置を指定する際には
@@ -34,10 +33,10 @@
      ディレクトリ名を指定した場合には、これが使用されます。
      これらの一つに空の文字列("")を指定した場合、ini ディエクティブの
      <parameter>mcrypt.algorithms_dir</parameter> または
-     <parameter>mcrypt.modes_dir</parameter>に設定された値が使用されま
-     す。これらが設定されていない場合、libmcryptをコンパイルした際のデ
-     フォルトのディレクトリ (通常は/usr/local/lib/libmcrypt)が使用され
-     ます。
+     <parameter>mcrypt.modes_dir</parameter> に設定された値が使用されます。
+     これらが設定されていない場合、libmcrypt をコンパイルした際の
+     デフォルトのディレクトリ (通常は/usr/local/lib/libmcrypt)が
+     使用されます。
     </para>
     <para>
      <example>
@@ -45,15 +44,78 @@
       <programlisting role="php">
 <![CDATA[
 <?php
-$td = mcrypt_module_open (MCRYPT_DES, "", MCRYPT_MODE_ECB, "/usr/lib/mcrypt-modes");
+    $td = mcrypt_module_open(MCRYPT_DES, '',
+        MCRYPT_MODE_ECB, '/usr/lib/mcrypt-modes');
+
+    $td = mcrypt_module_open('rijndael-256', '', 'ofb', '');
 ?>
 ]]>
       </programlisting>
-      <para>
-       上記の例は、デフォルトのディレクトリからDES暗号、ディレクトリ
-       /usr/lib/mcrypt-modesからEBCモードをオープンします。
-      </para>
      </example>
+    </para>
+    <para>
+     上の例の最初の行では、デフォルトのディレクトリから DES 暗号化を、
+     そして <filename>/usr/lib/mcrypt-modes</filename> から EBC モードの
+     オープンを試みます。2 行目の例では暗号化形式とモードを文字列で
+     指定しています。これは、libmcrypt 2.4.x あるいは 2.5.x に対して
+     拡張モジュールがリンクされている場合にのみ使用可能です。
+    </para>
+    <para>
+     <example>
+      <title><function>mcrypt_module_open</function> を暗号化で使用する</title>
+      <programlisting role="php">
+<![CDATA[
+<?php
+    /* 暗号モジュールをオープンします */
+    $td = mcrypt_module_open('rijndael-256', '', 'ofb', '');
+
+    /* IV を作成し、キー長を定義します。Windows では、かわりに
+     * MCRYPT_RAND を使用します */
+    $iv = mcrypt_create_iv(mcrypt_enc_get_iv_size($td), MCRYPT_DEV_RANDOM);
+    $ks = mcrypt_enc_get_key_size($td);
+
+    /* キーを作成します */
+    $key = substr(md5('very secret key'), 0, $ks);
+
+    /* 暗号化処理を初期化します */
+    mcrypt_generic_init($td, $key, $iv);
+
+    /* データを暗号化します */
+    $encrypted = mcrypt_generic($td, 'This is very important data');
+
+    /* 暗号化ハンドラを終了します */
+    mcrypt_generic_deinit($td);
+
+    /* 復号化用の暗号モジュールを初期化します */
+    mcrypt_generic_init($td, $key, $iv);
+
+    /* 暗号化された文字列を復号します */
+    $decrypted = mdecrypt_generic($td, $encrypted);
+
+    /* 復号化ハンドルを終了し、モジュールを閉じます */
+    mcrypt_generic_deinit($td);
+    mcrypt_module_close($td);
+
+    /* 文字列を表示します */
+    echo trim($decrypted) . "\n";
+?>
+]]>
+      </programlisting>
+     </example>
+    </para>
+    <para>
+     上の例の最初の行では、デフォルトのディレクトリから DES 暗号化を、
+     そして <filename>/usr/lib/mcrypt-modes</filename> から EBC モードの
+     オープンを試みます。2 行目の例では暗号化形式とモードを文字列で
+     指定しています。これは、libmcrypt 2.4.x あるいは 2.5.x に対して
+     拡張モジュールがリンクされている場合にのみ使用可能です。
+    </para>
+    <para>
+     <function>mcrypt_module_close</function>、
+     <function>mcrypt_generic</function>、
+     <function>mdecrypt_generic</function>、
+     <function>mcrypt_generic_init</function> および
+     <function>mcrypt_generic_deinit</function> も参照ください。
     </para>
    </refsect1>
   </refentry>
