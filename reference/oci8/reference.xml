@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.7 $ -->
-<!-- EN-Revision: 1.14 Maintainer: shimooka Status: ready -->
+<!-- $Revision: 1.8 $ -->
+<!-- EN-Revision: 1.17 Maintainer: shimooka Status: ready -->
 <!-- CREDITS: hirokawa -->
 <!-- Purpose: database.vendors -->
 <!-- Membership: bundled, external -->
@@ -13,78 +13,82 @@
    <section id="oci8.intro">
     &reftitle.intro;
     <para>
-     これらの関数は Oracle9, Oracle8, Oracle7
+     これらの関数は Oracle コールインターフェース (OCI) を使用した
+     Oracle 10, Oracle 9, Oracle 8, そして Oracle 7
      データベースへのアクセスを可能にします。
-     この拡張モジュールは Oracle Call Interface (OCI) を使用します。
-    </para>
-    <para>
-     この拡張モジュールは、<link linkend="ref.oracle">通常のOracle</link>
-     拡張モジュールより柔軟性があります。
-     この拡張モジュールは、グローバルおよびローカルの PHP 変数の Oracle
-     プレースホルダーへのバインドをサポートします。また、LOB,FILE,ROWID
-     を完全にサポートしており、ユーザー定義の変数が使用可能です。
-     可能であれば <link linkend="ref.oracle">通常の Oracle</link>
-     拡張モジュールの代わりにこの拡張モジュールを使用することをお勧めします。
+     これらは PHP 変数の Oracle プレースホルダへのバインドをサポートし、
+     LOB、FILE、ROWID を完全にサポートしており、
+     ユーザー定義の変数が使用可能です。
     </para>
    </section>
 
    <section id="oci8.requirements">
     &reftitle.required;
+   <para>
+    この拡張を使用するために Oracle クライアントライブラリが必要になります。
+    Windows ユーザは <filename>php_oci8.dll</filename> を使用するために
+    少なくとも Oracle 8.1 が必要になるでしょう。
+   </para>
+   <para>
+    要求される全てのファイルをインストールする最も簡便な方法は、
+    Oracle Instant Client を使用することです。これは
+    <ulink url="&url.oracle.instant.client;">&url.oracle.instant.client;</ulink>
+    から取得可能です。
+    Instant Client は ORACLE_SID もしくは ORACLE_HOME
+    環境変数を設定する必要がありませんが、LD_LIBRARY_PATH と
+    NLS_LANG を設定する必要があります。
+   </para>
+   <para>
+    この拡張モジュールを使用する前に Web デーモンのユーザでもある
+    Oracle ユーザに対する Oracle 用環境変数が正しく設定されていることを
+    確認してください。これらの変数は Web サーバを起動する
+    <emphasis>前に</emphasis> 設定されていなければなりません。
+    設定されている必要がある変数を以下に示します。
+    <itemizedlist>
+     <listitem>
+      <simpara>
+       ORACLE_HOME
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       ORACLE_SID
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       LD_PRELOAD
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       LD_LIBRARY_PATH
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       NLS_LANG
+      </simpara>
+     </listitem>
+    </itemizedlist>
+     頻繁にはないですが、TNS_ADMIN, TWO_TASK, ORA_TZFILE、
+     そして ORA_NLS33, ORA_NLS10 あるいは
+     NLS_* のような様々な Oracle の国際化設定用の変数を使用する場合は、
+     Oracle のドキュメントを参照してください。
+   </para>
+   <para>
+     Web サーバーのユーザ用に環境変数を設定した後、Web サーバーのユーザ
+     (nobody, www) をグループ oracle に追加してください。
+   </para>
+   <note>
+    <title>Web サーバが起動しないか、起動時にクラッシュする場合</title>
     <para>
-     この拡張を使用するために Oracle クライアントライブラリが必要になります。
-     Windows ユーザは <filename>php_oci8.dll</filename> を使用するために
-     少なくとも Oracle 8.1 が必要になるでしょう。
+      Apache が pthread ライブラリにリンクされているかどうか
+      次のように確認してください。
     </para>
     <para>
-     この拡張モジュールを使用する前に Webデーモンのユーザでもある
-     OracleユーザのOracle用環境変数が正しく設定されていることを確認し
-     てください。設定されている必要がある変数を以下に示します。
-     <itemizedlist>
-      <listitem>
-       <simpara>
-        ORACLE_HOME
-       </simpara>
-      </listitem>
-      <listitem>
-       <simpara>
-        ORACLE_SID
-       </simpara>
-      </listitem>
-      <listitem>
-       <simpara>
-        LD_PRELOAD
-       </simpara>
-      </listitem>
-      <listitem>
-       <simpara>
-        LD_LIBRARY_PATH
-       </simpara>
-      </listitem>
-      <listitem>
-       <simpara>
-        NLS_LANG
-       </simpara>
-      </listitem>
-      <listitem>
-       <simpara>
-        ORA_NLS33
-       </simpara>
-      </listitem>
-     </itemizedlist>
-    </para>
-    <para>
-     Webサーバーのユーザ用に環境変数を設定した後、Webサーバーのユーザ
-     (nobody, www)をグループoracleに追加してください。
-    </para>
-    <note>
-     <title>Webサーバが起動しないか、起動時にクラッシュする場合</title>
-     <para>
-      Apacheがpthreadライブラリにリンクされているかどうか次のように確認
-      してください。
-     </para>
-     <para>
-      <informalexample>
-       <screen>
+     <informalexample>
+      <screen>
 <![CDATA[
 # ldd /www/apache/bin/httpd
     libpthread.so.0 => /lib/libpthread.so.0 (0x4001c000)
@@ -94,16 +98,16 @@
     libc.so.6 => /lib/libc.so.6 (0x4007e000)
     /lib/ld-linux.so.2 => /lib/ld-linux.so.2 (0x40000000)
 ]]>
-       </screen>
-      </informalexample>
-     </para>
-     <para>
-      libpthread がこの一覧にない場合、Apacheを再インストールする必要
-      があります。
-     </para>
-     <para>
-      <informalexample>
-       <screen>
+      </screen>
+     </informalexample>
+    </para>
+    <para>
+     libpthread がこの一覧にない場合、Apache
+     を再インストールする必要があります。
+    </para>
+    <para>
+     <informalexample>
+      <screen>
 <![CDATA[
 # cd /usr/src/apache_1.3.xx
 # make clean
@@ -111,77 +115,162 @@
 # make
 # make install
 ]]>
-       </screen>
-      </informalexample>
-     </para>
-     <para>
-      UnixWareのようないくつかのシステムでは、libpthreadの代わりに
-      libthreadが使用されています。PHPとApacheは、
-      EXTRA_LIBS=-lthreadをconfigureに指定する必要があります。
-     </para>
-    </note>
-   </section>
-
-   &reference.oci8.configure;
-
-   <section id="oci8.configuration">
-    &reftitle.runtime;
-    &no.config;
-   </section>
-
-   <section id="oci8.resources">
-    &reftitle.resources;
-    <para>
+      </screen>
+     </informalexample>
     </para>
+    <para>
+      UnixWare のようないくつかのシステムでは、libpthread の代わりに
+      libthread が使用されています。その場合、PHP と Apache は、
+      EXTRA_LIBS=-lthread を configure に指定する必要があります。
+    </para>
+   </note>
    </section>
+
+   &reference.oci8.ini;
 
    &reference.oci8.constants;
 
    <section id="oci8.examples">
-   &reftitle.examples;
+    &reftitle.examples;
     <para>
-    <example>
-     <title>OCIに関するヒント</title>
-      <programlisting role="php">
+     <example>
+      <title>基本的なクエリ</title>
+       <programlisting role="php">
 <![CDATA[
 <?php
-// by sergo at bacup dot ru
 
-// コマンドの実行を遅延させるには、オプション OCI_DEFAULT を使用して
-// ください
-OCIExecute($stmt, OCI_DEFAULT);
+  $conn = oci_connect('hr', 'hr', 'orcl');
+  if (!$conn) {
+    $e = oci_error();
+    print htmlentities($e['message']);
+    exit;
+  }
 
-// (クエリ結果取得後に)使用するデータを取得
+  $query = 'SELECT * FROM DEPARTMENTS';
 
-$result = OCIResult($stmt, $n);
-if (is_object($result)) $result = $result->load();
+  $stid = oci_parse($conn, $query);
+  if (!$stid) {
+    $e = oci_error($conn);
+    print htmlentities($e['message']);
+    exit;
+  }
 
-// INSERT または UPDATE 命令の場合に使用
+  $r = oci_execute($stid, OCI_DEFAULT);
+  if (!$r) {
+    $e = oci_error($stid);
+    echo htmlentities($e['message']);
+    exit;
+  }
 
-$sql = "insert into table (field1, field2) values (field1 = 'value',
- field2 = empty_clob()) returning field2 into :field2";
-OCIParse($conn, $sql);
-$clob = OCINewDescriptor($conn, OCI_D_LOB);
-OCIBindByName($stmt, ":field2", &$clob, -1, OCI_B_CLOB);
-OCIExecute($stmt, OCI_DEFAULT);
-$clob->save("some text");
-OCICommit($conn);
+  print '<table border="1">';
+  while ($row = oci_fetch_array($stid, OCI_RETURN_NULLS)) {
+    print '<tr>';
+       foreach ($row as $item) {
+         print '<td>'.($item?htmlentities($item):'&nbsp;').'</td>';
+       }
+       print '</tr>';
+  }
+  print '</table>';
+
+  oci_close($conn);
+?>
+]]>
+       </programlisting>
+     </example>
+    </para>
+    <para>
+     <example>
+      <title>バインド変数を用いた挿入</title>
+       <programlisting role="php">
+<![CDATA[
+<?php
+
+  // 実行前に表を作成する
+  //   CREATE TABLE MYTABLE (mid NUMBER, myd VARCHAR2(20));
+
+  $conn = oci_connect('scott', 'tiger', 'orcl');
+
+  $query = 'INSERT INTO MYTABLE VALUES(:myid, :mydata)';
+
+  $stid = oci_parse($conn, $query);
+
+  $id = 60;
+  $data = 'Some data';
+
+  oci_bind_by_name($stid, ':myid', $id);
+  oci_bind_by_name($stid, ':mydata', $data);
+
+  $r = oci_execute($stid);
+
+  if ($r)
+    print "One row inserted";
+
+  oci_close($conn);
 
 ?>
 ]]>
-      </programlisting>
+       </programlisting>
      </example>
+    </para>
+
+
+    <para>
+    <example>
+     <title>CLOB カラムにデータを挿入する</title>
+      <programlisting role="php">
+<![CDATA[
+<?php
+
+// 実行前に表を作成する
+//     CREATE TABLE MYTABLE (mykey NUMBER, myclob CLOB);
+
+$conn = oci_connect('scott', 'tiger', 'orcl');
+
+$mykey = 12343;  // この例で用いる任意のキー
+
+$sql = "INSERT INTO mytable (mykey, myclob)
+        VALUES (:mykey, EMPTY_CLOB())
+        RETURNING myclob INTO :myclob";
+
+$stid = oci_parse($conn, $sql);
+$clob = oci_new_descriptor($conn, OCI_D_LOB);
+oci_bind_by_name($stid, ":mykey", $mykey, 5);
+oci_bind_by_name($stid, ":myclob", $clob, -1, OCI_B_CLOB);
+oci_execute($stid, OCI_DEFAULT);
+$clob->save("A very long string");
+
+oci_commit($conn);
+
+// CLOB データをフェッチする
+
+$query = 'SELECT myclob FROM mytable WHERE mykey = :mykey';
+
+$stid = oci_parse ($conn, $query);
+oci_bind_by_name($stid, ":mykey", $mykey, 5);
+oci_execute($stid, OCI_DEFAULT);
+
+print '<table border="1">';
+while ($row = oci_fetch_array($stid, OCI_ASSOC)) {
+  $result = $row['MYCLOB']->load();
+  print '<tr><td>'.$result.'</td></tr>';
+}
+print '</table>';
+
+?>
+]]>
+     </programlisting>
+    </example>
     </para>
     <para>
      コマンドラインで実行するのと同様な手法により、ストアドプロシージャ
      に簡単にアクセス可能です。
-     <example>
-      <title>ストアドプロシージャの使用法</title>
+    <example>
+     <title>ストアドプロシージャの使用法</title>
       <programlisting role="php">
 <![CDATA[
 <?php
 // by webmaster at remoterealty dot com
-$sth = OCIParse($dbh, "begin sp_newaddress( :address_id, '$firstname',
+$sth = oci_parse($dbh, "begin sp_newaddress( :address_id, '$firstname',
  '$lastname', '$company', '$address1', '$address2', '$city', '$state',
  '$postalcode', '$country', :error_code );end;");
 
@@ -189,15 +278,200 @@ $sth = OCIParse($dbh, "begin sp_newaddress( :address_id, '$firstname',
 // ストアドプロシージャ sp_newaddress をコールします。
 // 続いて、以下のようにバインドを実行します。
 
-   OCIBindByName($sth, ":address_id", $addr_id, 10);
-   OCIBindByName($sth, ":error_code", $errorcode, 10);
-   OCIExecute($sth);
+   oci_bind_by_name($sth, ":address_id", $addr_id, 10);
+   oci_bind_by_name($sth, ":error_code", $errorcode, 10);
+   oci_execute($sth);
 
 ?>
 ]]>
       </programlisting>
     </example>
     </para>
+   </section>
+
+   <section id="oci8.connection">
+    <title>接続のハンドリング</title>
+    <para>
+     oci8 拡張モジュールは Oracle に接続するための 3
+     つの異なる関数を提供しています。
+     アプリケーションに最適な関数を使用するのはあなた次第です。
+     また、このセクションにある情報は、
+     インフォームド・チョイス (十分な説明を受けよく考えた上での選択)
+     を行う助けになることを目的としています。
+    </para>
+    <para>
+     Oracle サーバへの接続は、完了まで要する時間という点から見ると、
+     かなりコストのかかる操作です。<function>oci_pconnect</function> 関数は、
+     異なるスクリプトリクエスト間で接続の再利用が可能な
+     持続的キャッシュを使用します。
+     これは、PHP プロセス (もしくは Apache の子プロセス)
+     毎の接続に関するオーバーヘッドを一度のみ負うということを意味しています。
+    </para>
+    <para>
+     もしアプリケーションが信用された異なる Web ユーザー毎に
+     Oracle に接続する場合、<function>oci_pconnect</function>
+     による持続的キャッシュは、
+     同時ユーザー数の増加と共に有効ではなくなるでしょう。
+     これは、多くのアイドル状態の接続が維持されることが原因で、
+     Oracle サーバ全体のパフォーマンスに不利な影響を与え始めるためです。
+     もしアプリケーションがこの方法で構成されている場合、
+     <link
+      linkend="ini.oci8.max_persistent">oci8.max_persistent</link> や <link
+      linkend="ini.oci8.persistent_timeout">oci8.persistent_timeout</link>
+     (持続的接続のキャッシュサイズや生存期間の制御が可能になります)
+     を使用してアプリケーションをチューニングする、もしくは代わりに
+     <function>oci_connect</function> を使用することが推奨されます。
+    </para>
+    <para>
+     <function>oci_connect</function> と <function>oci_pconnect</function>
+     の両者とも接続キャッシュを使用します。もし、同一パラメータと共に
+     <function>oci_connect</function> を複数回コールする場合、
+     2 番目以降は既存の接続ハンドルを返します。<function>oci_connect</function>
+     によって使用されるキャッシュは、スクリプト実行終了時、
+     もしくは明示的に接続ハンドルを閉じた時にクリアされます。
+     <function>oci_pconnect</function> も同様の動作をしますが、
+     キャッシュは独立して維持され、リクエスト間で残存します。
+    </para>
+    <para>
+     このキャッシュ機能は忘れてはならないほど重要です。
+     それは、2 つのハンドルがトランザクション的に独立していない
+     (実際には同じ接続なので、どのような種類の独立もありません)
+     ためです。もしアプリケーションが 2
+     つの別々でトランザクション的に独立した接続を必要とする場合、
+     <function>oci_new_connect</function> を使用すべきです。
+    </para>
+    <para>
+     <function>oci_new_connect</function> は、他の既存の接続が存在したとしても
+     常に Oracle サーバへの新規接続を生成します。
+     特にアプリケーションの最も負荷が高い部分など、
+     高トラフィックな Web アプリケーションに対しては
+     <function>oci_new_connect</function> の使用を避けてください。
+    </para>
+   </section>
+
+   <section id="oci8.datatypes">
+    <title>ドライバでサポートされるデータ型</title>
+    <table>
+     <title><function>oci_bind_by_name</function>
+     関数を使用してパラメータをバインドする場合、
+     ドライバは次の方をサポートします</title>
+     <tgroup cols="2">
+      <thead>
+       <row>
+        <entry>型</entry>
+        <entry>マッピング</entry>
+       </row>
+      </thead>
+      <tbody>
+       <row>
+        <entry>SQLT_NTY</entry>
+        <entry><function>oci_new_collection</function>
+        によって生成されたような
+        PHP のコレクションオブジェクトからネイティブのコレクション型に
+        マップします</entry>
+       </row>
+       <row>
+        <entry>SQLT_BFILEE</entry>
+        <entry><function>oci_new_descriptor</function>
+        によって生成されたような
+        PHP のディスクリプタオブジェクトからネイティブのディスクリプタ型に
+        マップします</entry>
+       </row>
+       <row>
+        <entry>SQLT_CFILEE</entry>
+        <entry><function>oci_new_descriptor</function>
+        によって生成されたような
+        PHP のディスクリプタオブジェクトからネイティブのディスクリプタ型に
+        マップします</entry>
+       </row>
+       <row>
+        <entry>SQLT_CLOB</entry>
+        <entry><function>oci_new_descriptor</function>
+        によって生成されたような
+        PHP のディスクリプタオブジェクトからネイティブのディスクリプタ型に
+        マップします</entry>
+       </row>
+       <row>
+        <entry>SQLT_BLOB</entry>
+        <entry><function>oci_new_descriptor</function>
+        によって生成されたような
+        PHP のディスクリプタオブジェクトからネイティブのディスクリプタ型に
+        マップします</entry>
+       </row>
+       <row>
+        <entry>SQLT_RDD</entry>
+        <entry><function>oci_new_descriptor</function>
+        によって生成されたような
+        PHP のディスクリプタオブジェクトからネイティブのディスクリプタ型に
+        マップします</entry>
+       </row>
+       <row>
+        <entry>SQLT_NUM</entry>
+        <entry>PHP パラメータを 'C' の long 型に変換し、
+        その値をバインドします</entry>
+       </row>
+       <row>
+        <entry>SQLT_RSET</entry>
+        <entry><function>oci_parse</function> によって生成されたもしくは他の
+        OCI クエリから処理されたような
+        PHP のステートメントハンドルからネイティブのステートメントハンドルに
+        マップします</entry>
+       </row>
+       <row>
+        <entry>SQLT_CHR や他の型</entry>
+        <entry>PHP パラメータを文字列型に変換し、その文字列をバインドします
+        </entry>
+       </row>
+      </tbody>
+     </tgroup>
+    </table>
+
+    <table>
+     <title>以下の型は結果セットからカラムを処理する際にサポートされます
+     </title>
+     <tgroup cols="2">
+      <thead>
+       <row>
+        <entry>型</entry>
+        <entry>マッピング</entry>
+       </row>
+      </thead>
+      <tbody>
+       <row>
+        <entry>SQLT_RSET</entry>
+        <entry>カーソルを表す OCI ステートメントリソースを生成します</entry>
+       </row>
+       <row>
+        <entry>SQLT_RDD</entry>
+        <entry>ROWID オブジェクトを生成します</entry>
+       </row>
+       <row>
+        <entry>SQLT_BLOB</entry>
+        <entry>LOB オブジェクトを生成します</entry>
+       </row>
+       <row>
+        <entry>SQLT_CLOB</entry>
+        <entry>LOB オブジェクトを生成します</entry>
+       </row>
+       <row>
+        <entry>SQLT_BFILE</entry>
+        <entry>LOB オブジェクトを生成します</entry>
+       </row>
+       <row>
+        <entry>SQLT_LNG</entry>
+        <entry>SQLT_CHR としてバインドし、文字列として返します</entry>
+       </row>
+       <row>
+        <entry>SQLT_LBI</entry>
+        <entry>SQLT_BIN としてバインドし、文字列として返します</entry>
+       </row>
+       <row>
+        <entry>Any other type</entry>
+        <entry>SQLT_CHR としてバインドし、文字列として返します</entry>
+       </row>
+      </tbody>
+     </tgroup>
+    </table>
    </section>
 
   </partintro>
@@ -225,4 +499,3 @@ vim600: syn=xml fen fdm=syntax fdl=2 si
 vim: et tw=78 syn=sgml
 vi: ts=1 sw=1
 -->
-
