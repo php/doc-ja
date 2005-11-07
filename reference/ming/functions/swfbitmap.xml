@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.4 $ -->
 <!-- splitted from ./ja/functions/ming.xml, last change in rev 1.1 -->
-<!-- EN-Revision: 1.24 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 1.6 Maintainer: hirokawa Status: ready -->
   <refentry id="function.swfbitmap">
    <refnamediv>
     <refname>SWFBitmap</refname>
@@ -9,39 +10,40 @@
    <refsect1>
     <title>説明</title>
      <methodsynopsis>
-      <type>new</type><methodname>swfbitmap</methodname>
-      <methodparam><type>string</type><parameter>filename</parameter></methodparam>
-      <methodparam choice="opt"><type>int</type><parameter>alphafilename</parameter></methodparam>
+      <type>SWFBitmap</type><methodname>swfbitmap</methodname>
+      <methodparam><type>mixed</type><parameter>file</parameter></methodparam>
+      <methodparam choice="opt"><type>mixed</type><parameter>alphafile</parameter></methodparam>
      </methodsynopsis>
-     &warn.experimental.func;
+    &warn.experimental.func;
     <para>
-     <function>swfbitmap</function> creates a new SWFBitmap object from 
-     the Jpeg or DBL file named <parameter>filename</parameter>. 
-     <parameter>alphafilename</parameter> indicates a MSK file to
-     be used as an alpha mask for a Jpeg image. 
+     <function>swfbitmap</function> は、<parameter>file</parameter>
+     で指定した Jpeg あるいは DBL ファイルから新規 SWFBitmap オブジェクトを
+     作成します。<parameter>alphafile</parameter> は、Jpeg 画像の
+     アルファマスクとして使用される MSK ファイルです。これらのパラメータは、
+     <function>fopen</function> のリソースあるいはバイナリ文字列です。
     </para>
     <note>
      <para>
-      We can only deal with baseline (frame 0) jpegs, no baseline optimized or 
-      progressive scan jpegs! 
+      baseline (frame 0) jpeg にのみ対応しています。baseline を最適化した
+      jpeg やプログレッシブ jpeg には対応していません!
      </para>
     </note>
     <simpara>
-     SWFBitmap has the following methods : <function>swfbitmap->getwidth</function>
-     and <function>swfbitmap->getheight</function>.
+     SWFBitmap は以下のメソッドを保持しています。<function>swfbitmap->getwidth</function>
+     および <function>swfbitmap->getheight</function>
     </simpara>
     <para>
-     You can't import png images directly, though- have to use the png2dbl 
-     utility to make a dbl ("define bits lossless") file from the png. 
-     The reason for this is that I don't want a dependency on the png library 
-     in ming- autoconf should solve this, but that's not set up yet. 
+     png 画像を直接読み込むことはできません。png2dbl を使用して、png から
+     dbl ("define bits lossless") ファイルを作成する必要があります。
+     この理由は、ming に png ライブラリの依存性を持ち込みたくないからです。
+     これは autoconf が解決すべき問題ですが、いまのところ解決されていません。
      <example>
-      <title>Import PNG files</title>
+      <title>PNG ファイルのインポート</title>
       <programlisting role="php">
 <![CDATA[
 <?php
   $s = new SWFShape();
-  $f = $s->addFill(new SWFBitmap("png.dbl"));
+  $f = $s->addFill(new SWFBitmap(file_get_contents("png.dbl")));
   $s->setRightFill($f);
 
   $s->drawLine(32, 0);
@@ -61,17 +63,17 @@
      </example>
     </para>
     <para>
-     And you can put an alpha mask on a jpeg fill.
+     また、jpeg にアルファマスクを設定することが可能です。
      <example>
-      <title><function>swfbitmap</function> example</title>
+      <title><function>swfbitmap</function> の例</title>
       <programlisting role="php">
 <![CDATA[
 <?php
 
   $s = new SWFShape();
 
-  // .msk file generated with "gif2mask" utility
-  $f = $s->addFill(new SWFBitmap("alphafill.jpg", "alphafill.msk"));
+  // .msk ファイルは "gif2mask" ユーティリティで作成します
+  $f = $s->addFill(new SWFBitmap(file_get_contents("alphafill.jpg"), file_get_contents("alphafill.msk")));
   $s->setRightFill($f);
 
   $s->drawLine(640, 0);
@@ -90,19 +92,16 @@
   $m->setDimension(640, 480);
   $m->setBackground(0xcc, 0xcc, 0xcc);
 
-  // draw checkerboard background
-  for($y=0; $y<480; $y+=40)
-  {
-    for($x=0; $x<640; $x+=80)
-    {
+  // チェッカー盤の背景を描きます
+  for ($y=0; $y<480; $y+=40) {
+    for ($x=0; $x<640; $x+=80) {
       $i = $m->add($c);
       $i->moveTo($x, $y);
     }
 
     $y+=40;
 
-    for($x=40; $x<640; $x+=80)
-    {
+    for ($x=40; $x<640; $x+=80) {
       $i = $m->add($c);
       $i->moveTo($x, $y);
     }
