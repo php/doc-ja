@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- $Revision: 1.2 $ -->
-<!-- splitted from ./en/functions/exec.xml, last change in rev 1.28 -->
-<!-- sync: 1.3 $ -->
+<!-- $Revision: 1.3 $ -->
+<!-- EN-Revision: 1.14 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: takagi -->
   <refentry id='function.proc-open'>
    <refnamediv>
     <refname>proc_open</refname>
@@ -9,102 +9,263 @@
      コマンドを実行し、入出力用にファイルポインタを開く
     </refpurpose>
    </refnamediv>
-   <refsect1>
-    <title>Description</title>
+   <refsect1 role="description">
+    &reftitle.description;
      <methodsynopsis>
       <type>resource</type><methodname>proc_open</methodname>
       <methodparam><type>string</type><parameter>cmd</parameter></methodparam>
       <methodparam><type>array</type><parameter>descriptorspec</parameter></methodparam>
-      <methodparam><type>array</type><parameter>pipes</parameter></methodparam>
+      <methodparam><type>array</type><parameter role="reference">pipes</parameter></methodparam>
+      <methodparam choice="opt"><type>string</type><parameter>cwd</parameter></methodparam>
+      <methodparam choice="opt"><type>array</type><parameter>env</parameter></methodparam>
+      <methodparam choice="opt"><type>array</type><parameter>other_options</parameter></methodparam>
      </methodsynopsis>
     <para>
      <function>proc_open</function> は <function>popen</function> と
      よく似ていますが、プログラムの実行をさらに細かく制御できる点で違います。
-     <parameter>cmd</parameter> は、シェルによって実行されるコマンドです。
-     <parameter>descriptorspec</parameter> は、キーがディスクリプタの番号で、
-     値がどのようにディスクリプタを子プロセスに渡すかを示す配列です。
-     <parameter>pipes</parameter> は、生成された、PHP 側のパイプの終端にあたる
-     ファイルポインタを格納した配列にセットされます。
-     返値はプロセスを表すリソースです。処理が終わったら、
-     <function>proc_close</function> を使ってリソースを開放しなくては
-     いけません。
     </para>
     <para>
-     <informalexample>
-      <programlisting role="php">
+     PHP 5 で、Unix98 pty 形式の pty のサポートが追加されました。これにより、
+     ターミナルとのやりとりを想定しているアプリケーションとの対話が可能となります。
+     pty の動きはパイプに似ていますが、双方向に働くので read/write のモードを
+     指定する必要がありません。以下の例では、pty を使用する方法を示しています。
+     すべてのディスクリプタを pty に接続する必要はないことに注意しましょう。
+     また、pty を 3 回指定したとしても、生成される pty は 1 つだけであることにも
+     注意しましょう。
+     PHP の将来のバージョンでは、pty に対する単なる読み書き以上のことが
+     可能になるでしょう。
+    </para>
+   </refsect1>
+
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <para>
+   <variablelist>
+    <varlistentry>
+     <term><parameter>cmd</parameter></term>
+     <listitem>
+      <para>
+       実行されるコマンド。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>descriptorspec</parameter></term>
+     <listitem>
+      <para>
+       数値添字の配列で、ディスクリプタ番号をキーとし、PHP がその
+       ディスクリプタをどのように子プロセスに渡すかを表すのが
+       対応する値となります。
+       0 が標準入力 (stdin)、1 が標準出力 (stdout) で、
+       2 が標準エラー出力 (stderr) となります。
+      </para>
+      <para>
+       現在サポートされているパイプ形式は <literal>file</literal>、
+       <literal>pipe</literal> および <literal>pty</literal> です。
+      </para>
+      <para>
+       ファイルディスクリプタの番号は、特に 0, 1, 2 に限られているわけでは
+       ありません。有効であるどのようなファイルディスクリプタの番号も指定でき、
+       それは子プロセスに渡されます。これにより、あるスクリプトと、
+       子プロセスとして起動している別のスクリプトとの間で通信ができます。
+       特に、これは PGP や GPG、openssl といったプログラムにパスフレーズを
+       より安全な方法で渡したいとき威力を発揮します。
+       補助的なファイルディスクリプタを介して、そのようなプログラムの
+       状態を取得するのにも便利です。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>pipes</parameter></term>
+     <listitem>
+      <para>
+       PHP 側で生成されたパイプの終端にあたる
+       ファイルポインタの配列。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>cwd</parameter></term>
+     <listitem>
+      <para>
+       コマンドの初期作業ディレクトリ。
+       <emphasis role="strong">完全</emphasis>パスである必要があります。
+       デフォルト値 (現在の PHP プロセスの作業ディレクトリ) を使用したい場合は
+       &null; を指定します。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>env</parameter></term>
+     <listitem>
+      <para>
+       実行するコマンドのための環境変数の配列。
+       現在の PHP プロセスと同じ環境変数を使用する場合は
+       &null; を指定します。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>other_options</parameter></term>
+     <listitem>
+      <para>
+       その他の追加オプションを指定することが可能です。
+       現在サポートされているのは <literal>suppress_errors</literal>
+       のみで、&true; に設定すると、この関数が生成するエラーを抑制します。
+      </para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
+  </para>
+ </refsect1>
+
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <para>
+   プロセスを表すリソースを返します。このリソースは、使用し終えた際に
+   <function>proc_close</function> を使用して開放する必要があります。
+   失敗した場合は &false; を返します。
+  </para>
+ </refsect1>
+
+ <refsect1 role="changelog">
+  &reftitle.changelog;
+  <para>
+   <informaltable>
+    <tgroup cols="2">
+     <thead>
+      <row>
+       <entry>&Version;</entry>
+       <entry>&Description;</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry>5.0.0</entry>
+       <entry>
+        パラメータ <parameter>cwd</parameter>、<parameter>env</parameter>
+        および <parameter>other_options</parameter> が追加されました。
+        Unix98 pty のサポートが追加されました。
+       </entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </informaltable>
+  </para>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title>A <function>proc_open</function> の例</title>
+    <programlisting role="php">
 <![CDATA[
+<?php
 $descriptorspec = array(
-   0 => array("pipe", "r"),  // stdin is a pipe that the child will read from
-   1 => array("pipe", "w"),  // stdout is a pipe that the child will write to
-   2 => array("file", "/tmp/error-output.txt", "a") // stderr is a file to write to
+   0 => array("pipe", "r"),  // stdin は、子プロセスが読み込むパイプです。
+   1 => array("pipe", "w"),  // stdout は、子プロセスが書き込むパイプです。
+   2 => array("file", "/tmp/error-output.txt", "a") // はファイルで、そこに書き込みます。
 );
-$process = proc_open("php", $descriptorspec, $pipes);
+
+$cwd = '/tmp';
+$env = array('some_option' => 'aeiou');
+
+$process = proc_open('php', $descriptorspec, $pipes, $cwd, $env);
+
 if (is_resource($process)) {
-    // $pipes はこの時点で次のような形を取っている
+    // $pipes はこの時点で次のような形を取っています。
     // 0 => 子プロセスの stdin に繋がれた書き込み可能なハンドル
     // 1 => 子プロセスの stdout に繋がれた読み込み可能なハンドル
     // すべてのエラー出力は /tmp/error-output.txt に書き込みされます。
 
-    fwrite($pipes[0], "<?php echo \"Hello World!\"; ?>");
+    fwrite($pipes[0], '<?php print_r($_ENV); ?>');
     fclose($pipes[0]);
 
-    while(!feof($pipes[1])) {
-        echo fgets($pipes[1], 1024);
-    }
+    echo stream_get_contents($pipes[1]);
     fclose($pipes[1]);
-    // デッドロックを避けるため proc_close を呼ぶ前に、
+
+    // デッドロックを避けるため、proc_close を呼ぶ前に
     // すべてのパイプを閉じることが重要です。
     $return_value = proc_close($process);
 
     echo "command returned $return_value\n";
 }
+?>
 ]]>
-      </programlisting>
-     </informalexample>
-    </para>
-    <para>
-     <parameter>descriptorspec</parameter> における
-     ファイルディスクリプタの番号は、特に 0, 1, 2 に限られているわけでは
-     ありません。有効であるどのようなファイルディスクリプタの番号も指定でき、
-     それは子プロセスに渡されます。これにより、あるスクリプトと、
-     子プロセスとして起動している別のスクリプトとの間で通信ができます。
-     特に、これは PGP や GPG、openssl といったプログラムにパスフレーズを
-     より安全な方法で渡したいとき威力を発揮します。
-     補助的なファイルディスクリプタを介して、そのようなプログラムの
-     状態を取得するのにも便利です。
-    </para>
-    <note>
-     <para>
-      Windows における互換性: 2 (stderr) よりも大きな番号のディスクリプタは
-      子プロセスに継承可能なハンドルとして渡されますが、
-      Windows のアーキテクチャは、ファイルディスクリプタの番号と
-      より低レベルなハンドルを関連付けないので、子プロセスは、
-      それらのハンドルにアクセスする術を持ちません。stdin, stdout, stderr
-      は期待通り動きます。
-     </para>
-    </note>
-    <note>
-     <para>
-      この関数は PHP 4.3.0 で導入されました。
-     </para>
-    </note>
-    <note>
-     <para>
-      もし一方向のパイプを利用したいだけでしたら、
-      <function>popen</function> を使うほうがより簡単です。
-     </para>
-    </note>
+    </programlisting>
+    &example.outputs.similar;
+    <screen>
+<![CDATA[
+Array
+(
+    [some_option] => aeiou
+    [PWD] => /tmp
+    [SHLVL] => 1
+    [_] => /usr/local/bin/php
+)
+command returned 0
+]]>
+    </screen>
+   </example>
+  </para>
+  <para>
+   <example>
+    <title>pty の使用法</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+// 子プロセスのための擬似ターミナルを作成します。
+$descriptorspec = array(
+   0 => array("pty"),
+   1 => array("pty"),
+   2 => array("pty")
+);
+$process = proc_open("cvs -d:pserver:cvsread@cvs.php.net:/repository login", $descriptorspec, $pipes);
+if (is_resource($process)) {
+   // プロセスに対する操作をここで行います。
+}
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+ </refsect1>
 
-    <para>
-     <function>exec</function>, <function>system</function>,
-     <function>passthru</function>, <function>popen</function>,
-     <function>escapeshellcmd</function>, <link
-     linkend="language.operators.execution">backtick operator</link>
-     も参照ください。
-    </para>
-
-   </refsect1>
-  </refentry>
+ <refsect1 role="notes">
+  &reftitle.notes;
+  <note>
+   <para>
+    Windows における互換性: 2 (stderr) よりも大きな番号のディスクリプタは
+    子プロセスに継承可能なハンドルとして渡されますが、
+    Windows のアーキテクチャは、ファイルディスクリプタの番号と
+    より低レベルなハンドルを関連付けないので、子プロセスは、
+    それらのハンドルにアクセスする術を持ちません。stdin, stdout, stderr
+    は期待通り動きます。
+   </para>
+  </note>
+  <note>
+   <para>
+    もし単方向(一方向)のパイプを利用したいだけでしたら、
+    <function>popen</function> を使うほうがより簡単です。
+   </para>
+  </note>
+ </refsect1>
+ 
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <para>
+   <simplelist>
+    <member><function>popen</function></member>
+    <member><function>exec</function></member>
+    <member><function>system</function></member>
+    <member><function>passthru</function></member>
+    <member><function>stream_select</function></member>
+    <member><link linkend="language.operators.execution">バックティック演算子</link></member>
+   </simplelist>
+  </para>
+ </refsect1>
+</refentry>
 
 <!-- Keep this comment at the end of the file
 Local variables:
