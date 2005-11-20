@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.5 $ -->
 <!-- splitted from ./ja/functions/sesam.xml, last change in rev 1.1 -->
-<!-- EN-Revision: 1.1 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 1.6 Maintainer: hirokawa Status: ready -->
   <refentry id="function.sesam-query">
    <refnamediv>
     <refname>sesam_query</refname>
@@ -11,97 +12,94 @@
      <methodsynopsis>
       <type>string</type><methodname>sesam_query</methodname>
       <methodparam><type>string</type><parameter>query</parameter></methodparam>
-      <methodparam><type>bool</type><parameter>
-	<replaceable><optional>scrollable</optional></replaceable>
-       </parameter></methodparam>
+      <methodparam choice="opt"><type>bool</type><parameter>scrollable</parameter></methodparam>
      </methodsynopsis>
     <para>
      返り値: 成功時にSESAM "結果ID" またはエラー時に
      &false;。
     </para>
     <para>
-     "result_id"リソースは、クエリ結果を取得する際に他の関数で使用され
-     ます。
+     "result_id" リソースは、クエリ結果を取得する際に他の関数で
+     使用されます。
     </para>
     <para>
-     <function>sesam_query</function> は、クエリをサーバ上の現在アクティ
-     ブなデータベースに送信します。この関数は、"即時"SQL命令および
-     "select型"クエリの両方を実行可能です。"即時型"命令を実行した場合、
-     カーソルは確保されず、この後に
+     <function>sesam_query</function> は、クエリをサーバ上の現在
+     アクティブなデータベースに送信します。この関数は、"即時" SQL 命令
+     および "select型" クエリの両方を実行可能です。"即時型" 命令を
+     実行した場合はカーソルは確保されず、この後に
      <function>sesam_fetch_row</function> または
-     <function>sesam_fetch_result</function> をコールしても空の結果(結
-     果の終端を示すカラム数0)が返されます。"select型"命令の場合、結果
-     記述子および(オプションのパラメータ
-     <parameter>scrollable</parameter>の設定によりスクロール型または連
-     続型の)カーソルが確保されます。<parameter>scrollable</parameter>
+     <function>sesam_fetch_result</function> をコールしても空の結果
+     (結果の終端を示すカラム数 0) が返されます。"select型" 命令の場合、
+     結果記述子および (オプションのパラメータ
+     <parameter>scrollable</parameter> の設定によりスクロール型または
+     連続型の) カーソルが確保されます。<parameter>scrollable</parameter>
      が省略された場合、カーソルは連続型となります。
     </para>
     <para>
      "スクロール型"カーソルを使用している場合、カーソルは結果集合上を
-     自由に移動可能です。各"スクロール型"クエリに関して、スクロール型
-     のグローバルデフォルト値(<literal>SESAM_SEEK_NEXT</literal>に初期
-     化されています)と <function>sesam_seek_row</function> により一度
-     設定するか、<function>sesam_fetch_row</function> を使用してレコー
-     ドを取得する度に設定するスクロールオフセットがあります。
+     自由に移動可能です。各"スクロール型"クエリに関して、スクロール型の
+     グローバルデフォルト値 (<literal>SESAM_SEEK_NEXT</literal> に
+     初期化されています) と <function>sesam_seek_row</function> により
+     一度設定するか、<function>sesam_fetch_row</function> を使用して
+     レコードを取得する度に設定するスクロールオフセットがあります。
     </para>
     <para>
-     "即時型"命令の場合、作用されたレコードの数が保存されます。この数
-     は、<function>sesam_affected_rows</function> 関数で取得可能です。
+     "即時型"命令の場合、作用されたレコードの数が保存されます。この数は、
+     <function>sesam_affected_rows</function> 関数で取得可能です。
     </para>
     <para>
      <function>sesam_fetch_row</function> および
      <function>sesam_fetch_result</function> も参照ください。
      <example>
       <title>
-       "phone"テーブルの全てのレコードをHTMLテーブルとして表示
+       "phone" テーブルの全てのレコードを HTML テーブルとして表示する
       </title>
       <programlisting role="php">
 <![CDATA[
 <?php
-if (!sesam_connect ("phonedb", "demo", "otto"))
-    die ("cannot connect");
-$result = sesam_query ("select * from phone");
+if (!sesam_connect("phonedb", "demo", "otto"))
+    die("接続できません");
+$result = sesam_query("select * from phone");
 if (!$result) {
     $err = sesam_diagnostic();
     die ($err["errmsg"]);
 }
-echo "<TABLE BORDER>\n";
-// Add title header with column names above the result:
-if ($cols = sesam_field_array ($result)) {
-    echo " <TR><TH COLSPAN=".$cols["count"].">Result:</TH></TR>\n";
-    echo " <TR>\n";
+echo "<table border>\n";
+// 結果の上にカラム名をヘッダとして表示します
+if ($cols = sesam_field_array($result)) {
+    echo "<tr><th colspan=" . $cols["count"] . ">Result:</th></tr>\n";
+    echo "<tr>\n";
     for ($col = 0; $col < $cols["count"]; ++$col) {
         $colattr = $cols[$col];
-        /* Span the table head over SESAM's "Multiple Fields": */
+        /* SESAM の "Multiple Fields" について、列を連結します */
         if ($colattr["count"] > 1) {
-            echo "  <TH COLSPAN=".$colattr["count"].">".$colattr["name"].
-                "(1..".$colattr["count"].")</TH>\n";
+            echo "<th colspan=\"" . $colattr["count"] . "\">" . $colattr["name"] .
+                "(1.." . $colattr["count"] . ")</th>\n";
             $col += $colattr["count"] - 1;
         } else
-            echo "  <TH>" . $colattr["name"] . "</TH>\n";
+            echo "<th>" . $colattr["name"] . "</th>\n";
     }
-    echo " </TR>\n";
+    echo "</tr>\n";
 }
 
 do {
-    // Fetch the result in chunks of 100 rows max.
-    $ok = sesam_fetch_result ($result, 100);
+    // 最大 100 行までに分割して結果を取得します
+    $ok = sesam_fetch_result($result, 100);
     for ($row=0; $row < $ok["rows"]; ++$row) {
-        echo " <TR>\n";
+        echo " <tr>\n";
         for ($col = 0; $col < $ok["cols"]; ++$col) {
-            if (isset($ok[$col][$row]))
-                echo "  <TD>" . $ok[$col][$row] . "</TD>\n";
+            if (isset($ok[$col][$row])) {
+                echo "<td>" . $ok[$col][$row] . "</td>\n";
             } else {
-                echo "  <TD>-empty-</TD>\n";
+                echo "<td>-empty-</td>\n";
             }
         }
-        echo " </TR>\n";
+        echo "</tr>\n";
     }
-} 
-while ($ok["truncated"]) { // while there may be more data
-    echo "</TABLE>\n";
-}
-// free result id
+} while ($ok["truncated"]); // データがなくなるまで続けます
+
+echo "</table>\n";
+// 結果 id を開放します
 sesam_free_result($result);
 ?>
 ]]>
