@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.7 $ -->
+<!-- $Revision: 1.8 $ -->
 <!-- EN-Revision: 1.19 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: shimooka -->
 <!-- Purpose: xml -->
@@ -302,11 +302,11 @@ function endElement($parser, $name)
 $xml_parser = xml_parser_create();
 xml_set_element_handler($xml_parser, "startElement", "endElement");
 if (!($fp = fopen($file, "r"))) {
-    die("could not open XML input");
+    die("XML 入力をオープンできませんでした");
 }
 while ($data = fread($fp, 4096)) {
     if (!xml_parse($xml_parser, $data, feof($fp))) {
-        die(sprintf("XML error: %s at line %d",
+        die(sprintf("XML エラー: %s が %d 行目で発生しました",
                     xml_error_string(xml_get_error_code($xml_parser)),
                     xml_get_current_line_number($xml_parser)));
     }
@@ -362,17 +362,17 @@ function characterData($parser, $data)
 }
 
 $xml_parser = xml_parser_create();
-// use case-folding so we are sure to find the tag in $map_array
+// case-folding を用いることで、$map_array から確実にタグを見つけられるようにします
 xml_parser_set_option($xml_parser, XML_OPTION_CASE_FOLDING, true);
 xml_set_element_handler($xml_parser, "startElement", "endElement");
 xml_set_character_data_handler($xml_parser, "characterData");
 if (!($fp = fopen($file, "r"))) {
-    die("could not open XML input");
+    die("XML 入力をオープンできませんでした");
 }
 
 while ($data = fread($fp, 4096)) {
     if (!xml_parse($xml_parser, $data, feof($fp))) {
-        die(sprintf("XML error: %s at line %d",
+        die(sprintf("XML エラー: %s が %d 行目で発生しました",
                     xml_error_string(xml_get_error_code($xml_parser)),
                     xml_get_current_line_number($xml_parser)));
     }
@@ -409,7 +409,7 @@ $file = "xmltest.xml";
 
 function trustedFile($file)
 {
-    // only trust local files owned by ourselves
+    // 信頼できるのは、自分自身が所有しているローカルファイルのみです
     if (!eregi("^([a-z]+)://", $file)
         && fileowner($file) == getmyuid()) {
             return true;
@@ -444,13 +444,13 @@ function PIHandler($parser, $target, $data)
     switch (strtolower($target)) {
         case "php":
             global $parser_file;
-            // If the parsed document is "trusted", we say it is safe
-            // to execute PHP code inside it.  If not, display the code
-            // instead.
+            // もし「信頼できる」ドキュメントだった場合、その中に書かれている
+            // PHP コードを実行しても安全だと考えます。そうでない場合、
+            // コードを実行するかわりにコードそのものを表示します。
             if (trustedFile($parser_file[$parser])) {
                 eval($data);
             } else {
-                printf("Untrusted PHP code: <i>%s</i>",
+                printf("信頼できない PHP コード: <i>%s</i>",
                         htmlspecialchars($data));
             }
             break;
@@ -472,13 +472,13 @@ function externalEntityRefHandler($parser, $openEntityNames, $base, $systemId,
                                   $publicId) {
     if ($systemId) {
         if (!list($parser, $fp) = new_xml_parser($systemId)) {
-            printf("Could not open entity %s at %s\n", $openEntityNames,
+            printf("エンティティ %s (%s にある) をオープンできませんでした\n", $openEntityNames,
                    $systemId);
             return false;
         }
         while ($data = fread($fp, 4096)) {
             if (!xml_parse($parser, $data, feof($fp))) {
-                printf("XML error: %s at line %d while parsing entity %s\n",
+                printf("XML エラー: %s が、%d 行目でエンティティ %s のパース中に発生しました\n",
                        xml_error_string(xml_get_error_code($parser)),
                        xml_get_current_line_number($parser), $openEntityNames);
                 xml_parser_free($parser);
@@ -514,19 +514,19 @@ function new_xml_parser($file)
 }
 
 if (!(list($xml_parser, $fp) = new_xml_parser($file))) {
-    die("could not open XML input");
+    die("XML 入力をオープンできませんでした");
 }
 
 echo "<pre>";
 while ($data = fread($fp, 4096)) {
     if (!xml_parse($xml_parser, $data, feof($fp))) {
-        die(sprintf("XML error: %s at line %d\n",
+        die(sprintf("XML エラー: %s が %d 行目で発生しました\n",
                     xml_error_string(xml_get_error_code($xml_parser)),
                     xml_get_current_line_number($xml_parser)));
     }
 }
 echo "</pre>";
-echo "parse complete\n";
+echo "パースが完了しました\n";
 xml_parser_free($xml_parser);
 
 ?>
@@ -571,7 +571,7 @@ xml_parser_free($xml_parser);
       </example>
      </para>
      <para>
-      This file is included from <filename>xmltest.xml</filename>:
+      このファイルは、<filename>xmltest.xml</filename> からインクルードされます。
       <example>
        <title>xmltest2.xml</title>
        <programlisting role="xml">
