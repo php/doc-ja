@@ -1,0 +1,1676 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.1 $ -->
+<!-- EN-Revision: 1.20 Maintainer: takagi Status: ready -->
+<!-- Purpose: database.abstract -->
+<!-- Membership: pecl -->
+<!-- State: experimental -->
+
+<reference id="ref.sdo">
+ <title>SDO 関数</title>
+ <titleabbrev>SDO</titleabbrev>
+
+ <partintro>
+  <section id="sdo.intro">
+   &reftitle.intro;
+   <para>
+    <!-- This warns that the extension is experimental -->
+    &warn.experimental;
+   </para>
+   
+   <para>
+    Service Data Objects (SDO) を使用すると、PHP アプリケーションから
+     (データベースクエリ・XML ファイル・スプレッドシートなどの) 
+    さまざまな形式のデータへのアクセスが
+    同じインターフェイスで行えるようになります。
+   </para>
+   <para>
+    データソースにアクセスするには、それぞれのデータソースに対応した
+    アクセス機能を提供するデータアクセスサービス (DAS) が必要となります。
+    PHP アプリケーションからは、データソース内のデータを表す
+    SDO インスタンスを作成するために DAS を使用します。そうすると、
+    標準的な SDO インターフェイスを使用して SDO インスタンスの
+    データに対する読み書きができるようになります。最後に、
+    変更されたデータを DAS でデータソース
+    (通常は、最初に作成したのと同じもの) に書き込みます。
+   </para>
+   <para>
+    現在使用可能なデータアクセスサービスの詳細は、
+    <link linkend="sdo.das.table">データアクセスサービスの一覧</link>
+    を参照ください。提供されている DAS 以外にも、SDO は
+    他のサービスを実装するためのインターフェイスも提供しています
+    (詳細は <link linkend="sdo.class.sdo-das-spis">SDO
+    データアクセスサービス インターフェイス</link> を参照ください)。
+   </para>
+    <para>
+    この拡張モジュールは、
+    <ulink url='&url.ibm.sdo;'>
+    Service Data Objects specification
+    </ulink>
+    の概念に由来するものです。
+   </para>
+
+   <section id="sdo.intro.structure">
+    <title>Service Data Object の構造</title>
+    <para>
+     Service Data Object のインスタンスは、データオブジェクトのツリーで
+     構成されています。このツリーは、データオブジェクト間の閉じた関係で
+     定義されます。例えば、Company (会社) データオブジェクトに
+     いくつかの Department (部署) データオブジェクトが含まれていると
+     すると、Company が Department を包含しているということになります。
+     他のオブジェクトを包含しているデータオブジェクトを削除すると、
+     そこに含まれているデータオブジェクトも削除されます。例えば、
+     Company データオブジェクトを削除すると、同時に Department
+     データオブジェクトも削除されます。
+    </para>
+    <para>
+     SDO では、包含関係以外の関係もデータオブジェクトのツリー内で
+     保持することができます。例えば、ある Employee (従業員)
+     データオブジェクトが、上司として別の Employee を参照していることが
+     あるかもしれません。包含関係以外の関係を持つデータオブジェクトを
+     削除する際には、参照先のデータオブジェクトは削除されません。
+    </para>
+    <para>
+     データオブジェクト同士がお互いを参照するだけではなく、
+     オブジェクト以外のプロパティを保持することもできます。
+     例えば、Company データオブジェクトに文字列型のプロパティ "name"
+     を含め、そこに会社名 ("Acme" など) を格納することもできます。
+    </para>
+   </section>
+  </section>
+
+  <section id="sdo.requirements">
+   &reftitle.required;
+   <para>
+    SDO 拡張モジュールを使用するには、PHP 5.1 以降が必要です。
+   </para>
+   <para>
+    この拡張モジュールの一部として組み込まれている
+    SDO <link linkend="ref.sdo-das-xml">XML データアクセスサービス</link>
+    には libxml2 が必要です (libxml2 2.6.19 でテストしました)。
+    これは、<ulink url='&url.libxml;'>&url.libxml;</ulink>
+    からダウンロードできます。
+   </para>
+  </section>
+
+  <section id="sdo.installation">
+   &reftitle.install;
+   <para>
+   インストール先が Windows なのか Linux なのか、あるいはリリース版
+   (PECL から取得できる .tgz ファイル) をインストールするのか
+   CVS の最新版をインストールするのか
+   などの違いによって、いくつかの方法があります。
+   また、PHP で書かれているリレーショナル DAS をインストールする際にも
+   特別な注意が必要です。
+   </para>
+   <para>
+    PHP 5.1 がベータ版から安定版になるまでの間は、インストール方法は
+    変化する可能性があります。ここに書かれている情報は 2005 年 10 月
+    6 日時点のもので、この時点では PHP 5.1.0RC1 が最新のリリース候補
+    であり、SDO の最新ベータリリースのバージョンは 0.5.2 でした。
+   </para>
+   <para> 
+    それぞれの場合におけるインストール方法を以下の表にまとめました。
+    <informaltable>
+     <tgroup cols='3'>
+      <thead>
+       <row>
+        <entry>最新版/リリース版</entry>
+        <entry>Windows</entry>
+        <entry>Linux</entry>
+       </row>
+      </thead>
+      <tbody>
+       <row>
+        <entry>
+         CVS の最新版
+        </entry>
+        <entry>
+         <itemizedlist>
+          <listitem>
+           <para>
+            SDO のコアおよび XML DAS の最新版 DLL は、それぞれ
+           <ulink url='&url.pecl.win.ext;php_sdo.dll'>php_sdo</ulink> および
+           <ulink url='&url.pecl.win.ext;php_sdo_das_xml.dll'>php_sdo_das_xml
+           </ulink> でダウンロードできます。
+           </para>
+          </listitem>
+          <listitem>
+           <para>
+            PHP の
+            <link linkend="ini.include-path">include_path</link>
+            に、CVS からリレーショナル DAS をチェックアウトします。
+           </para>
+          </listitem>
+         </itemizedlist>
+        </entry>
+        <entry>
+         <itemizedlist>
+          <listitem>
+           <para>
+            CVS から SDO コアおよび XML DAS をチェックアウトし、
+            以下で説明する Linux でのビルド手順にしたがってビルドします。
+           </para>
+          </listitem>
+          <listitem>
+           <para>
+            PHP の
+            <link linkend="ini.include-path">include_path</link>
+            に、CVS からリレーショナル DAS をチェックアウトします。
+           </para>
+          </listitem>
+         </itemizedlist>
+        </entry>
+       </row>
+       <row>
+        <entry>
+         リリース版
+        </entry>
+        <entry>
+         <itemizedlist>
+          <listitem>
+           <para>
+            現在、リリース版の SDO コアおよび XML DAS を自分のマシンで
+            ビルドすることはできません。スナップショットサイト
+            (この表の上の行を参照ください) から最新の DLL を取得するしか
+            方法はありません。
+           </para>
+          </listitem>
+          <listitem>
+           <para>
+            リレーショナル DAS は、以下のコマンドでダウンロードおよび
+            インストールが可能です。
+           </para>
+           <para>
+            <command>
+            pear install -B &lt;package name and level&gt;
+            </command>
+           </para>
+           <para> 
+            上のコマンドで、パッケージ名およびレベルを
+            <varname>sdo-0.5.2</varname> のように置き換えてください。
+           </para>
+          </listitem>
+         </itemizedlist>
+        </entry>
+        <entry>
+         <itemizedlist>
+          <listitem>
+           <para>
+            すべての SDO コンポーネント、すなわち SDO コア・
+            XML DAS およびリレーショナル DAS を以下のコマンドで
+            ダウンロードしてインストールすることが可能です。
+           </para>
+           <para>
+            <command>
+             pear install &lt;package name and level&gt;
+            </command>
+           </para>
+           <para>
+            上のコマンドで、パッケージ名およびレベルを
+            <varname>sdo-0.5.2</varname> のように置き換えてください。
+           </para>
+           <para> 
+            このコマンドは SDO および XML 共有ライブラリをビルドし、
+            リレーショナル DAS の PHP ファイルをインストールします。
+           </para>
+          </listitem>
+         </itemizedlist>
+        </entry>
+       </row>
+      </tbody>
+     </tgroup>
+    </informaltable>
+   </para>
+   <para>
+    インストール先プラットフォームやインストールしたコードのレベルに
+    かかわらず、&php.ini; に 2 つの拡張ライブラリを追加する必要があります。
+    Windows ではこれを追加し、
+    <programlisting role="php" id="sdo.installation.ini.windows">
+<![CDATA[
+extension=php_sdo.dll
+extension=php_sdo_das_xml.dll
+]]> 
+    </programlisting>
+    Linux ではこれを追加します。
+    <programlisting role="php" id="sdo.installation.ini.linux">
+<![CDATA[
+extension=sdo.so
+extension=sdo_das_xml.so
+]]>
+    </programlisting>
+    また、&php.ini; の
+    <link linkend="ini.extension-dir">extension_dir</link>
+    を、これらのライブラリの場所を指すように更新する必要があります。
+   </para>
+   
+   <para>
+    リレーショナル DAS は PHP で書かれています。そこで、&php.ini;の
+    <link linkend="ini.include-path">include_path</link>
+    を、<filename>sdo/DAS/Relational</filename> が存在する場所を
+    指すように更新する必要があります。
+   </para>
+   <procedure id='sdo.build.linux.steps'>
+    <title>Linux での SDO のビルド</title>
+    <para>
+     この節では、Linux 上で SDO コアおよび XML DAS をビルドする方法を
+     説明します。これを知る必要があるのは、CVS からチェックアウトした
+     最新バージョンをビルドしたい場合のみです。
+    </para>
+    <step>
+     <para>
+      拡張モジュールのメインディレクトリに移動します。
+      <command>cd &lt; sdo のコードがある場所 &gt;</command>
+     </para>
+    </step>
+    <step>
+     <para>
+      <command>phpize</command> を実行します。これにより、
+      SDO および XML データアクセスサービスをコンパイルするための
+      環境を設定します。
+     </para>
+    </step>
+    <step>
+     <para>
+      次に <command>./configure; make; make install</command> を実行します。
+      拡張モジュールをインストールするには、root としてログインする
+      必要があることに注意しましょう。
+     </para>
+    </step>
+    <step>
+     <para>
+      <filename>php.ini</filename> ファイルに
+      <command>extension=sdo.so</command> および
+      <command>extension=sdo_das_xml.so</command> をこの順序で
+      追加することで、これらのモジュールが PHP に読み込まれるようにします。
+     </para>
+    </step>
+   </procedure>
+  </section>
+
+  <section id="sdo.das.table">
+   <title>データアクセスサービス</title>
+   <para>
+    以下の表で、現在提供されている SDO データアクセスサービスの
+    一覧を示します。
+    <informaltable>
+     <tgroup cols='2'>
+      <thead>
+       <row>
+        <entry>DAS 名</entry>
+        <entry>説明</entry>
+       </row>
+      </thead>
+      <tbody>
+       <row>
+        <entry>
+         <link linkend="ref.sdo-das-xml">SDO_DAS_XML</link>
+        </entry>
+        <entry>
+         XML データアクセスサービスは、SDO を XML ドキュメントとして
+         読み書きします。あるいは RSS フィードのような Web URL 経由の
+         XML もサポートします。
+        </entry>
+       </row>
+       <row>
+        <entry>
+         <link linkend="ref.sdo.das.rel">SDO_DAS_Relational</link>
+        </entry>
+        <entry>
+         PDO を基にしたデータアクセスサービスで、SDO をリレーショナル
+         データソースとして読み書きします。同時更新に対しては
+         楽観的な実装となっています。
+        </entry>
+       </row>
+      </tbody>
+     </tgroup>
+    </informaltable>
+   </para>
+  </section>
+
+  <section id='sdo.limitations'>
+   <title>制限事項</title>
+   <procedure id='sdo.limitations.implementation'>
+    <title>実装上の制限</title>
+    <para>
+     現在の SDO の実装には、以下の制限があります。
+    </para>
+    <step>
+     <para>
+      マルチバイト文字セットはサポートしていません。
+     </para>
+    </step>
+   </procedure>
+   <procedure id='sdo.limitations.sdo'>
+    <title>SDO の制限</title>
+    <para>
+     現在の PHP の実装では、以下の SDO 2.0 の概念はサポートされていません。
+     将来これらのすべてが実装されるとは限りません。実装されるかどうかは
+     コミュニティの要望があるかどうかによります。
+    </para>
+    <step>
+     <para>
+      抽象型や型の派生
+     </para>
+    </step>
+    <step>
+     <para>
+      オープン型
+     </para>
+    </step>
+    <step>
+     <para>
+      双方向のリレーション
+     </para>
+    </step>
+    <step>
+     <para>
+      型およびプロパティのエイリアス
+     </para>
+    </step>
+    <step>
+     <para>
+      読み込み専用のプロパティ
+     </para>
+    </step>
+    <step>
+     <para>
+      XMLHelper/XSDHelper (XML DAS で、この機能の多くを提供しています)
+     </para>
+    </step>
+    <step>
+     <para>
+      TypeHelper (SDO_DAS_DataFactory がこの機能を提供しています)
+     </para>
+    </step>
+   </procedure>
+  </section>
+
+  <section id='sdo.examples'>
+   &reftitle.examples;
+   <para>
+    以下の例では、XML データアクセスサービスを使用して、
+    下のスキーマおよびインスタンスをもとに作成した SDO の使用を想定しています。
+   </para>
+   <para>
+    このスキーマでは、company (会社) データオブジェクトを定義しています。
+    company には department (部署) データオブジェクトが含まれ、
+    各 department には employee (従業員) データオブジェクトが含まれます。
+    それぞれのデータオブジェクトは、名前やシリアル番号などを表す
+    いくつかのプロパティを保持しています。また、company データオブジェクトは
+    1 つの employee データオブジェクトに対する包含関係でない参照を
+    保持しており、'employeeOfTheMonth' (今月の従業員) として定義されています。
+   </para>
+   <para>
+    <programlisting role="xml">
+<![CDATA[
+<xsd:schema  
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+  xmlns:sdo="commonj.sdo"
+  xmlns:sdoxml="commonj.sdo/xml"
+  xmlns:company="companyNS"
+  targetNamespace="companyNS">
+  <xsd:element name="company" type="company:CompanyType"/>
+  <xsd:complexType name="CompanyType">
+    <xsd:sequence>
+      <xsd:element name="departments" type="company:DepartmentType" 
+       maxOccurs="unbounded"/>
+    </xsd:sequence>
+    <xsd:attribute name="name" type="xsd:string"/>
+    <xsd:attribute name="employeeOfTheMonth" type="xsd:IDREF" 
+sdoxml:propertyType="company:EmployeeType"/> </xsd:complexType>
+  <xsd:complexType name="DepartmentType">
+    <xsd:sequence>
+      <xsd:element name="employees" type="company:EmployeeType"  
+       maxOccurs="unbounded"/>
+    </xsd:sequence>
+    <xsd:attribute name="name" type="xsd:string"/>
+    <xsd:attribute name="location" type="xsd:string"/>
+    <xsd:attribute name="number" type="xsd:int"/>
+  </xsd:complexType>
+  <xsd:complexType name="EmployeeType">
+    <xsd:attribute name="name" type="xsd:string"/>
+    <xsd:attribute name="SN" type="xsd:ID"/>
+    <xsd:attribute name="manager" type="xsd:boolean"/>
+  </xsd:complexType>
+</xsd:schema>
+]]>
+    </programlisting>
+   </para>
+
+   <para>
+    以下に示すインスタンスでは、'MegaCorp' という会社を定義しています。
+    ここには 'Advanced Technologies' という部署が存在し、3 人の
+    従業員がいます。この会社の「今月の従業員」は、2 番目の従業員である
+    'Jane Doe' です。
+   </para>
+
+   <para>
+    <programlisting role="xml">
+<![CDATA[
+<?xml version="1.0" encoding="UTF-8" ?> 
+<company xmlns="companyNS" name="MegaCorp" 
+ employeeOfTheMonth="#/departments.0/employees.1">
+  <departments name="Advanced Technologies" location="NY" number="123">
+    <employees name="John Jones" SN="E0001"/>
+    <employees name="Jane Doe" SN="E0003"/>
+    <employees name="Al Smith" SN="E0004" manager="true"/>
+  </departments>
+</company>
+]]>
+    </programlisting>
+   </para>
+
+  </section>
+
+  <section id="sdo.sample.getset">
+   <title>プロパティの値の設定および取得</title>
+   <para>
+    以下の例では、上のスキーマおよびインスタンスから作成した
+    データオブジェクトが <command>$company</command> であるものとします。
+   </para>
+   <para>
+    <example>
+     <title>プロパティ名を使用したアクセス</title>
+     <para>
+      データオブジェクトのプロパティへは、通常のオブジェクトの
+      プロパティにアクセスするのと同じ構文でアクセス可能です。
+      以下の例では、部署の一覧を取得して (ひとつの部署が含まれます)、
+      会社の名前を 'Acme' に変更します。
+     </para>
+     <programlisting role="php" id="sdo.examples.propname">
+<![CDATA[
+<?php
+  $departments = $company->departments;
+  $company->name = 'Acme';
+?>
+]]>
+     </programlisting>
+    </example>
+   </para>
+
+   <para>
+    <example>
+     <title>プロパティのインデックスを使用したアクセス</title>
+     <para>
+      データオブジェクトのプロパティへは、配列の構文を使用して
+      プロパティのインデックスでアクセスすることが可能です。
+      プロパティのインデックスは、そのプロパティの定義が
+      モデル (ここでは xml スキーマ) の中で行われた場所を表します。
+      上のスキーマの例では、company の最初のプロパティは
+      departments 要素で、2 番目のプロパティは company の name
+      属性です (SDO インターフェイスは、XML の属性および要素を
+      区別しません)。
+      以下の例では、部署の一覧を取得して (ひとつの部署が含まれます)、
+      会社の名前を 'Acme' に変更します。
+     </para>
+     <programlisting role="php" id="sdo.examples.propindex">
+<![CDATA[
+<?php
+  $departments = $company[0];
+  $company[1] = 'Acme';
+?>
+]]>
+     </programlisting>
+    </example>
+   </para>
+
+   <para>
+    <example>
+     <title>データオブジェクトの繰り返し処理</title>
+     <para>
+      foreach を使用することにより、データオブジェクトのプロパティを
+      順に処理していくことができます。以下の例では、company の
+      プロパティ、すなわち name・departments および employeeOfTheMonth
+      を順に処理します。
+     </para>
+     <programlisting role="php" id="sdo.examples.doiter">
+<![CDATA[
+<?php
+  foreach ($company as $name => $value) {
+    // ...
+  }
+?>
+]]>
+     </programlisting>
+     <para>
+      最初の繰り返しでは、$name は 'name'、そして $value
+      は 'Acme' となります。2 度目には $name は
+      'departments' となり、$value は DepartmentType 型の
+      オブジェクトをひとつ含む SDO_List となるでしょう
+      (なぜなら、departments は多くの値をとりうる (スキーマ内で
+      <command>maxOccurs="unbouded"</command> と宣言されている)
+      プロパティとされているからです)。
+      3 度目には $name は 'employeeOfTheMonth' となり、$value
+      は EmployeeType 型のデータオブジェクトとなります。
+     </para>
+    </example>
+   </para>
+
+   <para>
+    <example>
+     <title>多くの値をとりうるプロパティの繰り返し処理</title>
+     <para>
+      多くの値をとりうるプロパティについても、foreach を使用して
+      繰り返し処理を行うことが可能です。以下の例では、company の
+      departments を順に処理します。
+     </para>
+     <programlisting role="php" id="sdo.examples.mvpiter">
+<![CDATA[
+<?php
+  foreach ($company->departments as $department) {
+    // ...
+  }
+?>
+]]>
+     </programlisting>
+     <para>
+      繰り返しのたびに、<command>$department</command>
+      にはリスト内の次の部署が代入されます。
+     </para>
+    </example>
+   </para>
+
+   <para>
+    <example>
+     <title>多くの値をとりうる要素へのアクセス</title>
+     <para>
+      配列の構文を使用することで、多くの値をとりうる要素における
+      個々の要素にアクセスすることが可能です。以下の例では、
+      会社の中の最初の部署にアクセスしています。
+     </para>
+     <programlisting role="php" id="sdo.examples.mvaccess">
+<![CDATA[
+<?php
+  $ad_tech_dept = $company->departments[0];
+?>
+]]>
+     </programlisting>
+    </example>
+   </para>
+
+   <para>
+    <example>
+     <title>入れ子になったプロパティへのアクセス</title>
+     <para>
+      データオブジェクトのインスタンスの構造をたどっていくことで、
+      入れ子になったプロパティへのアクセスが可能です。
+      以下の例では、最初の部署の名前を取得し、設定しています。
+     </para>
+     <programlisting role="php" id="sdo.examples.nestedprop">
+<![CDATA[
+<?php
+  $dept_name = $company->departments[0]->name;
+  $company->departments[0]->name = 'Emerging Technologies';
+?>
+]]>
+     </programlisting>
+    </example>
+   </para>
+
+   <para>
+    <example>
+     <title>シンプルな XPath のサポート</title>
+     <para>
+      XPath 風の表記 (XPath を補強したサブセット)
+      を使用してプロパティにアクセスすることが
+      できます。一番シンプルな形式は、プロパティ名を取得するものです。
+      以下の例では、会社の名前を設定し、今月の従業員を取得しています。
+     </para>
+     <programlisting role="php" id="sdo.examples.simplexpath">
+<![CDATA[
+<?php
+  $company['name'] = 'UltraCorp';
+  $eotm = $company['employeeOfTheMonth'];
+?>
+]]>
+     </programlisting>
+    </example>
+   </para>
+
+   <para>
+    <example>
+     <title>シンプルな XPath のサポート</title>
+     <para>
+      データオブジェクトのインスタンスの構造をたどっていくには、
+      多次元の配列を使用します。以下の例では、最初の部署の名前を
+      取得および設定しています。
+     </para>
+     <programlisting role="php" id="sdo.examples.chainarray">
+<![CDATA[
+<?php
+  $dept_name = $company['departments'][0]['name'];
+  $company['departments'][0]['name'] = 'Emerging Technologies';
+?>
+]]>
+     </programlisting>
+    </example>
+   </para>
+
+   <para>
+    <example>
+     <title>XPath によるナビゲーション</title>
+     <para>
+      XPath 式を使用して、データオブジェクトのインスタンスの構造を
+      たどっていくことができます。複数の値をとりうるプロパティへの
+      アクセスには 2 とおりの方法がサポートされています。
+      最初の方法は、1 から始まる標準的な XPath の配列構文を使用する
+      ものです。もうひとつは、SDO で XPath を拡張した構文で、ゼロから
+      始まるインデックスを使用します。以下の例は、それぞれどちらも
+      最初の部署の 2 人目の従業員を取得しています。
+     </para>
+     <programlisting role="php" id="sdo.examples.xpathnav">
+<![CDATA[
+<?php
+  $jane_doe = $company["departments[1]/employees[2]"];
+  $jane_doe = $company["departments.0/employees.1"];
+?>
+]]>
+     </programlisting>
+    </example>
+   </para>
+
+   <para>
+    <example>
+     <title>XPath による問い合わせ</title>
+     <para>
+      XPath を使用して、インスタンスのデータ内のデータオブジェクトを
+      検索することができます。以下の例では、部署
+      'Advanced Technologies' の manager を取得しています。
+     </para>
+     <programlisting role="php" id="sdo.examples.xpathquery">
+<![CDATA[
+<?php
+ $ad_tech_mgr = 
+  $company["departments[name=\"Advanced Technologies\"]/employees[manager=\"true\"]"];
+?>
+]]>
+     </programlisting>
+    </example>
+   </para>
+
+   <para>
+    <example>
+     <title>子オブジェクトの作成</title>
+     <para>
+      データオブジェクトは、自分自身の中に子オブジェクトを保持することが
+      できます。子データオブジェクトは自動的にデータグラフの一員となります。
+      以下の例では、部署 'Advanced Technologies' に新しい従業員を追加しています。
+     </para>
+     <programlisting role="php" id="sdo.examples.create">
+<![CDATA[
+<?php
+  $ad_tech_dept = $company["departments[name=\"Advanced Technologies\"]"];
+  $new_hire = $ad_tech_dept->createDataObject('employees');
+  $new_hire->name = 'John Johnson';
+  $new_hire->SN = 'E0005';
+  $new_hire->manager = false;
+?>
+]]>
+     </programlisting>
+    </example>
+   </para>
+
+   <para>
+    <example>
+     <title>参照されているデータオブジェクトの開放</title>
+     <para>
+      データオブジェクトに項目が登録されているかどうかを確かめたり
+      項目を削除したりする際には、それぞれ <function>isset</function>
+      および <function>unset</function> 関数が使用可能です。
+     </para>
+     <para>
+      以下の例では、会社から「今月の従業員」を削除します。
+      もしこれらの間に包含関係があった場合、参照先の従業員も
+      削除されてしまいます (その月の一番優秀な従業員を毎月クビにしていく
+      なんてバカなことは、普通はしないでしょう!)。
+      しかし実際にはこれらは包含関係ではないので、参照先の
+      従業員は会社の中の部署の中に残り続けます。ただ、
+      employeeOfTheMonth プロパティを通じてはアクセスできなくなります。
+     </para>
+     <programlisting role="php" id="sdo.examples.unsetrefdo">
+<![CDATA[ 
+<?php
+  if (isset($company->employeeOfTheMonth)) {
+    unset($company->employeeOfTheMonth);
+  }
+?>
+]]>
+     </programlisting>
+    </example>
+   </para>
+  </section>
+
+  <section id="sdo.sample.sequence">
+   <title>シーケンスデータオブジェクトの使用</title>
+   <para>
+    シーケンスデータオブジェクトは、データオブジェクト内のさまざまな
+    プロパティの並び順を追跡する SDO です。ここには、非構造化
+    テキスト要素 (SDO のいずれのプロパティにも属さないテキスト要素)
+    を含めることも可能です。シーケンスデータオブジェクトは、
+    非構造化テキストを許可
+    (つまり、mixed=true である) したり、要素が交互に現れる
+    (<![CDATA[<A/><B/><A/>]]>) ような XML 文書を扱う場合に有用です。
+    これは、例えば order に choice を指定した complexType の要素に
+    対してスキーマで maxOccurs>1 を定義している場合などに発生します。
+   </para>
+   <para>
+    以下の例では、XML データアクセスサービスを使用して、
+    下のスキーマおよびインスタンスをもとに作成した SDO の使用を想定しています。
+   </para>
+   <para>
+    このスキーマでは、手紙の書式を定義しています。letter (手紙) には
+    オプションで 3 つのプロパティ date (日付)、firstName (名前)、
+    および lastName (苗字) を含めることが可能です。このスキーマでは
+    <command>mixed="true"</command> としていますが、これは
+    3 つのプロパティの間に非構造化テキストをちりばめることが
+    できるということを意味します。
+   </para>
+   <para>
+    <programlisting role="xml">
+<![CDATA[
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+  xmlns:letter="http://letterSchema"
+  targetNamespace="http://letterSchema">
+  <xsd:element name="letters" type="letter:FormLetter"/>
+  <xsd:complexType name="FormLetter" mixed="true">
+    <xsd:sequence>
+      <xsd:element name="date" minOccurs="0" type="xsd:string"/>
+      <xsd:element name="firstName" minOccurs="0" type="xsd:string"/>
+      <xsd:element name="lastName" minOccurs="0" type="xsd:string"/>
+    </xsd:sequence>
+  </xsd:complexType>
+</xsd:schema>
+          ]]>
+    </programlisting>
+   </para>
+
+   <para>
+    以下が、手紙のインスタンスです。これには 3 つのプロパティ
+    date、firstName および lastName が含まれており、非構造化
+    テキスト要素として住所と本文が含まれています。
+   </para>
+   <para>
+    <programlisting role="xml">
+<![CDATA[
+<letter:letters xmlns:letter="http://letterSchema">
+  <date>March 1, 2005</date>
+  Mutual of Omaha
+  Wild Kingdom, USA
+  Dear
+  <firstName>Casy</firstName>
+  <lastName>Crocodile</lastName>
+  Please buy more shark repellent.
+  Your premium is past due.
+</letter:letters>
+          ]]>
+    </programlisting>
+   </para>
+   <para>
+    このインスタンスが読み込まれると、letter データオブジェクトの
+    シーケンス番号およびプロパティ番号は以下の表のようになります。
+    <informaltable>
+     <tgroup cols='3'>
+      <thead>
+       <row>
+        <entry>シーケンスのインデックス</entry>
+        <entry>プロパティのインデックス:名前</entry>
+        <entry>値</entry>
+       </row>
+      </thead>
+      <tbody>
+       <row>
+        <entry>0</entry>
+        <entry>0:date</entry>
+        <entry>March 1, 2005</entry>
+       </row>
+       <row>
+        <entry>1</entry>
+        <entry>-</entry>
+        <entry>Mutual of Omaha</entry>
+       </row>
+       <row>
+        <entry>2</entry>
+        <entry>-</entry>
+        <entry>Wild Kingdom, USA</entry>
+       </row>
+       <row>
+        <entry>3</entry>
+        <entry>-</entry>
+        <entry>Dear</entry>
+       </row>
+       <row>
+        <entry>4</entry>
+        <entry>1:firstName</entry>
+        <entry>Casy</entry>
+       </row>
+       <row>
+        <entry>5</entry>
+        <entry>2:lastName</entry>
+        <entry>Crocodile</entry>
+       </row>
+       <row>
+        <entry>6</entry>
+        <entry>-</entry>
+        <entry>Please buy more shark repellent.</entry>
+       </row>
+       <row>
+        <entry>7</entry>
+        <entry>-</entry>
+        <entry>Your premium is past due.</entry>
+       </row>
+      </tbody>
+     </tgroup>
+    </informaltable>
+   </para>
+
+   <para>
+    シーケンス番号の整合性を保つため、シーケンスデータオブジェクトの
+    操作には SDO_Sequence インターフェイスを使用しなければなりません。
+    これにより、データオブジェクトに対しての操作を
+    プロパティのインデックスではなくシーケンスのインデックスを使用して
+    行えるようになります (上の表を参照ください)。
+    以下の例では、letter のインスタンスが
+    データオブジェクト <command>$letter</command> として
+    読み込まれているものと仮定します。
+    <example>
+     <title>SDO_Sequence インターフェイスの取得</title>
+     <para>
+      データオブジェクトのシーケンスを取得するには
+      <function>getSequence</function> メソッドを使用します。
+      以下の例では、letter データオブジェクトのシーケンスを取得します。
+     </para>
+     <programlisting role="php" id="sdo.examples.seqinterface">
+<![CDATA[ 
+<?php
+  $letter_seq = $letter->getSequence();
+?>
+]]>
+     </programlisting>
+    </example>
+   </para>
+   <para>
+    これ以降の例では、letter データオブジェクトのシーケンスが
+    変数 <command>$letter_seq</command> に代入されているものとします。
+   </para>
+
+   <para>
+    <example>
+     <title>シーケンスの値の取得/設定</title>
+     <para>
+      シーケンスのインデックスを使用することで、(非構造化
+      テキストも含め) それぞれの値を取得したり設定したりすることが可能です。
+      以下の例では、ファーストネームを 'Snappy' に変更して
+      シーケンスの最後の値 (非構造化テキスト
+      'Your premium is past due.') を取得します。
+     </para>
+     <programlisting role="php" id="sdo.examples.getsetseq">
+<![CDATA[ 
+<?php
+  $letter_seq[4] = 'Snappy';
+  $text = $letter_seq[count($letter_seq) - 1];
+?>
+]]>
+     </programlisting>
+    </example>
+   </para>
+
+   <para>
+    <example>
+     <title>シーケンスの繰り返し処理</title>
+     <para>
+      foreach を使用して、個々のシーケンス値について処理を繰り返すことが
+      できます。以下の例では、シーケンス順に個々の値を処理します。
+     </para>
+     <programlisting role="php" id="sdo.examples.seqiter">
+<![CDATA[ 
+<?php
+  foreach ($letter->getSequence() as $value) {
+    // ...
+  }
+?>
+]]>
+     </programlisting>
+    </example>
+   </para>
+
+   <para>
+    <example>
+     <title>シーケンスとデータオブジェクトの比較</title>
+     <para>
+      データオブジェクトのインターフェイスから設定した値は、シーケンスの
+      一部とはならないことがあります。データオブジェクト経由で値を
+      設定した場合、そのプロパティが既にシーケンスに組み込まれていた
+      場合にのみシーケンスからアクセス可能となります。
+      以下の例では、データオブジェクト経由で lastName を設定して
+      それをシーケンスから取得しています。これがうまくいくのは、
+      lastName が既にシーケンス内に存在するからです。もしこれが
+      事前に設定されていなかった場合、lastName には 'Smith' が
+      設定されますが、それはシーケンスの一部とはなりません。
+     </para>
+     <programlisting role="php" id="sdo.examples.seqvsdo">
+<![CDATA[ 
+<?php
+  $letter[2] = 'Smith';
+  $last_name = $letter_seq[5];
+?>
+]]>
+     </programlisting>
+    </example>
+   </para>
+
+   <para>
+    <example>
+     <title>シーケンスへの追加</title>
+     <para>
+      シーケンスに新しい値を追加するには
+      <link linkend='function.SDO-Sequence-insert'><function>SDO_Sequence::insert</function></link>
+      メソッドを使用します。以下の例では、プロパティ 'firstName' および
+      'lastName' が最初に削除されているものと仮定します。
+     </para>
+     <programlisting role="php" id="sdo.examples.seqadd">
+<![CDATA[ 
+<?php
+  // シーケンスに firstName を追加します
+  // 値: 'Smith'
+  // シーケンスのインデックス: NULL (追加)
+  // プロパティ ID: 1 (firtName プロパティのインデックス)
+  $letter_seq->insert('Smith', NULL, 1);
+
+  // シーケンスに lastName を追加します
+  // 値: 'Jones'
+  // シーケンスのインデックス: NULL (追加)
+  // プロパティ ID: 'lastName' (lastName プロパティの名前)
+  $letter_seq->insert('Jones', NULL, 'lastName');
+
+  // 非構造化テキストを追加します
+  // 値: 'Cancel Subscription.'
+  // シーケンスのインデックス: 省略 (追加)
+  // プロパティ ID: 省略 (非構造化テキスト)
+  $letter_seq->insert('Cancel Subscription.');
+
+  // 非構造化テキストを間に挿入します。それ以降のシーケンス値は
+  // ひとつずれます。
+  // 値: 'Care of:'
+  // シーケンスのインデックス: 1 (2 番目の要素として挿入する)
+  // プロパティ ID: 省略 (非構造化テキスト)
+  $letter_seq->insert('Care of:', 1);
+?>
+]]>
+     </programlisting>
+    </example>
+   </para>
+
+   <para>
+    <example>
+     <title>シーケンスからの削除</title>
+     <para>
+      シーケンスに項目が登録されているかどうかを確かめたり
+      シーケンスから項目を削除したりする際には、それぞれ 
+      <function>isset</function>
+      および <function>unset</function> 関数が使用可能です
+      (注意: <function>unset</function> は、現時点では値を
+      データオブジェクト内に残します。しかし、この挙動はおそらく今後
+      変更され、データオブジェクトからもデータを削除することに
+      なるでしょう)。シーケンスの挙動は、リスト構造に似ています。
+      そのため、シーケンスの途中の項目を削除すると、それ以降の
+      インデックスがひとつずつ小さいほうにずれます。以下の例では、
+      インデックスの最初の要素が存在するかどうか調べ、存在する場合に
+      それを削除しています。
+     </para>
+     <programlisting role="php" id="sdo.examples.seqremove">
+<![CDATA[ 
+<?php
+  if (isset($letter_seq[0])) {
+    unset($letter_seq[0]);
+  }
+?>
+]]>
+     </programlisting>
+    </example>
+   </para>
+
+  </section>
+
+
+  <section id="sdo.sample.reflection">
+   <title>サービスデータオブジェクトへのリフレクション</title>
+   <para>
+    SDO は、自分自身を作成するもととなったオブジェクト (モデル)
+    の構造を知っています。例えば、上の
+    <link linkend="sdo.examples">Company XML スキーマ</link> を使用して
+    作成した Company SDO には DepartmentType データオブジェクトしか
+    含めることはできず、同様に DepartmentType データオブジェクトには
+    EmployeeType データオブジェクトしか含めることはできません。
+   </para>
+   <para>
+    実行時にモデルの情報にアクセスできると、以下のような利点があります。
+    例えば、データオブジェクトに値を設定するためのユーザインターフェイスを
+    自動的に作成することができます。モデルの情報にアクセスするには、
+    リフレクションを使用します。
+   </para>
+
+   <para>
+    <example>
+     <title>データオブジェクトへのリフレクション</title>
+     <para>
+      以下の例では、空の Employee データオブジェクトへのリフレクションの
+      方法を示します。
+     </para>
+     <programlisting role="php" id="sdo.examples.reflection">
+<![CDATA[ 
+<?php
+  // employee データオブジェクトを (例えば XML データアクセスサービスなどから) 作成します
+  $employee = ...;
+  $reflection = new SDO_Model_ReflectionDataObject($employee);
+  print($reflection);
+?>
+]]>
+     </programlisting>
+     &example.outputs;
+
+     <screen>
+<![CDATA[
+object(SDO_Model_ReflectionDataObject)#4 { - ROOT OBJECT - Type { 
+companyNS:EmployeeType[3] { commonj.sdo:String $name; 
+commonj.sdo:String $SN; commonj.sdo:Boolean $manager; } }
+]]>
+     </screen>
+     <para>
+      SDO_Model_ReflectionDataObject に対して print を使用すると、
+      データオブジェクトのモデルを出力します。この出力結果から、
+      companyNS:EmployeeType 型には 3 つのプロパティがあることや
+      それぞれのプロパティの名前と型を知ることができます。
+      プリミティブ型は、SDO の型として表示されることに注意しましょう
+      (例: commonj.sdo namespace, String type)。これは SDO モデルであり、
+      アプリケーションからは PHP の同等の型 (例: string および boolean)
+      として扱えることを知っておくとよいでしょう。
+     </para>
+    </example>
+   </para>
+
+   <para>
+    <example>
+     <title>型情報へのアクセス</title>
+     <para>
+      リフレクションを使用して、データオブジェクトの型情報を取得することが
+      できます。以下の例では、まず型がプリミティブ型ではなく
+      データオブジェクトに対応するものであることを確認し、各プロパティの
+      名前を書き出しています ($type および $property は、それぞれ
+      SDO_Model_Type および SDO_Model_Property オブジェクトです)。
+     </para>
+     <programlisting role="php" id="sdo.examples.reflection.type">
+<![CDATA[ 
+<?php
+    // employee データオブジェクトを (例えば XML データアクセスサービスなどから) 作成します
+    $employee = ...;
+    $reflection = new SDO_Model_ReflectionDataObject($employee);
+    $type = $reflection->getType();
+    if (! $type->isDataType()) {
+        foreach ($type->getProperties() as $property) {
+            print $property->getName() . "\n";
+        }
+    }
+?>
+]]>
+     </programlisting>
+     &example.outputs;
+     <screen>
+<![CDATA[
+name
+SN
+manager
+]]>
+     </screen>
+    </example>
+   </para>
+
+  </section>
+
+
+
+
+
+  <!-- class definition section -->
+  <section id='sdo.classes'>
+   &reftitle.classes;
+   <para>
+    SDO は、3 つの系統のインターフェイスから構成されています。ひとつめは
+    典型的な SDO アプリケーションで使用されるインターフェイスをカバーする
+    もので、これらには 'SDO_' という名前がつけられています。2 番目は
+    データオブジェクトのモデルを扱うためのもので、これらには
+    'SDO_Model_' という名前がつけられています。最後はデータアクセスサービスで
+    使用されるもので、これらには 'SDO_DAS_' という名前がつけられています。
+    SDO を使用するほとんどの人は、'SDO_Model_' や 'SDO_DAS_'
+    を使用したり理解したりする必要はないでしょう。
+   </para>
+
+   <section id='sdo.class.sdo-apis'>
+    <title>SDO API</title>
+
+    <section id='sdo.class.sdo-dataobject'>
+     <title>
+      <classname>SDO_DataObject</classname>
+     </title>
+     <para>
+      データオブジェクトを操作する際のメインとなるインターフェイスです。
+      以下で説明するメソッドに加え、SDO_DataObject は
+      ArrayAccess、SDO_PropertyAccess (プロパティへのアクセスのために
+      <function>__get</function> /
+      <function>__set</function> メソッドをオーバーロードします)、
+      Iterator および Countable インターフェイスを継承します。
+     </para>
+     <section id='sdo.class.SDO_DataObject.methods'> &reftitle.methods;
+      <itemizedlist>
+       <listitem>
+        <para>
+         <link linkend='function.SDO-DataObject-getSequence'>getSequence</link>
+         - データオブジェクトのシーケンスを取得する
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         <link linkend='function.SDO-DataObject-createDataObject'>createDataObject</link>
+         - 子データオブジェクトを作成する
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         <link linkend='function.SDO-DataObject-clear'>clear</link>
+         - データオブジェクトのプロパティの設定を解除する
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         <link linkend='function.SDO-DataObject-getContainer'>getContainer</link>
+         - このオブジェクトのコンテナ (あるいは「親」) を取得する
+        </para>
+       </listitem>
+      </itemizedlist>
+     </section>
+    </section>
+
+    <section id='sdo.class.sdo-sequence'>
+     <title>
+      <classname>SDO_Sequence</classname>
+     </title>
+     <para>
+      シーケンスデータオブジェクトが、データオブジェクトのプロパティの
+      並び順を保持したままアクセスをおこなったり
+      非構造化テキストを許可したりする際に使用するインターフェイスです。
+      SDO_Sequence は、インデックスが常に連続した数となるようにします。
+      そのため、要素を挿入したり削除したりすると、その他の要素のインデックスが
+      増減します。以下で説明するメソッドに加え、SDO_Sequence は
+      ArrayAccess、Iterator および Countable インターフェイスを
+      継承しています。
+     </para>
+     <section id='sdo.class.SDO_Sequence.methods'>
+      &reftitle.methods;
+      <itemizedlist>
+       <listitem>
+        <para>
+         <link linkend='function.SDO-Sequence-getPropertyIndex'>getPropertyIndex</link> 
+         - シーケンスのインデックスからプロパティのインデックスを取得する
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         <link linkend='function.SDO-Sequence-getPropertyName'>getPropertyName</link> 
+         - シーケンスのインデックスからプロパティ名を取得する
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         <link linkend='function.SDO-Sequence-move'>move</link>
+         - 指定した要素を、現在のプロパティインデックスから別の位置に移動する
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         <link linkend='function.SDO-Sequence-insert'>insert</link>
+         - シーケンスに新しい値を挿入する
+        </para>
+       </listitem>
+      </itemizedlist>
+     </section>
+    </section>
+
+    <section id='sdo.class.sdo-list'>
+     <title>
+      <classname>SDO_List</classname>
+     </title>
+     <para>
+      複数の値を保持するプロパティを操作するためのインターフェイスです。
+      以下に挙げるメソッドに加え、SDO_List は ArrayAccess、
+      Iterator および Countable を継承しています。
+      SDO_List は、常にインデックスが連続した数となるようにします。
+      そのため、要素を挿入したり削除したりすると
+      他の要素のインデックスが変化します。
+     </para>
+     <section id='sdo.class.SDO-List.methods'>
+      &reftitle.methods;
+      <itemizedlist>
+       <listitem>
+        <para>
+         <link linkend='function.SDO-List-insert'>insert</link> 
+         - 新しい値をリストに挿入する
+        </para>
+       </listitem>
+      </itemizedlist>
+     </section>
+    </section>
+
+    <section id='sdo.class.sdo-datafactory'>
+     <title>
+      <classname>SDO_DataFactory</classname>
+     </title>
+     <para>
+      データオブジェクトを作成するためのインターフェイスです。
+      ファクトリのモデルに値を設定する (すなわち、作成可能なデータ
+      オブジェクトの型および構造情報をもとにデータファクトリを設定する)
+      のはデータアクセスサービスの役目です。また、オプションとして
+      SDO_DataFactory インターフェイスのインスタンスを返すか、
+      それを実装します。
+     </para>
+     <section id='sdo.class.SDO-DataFactory.methods'>
+      &reftitle.methods;
+      <itemizedlist>
+       <listitem>
+        <para>
+         <link linkend='function.SDO-DataFactory-create'>create</link> 
+         - 新しいデータオブジェクトを作成する
+        </para>
+       </listitem>
+      </itemizedlist>
+     </section>
+    </section>
+   </section>
+
+
+
+   <section id='sdo.class.sdo-model-apis'>
+    <title>SDO リフレクション API</title>
+
+    <section id='sdo.class.sdo-reflectiondataobject'>
+     <title>
+      <classname>SDO_Model_ReflectionDataObject</classname>
+     </title>
+     <para>
+      データオブジェクトのインスタンス自身について、モデルの型や
+      プロパティの情報を取得するためのインターフェイスです。
+      PHP 5 で使用可能となったリフレクションパターンに従うように
+      設計されています。
+     </para>
+     <section id='sdo.class.SDO_Model_ReflectionDataObject.methods'> 
+       &reftitle.methods;
+      <itemizedlist>
+       <listitem>
+        <para>
+         <link linkend='function.SDO-Model-ReflectionDataObject-construct'>__construct</link>
+         - 新しい SDO_Model_ReflectionDataObject を作成する
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         <link linkend='function.SDO-Model-ReflectionDataObject-getType'>getType</link>
+         - データオブジェクトの SDO_Model_Type を取得する
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         <link linkend=
+          'function.SDO-Model-ReflectionDataObject-getInstanceProperties'>getInstanceProperties</link>
+         - データオブジェクトのインスタンスのプロパティを取得する
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         <link linkend=
+          'function.SDO-Model-ReflectionDataObject-getContainmentProperty'>getContainmentProperty</link>
+         - リフレクション対象との包含関係を定義している親オブジェクトの
+         SDO_Model_Property を取得する
+        </para>
+       </listitem>
+      </itemizedlist>
+     </section>
+    </section>
+
+    <section id='sdo.class.sdo-type'>
+     <title>
+      <classname>SDO_Model_Type</classname>
+     </title>
+     <para>
+      データオブジェクトの型に関する情報を取得するための
+      インターフェイスです。このインターフェイスは、型の名前および
+      名前空間 URI・オープン型のデータを許可するかどうかなどを
+      調べるために使用します。
+     </para>
+     <section id='sdo.class.SDO_Model_Type.methods'> &reftitle.methods;
+      <itemizedlist>
+       <listitem>
+        <para>
+         <link linkend='function.SDO-Model-Type-getName'>getName</link>
+          - 型の名前を取得する
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         <link linkend='function.SDO-Model-Type-getNamespaceURI'>getNamespaceURI</link>
+         - 型の名前空間 URI を取得する
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         <link linkend='function.SDO-Model-Type-isInstance'>isInstance</link>
+         - データオブジェクトが特定の型のインスタンスであるかどうかを調べる
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         <link linkend='function.SDO-Model-Type-getProperties'>getProperties</link>
+         - 型のプロパティを取得する
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         <link linkend='function.SDO-Model-Type-getProperty'>getProperty</link>
+         - 型のプロパティを取得する
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         <link linkend='function.SDO-Model-Type-isDataType'>isDataType</link>
+         - この型が基本的なスカラー型であるかどうかを調べる
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         <link linkend='function.SDO-Model-Type-isSequencedType'>isSequencedType</link>
+         - この型がシーケンス型であるかどうかを調べる
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         <link linkend='function.SDO-Model-Type-isOpenType'>isOpenType</link>
+         - この型がオープン型であるかどうかを調べる
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         <link linkend='function.SDO-Model-Type-getBaseType'>getBaseType</link>
+         - この型の基底型を (もし存在すれば) 取得する
+        </para>
+       </listitem>
+      </itemizedlist>
+     </section>
+    </section>
+
+    <section id='sdo.class.sdo-property'>
+     <title>
+      <classname>SDO_Model_Property</classname>
+     </title>
+     <para>
+      データオブジェクトのプロパティに関する情報を取得するための
+      インターフェイスです。このインターフェイスは、プロパティの型・
+      デフォルト値の存在・包含関係の有無・カーディナリティなどを
+      調べるために使用します。
+     </para>
+     <section id='sdo.class.SDO_Model_Property.methods'> &reftitle.methods;
+      <itemizedlist>
+        <listitem>
+         <para>
+          <link linkend='function.SDO-Model-Property-getName'>getName</link>
+          - プロパティの名前を取得する
+         </para>
+        </listitem>
+        <listitem>
+         <para>
+          <link linkend='function.SDO-Model-Property-getType'>getType</link>
+          - プロパティの型を取得する
+         </para>
+        </listitem>
+        <listitem>
+         <para>
+          <link linkend='function.SDO-Model-Property-isMany'>isMany</link>
+          - プロパティが複数の値を保持するかどうかを調べる
+         </para>
+        </listitem>
+        <listitem>
+         <para>
+          <link linkend='function.SDO-Model-Property-isContainment'>isContainment</link>
+          - プロパティが包含関係を保持するかどうかを調べる
+         </para>
+        </listitem>
+        <listitem>
+         <para>
+          <link linkend='function.SDO-Model-Property-getContainingType'>getContainingType</link>
+          - このプロパティを含んでいる型を取得する
+         </para>
+        </listitem>
+        <listitem>
+         <para>
+          <link linkend='function.SDO-Model-Property-getDefault'>getDefault</link>
+          - プロパティのデフォルト値を取得する
+         </para>
+        </listitem>
+      </itemizedlist>
+     </section>
+    </section>
+
+
+
+   </section>
+
+   <section id='sdo.class.sdo-das-spis'>
+    <title>
+     SDO データアクセスサービス
+     開発者用インターフェイス
+    </title>
+
+    <section id='sdo.class.sdodas-dataobject'>
+     <title>
+      <classname>SDO_DAS_DataObject</classname>
+     </title>
+     <para>
+      データアクセスサービスが、データオブジェクトの
+      <link linkend='sdo.class.sdodas-changesummary'>SDO_DAS_ChangeSummary</link>
+      にアクセスするためのインターフェイスです。これは、変更した内容を
+      データベースに書き戻す際に、データアクセスサービスがデータの
+      衝突を調べるために使用されます。
+     </para>
+     <section id='sdo.class.SDO_DAS_DataObject.methods'> &reftitle.methods;
+      <itemizedlist>
+       <listitem>
+        <para>
+         <link linkend='function.SDO-DAS-DataObject-getChangeSummary'>getChangeSummary</link> 
+         - データオブジェクトの変更内容を取得する
+        </para>
+       </listitem>
+
+      </itemizedlist>
+     </section>
+    </section>
+
+    <section id='sdo.class.sdodas-changesummary'>
+     <title>
+      <classname>SDO_DAS_ChangeSummary</classname>
+     </title>
+     <para>
+      データオブジェクトの変更履歴にアクセスするためのインターフェイスです。
+      ログ取得が有効になってからデータオブジェクトに発生したあらゆる変更が、
+      変更内容に含まれます。削除あるいは修正の場合は、変更前の情報も保持されます。
+     </para>
+     <para>
+      ログ取得が有効になっていない場合、ログ取得が無効にされた時点までの
+      変更内容が保存されます。ログ取得を再開すると、過去の変更内容は消去されます。
+      これは、変更内容を DAS で書き出した後にデータオブジェクトを
+      再利用する場合に有用です。
+     </para>
+     <section id='sdo.class.SDO_DAS_ChangeSummary.methods'>
+      &reftitle.methods;
+      <itemizedlist>
+       <listitem>
+        <para>
+         <link linkend='function.SDO-DAS-ChangeSummary-beginLogging'>beginLogging</link> 
+         - データオブジェクトの変更履歴のログ取得を開始する
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         <link linkend='function.SDO-DAS-ChangeSummary-endLogging'>endLogging</link> 
+         - データオブジェクトの変更履歴のログ取得を終了する
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         <link linkend='function.SDO-DAS-ChangeSummary-isLogging'>isLogging</link> 
+         - ログ取得が有効になっているかどうかを調べる
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         <link linkend='function.SDO-DAS-ChangeSummary-getChangedDataObjects'>getChangedDataObjects</link> 
+         - 変更されたデータオブジェクトの一覧を取得する
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         <link linkend='function.SDO-DAS-ChangeSummary-getChangeType'>getChangeType</link> 
+         - データオブジェクトの変更の型を取得する
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         <link linkend='function.SDO-DAS-ChangeSummary-getOldValues'>getOldValues</link> 
+         - データオブジェクトの変更前の値を取得する
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         <link linkend='function.SDO-DAS-ChangeSummary-getOldContainer'>getOldContainer</link> 
+         - 削除されたデータオブジェクトの削除前のコンテナを取得する
+        </para>
+       </listitem>
+      </itemizedlist>
+     </section>
+    </section>
+
+    <section id='sdo.class.sdodas-setting'>
+     <title>
+      <classname>SDO_DAS_Setting</classname>
+     </title>
+     <para>
+      プロパティの古い値にアクセスするためのインターフェイスです。
+      設定の一覧は、
+      <link linkend='function.SDO-DAS-ChangeSummary-getOldValues'>
+       <function>getOldValues</function> で返されます。
+      </link>.
+     </para>
+     <section id='sdo.class.SDO_DAS_Setting.methods'>
+      &reftitle.methods;
+      <itemizedlist>
+       <listitem>
+        <para>
+         <link linkend='function.SDO-DAS-Setting-getPropertyIndex'>getPropertyIndex</link> 
+         - 変更されたプロパティのプロパティインデックスを取得する
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         <link linkend='function.SDO-DAS-Setting-getPropertyName'>getPropertyName</link> 
+         - 変更されたプロパティのプロパティ名を取得する
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         <link linkend='function.SDO-DAS-Setting-getValue'>getValue</link> 
+         - 変更されたプロパティの古い値を取得する
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         <link linkend='function.SDO-DAS-Setting-getListIndex'>getListIndex</link> 
+         - 複数の値を持つプロパティだった場合に、古い値のインデックスの
+         一覧を取得する
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         <link linkend='function.SDO-DAS-Setting-isSet'>isSet</link>
+         - 変更前に、プロパティが設定されていたかどうかを調べる
+         </para>
+       </listitem>
+      </itemizedlist>
+     </section>
+    </section>
+
+    <section id='sdo.class.sdodas-datafactory'>
+     <title>
+      <classname>SDO_DAS_DataFactory</classname>
+     </title>
+     <para>
+      SDO_DataObject のモデルを作成するインターフェイスです。
+      SDO_DAS_DataFactory は抽象クラスで、それを実装した具象データファクトリを
+      返すスタティックメソッドを提供します。この実装クラスを使用して、
+      データアクセスサービスが SDO モデルを作成します。
+      例えばリレーショナルデータアクセスサービスは、リレーショナル
+      データベースのスキーマをもとにして SDO_DAS_DataFactory モデルを
+      作成し、そこに値を設定します。
+     </para>
+     <section id='sdo.class.SDO_DAS_DataFactory.methods'>
+      &reftitle.methods;
+      <itemizedlist>
+       <listitem>
+        <para>
+         <link linkend='function.SDO-DAS-DataFactory-getDataFactory'>getDataFactory</link> 
+         - 具象データファクトリのインスタンスを取得するためのスタティックメソッド
+        </para>
+       </listitem>
+      </itemizedlist>
+      <itemizedlist>
+       <listitem>
+        <para>
+         <link linkend='function.SDO-DAS-DataFactory-addType'>addType</link> 
+         - SDO モデルに新しい型を追加する
+        </para>
+       </listitem>
+      </itemizedlist>
+      <itemizedlist>
+       <listitem>
+        <para>
+         <link linkend='function.SDO-DAS-DataFactory-addPropertyToType'>addPropertyToType</link> 
+         - SDO モデルの型定義に新しいプロパティを追加する
+        </para>
+       </listitem>
+      </itemizedlist>
+     </section>
+    </section>
+   </section>
+  </section>
+
+  &reference.sdo.constants;
+
+ </partintro>
+
+ &reference.sdo.functions;
+
+</reference>
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"../../../manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
