@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.1 $ -->
-<!-- splitted from ./en/functions/ps.xml, last change in rev 1.12 -->
-<!-- EN-Revision: 1.4 Maintainer: takagi Status: ready -->
+<!-- $Revision: 1.2 $ -->
+<!-- EN-Revision: 1.5 Maintainer: takagi Status: ready -->
 <refentry id="function.ps-findfont">
  <refnamediv>
   <refname>ps_findfont</refname>
@@ -18,14 +17,34 @@
    <methodparam choice="opt"><type>bool</type><parameter>embed</parameter></methodparam>
   </methodsynopsis>
   <para>
-    あとで使用するために、フォントを読み込みます。読み込んだフォントを
-    実際に利用するためには、<function>ps_setfont</function> で設定しなければ
-    なりません。文字の間隔を計算するため、この関数は adobe フォントメトリック
-    ファイルを必要とします。ページの内部で読み込まれたフォントは、
+    あとで使用するために、フォントを読み込みます。読み込んだフォントを実際に利用するためには、
+    <function>ps_setfont</function> で設定しなければなりません。
+    文字の間隔を計算するため、この関数は adobe フォントメトリックファイルを必要とします。
+    ページの内部で読み込まれたフォントは、
     そのページ内でのみ有効となります。ドキュメント全体で使われるフォントは、
-    最初の <function>ps_begin_page</function> の実行より前に読み込まれなければ
-    なりません。ページとページの間で <function>ps_findfont</function>
+    最初の <function>ps_begin_page</function> の実行より前に読み込まれなければなりません。
+    ページとページの間で <function>ps_findfont</function>
     が呼ばれた場合は、それ以降のページでフォントが有効になります。
+  </para>
+  <para>
+   afm ファイルの名前は、
+   <parameter>fontname</parameter><literal>.afm</literal> でなければなりません。
+   フォントを埋め込む場合は、フォントのアウトラインを含む
+   <parameter>fontname</parameter><literal>.pfb</literal>
+   が存在しなければなりません。
+  </para>
+  <para>
+   最初のページを処理する前に <function>ps_findfont</function> をコール際、
+   postscript ヘッダが出力されます。ここには、ドキュメント全体に適用される
+   BoundingBox が含まれます。
+   通常は、BoundingBox を設定するのは最初に <function>ps_begin_page</function>
+   がコールされたときで、これは <function>ps_findfont</function>
+   をコールした後になります。
+   したがって、<function>ps_findfont</function> のコール時にはまだ
+   BoundingBox が設定されておらず、警告が発生してしまいます。
+   こうなることを避けるため、<function>ps_findfont</function> をコールする前に
+   <function>ps_set_parameter</function> をコールし、BoundingBox
+   を設定しておくべきです。
   </para>
  </refsect1>
 
@@ -37,7 +56,8 @@
      <term><parameter>psdoc</parameter></term>
      <listitem>
       <para>
-       
+       <function>ps_new</function> が返す、postscript
+       ファイルのリソース ID。
       </para>
      </listitem>
     </varlistentry>
@@ -45,7 +65,7 @@
      <term><parameter>fontname</parameter></term>
      <listitem>
       <para>
-       
+       フォントの名前。
       </para>
      </listitem>
     </varlistentry>
@@ -54,20 +74,20 @@
      <listitem>
       <para>
         <function>ps_findfont</function> は、<parameter>encoding</parameter>
-        で渡されたファイルを読み込もうと試みます。 エンコーディング
-        ファイルは、<command>dvips(1)</command> で使われるものと同形式です。
+        で渡されたファイルを読み込もうと試みます。 エンコーディングファイルは、
+        <command>dvips(1)</command> で使われるものと同形式です。
         そこにはフォントエンコーディングベクタ（現在は利用されていませんが、
         存在する必要があります）が含まれており、また afm ファイルから
         生成されたリゲチャのリストを拡張するための拡張リゲチャが含まれています。
       </para>
       <para>
-        <parameter>encoding</parameter> は &null; または空文字列とすることも
-        可能で、その場合はデフォルトエンコーディング（TeXBase1）が用いられます。
+        <parameter>encoding</parameter> は &null; または空文字列とすることも可能で、
+        その場合はデフォルトエンコーディング（TeXBase1）が用いられます。
       </para>
       <para>
         encoding が <literal>builtin</literal> と指定された場合は、
-        エンコード処理は行われずにフォント固有のエンコーディングがそのまま
-        用いられます。これは、記号フォントを扱う場合に便利です。
+        エンコード処理は行われずにフォント固有のエンコーディングがそのまま用いられます。
+        これは、記号フォントを扱う場合に便利です。
       </para>
      </listitem>
     </varlistentry>
@@ -75,7 +95,8 @@
      <term><parameter>embed</parameter></term>
      <listitem>
       <para>
-       
+       0 より大きい値を設定すると、フォントがドキュメントに埋め込まれます。
+       これを使用するには、フォントのアウトライン (.pfb ファイル) が必要です。
       </para>
      </listitem>
     </varlistentry>

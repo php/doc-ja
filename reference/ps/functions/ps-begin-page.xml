@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.1 $ -->
-<!-- splitted from ./en/functions/ps.xml, last change in rev 1.12 -->
-<!-- EN-Revision: 1.2 Maintainer: takagi Status: ready -->
+<!-- $Revision: 1.2 $ -->
+<!-- EN-Revision: 1.5 Maintainer: takagi Status: ready -->
 <refentry id="function.ps-begin-page">
  <refnamediv>
   <refname>ps_begin_page</refname>
@@ -22,11 +21,21 @@
     いかにもページ単位でサイズを変えられるように思えますが、PostScript
     ではこれは不可能です。最初に <function>ps_begin_page</function>
     を呼んだ際に指定されたサイズが、ドキュメント全体に適用されます。
-    2 回目以降に呼ばれた場合はこのパラメータは意味を持たず、単に新しい
-    ページが作られるだけです。しかし、もしあなたが PostScript ドキュメントを
-    PDF に変換しようと考えているのなら話は別です。この関数はドキュメントの
-    各ページごとに pdfmark を設定するので、PDF に変換した後はページごとに
-    サイズを変えることができます。
+    2 回目以降に呼ばれた場合はこのパラメータは意味を持たず、
+    単に新しいページが作られるだけです。しかし、もしあなたが PostScript ドキュメントを
+    PDF に変換しようと考えているのなら話は別です。
+    この関数はドキュメントの各ページごとに pdfmark を設定するので、
+    PDF に変換した後はページごとにサイズを変えることができます。
+  </para>
+  <para>
+   PostScript はさまざまなページサイズを知らないので、pslib
+   ではドキュメントの各ページに対してバウンディングボックスを設定します。
+   このサイズは PostScript ビューアによって評価され、
+   ドキュメントヘッダの BoundingBox より優先されます。
+   左下角が (0, 0) ではない BoundingBox を設定すると、
+   予期せぬ結果を引き起こすことがあります。なぜなら、
+   ページ単位のバウンディングボックスは常に左下角が (0, 0) であり、
+   これが全体の設定より優先されるからです。
   </para>
   <para>
     個々のページの情報はカプセル化して保存されています。どういうことかというと、
@@ -35,15 +44,57 @@
   <para>
     最初の <function>ps_begin_page</function> 呼び出しまでに一度も
     <function>ps_findfont</function> が呼び出されていなかった場合は、
-    PostScript ドキュメントのヘッダが出力され、バウンディングボックスが
-    最初のページのサイズに設定されます。もしすでに <function>ps_findfont</function>
-    が呼ばれていた場合は既にヘッダが出力されてしまっており、ドキュメントに
-    適切なバウンディングボックスが設定されていないことになります。
+    PostScript ドキュメントのヘッダが出力され、
+    バウンディングボックスが最初のページのサイズに設定されます。
+    バウンディングボックスの左下角は (0, 0) に設定されます。もしすでに
+    <function>ps_findfont</function> が呼ばれていた場合は既にヘッダが出力されてしまっており、
+    ドキュメントに適切なバウンディングボックスが設定されていないことになります。
     このようなことを避けるために、<function>ps_findfont</function> や
     <function>ps_begin_page</function> を実行する前にはいつも
     <function>ps_set_info</function> を実行し、
     <literal>BoundingBox</literal> や <literal>Orientation</literal>
     の値を設定しておくべきです。
+  </para>
+  <note>
+   <para>
+    pslib のバージョン 0.2.6 まででは、
+    <function>ps_set_info</function> によって事前に設定されていたり
+    <function>ps_findfont</function> が事前にコールされていない限り、
+    この関数は常に BoundingBox および Orientation を上書きします。
+   </para>
+  </note>
+ </refsect1>
+
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <para>
+   <variablelist>
+    <varlistentry>
+     <term><parameter>psdoc</parameter></term>
+     <listitem>
+      <para>
+       <function>ps_new</function> が返す、postscript
+       ファイルのリソース ID。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>width</parameter></term>
+     <listitem>
+      <para>
+       ピクセル単位のページの幅 (例: A4 の場合は 596)。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>height</parameter></term>
+     <listitem>
+      <para>
+       ピクセル単位のページの高さ (例: A4 の場合は 842)。
+      </para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
   </para>
  </refsect1>
 

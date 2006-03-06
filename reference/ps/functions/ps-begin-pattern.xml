@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.1 $ -->
-<!-- splitted from ./en/functions/ps.xml, last change in rev 1.12 -->
-<!-- EN-Revision: 1.3 Maintainer: takagi Status: ready -->
+<!-- $Revision: 1.2 $ -->
+<!-- EN-Revision: 1.5 Maintainer: takagi Status: ready -->
 <refentry id="function.ps-begin-pattern">
  <refnamediv>
   <refname>ps_begin_pattern</refname>
@@ -11,7 +10,7 @@
  <refsect1 role="description">
   &reftitle.description;
   <methodsynopsis>
-   <type>bool</type><methodname>ps_begin_pattern</methodname>
+   <type>int</type><methodname>ps_begin_pattern</methodname>
    <methodparam><type>resource</type><parameter>psdoc</parameter></methodparam>
    <methodparam><type>float</type><parameter>width</parameter></methodparam>
    <methodparam><type>float</type><parameter>height</parameter></methodparam>
@@ -20,7 +19,68 @@
    <methodparam><type>int</type><parameter>painttype</parameter></methodparam>
   </methodsynopsis>
   <para>
-    新しいパターンを開始します。
+   新しいパターンを開始します。パターンとは、
+   領域を塗りつぶすための描画データを含むページのようなものです。
+   <function>ps_setcolor</function> をコールする際に
+   <literal>pattern</literal> に色空間を指定すると、
+   これは色のように使用されます。
+  </para>
+ </refsect1>
+
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <para>
+   <variablelist>
+    <varlistentry>
+     <term><parameter>psdoc</parameter></term>
+     <listitem>
+      <para>
+       <function>ps_new</function> が返す、postscript
+       ファイルのリソース ID。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>width</parameter></term>
+     <listitem>
+      <para>
+       ピクセル単位のパターンの幅。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>height</parameter></term>
+     <listitem>
+      <para>
+       ピクセル単位のパターンの高さ。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>x-step</parameter></term>
+     <listitem>
+      <para>
+       パターンを水平方向に並べる際のピクセル単位の間隔。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>y-step</parameter></term>
+     <listitem>
+      <para>
+       パターンを垂直方向に並べる際のピクセル単位の間隔。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>painttype</parameter></term>
+     <listitem>
+      <para>
+       1 あるいは 2 でなければなりません。
+      </para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
   </para>
  </refsect1>
 
@@ -28,6 +88,53 @@
   &reftitle.returnvalues;
   <para>
     パターンの ID を返します。失敗した場合は &false; を返します。
+  </para>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title>パターンの作成および使用</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$ps = ps_new();
+
+if (!ps_open_file($ps, "pattern.ps")) {
+  print "PostScript ファイルをオープンできません\n";
+  exit;
+}
+
+ps_set_parameter($ps, "warning", "true");
+ps_set_info($ps, "Creator", "pattern.php");
+ps_set_info($ps, "Author", "Uwe Steinmann");
+ps_set_info($ps, "Title", "Pattern example");
+
+
+$pspattern = ps_begin_pattern($ps, 10.0, 10.0, 10.0, 10.0, 1);
+ps_setlinewidth($ps, 0.2);
+ps_setcolor($ps, "stroke", "rgb", 0.0, 0.0, 1.0, 0.0);
+ps_moveto($ps, 0, 0);
+ps_lineto($ps, 7, 7);
+ps_stroke($ps);
+ps_moveto($ps, 0, 7);
+ps_lineto($ps, 7, 0);
+ps_stroke($ps);
+ps_end_pattern($ps);
+
+ps_begin_page($ps, 596, 842);
+ps_setcolor($ps, "both", "pattern", $pspattern, 0.0, 0.0, 0.0);
+ps_rect($ps, 50, 400, 200, 200);
+ps_fill($ps);
+ps_end_page($ps);
+
+ps_close($ps);
+ps_delete($ps);
+?>
+]]>
+    </programlisting>
+   </example>
   </para>
  </refsect1>
 
