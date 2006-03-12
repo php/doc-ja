@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.1 $ -->
+<!-- EN-Revision: 1.4 Maintainer: takagi Status: ready -->
+<refentry id="function.PDO-sqliteCreateAggregate">
+ <refnamediv>
+  <refname>PDO::sqliteCreateAggregate</refname>
+  <refpurpose>
+   SQL 文で使用する集約ユーザ定義関数 (UDF) を登録する
+  </refpurpose>
+ </refnamediv>
+
+ <refsect1 role="description">
+  &reftitle.description;
+  <methodsynopsis>
+   <type>bool</type><methodname>PDO::sqliteCreateAggregate</methodname>
+   <methodparam><type>string</type><parameter>function_name</parameter></methodparam>
+   <methodparam><type>callback</type><parameter>step_func</parameter></methodparam>
+   <methodparam><type>callback</type><parameter>finalize_func</parameter></methodparam>
+   <methodparam choice="opt"><type>int</type><parameter>num_args</parameter></methodparam>
+  </methodsynopsis>
+  &warn.experimental.func;
+  <para>
+   <function>PDO::sqliteCreateAggregate</function> は
+   <function>PDO::sqliteCreateFunction</function> と似ていますが、
+   この関数で登録した関数は、クエリのすべての行の内容を集約する関数を登録します。
+  </para>
+  <para>
+   この関数と <function>PDO::sqliteCreateFunction</function> の最大の違いは、
+   集約関数を作成するためには 2 つの関数が必要であるということです。
+   <parameter>step_func</parameter> は、結果セットの各行についてコールされるものです。
+   この PHP 関数は、結果を蓄積して集約コンテキストに保存しなければなりません。
+   すべての行が処理された後で、<parameter>finalize_func</parameter>
+   がコールされます。ここでは、集約コンテキストからデータを取得して結果を返します。
+   コールバック関数の返す値は、SQLite が理解できる形式 (すなわち
+   <link linkend="language.types.intro">スカラー型</link>)
+   でなければなりません。
+  </para>
+ </refsect1>
+
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <para>
+   <variablelist>
+    <varlistentry>
+     <term><parameter>function_name</parameter></term>
+     <listitem>
+      <para>
+       SQL 文で使用する関数の名前。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>step_func</parameter></term>
+     <listitem>
+      <para>
+       結果セットの各行に対して実行されるコールバック関数。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>finalize_func</parameter></term>
+     <listitem>
+      <para>
+       各行から取得したデータを集約するためのコールバック関数。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>num_args</parameter></term>
+     <listitem>
+      <para>
+       コールバック関数があらかじめ定義済みの引数を受け取る場合に、
+       SQLite のパーサに渡すヒント。
+      </para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
+  </para>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title>集約関数 max_length の例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$data = array(
+   'one',
+   'two',
+   'three',
+   'four',
+   'five',
+   'six',
+   'seven',
+   'eight',
+   'nine',
+   'ten',
+   );
+$db = new PDO('sqlite::memory:');
+$db->exec("CREATE TABLE strings(a)");
+$insert = $db->prepare('INSERT INTO strings VALUES (?)');
+foreach ($data as $str) {
+    $insert->execute(array($str));
+}
+$insert = null;
+
+function max_len_step(&$context, $string) 
+{
+    if (strlen($string) > $context) {
+        $context = strlen($string);
+    }
+}
+
+function max_len_finalize(&$context) 
+{
+    return $context;
+}
+
+$db->sqliteCreateAggregate('max_len', 'max_len_step', 'max_len_finalize');
+
+var_dump($db->query('SELECT max_len(a) from strings')->fetchAll());
+
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+  <para>
+   この例では、
+   テーブルのカラムの中で一番長い文字列の長さを計算する集約関数を作成します。
+   各行について <literal>max_len_step</literal> 関数がコールされ、
+   <parameter>context</parameter> パラメータが渡されます。
+   このパラメータには、他の PHP 変数と同様に、配列やオブジェクトが設定されます。
+   この例では、これまでに登場した値のうち長さが最大のものの長さを保持しています。
+   <parameter>string</parameter> が現在の最大値より長い場合に、
+   その値で現在の最大値を更新します。
+  </para>
+  <para>
+   すべての行に対する処理が終わると、SQLite は
+   <literal>max_len_finalize</literal> 関数をコールして集約結果を決定します。
+   ここでは、<parameter>context</parameter> の内容に基づいた、
+   なんらかの計算を行うことができます。
+   しかし、この例ではクエリを処理している過程で既に結果が決定しているので、
+   ここでは単に context の値を返しているだけです。
+  </para>
+  <tip>
+   <para>
+    結果の値を context に溜め込んでおき、最後に一括して処理するという方法は推奨
+    「しません」。これは、SQLite のメモリ消費量が大きくなるからです。
+    仮に 32 バイトの長さのデータが百万件あったとして、
+    それを溜め込むためにどれだけのメモリが必要になるか考えてみましょう。
+   </para>
+  </tip>
+  <tip>
+   <para>
+    <function>PDO::sqliteCreateFunction</function> および
+    <function>PDO::sqliteCreateAggregate</function> を使用して、
+    SQLite のネイティブ SQL 関数を上書きすることができます。
+   </para>
+  </tip>
+  <note>
+   <para>
+    このメソッドは、SQLite2 ドライバでは使用できません。
+    代わりに、古い形式の sqlite API を使用してください。
+   </para>
+  </note>
+
+ </refsect1>
+
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <para>
+   <simplelist>
+    <member><function>PDO::sqliteCreateFunction</function></member>
+    <member><function>sqlite_create_function</function></member>
+    <member><function>sqlite_create_aggregate</function></member>
+   </simplelist>
+  </para>
+ </refsect1>
+
+</refentry>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"../../../../manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
