@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.27 $ -->
-<!-- EN-Revision: 1.87 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.28 $ -->
+<!-- EN-Revision: 1.88 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: shimooka,takagi -->
  <chapter id="features.file-upload">
   <title>ファイルアップロードの処理</title>
@@ -470,45 +470,10 @@ foreach ($_FILES["pictures"]["error"] as $key => $error) {
 
   <sect1 id="features.file-upload.put-method">
    <title>PUT メソッドのサポート</title>
-   <simpara>
-    PHP 3 と PHP 4 の間で PUT メソッドのサポートが変更されました。
-    PHP 4 では、HTTP PUT のコンテンツを読み込むためには
-    標準の入力ストリームを使用すべきです。
-   </simpara>
    <para>
-    <example>
-     <title>PHP 4 で HTTP PUT ファイルを保存する</title>
-     <programlisting role="php">
-<![CDATA[
-<?php
-/* PUT データが標準入力ストリームから入ってくる */
-$putdata = fopen("php://stdin","r");
-
-/* 書き込み先ファイルをオープン */
-$fp = fopen("myputfile.ext","w");
-
-/* 1kb毎に読み込んでファイルに書き込む */
-while ($data = fread($putdata,1024))
-  fwrite($fp,$data);
-
-/* ストリームを閉じる */
-fclose($fp);
-fclose($putdata);
-?>
-]]>
-     </programlisting>
-    </example>
-   </para>
-   <note>
-    <para>
-     以下の全てのドキュメントは PHP 3 にのみ適用されます。
-    </para>
-   </note>
-   <para>
-    PHP は、<productname>Netscape Composer</productname> や
-    W3C <productname>Amaya</productname> のようなクライアントを使用した場合の
+    PHP は、クライアントがサーバにファイルを保存するための
     HTTP PUT メソッドのサポートを提供します。
-    PUT リクエストはファイルアップロードよりもシンプルであり、
+    PUT リクエストは POST リクエストによるファイルアップロードよりもシンプルであり、
     次のような形になります。
     <informalexample>
      <programlisting role="HTTP">
@@ -542,23 +507,58 @@ Script PUT /put.php
     すべての PUT リクエストが put.php スクリプトに送られるよう Apache に
     指定します。 もちろん、拡張子 .php により PHP が実行されるよう設定され、
     PHP がアクティブであることが必要です。
+    このスクリプトに対するすべての PUT リクエストの対象リソースは、
+    スクリプト自身とします。アップロードされるファイルのファイル名ではありません。
    </simpara>
    <simpara>
-    put.php ファイルの中で次のように処理を行う必要があります。
+    PHP 4 以降では、put.php の中で以下のようなことを行います。
+    これは、アップロードされたファイルをサーバ上のファイル
+    <filename>myputfile.ext</filename> にコピーします。
+    ファイルコピーを行う前には、
+    何らかの確認やユーザ認証を行いたくなるかもしれません。
    </simpara>
    <para>
-    <informalexample>
+    <example>
+     <title>PHP 4 で、HTTP PUT されたファイルを保存する</title>
      <programlisting role="php">
+<![CDATA[
+<?php
+/* PUT されたデータは標準入力からやってきます */
+$putdata = fopen("php://input", "r");
+
+/* 書き込みモードでファイルをオープンします */
+$fp = fopen("myputfile.ext", "w");
+
+/* データを 1 KB 単位で読み込み、
+   ファイルに書き込みます */
+while ($data = fread($putdata, 1024))
+  fwrite($fp, $data);
+
+/* ストリームを閉じます */
+fclose($fp);
+fclose($putdata);
+?>
+]]>
+     </programlisting>
+    </example>
+   </para>
+   <note>
+    <para>
+     これ以降のドキュメントは PHP 3 にのみ適用されます。
+    </para>
+   </note>
+   <para>
+    <example>
+    <title>PHP 3 で、HTTP PUT されたファイルを保存する</title>
+    <programlisting role="php">
 <![CDATA[
 <?php copy($PHP_UPLOADED_FILE_NAME,$DOCUMENT_ROOT.$REQUEST_URI); ?>
 ]]>
     </programlisting>
-    </informalexample>
+   </example>
    </para>
    <simpara>
-    これは、リモートクライアントによりリクエストされた位置にファイルを
-    コピーします。このファイルコピーを実行する前に何らかの確認やユーザの
-    認証を実行することが望ましいでしょう。上記のスクリプトでは、PHP
+    上記のスクリプトでは、PHP
     が PUT メソッドのリクエストを受けた際に <link
     linkend="features.file-upload.post-method">POST メソッド</link>
     と全く同様にテンポラリファイルにアップロードされたファイルを保存すると
