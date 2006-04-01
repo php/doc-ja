@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.2 $ -->
-<!-- EN-Revision: 1.21 Maintainer: takagi Status: ready -->
+<!-- $Revision: 1.3 $ -->
+<!-- EN-Revision: 1.22 Maintainer: takagi Status: ready -->
 <!-- Purpose: database.abstract -->
 <!-- Membership: pecl -->
 <!-- State: experimental -->
@@ -11,12 +11,7 @@
 
  <partintro>
   <section id="sdo.intro">
-   &reftitle.intro;
-   <para>
-    <!-- This warns that the extension is experimental -->
-    &warn.experimental;
-   </para>
-   
+   &reftitle.intro;   
    <para>
     Service Data Objects (SDO) を使用すると、PHP アプリケーションから
      (データベースクエリ・XML ファイル・スプレッドシートなどの) 
@@ -30,8 +25,8 @@
     SDO インスタンスを作成するために DAS を使用します。そうすると、
     標準的な SDO インターフェイスを使用して SDO インスタンスの
     データに対する読み書きができるようになります。最後に、
-    変更されたデータを DAS でデータソース
-    (通常は、最初に作成したのと同じもの) に書き込みます。
+    変更されたデータを DAS でデータソースに書き込みます。
+    このデータソースは、通常は最初に作成したのと同じものとなります。
    </para>
    <para>
     現在使用可能なデータアクセスサービスの詳細は、
@@ -42,11 +37,13 @@
     データアクセスサービス インターフェイス</link> を参照ください)。
    </para>
     <para>
-    この拡張モジュールは、
-    <ulink url='&url.ibm.sdo;'>
-    Service Data Objects specification
-    </ulink>
-    の概念に由来するものです。
+     この拡張モジュールは、
+     <ulink url='&url.ibm.sdo;'>
+     Service Data Objects specification
+     </ulink>
+     の概念に由来するものです。
+     <ulink url="&url.apache.tuscany;">Apache Tuscany</ulink> SDO 2.0 for C++ project
+     を含んでいます。
    </para>
 
    <section id="sdo.intro.structure">
@@ -57,23 +54,31 @@
      定義されます。例えば、Company (会社) データオブジェクトに
      いくつかの Department (部署) データオブジェクトが含まれていると
      すると、Company が Department を包含しているということになります。
-     他のオブジェクトを包含しているデータオブジェクトを削除すると、
-     そこに含まれているデータオブジェクトも削除されます。例えば、
-     Company データオブジェクトを削除すると、同時に Department
-     データオブジェクトも削除されます。
     </para>
     <para>
      SDO では、包含関係以外の関係もデータオブジェクトのツリー内で
      保持することができます。例えば、ある Employee (従業員)
      データオブジェクトが、上司として別の Employee を参照していることが
-     あるかもしれません。包含関係以外の関係を持つデータオブジェクトを
-     削除する際には、参照先のデータオブジェクトは削除されません。
+     あるかもしれません。
     </para>
     <para>
      データオブジェクト同士がお互いを参照するだけではなく、
      オブジェクト以外のプロパティを保持することもできます。
      例えば、Company データオブジェクトに文字列型のプロパティ "name"
      を含め、そこに会社名 ("Acme" など) を格納することもできます。
+    </para>
+    <para>
+     これらのデータオブジェクトのプロパティ、すなわち包含関係をもつもの、
+     包含関係を持たないもの、そしてプリミティブなプロパティは、
+     ひとつの値を持つこともあれば複数の値を持つこともあります。
+     上の例では、Departments は複数の値をとりますが
+     Company の name はひとつの値しかとりません。
+    </para>
+    <para>
+     PHP では、SDO データオブジェクトは PHP のオブジェクトとして表されます。
+     データオブジェクトのプロパティへは、
+     オブジェクト構文あるいは連想配列形式の構文でアクセスすることができます。
+     後でこれらの例を示します。
     </para>
    </section>
   </section>
@@ -82,173 +87,108 @@
    &reftitle.required;
    <para>
     SDO 拡張モジュールを使用するには、PHP 5.1 以降が必要です。
-   </para>
-   <para>
-    この拡張モジュールの一部として組み込まれている
-    SDO <link linkend="ref.sdo-das-xml">XML データアクセスサービス</link>
-    には libxml2 が必要です (libxml2 2.6.19 でテストしました)。
-    これは、<ulink url='&url.libxml;'>&url.libxml;</ulink>
+    また、libxml2 ライブラリも必要です。通常は、既に
+    libxml2 はインストールされているでしょうが、もしインストールされていない場合は
+    <ulink url='&url.libxml;'>&url.libxml;</ulink>
     からダウンロードできます。
    </para>
   </section>
 
   <section id="sdo.installation">
    &reftitle.install;
-   <para>
-   インストール先が Windows なのか Linux なのか、あるいはリリース版
-   (PECL から取得できる .tgz ファイル) をインストールするのか
-   CVS の最新版をインストールするのか
-   などの違いによって、いくつかの方法があります。
-   また、PHP で書かれているリレーショナル DAS をインストールする際にも
-   特別な注意が必要です。
-   </para>
-   <para>
-    PHP 5.1 がベータ版から安定版になるまでの間は、インストール方法は
-    変化する可能性があります。ここに書かれている情報は 2005 年 10 月
-    6 日時点のもので、この時点では PHP 5.1.0RC1 が最新のリリース候補
-    であり、SDO の最新ベータリリースのバージョンは 0.5.2 でした。
-   </para>
-   <para> 
-    それぞれの場合におけるインストール方法を以下の表にまとめました。
-    <informaltable>
-     <tgroup cols='3'>
-      <thead>
-       <row>
-        <entry>最新版/リリース版</entry>
-        <entry>Windows</entry>
-        <entry>Linux</entry>
-       </row>
-      </thead>
-      <tbody>
-       <row>
-        <entry>
-         CVS の最新版
-        </entry>
-        <entry>
-         <itemizedlist>
-          <listitem>
-           <para>
-            SDO のコアおよび XML DAS の最新版 DLL は、それぞれ
-           <ulink url='&url.pecl.win.ext;php_sdo.dll'>php_sdo</ulink> および
-           <ulink url='&url.pecl.win.ext;php_sdo_das_xml.dll'>php_sdo_das_xml
-           </ulink> でダウンロードできます。
-           </para>
-          </listitem>
-          <listitem>
-           <para>
-            PHP の
-            <link linkend="ini.include-path">include_path</link>
-            に、CVS からリレーショナル DAS をチェックアウトします。
-           </para>
-          </listitem>
-         </itemizedlist>
-        </entry>
-        <entry>
-         <itemizedlist>
-          <listitem>
-           <para>
-            CVS から SDO コアおよび XML DAS をチェックアウトし、
-            以下で説明する Linux でのビルド手順にしたがってビルドします。
-           </para>
-          </listitem>
-          <listitem>
-           <para>
-            PHP の
-            <link linkend="ini.include-path">include_path</link>
-            に、CVS からリレーショナル DAS をチェックアウトします。
-           </para>
-          </listitem>
-         </itemizedlist>
-        </entry>
-       </row>
-       <row>
-        <entry>
-         リリース版
-        </entry>
-        <entry>
-         <itemizedlist>
-          <listitem>
-           <para>
-            現在、リリース版の SDO コアおよび XML DAS を自分のマシンで
-            ビルドすることはできません。スナップショットサイト
-            (この表の上の行を参照ください) から最新の DLL を取得するしか
-            方法はありません。
-           </para>
-          </listitem>
-          <listitem>
-           <para>
-            リレーショナル DAS は、以下のコマンドでダウンロードおよび
-            インストールが可能です。
-           </para>
-           <para>
-            <command>
-            pear install -B &lt;package name and level&gt;
-            </command>
-           </para>
-           <para> 
-            上のコマンドで、パッケージ名およびレベルを
-            <varname>sdo-0.5.2</varname> のように置き換えてください。
-           </para>
-          </listitem>
-         </itemizedlist>
-        </entry>
-        <entry>
-         <itemizedlist>
-          <listitem>
-           <para>
-            すべての SDO コンポーネント、すなわち SDO コア・
-            XML DAS およびリレーショナル DAS を以下のコマンドで
-            ダウンロードしてインストールすることが可能です。
-           </para>
-           <para>
-            <command>
-             pear install &lt;package name and level&gt;
-            </command>
-           </para>
-           <para>
-            上のコマンドで、パッケージ名およびレベルを
-            <varname>sdo-0.5.2</varname> のように置き換えてください。
-           </para>
-           <para> 
-            このコマンドは SDO および XML 共有ライブラリをビルドし、
-            リレーショナル DAS の PHP ファイルをインストールします。
-           </para>
-          </listitem>
-         </itemizedlist>
-        </entry>
-       </row>
-      </tbody>
-     </tgroup>
-    </informaltable>
-   </para>
-   <para>
-    インストール先プラットフォームやインストールしたコードのレベルに
-    かかわらず、&php.ini; に 2 つの拡張ライブラリを追加する必要があります。
-    Windows ではこれを追加し、
-    <programlisting role="php" id="sdo.installation.ini.windows">
+   <procedure id='sdo.install.unix'>
+     <title>Unix システム</title>
+     <step>
+      <para>
+       SDO コンポーネント、すなわち SDO コア・XML DAS
+       およびリレーショナル DAS の最新版をダウンロード、
+       インストールするには、次のコマンドを使用します。
+       <screen> <![CDATA[
+pear install sdo
+]]>
+       </screen>
+      </para>
+      <para>
+       このコマンドは SDO および XML 共有ライブラリをビルドし、
+       リレーショナル DAS の PHP ファイルをインストールします。
+      </para>
+      <para>
+       最新のベータ版を使用するには、代わりに次のコマンドを使用します。
+       <screen> 
 <![CDATA[
-extension=php_sdo.dll
-extension=php_sdo_das_xml.dll
-]]> 
-    </programlisting>
-    Linux ではこれを追加します。
-    <programlisting role="php" id="sdo.installation.ini.linux">
-<![CDATA[
+pear install sdo-beta
+]]>
+       </screen>
+     </para>
+    </step>
+    <step>
+     <para>
+      <command>pear</command> コマンドは、SDO および SDO_DAS_XML
+      モジュールを自動的に PHP 拡張モジュールディレクトリにインストールします。
+      SDO 拡張モジュールを有効にするには、以下の行を
+      &php.ini; に追加しなければなりません。
+      <screen> <![CDATA[
 extension=sdo.so
 extension=sdo_das_xml.so
 ]]>
-    </programlisting>
-    また、&php.ini; の
-    <link linkend="ini.extension-dir">extension_dir</link>
-    を、これらのライブラリの場所を指すように更新する必要があります。
-   </para>
+      </screen>
+     </para>
+     <para>
+      PECL パッケージのビルド方法についての詳細は、マニュアルの
+      <link linkend="install.pecl">PECL 拡張モジュールのインストール</link>
+      を参照ください。
+     </para>
+    </step>
+    </procedure>
    
-   <para>
-    リレーショナル DAS は PHP で書かれています。そこで、&php.ini;の
-    <link linkend="ini.include-path">include_path</link>
-    を、<filename>sdo/DAS/Relational</filename> が存在する場所を
-    指すように更新する必要があります。
-   </para>
+   <procedure id='sdo.install.win32'>
+    <title>Windows</title>
+    <step>
+     <para>
+      SDO コアおよび XML DAS の最新版の DLL は、それぞれ
+      <ulink url='&url.pecl.win.ext;php_sdo.dll'>php_sdo.dll</ulink> および
+      <ulink url='&url.pecl.win.ext;php_sdo_das_xml.dll'>php_sdo_das_xml.dll</ulink>
+      からダウンロードできます。
+     </para>
+     <para> 
+      現在は、<ulink url='&url.pecl.win;'>pecl4win</ulink>
+      では安定リリース版のバイナリが提供されていないことに注意しましょう。
+      最新版のみがダウンロード可能となっています。
+     </para>
+    </step>    
+    <step>
+     <para>
+      <command>pear</command> コマンドは、SDO および SDO_DAS_XML
+      モジュールを自動的に PHP 拡張モジュールディレクトリにインストールします。
+      SDO 拡張モジュールを有効にするには、以下の行を
+      &php.ini; に追加しなければなりません。
+      <screen>
+       <![CDATA[
+extension=php_sdo.dll
+extension=php_sdo_das_xml.dll
+]]>
+      </screen>
+     </para>
+    </step>
+    <step>
+     <para>
+      リレーショナル DAS をダウンロード、インストールするには、
+      以下のコマンドを実行します。
+      <screen>
+      <![CDATA[
+pear install -B sdo
+]]>
+      </screen>
+     </para>
+     <para>
+      リレーショナル DAS は PHP で書かれています。
+      <filename>sdo/DAS/Relational</filename> を含むディレクトリを指すように
+      &php.ini; の <link linkend="ini.include-path">include_path</link>
+      を設定しなければなりません。
+     </para>
+    </step>
+   </procedure>
+   
    <procedure id='sdo.build.linux.steps'>
     <title>Linux での SDO のビルド</title>
     <para>
@@ -278,7 +218,7 @@ extension=sdo_das_xml.so
     </step>
     <step>
      <para>
-      <filename>php.ini</filename> ファイルに
+      &php.ini; ファイルに
       <command>extension=sdo.so</command> および
       <command>extension=sdo_das_xml.so</command> をこの順序で
       追加することで、これらのモジュールが PHP に読み込まれるようにします。
@@ -307,8 +247,7 @@ extension=sdo_das_xml.so
         </entry>
         <entry>
          XML データアクセスサービスは、SDO を XML ドキュメントとして
-         読み書きします。あるいは RSS フィードのような Web URL 経由の
-         XML もサポートします。
+         読み書きします。
         </entry>
        </row>
        <row>
@@ -317,7 +256,7 @@ extension=sdo_das_xml.so
         </entry>
         <entry>
          PDO を基にしたデータアクセスサービスで、SDO をリレーショナル
-         データソースとして読み書きします。同時更新に対しては
+         データベースとして読み書きします。同時更新に対しては
          楽観的な実装となっています。
         </entry>
        </row>
@@ -337,6 +276,9 @@ extension=sdo_das_xml.so
     <step>
      <para>
       マルチバイト文字セットはサポートしていません。
+      コミュニティの要望があれば、Unicode 対応版の PHP
+      で対応するかもしれません。
+      <link linkend="ref.unicode">Unicode 関数</link> を参照ください。
      </para>
     </step>
    </procedure>
@@ -347,16 +289,6 @@ extension=sdo_das_xml.so
      将来これらのすべてが実装されるとは限りません。実装されるかどうかは
      コミュニティの要望があるかどうかによります。
     </para>
-    <step>
-     <para>
-      抽象型や型の派生
-     </para>
-    </step>
-    <step>
-     <para>
-      オープン型
-     </para>
-    </step>
     <step>
      <para>
       双方向のリレーション
@@ -373,13 +305,13 @@ extension=sdo_das_xml.so
      </para>
     </step>
     <step>
-     <para>
-      XMLHelper/XSDHelper (XML DAS で、この機能の多くを提供しています)
-     </para>
-    </step>
-    <step>
-     <para>
-      TypeHelper (SDO_DAS_DataFactory がこの機能を提供しています)
+     <para> 
+      SDO 2.0 で定義されているヘルパークラスは、直接には実装されていません。
+      しかし、同等の機能がより PHP らしい方法で提供されています。
+      例えば、<command>CopyHelper::copy()</command> の機能については、
+      データオブジェクトに PHP の
+      <link linkend='language.oop5.cloning'>clone</link>
+      キーワードを適用することで実現できます。
      </para>
     </step>
    </procedure>
@@ -392,13 +324,34 @@ extension=sdo_das_xml.so
     下のスキーマおよびインスタンスをもとに作成した SDO の使用を想定しています。
    </para>
    <para>
-    このスキーマでは、company (会社) データオブジェクトを定義しています。
-    company には department (部署) データオブジェクトが含まれ、
-    各 department には employee (従業員) データオブジェクトが含まれます。
-    それぞれのデータオブジェクトは、名前やシリアル番号などを表す
-    いくつかのプロパティを保持しています。また、company データオブジェクトは
-    1 つの employee データオブジェクトに対する包含関係でない参照を
-    保持しており、'employeeOfTheMonth' (今月の従業員) として定義されています。
+    以下で説明しているインスタンスドキュメントは、
+    'MegaCorp' という会社を扱っています。この会社には
+    'Advanced Technologies' という名前の部署がひとつあります。
+    Advanced Technologies 部門には 3 人の従業員がいます。
+    この会社の employeeOfTheMonth (今月の従業員) は、
+    2 人目の従業員である 'Jane Doe' を指しています。
+   </para>
+   <para>
+    <programlisting role="xml">
+<![CDATA[
+<?xml version="1.0" encoding="UTF-8" ?> 
+<company xmlns="companyNS" name="MegaCorp" 
+  employeeOfTheMonth="E0003">
+  <departments name="Advanced Technologies" location="NY" number="123">
+    <employees name="John Jones" SN="E0001"/>
+    <employees name="Jane Doe" SN="E0003"/>
+    <employees name="Al Smith" SN="E0004" manager="true"/>
+  </departments>
+</company>
+]]>
+    </programlisting>
+   </para>
+   <para>
+    このスキーマのルート要素は company です。company は departments
+    を含んでおり、個々の department は employees を含んでいます。
+    各要素はいくつかの属性を保持しており、ここに名前やシリアル番号などを保存します。
+    最後に、company は IDREF 属性を保持しており、
+    特定の従業員を 'employeeOfTheMonth' として参照しています。
    </para>
    <para>
     <programlisting role="xml">
@@ -413,11 +366,12 @@ extension=sdo_das_xml.so
   <xsd:complexType name="CompanyType">
     <xsd:sequence>
       <xsd:element name="departments" type="company:DepartmentType" 
-       maxOccurs="unbounded"/>
+        maxOccurs="unbounded"/>
     </xsd:sequence>
     <xsd:attribute name="name" type="xsd:string"/>
     <xsd:attribute name="employeeOfTheMonth" type="xsd:IDREF" 
-sdoxml:propertyType="company:EmployeeType"/> </xsd:complexType>
+      sdoxml:propertyType="company:EmployeeType"/> 
+  </xsd:complexType>
   <xsd:complexType name="DepartmentType">
     <xsd:sequence>
       <xsd:element name="employees" type="company:EmployeeType"  
@@ -436,37 +390,22 @@ sdoxml:propertyType="company:EmployeeType"/> </xsd:complexType>
 ]]>
     </programlisting>
    </para>
-
    <para>
-    以下に示すインスタンスでは、'MegaCorp' という会社を定義しています。
-    ここには 'Advanced Technologies' という部署が存在し、3 人の
-    従業員がいます。この会社の「今月の従業員」は、2 番目の従業員である
-    'Jane Doe' です。
+    XML データアクセスサービスは、スキーマを SDO に関連付けます。
+    "name" のような属性はプリミティブプロパティに、
+    一連の employees は複数の値をとる包含関係に、といったようになります。
+    包含関係は complex 型の中に別の complex 型を含めることで表され、
+    非包含関係は ID や IDREF に特別な属性
+    <command>sdoxml:propertyType</command> を指定して表されることに注意しましょう。
    </para>
-
-   <para>
-    <programlisting role="xml">
-<![CDATA[
-<?xml version="1.0" encoding="UTF-8" ?> 
-<company xmlns="companyNS" name="MegaCorp" 
- employeeOfTheMonth="#/departments.0/employees.1">
-  <departments name="Advanced Technologies" location="NY" number="123">
-    <employees name="John Jones" SN="E0001"/>
-    <employees name="Jane Doe" SN="E0003"/>
-    <employees name="Al Smith" SN="E0004" manager="true"/>
-  </departments>
-</company>
-]]>
-    </programlisting>
-   </para>
-
   </section>
 
   <section id="sdo.sample.getset">
    <title>プロパティの値の設定および取得</title>
    <para>
-    以下の例では、上のスキーマおよびインスタンスから作成した
-    データオブジェクトが <command>$company</command> であるものとします。
+    以下の例では、上で示したスキーマおよびインスタンスドキュメントをもとに
+    作成したデータオブジェクトツリーのルート要素が
+    <command>$company</command> に入っているものとして考えます。
    </para>
    <para>
     <example>
@@ -474,13 +413,11 @@ sdoxml:propertyType="company:EmployeeType"/> </xsd:complexType>
      <para>
       データオブジェクトのプロパティへは、通常のオブジェクトの
       プロパティにアクセスするのと同じ構文でアクセス可能です。
-      以下の例では、部署の一覧を取得して (ひとつの部署が含まれます)、
-      会社の名前を 'Acme' に変更します。
+      以下の例では、会社の名前を 'Acme' に変更します。
      </para>
      <programlisting role="php" id="sdo.examples.propname">
 <![CDATA[
 <?php
-  $departments = $company->departments;
   $company->name = 'Acme';
 ?>
 ]]>
@@ -490,24 +427,17 @@ sdoxml:propertyType="company:EmployeeType"/> </xsd:complexType>
 
    <para>
     <example>
-     <title>プロパティのインデックスを使用したアクセス</title>
+     <title>配列のインデックスを使用したプロパティへのアクセス</title>
      <para>
-      データオブジェクトのプロパティへは、配列の構文を使用して
-      プロパティのインデックスでアクセスすることが可能です。
-      プロパティのインデックスは、そのプロパティの定義が
-      モデル (ここでは xml スキーマ) の中で行われた場所を表します。
-      上のスキーマの例では、company の最初のプロパティは
-      departments 要素で、2 番目のプロパティは company の name
-      属性です (SDO インターフェイスは、XML の属性および要素を
-      区別しません)。
-      以下の例では、部署の一覧を取得して (ひとつの部署が含まれます)、
-      会社の名前を 'Acme' に変更します。
+      連想配列形式の構文を使用して、プロパティにアクセスすることもできます。
+      最も簡単な負尾法は、プロパティ名を配列のインデックスとして使用する方法です。
+      例えば、以下の例では会社の名前を設定してから「今月の従業員」を取得しています。
      </para>
-     <programlisting role="php" id="sdo.examples.propindex">
+     <programlisting role="php" id="sdo.examples.simplexpath">
 <![CDATA[
 <?php
-  $departments = $company[0];
-  $company[1] = 'Acme';
+  $company['name'] = 'UltraCorp';
+  $eotm = $company['employeeOfTheMonth'];
 ?>
 ]]>
      </programlisting>
@@ -519,57 +449,52 @@ sdoxml:propertyType="company:EmployeeType"/> </xsd:complexType>
      <title>データオブジェクトの繰り返し処理</title>
      <para>
       foreach を使用することにより、データオブジェクトのプロパティを
-      順に処理していくことができます。以下の例では、company の
-      プロパティ、すなわち name・departments および employeeOfTheMonth
-      を順に処理します。
+      順に処理していくことができます。以下の例では、
+      今月の従業員のプロパティを順に処理します。
      </para>
      <programlisting role="php" id="sdo.examples.doiter">
 <![CDATA[
 <?php
-  foreach ($company as $name => $value) {
-    // ...
+  $eotm = $company->employeeOfTheMonth;
+  foreach ($eotm as $name => $value) {
+      echo "$name: $value\n";
   }
 ?>
 ]]>
      </programlisting>
-     <para>
-      最初の繰り返しでは、$name は 'name'、そして $value
-      は 'Acme' となります。2 度目には $name は
-      'departments' となり、$value は DepartmentType 型の
-      オブジェクトをひとつ含む SDO_List となるでしょう
-      (なぜなら、departments は多くの値をとりうる (スキーマ内で
-      <command>maxOccurs="unbouded"</command> と宣言されている)
-      プロパティとされているからです)。
-      3 度目には $name は 'employeeOfTheMonth' となり、$value
-      は EmployeeType 型のデータオブジェクトとなります。
+     <para> 
+      出力は以下のようになります。
+     </para>     
+     <programlisting id="sdo.examples.doiter-output">
+<![CDATA[
+name: Jane Doe
+SN: E0003
+]]>
+     </programlisting>
+     <para> 
+      'manager' プロパティは表示されません。なぜなら設定されていないからです。
      </para>
     </example>
    </para>
-
+   
    <para>
     <example>
-     <title>多くの値をとりうるプロパティの繰り返し処理</title>
+     <title>多くの値をとりうるプロパティへの名前によるアクセス</title>
      <para>
-      多くの値をとりうるプロパティについても、foreach を使用して
-      繰り返し処理を行うことが可能です。以下の例では、company の
-      departments を順に処理します。
+      多くの値をとりうるデータオブジェクトのプロパティへのアクセスも、
+      オブジェクトのプロパティに対するアクセス構文でアクセスできます。
+      例えば部署の一覧を取得するにはこのようにします。
      </para>
-     <programlisting role="php" id="sdo.examples.mvpiter">
+     <programlisting role="php" id="sdo.examples.mvpname">
 <![CDATA[
 <?php
-  foreach ($company->departments as $department) {
-    // ...
-  }
+  $departments = $company->departments;
 ?>
 ]]>
      </programlisting>
-     <para>
-      繰り返しのたびに、<command>$department</command>
-      にはリスト内の次の部署が代入されます。
-     </para>
     </example>
    </para>
-
+   
    <para>
     <example>
      <title>多くの値をとりうる要素へのアクセス</title>
@@ -590,59 +515,55 @@ sdoxml:propertyType="company:EmployeeType"/> </xsd:complexType>
 
    <para>
     <example>
-     <title>入れ子になったプロパティへのアクセス</title>
+     <title>多くの値をとりうるプロパティの順次処理</title>
      <para>
-      データオブジェクトのインスタンスの構造をたどっていくことで、
-      入れ子になったプロパティへのアクセスが可能です。
-      以下の例では、最初の部署の名前を取得し、設定しています。
+      foreach を使用して、多くの値をとりうるプロパティを順に処理することができます。
+      会社の各部門を順に処理するにはこのようにします。
+     </para>
+     <programlisting role="php" id="sdo.examples.mvpiter">
+<![CDATA[
+<?php
+  foreach ($company->departments as $department) {
+    // ...
+  }
+?>
+]]>
+     </programlisting>
+     <para>
+      繰り返しのたびに、次の部署が変数
+      <command>$department</command> に代入されます。
+     </para>
+    </example>
+   </para>
+
+   <para>
+    <example>
+     <title>連結されたプロパティへのアクセス</title>
+     <para>
+      プロパティへの参照を、ひとつの行に連結することができます。
+      以下の例では、最初の部署の名前を設定し、取得しています。
      </para>
      <programlisting role="php" id="sdo.examples.nestedprop">
 <![CDATA[
 <?php
-  $dept_name = $company->departments[0]->name;
   $company->departments[0]->name = 'Emerging Technologies';
+  $dept_name = $company->departments[0]->name;
 ?>
 ]]>
      </programlisting>
-    </example>
-   </para>
-
-   <para>
-    <example>
-     <title>シンプルな XPath のサポート</title>
-     <para>
-      XPath 風の表記 (XPath を補強したサブセット)
-      を使用してプロパティにアクセスすることが
-      できます。一番シンプルな形式は、プロパティ名を取得するものです。
-      以下の例では、会社の名前を設定し、今月の従業員を取得しています。
-     </para>
-     <programlisting role="php" id="sdo.examples.simplexpath">
-<![CDATA[
-<?php
-  $company['name'] = 'UltraCorp';
-  $eotm = $company['employeeOfTheMonth'];
-?>
-]]>
-     </programlisting>
-    </example>
-   </para>
-
-   <para>
-    <example>
-     <title>シンプルな XPath のサポート</title>
-     <para>
-      データオブジェクトのインスタンスの構造をたどっていくには、
-      多次元の配列を使用します。以下の例では、最初の部署の名前を
-      取得および設定しています。
-     </para>
+     <para>同じことを連想配列構文で行うと、このようになります。</para>
      <programlisting role="php" id="sdo.examples.chainarray">
 <![CDATA[
 <?php
-  $dept_name = $company['departments'][0]['name'];
   $company['departments'][0]['name'] = 'Emerging Technologies';
+  $dept_name = $company['departments'][0]['name'];
 ?>
 ]]>
      </programlisting>
+     <para>
+      どちらの場合でも、dept_name の内容は 'Emerging Technologies'
+      となります。
+     </para>
     </example>
    </para>
 
@@ -650,22 +571,35 @@ sdoxml:propertyType="company:EmployeeType"/> </xsd:complexType>
     <example>
      <title>XPath によるナビゲーション</title>
      <para>
-      XPath 式を使用して、データオブジェクトのインスタンスの構造を
-      たどっていくことができます。複数の値をとりうるプロパティへの
-      アクセスには 2 とおりの方法がサポートされています。
-      最初の方法は、1 から始まる標準的な XPath の配列構文を使用する
-      ものです。もうひとつは、SDO で XPath を拡張した構文で、ゼロから
-      始まるインデックスを使用します。以下の例は、それぞれどちらも
-      最初の部署の 2 人目の従業員を取得しています。
+      連想配列のインデックスとして、XPath 風の式を使用することができます。
+      実際に使用できる式は、XPath の拡大サブセットです。
      </para>
-     <programlisting role="php" id="sdo.examples.xpathnav">
+     <para>
+      多くの値をとりうるプロパティの表す方法として、
+      2 通りの方法がサポートされています。
+      最初の方法は、1 から始まる標準的な XPath の配列構文を使用するものです。
+      もうひとつは、SDO で XPath を拡張した構文で、
+      ゼロから始まるインデックスを使用します。
+      標準的な構文は以下のようになります。
+     </para>
+     <programlisting role="php" id="sdo.examples.xpath1nav">
 <![CDATA[
 <?php
   $jane_doe = $company["departments[1]/employees[2]"];
+?>
+]]>
+     </programlisting>    
+     <para>そして SDO の拡張版 XPath 構文はこのようになります。</para> 
+     <programlisting role="php" id="sdo.examples.xpath0nav">
+<![CDATA[
+<?php
   $jane_doe = $company["departments.0/employees.1"];
 ?>
 ]]>
      </programlisting>
+     <para>
+      どちらの例でも、最初の部署の 2 番目の従業員を取得します。
+     </para>
     </example>
    </para>
 
@@ -678,10 +612,10 @@ sdoxml:propertyType="company:EmployeeType"/> </xsd:complexType>
       'Advanced Technologies' の manager を取得しています。
      </para>
      <programlisting role="php" id="sdo.examples.xpathquery">
-<![CDATA[
+      <![CDATA[
 <?php
  $ad_tech_mgr = 
-  $company["departments[name=\"Advanced Technologies\"]/employees[manager=\"true\"]"];
+  $company["departments[name='Advanced Technologies']/employees[manager=true]"];
 ?>
 ]]>
      </programlisting>
@@ -699,7 +633,7 @@ sdoxml:propertyType="company:EmployeeType"/> </xsd:complexType>
      <programlisting role="php" id="sdo.examples.create">
 <![CDATA[
 <?php
-  $ad_tech_dept = $company["departments[name=\"Advanced Technologies\"]"];
+  $ad_tech_dept = $company["departments[name='Advanced Technologies']"];
   $new_hire = $ad_tech_dept->createDataObject('employees');
   $new_hire->name = 'John Johnson';
   $new_hire->SN = 'E0005';
@@ -712,12 +646,45 @@ sdoxml:propertyType="company:EmployeeType"/> </xsd:complexType>
 
    <para>
     <example>
-     <title>参照されているデータオブジェクトの開放</title>
+     <title>プリミティブなプロパティの開放</title>
      <para>
       データオブジェクトに項目が登録されているかどうかを確かめたり
       項目を削除したりする際には、それぞれ <function>isset</function>
       および <function>unset</function> 関数が使用可能です。
      </para>
+     <para>
+      以下の例は、最初の部署の名前を消去します。
+     </para>
+     <programlisting role="php" id="sdo.examples.unsetprim">
+<![CDATA[ 
+<?php
+  unset($company->departments[0]->name);
+?>
+]]>
+     </programlisting>
+    </example>
+   </para>
+      
+   <para>
+    <example>
+     <title>データオブジェクトの開放</title>
+     <para>
+      unset は、ツリーからデータオブジェクトを削除する場合にも使用できます。
+      以下の例は、John Jones を会社から削除します。
+     </para>
+     <programlisting role="php" id="sdo.examples.unsetdo">
+<![CDATA[ 
+<?php
+  unset($company->departments[0]->employees[0]);
+?>
+]]>
+     </programlisting>
+    </example>
+   </para>
+   
+   <para>
+    <example>
+     <title>参照されているデータオブジェクトの開放</title>
      <para>
       以下の例では、会社から「今月の従業員」を削除します。
       もしこれらの間に包含関係があった場合、参照先の従業員も
@@ -738,6 +705,37 @@ sdoxml:propertyType="company:EmployeeType"/> </xsd:complexType>
      </programlisting>
     </example>
    </para>
+   
+   <para>
+    <example>
+     <title>プロパティのインデックスを使用したアクセス</title>
+     <para>
+      配列構文を使用して、プロパティのインデックス経由で
+      データオブジェクトのプロパティにアクセスすることができます。
+      プロパティのインデックスは、モデル (この場合は xml スキーマ)
+      内でそのプロパティの定義が現れる位置となります。
+      上のスキーマの例では、会社の名前が company の
+      2 番目の属性であることがわかります (SDO のインターフェイスは、
+      XML の要素と属性を区別しません)。以下の例では、
+      会社の名前を 'Acme' に設定します。これは
+      <link linkend="sdo.examples.propname">プロパティ名を使用したアクセス</link>
+      と同じ結果となります。
+     </para>
+     <programlisting role="php" id="sdo.examples.propindex">
+<![CDATA[
+<?php
+  $company[1] = 'Acme';
+?>
+]]>
+     </programlisting>
+     <para>
+      このようにインデックスを直接使用すると、後で破綻してしまう可能性があります。
+      通常はプロパティ名を使用する方式を推奨します。
+      しかし、時にはインデックスによるアクセスが必要になる場合もあるでしょう。
+     </para>
+    </example>
+   </para>
+
   </section>
 
   <section id="sdo.sample.sequence">
