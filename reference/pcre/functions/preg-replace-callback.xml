@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.8 $ -->
 <!-- splitted from ./ja/functions/pcre.xml, last change in rev 1.20 -->
-<!-- EN-Revision: 1.12 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 1.13 Maintainer: hirokawa Status: ready -->
 <!-- Credits: haruki -->
 <refentry id="function.preg-replace-callback">
  <refnamediv>
@@ -33,16 +34,16 @@
    <programlisting role='php'>
 <![CDATA[
 <?php
-  // this text was used in 2002
-  // we want to get this up to date for 2003
-  $text = "April fools day is 04/01/2002\n";  
-  $text.= "Last christmas was 12/24/2001\n";  
+  // このテキストは 2002 に使われていたものなのですが、
+  // これを 2003 年対応の日付に変更したいのです
+  $text = "エイプリルフールの日付は 04/01/2002 です\n";  
+  $text.= "この前のクリスマスの日付は 12/24/2001 でした\n";  
   
-  // the callback function
+  // コールバック関数
   function next_year($matches) {
-    // as usual: $matches[0] is the complete match
-    // $matches[1] the match for the first subpattern
-    // enclosed in '(...)' and so on
+    // 通常は、$matches[0] がマッチした全体を表します。
+    // $matches[1] は、マッチした中で、パターン内の最初の '(...)'
+    // にあてはまる部分を表します。それ以降も同様です。
     return $matches[1].($matches[2]+1);
   }
 
@@ -51,9 +52,9 @@
               "next_year",
               $text);
 
-  // result is:
-  // April fools day is 04/01/2003
-  // Last christmas was 12/24/2002
+  // 結果はこうなります。
+  // エイプリルフールの日付は 04/01/2003 です
+  // この前のクリスマスの日付は 12/24/2002 でした
 ?>
 ]]>
    </programlisting>
@@ -77,16 +78,16 @@
    <programlisting role='php'>
 <![CDATA[
 <?php
-/* a unix-style command line filter to convert uppercase
- * letters at the beginning of paragraphs to lowercase */
-$fp = fopen("php://stdin", "r") or die("can't read stdin");
+/* Unix 方式のコマンドラインフィルタです。
+ * 段落の冒頭の大文字を、小文字に変換します。*/
+$fp = fopen("php://stdin", "r") or die("標準入力から読み込めません");
 while (!feof($fp)) {
     $line = fgets($fp);
     $line = preg_replace_callback(
         '|<p>\s*\w|',
         create_function(
-            // single quotes are essential here,
-            // or alternative escape all $ as \$
+            // ここでは単一引用符の使用が不可欠です。
+            // そうでない場合は、$ をすべて \$ とエスケープします。
             '$matches',
             'return strtolower($matches[0]);'
         ),
@@ -95,6 +96,35 @@ while (!feof($fp)) {
     echo $line;
 }
 fclose($fp);
+?>
+]]>
+   </programlisting>
+  </example>
+  <example>
+   <title>
+    カプセル化された BB code を処理するための、
+    <function>preg_replace_callback</function> での再帰構造の使用
+   </title>
+   <programlisting role='php'>
+<![CDATA[
+<?php
+$input = "通常の位置 [indent] 字下げ [indent] もっと字下げ [/indent] 字下げ [/indent] 通常の位置"; 
+
+function parseTagsRecursive($input) 
+{
+    
+    $regex = '#\[indent]((?:[^[]|\[(?!/?indent])|(?R))+)\[/indent]#';
+
+    if (is_array($input)) {
+        $input = '<div style="margin-left: 10px">'.$input[1].'</div>';
+    }
+
+    return preg_replace_callback($regex, 'parseTagsRecursive', $input);
+}
+
+$output = parseTagsRecursive($input);
+
+echo $output;
 ?>
 ]]>
    </programlisting>
