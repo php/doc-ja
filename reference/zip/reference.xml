@@ -1,79 +1,163 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.7 $ -->
-<!-- EN-Revision: 1.8 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.8 $ -->
+<!-- EN-Revision: 1.12 Maintainer: hirokawa Status: ready -->
 <!-- Purpose: compression -->
-<!-- Membership: pecl -->
+<!-- Membership: bundled, pecl -->
 
- <reference id="ref.zip">
-  <title>Zipファイル関数 (読込のみ)</title>
-  <titleabbrev>Zip</titleabbrev>
+<reference id="ref.zip">
+ <title>Zip ファイル関数</title>
+ <titleabbrev>Zip</titleabbrev>
 
-  <partintro>
-   <section id="zip.intro">
-    &reftitle.intro;
+ <partintro>
+  <section id="zip.intro">
+   &reftitle.intro;
+   <para>
+    このモジュールにより、ZIP 圧縮されたアーカイブとその内部のファイルに対する
+    透過的な読み書きが可能となります。
+   </para>
+  </section>
+
+  <section id="zip.requirements">
+   &reftitle.required;
+   <section>
+    <title>PHP 4 の同梱版</title>
     <para>
-     このモジュールにより、ZIP 圧縮されたアーカイブとその内部のファイルを
-     透過的に読み込むことが可能となります。
+     最初のバージョンは PHP 4 に同梱されています。また、PECL
+     でバージョン 1.0 として公開されています。<ulink url="&url.pecl.package;zip">
+     &url.pecl.package;zip</ulink> を参照ください。
+     これは、Zip アーカイブの読み込みのみに対応しています。
     </para>
-   </section>
-
-   <section id="zip.requirements">
-    &reftitle.required;
     <para>
-     このモジュールは、Guido Draheim により作成されたライブラリ
-     <ulink url="&url.zziplib;">ZZIPlib</ulink> の関数を使用します。
+     このバージョンは、Guido Draheim による
+     <ulink url="&url.zziplib;">ZZIPlib</ulink>
+     ライブラリの関数を使用しています。
      ZZIPlib バージョン &gt;= 0.10.6 が必要です。
     </para>
+   </section>
+
+   <section>
+    <title>PECL 版および PHP 5.2 以降の版</title>
     <para>
-     PECL パッケージのバージョン 1.1.0 以降では、
-     外部パッケージを必要としなくなりました。また、書き込み
-     (作成および変更) モードが提供されるようになりました。
-     新しい機能はまだドキュメント化されていないので、
-     パッケージに含まれる例を参照ください。
-    </para>
-    <para>
-     ZZIPlib は ZIP の圧縮アルゴリズムの完全な実装で提供される関数の
-     サブセットであり、ZIP ファイルアーカイブの読込みのみができることに
-     注意してください。このライブラリで読み込まれる ZIP ファイルアーカイブを
-     作成するには、通常の ZIP ユーティリティが必要です。
+     最新のバージョンは PHP 5.2.0 以降に同梱されており、
+     PECL 版のバージョン 1.1.0 以降となっています。これは、
+     外部のライブラリを必要としません。PHP 5.1 以降で使用した場合には
+     Zip アーカイブの読み書きが可能で、PHP 4 で使用した場合には
+     読み込みのみが可能となります。
     </para>
    </section>
+  </section>
 
-   &reference.zip.configure;
+  &reference.zip.configure;
 
-   <section id="zip.configuration">
-    &reftitle.runtime;
-    &no.config;
-   </section>
+  <section id="zip.configuration">
+   &reftitle.runtime;
+   &no.config;
+  </section>
 
-   <section id="zip.resources">
-    &reftitle.resources;
-    &no.resource;
-   </section>
+  <section id="zip.resources">
+   &reftitle.resources;
+   <para>
+    Zip モジュールでは二種類のリソース型が使用されます。
+    まず最初が Zip アーカイブを表す Zip directory で、
+    もうひとつはアーカイブのエントリを表す Zip Entry です。
+   </para>
+  </section>
 
-   <section id="zip.constants">
-    &reftitle.constants;
-    &no.constants;
-   </section>
+  &reference.zip.constants;
 
-   <section id="zip.examples">
-    &reftitle.examples;
-    <para>
-     以下の例は、ZIP ファイルアーカイブをオープンし、そのアーカイブの中の
-     各ファイルを読み込んで、その内容を出力するものです。この例で使用されている
-     <filename>test2.php</filename> アーカイブは、ZZIPlib
-     ソース配布に含まれるテスト用のアーカイブの一つです。
-    </para>
-    <example>
-     <title>Zip の使用例</title>
-     <programlisting role="php">
+  <section id="zip.examples">
+   &reftitle.examples;
+   <example>
+    <title>Zip アーカイブの作成</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+$zip = new ZipArchive();
+$filename = "./test112.zip";
+
+if ($zip->open($filename, ZIPARCHIVE::CREATE)!==TRUE) {
+    exit("cannot open <$filename>\n");
+}
+
+$zip->addFromString("testfilephp.txt" . time(), "#1 This is a test string added as testfilephp.txt.\n");
+$zip->addFromString("testfilephp2.txt" . time(), "#2 This is a test string added as testfilephp2.txt.\n");
+$zip->addFile($thisdir . "/too.php","/testfromfile.php");
+echo "numfiles: " . $zip->numFiles . "\n";
+echo "status:" . $zip->status . "\n";
+$zip->close();
+?>
+]]>
+    </programlisting>
+   </example>
+   <example>
+    <title>アーカイブの詳細の出力および一覧表示</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$za = new ZipArchive();
+
+$za->open('test_with_comment.zip');
+print_r($za);
+var_dump($za);
+echo "numFiles: " . $za->numFiles . "\n";
+echo "status: " . $za->status  . "\n";
+echo "statusSys: " . $za->statusSys . "\n";
+echo "filename: " . $za->filename . "\n";
+echo "comment: " . $za->comment . "\n";
+
+for ($i=0; $i<$za->numFiles;$i++) {
+    echo "index: $i\n";
+    print_r($za->statIndex($i));
+}
+echo "numFile:" . $za->numFiles . "\n";
+?>
+]]>
+    </programlisting>
+   </example>
+   <example>
+    <title>Zip ストリームラッパーによる OpenOffice メタ情報の読み込み</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$reader = new XMLReader();
+
+$reader->open('zip://' . dirname(__FILE__) . '/test.odt#meta.xml');
+$odt_meta = array();
+while ($reader->read()) {
+    if ($reader->nodeType == XMLREADER::ELEMENT) {
+        $elm = $reader->name;
+    } else {
+        if ($reader->nodeType == XMLREADER::END_ELEMENT && $reader->name == 'office:meta') {
+            break;
+        }
+        if (!trim($reader->value)) {
+            continue;
+        }
+        $odt_meta[$elm] = $reader->value;
+    }
+}
+print_r($odt_meta);
+?>
+]]>
+    </programlisting>
+   </example>
+   <para>
+    この例は旧 API (PHP 4 用) を使用します。まず ZIP
+    ファイルアーカイブをオープンし、アーカイブ内の各ファイルを読み込み、
+    その内容を出力します。この例で使用するアーカイブ
+    <filename>test2.zip</filename> は、ZZIPlib
+    のソース配布物に含まれているテスト用アーカイブのひとつです。
+   </para>
+   <example>
+    <title>Zip の使用例</title>
+    <programlisting role="php">
 <![CDATA[
 <?php
 
 $zip = zip_open("/tmp/test2.zip");
 
 if ($zip) {
-
     while ($zip_entry = zip_read($zip)) {
         echo "Name:               " . zip_entry_name($zip_entry) . "\n";
         echo "Actual Filesize:    " . zip_entry_filesize($zip_entry) . "\n";
@@ -94,15 +178,14 @@ if ($zip) {
     zip_close($zip);
 
 }
-
 ?>
 ]]>
-     </programlisting>
-    </example>
-   </section>
-  </partintro>
+    </programlisting>
+   </example>
+  </section>
+ </partintro>
 
-&reference.zip.functions;
+ &reference.zip.functions;
 
  </reference>
 <!-- Keep this comment at the end of the file
@@ -122,4 +205,3 @@ sgml-local-catalogs:nil
 sgml-local-ecat-files:nil
 End:
 -->
-
