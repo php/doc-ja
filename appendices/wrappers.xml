@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.16 $ -->
-<!-- EN-Revision: 1.62 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.17 $ -->
+<!-- EN-Revision: 1.65 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi -->
  <appendix id="wrappers">
   <title>サポートされるプロトコル/ラッパー</title>
@@ -611,19 +611,16 @@ X-MyCustomHeader: Foo
   
   <section id="wrappers.php">
    <title>PHP 入出力ストリーム</title>
-   <simpara>
-    PHP 3.0.13 以降で、<filename>php://output</filename>。
-    および PHP 4.3.0 以降で <filename>php://input</filename>、
-    PHP 5.0.0 以降で <filename>php://filter</filename>
-   </simpara>
-   
+
    <itemizedlist>
     <listitem><simpara><filename>php://stdin</filename></simpara></listitem>
     <listitem><simpara><filename>php://stdout</filename></simpara></listitem>
     <listitem><simpara><filename>php://stderr</filename></simpara></listitem>
     <listitem><simpara><filename>php://output</filename></simpara></listitem>
     <listitem><simpara><filename>php://input</filename></simpara></listitem>
-    <listitem><simpara><filename>php://filter</filename></simpara></listitem>
+    <listitem><simpara><filename>php://filter</filename> (PHP 5.0.0 以降で使用可能)</simpara></listitem>
+    <listitem><simpara><filename>php://memory</filename> (PHP 5.1.0 以降で使用可能)</simpara></listitem>
+    <listitem><simpara><filename>php://temp</filename> (PHP 5.1.0 以降で使用可能)</simpara></listitem>
    </itemizedlist>
    
    <simpara>
@@ -736,6 +733,43 @@ file_put_contents("php://filter/write=string.rot13/resource=example.txt","Hello 
     </simpara>
    </listitem>
   </itemizedlist>
+
+  <simpara>
+   <filename>php://memory</filename> ラッパーは、データをメモリに保存します。
+   <filename>php://temp</filename> も同様ですが、メモリの制限
+   (デフォルトは 2 MB です) を超過した際にはテンポラリファイルを使用します。
+  </simpara>
+  <simpara>
+   <filename>php://temp</filename> ラッパーは、次の
+   'parameters' を 'path' の一部として受け付けます。
+  </simpara>
+  <itemizedlist>
+   <listitem>
+    <para>
+     <literal>/maxmemory:&lt;バイト数&gt;</literal>
+     (<emphasis>任意</emphasis>) 
+     このパラメータは、メモリの制限 (データをテンポラリファイルに移動する閾値)
+     のデフォルト値を変更します。
+     <informalexample>
+      <programlisting role="php">
+<![CDATA[
+<?php
+$fiveMBs = 5 * 1024 * 1024;
+$fp = fopen("php://temp/maxmemory:$fiveMBs", 'r+');
+
+fputs($fp, "hello\n");
+
+// 先ほど書き込んだデータを読み込みます。
+rewind($fp);
+echo stream_get_contents($fp);
+?>
+]]>
+      </programlisting>
+     </informalexample>
+    </para>
+   </listitem>
+  </itemizedlist>
+
   <para>
    <table>
     <title>
@@ -757,33 +791,45 @@ file_put_contents("php://filter/write=string.rot13/resource=example.txt","Hello 
       <row>
        <entry>読み込み許可</entry>
        <entry>
-        <literal>php://stdin</literal> および
-        <literal>php://input</literal> のみ。
+        <literal>php://stdin</literal>、
+        <literal>php://input</literal>、
+        <literal>php://memory</literal> および
+        <literal>php://temp</literal> のみ。
        </entry>
       </row>
       <row>
        <entry>書き込み許可</entry>
        <entry>
         <literal>php://stdout</literal>、
-        <literal>php://stderr</literal> および
-        <literal>php://output</literal> のみ。
+        <literal>php://stderr</literal>、
+        <literal>php://output</literal>、
+        <literal>php://memory</literal> および
+        <literal>php://temp</literal> のみ。
        </entry>
       </row>
       <row>
        <entry>追加許可</entry>
        <entry>
         <literal>php://stdout</literal>、
-        <literal>php://stderr</literal> および
-        <literal>php://output</literal> のみ（書き込みと同じ）。
+        <literal>php://stderr</literal>、
+        <literal>php://output</literal>、
+        <literal>php://memory</literal> および
+        <literal>php://temp</literal> のみ (書き込みと同じ)。
        </entry>
       </row>
       <row>
        <entry>同時読み書き許可</entry>
-       <entry>No. これらのラッパーは一方通行です。</entry>
+       <entry>
+        <literal>php://memory</literal> および
+        <literal>php://temp</literal> のみ。
+       </entry>
       </row>
       <row>
        <entry><function>stat</function> のサポート</entry>
-       <entry>No</entry>
+       <entry>
+        <literal>php://memory</literal> および
+        <literal>php://temp</literal> のみ。
+       </entry>
       </row>
       <row>
        <entry><function>unlink</function> のサポート</entry>
@@ -895,6 +941,100 @@ file_put_contents("php://filter/write=string.rot13/resource=example.txt","Hello 
    </table>
   </para>
  </section>
+
+ <section id="wrappers.data">
+  <title>データ (RFC 2397)</title>
+  <simpara>
+   <filename>data:</filename> (<ulink url="&url.rfc;2397">RFC
+   2397</ulink>) ストリームラッパーは、 PHP 5.2.0
+   以降で使用可能です。
+  </simpara>
+
+  <example>
+   <title>data:// の内容の表示</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+// "I love PHP" と表示します
+echo file_get_contents('data://text/plain;base64,SSBsb3ZlIFBIUAo=');
+?>
+]]>
+   </programlisting>
+  </example>
+
+  <example>
+   <title>media type の取得</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+$fp   = fopen('data://text/plain;base64,', 'r');
+$meta = stream_get_meta_data($fp);
+
+// "text/plain" と表示します
+echo $meta['mediatype'];
+?>
+]]>
+   </programlisting>
+  </example>
+
+
+  <para>
+   <table>
+    <title>ラッパーの概要</title>
+    <tgroup cols="2">
+     <thead>
+      <row>
+       <entry>属性</entry>
+       <entry>サポートの有無</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry><link linkend="ini.allow-url-fopen">allow_url_fopen</link> で制約される</entry>
+       <entry>No</entry>
+      </row>
+      <row>
+       <entry>読み込み許可</entry>
+       <entry>Yes</entry>
+      </row>
+      <row>
+       <entry>書き込み許可</entry>
+       <entry>No</entry>
+      </row>
+      <row>
+       <entry>追加許可</entry>
+       <entry>No</entry>
+      </row>
+      <row>
+       <entry>同時読み書き許可</entry>
+       <entry>No</entry>
+      </row>
+      <row>
+       <entry><function>stat</function> のサポート</entry>
+       <entry>No</entry>
+      </row>
+      <row>
+       <entry><function>unlink</function> のサポート</entry>
+       <entry>No</entry>
+      </row>
+      <row>
+       <entry><function>rename</function> のサポート</entry>
+       <entry>No</entry>
+      </row>
+      <row>
+       <entry><function>mkdir</function> のサポート</entry>
+       <entry>No</entry>
+      </row>
+      <row>
+       <entry><function>rmdir</function> のサポート</entry>
+       <entry>No</entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </table>
+  </para>
+ </section>
+
  <section id="wrappers.ssh2">
   <title>SSH2</title>
   <simpara>
