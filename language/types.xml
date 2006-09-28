@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.54 $ -->
-<!-- EN-Revision: 1.167 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.55 $ -->
+<!-- EN-Revision: 1.168 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi -->
  <chapter id="language.types">
   <title>型</title>
@@ -1793,7 +1793,33 @@ $error_descriptions[8] = "This is just an informal notice";
     <para>
      <type>object</type>を配列にする場合には、配列の要素として
      オブジェクトの属性 (メンバ変数) を持つ配列を得ることになります。
-     添字はメンバ変数名となります。
+     添字はメンバ変数名となりますが、いくつか注意すべき例外があります。
+     private 変数の場合、変数名の頭にクラス名がつきます。また、
+     protected 変数の場合は、変数名の頭に '*' がつきます。
+     このとき、頭に追加される値の前後に null バイトがついてきます。
+     その結果、予期せぬ振る舞いをすることがあります。
+      <informalexample>
+       <programlisting role="php">
+<![CDATA[
+<?php
+
+class A {
+	private $A; // これは '\0A\0A' となります
+}
+
+class B extends A {
+	private $A; // これは '\0B\0A' となります
+	public $AA; // これは 'AA' となります
+}
+
+var_dump((array) new B());
+?>
+]]>
+       </programlisting>
+      </informalexample>
+
+     上の例では 'AA' というキーがふたつあるように見えますが、
+     そのうちひとつは、実際は '\0A\0A' ということになります。
     </para>
     
     <para>
