@@ -1,20 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.5 $ -->
-<!-- EN-Revision: 1.6 Maintainer: takagi Status: ready -->
-<refentry id="function.Memcache-addServer">
+<!-- $Revision: 1.1 $ -->
+<!-- EN-Revision: 1.1 Maintainer: takagi Status: ready -->
+<refentry id="function.Memcache-setServerParams">
  <refnamediv>
-  <refname>Memcache::addServer</refname>
-  <refpurpose>コネクションプールに memcached サーバを追加する</refpurpose>
+  <refname>Memcache::setServerParams</refname>
+  <refpurpose>サーバのパラメータおよび状態を、実行時に変更する</refpurpose>
  </refnamediv>
  
  <refsect1 role="description">
   &reftitle.description;
   <methodsynopsis>
-   <type>bool</type><methodname>Memcache::addServer</methodname>
+   <type>bool</type><methodname>Memcache::setServerParams</methodname>
    <methodparam><type>string</type><parameter>host</parameter></methodparam>
    <methodparam choice="opt"><type>int</type><parameter>port</parameter></methodparam>
-   <methodparam choice="opt"><type>bool</type><parameter>persistent</parameter></methodparam>
-   <methodparam choice="opt"><type>int</type><parameter>weight</parameter></methodparam>
    <methodparam choice="opt"><type>int</type><parameter>timeout</parameter></methodparam>
    <methodparam choice="opt"><type>int</type><parameter>retry_interval</parameter></methodparam>
    <methodparam choice="opt"><type>bool</type><parameter>status</parameter></methodparam>
@@ -22,26 +20,14 @@
   </methodsynopsis>
   
   <para>
-   <function>Memcache::addServer</function> は、コネクションプールに
-   サーバを追加します。実際の接続は、最初に使用する際に確立されます。
-   <function>Memcache::addServer</function> を使用してオープンされた
-   接続は、スクリプトの実行終了時に自動的に閉じられます。
-   <function>Memcache::close</function> を使用して閉じることも可能です。
-   <function>memcache_add_server</function> 関数を使用することも可能です。
+   <function>Memcache::setServerParams</function> は、
+   サーバのパラメータを実行時に変更します。
+   <function>memcache_set_server_params</function> 関数を使用することも可能です。
   </para>
   
-  <para>
-   他のサーバが使用可能である場合、あらゆるメソッドのあらゆる段階について
-   ユーザが意識しないままにフェイルオーバー処理が行われます。
-   ソケットあるいは Memcaches サーバレベルで発生したあらゆるエラー
-   (ただし out-of-memory は除く) に対してフェイルオーバーが動作します。
-   既存のキーを追加しようとしたなどの通常のクライアントエラーの場合は、
-   フェイルオーバー処理は起動しません。
-  </para>
-
   <note>
    <para>
-    この関数は、Memcache バージョン 2.0.0 で追加されました。
+    この関数は、Memcache バージョン 2.1.0 で追加されました。
    </para>
   </note>
 
@@ -69,26 +55,6 @@
      </listitem>
     </varlistentry>
     <varlistentry>
-     <term><parameter>persistent</parameter></term>
-     <listitem>
-      <para>
-       持続的な接続を使用するかどうかを指定します。
-       デフォルトは &true; です。
-      </para>
-     </listitem>
-    </varlistentry>
-    <varlistentry>
-     <term><parameter>weight</parameter></term>
-     <listitem>
-      <para>
-       このサーバに対して割り当てる容器の数を指定します。これは、
-       このサーバが選択される可能性を左右します。選択される可能性は、
-       すべてのサーバの weight の合計に対するこのパラメータの割合で
-       決まります。
-      </para>
-     </listitem>
-    </varlistentry>
-    <varlistentry>
      <term><parameter>timeout</parameter></term>
      <listitem>
       <para>
@@ -109,15 +75,6 @@
        <function>dl</function> を使用してこの拡張モジュールが動的に
        読み込まれている場合は、このパラメータおよび
        <parameter>persistent</parameter> は何の効果も及ぼしません。
-      </para>
-      <para>
-       失敗した接続構造体は、個々にタイムアウト値を持っており、
-       タイムアウト時間が経過するまでは、バックエンドから新たな要求が来ても
-       その構造体はスキップされます。時間が経過すると、
-       その接続が無事再接続されるか、あるいはさらに
-       <parameter>retry_interval</parameter> 秒の間、接続失敗と記録されます。
-       典型的な効果は、ウェブサーバの各子プロセスがページを送り出す際に
-       <parameter>retry_interval</parameter> 秒ごとに接続を再試行することです。
       </para>
      </listitem>
     </varlistentry>
@@ -162,21 +119,29 @@
   &reftitle.examples;
   <para>
    <example>
-    <title><function>Memcache::addServer</function> の例</title>
+    <title><function>Memcache::setServerParams</function> の例</title>
     <programlisting role="php">
 <![CDATA[
 <?php
 
+function _callback_memcache_failure($host, $port) {
+	print "memcache '$host:$port' failed";
+}
+
 /* オブジェクト指向の API */
 
 $memcache = new Memcache;
-$memcache->addServer('memcache_host', 11211);
-$memcache->addServer('memcache_host2', 11211);
+
+// サーバをオフラインモードで追加します
+$memcache->addServer('memcache_host', 11211, false, 1, 1, -1, false);
+
+// サーバをオンラインに変更します
+$memcache->setServerParams('memcache_host', 11211, 1, 15, true, '_callback_memcache_failure');
 
 /* 手続き型の API */
 
 $memcache_obj = memcache_connect('memcache_host', 11211);
-memcache_add_server($memcache_obj, 'memcache_host2', 11211);
+memcache_set_server_params($memcache_obj, 'memcache_host', 11211, 1, 15, true, '_callback_memcache_failure');
 
 ?>
 ]]>
@@ -189,10 +154,7 @@ memcache_add_server($memcache_obj, 'memcache_host2', 11211);
   &reftitle.seealso;
   <para>
    <simplelist>
-    <member><function>Memcache::connect</function></member>
-    <member><function>Memcache::pconnect</function></member>
-    <member><function>Memcache::close</function></member>
-    <member><function>Memcache::setServerParams</function></member>
+    <member><function>Memcache::addServer</function></member>
     <member><function>Memcache::getServerStatus</function></member>
    </simplelist>
   </para>
