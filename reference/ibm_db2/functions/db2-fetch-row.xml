@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.1 $ -->
-<!-- EN-Revision: 1.5 Maintainer: takagi Status: ready -->
+<!-- $Revision: 1.2 $ -->
+<!-- EN-Revision: 1.6 Maintainer: takagi Status: ready -->
 <refentry id="function.db2-fetch-row">
  <refnamediv>
   <refname>db2_fetch_row</refname>
@@ -99,6 +99,54 @@ cat Pook
 gold fish Bubbles
 budgerigar Gizmo
 goat Rickety Ride
+]]>
+    </screen>
+   </example>
+   <example>
+    <title>i5/OS recommended alternatives to db2_fetch_row/db2_result</title>
+    <para>
+     i5/OS では、<function>db2_fetch_row</function>/<function>db2_result</function>
+     ではなく <function>db2_fetch_both</function>、
+     <function>db2_fetch_array</function> あるいは <function>db2_fetch_object</function>
+     を使用することを推奨します。一般に
+     <function>db2_fetch_row</function>/<function>db2_result</function> は、さまざまなカラム型で
+     <literal>EBCIDIC</literal> から <literal>ASCII</literal> への変換の際に問題が発生します。
+     <literal>DBCS</literal> アプリケーションではデータが切り捨てられてしまう可能性もあります。
+     また、パフォーマンス面でも <function>db2_fetch_both</function>、
+     <function>db2_fetch_array</function> および <function>db2_fetch_object</function>
+     は <function>db2_fetch_row</function>/<function>db2_result</function>
+     よりすぐれています。
+    </para>
+    <programlisting role="php">
+<![CDATA[
+<?php
+  $conn = db2_connect("","","");
+  $sql = 'SELECT SPECIFIC_SCHEMA, SPECIFIC_NAME, ROUTINE_SCHEMA, ROUTINE_NAME, ROUTINE_TYPE, ROUTINE_CREATED, ROUTINE_BODY, IN_PARMS, OUT_PARMS, INOUT_PARMS, PARAMETER_STYLE, EXTERNAL_NAME, EXTERNAL_LANGUAGE FROM QSYS2.SYSROUTINES FETCH FIRST 2 ROWS ONLY';
+  $stmt = db2_exec($conn, $sql, array('cursor' => DB2_SCROLLABLE));
+  while ($row = db2_fetch_both($stmt)){
+    echo "<br>db2_fetch_both {$row['SPECIFIC_NAME']} {$row['ROUTINE_CREATED']} {$row[5]}";
+  }
+  $stmt = db2_exec($conn, $sql, array('cursor' => DB2_SCROLLABLE));
+  while ($row = db2_fetch_array($stmt)){
+    echo "<br>db2_fetch_array {$row[1]}  {$row[5]}";
+  }
+  $stmt = db2_exec($conn, $sql, array('cursor' => DB2_SCROLLABLE));
+  while ($row = db2_fetch_object($stmt)){
+    echo "<br>db2_fetch_object {$row->SPECIFIC_NAME} {$row->ROUTINE_CREATED}";
+  }
+  db2_close($conn);
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+db2_fetch_both MATCH_ANIMAL 2006-08-25-17.10.23.775000 2006-08-25-17.10.23.775000
+db2_fetch_both MULTIRESULTS 2006-10-17-10.11.05.308000 2006-10-17-10.11.05.308000
+db2_fetch_array MATCH_ANIMAL 2006-08-25-17.10.23.775000
+db2_fetch_array MULTIRESULTS 2006-10-17-10.11.05.308000
+db2_fetch_object MATCH_ANIMAL 2006-08-25-17.10.23.775000
+db2_fetch_object MULTIRESULTS 2006-10-17-10.11.05.308000
 ]]>
     </screen>
    </example>

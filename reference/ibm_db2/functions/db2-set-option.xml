@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.1 $ -->
-<!-- EN-Revision: 1.3 Maintainer: takagi Status: ready -->
+<!-- $Revision: 1.2 $ -->
+<!-- EN-Revision: 1.4 Maintainer: takagi Status: ready -->
 <refentry id="function.db2-set-option">
   <refnamediv>
     <refname>db2_set_option</refname>
@@ -120,6 +120,27 @@
                   </listitem>
                 </varlistentry>
               </variablelist>
+            </para>
+            <para>
+             以下の新しい i5/OS オプションは、ibm_db2 のバージョン 1.5.1 以降で使用可能です。
+             注意: それ以前のバージョンの ibm_db2 は、これらの新しい i5 オプションをサポートしていません。
+              <variablelist>
+                <varlistentry>
+                  <term><parameter>i5_fetch_only</parameter></term>
+                  <listitem>
+                    <para>
+                     <literal>DB2_I5_FETCH_ON</literal> - 
+                     カーソルは読み込み専用となり、場所を指定しての更新や削除には使用できません。
+                     これは、<literal>SQL_ATTR_FOR_FETCH_ONLY</literal>
+                     が <literal>SQL_FALSE</literal> に設定されていない場合のデフォルト設定です。
+                    </para>
+                    <para>
+                     <literal>DB2_I5_FETCH_OFF</literal> -
+                     カーソルは、場所を指定しての更新や削除に使用できるようになります。
+                    </para>
+                  </listitem>
+                </varlistentry>
+               </variablelist>
             </para>
           </listitem>
         </varlistentry>
@@ -243,6 +264,20 @@
               <entry>db2_attr_case</entry>
               <entry><literal>DB2_CASE_NATURAL</literal></entry>
               <entry colname="col3">X</entry>
+              <entry colname="col4">X</entry>
+              <entry colname="col5">-</entry>
+            </row>
+            <row>
+              <entry>i5_fetch_only</entry>
+              <entry><literal>DB2_I5_FETCH_ON</literal></entry>
+              <entry colname="col3">-</entry>
+              <entry colname="col4">X</entry>
+              <entry colname="col5">-</entry>
+            </row>
+            <row>
+              <entry>i5_fetch_only</entry>
+              <entry><literal>DB2_I5_FETCH_OFF</literal></entry>
+              <entry colname="col3">-</entry>
               <entry colname="col4">X</entry>
               <entry colname="col5">-</entry>
             </row>
@@ -631,6 +666,34 @@ Array
     [bonus] => 500.00
     [comm] => 1904.00
 )]]></screen>
+      </example>
+      <example>
+        <title>i5/OS カーソルは読み込み専用</title>
+        <para>
+        </para>
+        <programlisting role="php">
+<![CDATA[
+<?php
+  $conn = db2_connect("", "", "", array("i5_lib"=>"nobody"));
+  $stmt = db2_prepare($conn, 'select * from names where first = ?');
+  $name = "first2";
+  db2_bind_param($stmt, 1, "name", DB2_PARAM_IN);
+  $options = array("i5_fetch_only"=>DB2_I5_FETCH_ON);
+  db2_set_option($stmt,$options,0);
+  if (db2_execute($stmt)) {
+    while ($row = db2_fetch_array($stmt)) {
+      echo "{$row[0]} {$row[1]}";
+    }
+  }
+?>
+]]>
+        </programlisting>
+        &example.outputs;
+        <screen>
+<![CDATA[
+first2 last2
+]]>
+        </screen>
       </example>
     </para>
   </refsect1>

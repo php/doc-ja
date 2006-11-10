@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.2 $ -->
-<!-- EN-Revision: 1.7 Maintainer: takagi Status: ready -->
+<!-- $Revision: 1.3 $ -->
+<!-- EN-Revision: 1.9 Maintainer: takagi Status: ready -->
 <refentry id="function.db2-connect">
  <refnamediv>
   <refname>db2_connect</refname>
@@ -163,6 +163,233 @@
         </varlistentry>
        </variablelist>
       </para>
+      <para>
+       以下の新しい i5/OS オプションは、ibm_db2 のバージョン 1.5.1 以降で使用可能です。
+       注意: それ以前のバージョンの ibm_db2 は、これらの新しい i5 オプションをサポートしていません。
+       <variablelist>
+        <varlistentry>
+         <term><parameter>i5_lib</parameter></term>
+         <listitem>
+          <para>
+           未解決のファイル参照を解決する際に使用するデフォルトのライブラリを指定します。
+           システムのネーミングモードを使用している接続の場合は、これは無効です。
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry>
+         <term><parameter>i5_naming</parameter></term>
+         <listitem>
+          <para>
+           <literal>DB2_I5_NAMING_ON</literal> は、DB2 UDB CLI iSeries 
+           のシステムネーミングモードを有効にします。ファイルの識別の際、
+           区切り文字としてスラッシュ (/) を使用します。
+           識別されないファイルの解決には、ジョブのライブラリ一覧を使用します。
+          </para>
+          <para>
+           <literal>DB2_I5_NAMING_OFF</literal> は、DB2 UDB CLI
+           のデフォルトのネーミングモード (SQL ネーミング) を無効にします。
+           ファイルの識別の際、区切り文字としてピリオド (.) を使用します。
+           識別されないファイルの解決には、
+           デフォルトのライブラリあるいは現在のユーザ ID を使用します。
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry>
+         <term><parameter>i5_commit</parameter></term>
+         <listitem>
+          <para>
+           <parameter>i5_commit</parameter> 属性は、
+           <function>db2_connect</function> の前に設定しなければなりません。
+           接続が確立された後にこの値が変更され、その接続がリモートデータソースに対するものだった場合は、
+           その接続ハンドルに対してもう一度 <function>db2_connect</function>
+           がコールされるまで変更は反映されません。
+          </para>
+          <para>
+           注意: php.ini の設定は <parameter>ibm_db2.i5_allow_commit</parameter>==0
+           あるいは <literal>DB2_I5_TXN_NO_COMMIT</literal> がデフォルトです。
+           しかし、その設定よりも <parameter>i5_commit</parameter>
+           オプションの内容のほうが優先されます。
+          </para>
+          <para>
+           <literal>DB2_I5_TXN_NO_COMMIT</literal> - コミットの管理を使用しません。
+          </para>
+          <para>
+           <literal>DB2_I5_TXN_READ_UNCOMMITTED</literal> - ダーティリード、
+           反復不能読み取り、ファントムリードが発生する可能性があります。
+          </para>
+          <para>
+           <literal>DB2_I5_TXN_READ_COMMITTED</literal> - ダーティリードは発生しません。
+           反復不能読み取り、ファントムリードが発生する可能性があります。
+          </para>
+          <para>
+           <literal>DB2_I5_TXN_REPEATABLE_READ</literal> - ダーティリード、
+           反復不能読み取りは発生しません。
+           ファントムリードが発生する可能性があります。
+          </para>
+          <para>
+           <literal>DB2_I5_TXN_SERIALIZABLE</literal> -
+           トランザクションの一貫性を保持します。
+           ダーティリード、反復不能読み取り、ファントムリードは発生しません。
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry>
+         <term><parameter>i5_query_optimize</parameter></term>
+         <listitem>
+          <para>
+            <literal>DB2_FIRST_IO</literal> 
+            すべてのクエリは、結果の一行目をできるだけ早く返すように最適化されます。
+            これが有効なのは、出力の制御をユーザが行う場合です。出力の制御とは、
+            たとえば、出力の最初のページを見てそこで処理を停止させるなどのことです。
+            OPTIMIZE FOR nnn ROWS 句を指定したクエリは、その指定が優先されます。
+          </para>
+          <para>
+           <literal>DB2_ALL_IO All</literal>
+           結果全体をできるだけ短時間で取得できるように最適化されます。
+           これは、結果をファイルや帳票に書き出す場合に有用なオプションです。
+           あるいは出力データを順次処理するインターフェイスなどにも有用です。
+           OPTIMIZE FOR nnn ROWS 句を指定したクエリは、その指定が優先されます。
+           これはデフォルトの設定です。
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry>
+         <term><parameter>i5_dbcs_alloc</parameter></term>
+         <listitem>
+          <para>
+           <literal>DB2_I5_DBCS_ALLOC_ON</literal> は、
+           DBCS トランザクションカラムサイズ用の DB2 6X アロケーションを有効にします。
+          </para>
+          <para>
+           <literal>DB2_I5_DBCS_ALLOC_OFF</literal> は、
+           DBCS トランザクションカラムサイズ用の DB2 6X アロケーションを無効にします。
+          </para>
+          <para>
+           注意: php.ini では <parameter>ibm_db2.i5_dbcs_alloc</parameter>==0 あるいは
+           <literal>DB2_I5_DBCS_ALLOC_OFF</literal> がデフォルト設定となっています。
+           しかし、<parameter>i5_dbcs_alloc</parameter> の値のほうが優先されます。
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry>
+         <term><parameter>i5_date_fmt</parameter></term>
+         <listitem>
+          <para>
+           <literal>SQL_FMT_ISO</literal> - 国際標準化機構 (ISO) の日付書式
+           yyyy-mm-dd を使用します。デフォルトです。
+          </para>
+          <para>
+           <literal>DB2_I5_FMT_USA</literal> - 合衆国の日付書式 mm/dd/yyyy を使用します。
+          </para>
+          <para>
+           <literal>DB2_I5_FMT_EUR</literal> - 欧州の日付書式 format dd.mm.yyyy を使用します。
+          </para>
+          <para>
+           <literal>DB2_I5_FMT_JIS</literal> - 日本工業規格 (JIS) の日付書式 yyyy-mm-dd を使用します。
+          </para>
+          <para>
+           <literal>DB2_I5_FMT_MDY</literal> - 日付書式 mm/dd/yyyy を使用します。
+          </para>
+          <para>
+           <literal>DB2_I5_FMT_DMY</literal> - 日付書式 dd/mm/yyyy を使用します。
+          </para>
+          <para>
+           <literal>DB2_I5_FMT_YMD</literal> - 日付書式 yy/mm/dd を使用します。
+          </para>
+          <para>
+           <literal>DB2_I5_FMT_JUL</literal> - ユリウス日 yy/ddd を使用します。
+          </para>
+          <para>
+           <literal>DB2_I5_FMT_JOB</literal> - そのジョブのデフォルトを使用します。
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry>
+         <term><parameter>i5_date_sep</parameter></term>
+         <listitem>
+          <para>
+           <literal>DB2_I5_SEP_SLASH</literal> - スラッシュ ( / ) を日付の区切り文字として使用します。
+           デフォルトです。
+          </para>
+          <para>
+           <literal>DB2_I5_SEP_DASH</literal> - ダッシュ ( - ) を日付の区切り文字として使用します。
+          </para>
+          <para>
+           <literal>DB2_I5_SEP_PERIOD</literal> - ピリオド ( . ) を日付の区切り文字として使用します。
+          </para>
+          <para>
+           <literal>DB2_I5_SEP_COMMA</literal> - カンマ ( , ) を日付の区切り文字として使用します。
+          </para>
+          <para>
+           <literal>DB2_I5_SEP_BLANK</literal> - ブランクを日付の区切り文字として使用します。
+          </para>
+          <para>
+           <literal>DB2_I5_SEP_JOB</literal> - そのジョブのデフォルトを使用します。
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry>
+         <term><parameter>i5_time_fmt</parameter></term>
+         <listitem>
+          <para>
+           <literal>DB2_I5_FMT_ISO</literal> - 国際標準化機構 (ISO) の時刻書式
+           hh.mm.ss を使用します。デフォルトです。
+          </para>
+          <para>
+           <literal>DB2_I5_FMT_USA</literal> - 合衆国の時刻書式
+           hh:mmxx を使用します。xx には AM あるいは PM が入ります。
+          </para>
+          <para>
+           <literal>DB2_I5_FMT_EUR</literal> - 欧州の時刻書式 hh.mm.ss 
+           を使用します。
+          </para>
+          <para>
+           <literal>DB2_I5_FMT_JIS</literal> - 日本工業規格 (JIS) の時刻書式
+           hh:mm:ss を使用します。
+          </para>
+          <para>
+           <literal>DB2_I5_FMT_HMS</literal> - hh:mm:ss を使用します。
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry>
+         <term><parameter>i5_time_sep</parameter></term>
+         <listitem>
+          <para>
+           <literal>DB2_I5_SEP_COLON</literal> - コロン ( : ) を時刻の区切り文字として使用します。
+           デフォルトです。
+          </para>
+          <para>
+           <literal>DB2_I5_SEP_PERIOD</literal> - ピリオド ( . ) を時刻の区切り文字として使用します。
+          </para>
+          <para>
+           <literal>DB2_I5_SEP_COMMA</literal> - カンマ ( , ) を時刻の区切り文字として使用します。
+          </para>
+          <para>
+           <literal>DB2_I5_SEP_BLANK</literal> - ブランクを時刻の区切り文字として使用します。
+          </para>
+          <para>
+           <literal>DB2_I5_SEP_JOB</literal> - そのジョブのデフォルトを使用します。
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry>
+         <term><parameter>i5_decimal_sep</parameter></term>
+         <listitem>
+          <para>
+           <literal>DB2_I5_SEP_PERIOD</literal> - ピリオド ( . ) を小数点として使用します。
+           デフォルトです。
+          </para>
+          <para>
+           <literal>DB2_I5_SEP_COMMA</literal> - カンマ ( , ) を小数点として使用します。
+          </para>
+          <para>
+           <literal>DB2_I5_SEP_JOB</literal> - そのジョブのデフォルトを使用します。
+          </para>
+         </listitem>
+        </varlistentry>
+       </variablelist>
+      </para>
      </listitem>
     </varlistentry>
    </variablelist>
@@ -288,7 +515,37 @@ else {
 ]]>
     </screen>
    </example>
-
+   <example>
+    <title>i5/OS best performance</title>
+    <para>
+     i5/OS で最高のパフォーマンスを引き出すためには、ibm_db2 1.5.1
+     を使用した PHP アプリケーションで
+     <function>db2_connect</function>
+     にデフォルトのホスト、ユーザ ID およびパスワードを使用します。
+    </para>
+    <programlisting role="php">
+<![CDATA[
+<?php
+  $library = "ADC";
+  $i5 = db2_connect("", "", "", array("i5_lib"=>"qsys2"));
+  $result = db2_exec($i5, 
+       "select * from systables where table_schema = '$library'");
+  while ($row = db2_fetch_both($result)) {               
+     echo $row['TABLE_NAME']."</br>";                     
+  }                                                      
+  db2_close($i5);
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+ANIMALS
+NAMES
+PICTURES
+]]>
+    </screen>
+   </example>
   </para>
  </refsect1>
 
