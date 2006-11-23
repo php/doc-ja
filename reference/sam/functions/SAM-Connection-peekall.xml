@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.2 $ -->
-<!-- EN-Revision: 1.2 Maintainer: takagi Status: ready -->
-<refentry id='function.SAM-Connection-receive'>
+<!-- $Revision: 1.1 $ -->
+<!-- EN-Revision: 1.1 Maintainer: takagi Status: ready -->
+<refentry id='function.SAM-Connection-peekAll'>
  <refnamediv>
-  <refname>SAMConnection::receive()</refname>
+  <refname>SAMConnection::peekAll()</refname>
   <refpurpose>
-   メッセージをキューあるいは購読から取得する
+   ひとつあるいは複数のメッセージをキューから読み込み、それをキューに残したままにする
   </refpurpose>
  </refnamediv>
 
@@ -14,7 +14,7 @@
   <classsynopsis>
    <ooclass><classname>SAMConnection</classname></ooclass>
    <methodsynopsis>
-    <type>SAMMessage</type><methodname>receive</methodname>
+    <type>array</type><methodname>peekAll</methodname>
       <methodparam><type>string</type><parameter>target</parameter></methodparam>
       <methodparam choice='opt'><type>array</type><parameter>properties</parameter></methodparam>
    </methodsynopsis>
@@ -37,7 +37,7 @@
      <term><parameter>properties</parameter></term>
      <listitem>
       <para>
-       オプションの連想配列で、受信操作を制御するパラメータを指定します。
+       オプションの連想配列で、読み込み操作を制御するパラメータを指定します。
        <informaltable>
          <tgroup cols="2">
            <thead>
@@ -50,26 +50,14 @@
              <row>
                <entry>SAM_CORRELID</entry>
                <entry>
-                メッセージの相関 ID 文字列にもとづいて、
-                受信するメッセージを選択するために使用します。
+                これは、取得するメッセージの相関 ID 文字列です。
+                典型的な例は、"send" リクエストが返す相関 ID 文字列となります。
                </entry>
              </row>
              <row>
                <entry>SAM_MESSAGEID</entry>
-               <entry>
-                メッセージのメッセージ ID 文字列にもとづいて、
-                受信するメッセージを選択するために使用します。
-               </entry>
+               <entry>これは、取得するメッセージのメッセージ ID 文字列です。</entry>
              </row>             
-             <row>
-               <entry>SAM_WAIT</entry>
-               <entry>
-                タイムアウトをミリ秒で指定します。この時間までメッセージの受信を待ち続け、
-                キューやトピックにメッセージがなかった場合に失敗とします。デフォルト値は 0
-                で、永遠に待ち続けます。この使用には注意が必要です。
-                メッセージが存在しない場合、PHP スクリプト自体が期限切れになるまで実行し続けます。
-               </entry>
-             </row>
            </tbody>
          </tgroup>
        </informaltable>
@@ -92,16 +80,20 @@
   &reftitle.examples;
   <para>
    <example>
-    <title>キューからのメッセージの取得</title>
+    <title>キューからすべてのメッセージを取得し、そのままメッセージをキューに残す</title>
     <programlisting role="php">
 <![CDATA[
 <?php
-$msg = $conn->receive('queue://receive/test');
+   $msgArray = $conn->peekAll('queue://receive/test');
+   if ($msgArray) {
 
-if (!$msg) {
-  // 受信に失敗しました!
-  echo "Receive failed ($conn->errno) $conn->error";
-}
+      foreach ( $msgArray as $key => $msg) {
+            echo "Message $key: body = $msg->body\n";
+         }
+      }
+   else
+      echo "PeekAll failed ($conn->errno) $conn->error";
+   }
 ?>
 ]]>
     </programlisting>
@@ -109,17 +101,21 @@ if (!$msg) {
   </para>
   <para>
    <example>
-    <title>オプションを指定して、キューからのメッセージの取得</title>
-    <para>
-      この例では SAM_SELECT オプションを使用して、
-      受信するメッセージを表すためのセレクタ文字列を指定します。
-      また、タイムアウトを 10 秒に指定します。
-    </para>
+    <title>相関 ID にマッチするメッセージをキューから取得する</title>
     <programlisting role="php">
 <![CDATA[
 <?php
 
-$msg = $conn->receive('queue://receive/test', array(SAM_SELECT => $token, SAM_WAIT => 10000));
+   $msgArray = $conn->peekAll('queue://receive/test', array(SAM_CORRELID => $correlId ));
+   if ($msgArray) {
+
+      foreach ( $msgArray as $key => $msg) {
+            echo "Message $key: body = $msg->body\n";
+         }
+      }
+   else
+      echo "PeekAll failed ($conn->errno) $conn->error";
+   }
 
 ?>
 ]]>
