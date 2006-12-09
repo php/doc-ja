@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.2 $ -->
-<!-- EN-Revision: 1.2 Maintainer: takagi Status: ready -->
+<!-- $Revision: 1.3 $ -->
+<!-- EN-Revision: 1.3 Maintainer: takagi Status: ready -->
  <reference id="ref.sam">
   <title>SAM - Simple Asynchronous Messaging: 単純な非同期メッセージング</title>
   <titleabbrev>SAM</titleabbrev>
@@ -369,7 +369,117 @@ mt.exe -manifest php_sam.dll.manifest -outputresource:php_sam.dll;2
       </example>
      </para>
     </section>  <!-- id=sam.operations -->
+    <section id='sam.pubsub'>
+     <title>配信/購読およびトピックの購読</title>
+     <para>
+     SAM では、メッセージをキューに送信するか、あるいは WebSphere MQ および WPM
+     ではトピックに配信/購読することができます。
+     トピックを SAM に指定するには、場所を指定する際に
+     'queue://AQUEUE' ではなく 'topic://fred' 形式を使用します。
+     配信/購読 機能を使用するには、正しいブローカ名を CAMConnect の
+     "connect" コール時に指定し、対象のトピックを SAMConnect の "send"
+     および "receive" コール時に指定する必要があります。
+     それ以外については、PHP のインターフェイスは point to point モデルと同じです。
+     </para>
+     <para>
+     デフォルトでは、SAM は永続的でない購読を作成して配信/購読を行います。
+     つまり、メッセージをトピックに配信しているときにクライアントアプリケーションがアクティブでなくなると、
+     その後アプリケーションが再開しても受信処理は行われないということです。
+     WPM あるいは WebSphere MQ の配信/購読 を使用している場合は、
+     SAM でトピックへの永続的な購読を作成することができます。
+     こうすると、データの配信時にクライアントがアクティブでなかったとしても、
+     アプリケーションでデータを受信することができるようになります。
+     </para>
+     <para>
+     永続的な購読を指定するには SAMConnect の "subscribe" コールを使用します。
+     このメソッドは、対象となるトピックを入力パラメータとして受け取り、
+     購読 ID を返します。この ID を使用して、"receive" コールを行います。
+     購読が不要になった場合は、SAMConnection の "unsubscribe"
+     メソッドを使用して購読を削除します。
+     </para>
+     <para>
+      <example>
+       <title>トピックに対する永続的な購読の作成</title>
+       <programlisting role="php">
+        <![CDATA[
+<?php
 
+      $subName = $conn->subscribe('topic://A');
+
+      if (!$subName) {
+         echo "購読に失敗しました";
+      } else {
+         # 購読に成功しました
+         ...
+      }
+?>
+        ]]>
+       </programlisting>
+      </example>
+     </para>
+     <para>
+      <example>
+       <title>WebSphere Platform Messaging (WPM) サーバを使用したトピックの購読</title>
+       <programlisting role="php">
+        <![CDATA[
+<?php
+   $conn = new SAMConnection();
+   // 注意: WPM での配信/購読では、永続的な購読を保持するメッセージングエンジン
+   //      (SAM_WPM_DUR_SUB_HOME) を接続の際に指定する必要があります
+   $conn->connect(SAM_WMQ, array(SAM_ENDPOINTS => 'localhost:7278:BootstrapBasicMessaging',
+                                 SAM_BUS => 'Bus1',
+                                 SAM_TARGETCHAIN => 'InboundBasicMessaging'
+                                 SAM_WPM_DUR_SUB_HOME => 'MyMachineNode01.server1-Bus1'));
+
+   $subName = $conn->subscribe('topic://A');
+
+   if (!$subName) {
+      echo "購読に失敗しました";
+   } else {
+      # 購読に成功しました
+      ...
+   }
+?>
+        ]]>
+       </programlisting>
+      </example>
+     </para>
+     <para>
+      <example>
+       <title>永続的な購読による、配信されたデータの受信</title>
+       <programlisting role="php">
+        <![CDATA[
+<?php
+
+      $msg = $conn->receive($subName);
+      if ($msg) {
+         echo "メッセージの受信に成功しました";
+      } else {
+         echo "受信に失敗しました";
+      }
+
+?>
+        ]]>
+       </programlisting>
+      </example>
+     </para>
+     <para>
+      <example>
+       <title>トピックへの永続的な購読の削除</title>
+       <programlisting role="php">
+        <![CDATA[
+<?php
+
+      if (!$conn->unsubscribe($subName)) {
+         echo "購読解除に失敗しました";
+      }
+
+?>
+        ]]>
+       </programlisting>
+      </example>
+     </para>
+    </section>  <!-- id=sam.pubsub -->
     <section id='sam.errors'>
      <title>エラー処理</title>
      <para>
