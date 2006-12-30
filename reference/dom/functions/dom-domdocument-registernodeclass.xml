@@ -1,21 +1,111 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.1 $ -->
-<!-- EN-Revision: 1.1 Maintainer: takagi Status: ready -->
+<!-- $Revision: 1.2 $ -->
+<!-- EN-Revision: 1.2 Maintainer: takagi Status: ready -->
 <refentry id="function.dom-domdocument-registernodeclass">
  <refnamediv>
-  <refname>DOMDocument::registerNodeClass</refname>
+  <refname>DOMDocument->registerNodeClass()</refname>
   <refpurpose>基底ノード型を作成する際に使用する拡張クラスを登録する</refpurpose>
  </refnamediv>
  <refsect1 role="description">
   &reftitle.description;
-  <methodsynopsis>
-   <type>bool</type><methodname>DOMDocument::registerNodeClass</methodname>
-   <methodparam><type>string</type><parameter>baseclass</parameter></methodparam>
-   <methodparam><type>string</type><parameter>extendedclass</parameter></methodparam>
-  </methodsynopsis>
+  <classsynopsis>
+   <ooclass><classname>DOMDocument</classname></ooclass>
+   <methodsynopsis>
+    <type>bool</type><methodname>registerNodeClass</methodname>
+    <methodparam><type>string</type><parameter>baseclass</parameter></methodparam>
+    <methodparam><type>string</type><parameter>extendedclass</parameter></methodparam>
+   </methodsynopsis>
+  </classsynopsis>
 
-  &warn.undocumented.func;
+  <para>
+   このメソッドにより、独自に拡張した DOM クラスを登録することができます。
+   これを、後で PHP DOM 拡張モジュールで使用します。
+  </para>
+  <para>
+   このメソッドは、DOM の標準にはないものです。
+  </para>
+ </refsect1>
 
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <para>
+   <variablelist>
+    <varlistentry>
+     <term><parameter>baseclass</parameter></term>
+     <listitem>
+      <para>
+       拡張したい DOM クラス。クラス名の一覧は、この章の導入部にあります。
+      </para>
+      <para>
+       もちろん、DOMDocument を拡張したクラスを登録することはできません。
+       しかし、拡張したクラスのインスタンスを作成することで、常にドキュメントを開始できます。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>extendedclass</parameter></term>
+     <listitem>
+      <para>
+       拡張したクラスの名前。&null; を渡した場合は、
+       それまでに <parameter>baseclass</parameter>
+       を拡張して作成したすべてのクラスが削除されます。
+      </para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
+  </para>
+ </refsect1>
+
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <para>
+   &return.success;
+  </para>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title>新しいメソッドを DOMElement に追加し、コードを書きやすくする</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+class myElement extends DOMElement {
+   function appendElement($name) { 
+      return $this->appendChild(new myElement($name));
+   }
+}
+
+class myDocument extends DOMDocument {
+   function setRoot($name) { 
+      return $this->appendChild(new myElement($name));
+   }
+}
+
+$doc = new myDocument();
+$doc->registerNodeClass('DOMElement', 'myElement');
+
+// これ以降、他の要素への要素の追加が一回のメソッドコールでできるようになります!
+$root = $doc->setRoot('root');
+$child = $root->appendElement('child');
+$child->setAttribute('foo', 'bar');
+
+echo $doc->saveXML();
+
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen role="xml">
+<![CDATA[
+<?xml version="1.0"?>
+<root><child foo="bar"/></root>
+]]>
+    </screen>
+   </example>
+  </para>
  </refsect1>
 
 </refentry>
