@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.10 $ -->
-<!-- EN-Revision: 1.22 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.11 $ -->
+<!-- EN-Revision: 1.23 Maintainer: hirokawa Status: ready -->
 <!-- Purpose: remote.other -->
 <!-- Membership: bundled -->
 
@@ -128,21 +128,21 @@ ob_implicit_flush();
 $address = '192.168.1.53';
 $port = 10000;
 
-if (($sock = socket_create(AF_INET, SOCK_STREAM, 0)) < 0) {
-    echo "socket_create() failed: reason: " . socket_strerror ($sock) . "\n";
+if (($sock = socket_create(AF_INET, SOCK_STREAM, SOL_TCP)) === false) {
+    echo "socket_create() failed: reason: " . socket_strerror(socket_last_error()) . "\n";
 }
 
-if (($ret = socket_bind($sock, $address, $port)) < 0) {
-    echo "socket_bind() failed: reason: " . socket_strerror ($ret) . "\n";
+if (socket_bind($sock, $address, $port) === false) {
+    echo "socket_bind() failed: reason: " . socket_strerror(socket_last_error($sock)) . "\n";
 }
 
-if (($ret = socket_listen($sock, 5)) < 0) {
-    echo "socket_listen() failed: reason: " . socket_strerror($ret) . "\n";
+if (socket_listen($sock, 5) === false) {
+    echo "socket_listen() failed: reason: " . socket_strerror(socket_last_error($sock)) . "\n";
 }
 
 do {
-    if (($msgsock = socket_accept($sock)) < 0) {
-        echo "socket_accept() failed: reason: " . socket_strerror($msgsock) . "\n";
+    if (($msgsock = socket_accept($sock)) === false {
+        echo "socket_accept() failed: reason: " . socket_strerror(socket_last_error($sock)) . "\n";
         break;
     }
     /* Send instructions. */
@@ -151,8 +151,8 @@ do {
     socket_write($msgsock, $msg, strlen($msg));
 
     do {
-        if (FALSE === ($buf = socket_read($msgsock, 2048, PHP_NORMAL_READ))) {
-            echo "socket_read() failed: reason: " . socket_strerror($ret) . "\n";
+        if (false === ($buf = socket_read($msgsock, 2048, PHP_NORMAL_READ))) {
+            echo "socket_read() failed: reason: " . socket_strerror(socket_last_error($msgsock)) . "\n";
             break 2;
         }
         if (!$buf = trim($buf)) {
@@ -166,7 +166,7 @@ do {
             break 2;
         }
         $talkback = "PHP: You said '$buf'.\n";
-        socket_write($msgsock, $talkback, strlen ($talkback));
+        socket_write($msgsock, $talkback, strlen($talkback));
         echo "$buf\n";
     } while (true);
     socket_close($msgsock);
@@ -199,28 +199,28 @@ $service_port = getservbyname('www', 'tcp');
 $address = gethostbyname('www.example.com');
 
 /* Create a TCP/IP socket. */
-$socket = socket_create(AF_INET, SOCK_STREAM, 0);
-if ($socket < 0) {
-    echo "socket_create() failed: reason: " . socket_strerror($socket) . "\n";
+$socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
+if ($socket === false) {
+    echo "socket_create() failed: reason: " . socket_strerror(socket_last_error()) . "\n";
 } else {
     echo "OK.\n";
 }
 
 echo "Attempting to connect to '$address' on port '$service_port'...";
 $result = socket_connect($socket, $address, $service_port);
-if ($result < 0) {
-    echo "socket_connect() failed.\nReason: ($result) " . socket_strerror($result) . "\n";
+if ($result === false) {
+    echo "socket_connect() failed.\nReason: ($result) " . socket_strerror(socket_last_error($socket)) . "\n";
 } else {
     echo "OK.\n";
 }
 
-$in = "HEAD / HTTP/1.0\r\n";
+$in = "HEAD / HTTP/1.1\r\n";
 $in .= "Host: www.example.com\r\n";
 $in .= "Connection: Close\r\n\r\n";
 $out = '';
 
 echo "Sending HTTP HEAD request...";
-socket_write($socket, $in, strlen ($in));
+socket_write($socket, $in, strlen($in));
 echo "OK.\n";
 
 echo "Reading response:\n\n";
