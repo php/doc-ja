@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.1 $ -->
+<!-- EN-Revision: 1.1 Maintainer: takagi Status: ready -->
+<section id="phar.using.basics">
+ <title>Phar アーカイブの使用法: 導入</title>
+ <para>
+  Phar アーカイブは Java の JAR アーカイブと似た概念のものですが、
+  PHP アプリケーションで使用する際に必要な機能をより柔軟に使用できるよう改良しています。
+  Phar アーカイブを使用すると、PHP アプリケーションやライブラリを
+  ひとつのファイルにまとめて配布できるようになります。
+  Java における JAR アーカイブの実装とは異なり、
+  PHP の Phar アーカイブを処理したり実行したりするには外部のツールは不要です。
+  Phar アーカイブ形式のアプリケーションは、その他の PHP
+  アプリケーションとまったく同様に扱えます。
+ </para>
+ <screen>
+  <![CDATA[
+php coolapplication.phar
+  ]]>
+ </screen>
+ <para>
+  Phar アーカイブ形式のライブラリを使用する方法も、
+  その他の通常の PHP ライブラリとまったく同じです。
+ </para>
+ <programlisting role="php">
+  <![CDATA[
+<?php
+include 'coollibrary.phar';
+?>
+  ]]>
+ </programlisting>
+ <para>
+  Phar アーカイブを非常に便利なものとしている機能が
+  <literal>phar</literal> ストリームラッパーです。
+  詳細については <link linkend="phar.using.stream">こちら</link>
+  で説明します。このストリームラッパーを使用すると、
+  phar 内の個々のファイルに対して、
+  まるで通常のファイルシステム上にあるのと同じような感覚でアクセスできます。
+  <literal>phar</literal> ストリームラッパーは、
+  ファイルに対する読み書きや、ディレクトリに対する
+  <function>opendir</function> をすべてサポートしています。
+ </para>
+ <programlisting role="php">
+  <![CDATA[
+<?php
+include 'phar://coollibrary.phar/internal/file.php';
+header('Content-type: image/jpeg');
+// phar にアクセスするには、フルパスあるいはエイリアスを使用します
+echo file_get_contents('phar:///fullpath/to/coollibrary.phar/images/wow.jpg');
+?>
+  ]]>
+ </programlisting>
+ <para>
+  Phar 拡張モジュールで提供されているもうひとつの機能が
+  <classname>Phar</classname> クラスです。
+  これにより、Phar アーカイブ内のファイルに対して
+  まるでそれが連想配列であるかのようにアクセスできるようになります。
+  またその他の機能も用意されています。Phar クラスについての説明は
+  <link linkend="phar.using.object">こちら</link> をご覧ください。
+ </para>
+ <programlisting role="php">
+  <![CDATA[
+<?php
+try {
+    // 既存の phar をオープンします
+    $p = new Phar('coollibrary.phar');
+    foreach ($p as $file) {
+        // $file は PharFileInfo クラスで、これは SplFileInfo を継承しています
+        echo $file->getFileName() . "\n";
+        echo $file . "\n"; // 内容を表示します
+    }
+    if (isset($p['internal/file.php'])) {
+        var_dump($p['internal/file.php']->getMetaData());
+    }
+
+    // 新しい phar の作成 - php.ini で phar.readonly を 0 にしておく必要があります。
+    // phar.readonly は、セキュリティ上の理由によってデフォルトで有効になっています。
+    // 実際の運用サーバでは、決して Phar を作成する必要はないはずで、
+    // 単に実行できるだけでよいはずです。
+    if (Phar::canWrite()) {
+        $p = new Phar(dirname(__FILE__) . '/newphar.phar', 0, 'newphar.phar');
+        // トランザクションを作成します - commit() がコールされるまで、ディスクには何も書き込まれません
+        $p->begin();
+        // 新しいファイルを追加し、その内容を設定します
+        $p['file1.txt'] = 'Information';
+        $fp = fopen('hugefile.dat', 'rb');
+        // ストリームからコピーします
+        $p['data/hugefile.dat'] = $fp;
+        if (Phar::canCompress()) {
+            $p['data/hugefile.dat']->setCompressedGZ();
+        }
+        $p['images/wow.jpg'] = file_get_contents('images/wow.jpg');
+        // ファイル固有のメタデータとして、任意のデータを保存できます
+        $p['images/wow.jpg']->setMetaData(array('mime-type' => 'image/jpeg'));
+        $p['index.php'] = file_get_contents('index.php');
+        $p->setMetaData(array('bootstrap' => 'index.php'));
+        // Phar を保存し、ローダースタブを設定します
+        $p->commit('<?php
+$p = new Phar(__FILE__);
+$m = $p->getMetaData();
+require "phar://" . __FILE__ . "/" . $m["bootstrap"];
+__HALT_COMPILER();');
+    }
+} catch (BadMethodCallException $e) {
+    echo 'Phar をオープンできません: ', $e;
+}
+?>
+  ]]>
+ </programlisting>
+</section>
+<section id="phar.using.stream">
+ <title>Phar アーカイブの使用法: phar ストリームラッパー</title>
+ <para>
+  Phar ストリームラッパーは、<function>fopen</function> による読み込みや
+  書き込みそして追記、<function>unlink</function>、<function>stat</function>、
+  <function>fstat</function>、<function>fseek</function>、<function>rename</function>
+  そしてディレクトリに対する <function>opendir</function>
+  といった機能に完全に対応しています。
+  Phar ストリームラッパーはディレクトリの作成や削除には対応していません。
+  ファイルは単なるファイルとしてしか格納されず、
+  ディレクトリを抽象化した概念は存在しないからです。
+ </para>
+ <para>
+  Phar アーカイブ内の各ファイルの圧縮やファイル単位のメタデータの操作も、
+  ストリーム上で可能です。
+ </para>
+ <programlisting role="php">
+  <![CDATA[
+<?php
+$context = stream_context_create(array('phar' =>
+                                    array('compression' => Phar::GZ)),
+                                    array('metadata' => array('user' => 'cellog')));
+file_put_contents('phar://my.phar/somefile.php', 0, $context);
+?>
+  ]]>
+ </programlisting>
+ <para>
+  <literal>phar</literal> ストリームラッパーは、
+  リモートファイルを操作することはできません。つまり、INI 設定
+  <link linkend="ini.allow-url-fopen">allow_url_fopen</link>
+  が無効になっている場合でも使用できます。
+ </para>
+ <para>
+  ストリーム操作だけで新しい phar アーカイブをゼロから作成することも可能ですが、
+  そんな場合は Phar クラスの組み込み機能を使用するほうが便利です。
+  ストリームラッパーが有用なのは、読み込み操作を行う場合です。
+ </para>
+</section>
+<section id="phar.using.object">
+ <title>Phar アーカイブの使用法: Phar クラス</title>
+ <para>
+  <classname>Phar</classname> クラスは Phar アーカイブの読み込みや操作をサポートしています。
+  また
+  <ulink url="http://www.php.net/~helly/php/ext/spl/classRecursiveDirectoryIterator.html"><classname>RecursiveDirectoryIterator</classname></ulink>
+  クラスを継承しているため、順次処理も可能です。
+  <interface>ArrayAccess</interface> インターフェイスをサポートしているので、
+  Phar アーカイブ内のファイルに対して、
+  それがまるで連想配列であるかのようにアクセスすることができます。
+ </para>
+ <para>
+  <literal>$p</literal> が、次のように作成した Phar オブジェクトであるとしましょう。
+  <programlisting role="php">
+   <![CDATA[
+<?php
+$p = new Phar('myphar.phar');
+?>
+   ]]>
+  </programlisting>
+  これに対して、次のような処理が可能となります。
+  <itemizedlist>
+   <listitem>
+    <simpara>
+     <literal>$a = $p['file.php']</literal> とすると、
+     <literal>phar://myphar.phar/file.php</literal> の中身を参照する
+     <classname>PharFileInfo</classname> クラスが作成されます。
+    </simpara>
+   </listitem>
+   <listitem>
+    <simpara>
+     <literal>$p['file.php'] = $v</literal> とすると、
+     <literal>myphar.phar</literal> の中に新しいファイル
+     (<literal>phar://myphar.phar/file.php</literal>)
+     を作成するか、あるいは同名のファイルを上書きします。
+     <literal>$v</literal> には、文字列あるいはファイルポインタのいずれかを指定できます。
+     ファイルポインタを指定した場合は、その中身全体をもとにして新しいファイルを作成します。
+    </simpara>
+   </listitem>
+   <listitem>
+    <simpara>
+     <literal>isset($p['file.php'])</literal>
+     とすると、<literal>phar://myphar.phar/file.php</literal> が
+     <literal>myphar.phar</literal> の中に存在するかどうかがわかります。
+    </simpara>
+   </listitem>
+   <listitem>
+    <simpara>
+     <literal>unset($p['file.php'])</literal> とすると、
+     <literal>phar://myphar.phar/file.php</literal> を
+     <literal>myphar.phar</literal> から削除します。
+    </simpara>
+   </listitem>
+  </itemizedlist>
+ </para>
+ <para>
+  さらに、Phar 固有のメタデータにアクセスするためには
+  <classname>Phar</classname> オブジェクトを使用することが唯一の方法となります。そのためには
+  <link linkend="function.Phar-getMetaData"><function>Phar-&gt;getMetaData</function></link>
+  を使用します。また、Phar アーカイブの PHP ローダスタブを設定したり取得したりするための唯一の方法が
+  <link linkend="function.Phar-getStub"><function>Phar-&gt;getStub</function></link> および
+  <link linkend="function.Phar-commit"><function>Phar-&gt;commit</function></link> です。
+  また、Phar アーカイブ全体の圧縮を行うには
+  <classname>Phar</classname> クラスが必要となります。
+ </para>
+ <para>
+  <classname>Phar</classname> オブジェクトの全機能の一覧については、以下で説明します。
+ </para>
+ <para>
+  <classname>PharFileInfo</classname> クラスは
+  <ulink url="http://www.php.net/~helly/php/ext/spl/classSplFileInfo.html"><classname>SplFileInfo</classname></ulink>
+  クラスを継承しており、Phar 内のファイルについての Phar
+  固有の情報 (圧縮情報やメタデータなど) を扱うためのメソッドが追加されています。
+ </para>
+</section>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"../../../manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
