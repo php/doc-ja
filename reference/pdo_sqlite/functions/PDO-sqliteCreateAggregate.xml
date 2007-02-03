@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.1 $ -->
-<!-- EN-Revision: 1.4 Maintainer: takagi Status: ready -->
+<!-- $Revision: 1.2 $ -->
+<!-- EN-Revision: 1.5 Maintainer: takagi Status: ready -->
 <refentry id="function.PDO-sqliteCreateAggregate">
  <refnamediv>
-  <refname>PDO::sqliteCreateAggregate</refname>
+  <refname>PDO->sqliteCreateAggregate()</refname>
   <refpurpose>
    SQL 文で使用する集約ユーザ定義関数 (UDF) を登録する
   </refpurpose>
@@ -11,29 +11,25 @@
 
  <refsect1 role="description">
   &reftitle.description;
-  <methodsynopsis>
-   <type>bool</type><methodname>PDO::sqliteCreateAggregate</methodname>
-   <methodparam><type>string</type><parameter>function_name</parameter></methodparam>
-   <methodparam><type>callback</type><parameter>step_func</parameter></methodparam>
-   <methodparam><type>callback</type><parameter>finalize_func</parameter></methodparam>
-   <methodparam choice="opt"><type>int</type><parameter>num_args</parameter></methodparam>
-  </methodsynopsis>
+  <classsynopsis>
+   <ooclass><classname>PDO</classname></ooclass>
+   <methodsynopsis>
+    <type>bool</type><methodname>sqliteCreateAggregate</methodname>
+    <methodparam><type>string</type><parameter>function_name</parameter></methodparam>
+    <methodparam><type>callback</type><parameter>step_func</parameter></methodparam>
+    <methodparam><type>callback</type><parameter>finalize_func</parameter></methodparam>
+    <methodparam choice="opt"><type>int</type><parameter>num_args</parameter></methodparam>
+   </methodsynopsis>
+  </classsynopsis>
   &warn.experimental.func;
   <para>
-   <function>PDO::sqliteCreateAggregate</function> は
-   <function>PDO::sqliteCreateFunction</function> と似ていますが、
+   このメソッドは
+   <xref linkend="function.PDO-sqliteCreateFunction" /> と似ていますが、
    この関数で登録した関数は、クエリのすべての行の内容を集約する関数を登録します。
   </para>
   <para>
-   この関数と <function>PDO::sqliteCreateFunction</function> の最大の違いは、
+   この関数と <xref linkend="function.PDO-sqliteCreateFunction" /> の最大の違いは、
    集約関数を作成するためには 2 つの関数が必要であるということです。
-   <parameter>step_func</parameter> は、結果セットの各行についてコールされるものです。
-   この PHP 関数は、結果を蓄積して集約コンテキストに保存しなければなりません。
-   すべての行が処理された後で、<parameter>finalize_func</parameter>
-   がコールされます。ここでは、集約コンテキストからデータを取得して結果を返します。
-   コールバック関数の返す値は、SQLite が理解できる形式 (すなわち
-   <link linkend="language.types.intro">スカラー型</link>)
-   でなければなりません。
   </para>
  </refsect1>
 
@@ -53,7 +49,27 @@
      <term><parameter>step_func</parameter></term>
      <listitem>
       <para>
-       結果セットの各行に対して実行されるコールバック関数。
+       結果セットの各行についてコールされるコールバック関数。
+       この PHP 関数は、結果を蓄積して集約コンテキストに保存しなければなりません。
+      </para>
+      <para>
+       この関数は次のように定義しなければなりません。
+       <methodsynopsis>
+        <methodname><replaceable>step</replaceable></methodname>
+        <methodparam><type>mixed</type><parameter>context</parameter></methodparam>
+        <methodparam><type>int</type><parameter>rownumber</parameter></methodparam>
+        <methodparam><type>mixed</type><parameter>value1</parameter></methodparam>
+        <methodparam choice="opt"><type>mixed</type><parameter>value2</parameter></methodparam>
+        <methodparam choice="opt"><type>mixed</type><parameter>..</parameter></methodparam>
+       </methodsynopsis>
+      </para>
+      <para>
+       <varname>context</varname> は最初の行では &null; となります。
+       それ以降の行では、その前の step 関数が返した値を保持します。
+       これを使用して、集約の状態を管理します。
+      </para>
+      <para>
+       <varname>rownumber</varname> は現在の行番号を保持します。
       </para>
      </listitem>
     </varlistentry>
@@ -61,7 +77,28 @@
      <term><parameter>finalize_func</parameter></term>
      <listitem>
       <para>
-       各行から取得したデータを集約するためのコールバック関数。
+       すべての行が処理された後でコールされるコールバック関数。
+       ここでは、集約コンテキストからデータを取得して結果を返します。
+       コールバック関数の返す値は、SQLite が理解できる形式 (すなわち
+       <link linkend="language.types.intro">スカラー型</link>)
+       でなければなりません。
+      </para>
+      <para>
+       この関数は次のように定義しなければなりません。
+       <methodsynopsis>
+        <methodname><replaceable>fini</replaceable></methodname>
+        <methodparam><type>mixed</type><parameter>context</parameter></methodparam>
+        <methodparam><type>int</type><parameter>rownumber</parameter></methodparam>
+       </methodsynopsis>
+      </para>
+      <para>
+       <varname>context</varname> には、最後の step 関数の返り値が格納されます。
+      </para>
+      <para>
+       <varname>rownumber</varname> は、この集約関数が処理した行数を保持します。
+      </para>
+      <para>
+       この関数の返り値が、集約の返り値となります。
       </para>
      </listitem>
     </varlistentry>
@@ -106,14 +143,14 @@ foreach ($data as $str) {
 }
 $insert = null;
 
-function max_len_step(&$context, $string) 
+function max_len_step(&$context, $rownumber, $string) 
 {
     if (strlen($string) > $context) {
         $context = strlen($string);
     }
 }
 
-function max_len_finalize(&$context) 
+function max_len_finalize(&$context, $rownumber) 
 {
     return $context;
 }
@@ -155,8 +192,8 @@ var_dump($db->query('SELECT max_len(a) from strings')->fetchAll());
   </tip>
   <tip>
    <para>
-    <function>PDO::sqliteCreateFunction</function> および
-    <function>PDO::sqliteCreateAggregate</function> を使用して、
+    <xref linkend="function.PDO-sqliteCreateFunction" /> および
+    <xref linkend="function.PDO-sqliteCreateAggregate" /> を使用して、
     SQLite のネイティブ SQL 関数を上書きすることができます。
    </para>
   </tip>
@@ -174,7 +211,7 @@ var_dump($db->query('SELECT max_len(a) from strings')->fetchAll());
   &reftitle.seealso;
   <para>
    <simplelist>
-    <member><function>PDO::sqliteCreateFunction</function></member>
+    <member><xref linkend="function.PDO-sqliteCreateFunction" /></member>
     <member><function>sqlite_create_function</function></member>
     <member><function>sqlite_create_aggregate</function></member>
    </simplelist>
