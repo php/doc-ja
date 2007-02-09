@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.2 $ -->
-<!-- EN-Revision: 1.2 Maintainer: takagi Status: ready -->
+<!-- $Revision: 1.3 $ -->
+<!-- EN-Revision: 1.3 Maintainer: takagi Status: ready -->
 <section id="phar.using.basics">
  <title>Phar アーカイブの使用法: 導入</title>
  <para>
@@ -79,7 +79,8 @@ try {
     // 単に実行できるだけでよいはずです。
     if (Phar::canWrite()) {
         $p = new Phar(dirname(__FILE__) . '/newphar.phar', 0, 'newphar.phar');
-        // トランザクションを作成します - commit() がコールされるまで、ディスクには何も書き込まれません
+        // トランザクションを作成します - commit() がコールされるまで、
+        // newphar.phar には何も書き込まれません。しかし一時ストレージが必要となります
         $p->begin();
         // 新しいファイルを追加し、その内容を設定します
         $p['file1.txt'] = 'Information';
@@ -94,14 +95,16 @@ try {
         $p['images/wow.jpg']->setMetaData(array('mime-type' => 'image/jpeg'));
         $p['index.php'] = file_get_contents('index.php');
         $p->setMetaData(array('bootstrap' => 'index.php'));
-        // Phar を保存し、ローダースタブを設定します
-        $p->commit('<?php
+        // ローダースタブを設定します
+        $p->setStub('<?php
 $p = new Phar(__FILE__);
 $m = $p->getMetaData();
 require "phar://" . __FILE__ . "/" . $m["bootstrap"];
 __HALT_COMPILER();');
+        // phar アーカイブをディスクに保存します
+        $p->commit();
     }
-} catch (BadMethodCallException $e) {
+} catch (Exception $e) {
     echo 'Phar をオープンできません: ', $e;
 }
 ?>
@@ -137,7 +140,8 @@ file_put_contents('phar://my.phar/somefile.php', 0, $context);
  <para>
   <literal>phar</literal> ストリームラッパーは、
   リモートファイルを操作することはできません。つまり、INI 設定
-  <link linkend="ini.allow-url-fopen">allow_url_fopen</link>
+  <link linkend="ini.allow-url-fopen">allow_url_fopen</link> および
+  <link linkend="ini.allow-url-include">allow_url_include</link>
   が無効になっている場合でも使用できます。
  </para>
  <para>
@@ -158,15 +162,40 @@ file_put_contents('phar://my.phar/somefile.php', 0, $context);
   それがまるで連想配列であるかのようにアクセスすることができます。
  </para>
  <para>
+  注意すべき点は、Phar アーカイブを作成する際には
+  <classname>Phar</classname> のコンストラクタに
+  フルパスを渡さなければならないということです。
+  相対パスでは初期化に失敗します。
+ </para>
+ <para>
   <literal>$p</literal> が、次のように作成した Phar オブジェクトであるとしましょう。
   <programlisting role="php">
    <![CDATA[
 <?php
-$p = new Phar('myphar.phar');
+$p = new Phar('/path/to/myphar.phar', 0, 'myphar.phar');
 ?>
    ]]>
   </programlisting>
-  これに対して、次のような処理が可能となります。
+  空の Phar アーカイブが <literal>/path/to/myphar.phar</literal>
+  に作成されます。もし <literal>/path/to/myphar.phar</literal>
+  が既に存在する場合は、それを再度オープンします。
+  リテラル <literal>myphar.phar</literal> は、エイリアスを表します。
+  これを用いると、URL で <literal>/path/to/myphar.phar</literal>
+  を参照する際に次のようにできます。
+  <programlisting role="php">
+   <![CDATA[
+<?php
+// これらのふたつの file_get_contents() コールが同等となるのは、
+// /path/to/myphar.phar のマニフェストでエイリアス "myphar.phar"
+// が明示的に指定されている場合か、先ほどの例のように
+// Phar オブジェクトを初期化した場合です。
+$f = file_get_contents('phar:///path/to/myphar.phar/whatever.txt');
+$f = file_get_contents('phar://myphar.phar/whatever.txt');
+?>
+   ]]>
+  </programlisting>
+  新しく作成した <classname>Phar</classname> オブジェクト
+  <literal>$p</literal> に対して、次のような処理が可能となります。
   <itemizedlist>
    <listitem>
     <simpara>
