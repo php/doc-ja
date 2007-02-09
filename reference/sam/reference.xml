@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.4 $ -->
-<!-- EN-Revision: 1.4 Maintainer: takagi Status: ready -->
+<!-- $Revision: 1.5 $ -->
+<!-- EN-Revision: 1.7 Maintainer: takagi Status: ready -->
  <reference id="ref.sam">
   <title>SAM - Simple Asynchronous Messaging: 単純な非同期メッセージング</title>
   <titleabbrev>SAM</titleabbrev>
@@ -17,10 +17,38 @@
      また、熟練者向けには、より複雑な操作もできるようになっています。
      大半のユーザが使用する場合には、複雑で膨大な設定オプションは無視することができます。
     </para>
+    <para>
+     SAM 拡張モジュールは、さまざまなメッセージングミドルウェアシステムにアクセスするための手段として
+     非常にシンプルな API を提供するフレームワークです。
+     現在このパッケージに標準で組み込まれているのは、
+     MQTT (MQ Telemetry Transport) メッセージングプロトコルのサポート
+     および IBM Messaging and Queuing ミドルウェア製品群のサポートです。
+     SAM は、その他のメッセージングシステムをサポートするために拡張できるよう設計されています。
+     この拡張モジュールは、C あるいは PHP で書くことができます。
+    </para>
    </section>  <!-- id=sam.intro -->
 
    <section id='sam.installation'>
     &reftitle.install;
+    <para>
+      SAM フレームワークおよび MQTT サポートをビルドして使用するためには、
+      特にその他の前提条件はありません。
+      MQTT 以外のプロトコルのサポートはライブラリとして提供されており、
+      クライアント側のコードの中にはは XMS を使用するものもあります。
+    </para>
+    <para>
+      組み込みの MQTT サポートを使用したいだけである場合は、
+      SAM を拡張モジュールとしてビルドして設定するか、
+      あるいは単に "php_sam.php" を PHP スクリプトから "requires"
+      あるいは "requires_once" で読み込みます。この場合は、
+      コードをインストールするだけでよく、拡張モジュールをビルドする必要はありません。
+      これを行うには、pear インストーラで次のように指定します。
+      <screen>
+       <![CDATA[
+      pecl install -B SAM
+]]>
+      </screen>
+    </para>
     <section id='sam.installation.prerequisites'>
      <title>前提条件</title>
       <para>
@@ -65,15 +93,19 @@ pear install sam
       </para>
       <para>
        このモジュールを PHP に読み込ませるために、
-      &php.ini; に
+       &php.ini; に以下を追加します。
       <screen>
        <![CDATA[
 extension=sam.so
 ]]>
       </screen>
-      </para>
-      <para>
-       を追加します。
+      XMS サポートを使用して IBM Messaging and Queuing family にアクセスしたい場合は、
+      SAM XMS 拡張モジュールも有効にしなければなりません。
+      <screen>
+       <![CDATA[
+extension=sam_xms.so
+]]>
+      </screen>
       </para>
       <para>
        PEAR インストーラを使用できない場合は、
@@ -98,8 +130,8 @@ make install               # おそらく root になる必要があるでしょ
      <section id='sam.installation.windows'>
      <title>Windows でのインストール手順</title>
       <para>
-       ビルド済みのバイナリは現在公開されていないため、
-       自分でビルドする必要があります。この拡張モジュールのビルド手順は、
+       SAM のウェブサイトにあるビルド済みバイナリは、非常に限られた範囲のものになっています。
+       そのため、おそらく自分でビルドすることになるでしょう。この拡張モジュールのビルド手順は、
        Windows 上での標準的な拡張モジュールビルド手順と同じです。
       </para>
       <para>
@@ -165,25 +197,60 @@ set PATH=..\win32build\bin;%PATH%
        buildconf.bat コマンドを実行します。これは configure.js ファイルを作成します。
       </para>
       <para>
-       cscript コマンドを実行します。
+cscript コマンドに適切なオプションをつけて実行します。
+SAM 拡張モジュールフレームワークと MQTT サポートだけをビルドするのなら
       <screen>
        <![CDATA[
-cscript /nologo configure.js --with-sam="c:\program files\ibm\xms"
+cscript /nologo configure.js --with-sam
+]]>
+      </screen>
+SAM フレームワークおよび XMS サポートをビルドするのなら
+      <screen>
+       <![CDATA[
+cscript /nologo configure.js --with-sam --with-sam_xms="c:\program files\ibm\xms"
 ]]>
       </screen>
       </para>
       <para>
-       sam に渡している追加のパラメータは、XMS ライブラリやランタイムへのパスです。
+       とします。sam_xms に渡している追加のパラメータは、XMS ライブラリやランタイムへのパスです。
        これらは、このファイルの最初に書いてある前提条件によってインストールされているものです。
       </para>
       <para>
        cscript のパラメータとして、php のビルドオプションのうちお好みのものを追加したり削除することもできます。
       </para>
       <para>
-       すべてがうまくいけば、あとは make を実行するだけです!
+       すべてがうまくいけば、あとは SAM フレームワーク用の make を実行するだけです!
       <screen>
        <![CDATA[
 nmake php_sam.dll
+]]>
+      </screen>
+また、もし XML サポートを使用するのなら、sam_xms 拡張モジュールも make しなければなりません。
+      <screen>
+       <![CDATA[
+nmake php_sam_xms.dll
+]]>
+      </screen>
+      </para>
+      <para>
+Visual Studio 2005 を使用して DLL をビルドする場合は、
+これ以降に進む前に次の追加手順を実行しなければなりません。
+      </para>
+      <para>
+作成された DLL (php_sam.dll およびオプションで php_sam_xms.dll)
+を、PHP をセットアップしたディレクトリ以下の適切な場所にコピーします。
+このモジュールを PHP に読み込ませるために、次の行を
+&php.ini; に追加しておきましょう。
+      <screen>
+       <![CDATA[
+extension=php_sam.dll
+]]>
+      </screen>
+      XMS サポートを使用して IBM Messgaing and Queuing family
+      にアクセスしたい場合は SAM XMS 拡張モジュールも有効にする必要があります。
+      <screen>
+       <![CDATA[
+extension=php_sam_xms.dll
 ]]>
       </screen>
       </para>
@@ -202,12 +269,62 @@ nmake php_sam.dll
 mt.exe -manifest php_sam.dll.manifest -outputresource:php_sam.dll;2
 ]]>
       </screen>
+XMS 機能を使用する場合は、同様に
+SAM XMS DLL も指定しなければなりません。
+      <screen>
+       <![CDATA[
+mt.exe -manifest php_sam_xms.dll.manifest -outputresource:php_sam_xms.dll;2
+]]>
+      </screen>
       </para>
       <para>
        SAM 拡張モジュールを Microsoft Visual Studio 2005 のコンパイラやライブラリでビルドした場合は、
        ランタイムコンポーネントが SAM を使用する予定のシステムにインストールされている必要があります。
        そのためには、そこに Visual Studio 2005 をインストールするか、あるいはフリーで配布されている
        <ulink url="&url.ms.crt;">ランタイムパッケージ</ulink> を使用します。
+      </para>
+     </section>
+     <section id='sam.installation.configutaion'>
+      <title>プロトコルサポートおよびマッピング</title>
+      <para>
+SAM フレームワークを拡張して、他のメッセージングプロトコルや通信機構をサポートさせることができます。
+新しいプロトコルや接続ライブラリのサポートを追加するには、
+それをサポートするクラスを定義する必要があります。これは C 拡張モジュールあるいは
+PHP スクリプトとして作成します。また、"ファクトリ" スクリプトも作成しなければなりません。
+サポートクラスは、SAMConnection クラスの全メソッドを実装する必要があります。
+SAMConnection を継承してはいけません。ファクトリスクリプトはフレームワークからコールされ、
+実装クラスのインスタンスを作成します。SAM がどのファクトリをコールするのかは、
+"connect" の最初のパラメータで指定したプロトコルによって決まります。
+      </para>
+      <para>
+デフォルトでは、connect でプロトコルに SAM_MQTT ("mqtt") を指定した場合に
+組み込みの MQTT サポートを使用します。その他のプロトコルを指定した場合は
+XMS 拡張モジュールを使用します。
+新たなプロトコルのサポートを追加したりデフォルトの挙動を変更したりするには、
+&php.ini; の [sam] セクションにエントリを追加します。
+デフォルトのマッピングは、以下のエントリと同等です。
+      <screen>
+       <![CDATA[
+[sam]
+sam.factory.mqtt=mqtt
+sam.factory.wmq=xms
+sam.factory.wmq:client=xms
+sam.factory.wmq:bindings=xms
+sam.factory.wpm=xms
+sam.factory.rtt=xms
+]]>
+      </screen>
+これらの例でわかるように、エントリは "sam.factory.pppp=xxx"
+という形式になります。pppp の部分が connect コール時に指定するプロトコル文字列で、
+xxx はファクトリ名のサフィックスです。
+注意: SAM では、これらのプロトコルに対応する定数を定義しています。たとえば
+SAM_WMQ=wmq、SAM_WPM=wpm、SAM_RTT=rtt、SAM_MQTT=mqtt などとなります。
+      </para>
+      <para>
+connect コールの際にこれを指定すると、
+SAM はそのプロトコル名を &php.ini; のエントリから探し、対応するファクトリスクリプト
+sam_factory_xxx.php をコールします。
+エントリが見つからなかった場合は、デフォルトは XMS となります。
       </para>
      </section>
    </section>  <!-- id=sam.installation -->
@@ -254,6 +371,20 @@ mt.exe -manifest php_sam.dll.manifest -outputresource:php_sam.dll;2
    $conn->connect(SAM_WMQ, array(SAM_ENDPOINTS => 'localhost:7278:BootstrapBasicMessaging',
                                  SAM_BUS => 'Bus1',
                                  SAM_TARGETCHAIN => 'InboundBasicMessaging'));
+?>
+        ]]>
+       </programlisting>
+      </example>
+     </para>
+     <para>
+      <example>
+       <title>接続の作成、および MQTT サーバへの接続</title>
+       <programlisting role='php'>
+        <![CDATA[
+<?php
+   $conn = new SAMConnection();
+   $conn->connect(SAM_MQTT, array(SAM_HOST => 'myhost.mycompany.com',
+                                 SAM_PORT => 1883));
 ?>
         ]]>
        </programlisting>
@@ -525,7 +656,7 @@ mt.exe -manifest php_sam.dll.manifest -outputresource:php_sam.dll;2
    <section id='sam.classes'>
     &reftitle.classes;
 
-<!-- Connection class    *************************************************** -->
+<!-- Connection class  -->
     <section id='sam.class.Connection'>
      <title><classname>SAMConnection</classname></title>
      <para>
@@ -537,7 +668,7 @@ mt.exe -manifest php_sam.dll.manifest -outputresource:php_sam.dll;2
       <itemizedlist>
        <listitem>
         <para>
-         <link linkend='function.SAM-Connection-constructor'>new SAMConnection</link> -
+         <link linkend='function.samconnection-constructor'>new SAMConnection</link> -
          新しい接続オブジェクトを作成し、メッセージング環境への接続を可能にします。
         </para>
        </listitem>
@@ -549,73 +680,79 @@ mt.exe -manifest php_sam.dll.manifest -outputresource:php_sam.dll;2
       <itemizedlist>
        <listitem>
         <para>
-         <link linkend='function.SAM-Connection-commit'>commit</link>
+         <link linkend='function.samconnection-commit'>commit</link>
          - 現在作業中の内容をコミット (正常に完了) するメソッドです。
         </para>
        </listitem>
        <listitem>
         <para>
-         <link linkend='function.SAM-Connection-connect'>connect</link>
+         <link linkend='function.samconnection-connect'>connect</link>
          - PHP スクリプトをメッセージングサーバに接続させるメソッドです。
         </para>
        </listitem>
        <listitem>
         <para>
-         <link linkend='function.SAM-Connection-disconnect'>disconnect</link>
+         <link linkend='function.samconnection-disconnect'>disconnect</link>
          - PHP スクリプトとメッセージングサーバとの接続を解除するメソッドです。
         </para>
        </listitem>
        <listitem>
         <para>
-         <link linkend='function.SAM-Connection-isConnected'>isConnected</link>
+         <link linkend='function.samconnection-isconnected'>isConnected</link>
          - PHP スクリプトがメッセージングサーバと接続しているかどうかを調べるメソッドです。
         </para>
        </listitem>
        <listitem>
         <para>
-         <link linkend='function.SAM-Connection-peek'>peek</link>
+         <link linkend='function.samconnection-peek'>peek</link>
          - メッセージをキューから取得し、それをキューに残したままにしておくメソッドです。
         </para>
        </listitem>
        <listitem>
         <para>
-         <link linkend='function.SAM-Connection-peekAll'>peekAll</link>
+         <link linkend='function.samconnection-peekall'>peekAll</link>
          - ひとつあるいは複数のメッセージをキューから取得し、それをキューに残したままにしておくメソッドです。
         </para>
        </listitem>       
        <listitem>
         <para>
-         <link linkend='function.SAM-Connection-receive'>receive</link>
+         <link linkend='function.samconnection-receive'>receive</link>
          - メッセージをキューあるいは購読から取得するメソッドです。
         </para>
        </listitem>
        <listitem>
         <para>
-         <link linkend='function.SAM-Connection-remove'>remove</link>
+         <link linkend='function.samconnection-remove'>remove</link>
          - メッセージをキューから削除するメソッドです。
         </para>
        </listitem>
        <listitem>
         <para>
-         <link linkend='function.SAM-Connection-rollback'>rollback</link>
+         <link linkend='function.samconnection-rollback'>rollback</link>
          - 現在作業中の内容をキャンセル (ロールバック) するメソッドです。
         </para>
        </listitem>
        <listitem>
         <para>
-         <link linkend='function.SAM-Connection-send'>send</link>
+         <link linkend='function.samconnection-send'>send</link>
          - キューにメッセージを送信したり、トピックの投稿したりするメソッドです。
         </para>
        </listitem>
        <listitem>
         <para>
-         <link linkend='function.SAM-Connection-subscribe'>subscribe</link>
+         <link linkend='function.samconnection-setDebug'>setDebug</link>
+         - 追加のデバッグ出力をオンあるいはオフにするメソッドです。
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         <link linkend='function.samconnection-subscribe'>subscribe</link>
          - ひとつあるいは複数のトピックを購読するためのメソッドです。
         </para>
        </listitem>
        <listitem>
         <para>
-         <link linkend='function.SAM-Connection-unsubscribe'>unsubscribe</link>
+         <link linkend='function.samconnection-unsubscribe'>unsubscribe</link>
          - ひとつあるいは複数のトピックの購読を解除するメソッドです。
         </para>
        </listitem>
@@ -627,14 +764,14 @@ mt.exe -manifest php_sam.dll.manifest -outputresource:php_sam.dll;2
       <itemizedlist>
        <listitem>
         <para>
-         <link linkend='function.SAM-Connection-errno'>errno</link> -
+         <link linkend='function.samconnection-errno'>errno</link> -
          この接続で最後に発生したエラーのエラーコードを表す数値です。
          直近の処理が正常に終了した場合は、このプロパティは 0 となります。
         </para>
        </listitem>
        <listitem>
         <para>
-         <link linkend='function.SAM-Connection-error'>error</link> -
+         <link linkend='function.samconnection-error'>error</link> -
          この接続で最後に発生したエラーの説明テキストです。
         </para>
        </listitem>
@@ -654,7 +791,7 @@ mt.exe -manifest php_sam.dll.manifest -outputresource:php_sam.dll;2
       <itemizedlist>
        <listitem>
         <para>
-         <link linkend='function.SAM-Message-constructor'>new SAMMessage</link> -
+         <link linkend='function.sammessage-constructor'>new SAMMessage</link> -
          新しいメッセージを作成します。
         </para>
        </listitem>
@@ -666,13 +803,13 @@ mt.exe -manifest php_sam.dll.manifest -outputresource:php_sam.dll;2
       <itemizedlist>
        <listitem>
         <para>
-         <link linkend='function.SAM-Message-body'>body</link> -
+         <link linkend='function.sammessage-body'>body</link> -
          メッセージの本文です。
         </para>
        </listitem>
        <listitem>
         <para>
-         <link linkend='function.SAM-Message-header'>header</link> -
+         <link linkend='function.sammessage-header'>header</link> -
          メッセージのヘッダプロパティです。
         </para>
        </listitem>
