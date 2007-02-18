@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.36 $ -->
-<!-- EN-Revision: 1.109 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.37 $ -->
+<!-- EN-Revision: 1.111 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi -->
  <chapter id="language.operators">
   <title>演算子</title>
@@ -1143,11 +1143,153 @@ var_dump($a === $b); // bool(false)
   <sect1 id="language.operators.type">
    <title>型演算子</title>
    <para>
-    PHP にはひとつの型演算子: <literal>instanceof</literal> があり、
-    与えられたオブジェクト・その親・あるいは実装している
-    <link linkend="language.oop5.interfaces">インターフェース</link>
-    が指定した<link linkend="language.oop">オブジェクトクラス</link>であるか
-    どうかを調べます。
+    <literal>instanceof</literal> を使用して、
+    ある PHP 変数が特定の
+    <link linkend="language.oop5.basic.class">クラス</link>
+    のオブジェクトのインスタンスであるかどうかを調べます。
+    <example>
+     <title>クラスでの instanceof の使用法</title>
+     <programlisting role="php">
+     <![CDATA[
+<?php
+class MyClass
+{
+}
+class NotMyClass
+{
+}
+$a = new MyClass;
+
+var_dump($a instanceof MyClass);
+var_dump($a instanceof NotMyClass);
+?>
+     ]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+bool(true)
+bool(false)
+]]>
+     </screen>
+    </example>
+    <literal>instanceof</literal> は、ある変数が
+    特定の親クラスを継承したクラスのオブジェクトのインスタンスであるかどうかを調べることもできます。
+    <example>
+     <title>継承したクラスでの instanceof の使用法</title>
+     <programlisting role="php">
+     <![CDATA[
+<?php
+class ParentClass
+{
+}
+class MyClass extends ParentClass
+{
+}
+$a = new MyClass;
+
+var_dump($a instanceof MyClass);
+var_dump($a instanceof ParentClass);
+?>
+     ]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+bool(true)
+bool(true)
+]]>
+     </screen>
+    </example>
+    最後に、<literal>instanceof</literal>
+    は、ある変数が特定の
+    <link linkend="language.oop5.interfaces">インターフェイス</link>
+    を実装したクラスのオブジェクトのインスタンスであるかどうかも調べることができます。
+    <example>
+     <title>クラスでの instanceof の使用法</title>
+     <programlisting role="php">
+     <![CDATA[
+<?php
+interface MyInterface
+{
+}
+class MyClass implements MyInterface
+{
+}
+$a = new MyClass;
+
+var_dump($a instanceof MyClass);
+var_dump($a instanceof MyInterface);
+?>
+     ]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+bool(true)
+bool(true)
+]]>
+     </screen>
+    </example>
+   </para>
+   <para>
+    通常、<literal>instanceof</literal> ではリテラルのクラス名を使用しますが、
+    別のオブジェクトや文字列変数を使用することもできます。
+    <example>
+     <title>変数を用いた instanceof の使用法</title>
+     <programlisting role="php">
+     <![CDATA[
+<?php
+interface MyInterface
+{
+}
+class MyClass implements MyInterface
+{
+}
+$a = new MyClass;
+$b = new MyClass;
+$c = 'MyClass';
+$d = 'NotMyClass';
+var_dump($a instanceof $b); // $b MyClass クラスのオブジェクトです
+var_dump($a instanceof $c); // $c は文字列 'MyClass' です
+var_dump($a instanceof $d); // $d は文字列 'NotMyClass' です
+?>
+     ]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+bool(true)
+bool(true)
+bool(false)
+]]>
+     </screen>
+    </example>
+   </para>
+   <para>
+    注意すべき落とし穴があります。PHP 5.1.0 より前のバージョンでは、
+    <literal>instanceof</literal> は、クラス名が存在しない場合に
+    <link linkend="language.oop5.autoload">__autoload()</link> をコールしていました。
+    さらに、クラスが読み込めなかった場合に致命的なエラーが発生していました。
+    この問題の回避策としては、<literal>動的なクラス参照</literal>
+    を使用するか、クラス名を含む文字列変数を使用します。
+    <example>
+     <title>PHP 5.0 における、クラス名検索時の致命的エラーの回避策</title>
+     <programlisting role="php">
+     <![CDATA[
+<?php
+$d = 'NotMyClass';
+var_dump($a instanceof $d); // これで、致命的なエラーは発生しません
+?>
+     ]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+bool(false)
+]]>
+     </screen>
+    </example>
    </para>
    <simpara>
     <literal>instanceof</literal> 演算子は PHP 5 から使用可能になりました。
@@ -1155,30 +1297,6 @@ var_dump($a === $b); // bool(false)
     現在は <function>is_a</function> は推奨されておらず、
     <literal>instanceof</literal> の使用が推奨されています。
    </simpara>
-   <informalexample>
-    <programlisting role="php">
-<![CDATA[
-<?php
-class A { }
-class B { }
-
-$thing = new A;
-
-if ($thing instanceof A) {
-    echo 'A';
-}
-if ($thing instanceof B) {
-    echo 'B';
-}
-?>
-]]>
-    </programlisting>
-    <simpara>
-     <varname>$thing</varname> は A 型の <type>object</type> であって
-     B 型ではないので、A 型のブロックのみが実行されます。
-    </simpara>
-    <screen>A</screen>
-   </informalexample>
    <para>
     <function>get_class</function> および
     <function>is_a</function> も参照ください。
