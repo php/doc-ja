@@ -1,14 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.5 $ -->
-<!-- EN-Revision: 1.7 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.6 $ -->
+<!-- EN-Revision: 1.9 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi -->
 <refentry id="function.create-function">
  <refnamediv>
   <refname>create_function</refname>
-  <refpurpose>匿名関数(ラムダ形式)を作成する</refpurpose>
+  <refpurpose>匿名関数 (ラムダ形式) を作成する</refpurpose>
  </refnamediv>
- <refsect1>
-  <title>説明</title>
+
+ <refsect1 role="description">
+  &reftitle.description;
   <methodsynopsis>
    <type>string</type><methodname>create_function</methodname>
    <methodparam><type>string</type><parameter>args</parameter></methodparam>
@@ -16,26 +17,62 @@
   </methodsynopsis>
   <para>
    指定したパラメータにより匿名関数を作成し、その関数のユニークな名前を返します。
+  </para>
+ </refsect1>
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <para>
    通常、<parameter>args</parameter>には、シングルクオートで括った文字列を
    指定し、<parameter>code</parameter> の場合も同様に指定することが推奨されます。
    シングルクオートで括った文字列を使用する理由は、パース時に変数名を保護するためです。
    ダブルクオートを使用した場合には、<literal>\$avar</literal>のように変数名を
    エスケープする必要があります。
+   <variablelist>
+    <varlistentry>
+     <term><parameter>args</parameter></term>
+     <listitem>
+      <para>
+       関数の引数。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>code</parameter></term>
+     <listitem>
+      <para>
+       関数のコード。
+      </para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
   </para>
+ </refsect1>
+
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <para>
+   一意な関数名を表す文字列、あるいはエラー時に &false; を返します。
+  </para>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title>
+     <function>create_function</function> による匿名関数の作成
+    </title>
     <para>
-     (例えば、)実行時に取得した情報から関数を作成する際にこの関数を使用することが可能です。
-     <example>
-      <title>
-       <function>create_function</function>により匿名関数を作成する
-      </title>
-      <programlisting role="php">
+     この関数を使用すると、(たとえば) 実行時に取得した情報をもとにして関数を作成できます。
+    </para>
+    <programlisting role="php">
 <![CDATA[
 <?php
 $newfunc = create_function('$a,$b', 'return "ln($a) + ln($b) = " . log($a * $b);');
-echo "New anonymous function: $newfunc\n";
+echo "新しい匿名関数: $newfunc\n";
 echo $newfunc(2, M_E) . "\n";
-// outputs
-// New anonymous function: lambda_1
+// 出力
+// 新しい匿名関数: lambda_1
 // ln(2) + ln(2.718281828459) = 1.6931471805599
 ?>
 ]]>
@@ -43,25 +80,25 @@ echo $newfunc(2, M_E) . "\n";
    </example>
   </para>
   <para>
-   もしくは、パラメータリストに一連の処理を行うことができる一般的なハンドラ関数を
-   定義できます。
+   もしくは、パラメータリストに一連の処理を行うことができる
+   一般的なハンドラ関数を定義できます。
   </para>
   <para>
    <example>
     <title>
-     <function>create_function</function> で一般的な処理関数を作成する
+     <function>create_function</function> による一般的な処理関数の作成
     </title>
     <programlisting role="php">
 <![CDATA[
 <?php
-function process($var1, $var2, $farr) 
+function process($var1, $var2, $farr)
 {
     foreach ($farr as $f) {
         echo $f($var1, $var2) . "\n";
     }
 }
 
-// create a bunch of math functions
+// 数学関数群を作成します
 $f1 = 'if ($a >=0) {return "b*a^2 = ".$b*sqrt($a);} else {return false;}';
 $f2 = "return \"min(b^2+a, a^2,b) = \".min(\$a*\$a+\$b,\$b*\$b+\$a);";
 $f3 = 'if ($a > 0 && $b != 0) {return "ln(a)/b = ".log($a)/$b; } else { return false; }';
@@ -73,36 +110,34 @@ $farr = array(
     create_function('$a,$b', $f3)
     );
 
-echo "\nUsing the first array of anonymous functions\n";
-echo "parameters: 2.3445, M_PI\n";
+echo "\n無名関数群の最初の配列を使用します\n";
+echo "パラメータ: 2.3445, M_PI\n";
 process(2.3445, M_PI, $farr);
 
-// now make a bunch of string processing functions
+// 文字列処理関数群を作成します
 $garr = array(
     create_function('$b,$a', 'if (strncmp($a, $b, 3) == 0) return "** \"$a\" '.
     'and \"$b\"\n** Look the same to me! (looking at the first 3 chars)";'),
     create_function('$a,$b', '; return "CRCs: " . crc32($a) . " , ".crc32(b);'),
     create_function('$a,$b', '; return "similar(a,b) = " . similar_text($a, $b, &$p) . "($p%)";')
     );
-echo "\nUsing the second array of anonymous functions\n";
+echo "\n無名関数群の二番目の配列を使用します\n";
 process("Twas brilling and the slithy toves", "Twas the night", $garr);
 ?>
 ]]>
-      </programlisting>
-      <para>
-       and when you run the code above, the output will be:
-      </para>
-      <screen>
+    </programlisting>
+    &example.outputs;
+    <screen>
 <![CDATA[
-Using the first array of anonymous functions
-parameters: 2.3445, M_PI
+無名関数群の最初の配列を使用します
+パラメータ: 2.3445, M_PI
 some trig: -1.6291725057799
 a hypotenuse: 3.9199852871011
 b*a^2 = 4.8103313314525
 min(b^2+a, a^2,b) = 8.6382729035898
 ln(a/b) = 0.27122299212594
 
-Using the second array of anonymous functions
+無名関数群の二番目の配列を使用します
 ** "Twas the night" and "Twas brilling and the slithy toves"
 ** Look the same to me! (looking at the first 3 chars)
 CRCs: -725381282 , 1908338681
@@ -112,26 +147,25 @@ similar(a,b) = 11(45.833333333333%)
    </example>
   </para>
   <para>
-   しかし、恐らくラムダ形式の(匿名)関数の最も一般的な使用法は、
-   <function>array_walk</function> または <function>usort</function>
-   を使用する場合にようにコールバック関数を作成する場合でしょう。
+   ラムダ形式の (匿名の) 関数の最も一般的な使用法は、
+   コールバック関数を作成することでしょう。たとえば
+   <function>array_walk</function> あるいは <function>usort</function>
+   などで使用します。
   </para>
   <para>
    <example>
-    <title>コールバック関数として匿名関数を使用する</title>
+    <title>コールバック関数としての匿名関数の使用法</title>
     <programlisting role="php">
 <![CDATA[
 <?php
 $av = array("the ", "a ", "that ", "this ");
 array_walk($av, create_function('&$v,$k', '$v = $v . "mango";'));
-print_r($av); 
+print_r($av);
 ?>
 ]]>
-      </programlisting>
-      <para>
-       outputs:
-      </para>
-      <screen>
+    </programlisting>
+    &example.outputs;
+    <screen>
 <![CDATA[
 Array
 (
@@ -143,7 +177,7 @@ Array
 ]]>
     </screen>
     <para>
-     文字列の配列は短いものから長いものへ並べられました。
+     文字列の配列が、短い順に並べ替えられます。
     </para>
     <programlisting role="php">
 <![CDATA[
@@ -155,9 +189,7 @@ print_r($sv);
 ?>
 ]]>
     </programlisting>
-    <para>
-     outputs:
-    </para>
+    &example.outputs;
     <screen>
 <![CDATA[
 Array
@@ -170,7 +202,7 @@ Array
 ]]>
     </screen>
     <para>
-     長い文字列から短い文字列へソートされました。
+     長い順に並べ替えます。
     </para>
     <programlisting role="php">
 <![CDATA[
@@ -182,9 +214,7 @@ print_r($sv);
 ?>
 ]]>
     </programlisting>
-    <para>
-     outputs:
-    </para>
+    &example.outputs;
     <screen>
 <![CDATA[
 Array
@@ -199,6 +229,7 @@ Array
    </example>
   </para>
  </refsect1>
+
 </refentry>
 
 <!-- Keep this comment at the end of the file
