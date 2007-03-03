@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.3 $ -->
-<!-- EN-Revision: 1.4 Maintainer: takagi Status: ready -->
-<refentry id="function.apc-store">
+<!-- $Revision: 1.1 $ -->
+<!-- EN-Revision: 1.1 Maintainer: takagi Status: ready -->
+<refentry id="function.apc-add">
  <refnamediv>
-  <refname>apc_store</refname>
+  <refname>apc_add</refname>
   <refpurpose>
-   変数をデータ領域にキャッシュする
+   変数をデータ領域にキャッシュする (保存されていない場合のみ)
   </refpurpose>
  </refnamediv>
  <refsect1 role="description">
   &reftitle.description;
   <methodsynopsis>
-   <type>bool</type><methodname>apc_store</methodname>
+   <type>bool</type><methodname>apc_add</methodname>
    <methodparam><type>string</type><parameter>key</parameter></methodparam>
    <methodparam><type>mixed</type><parameter>var</parameter></methodparam>
    <methodparam choice="opt"><type>int</type><parameter>ttl</parameter></methodparam>
@@ -19,7 +19,7 @@
 
   <note>
    <simpara>
-    PHP の他の多くの仕組みと異なり、<function>apc_store</function> 
+    PHP の他の多くの仕組みと異なり、<function>apc_add</function> 
     を用いて格納された変数はリクエストを超えて
     （その値がキャッシュから取り除かれるまで）持続します。
    </simpara>
@@ -34,8 +34,11 @@
      <listitem>
       <para>
        この名前を用いて変数を格納します。<parameter>key</parameter> は
-       キャッシュ内で一意です。そのため、同一の <parameter>key</parameter> 
-       で新しい値を格納すると、元の値は上書きされます。
+       キャッシュ内で一意です。そのため、<function>apc_add</function>
+       を使用して同一の <parameter>key</parameter> 
+       で新しい値を格納しようとしても、それは保存されません。
+       かわりに &false; が返されます (これが、<function>apc_add</function>
+       と <function>apc_store</function> の唯一の相違点です)。
       </para>
      </listitem>
     </varlistentry>
@@ -76,19 +79,25 @@
   &reftitle.examples;
   <para>
    <example>
-    <title>A <function>apc_store</function> の例</title>
+    <title><function>apc_add</function> の例</title>
     <programlisting role="php">
 <![CDATA[
 <?php
 $bar = 'BAR';
-apc_store('foo', $bar);
+apc_add('foo', $bar);
 var_dump(apc_fetch('foo'));
+echo "\n";
+$bar = 'NEVER GETS SET';
+apc_add('foo', $bar);
+var_dump(apc_fetch('foo'));
+echo "\n";
 ?>
 ]]>
     </programlisting>
     &example.outputs;
     <screen>
 <![CDATA[
+string(3) "BAR"
 string(3) "BAR"
 ]]>
     </screen>
@@ -100,7 +109,7 @@ string(3) "BAR"
   &reftitle.seealso;
   <para>
    <simplelist>
-    <member><function>apc_add</function></member>
+    <member><function>apc_store</function></member>
     <member><function>apc_fetch</function></member>
     <member><function>apc_delete</function></member>
    </simplelist>
