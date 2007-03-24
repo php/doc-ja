@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.10 $ -->
-<!-- EN-Revision: 1.13 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.11 $ -->
+<!-- EN-Revision: 1.14 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: shimooka -->
 
 <sect1 id="language.oop5.magic">
@@ -38,20 +38,26 @@
  <sect2 id="language.oop5.magic.sleep">
   <title><literal>__sleep</literal> と <literal>__wakeup</literal></title>
   <para>
-   <function>serialize</function> は、クラスに
-   特殊な名前 <literal>__sleep</literal> を有する関数があるかどうかを
-   調べます。もしある場合には、この関数がシリアル化の前に実行されます。
-   この関数によりオブジェクトのクリンナップを行うことができ、
-   シリアル化するオブジェクトの全ての変数の名前を有する配列を返す
-   と仮定されます。
+   <function>serialize</function> は、クラスに特殊な名前
+   <literal>__sleep</literal> の関数があるかどうかを調べます。
+   もしあれば、シリアル化の前にその関数を実行します。
+   この関数で、オブジェクトをクリアすることができます。
+   またこの関数は、シリアル化するオブジェクトについて、
+   すべての変数の名前を配列で返すことが前提となっています。
+   このメソッドが何も返さなかった場合は、&null;
+   がシリアル化され、E_NOTICE が発生します。
   </para>
   <para>
-   意図される <literal>__sleep</literal> の使用法は、
-   オブジェクトが有する可能性があるデータベース接続に関係しており、
-   ペンディングされたデータベースのコミットを行ったり、
-   同様のクリンナップタスクを行ったりするものです。
-   また、この関数は、オブジェクトのサイズが非常に大きく、全体を
-   保存することができない場合にも便利です。
+   典型的な <literal>__sleep</literal> の使用法は、
+   途中のデータをコミットしたり、
+   似たようなタスクのクリアを行うといったものです。
+   また、オブジェクトが非常に大きく、かつ、完全に保存する必要がない場合、
+   この関数が有用です。
+  </para>
+  <para>
+   <literal>__sleep</literal> メソッドは、シリアル化する値
+   (通常は <literal>$this</literal>) を返さなければなりません。
+   そうしないと、&null; がシリアル化されます。
   </para>
   <para>
    逆に、<function>unserialize</function> は、
@@ -91,7 +97,7 @@ class Connection {
     
     public function __sleep()
     {
-        mysql_close($this->link);
+        return array('server', 'username', 'password', 'db');
     }
     
     public function __wakeup()
