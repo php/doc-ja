@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.4 $ -->
-<!-- EN-Revision: 1.27 Maintainer: takagi Status: ready -->
+<!-- $Revision: 1.5 $ -->
+<!-- EN-Revision: 1.28 Maintainer: takagi Status: ready -->
 <refentry id="function.mysql-real-escape-string">
  <refnamediv>
   <refname>mysql_real_escape_string</refname>
@@ -137,18 +137,23 @@ if (isset($_POST['product_name']) && isset($_POST['product_description']) && iss
 
     } else {
         
-        // magic_quotes_gpc が ON になっている場合に、その処理内容を元に戻します
+        // magic_quotes_gpc/magic_quotes_sybase が ON になっている場合に、その処理内容を元に戻します
 
         if(get_magic_quotes_gpc()) {
-            $product_name        = stripslashes($_POST['product_name']);
-            $product_description = stripslashes($_POST['product_description']);
+            if(ini_get('magic_quotes_sybase')) {
+                $product_name        = str_replace("''", "'", $_POST['product_name']);
+                $product_description = str_replace("''", "'", $_POST['product_description']);
+            } else {
+                $product_name        = stripslashes($_POST['product_name']);
+                $product_description = stripslashes($_POST['product_description']);
+            }
         } else {
             $product_name        = $_POST['product_name'];
             $product_description = $_POST['product_description'];
         }
 
         // 安全なクエリを作成します
-        $query = sprintf("INSERT INTO products (`name`, `description`, `user_id`) VALUES ('%s', '%s', '%d')",
+        $query = sprintf("INSERT INTO products (`name`, `description`, `user_id`) VALUES ('%s', '%s', %d)",
                     mysql_real_escape_string($product_name, $link),
                     mysql_real_escape_string($product_description, $link),
                     $_POST['user_id']);
