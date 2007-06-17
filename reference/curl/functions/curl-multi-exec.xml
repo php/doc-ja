@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.2 $ -->
-<!-- EN-Revision: 1.5 Maintainer: takagi Status: ready -->
+<!-- $Revision: 1.3 $ -->
+<!-- EN-Revision: 1.8 Maintainer: takagi Status: ready -->
 <refentry id="function.curl-multi-exec">
  <refnamediv>
   <refname>curl_multi_exec</refname>
@@ -14,9 +14,10 @@
    <methodparam><type>resource</type><parameter>mh</parameter></methodparam>
    <methodparam><type>int</type><parameter role="reference">still_running</parameter></methodparam>
   </methodsynopsis>
-
-  &warn.undocumented.func;
-
+  <para>
+   スタック内の各ハンドルを処理します。
+   このメソッドは、ハンドルがデータの読み書きを要するかどうかにかかわらずコール可能です。
+  </para> 
  </refsect1>
 
  <refsect1 role="parameters">
@@ -28,6 +29,7 @@
      <term><parameter>still_running</parameter></term>
      <listitem>
       <para>
+       処理が実行中かどうかを表すフラグへの参照。
       </para>
      </listitem>
     </varlistentry>
@@ -35,6 +37,65 @@
   </para>
  </refsect1>
 
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <para>
+   cURL <link linkend="curl.constants">定義済み定数</link> で定義された
+   cURL コードを返します。
+  </para>
+  <note>
+   <para>
+    これは、マルチスタック全体に関するエラーのみを返します。この関数が
+    <constant>CURLM_OK</constant> を返したとしても、各転送で個別にエラーが発生している可能性があります。
+   </para>
+  </note>
+ </refsect1>
+ 
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title><function>curl_multi_exec</function> の例</title>
+    <para>
+     この例は、ふたつの cURL ハンドルを作成し、それをマルチハンドルに追加して並列実行します。
+    </para>
+    <programlisting role="php">
+<![CDATA[
+<?php
+// cURL リソースを作成します
+$ch1 = curl_init();
+$ch2 = curl_init();
+
+// URL およびその他適切なオプションを設定します。
+curl_setopt($ch1, CURLOPT_URL, "http://www.example.com/");
+curl_setopt($ch1, CURLOPT_HEADER, 0);
+curl_setopt($ch2, CURLOPT_URL, "http://www.php.net/");
+curl_setopt($ch2, CURLOPT_HEADER, 0);
+
+// マルチ cURL ハンドルを作成します
+$mh = curl_multi_init();
+
+// ふたつのハンドルを追加します
+curl_multi_add_handle($mh,$ch1);
+curl_multi_add_handle($mh,$ch2);
+
+$running=null;
+// ハンドルを実行します
+do {
+    curl_multi_exec($mh,$running);
+} while ($running > 0);
+// ハンドルを閉じます
+curl_multi_remove_handle($ch1);
+curl_multi_remove_handle($ch2);
+curl_multi_close($mh);
+
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+ </refsect1>
+ 
  <refsect1 role="seealso">
   &reftitle.seealso;
   <para>
