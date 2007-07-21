@@ -1,35 +1,238 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.5 $ -->
-<!-- splitted from ./ja/functions/sockets.xml, last change in rev 1.10 -->
-<!-- EN-Revision: 1.7 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.6 $ -->
+<!-- EN-Revision: 1.12 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi -->
-  <refentry xml:id="function.socket-recvfrom" xmlns="http://docbook.org/ns/docbook">
-   <refnamediv>
-    <refname>socket_recvfrom</refname>
-    <refpurpose>
-     接続しているかどうかによらず、ソケットからデータを受信する
-    </refpurpose>
-   </refnamediv>
-   <refsect1>
-    <title>説明</title>
-     <methodsynopsis>
-      <type>int</type><methodname>socket_recvfrom</methodname>
-      <methodparam><type>resource</type><parameter>socket</parameter></methodparam>
-      <methodparam><type>string</type><parameter role="reference">buf</parameter></methodparam>
-      <methodparam><type>int</type><parameter>len</parameter></methodparam>
-      <methodparam><type>int</type><parameter>flags</parameter></methodparam>
-      <methodparam><type>string</type><parameter role="reference">name</parameter></methodparam>
-      <methodparam choice="opt"><type>int</type><parameter role="reference">port</parameter></methodparam>
-     </methodsynopsis>
+<refentry xmlns="http://docbook.org/ns/docbook" xml:id="function.socket-recvfrom">
+ <refnamediv>
+  <refname>socket_recvfrom</refname>
+  <refpurpose>接続しているかどうかによらず、ソケットからデータを受信する</refpurpose>
+ </refnamediv>
+ 
+ <refsect1 role="description">
+  &reftitle.description;
+  <methodsynopsis>
+   <type>int</type><methodname>socket_recvfrom</methodname>
+   <methodparam><type>resource</type><parameter>socket</parameter></methodparam>
+   <methodparam><type>string</type><parameter role="reference">buf</parameter></methodparam>
+   <methodparam><type>int</type><parameter>len</parameter></methodparam>
+   <methodparam><type>int</type><parameter>flags</parameter></methodparam>
+   <methodparam><type>string</type><parameter role="reference">name</parameter></methodparam>
+   <methodparam choice="opt"><type>int</type><parameter role="reference">port</parameter></methodparam>
+  </methodsynopsis>
+  <para>
+   <function>socket_recvfrom</function> 関数は、
+   ポート <parameter>port</parameter> (<constant>AF_UNIX</constant>
+   型のソケットである場合を除く) 上の <parameter>name</parameter>
+   から受信した <parameter>len</parameter> バイトのデータを
+   <parameter>buf</parameter> に格納します。
+   <function>socket_recvfrom</function> は、
+   接続済みのソケットだけでなく接続していないソケットに対しても使用可能です。
+   さらに、フラグを指定することでこの関数の挙動を設定できます。
+  </para>
+  <para>
+   <parameter>name</parameter> と <parameter>port</parameter>
+   は参照渡しとしなければなりません。接続していないソケットの場合は、
+   <parameter>name</parameter> はリモートホストの IP アドレスか
+   UNIX ソケットへのパスとなります。接続済みのソケットの場合は、
+   <parameter>name</parameter> は &null; とします。
+   また、<constant>AF_INET</constant> あるいは
+   <constant>AF_INET6</constant> 形式のまだ接続していないソケットの場合、
+   <parameter>port</parameter> にはリモートホストのポート番号を指定します。
+  </para>
+ </refsect1>
+
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <para>
+   <variablelist>
+    <varlistentry>
+     <term><parameter>socket</parameter></term>
+     <listitem>
+      <para>
+       <parameter>socket</parameter> には、
+       socket_create() で作成したソケットリソースを指定します。
+      </para>
+     </listitem>
+    </varlistentry>
+
+    <varlistentry>
+     <term><parameter>buf</parameter></term>
+     <listitem>
+      <para>
+       受信したデータが
+       <parameter>buf</parameter> に格納されます。
+      </para>
+     </listitem>
+    </varlistentry>
+
+    <varlistentry>
+     <term><parameter>len</parameter></term>
+     <listitem>
+      <para>
+       最大 <parameter>len</parameter> バイトまでのデータをリモートホストから取得します。
+      </para>
+     </listitem>
+    </varlistentry>
+
+    <varlistentry>
+     <term><parameter>flags</parameter></term>
+     <listitem>
+      <para>
+       以下の表にまとめたフラグを
+       <parameter>flags</parameter> に指定します。複数のフラグを指定する場合には
+       論理 OR 演算子 (<literal>|</literal>) を使用します。
+      </para>
+      
+      <table>
+       <title>使用できるフラグ</title>
+       <tgroup cols="2">
+        <thead>
+         <row>
+          <entry>フラグ</entry>
+          <entry>説明</entry>
+         </row>
+        </thead>
+        <tbody>
+         <row>
+          <entry>MSG_OOB</entry>
+          <entry>
+           帯域外 (out-of-band) のデータを受信する。
+          </entry>
+         </row>
+         <row>
+          <entry>MSG_PEEK</entry>
+          <entry>
+           受信キューの先頭にあるデータを受信し、
+           そのデータをそのままキューに残しておく。
+          </entry>
+         </row>
+         <row>
+          <entry>MSG_WAITALL</entry>
+          <entry>
+           少なくとも <parameter>len</parameter> バイト受信するまではブロックする。
+           しかし、もし何らかのシグナルを受信したりリモートホストとの接続が切断された場合は
+           これより少ないバイト数を返す可能性がある。
+          </entry>
+         </row>
+         <row>
+          <entry>MSG_DONTWAIT</entry>
+          <entry>
+           通常はブロックする場面であってもそのまま return する。
+          </entry>
+         </row>
+        </tbody>
+       </tgroup>
+      </table>
+     </listitem>
+    </varlistentry>
+
+    <varlistentry>
+     <term><parameter>name</parameter></term>
+     <listitem>
+      <para>
+       <constant>AF_UNIX</constant> 型のソケットの場合は、
+       <parameter>name</parameter> はファイルへのパスとなります。
+       それ以外の場合は、未接続のソケットの場合には
+       <parameter>name</parameter> はリモートホストの IP アドレスとなります。
+       接続済みソケットの場合は &null; となります。
+      </para>
+     </listitem>
+    </varlistentry>
+
+    <varlistentry>
+     <term><parameter>port</parameter></term>
+     <listitem>
+      <para>
+       この引数は <constant>AF_INET</constant> 型あるいは
+       <constant>AF_INET6</constant> 型のソケットに対してのみ適用され、
+       データを受信するリモートホストのポートを指定します。
+       接続済みソケットの場合は
+       <parameter>port</parameter> は &null; となります。
+      </para>
+     </listitem>
+    </varlistentry>
+    
+   </variablelist>
+  </para>
+ </refsect1>
+ 
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <para>
+   <function>socket_recvfrom</function> は、受信したバイト数を返します。
+   あるいはエラー時には -1 を返します。
+   エラーコードを取得するには <function>socket_last_error</function>
+   をコールします。取得したエラーコードを
+   <function>socket_strerror</function> に渡すと、
+   そのエラーについての説明を得ることができます。
+  </para>
+ </refsect1>
+                     
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title><function>socket_recvfrom</function> の例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+error_reporting(E_ALL | E_STRICT);
+
+$socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
+socket_connect($socket, "127.0.0.1", 1223);
+
+$Ip = "";
+socket_recvfrom($socket, $buf, 12, 0, $Ip, $Port);
+
+echo "Received data: $buf";
+?>
+]]>
+    </programlisting>
     <para>
-     &warn.undocumented.func;
+     この例は、127.0.0.1 のポート 1223
+     との TCP 接続を確立し、受信したデータを最大 12 バイトまで表示します。
+     データを受信するまではブロック状態となります。
     </para>
-    <para>
-     <function>socket_recvfrom</function> は、PHP 4.3.0 以降
-     バイナリデータに関しても安全です。
-    </para>
-   </refsect1>
-  </refentry>
+   </example>
+  </para>
+ </refsect1>
+
+ <refsect1 role="changelog">
+  &reftitle.changelog;
+  <para>
+   <informaltable>
+    <tgroup cols="2">
+     <thead>
+      <row>
+       <entry>&Version;</entry>
+       <entry>&Description;</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry>4.3.0</entry>
+       <entry>
+        <function>socket_recvfrom</function> はバイナリセーフとなりました。
+       </entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </informaltable>
+  </para>
+ </refsect1>
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <para>
+   <simplelist>
+    <member><function>socket_recv</function></member>
+    <member><function>socket_send</function></member>
+    <member><function>socket_sendto</function></member>
+    <member><function>socket_create</function></member>
+   </simplelist>
+  </para>
+ </refsect1>
+</refentry>
 
 <!-- Keep this comment at the end of the file
 Local variables:
