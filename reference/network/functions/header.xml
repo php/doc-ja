@@ -1,187 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.2 $ -->
-<!-- EN-Revision: 1.1 Maintainer: takagi Status: ready -->
-  <refentry xml:id="function.header" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
-   <refnamediv>
-    <refname>header</refname>
-    <refpurpose>生の HTTP ヘッダを送信する</refpurpose>
-   </refnamediv>
-   <refsect1>
-    <title>説明</title>
-     <methodsynopsis>
-      <type>void</type><methodname>header</methodname>
-      <methodparam><type>string</type><parameter>string</parameter></methodparam>
-      <methodparam choice="opt"><type>bool</type><parameter>replace</parameter></methodparam>
-      <methodparam choice="opt"><type>int</type><parameter>http_response_code</parameter></methodparam>
-     </methodsynopsis>
-    <para>
-     <function>header</function> は、生の
-     <acronym>HTTP</acronym> ヘッダを送信するために使用されます。
-     <acronym>HTTP</acronym> ヘッダについての詳細な情報は
-     <link xlink:href="&url.rfc;2616">HTTP/1.1 仕様</link>
-     を参照ください。
-    </para>
-    <note>
-     <para>
-      PHP 4.4.2 および PHP 5.1.2 以降、この関数は一度に複数のヘッダを
-      送信できないようになりました。これは、
-      ヘッダインジェクション攻撃への対策です。
-     </para>
-    </note>
-    <para>
-     オプションのパラメータ <parameter>replace</parameter> は、ヘッダが
-     前に送信された類似のヘッダを置換するか、または、同じ形式の二番目の
-     ヘッダを追加するかどうかを指定します。デフォルトでは、この関数は
-     置換を行ないますが、二番目の引数に &false; を指定すると、同じ型の
-     複数のヘッダを強制的に生成します。例えば、
-    </para>
-    <para>
-     <informalexample>
-      <programlisting role="php">
-<![CDATA[
-<?php
-header('WWW-Authenticate: Negotiate');
-header('WWW-Authenticate: NTLM', false);
-?>
-]]>
-      </programlisting>
-     </informalexample>
-    </para>
-    <para>
-     第二オプション引数 <parameter>http_response_code</parameter> は
-     HTTP レスポンスコードを強制的に指定の値にします (このパラメータは
-     PHP 4.3.0 以降で有効です)。
-    </para>
-    <para>
-     特殊な header コールが 2 種類あります。最初のものは、
-     文字列 "<literal>HTTP/</literal>"
-     から始まる全てのヘッダ (大文字・小文字は区別されません) です。
-     このヘッダは、送信する HTTP ステータスコードを示すために使用されます。
-     例えば、存在しないファイルへのリクエストを処理するためにある PHP
-     スクリプトを使用するよう (<literal>ErrorDocument</literal>
-     ディレクティブにより) Apache を設定する場合、
-     そのスクリプトが正しいステータスコードを返すようにする必要があります。
-    </para>
-    <para>
-     <informalexample>
-      <programlisting role="php">
-<![CDATA[
-<?php
-header("HTTP/1.0 404 Not Found");
-?>
-]]>
-     </programlisting>
-    </informalexample>
-   </para>
-    <note>
-     <para>
-      実際に <function>header</function> が最初にコールされたか
-      どうかにかかわらず、HTTP ステータスヘッダ行は
-      クライアントに対し常に最初に送信されます。
-      HTTP ヘッダが既に送信されていない限り、
-      <function>header</function> をコールすることでステータスは
-      常に上書きされます。
-     </para>
-    </note>
-    <para>
-     2 番目の特別なヘッダは、"Location:"
-     ヘッダです。このヘッダがブラウザに返されるだけではなく、
-     ブラウザに <literal>REDIRECT</literal> (302) ステータスコードを返します
-     (<literal>3xx</literal> ステータスコードが既に送信されていない場合にのみ)。
-    </para>
-    <para>
-     <informalexample>
-      <programlisting role="php">
-<![CDATA[
-<?php
-header("Location: http://www.example.com/"); /* Redirect browser */
-
-/* Make sure that code below does not get executed when we redirect. */
-exit;
-?>
-]]>
-      </programlisting>
-     </informalexample>
-    </para>
-    <note>
-     <para>
-      HTTP/1.1 では、スキーム、ホスト名、絶対パスを含む絶対
-      <acronym>URI</acronym> が <link
-       xlink:href="&spec.http1.1;-sec14.html#sec14.30">Location:</link>
-      の引数として必要ですが、相対 URI を受け付けるクライアントもあります。
-      通常は、相対 URI から絶対 URI を作成するためには
-      $_SERVER['HTTP_HOST']、$_SERVER['PHP_SELF'] および
-      <function>dirname</function> を使用できます。
-      <informalexample>
-       <programlisting role="php">
-<![CDATA[
-<?php
-/* カレントディレクトリの別のページにリダイレクトします */
-$host  = $_SERVER['HTTP_HOST'];
-$uri   = rtrim(dirname($_SERVER['PHP_SELF']), '/\\');
-$extra = 'mypage.php';
-header("Location: http://$host$uri/$extra");
-exit;
-?>
-]]>
-       </programlisting>
-      </informalexample>
-     </para>
-    </note>
-    <note>
-     <para>
-      <link linkend="ini.session.use-trans-sid">session.use_trans_sid</link>
-      が有効であったとしても、セッション ID が Location ヘッダとともに
-      渡されることはありません。<constant>SID</constant> 定数を使用して
-      手動で渡す必要があります。
-     </para>
-    </note>
-    <para>
-     PHP スクリプトはしばしば動的に HTML を生成するため、クライアント
-     ブラウザやサーバおよびクライアントブラウザの間でプロキシがキャッシュを
-     行ったりするべきではありません。多くのプロキシとクライアントでは、
-     以下のコードにより強制的にキャッシュを無効にできます。
-    </para>
-    <para>
-     <informalexample>
-      <programlisting role="php">
-<![CDATA[
-<?php
-header("Cache-Control: no-cache, must-revalidate"); // HTTP/1.1
-header("Expires: Mon, 26 Jul 1997 05:00:00 GMT"); // 過去の日付
-?>
-]]>
-      </programlisting>
-     </informalexample>
-    </para>
-    <note>
-     <para>
-      上記のヘッダを全て出力しなかったとしてもページのキャッシュが
-      行われない場合があることに気付くかもしれません。デフォルトの
-      ブラウザのキャッシュの動作をユーザが変更できる手段はいくつもあります。
-      上記のヘッダを送信することにより、スクリプトの出力がキャッシュされる
-      可能性がある設定を上書きするべきです。
-     </para>
-     <para>
-      さらに、<function>session_cache_limiter</function> および
-      設定 <literal>session.cache_limiter</literal> を用いると、
-      セッションが使用された際にキャッシュ関係の正しいヘッダを
-      自動的に生成させることもできます。
-     </para>
-    </note>
-    <para>
-     覚えておいて頂きたいのは、<function>header</function> 関数は、
-     通常の HTML タグまたは PHP からの出力にかかわらず、すべての実際の
-     出力の前にコールする必要があることです。
-     頻出するエラーとして、<function>include</function> または
-     <function>require</function> 関数、他のファイルをアクセスする関数に
-     空白または空行があり、<function>header</function> の前に出力が
-     行われてしまうというものがあります。同じ問題は、単一の PHP/HTML
-     ファイルを使用している場合でも存在します。
-    </para>
-    <para>
-     <informalexample>
-      <programlisting role="php">
+<!-- $Revision: 1.3 $ -->
+<!-- EN-Revision: 1.6 Maintainer: takagi Status: ready -->
+<refentry xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://docbook.org/ns/docbook" xml:id="function.header">
+ <refnamediv>
+  <refname>header</refname>
+  <refpurpose>生の HTTP ヘッダを送信する</refpurpose>
+ </refnamediv>
+ 
+ <refsect1 role="description">
+  &reftitle.description;
+  <methodsynopsis>
+   <type>void</type><methodname>header</methodname>
+   <methodparam><type>string</type><parameter>string</parameter></methodparam>
+   <methodparam choice="opt"><type>bool</type><parameter>replace</parameter></methodparam>
+   <methodparam choice="opt"><type>int</type><parameter>http_response_code</parameter></methodparam>
+  </methodsynopsis>
+  <para>
+   <function>header</function> は、生の
+   <acronym>HTTP</acronym> ヘッダを送信するために使用されます。
+   <acronym>HTTP</acronym> ヘッダについての詳細な情報は
+   <link xlink:href="&url.rfc;2616">HTTP/1.1 仕様</link>
+   を参照ください。
+  </para>
+  <para>
+   覚えておいて頂きたいのは、<function>header</function> 関数は、
+   通常の HTML タグまたは PHP からの出力にかかわらず、すべての実際の
+   出力の前にコールする必要があることです。
+   頻出するエラーとして、<function>include</function> または
+   <function>require</function> 関数、他のファイルをアクセスする関数に
+   空白または空行があり、<function>header</function> の前に出力が
+   行われてしまうというものがあります。同じ問題は、単一の PHP/HTML
+   ファイルを使用している場合でも存在します。
+   <informalexample>
+    <programlisting role="php">
 <![CDATA[
 <html>
 <?php
@@ -190,30 +41,156 @@ header("Expires: Mon, 26 Jul 1997 05:00:00 GMT"); // 過去の日付
 header('Location: http://www.example.com/');
 ?>
 ]]>
-      </programlisting>
-     </informalexample>
-    </para>    
-    <note>
-     <para>
-      PHP 4 では、出力のバッファリングを使用してこの問題を回避することができます。
-      この場合、ブラウザへの出力が送信するまでサーバに
-      全てバッファリングされるオーバーヘッドがあります。出力バッファリングは、
-      <function>ob_start</function> と
-      <function>ob_end_flush</function> をスクリプトでコールするか
-      &php.ini; またはサーバ設定ファイルの設定ディレクティブ
-      <literal>output_buffering</literal> を設定することにより
-      行うことが可能です。
-     </para>
-    </note>
+    </programlisting>
+   </informalexample>
+  </para>
+ </refsect1>
+
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <para>
+   <variablelist>
+    <varlistentry>
+     <term><parameter>string</parameter></term>
+     <listitem>
+      <para>
+       ヘッダ文字列。
+      </para>
+      <para>
+       特殊な header コールが 2 種類あります。最初のものは、
+       文字列 "<literal>HTTP/</literal>"
+       から始まる全てのヘッダ (大文字・小文字は区別されません) です。
+       このヘッダは、送信する HTTP ステータスコードを示すために使用されます。
+       例えば、存在しないファイルへのリクエストを処理するためにある PHP
+       スクリプトを使用するよう (<literal>ErrorDocument</literal>
+       ディレクティブにより) Apache を設定する場合、
+       そのスクリプトが正しいステータスコードを返すようにする必要があります。
+      </para>
+      <para>
+       <informalexample>
+        <programlisting role="php">
+<![CDATA[
+<?php
+header("HTTP/1.0 404 Not Found");
+?>
+]]>
+        </programlisting>
+       </informalexample>
+      </para>
+      <para>
+       2 番目の特別なヘッダは、"Location:"
+       ヘッダです。このヘッダがブラウザに返されるだけではなく、
+       ブラウザに <literal>REDIRECT</literal> (302) ステータスコードを返します
+       (<literal>3xx</literal> ステータスコードが既に送信されていない場合にのみ)。
+      </para>
+      <para>
+       <informalexample>
+        <programlisting role="php">
+<![CDATA[
+<?php
+header("Location: http://www.example.com/"); /* ブラウザをリダイレクトします */
+
+/* リダイレクトしたら、これ以降のコードは実行されません */
+exit;
+?>
+]]>
+        </programlisting>
+       </informalexample>
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>replace</parameter></term>
+     <listitem>
+      <para>
+       オプションのパラメータ <parameter>replace</parameter> は、ヘッダが
+       前に送信された類似のヘッダを置換するか、または、同じ形式の二番目の
+       ヘッダを追加するかどうかを指定します。デフォルトでは、この関数は
+       置換を行ないますが、二番目の引数に &false; を指定すると、同じ型の
+       複数のヘッダを強制的に生成します。例えば、
+      </para>
+      <para>
+       <informalexample>
+        <programlisting role="php">
+<![CDATA[
+<?php
+header('WWW-Authenticate: Negotiate');
+header('WWW-Authenticate: NTLM', false);
+?>
+]]>
+        </programlisting>
+       </informalexample>
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>http_response_code</parameter></term>
+     <listitem>
+      <para>
+       HTTP レスポンスコードを強制的に指定の値にします。
+      </para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
+  </para>
+ </refsect1>
+
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <para>
+   &return.void;
+  </para>
+ </refsect1>
+
+ <refsect1 role="changelog">
+  &reftitle.changelog;
+  <para>
+   <informaltable>
+    <tgroup cols="2">
+     <thead>
+      <row>
+       <entry>&Version;</entry>
+       <entry>&Description;</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry>4.4.2 および 5.1.2</entry>
+       <entry>
+        この関数は一度に複数のヘッダを送信できないようになりました。
+        これは、ヘッダインジェクション攻撃への対策です。
+       </entry>
+      </row>
+      <row>
+       <entry>4.3.0</entry>
+       <entry>
+        <parameter>http_response_code</parameter> パラメータが追加されました。
+       </entry>
+      </row>
+      <row>
+       <entry>4.0.4</entry>
+       <entry>
+        <parameter>replace</parameter> パラメータが追加されました。
+       </entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </informaltable>
+  </para>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title>ダウンロードダイアログ</title>
     <para>
-     PDF ファイルを生成するといったように送信するデータを保存するかどうか
-     ユーザにプロンプトを表示したい場合、推奨されるファイル名を指定して
-     ブラウザに保存ダイアログを表示させる<link
-      xlink:href="&url.rfc;2183">Content-Disposition</link> ヘッダを使用可能です。
+     PDF ファイルを生成した場合など、
+     それをダウンロードするかの確認ダイアログを表示させたいことがあるでしょう。
+     そんな場合は、<link xlink:href="&url.rfc;2183">Content-Disposition</link>
+     ヘッダを使用してファイル名を指定すると、ブラウザ側でダイアログを表示させることができます。
     </para>
-    <para>
-     <informalexample>
-      <programlisting role="php">
+    <programlisting role="php">
 <![CDATA[
 <?php
 // PDFを出力します
@@ -226,33 +203,137 @@ header('Content-Disposition: attachment; filename="downloaded.pdf"');
 readfile('original.pdf');
 ?>
 ]]>
-      </programlisting>
-     </informalexample>
-    </para>
-    <note>
-     <para>
-      Microsoft Internet Explorer 4.01 にはバグがあり、
-      この方法が動作しません。これを解決する方法はありません。
-      同様に Microsoft Internet Explorer 5.5 にもこれを妨げるバグがあります。
-      こちらは、サービスパック 2 以降にアップグレードすることで対応できます。
-     </para>
-    </note>
-    <note>
-     <simpara>
-      <link linkend="ini.safe-mode">セーフモード</link>が有効な場合は、
-      <literal>WWW-Authenticate</literal> ヘッダ (HTTP 認証に使用する)
-      を設定した際に、スクリプトの uid が <literal>realm</literal>
-      部に追加されます。
-     </simpara>
-    </note>
+    </programlisting>
+   </example>
+  </para>
+  <para>
+   <example>
+    <title>キャッシュディレクティブ</title>
     <para>
-     <function>headers_sent</function>、
-     <function>setcookie</function> および
-     <link linkend="features.http-auth">HTTP 認証</link>
-     の節も参照ください。
+     PHP スクリプトはしばしば動的に HTML を生成するため、クライアント
+     ブラウザやサーバおよびクライアントブラウザの間でプロキシがキャッシュを
+     行ったりするべきではありません。多くのプロキシとクライアントでは、
+     以下のコードにより強制的にキャッシュを無効にできます。
     </para>
-   </refsect1>
-  </refentry>
+    <programlisting role="php">
+<![CDATA[
+<?php
+header("Cache-Control: no-cache, must-revalidate"); // HTTP/1.1
+header("Expires: Mon, 26 Jul 1997 05:00:00 GMT"); // 過去の日付
+?>
+]]>
+    </programlisting>
+    <para>
+     <note>
+      <para>
+       上記のヘッダを全て出力しなかったとしてもページのキャッシュが
+       行われない場合があることに気付くかもしれません。デフォルトの
+       ブラウザのキャッシュの動作をユーザが変更できる手段はいくつもあります。
+       上記のヘッダを送信することにより、スクリプトの出力がキャッシュされる
+       可能性がある設定を上書きするべきです。
+      </para>
+      <para>
+       さらに、<function>session_cache_limiter</function> および
+       設定 <literal>session.cache_limiter</literal> を用いると、
+       セッションが使用された際にキャッシュ関係の正しいヘッダを
+       自動的に生成させることもできます。
+      </para>
+     </note>
+    </para>
+   </example>
+  </para>
+ </refsect1>
+
+ <refsect1 role="notes">
+  &reftitle.notes;
+  <note>
+   <para>
+    PHP 4 では、出力のバッファリングを使用してこの問題を回避することができます。
+    この場合、ブラウザへの出力が送信するまでサーバに
+    全てバッファリングされるオーバーヘッドがあります。出力バッファリングは、
+    <function>ob_start</function> と
+    <function>ob_end_flush</function> をスクリプトでコールするか
+    &php.ini; またはサーバ設定ファイルの設定ディレクティブ
+    <literal>output_buffering</literal> を設定することにより
+    行うことが可能です。
+   </para>
+  </note>
+  <note>
+   <para>
+    実際に <function>header</function> が最初にコールされたか
+    どうかにかかわらず、HTTP ステータスヘッダ行は
+    クライアントに対し常に最初に送信されます。
+    HTTP ヘッダが既に送信されていない限り、
+    <function>header</function> をコールすることでステータスは
+    常に上書きされます。
+   </para>
+  </note>
+  <note>
+   <para>
+    Microsoft Internet Explorer 4.01 にはバグがあり、
+    この方法が動作しません。これを解決する方法はありません。
+    同様に Microsoft Internet Explorer 5.5 にもこれを妨げるバグがあります。
+    こちらは、サービスパック 2 以降にアップグレードすることで対応できます。
+   </para>
+  </note>
+  <note>
+   <simpara>
+    <link linkend="ini.safe-mode">セーフモード</link>が有効な場合は、
+    <literal>WWW-Authenticate</literal> ヘッダ (HTTP 認証に使用する)
+    を設定した際に、スクリプトの uid が <literal>realm</literal>
+    部に追加されます。
+   </simpara>
+  </note>
+  <note>
+   <para>
+    HTTP/1.1 では、スキーム、ホスト名、絶対パスを含む絶対
+    <acronym>URI</acronym> が <link
+    xlink:href="&spec.http1.1;-sec14.html#sec14.30">Location:</link>
+    の引数として必要ですが、相対 URI を受け付けるクライアントもあります。
+    通常は、相対 URI から絶対 URI を作成するためには
+    $_SERVER['HTTP_HOST']、$_SERVER['PHP_SELF'] および
+    <function>dirname</function> を使用できます。
+    <informalexample>
+     <programlisting role="php">
+<![CDATA[
+<?php
+/* カレントディレクトリの別のページにリダイレクトします */
+$host  = $_SERVER['HTTP_HOST'];
+$uri   = rtrim(dirname($_SERVER['PHP_SELF']), '/\\');
+$extra = 'mypage.php';
+header("Location: http://$host$uri/$extra");
+exit;
+?>
+]]>
+     </programlisting>
+    </informalexample>
+   </para>
+  </note>
+  <note>
+   <para>
+    <link linkend="ini.session.use-trans-sid">session.use_trans_sid</link>
+    が有効であったとしても、セッション ID が Location ヘッダとともに
+    渡されることはありません。<constant>SID</constant> 定数を使用して
+    手動で渡す必要があります。
+   </para>
+  </note>
+ </refsect1>
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <para>
+   <simplelist>
+    <member><function>headers_sent</function></member>
+    <member><function>setcookie</function></member>
+    <member>
+     <link linkend="features.http-auth">HTTP
+     認証</link>
+    </member>
+   </simplelist>
+  </para>
+ </refsect1>
+
+</refentry>
 
 <!-- Keep this comment at the end of the file
 Local variables:

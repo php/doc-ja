@@ -1,241 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.4 $ -->
-<!-- EN-Revision: 1.21 Maintainer: takagi Status: ready -->
-  <refentry xml:id="function.dns-get-record" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
-    <refnamediv>
-     <refname>dns_get_record</refname>
-     <refpurpose>
-      ホスト名に関連する DNS リソースレコードを取得する
-     </refpurpose>
-    </refnamediv>
-    <refsect1>
-     <title>説明</title>
-      <methodsynopsis>
-       <type>array</type><methodname>dns_get_record</methodname>
-       <methodparam><type>string</type><parameter>hostname</parameter></methodparam>
-       <methodparam choice="opt"><type>int</type><parameter>type</parameter></methodparam>
-       <methodparam choice="opt"><type>array</type><parameter role="reference">authns</parameter></methodparam>
-       <methodparam><type>array</type><parameter role="reference">addtl</parameter></methodparam>
-      </methodsynopsis>
-     <para>
-      <note>
-       <simpara>
-        この関数は Windows プラットフォームでは実装されていません。
-        また、（現時点では）*BSD システムでも動作しません。
-        <link xlink:href="&url.php.pear;">PEAR</link> の
-        <link xlink:href="&url.pear.package;Net_DNS">Net_DNS</link> クラスを試してみてください。
-       </simpara>
-      </note>
-     </para>
-     <para>
-      この関数は、連想配列を要素にもつ配列を返します。それぞれの連想配列には
-      <emphasis>少なくとも</emphasis> 以下のキーが含まれています:
-      <table>
-       <title>基本 DNS 属性</title>
-       <tgroup cols="2">
-        <thead>
-         <row>
-          <entry>属性</entry>
-          <entry>意味</entry>
-         </row>
-        </thead>
-        <tbody>
-         <row>
-          <entry>host</entry>
-          <entry>
-           これ以降の関連するデータが参照する DNS 名。
-          </entry>
-         </row>
-         <row>
-          <entry>class</entry>
-          <entry>
-           <function>dns_get_record</function> は Internet クラスの
-           レコードのみを返すので、このパラメータは常に
-           <literal>IN</literal> を返します。
-          </entry>
-         </row>
-         <row>
-          <entry>type</entry>
-          <entry>
-           レコード型を表す文字列。type の値に応じて、結果の配列には
-           追加の属性が含まれます。以下の表を参照ください。
-          </entry>
-         </row>
-         <row>
-          <entry>ttl</entry>
-          <entry>
-           このレコードの有効期限。レコードの本来の ttl と一致するとは
-           <emphasis>限りません</emphasis>。むしろ、ネームサーバへの
-           クエリにかかった時間をそこから引いたものに一致します。
-          </entry>
-         </row>
-        </tbody>
-       </tgroup>
-      </table>
-     </para>
-     <simpara>
-      <parameter>hostname</parameter> は、正しい DNS ホスト名、すなわち
-      "www.example.com" のようなものでなければなりません。
-      in-addr.arpa 形式の表記を用いた逆引き検索は可能ですが、
-      たいていは <function>gethostbyaddr</function> を用いるほうが適当です。
-     </simpara>
-     <para>
-      デフォルトでは、<function>dns_get_record</function> は
-      <parameter>hostname</parameter> に関連するすべてのリソースレコードを
-      検索します。これを制限するには、オプションの
-      <parameter>type</parameter> パラメータを指定してください。
-      <parameter>type</parameter> は以下のうちのいずれかです。
-      <constant>DNS_A</constant>, <constant>DNS_CNAME</constant>, 
-      <constant>DNS_HINFO</constant>, <constant>DNS_MX</constant>, 
-      <constant>DNS_NS</constant>, <constant>DNS_PTR</constant>, 
-      <constant>DNS_SOA</constant>, <constant>DNS_TXT</constant>, 
-      <constant>DNS_AAAA</constant>, <constant>DNS_SRV</constant>,
-      <constant>DNS_NAPTR</constant>, <constant>DNS_A6</constant>,
-      <constant>DNS_ALL</constant> or <constant>DNS_ANY</constant> 。
-      デフォルトは <emphasis>DNS_ANY</emphasis> です。
-      <note>
-       <para>
-        プラットフォーム依存の libresolv のおかしな挙動のせいで、
-        <constant>DNS_ANY</constant> が常にすべてのレコードを返すとは
-        限りません。速度は遅くなりますが、<constant>DNS_ALL</constant>
-        のほうがより確実にすべてのレコードを取得できます。
-       </para>
-      </note>
-     </para>
-     <simpara>
-       3 番目、4 番目のオプションの引数
-       <parameter>authns</parameter> と <parameter>addtl</parameter>
-       はリファレンスで渡され、もし指定された場合はそこにそれぞれ
-       <emphasis>Authoritative Name Servers</emphasis>,
-       と <emphasis>Additional Records</emphasis> が格納されます。
-       下の例を参照ください。
-     </simpara>
-     <para>
-      <table>
-       <title>'type' に応じて連想配列に追加される項目</title>
-       <tgroup cols="2">
-        <thead>
-         <row>
-          <entry>レコード型</entry>
-          <entry>追加項目</entry>
-         </row>
-        </thead>
-        <tbody>
-         <row>
-          <entry><literal>A</literal></entry>
-          <entry>
-           <literal>ip</literal>: ドット区切り 10 進数形式の IPv4 アドレス。
-          </entry>
-         </row>
-         <row>
-          <entry><literal>MX</literal></entry>
-          <entry>
-           <literal>pri</literal>: メールエクスチェンジャの優先度。
-           数字が小さいほど優先度が高い。
-           <literal>target</literal>: メールエクスチェンジャの FQDN 。
-           <function>dns_get_mx</function> も参照ください。
-          </entry>
-         </row>
-         <row>
-          <entry><literal>CNAME</literal></entry>
-          <entry>
-           <literal>target</literal>: レコードのエイリアスの対象となっている
-           場所の FQDN 。
-          </entry>
-         </row>
-         <row>
-          <entry><literal>NS</literal></entry>
-          <entry>
-           <literal>target</literal>: このホスト名に対する権威をもっている
-           ネームサーバの FQDN 。
-          </entry>
-         </row>
-         <row>
-          <entry><literal>PTR</literal></entry>
-          <entry>
-           <literal>target</literal>: レコードが指している、DNS 名前空間内の場所
-          </entry>
-         </row>
-          <row>
-          <entry><literal>TXT</literal></entry>
-          <entry>
-           <literal>txt</literal>: このレコードに関連付けられている任意の文字列。
-          </entry>
-         </row>
-         <row>
-          <entry><literal>HINFO</literal></entry>
-          <entry>
-           <literal>cpu</literal>: このレコードが参照しているマシンの CPU を
-           識別する IANA 番号。
-           <literal>os</literal>: このレコードが参照しているマシン上の OS を
-           識別する IANA 番号。
-           これらの値の意味については、IANA の 
-           <link xlink:href="&url.iana.system-names;">Operating System Names</link>
-           を参照ください。
-          </entry>
-         </row>
-         <row> 
-          <entry><literal>SOA</literal></entry>
-          <entry>
-           <literal>mname</literal>: リソースレコードの元となるマシンの
-           FQDN 。
-           <literal>rname</literal>: このドメインの管理責任者の Email アドレス。
-           <literal>serial</literal>: ドメインのシリアル番号。
-           <literal>refresh</literal>: セカンダリネームサーバがこのドメインの
-           コピーを更新する際に参照するリフレッシュ間隔（秒単位）。
-           <literal>retry</literal>: リフレッシュが失敗した際に 2 度目の
-           リフレッシュを試みるまでの間隔（秒単位）
-           <literal>expire</literal>: セカンダリネームサーバが、ゾーンデータの
-           リフレッシュに失敗した場合にコピーのデータを破棄せず持ち続ける期間
-           （秒単位）。
-           <literal>minimum-ttl</literal>: クライアントが、一度取得したデータを
-           再リクエストすることなしに利用できる最小期間（秒単位）。個々の
-           リソースレコードによって上書きが可能。
-          </entry>
-         </row>
-         <row>
-          <entry><literal>AAAA</literal></entry>
-          <entry>
-           <literal>ipv6</literal>: IPv6 アドレス。
-          </entry>
-         </row>
-         <row>
-          <entry><literal>A6</literal>(PHP &gt;= 5.1.0)</entry>
-          <entry>
-           <literal>masklen</literal>: <parameter>chain</parameter>
-           で指定された対象から引き継ぐビット長。
-           <literal>ipv6</literal>: <parameter>chain</parameter> と
-           マージするためのこのレコードのアドレス。
-           <literal>chain</literal>: <parameter>ipv6</parameter> データと
-           マージするための親レコード。
-          </entry>
-         </row>
-         <row>
-          <entry><literal>SRV</literal></entry>
-          <entry>
-           <literal>pri</literal>: (Priority) 値が小さいものが優先されます。
-           <literal>weight</literal>: 同じ優先順位の
-           <parameter>targets</parameter> からランダムに選択する際の重み。
-           <literal>target</literal> および <literal>port</literal>:
-           リクエストされたサービスが存在するホスト名とポート。
-           詳細は <link xlink:href="&url.rfc;2782">RFC 2782</link> を参照ください。
-          </entry>
-         </row>
-         <row>
-          <entry><literal>NAPTR</literal></entry>
-          <entry>
-           <literal>order</literal> および <literal>pref</literal>: 上の
-           <parameter>pri</parameter> および <parameter>weight</parameter> と同じ。
-           <literal>flags</literal>, <literal>services</literal>, <literal>regex</literal>,
-           および <literal>replacement</literal>:
-           <link xlink:href="&url.rfc;2915">RFC 2915</link> で定義されるパラメータ。
-          </entry>
-         </row>
-        </tbody>
-       </tgroup>
-      </table>
-     </para>
-     <para>
+<!-- $Revision: 1.5 $ -->
+<!-- EN-Revision: 1.25 Maintainer: takagi Status: ready -->
+<refentry xml:id="function.dns-get-record" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <refnamediv>
+  <refname>dns_get_record</refname>
+  <refpurpose>ホスト名に関連する DNS リソースレコードを取得する</refpurpose>
+ </refnamediv>
+ 
+ <refsect1 role="description">
+  &reftitle.description;
+  <methodsynopsis>
+   <type>array</type><methodname>dns_get_record</methodname>
+   <methodparam><type>string</type><parameter>hostname</parameter></methodparam>
+   <methodparam choice="opt"><type>int</type><parameter>type</parameter></methodparam>
+   <methodparam choice="opt"><type>array</type><parameter role="reference">authns</parameter></methodparam>
+   <methodparam><type>array</type><parameter role="reference">addtl</parameter></methodparam>
+  </methodsynopsis>
+  <para>
+   指定した <parameter>hostname</parameter>
+   に関連づけられた DNS リソースレコードを取得します。
+  </para>
+ </refsect1>
+
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <para>
+   <variablelist>
+    <varlistentry>
+     <term><parameter>hostname</parameter></term>
+     <listitem>
+      <para>
+       <parameter>hostname</parameter> は、正しい DNS ホスト名、すなわち
+       "www.example.com" のようなものでなければなりません。
+       in-addr.arpa 形式の表記を用いた逆引き検索は可能ですが、
+       たいていは <function>gethostbyaddr</function> を用いるほうが適当です。
+      </para>
       <note>
        <para>
         DNS の標準規格により、メールアドレスは user.host 形式で渡されます
@@ -245,21 +44,245 @@
         利用する前には必要なら変更を加えることを忘れないようにしてください。 
        </para>
       </note>
-     </para>
-     <example>
-      <title><function>dns_get_record</function> の使用</title>
-      <programlisting role="php">
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>type</parameter></term>
+     <listitem>
+      <para>
+       デフォルトでは、<function>dns_get_record</function> は
+       <parameter>hostname</parameter> に関連するすべてのリソースレコードを検索します。
+       これを制限するには、オプションの
+       <parameter>type</parameter> パラメータを指定してください。
+       <parameter>type</parameter> は以下のうちのいずれかです。
+       <constant>DNS_A</constant>, <constant>DNS_CNAME</constant>,
+       <constant>DNS_HINFO</constant>, <constant>DNS_MX</constant>,
+       <constant>DNS_NS</constant>, <constant>DNS_PTR</constant>,
+       <constant>DNS_SOA</constant>, <constant>DNS_TXT</constant>,
+       <constant>DNS_AAAA</constant>, <constant>DNS_SRV</constant>,
+       <constant>DNS_NAPTR</constant>, <constant>DNS_A6</constant>,
+       <constant>DNS_ALL</constant> or <constant>DNS_ANY</constant>。
+       デフォルトは <emphasis>DNS_ANY</emphasis> です。
+      </para>
+      <note>
+       <para>
+        プラットフォーム依存の libresolv のおかしな挙動のせいで、
+        <constant>DNS_ANY</constant> が常にすべてのレコードを返すとは
+        限りません。速度は遅くなりますが、<constant>DNS_ALL</constant>
+        のほうがより確実にすべてのレコードを取得できます。
+       </para>
+      </note>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>authns</parameter></term>
+     <listitem>
+      <para>
+       参照で渡し、
+       <emphasis>Authoritative Name Servers</emphasis>
+       のリソースレコードが格納されます。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>addtl</parameter></term>
+     <listitem>
+      <para>
+       参照で渡し、
+       <emphasis>Additional Records</emphasis>
+       が格納されます。
+      </para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
+  </para>
+ </refsect1>
+
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <para>
+   この関数は、連想配列を要素にもつ配列を返します。それぞれの連想配列には
+   <emphasis>少なくとも</emphasis> 以下のキーが含まれています:
+   <table>
+    <title>基本 DNS 属性</title>
+    <tgroup cols="2">
+     <thead>
+      <row>
+       <entry>属性</entry>
+       <entry>意味</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry>host</entry>
+       <entry>
+        これ以降の関連するデータが参照する DNS 名。
+       </entry>
+      </row>
+      <row>
+       <entry>class</entry>
+       <entry>
+        <function>dns_get_record</function> は
+        Internet クラスのレコードのみを返すので、このパラメータは常に
+        <literal>IN</literal> を返します。
+       </entry>
+      </row>
+      <row>
+       <entry>type</entry>
+       <entry>
+        レコード型を表す文字列。type の値に応じて、
+        結果の配列には追加の属性が含まれます。以下の表を参照ください。
+       </entry>
+      </row>
+      <row>
+       <entry>ttl</entry>
+       <entry>
+        このレコードの有効期限。レコードの本来の ttl と一致するとは
+        <emphasis>限りません</emphasis>。むしろ、
+        ネームサーバへのクエリにかかった時間をそこから引いたものに一致します。
+       </entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </table>
+  </para>
+  <para>
+   <table>
+    <title>'type' に応じて連想配列に追加される項目</title>
+    <tgroup cols="2">
+     <thead>
+      <row>
+       <entry>レコード型</entry>
+       <entry>追加項目</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry><literal>A</literal></entry>
+       <entry>
+        <literal>ip</literal>: ドット区切り 10 進数形式の IPv4 アドレス。
+       </entry>
+      </row>
+      <row>
+       <entry><literal>MX</literal></entry>
+       <entry>
+        <literal>pri</literal>: メールエクスチェンジャの優先度。
+        数字が小さいほど優先度が高い。
+        <literal>target</literal>: メールエクスチェンジャの FQDN 。
+        <function>dns_get_mx</function> も参照ください。
+       </entry>
+      </row>
+      <row>
+       <entry><literal>CNAME</literal></entry>
+       <entry>
+        <literal>target</literal>: レコードのエイリアスの対象となっている場所の FQDN 。
+       </entry>
+      </row>
+      <row>
+       <entry><literal>NS</literal></entry>
+       <entry>
+        <literal>target</literal>: このホスト名に対する権威をもっているネームサーバの FQDN 。
+       </entry>
+      </row>
+      <row>
+       <entry><literal>PTR</literal></entry>
+       <entry>
+        <literal>target</literal>: レコードが指している、DNS 名前空間内の場所
+       </entry>
+      </row>
+       <row>
+       <entry><literal>TXT</literal></entry>
+       <entry>
+        <literal>txt</literal>: このレコードに関連付けられている任意の文字列。
+       </entry>
+      </row>
+      <row>
+       <entry><literal>HINFO</literal></entry>
+       <entry>
+        <literal>cpu</literal>: このレコードが参照しているマシンの CPU を識別する IANA 番号。
+        <literal>os</literal>: このレコードが参照しているマシン上の OS を識別する IANA 番号。
+        これらの値の意味については、IANA の 
+        <link xlink:href="&url.iana.system-names;">Operating System Names</link>
+        を参照ください。
+       </entry>
+      </row>
+      <row>
+       <entry><literal>SOA</literal></entry>
+       <entry>
+        <literal>mname</literal>: リソースレコードの元となるマシンの FQDN 。
+        <literal>rname</literal>: このドメインの管理責任者の Email アドレス。
+        <literal>serial</literal>: ドメインのシリアル番号。
+        <literal>refresh</literal>:
+        セカンダリネームサーバがこのドメインのコピーを更新する際に参照するリフレッシュ間隔（秒単位）。
+        <literal>retry</literal>: リフレッシュが失敗した際に
+        2 度目のリフレッシュを試みるまでの間隔（秒単位）
+        <literal>expire</literal>: セカンダリネームサーバが、ゾーンデータの
+        リフレッシュに失敗した場合にコピーのデータを破棄せず持ち続ける期間
+        （秒単位）。
+        <literal>minimum-ttl</literal>: クライアントが、
+        一度取得したデータを再リクエストすることなしに利用できる最小期間（秒単位）。
+        個々のリソースレコードによって上書きが可能。
+       </entry>
+      </row>
+      <row>
+       <entry><literal>AAAA</literal></entry>
+       <entry>
+        <literal>ipv6</literal>: IPv6 アドレス。
+       </entry>
+      </row>
+      <row>
+       <entry><literal>A6</literal>(PHP &gt;= 5.1.0)</entry>
+       <entry>
+        <literal>masklen</literal>: <parameter>chain</parameter>
+        で指定された対象から引き継ぐビット長。
+        <literal>ipv6</literal>: <parameter>chain</parameter>
+        とマージするためのこのレコードのアドレス。
+        <literal>chain</literal>: <parameter>ipv6</parameter>
+        データとマージするための親レコード。
+       </entry>
+      </row>
+      <row>
+       <entry><literal>SRV</literal></entry>
+       <entry>
+        <literal>pri</literal>: (Priority) 値が小さいものが優先されます。
+        <literal>weight</literal>: 同じ優先順位の
+        <parameter>targets</parameter> からランダムに選択する際の重み。
+        <literal>target</literal> および <literal>port</literal>:
+        リクエストされたサービスが存在するホスト名とポート。
+        詳細は <link xlink:href="&url.rfc;2782">RFC 2782</link> を参照ください。
+       </entry>
+      </row>
+      <row>
+       <entry><literal>NAPTR</literal></entry>
+       <entry>
+        <literal>order</literal> および <literal>pref</literal>: 上の
+        <parameter>pri</parameter> および <parameter>weight</parameter> と同じ。
+        <literal>flags</literal>, <literal>services</literal>, <literal>regex</literal>,
+        および <literal>replacement</literal>:
+        <link xlink:href="&url.rfc;2915">RFC 2915</link> で定義されるパラメータ。
+       </entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </table>
+  </para>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title><function>dns_get_record</function> の使用</title>
+    <programlisting role="php">
 <![CDATA[
 <?php
 $result = dns_get_record("php.net");
 print_r($result);
 ?>
 ]]>
-      </programlisting>
-      <para>
-       上の例の出力は例えば以下のようになります:
-      </para>
-      <screen>
+    </programlisting>
+    &example.outputs.similar;
+    <screen>
 <![CDATA[
 Array
 (
@@ -284,18 +307,18 @@ Array
 
 )
 ]]>
-      </screen>
-     </example>
-     <simpara>
-      MX レコードが解決されれば、たいていはメールサーバの IP アドレスを
-      取得したくなるものです。そのため、<function>dns_get_record</function>
-      は <parameter>addtl</parameter> に関連するレコードを含めて返します。
-      また、<parameter>authns</parameter> には権威のあるネームサーバの
-      リストを含めて返します。
-     </simpara>
-     <example>
-      <title><function>dns_get_record</function> と DNS_ANY の使用</title>
-      <programlisting role="php">
+    </screen>
+   </example>
+   <example>
+    <title><function>dns_get_record</function> と DNS_ANY の使用</title>
+    <para>
+     MX レコードが解決されれば、たいていはメールサーバの IP アドレスを
+     取得したくなるものです。そのため、<function>dns_get_record</function>
+     は <parameter>addtl</parameter> に関連するレコードを含めて返します。
+     また、<parameter>authns</parameter> には
+     権威のあるネームサーバのリストを含めて返します。
+    </para>
+    <programlisting role="php">
 <![CDATA[
 <?php
 /* php.net の "ANY" レコードを要求し、
@@ -313,11 +336,9 @@ echo "Additional = ";
 print_r($addtl);
 ?>
 ]]>
-      </programlisting>
-      <para>
-       上の例の出力は例えば以下のようになります:
-      </para>
-      <screen>
+    </programlisting>
+    &example.outputs.similar;
+    <screen>
 <![CDATA[
 Result = Array
 (
@@ -429,14 +450,34 @@ Additional = Array
 
 )
 ]]>
-      </screen>
-     </example>
-     <simpara>
-       <function>dns_get_mx</function>
-       および <function>dns_check_record</function> も参照ください。
-     </simpara>
-    </refsect1>
-  </refentry>
+    </screen>
+   </example>
+  </para>
+ </refsect1>
+
+ <refsect1 role="notes">
+  &reftitle.notes;
+  <note>
+   <para>
+    この関数は Windows プラットフォームでは実装されていません。
+    また、（現時点では）*BSD システムでも動作しません。
+    <link xlink:href="&url.php.pear;">PEAR</link> の
+    <link xlink:href="&url.pear.package;Net_DNS">Net_DNS</link> クラスを試してみてください。
+   </para>
+  </note>
+ </refsect1>
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <para>
+   <simplelist>
+    <member><function>dns_get_mx</function></member>
+    <member><function>dns_check_record</function></member>
+   </simplelist>
+  </para>
+ </refsect1>
+
+</refentry>
 
 <!-- Keep this comment at the end of the file
 Local variables:
