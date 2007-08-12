@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.1 $ -->
+<!-- EN-Revision: 1.2 Maintainer: takagi Status: ready -->
+ <sect1 xml:id="internals2.structure.modstruct" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <title>zend_module 構造体</title>
+  <para>
+   PHP 拡張モジュールのソースファイルの中には、
+   C プログラマにとって目新しいものがいくつか含まれています。
+   これらの中でも最も重要であり、
+   拡張モジュールを開発するにあたって最初にさわることになるのが
+   <literal>zend_module</literal> 構造体です。
+   この構造体には豊富な情報が格納されており、
+   その拡張モジュールの依存性やバージョン、コールバック、
+   その他重要なデータを Zend Engine に伝える役割を果たします。
+   この構造体の中身は、何度も大幅に変更されています。
+   ここでは、PHP 5.0 の時点の情報をもとにして説明します。
+   PHP 5.1 や 5.2 では、少々変更されている点もあります。
+  </para>
+  
+  <para>
+   <filename>example.c</filename> での <literal>zend_module</literal>
+   の宣言は、次のようになります (これは、
+   <command>ext_skel --extname=example</command>
+   で生成したものに何も手を加えていない状態です)。
+  </para>
+  
+  <example xml:id="internals2.structure.modstruct.example-decl">
+   <title>example 拡張モジュールにおける zend_module の宣言部</title>
+   <programlisting role="c">
+<![CDATA[
+/* {{{ example_module_entry
+ */
+zend_module_entry example_module_entry = {
+#if ZEND_MODULE_API_NO >= 20010901
+	STANDARD_MODULE_HEADER,
+#endif
+	"example",
+	example_functions,
+	PHP_MINIT(example),
+	PHP_MSHUTDOWN(example),
+	PHP_RINIT(example),		/* Replace with NULL if there's nothing to do at request start */
+	PHP_RSHUTDOWN(example),	/* Replace with NULL if there's nothing to do at request end */
+	PHP_MINFO(example),
+#if ZEND_MODULE_API_NO >= 20010901
+	"0.1", /* Replace with version number for your extension */
+#endif
+	STANDARD_MODULE_PROPERTIES
+};
+/* }}} */
+]]>
+   </programlisting>
+  </example>
+  
+  <para>
+   最初はちょっとひるむかも知れませんが、
+   大半の部分はよく見れば非常に単純です。
+   次に示すのは、PHP 5.2 の <filename>zend_modules.h</filename>
+   における <literal>zend_module</literal> の宣言部です。
+   関連する定数の定義も含めています。
+  </para>
+  
+  <example xml:id="internals2.structure.modstruct.struct-defn">
+   <title>PHP 5.2 における zend_module の定義</title>
+   <programlisting role="c">
+<![CDATA[
+#define ZEND_MODULE_API_NO 20060613
+struct _zend_module_entry {
+	unsigned short size;
+	unsigned int zend_api;
+	unsigned char zend_debug;
+	unsigned char zts;
+	struct _zend_ini_entry *ini_entry;
+	struct _zend_module_dep *deps;
+	char *name;
+	struct _zend_function_entry *functions;
+	int (*module_startup_func)(INIT_FUNC_ARGS);
+	int (*module_shutdown_func)(SHUTDOWN_FUNC_ARGS);
+	int (*request_startup_func)(INIT_FUNC_ARGS);
+	int (*request_shutdown_func)(SHUTDOWN_FUNC_ARGS);
+	void (*info_func)(ZEND_MODULE_INFO_FUNC_ARGS);
+	char *version;
+	size_t globals_size;
+#ifdef ZTS
+	ts_rsrc_id* globals_id_ptr;
+#else
+	void* globals_ptr;
+#endif
+	void (*globals_ctor)(void *global TSRMLS_DC);
+	void (*globals_dtor)(void *global TSRMLS_DC);
+	int (*post_deactivate_func)(void);
+	int module_started;
+	unsigned char type;
+	void *handle;
+	int module_number;
+};
+#define STANDARD_MODULE_HEADER_EX sizeof(zend_module_entry), ZEND_MODULE_API_NO, ZEND_DEBUG, USING_ZTS
+#define STANDARD_MODULE_HEADER \
+	STANDARD_MODULE_HEADER_EX, NULL, NULL
+#define ZE2_STANDARD_MODULE_HEADER \
+	STANDARD_MODULE_HEADER_EX, ini_entries, NULL
+
+#define STANDARD_MODULE_PROPERTIES_EX 0, 0, NULL, 0
+]]>
+   </programlisting>
+  </example>
+  
+ </sect1>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"../../../manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
