@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.3 $ -->
-<!-- EN-Revision: 1.12 Maintainer: takagi Status: ready -->
+<!-- $Revision: 1.4 $ -->
+<!-- EN-Revision: 1.15 Maintainer: takagi Status: ready -->
 <refentry xmlns="http://docbook.org/ns/docbook" xml:id="function.socket-get-option">
  <refnamediv>
   <refname>socket_get_option</refname>
@@ -54,11 +54,12 @@
      <listitem>
       <table>
        <title>使用可能なソケットオプション</title>
-       <tgroup cols="2">
+       <tgroup cols="3">
         <thead>
          <row>
           <entry>オプション</entry>
           <entry>説明</entry>
+          <entry>型</entry>
          </row>
         </thead>
         <tbody>
@@ -67,11 +68,8 @@
           <entry>
            デバッグ情報を記録するかどうかを報告します。
           </entry>
-         </row>
-         <row>
-          <entry>SO_ACCEPTCONN</entry>
           <entry>
-           ソケットの listen が有効かどうかを報告します。
+           <type>int</type>
           </entry>
          </row>
          <row>
@@ -79,11 +77,17 @@
           <entry>
            ブロードキャストメッセージの送信がサポートされているかどうかを報告します。
           </entry>
+          <entry>
+           <type>int</type>
+          </entry>
          </row>
          <row>
           <entry>SO_REUSEADDR</entry>
           <entry>
            ローカルアドレスが再使用可能するかどうかを報告します。
+          </entry>
+          <entry>
+           <type>int</type>
           </entry>
          </row>
          <row>
@@ -93,12 +97,41 @@
            もしソケットがこれらのメッセージに応答できなかった場合、
            接続は崩壊し、ソケットへの書き込みを行うと SIGPIPE シグナルを受け取ります。
           </entry>
+          <entry>
+           <type>int</type>
+          </entry>
          </row>
          <row>
           <entry>SO_LINGER</entry>
           <entry>
-           データが存在する際に、<function>socket_close</function> の後で
-           <parameter>socket</parameter> が残り続けるかどうかを報告します。
+           <para>
+            データがまだ残っているうちに <function>socket_close</function>
+            をコールした場合に、<parameter>socket</parameter> を残存させるかどうかを報告します。
+            デフォルトでは、ソケットが閉じられる際には未送信のデータをすべて送信しようとします。
+            接続ベースのソケットでは、
+            <function>socket_close</function> は接続先がデータを認識するまで閉じるのを待ちます。
+           </para>
+           <para>
+            <varname>l_onoff</varname> が非ゼロで
+            <varname>l_linger</varname> がゼロの場合は、
+            その時点で未送信のデータはすべて破棄されます。
+            接続ベースのソケットの場合、接続先には RST (リセット)
+            を送信します。
+           </para>
+           <para>
+            一方 <varname>l_onoff</varname> が非ゼロで
+            <varname>l_linger</varname> も非ゼロの場合は、
+            <function>socket_close</function> は
+            全データを送信し終えるか <varname>l_linger</varname>
+            で指定した時間が経過するまで処理をブロックします。
+            ソケットが非ブロックモードの場合は、
+            <function>socket_close</function> は失敗してエラーを返します。
+           </para>
+          </entry>
+          <entry>
+           <type>array</type>。配列に含まれるキーは
+           <varname>l_onoff</varname> および
+           <varname>l_linger</varname> のふたつ。
           </entry>
          </row>
          <row>
@@ -107,29 +140,44 @@
            <parameter>socket</parameter>
            が帯域外のデータをインラインに残し続けるかを報告します。
           </entry>
+          <entry>
+           <type>int</type>
+          </entry>
          </row>
          <row>
           <entry>SO_SNDBUF</entry>
           <entry>
-           送信バッファサイズの情報を報告します。
+           送信バッファのサイズを報告します。
           </entry>
+          <entry>
+           <type>int</type>
+          </entry>          
          </row>
          <row>
           <entry>SO_RCVBUF</entry>
           <entry>
-           受信バッファサイズの情報を報告します。
+           受信バッファのサイズを報告します。
           </entry>
+          <entry>
+           <type>int</type>
+          </entry>         
          </row>
          <row>
           <entry>SO_ERROR</entry>
           <entry>
            エラーステータスに関する情報を報告し、それをクリアします。
           </entry>
+          <entry>
+           <type>int</type> (<function>socket_set_option</function> で設定することはできません)
+          </entry>
          </row>
          <row>
           <entry>SO_TYPE</entry>
           <entry>
-           <parameter>socket</parameter> の型を報告します。
+           <parameter>socket</parameter> の型 (たとえば <constant>SOCK_STREAM</constant>) を報告します。
+          </entry>
+          <entry>
+           <type>int</type> (<function>socket_set_option</function> で設定することはできません)
           </entry>
          </row>
          <row>
@@ -137,18 +185,39 @@
           <entry>
            送信メッセージがルータを越えるかどうかを報告します。
           </entry>
+          <entry>
+           <type>int</type>
+          </entry>
          </row>
          <row>
           <entry>SO_RCVLOWAT</entry>
           <entry>
-           <parameter>socket</parameter> の入力操作を行う際の最小バイト数
-           (デフォルトは 1) を報告します。
+           <parameter>socket</parameter> の入力操作を行う際の最小バイト数を報告します。
+          </entry>
+          <entry>
+           <type>int</type>
           </entry>
          </row>
          <row>
           <entry>SO_RCVTIMEO</entry>
           <entry>
            入力操作のタイムアウト値を報告します。
+          </entry>
+          <entry>
+           <type>array</type>。配列に含まれるキーはふたつ。
+           <varname>sec</varname> はタイムアウトの秒単位の部分で、
+           <varname>usec</varname> はタイムアウトのミリ秒単位の部分。
+          </entry>
+         </row>
+         <row>
+          <entry>SO_SNDTIMEO</entry>
+          <entry>
+           出力関数がフロー制御のためにブロックするタイムアウト値を報告します。
+          </entry>
+          <entry>
+           <type>array</type>。配列に含まれるキーはふたつ。
+           <varname>sec</varname> はタイムアウトの秒単位の部分で、
+           <varname>usec</varname> はタイムアウトのミリ秒単位の部分。
           </entry>
          </row>
          <row>
@@ -157,11 +226,8 @@
            <parameter>socket</parameter>
            の出力操作を行う際の最小バイト数を報告します。
           </entry>
-         </row>
-         <row>
-          <entry>SO_SNDTIMEO</entry>
           <entry>
-           出力関数がフロー制御のためにブロックするタイムアウト値を報告します。
+           <type>int</type>
           </entry>
          </row>
         </tbody>
@@ -177,6 +243,27 @@
   &reftitle.returnvalues;
   <para>
    指定したオプションの値、あるいはエラー時に &false; を返します。
+  </para>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title><function>socket_set_option</function> の例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$socket = socket_create_listen(1223);
+
+$linger = array('l_linger' => 1, 'l_onoff' => 1);
+socket_set_option($socket, SOL_SOCKET, SO_LINGER, $linger);
+
+var_dump(socket_get_option($socket, SOL_SOCKET, SO_REUSEADDR));
+?>
+]]>
+    </programlisting>
+   </example>
   </para>
  </refsect1>
 
