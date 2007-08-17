@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.7 $ -->
-<!-- EN-Revision: 1.11 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.8 $ -->
+<!-- EN-Revision: 1.12 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi -->
 <refentry xmlns="http://docbook.org/ns/docbook" xml:id="function.socket-set-nonblock">
  <refnamediv>
@@ -17,7 +17,12 @@
   <para>
    <function>socket_set_nonblock</function> 関数は、
    <parameter>socket</parameter> パラメータで指定したソケットに
-   O_NONBLOCK フラグを設定します。
+   <constant>O_NONBLOCK</constant> フラグを設定します。
+  </para>
+  <para>
+   受信や送信、接続、待機といった操作を非ブロックモードのソケットに対して行うと、
+   その処理が完了するか何らかのシグナルを受信するまではスクリプトは停止しません。
+   また、その操作がブロックされると、呼び出し元の関数は失敗します。
   </para>
  </refsect1>
 
@@ -29,6 +34,8 @@
      <term><parameter>socket</parameter></term>
      <listitem>
       <para>
+       <function>socket_create</function> あるいは <function>socket_accept</function>
+       で作成したソケットリソース。
       </para>
      </listitem>
     </varlistentry>
@@ -51,21 +58,20 @@
     <programlisting role="php">
 <![CDATA[
 <?php
-$port = 9090;
-if (($socket = socket_create_listen($port)) === false) {
-    echo "socket_create_listen() failed. Reason: ".socket_strerror(socket_last_error());
-}
+$socket = socket_create_listen(1223);
+socket_set_nonblock($socket);
 
-if (socket_set_option($socket, SOL_SOCKET, SO_REUSEADDR, 1) === false) {
-    echo "socket_set_option() failed. Reason: ".socket_strerror(socket_last_error($socket));
-}
-
-if (socket_set_nonblock($socket) === false) {
-    echo "socket_set_nonblock() failed. Reason: ".socket_strerror(socket_last_error($socket));
-}
+socket_accept($socket);
 ?>
 ]]>
     </programlisting>
+    <para>
+     この例は、すべてのインターフェイス上でポート 1223
+     を待ち受けるソケットを作成し、それを <constant>O_NONBLOCK</constant>
+     モードに設定します。
+     <function>socket_accept</function> は、
+     その時点で待機中の接続がない場合はすぐに失敗します。
+    </para>
    </example>
   </para>
  </refsect1>

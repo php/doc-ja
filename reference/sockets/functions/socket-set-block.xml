@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.4 $ -->
-<!-- EN-Revision: 1.8 Maintainer: takagi Status: ready -->
+<!-- $Revision: 1.5 $ -->
+<!-- EN-Revision: 1.10 Maintainer: takagi Status: ready -->
 <refentry xmlns="http://docbook.org/ns/docbook" xml:id="function.socket-set-block">
  <refnamediv>
   <refname>socket_set_block</refname>
@@ -16,7 +16,11 @@
   <para>
    <function>socket_set_block</function> 関数は、
    <parameter>socket</parameter> パラメータで指定したソケットから
-   O_NONBLOCK フラグを取り除きます。
+   <constant>O_NONBLOCK</constant> フラグを取り除きます。
+  </para>
+  <para>
+   受信や送信、接続、待機といった操作をブロックモードのソケットに対して行うと、
+   その処理が完了するか何らかのシグナルを受信するまではスクリプトを停止します。
   </para>
  </refsect1>
 
@@ -28,6 +32,8 @@
      <term><parameter>socket</parameter></term>
      <listitem>
       <para>
+       <function>socket_create</function> あるいは <function>socket_accept</function>
+       で作成したソケットリソース。
       </para>
      </listitem>
     </varlistentry>
@@ -50,27 +56,20 @@
     <programlisting role="php">
 <![CDATA[
 <?php
+$socket = socket_create_listen(1223);
+socket_set_block($socket);
 
-$port = 9090;
-if (($socket = socket_create_listen($port)) === false) {
-    echo "socket_create_listen() failed. Reason: ".socket_strerror(socket_last_error());
-}
-
-if (socket_set_option($socket, SOL_SOCKET, SO_REUSEADDR, 1) === false) {
-    echo "socket_set_option() failed. Reason: ".socket_strerror(socket_last_error($socket));
-}
-
-if (socket_set_nonblock($socket) === false) { // $socket は非ブロックモード
-    echo "socket_set_nonblock() failed. Reason: ".socket_strerror(socket_last_error($socket));
-}
-
-if (socket_set_block($socket) === false) {     // $socket はブロックモード
-    echo "socket_set_block() failed. Reason: ". socket_strerror(socket_last_error($socket));
-}
-
+socket_accept($socket);
 ?>
 ]]>
     </programlisting>
+    <para>
+     この例は、すべてのインターフェイス上でポート 1223
+     を待ち受けるソケットを作成し、それを <constant>O_BLOCK</constant>
+     モードに設定します。
+     <function>socket_accept</function> は、
+     接続が受け付けられるまで処理を停止して待ち続けます。
+    </para>
    </example>
   </para>
  </refsect1>

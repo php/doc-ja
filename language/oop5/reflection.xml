@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.18 $ -->
-<!-- EN-Revision: 1.24 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.19 $ -->
+<!-- EN-Revision: 1.30 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: shimooka -->
 
 <sect1 xml:id="language.oop5.reflection" xmlns="http://docbook.org/ns/docbook">
@@ -115,6 +115,27 @@ Class [ <internal> class Exception ] {
   </para>
  </sect2>
 
+  <sect2 xml:id="language.oop5.reflection.reflector">
+   <title><classname>Reflector</classname></title>
+   <para>
+    <classname>Reflector</classname> は、
+    すべてのエクスポート可能なリフレクションクラスが実装しているインターフェイスです。
+   </para>
+   <informalexample>
+    <programlisting role="php">
+<![CDATA[
+<?php
+interface Reflector
+{
+    public string __toString()
+    public static string export()
+}
+?>
+]]>
+    </programlisting>
+   </informalexample>
+  </sect2>
+
   <sect2 xml:id="language.oop5.reflection.reflectionexception">
    <title><classname>ReflectionException</classname></title>
    <para>
@@ -143,13 +164,14 @@ class ReflectionFunction extends ReflectionFunctionAbstract implements Reflector
     public static string export(string name, bool return)
     public string getName()
     public bool isInternal()
+    public bool isDisabled()
     public bool isUserDefined()
     public string getFileName()
     public int getStartLine()
     public int getEndLine()
     public string getDocComment()
     public array getStaticVariables()
-    public mixed invoke(mixed args)
+    public mixed invoke([mixed args [, ...]])
     public mixed invokeArgs(array args)
     public bool returnsReference()
     public ReflectionParameter[] getParameters()
@@ -158,8 +180,15 @@ class ReflectionFunction extends ReflectionFunctionAbstract implements Reflector
 }
 ?>
 ]]>
-   </programlisting>
-  </informalexample>
+    </programlisting>
+   </informalexample>
+   <para>
+    親クラスである<classname>ReflectionFunctionAbstract</classname> にも、
+    <function>invoke</function> および
+    <function>invokeArgs</function>、<function>export</function>、
+    <function>isDisabled</function>
+    を除くすべてのメソッドが存在します。
+   </para>
    <note>
     <simpara>
      <function>getNumberOfParameters</function> と
@@ -272,10 +301,8 @@ class ReflectionParameter implements Reflector
      <function>isDefaultValueAvailable</function>,
      <function>isOptional</function>  は PHP 5.0.3 で追加され、
      <function>isArray</function> は PHP 5.1.0で追加されました。
-     <!-- These are still ifdefed out
      <function>getDeclaringFunction</function> および
-     <function>getPosition</function> は PHP 5.1.3 で追加されました。
-     -->
+     <function>getPosition</function> は PHP 5.2.3 で追加されました。
    </para>
   </note>
   <para>
@@ -535,7 +562,7 @@ class ReflectionMethod extends ReflectionFunctionAbstract implements Reflector
     public void __construct(mixed class, string name)
     public string __toString()
     public static string export(mixed class, string name, bool return)
-    public mixed invoke(stdclass object, mixed args)
+    public mixed invoke(stdclass object [, mixed args [, ...]])
     public mixed invokeArgs(stdclass object, array args)
     public bool isFinal()
     public bool isAbstract()
@@ -548,7 +575,7 @@ class ReflectionMethod extends ReflectionFunctionAbstract implements Reflector
     public int getModifiers()
     public ReflectionClass getDeclaringClass()
 
-    // ReflectionFunction から継承したメソッド
+    // ReflectionFunctionAbstract から継承したメソッド
     final private __clone()
     public string getName()
     public bool isInternal()
@@ -596,7 +623,7 @@ class Counter
     }
 }
 
-// Reflection_Method クラスのインスタンスを生成する
+// ReflectionMethod クラスのインスタンスを生成する
 $method = new ReflectionMethod('Counter', 'increment');
 
 // 基本情報を表示する
@@ -831,12 +858,12 @@ printf(
  */
 class My_Reflection_Method extends ReflectionMethod
 {
-    public $visibility = '';
+    public $visibility = array();
 
     public function __construct($o, $m)
     {
         parent::__construct($o, $m);
-        $this->visibility= Reflection::getModifierNames($this->getModifiers());
+        $this->visibility = Reflection::getModifierNames($this->getModifiers());
     }
 }
 
