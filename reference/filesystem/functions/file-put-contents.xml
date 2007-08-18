@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.9 $ -->
-<!-- EN-Revision: 1.15 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.10 $ -->
+<!-- EN-Revision: 1.18 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: shimooka -->
 <refentry xmlns="http://docbook.org/ns/docbook" xml:id="function.file-put-contents">
  <refnamediv>
@@ -18,14 +18,13 @@
    <methodparam choice="opt"><type>resource</type><parameter>context</parameter></methodparam>
   </methodsynopsis>
   <para> 
-   連続して <function>fopen</function>, <function>fwrite</function>,
-   <function>fclose</function> をコールすることと等価です。
+   この関数は、<function>fopen</function>、<function>fwrite</function>、
+   <function>fclose</function> を続けてコールしてデータをファイルに書き込むのと等価です。
   </para>
   <para>
-   <parameter>data</parameter> パラメータに配列を指定することも可能です
-   (多次元配列は不可) 。この関数は
-   <literal>file_put_contents($filename, implode('', $array))</literal>.
-   と同等です。
+   <parameter>filename</parameter> が存在しない場合はファイルを作成します。
+   存在する場合はそのファイルを上書きします。ただし
+   <constant>FILE_APPEND</constant> フラグが設定されている場合は別です。
   </para>
  </refsect1>
 
@@ -37,7 +36,7 @@
      <term><parameter>filename</parameter></term>
      <listitem>
       <para>
-       データを書き込むファイル。
+       データを書き込むファイルへのパス。
       </para>
      </listitem>
     </varlistentry>
@@ -54,24 +53,85 @@
        ストリームのバッファに残っている内容が指定したファイルにコピーされます。
        これは、<function>stream_copy_to_stream</function> の挙動と似ています。
       </para>
+      <para>
+       <parameter>data</parameter> に一次元の配列を指定することもできます。この場合は
+       <literal>file_put_contents($filename, implode('', $array))</literal>
+       と同じ意味になります。
+      </para>
      </listitem>
     </varlistentry>
     <varlistentry>
      <term><parameter>flags</parameter></term>
      <listitem>
       <para>
-       <parameter>flags</parameter> には
-       <constant>FILE_USE_INCLUDE_PATH</constant>,
-       <constant>FILE_APPEND</constant> かつ/または
-       <constant>LOCK_EX</constant> (排他的ロックを取得します)
-       を取ることができます。しかし、
-       <constant>FILE_USE_INCLUDE_PATH</constant>
-       オプションは注意して使用してください。
-       PHP 6 では、
-       <constant>FILE_TEXT</constant> あるいは <constant>FILE_BINARY</constant>
-       によって出力時の改行の扱いを指定できます。詳細な情報は、
-       <function>fopen</function> のモード &quot;t&quot; および &quot;b&quot;
-       を参照ください。
+       <parameter>flags</parameter> の値は、以下のフラグを組み合わせたものとなります
+       (組み合わせ方には多少制限があります)。組み合わせる際には、論理 OR
+       (<literal>|</literal>) 演算子で連結します。
+      </para>
+      <para>
+       <table>
+        <title>使用できるフラグ</title>
+        <tgroup cols="2">
+         <thead>
+          <row>
+           <entry>フラグ</entry>
+           <entry>説明</entry>
+          </row>
+         </thead>
+         <tbody>
+          <row>
+           <entry>
+            <constant>FILE_USE_INCLUDE_PATH</constant>
+           </entry>
+           <entry>
+            <parameter>filename</parameter> をインクルードディレクトリから探します。
+            詳細な情報は <link linkend="ini.include-path">include_path</link> を参照ください。
+           </entry>
+          </row>
+          <row>
+           <entry>
+            <constant>FILE_APPEND</constant>
+           </entry>
+           <entry>
+            <parameter>filename</parameter> がすでに存在する場合に、
+            データをファイルに上書きするするのではなく追記します。
+           </entry>
+          </row>
+          <row>
+           <entry>
+            <constant>LOCK_EX</constant>
+           </entry>
+           <entry>
+            書き込み処理中に、ファイルに対する排他ロックを確保します。
+           </entry>
+          </row>
+          <row>
+           <entry>
+            <constant>FILE_TEXT</constant>
+           </entry>
+           <entry>
+            <parameter>data</parameter> をテキストモードで書き込みます。
+            デフォルトのエンコーディングは UTF-8 です。別のエンコーディングを指定するには、
+            独自のコンテキストを作成します。このフラグは
+            <constant>FILE_BINARY</constant> と同時に使用することはできません。
+            <parameter>data</parameter> が UTF-8 で <constant>FILE_TEXT</constant>
+            フラグが未設定の場合は、警告が発生します。このフラグは
+            PHP 6 以降でのみ使用可能です。
+           </entry>
+          </row>
+          <row>
+           <entry>
+            <constant>FILE_BINARY</constant>
+           </entry>
+           <entry>
+            <parameter>data</parameter> をバイナリモードで書き込みます。これはデフォルトの設定で、
+            <constant>FILE_TEXT</constant> と同時に使用することはできません。
+            このフラグは PHP 6 以降でのみ使用可能です。
+           </entry>
+          </row>
+         </tbody>
+        </tgroup>
+       </table>
       </para>
      </listitem>
     </varlistentry>
