@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.10 $ -->
-<!-- EN-Revision: 1.27 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.11 $ -->
+<!-- EN-Revision: 1.29 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: shimooka -->
 <refentry xmlns="http://docbook.org/ns/docbook" xml:id="function.file-get-contents">
  <refnamediv>
@@ -13,17 +13,16 @@
   <methodsynopsis>
    <type>string</type><methodname>file_get_contents</methodname>
    <methodparam><type>string</type><parameter>filename</parameter></methodparam>
-   <methodparam choice="opt"><type>bool</type><parameter>use_include_path</parameter></methodparam>
    <methodparam choice="opt"><type>resource</type><parameter>context</parameter></methodparam>
+   <methodparam choice="opt"><type>int</type><parameter>flags</parameter></methodparam>
    <methodparam choice="opt"><type>int</type><parameter>offset</parameter></methodparam>
    <methodparam choice="opt"><type>int</type><parameter>maxlen</parameter></methodparam>
   </methodsynopsis>
   <para> 
-   <function>file_get_contents</function> は、
-   <parameter>offset</parameter>で指定した場所から開始し
+   この関数は <function>file</function> と同じ動作をしますが、
+   <parameter>offset</parameter> で指定した場所から開始し
    <parameter>maxlen</parameter> バイト分だけ
-   ファイルの内容を文字列に読み込むこと以外は <function>file</function>
-   と等価です。
+   ファイルの内容を文字列に読み込むという点が異なります。
    失敗した場合、<function>file_get_contents</function> は &false; を返します。
   </para>
   <para>
@@ -33,16 +32,127 @@
   </para>
   <note>
    <para>
-    空白のような特殊な文字を有するURIをオープンする場合には、
-    <function>urlencode</function>でそのURIをエンコードする必要があります。
+    空白のような特殊な文字を有する URI をオープンする場合には、
+    <function>urlencode</function> でその URI をエンコードする必要があります。
    </para>
   </note>
-  <note>
-   <para>
-    <parameter>context</parameter> パラメータを省略するには、&null;
-    を指定します。
-   </para>
-  </note>
+ </refsect1>
+
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <para>
+   <variablelist>
+    <varlistentry>
+     <term><parameter>filename</parameter></term>
+     <listitem>
+      <para>
+       データを読み込みたいファイルの名前。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>context</parameter></term>
+     <listitem>
+      <para>
+       <function>stream_context_create</function> で作成したコンテキストリソース。
+       独自のコンテキストを使用する必要がない場合は、このパラメータに
+       &null; を指定します。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>flags</parameter></term>
+     <listitem>
+      <warning>
+       <para>
+        PHP 6 より前のバージョンでは、このパラメータは
+        <parameter>use_include_path</parameter> という名前の <type>bool</type>
+        パラメータでした。この <parameter>flags</parameter> パラメータは
+        PHP 6 以降でのみ使用可能です。古いバージョンを使用しており、
+        <parameter>filename</parameter> を
+        <link linkend="ini.include-path">インクルードパス</link>
+        から探したい場合は、このパラメータには &true; を設定することになるでしょう。
+        PHP 6 以降の場合は、同じ動作をさせたい場合は
+        <constant>FILE_USE_INCLUDE_PATH</constant> フラグを指定します。
+       </para>
+      </warning>
+      <para>
+       <parameter>flags</parameter> の値は、以下のフラグを組み合わせたものとなります
+       (組み合わせ方には多少制限があります)。組み合わせる際には、論理 OR
+       (<literal>|</literal>) 演算子で連結します。
+      </para>
+      <para>
+       <table>
+        <title>使用できるフラグ</title>
+        <tgroup cols="2">
+         <thead>
+          <row>
+           <entry>フラグ</entry>
+           <entry>説明</entry>
+          </row>
+         </thead>
+         <tbody>
+          <row>
+           <entry>
+            <constant>FILE_USE_INCLUDE_PATH</constant>
+           </entry>
+           <entry>
+            <parameter>filename</parameter> をインクルードディレクトリから探します。
+            詳細な情報は <link linkend="ini.include-path">include_path</link> を参照ください。
+           </entry>
+          </row>
+          <row>
+           <entry>
+            <constant>FILE_TEXT</constant>
+           </entry>
+           <entry>
+            unicode が有効な場合、データ読み込み時のデフォルトのエンコーディングは UTF-8 です。
+            別のエンコーディングを指定するには、
+            独自のコンテキストを作成するか、あるいは
+            <function>stream_default_encoding</function> でデフォルトを変更します。
+            このフラグは <constant>FILE_BINARY</constant> と同時に使用することはできません。
+           </entry>
+          </row>
+          <row>
+           <entry>
+            <constant>FILE_BINARY</constant>
+           </entry>
+           <entry>
+            このフラグを指定すると、ファイルをバイナリモードで読み込みます。これはデフォルトの設定で、
+            <constant>FILE_TEXT</constant> と同時に使用することはできません。
+           </entry>
+          </row>
+         </tbody>
+        </tgroup>
+       </table>
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>offset</parameter></term>
+     <listitem>
+      <para>
+       読み込みを開始するオフセット位置。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>maxlen</parameter></term>
+     <listitem>
+      <para>
+       読み込むデータの最大バイト数。
+      </para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
+  </para>
+ </refsect1>
+
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <para>
+   読み込んだデータを返します。失敗した場合は &false; を返します。
+  </para>
  </refsect1>
 
  <refsect1 role="changelog">
@@ -70,6 +180,13 @@
         <parameter>maxlen</parameter> パラメータが追加されました。
        </entry>
       </row>
+      <row>
+       <entry>6.0.0</entry>
+       <entry>
+        <parameter>use_include_path</parameter> パラメータが
+        <parameter>flags</parameter> パラメータに置き換えられました。
+       </entry>
+      </row>
      </tbody>
     </tgroup>
    </informaltable>
@@ -80,7 +197,6 @@
   &reftitle.notes;
   &note.bin-safe;
   &tip.fopen-wrapper;
-  &note.context-support;
   &warn.ssl-non-standard;
  </refsect1>
 
