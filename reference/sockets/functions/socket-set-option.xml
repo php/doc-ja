@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.4 $ -->
-<!-- EN-Revision: 1.12 Maintainer: takagi Status: ready -->
+<!-- $Revision: 1.5 $ -->
+<!-- EN-Revision: 1.14 Maintainer: takagi Status: ready -->
 <refentry xmlns="http://docbook.org/ns/docbook" xml:id="function.socket-set-option">
  <refnamediv>
   <refname>socket_set_option</refname>
@@ -85,11 +85,26 @@
     <programlisting role="php">
 <![CDATA[
 <?php
-$socket = socket_create_listen(1223);
-socket_set_option($socket, SOL_SOCKET, SO_REUSEADDR, 1);
+$socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
 
-if (socket_get_option($socket, SOL_SOCKET, SO_REUSEADDR) !== 0) {
-    echo 'SO_REUSEADDR is set on socket !' . PHP_EOL;
+if (!is_resource($socket)) {
+    echo 'ソケットを作成できません: '. socket_strerror(socket_last_error()) . PHP_EOL;
+}
+
+if (!socket_set_option($socket, SOL_SOCKET, SO_REUSEADDR, 1)) {
+    echo 'ソケットのオプションを設定できません: '. socket_strerror(socket_last_error()) . PHP_EOL;
+}
+
+if (!socket_bind($socket, '127.0.0.1', 1223)) {
+    echo 'ソケットをバインドできません: '. socket_strerror(socket_last_error()) . PHP_EOL;
+}
+
+$rval = socket_get_option($socket, SOL_SOCKET, SO_REUSEADDR);
+
+if ($rval === false) {
+    echo 'ソケットのオプションを取得できません: '. socket_strerror(socket_last_error()) . PHP_EOL;
+} else if ($rval !== 0) {
+    echo 'SO_REUSEADDR がソケットに設定されています!' . PHP_EOL;
 }
 ?>
 ]]>
