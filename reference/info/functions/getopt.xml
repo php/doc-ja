@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.9 $ -->
-<!-- EN-Revision: 1.16 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.10 $ -->
+<!-- EN-Revision: 1.17 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi -->
-<refentry xml:id="function.getopt" xmlns="http://docbook.org/ns/docbook">
+<refentry xmlns="http://docbook.org/ns/docbook" xml:id="function.getopt">
  <refnamediv>
   <refname>getopt</refname>
   <refpurpose>コマンドライン引数のリストからオプションを取得する</refpurpose>
@@ -16,9 +16,7 @@
    <methodparam choice="opt"><type>array</type><parameter>longopts</parameter></methodparam>
   </methodsynopsis>
   <para>
-   オプション/引数のペアを連想配列で返します。
-   オプションのフォーマットは <parameter>options</parameter> で指定します。
-   エラーの場合 &false; を返します。
+   スクリプトに渡されたオプションをパースします。
   </para>
  </refsect1>
 
@@ -29,32 +27,71 @@
     <varlistentry>
      <term><parameter>options</parameter></term>
      <listitem>
-      <para>
-       <parameter>options</parameter> 引数は次のような内容を書きます:
-       引数を特定するための個別の文字と、それに続くコロン。例えば、
-       オプション文字列 <literal>x</literal> は <literal>-x</literal>
-       というオプションを認識します。<literal>x:</literal> は
-       <literal>-x argument</literal> というオプションとその引数を認識します。
-       オプションと引数の間に空白があるかどうかは考慮されません。
-      </para>
+      <simpara>
+       この文字列の各文字をオプション文字として使用し、
+       スクリプトにハイフンひとつ (<literal>-</literal>)
+       で始まるオプションとして渡された内容とマッチさせます。
+      </simpara>
+      <simpara>
+       たとえば、オプション文字列 <literal>"x"</literal> は
+       <literal>-x</literal> というオプションを認識します。
+      </simpara>
      </listitem>
     </varlistentry>
     <varlistentry>
      <term><parameter>longopts</parameter></term>
      <listitem>
-      <para>
-      </para>
+      <simpara>
+       オプションの配列。
+       この配列の各要素をオプション文字列として使用し、
+       スクリプトにハイフンふたつ (<literal>--</literal>)
+       で始まるオプションとして渡された内容とマッチさせます。
+      </simpara>
+      <simpara>
+       たとえば、longopts の要素 <literal>"opt"</literal> は
+       <literal>--opt</literal> というオプションを認識します。
+      </simpara>
+      <note>
+       <simpara>
+        PHP5.3.0 より前のバージョンでは、
+        このパラメータは一部のシステムでしか使用できません。
+       </simpara>
+      </note>
      </listitem>
     </varlistentry>
    </variablelist>
   </para>
+  <para>
+   <parameter>options</parameter> パラメータに含まれる要素には次のようなものがあります。
+   <simplelist>
+    <member>単一の文字 (値を受け付けない)</member>
+    <member>文字の後にコロンをひとつ続けたもの (値が必須であるパラメータ)</member>
+    <member>文字の後にコロンをふたつ続けたもの (値がオプションであるパラメータ)</member>
+   </simplelist>
+   オプションの値は、文字列の後の最初の引数となります。
+   値の前に空白があるかどうかは関係ありません。
+   <note>
+    <simpara>
+     オプションの値で、<literal>" "</literal> (空白) を区切り文字として使用することはできません。
+    </simpara>
+   </note>
+  </para>
+  <note>
+   <para>
+    <parameter>options</parameter> と
+    <parameter>longopts</parameter> の書式はほぼ同じです。唯一の違いは、
+    <parameter>longopts</parameter> はオプションの配列
+    (その各要素がオプションとなる) を受け取るけれども <parameter>options</parameter>
+    は文字列 (その各文字がオプションとなる) を受け取るということです。
+   </para>
+  </note>
  </refsect1>
 
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
    この関数はオプション/引数のペアを連想配列で返します。
-   オプションが引数を持たない場合、値には &false; がセットされます。
+   失敗した場合は &false; を返します。
   </para>
  </refsect1>
 
@@ -86,25 +123,125 @@
  <refsect1 role="examples">
   &reftitle.examples;
   <para>
-   <example>
+   <example xml:id="getopt.examples-1">
     <title><function>getopt</function> の例</title>
     <programlisting role="php">
 <![CDATA[
 <?php
-// コマンドライン（$GLOBALS['argv']）をパースする
 $options = getopt("f:hp:");
+var_dump($options);
 ?>
 ]]>
     </programlisting>
+    <para>
+     上のスクリプトを <literal>php script.php -fvalue -h</literal>
+     として実行すると、次のようになります。
+    </para>
+    <screen>
+<![CDATA[
+array(2) {
+  ["f"]=>
+  string(5) "value"
+  ["h"]=>
+  bool(false)
+}
+]]>
+    </screen>
+   </example>
+  </para>
+  <para>
+   <example xml:id="getopt.examples-2">
+    <title><function>getopt</function> の例 その2</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$shortopts  = "";
+$shortopts .= "f:";  // 値が必須
+$shortopts .= "v::"; // 値がオプション
+$shortopts .= "abc"; // これらのオプションは値を受け取りません
+
+$longopts  = array(
+    "required:",     // 値が必須
+    "optional::",    // 値がオプション
+    "option",        // 値なし
+    "opt",           // 値なし
+);
+$options = getopt($shortopts, $longopts);
+var_dump($options);
+?>
+]]>
+    </programlisting>
+    <para>
+     上のスクリプトを <literal>php script.php -f "value for f" -v
+     -a --required value --optional="optional value" --option</literal>
+     として実行すると、次のようになります。
+    </para>
+    <screen>
+<![CDATA[
+array(6) {
+  ["f"]=>
+  string(11) "value for f"
+  ["v"]=>
+  bool(false)
+  ["a"]=>
+  bool(false)
+  ["required"]=>
+  string(5) "value"
+  ["optional"]=>
+  string(14) "optional value"
+  ["option"]=>
+  bool(false)
+}
+]]>
+    </screen>
+   </example>
+  </para>
+  <para>
+   <example xml:id="getopt.examples-3">
+    <title><function>getopt</function> の例 その3</title>
+    <para>複数のオプションを一度に渡す例</para>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$options = getopt("abc");
+var_dump($options);
+?>
+]]>
+    </programlisting>
+    <para>
+     上のスクリプトを <literal>php script.php -aaac</literal>
+     として実行すると、次のようになります。
+    </para>
+    <screen>
+<![CDATA[
+array(2) {
+  ["a"]=>
+  array(3) {
+    [0]=>
+    bool(false)
+    [1]=>
+    bool(false)
+    [2]=>
+    bool(false)
+  }
+  ["c"]=>
+  bool(false)
+}
+]]>
+    </screen>
    </example>
   </para>
  </refsect1>
 
-<!--
  <refsect1 role="notes">
   &reftitle.notes;
+  <note>
+   <para>
+    <link linkend="ini.register-argc-argv">register_argc_argv</link>
+    オプションを有効にしないと、この館数は動作しません。
+   </para>
+  </note>
  </refsect1>
--->
 
 </refentry>
 
