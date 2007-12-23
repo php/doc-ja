@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.1 $ -->
+<!-- EN-Revision: 1.2 Maintainer: takagi Status: ready -->
+<!-- CREDITS: hirokawa -->
+
+<chapter xml:id="hw.apache" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <title>Apache との組み合わせ</title>
+ <para>
+  Hyperwave モジュールは、PHP が Apache モジュールとしてコンパイル
+  された場合に、最適化されています。
+  この場合、Apache が書き換えエンジンを使用する場合、内部の
+  Hyperwave サーバーをほぼ完全にユーザーから隠すことが可能です。
+  以下の手順によりこのことを説明します。
+ </para>
+ <para>
+  Hyperwaveサポートを有効にしてApacheに組み込んだPHPは、wavemaster
+  に基づく本来のHyperwaveの手法を置換するものなので、Apacheサーバー
+  は、Hyperwave Webインターフェースとしてのみ処理を行うと仮定します。
+  これは必然ではありませんが、設定が容易になります。考え方は非常に
+  簡単です。まず最初に<varname>$_ENV['PATH_INFO']</varname>変数を評
+  価し、Hyperwaveオブジェクトの名前としてその値を処理するPHPスクリ
+  プトが必要です。このスクリプトを<literal>'Hyperwave'</literal>と
+  呼びましょう。URL <systemitem
+  role="url">http://your.hostname/Hyperwave/name_of_object</systemitem>
+  <literal>'name_of_object'</literal>という名前のHyperwaveオブジェ
+  クトを返します。オブジェクトの型に応じて、スクリプトは対応した処
+  理を行う必要があります。collectionの場合、恐らく子のリストを返す
+  ことになります。ドキュメントの場合、MIME型と内容を返すことになり
+  ます。Apacheの書換エンジンを使用した場合、若干の改善が見込まれま
+  す。ユーザーの立場で見ると、URL 
+  <systemitem role="url">http://your.hostname/name_of_object</systemitem>
+  がオブジェクトを返せば、より簡単になります。書き換えの規則は非常
+  に簡単です。
+
+  <informalexample>
+   <programlisting role="apache-conf">
+<![CDATA[
+RewriteRule ^/(.*) /usr/local/apache/htdocs/HyperWave/$1 [L]
+]]>
+   </programlisting>
+  </informalexample>
+
+  この状態で、全てのURLはHyperwaveサーバーのオブジェクトに関係付け
+  られています。これにより問題の解決が容易になります。'Hyperwave'
+  スクリプト以外の検索といった他のスクリプトを実行することはできま
+  せん。これは次のような別の規則により修正することができます。
+
+  <informalexample>
+   <programlisting role="apache-conf">
+<![CDATA[
+RewriteRule ^/hw/(.*) /usr/local/apache/htdocs/hw/$1 [L]
+]]>
+   </programlisting>
+  </informalexample>
+
+  これにより、ディレクトリ<filename
+  class="directory">/usr/local/apache/htdocs/hw</filename>が追加の
+  スクリプトや他のファイル用に確保されます。この規則は、一つ前の規
+  則よりも前に評価されることに注意してください。これには若干の欠点が
+  あります。つまり、<literal>'hw/'</literal>で始まる名前を有する
+  Hyperwave オブジェクトは全て隠されてしまいます。このため、このよ
+  うな名前を使用しないようにしてください。例えば画像用により多くのディ
+  レクトリが必要な場合、更に規則を加えるか一つのディレクトリに全て
+  を置くかしてください。最後にRewriteEngineをオンにすることを忘れない
+  でください。
+
+  <informalexample>
+   <programlisting role="apache-conf">
+<![CDATA[
+RewriteEngine on
+]]>
+   </programlisting>
+  </informalexample>
+
+  経験上、次のようなスクリプトが必要になることと思われます。
+
+  <itemizedlist>
+    <listitem>
+     <simpara>
+     オブジェクト自身を返す
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+     検索を許可する
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+     自分を定義する
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+     プロファイルを設定する
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+     オブジェクト属性を表示したり、ユーザーに関する情報を表示したり、
+     サーバーのステータスを表示したり等する追加される関数毎に一つ
+     </simpara>
+    </listitem>
+  </itemizedlist>
+ </para>
+ <para>
+  Rewrite Engineの一つの代わりとして、Apache
+  <literal>ErrorDocument</literal>ディレクティブを使用することもで
+  きます。しかし、<literal>ErrorDocument</literal> でリダイレクトさ
+  れたページは、POSTデータを受け取ることはできないことに注意して下
+  さい。
+ </para>
+</chapter>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"../../../manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
+
