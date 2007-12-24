@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.1 $ -->
+<!-- EN-Revision: 1.2 Maintainer: takagi Status: ready -->
+
+<chapter xml:id="imagick.examples" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+ &reftitle.examples;
+ <section xml:id="imagick.examples-1">
+  &reftitle.examples;
+  <para>
+   Imagick は、PHP による画像の操作を、
+   とても簡単なオブジェクト指向インターフェイスで行います。
+   画像のサムネイルを作成する簡単な例をごらんください。
+   <example>
+    <title>Imagick によるサムネイルの作成</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+header('Content-type: image/jpeg');
+
+$image = new Imagick('image.jpg');
+
+// 幅あるいは高さに 0 を指定すると、
+// 元の画像のアスペクト比を維持します
+$image->thumbnailImage(100, 0);
+
+echo $image;
+
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+
+  <para>
+   SPL および Imagick がサポートするその他のオブジェクト指向機能を使用すると、
+   ディレクトリ内のすべてのファイルのサイズを変更するのも簡単です
+   (デジタルカメラで撮影した巨大な画像ファイル群をウェブ用に変換するような
+   バッチ処理で有用です)。この例では、リサイズ機能を使用しています。
+   これは、画像のメタデータを残しておきたいからです。
+   <example>
+    <title>ディレクトリ内のすべての JPG ファイルのサムネイルの作成</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+$images = new Imagick(glob('images/*.JPG'));
+
+foreach($images as $image) {
+
+    // 0 を指定することで、thumbnailImage にアスペクト比を維持させています
+    $image->thumbnailImage(1024,0);
+
+}
+
+$images->writeImages();
+
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+  <para>
+   これは、鏡像を作成する例です。
+   鏡像を作成するには、まず画像を反転させてその上に階調を重ねます。
+   そして、もとの画像と反転画像をキャンバスの上で合成します。
+   <example>
+    <title>画像の鏡像の作成</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+/* 画像を読み込みます */
+$im = new Imagick("test.png");
+
+/* 画像のサムネイルを作成します */
+$im->thumbnailImage(200, null);
+
+/* 画像の枠線を作成します */
+$im->borderImage(new ImagickPixel("white"), 5, 5);
+
+/* 画像をコピーし、反転させます */
+$reflection = $im->clone();
+$reflection->flipImage();
+
+/* 階調を作成します。これを後で鏡像にかぶせます */
+$gradient = new Imagick();
+
+/* 階調は、画像と枠線をあわせたものより大きくなければなりません */
+$gradient->newPseudoImage($reflection->getImageWidth() + 10, $reflection->getImageHeight() + 10, "gradient:transparent-black");
+
+/* 階調を合成します */
+$reflection->compositeImage($gradient, imagick::COMPOSITE_OVER, 0, 0);
+
+/* 不透明度を設定します。ImageMagick 6.2.9 以降が必要です */
+$reflection->setImageOpacity( 0.3 );
+
+/* 空のキャンバスを作成します */
+$canvas = new Imagick();
+
+/* キャンバスは、どちらの画像よりも大きくなければなりません */
+$width = $im->getImageWidth() + 40;
+$height = ($im->getImageHeight() * 2) + 30;
+$canvas->newImage($width, $height, new ImagickPixel("black"));
+$canvas->setImageFormat("png");
+
+/* もとの画像と鏡像をキャンバスに合成します */
+$canvas->compositeImage($im, imagick::COMPOSITE_OVER, 20, 10);
+$canvas->compositeImage($reflection, imagick::COMPOSITE_OVER, 20, $im->getImageHeight() + 10);
+
+/* 画像を出力します */
+header("Content-Type: image/png");
+echo $canvas;
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+ </section>
+</chapter>
+
+
