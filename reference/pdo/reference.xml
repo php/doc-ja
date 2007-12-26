@@ -1,52 +1,15 @@
 <?xml version='1.0' encoding='utf-8'?>
-<!-- $Revision: 1.25 $ -->
-<!-- EN-Revision: 1.59 Maintainer: shimooka Status: ready -->
+<!-- $Revision: 1.26 $ -->
+<!-- EN-Revision: 1.61 Maintainer: shimooka Status: ready -->
 <!-- CREDITS: hirokawa,takagi -->
-<!-- Purpose: database.abstract -->
-<!-- Membership: pecl, bundled -->
 
  <reference xml:id="ref.pdo" xmlns="http://docbook.org/ns/docbook">
-  <title>PDO 関数</title>
-  <titleabbrev>PDO</titleabbrev>
+  <title>PDO &Functions;</title>
 
   <partintro>
-   <section xml:id="pdo.intro">
-    &reftitle.intro;
-    <para>
-     PHP Data Objects (PDO) 拡張モジュールは、
-     PHP の中からデータベースにアクセスするための軽量で高性能な
-     インターフェイスを定義します。
-     PDO インターフェイスを実装する各データベースドライバは、
-     正規表現関数のようなデータベース固有の機能を提供することができます。
-     PDO 拡張モジュールによりそのデータベースの全てのデータベース関数を
-     実行できるわけではないことに注意してください。
-     データベースサーバにアクセスするには、
-     <link linkend="pdo.drivers">データベース固有の PDO ドライバ</link>
-     を使用する必要があります。
-    </para>
-    <para>
-     PDO は、<emphasis>データアクセス</emphasis>の抽象化レイヤを提供します。
-     つまり、使用しているデータベースが何であるかにかかわらず、同じ
-     関数を使用してクエリの発行やデータの取得が行えるということです。
-     PDO は、<emphasis>データベース</emphasis>の抽象化を行うのでは
-     <emphasis>ありません</emphasis>。つまり、SQL を書き直したり
-     存在しない機能をエミュレートしたりはしないということです。
-     もしそのような機能が必要なら、全体を網羅する (full-blown)
-     別の抽象化レイヤを使用すべきです。
-    </para>
-    <para>
-     PDO は PHP 5.1 以降にバンドルされており、PHP 5.0 では PECL
-     拡張モジュールとして使用可能です。PDO は PHP 5 の新機能である
-     オブジェクト指向機能を使用しており、それより前のバージョンの
-     PHP では動作しません。
-    </para>
-   </section>
-   
-   &reference.pdo.configure;
 
-   &reference.pdo.ini;
-
-   <section xml:id="pdo.drivers">
+   <!-- FIXME: Consider removing this list... -->
+   <section xml:id="pdo.drivers2">
     <title>PDO ドライバ</title>
     <para>
      以下のドライバが現在 PDO インターフェイスを実装しています。
@@ -101,624 +64,7 @@
     </para>
    </section>
 
-   <section xml:id='pdo.connections'>
-    <title>接続、および接続の管理</title>
-    <para>
-     PDO 基底クラスのインスタンスを作成することにより、接続が確立されます。
-     どのドライバを使用するのかにかかわらず、常に PDO クラスを指定します。
-     コンストラクタに渡す引数により、データソース (いわゆる DSN) の指定や
-     (もしあれば、オプションで) ユーザ名およびパスワードの指定を行います。
-    </para>
-    <para>
-     <example><title>MySQL への接続</title>
-      <programlisting role='php'>
-<![CDATA[
-<?php
-$dbh = new PDO('mysql:host=localhost;dbname=test', $user, $pass);
-?>
-]]> 
-      </programlisting>
-     </example>
-    </para>
-    <para>
-     接続時になんらかのエラーが発生した場合、<literal>PDOException</literal>
-     オブジェクトがスローされます。エラー処理を行いたい場合はこの例外を
-     キャッチします。あるいはこれを無視して、
-     <function>set_exception_handler</function> で設定した
-     グローバル例外ハンドラに処理を任せることもできます。
-    </para>
-    <para>
-     <example><title>接続エラーの処理</title>
-      <programlisting role='php'>
-<![CDATA[
-<?php
-try {
-   $dbh = new PDO('mysql:host=localhost;dbname=test', $user, $pass);
-   foreach ($dbh->query('SELECT * from FOO') as $row) {
-      print_r($row);
-   }
-   $dbh = null;
-} catch (PDOException $e) {
-   print "エラー!: " . $e->getMessage() . "<br/>";
-   die();
-}
-?>
-]]>
-      </programlisting>
-     </example>
-    </para>
-    <warning>
-     <para>
-      PDO コンストラクタからの例外をアプリケーション内でキャッチしない場合、
-      zend エンジンはスクリプトの実行を終了し、バックトレースを表示します。
-      このバックトレースを見れば、データベースへの接続の詳細がわかってしまいます。
-      その中にはユーザ名やパスワードも含まれます。
-      (<literal>catch</literal> 文を使用して) 明示的に例外をキャッチするか、
-      あるいは <function>set_exception_handler</function> を使用して
-      暗黙的に例外をキャッチするようにしましょう。
-     </para>
-    </warning>
-    <para>
-     データベースへの接続に成功すると、PDO クラスのインスタンスが
-     スクリプトに返されます。この PDO オブジェクトが存在する間、
-     接続がアクティブであり続けます。接続を閉じるには、他から
-     参照されていないことを保障することでオブジェクトを破棄する
-     必要があります。それには、オブジェクトを保持している変数に対して
-     &null; を代入します。
-     明示的にこれを行わなかった場合は、スクリプトの終了時に自動的に
-     接続が閉じられます。
-    </para>
-    <para>
-     <example><title>接続を閉じる</title>
-     <programlisting role='php'>
-<![CDATA[
-<?php
-$dbh = new PDO('mysql:host=localhost;dbname=test', $user, $pass);
-// ここで接続を使用します
-
-
-// 使用を終了したので、閉じます
-$dbh = null;
-?>
-]]>
-     </programlisting>
-    </example>
-   </para>
-   <para>
-    データベースサーバへの持続的な接続による恩恵をこうむる web
-    アプリケーションは多いでしょう。持続的な接続は、スクリプトが
-    終了しても閉じられずにキャッシュされ、他のスクリプトが同じ内容の
-    接続を要求してきた際にそれが再利用されます。持続的接続の
-    キャッシュにより、スクリプトがデータベースを使用するたびに
-    新しい接続を確立するオーバーヘッドを避けることができます。
-    それにより、結果として web アプリケーションを高速化できるように
-    なります。
-   </para>
-   <para>
-    <example><title>持続的な接続</title>
-     <programlisting role='php'>
-<![CDATA[
-<?php
-$dbh = new PDO('mysql:host=localhost;dbname=test', $user, $pass, array(
-  PDO::ATTR_PERSISTENT => true
-));
-?>
-]]>
-     </programlisting>
-     </example>
-    </para>
-    <note>
-     <para>
-      持続的な接続を使用したい場合は、ドライバのオプションを表す配列に
-      <constant>PDO::ATTR_PERSISTENT</constant> を設定して
-      PDO のコンストラクタに渡す必要があります。この属性を
-      <xref linkend="function.PDO-setAttribute" />
-      を用いてインスタンス作成後に設定した場合は、
-      そのドライバは持続的な接続を使用しません。
-     </para>
-    </note>
-    <note>
-     <para>
-      PDO ODBC ドライバを使用しており、ODBC ライブラリが ODBC
-      接続プーリングをサポートしている場合 (unixODBC および Windows
-      はこれをサポートしています。他にもあるかもしれません) は、
-      PDO の持続的接続を使用せずに ODBC の接続プーリングに
-      接続キャッシュ処理を任せることを推奨します。
-      ODBC の接続プールは、プロセス内で他のモジュールと共有されています。
-      PDO が接続をキャッシュしてしまうと、その接続は ODBC の
-      接続プールに返されなくなり、他のモジュールによって新たな接続が
-      作成されてしまうようになります。
-     </para>
-    </note>
-   </section>
-
-   <section xml:id='pdo.transactions'>
-    <title>トランザクションおよび自動コミット</title>
-    <para>
-     さあ、PDO を使用してデータベースに接続することができました。
-     クエリを発行する前に、PDO がトランザクションをどのように扱うのかを
-     理解しなければなりません。トランザクションについてよくわからない方の
-     ために説明すると、これは以下の 4 つの機能、つまり
-     原子性 - Atomicity、一貫性 - Consistency、独立性 - Isolation および
-     永続性 - Durability (ACID) を提供するものです。
-     一般的な言葉で言うと、トランザクション内で実行された作業は
-     たとえ段階的に行われたものであってもデータベースに安全に反映される
-     ことが保証されています。トランザクションのコミット時に他の接続の
-     干渉を受けることはありません。また、トランザクション内での作業は
-     (まだコミットされていなければ) いつでも自動的に取り消すことが
-     できます。これにより、スクリプト内でのエラー処理がより楽になります。
-    </para>
-    <para>
-     トランザクションの一般的な実装は、変更内容を一時的に「蓄えて」おき、
-     それを一気に適用するようになっています。この実装には、更新処理の
-     性能を劇的に向上させるという効果もあります。つまり、
-     トランザクションによってあなたの書くスクリプトはより高速になり、
-     またより堅牢になるということです
-     (これらの恩恵をうけるためには、トランザクションを正しく使用する
-     必要があります)。
-    </para>
-    <para>
-     残念ながら、すべてのデータベースがトランザクションをサポートしていると
-     いうわけではありません。そのため、PDO で最初に接続をオープンした際には、
-     いわゆる「自動コミット」モードで動作します。自動コミットモードとは、
-     もしデータベースがトランザクションをサポートしていたら個々のクエリが
-     暗黙的なトランザクションのもとで実行され、サポートしていなかったら
-     トランザクションを使用せずに実行されることを意味します。
-     トランザクションを使用する場合は、
-     <xref linkend="function.PDO-beginTransaction" /> メソッドを使用して
-     トランザクションを初期化する必要があります。使用しているドライバが
-     トランザクションをサポートしていない場合は PDOException が
-     スローされます (これは深刻な状態であるため、エラー処理の設定に
-     かかわらず常にスローされます)。初期化した後でトランザクションを
-     終了させるには、トランザクション内でのコードが成功したか否かに応じて
-     <xref linkend="function.PDO-commit" /> あるいは
-     <xref linkend="function.PDO-rollBack" /> を使用します。
-    </para>
-    <para>
-     スクリプトが終了したり接続が閉じられようとした際に、もし処理が
-     完了していないトランザクションがあれば PDO が自動的に
-     ロールバックします。これは、スクリプトが予期せぬ状態で終了した場合に
-     データの不整合が発生するのを避けるための安全装置です。もし
-     明示的にコミットしていなければ、おそらく何かおかしなことが
-     起こったのだろうと推測されます。そのため、データを守るために
-     ロールバックが行われるのです。
-    </para>
-    <warning>
-     <para>
-      自動的にロールバックが行われるのは、トランザクションを
-      <xref linkend="function.PDO-beginTransaction" /> で開始した場合のみです。
-      トランザクションを開始するクエリを手動で発行した場合、
-      PDO はそれを知ることができません。そのため、何か問題が発生しても
-      ロールバックすることはできないのです。
-     </para>
-    </warning>
-    <para>
-     <example><title>トランザクション内で一括処理を行う</title>
-      <para>
-       以下の例では、新しい従業員のデータを作成しているものとします。
-       この従業員には ID 番号 23 を割り当てます。この人物についての
-       基礎データを入力するだけでなく、その給与についても登録する
-       必要があります。以下では単純に 2 つの別々の更新を行っていますが、
-       それらは <xref linkend="function.PDO-beginTransaction" /> および
-       <xref linkend="function.PDO-commit" /> のコールで囲まれています。
-       これにより、変更が完了するまでは他からは一切変更内容が
-       見えないことが保証されます。もし何か問題が発生すれば、
-       catch ブロック内でトランザクション開始以降のすべての変更が
-       ロールバックされます。そしてエラーメッセージを表示します。
-      </para>
-      <programlisting role='php'>
-<![CDATA[
-<?php
-try {
-  $dbh = new PDO('odbc:SAMPLE', 'db2inst1', 'ibmdb2', 
-      array(PDO::ATTR_PERSISTENT => true));
-  echo "接続しました\n";
-  $dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-  $dbh->beginTransaction();
-  $dbh->exec("insert into staff (id, first, last) values (23, 'Joe', 'Bloggs')");
-  $dbh->exec("insert into salarychange (id, amount, changedate) 
-      values (23, 50000, NOW())");
-  $dbh->commit();
-  
-} catch (Exception $e) {
-  $dbh->rollBack();
-  echo "失敗しました。" . $e->getMessage();
-}
-?>
-]]>
-      </programlisting>
-     </example>
-    </para>
-    <para>
-     トランザクション内で行える処理は、更新には限りません。たとえば
-     何か複雑なクエリを発行してデータを抽出し、その情報をもとに
-     データの更新をしたり別のクエリを実行したりすることも可能です。
-     トランザクションがアクティブな間は、作業中のデータについては
-     他から一切変更が加えられないことが保証されます。
-     実際のところこの説明は 100% 正確というわけではありませんが、
-     もしあなたがいままでトランザクションのことを知らなかったのであれば
-     このように理解しておけば十分でしょう。
-    </para>
-   </section>
-
-   <section xml:id='pdo.prepared-statements'>
-    <title>プリペアドステートメントおよびストアドプロシージャ</title>
-    <para>
-     より成熟したデータベースの多くは、プリペアドステートメントという
-     概念をサポートしています。プリペアドステートメントとはいったい何の
-     ことでしょう? これは、実行したい SQL をコンパイルした
-     一種のテンプレートのようなものです。パラメータ変数を使用することで
-     SQL をカスタマイズすることが可能です。プリペアドステートメントには
-     2 つの大きな利点があります。
-    </para>
-    <itemizedlist>
-     <listitem>
-      <simpara>
-       クエリのパース (あるいは準備) が必要なのは最初の一回だけで、
-       同じパラメータ (あるいは別のパラメータ) を指定して何度でも
-       クエリを実行することができます。クエリを実行するには、準備として
-       クエリの解析やコンパイル、そして実行プランの最適化が行われます。
-       クエリが複雑になると、この処理には時間がかかるようになります。
-       同じクエリを異なったパラメータで何度も実行すると、アプリケーションの
-       動作は目に見えて遅くなるでしょう。
-       プリペアドステートメントを使用すると、この
-       解析/コンパイル/最適化 の繰り返しを避けることができます。
-       端的に言うと、プリペアドステートメントは使用するリソースが少なくいため
-       高速に動作するということです。
-      </simpara>
-     </listitem>
-     <listitem>
-      <simpara>
-       プリペアドステートメントに渡すパラメータは、引用符で括る必要は
-       ありません。それはドライバが自動的に行います。
-       アプリケーションで明示的にプリペアドステートメントを使用するように
-       すれば、SQL インジェクションは決して発生しません
-       (しかし、もし信頼できない入力をもとにクエリの他の部分を構築している
-       のならば、その部分に対するリスクを負うことになります)。
-      </simpara>
-     </listitem>
-    </itemizedlist>
-    <para>
-     プリペアドステートメントは非常に有用な機能なので、もしドライバが
-     サポートしていなくても、例外的に PDO がこの機能をエミュレートします。
-     これにより、データベースの機能にかかわらず同じ仕組みで
-     データベースへのアクセスができることが保証されます。
-    </para>
-    <para>
-     <example><title>プリペアドステートメントを使用して、繰り返し挿入処理を行う</title>
-     <simpara>
-      この例は、<literal>name</literal> および <literal>value</literal>
-      を名前つきプレースホルダで置き換えて INSERT クエリを実行します。
-     </simpara>
-     <programlisting role='php'>
-<![CDATA[
-<?php
-$stmt = $dbh->prepare("INSERT INTO REGISTRY (name, value) VALUES (:name, :value)");
-$stmt->bindParam(':name', $name);
-$stmt->bindParam(':value', $value);
-
-// 行を挿入します
-$name = 'one';
-$value = 1;
-$stmt->execute();
-
-// パラメータを変更し、別の行を挿入します
-$name = 'two';
-$value = 2;
-$stmt->execute();
-?>
-]]>
-     </programlisting>
-    </example>
-   </para>
-    <para>
-     <example><title>プリペアドステートメントを使用して、繰り返し挿入処理を行う</title>
-     <simpara>
-      この例は、<literal>name</literal> および <literal>value</literal>
-      をプレースホルダ <literal>?</literal> で置き換えて INSERT クエリを実行します。
-     </simpara>
-     <programlisting role='php'>
-<![CDATA[
-<?php
-$stmt = $dbh->prepare("INSERT INTO REGISTRY (name, value) VALUES (?, ?)");
-$stmt->bindParam(1, $name);
-$stmt->bindParam(2, $value);
-
-// 行を挿入します
-$name = 'one';
-$value = 1;
-$stmt->execute();
-
-// パラメータを変更し、別の行を挿入します
-$name = 'two';
-$value = 2;
-$stmt->execute();
-?>
-]]>
-     </programlisting>
-    </example>
-   </para>
-    <para>
-     <example><title>プリペアドステートメントを使用してデータを取得する</title>
-     <simpara>
-      この例では、フォームで入力したキーの値に応じたデータを取得します。
-      ユーザの入力内容は自動的に引用符で括られるので、SQL インジェクション攻撃の
-      恐れはありません。
-     </simpara>
-     <programlisting role='php'>
-<![CDATA[
-<?php
-$stmt = $dbh->prepare("SELECT * FROM REGISTRY where name = ?");
-if ($stmt->execute(array($_GET['name']))) {
-  while ($row = $stmt->fetch()) {
-    print_r($row);
-  }
-}
-?>
-]]>
-     </programlisting>
-    </example>
-   </para>
-   <para>
-    データベースドライバがサポートしていれば、入力パラメータだけでなく
-    出力パラメータもバインドすることが可能です。出力パラメータは、
-    一般にストアドプロシージャから値を受け取るために使用します。この場合、
-    返される値の大きさがどの程度になるのかをバインド時に知っておく必要が
-    あります。指定した大きさよりも大きな値が返されると、エラーが発生します。
-   </para>
-
-   <para>
-    <example><title>出力パラメータを指定してストアドプロシージャをコールする</title>
-     <programlisting role='php'>
-<![CDATA[
-<?php
-$stmt = $dbh->prepare("CALL sp_returns_string(?)");
-$stmt->bindParam(1, $return_value, PDO::PARAM_STR, 4000); 
-
-// ストアドプロシージャをコールします
-$stmt->execute();
-
-print "プロシージャが返した値は $return_value です\n";
-?>
-]]>
-     </programlisting>
-    </example>
-   </para>
-
-   <para>
-    入出力の両方に使用するパラメータを指定することもできます。
-    このパラメータの書式は、出力パラメータと同じです。
-    次の例では、ストアドプロシージャに文字列 'hello' を渡しています。
-    プロシージャの結果が返ってくると、
-    この文字列はプロシージャの返す値に置き換えられます。
-   </para>
-
-   <para>
-    <example><title>入出力パラメータを指定してストアドプロシージャをコールする</title>
-     <programlisting role='php'>
-<![CDATA[
-<?php
-$stmt = $dbh->prepare("CALL sp_takes_string_returns_string(?)");
-$value = 'hello';
-$stmt->bindParam(1, $value, PDO::PARAM_STR|PDO::PARAM_INPUT_OUTPUT, 4000); 
-
-// ストアドプロシージャをコールします
-$stmt->execute();
-
-print "プロシージャが返した値は $value です\n";
-?>
-]]>
-     </programlisting>
-    </example>
-   </para>
-   <para>
-    <example><title>プレースホルダの間違った使用法</title>
-     <programlisting role='php'>
-<![CDATA[
-<?php
-$stmt = $dbh->prepare("SELECT * FROM REGISTRY where name LIKE '%?%'");
-$stmt->execute(array($_GET['name']));
-
-// プレースホルダは、値全体に対して使用しなければなりません
-$stmt = $dbh->prepare("SELECT * FROM REGISTRY where name LIKE ?");
-$stmt->execute(array("%$_GET[name]%"));
-?>
-]]>
-     </programlisting>
-    </example>
-   </para>
-  </section>
-
-  <section xml:id='pdo.error-handling'>
-   <title>エラーおよびエラー処理</title>
-    <para>
-     PDO が提供するエラー処理方法は 3 通り存在し、
-     アプリケーションの開発形態によって使い分けることができます。
-    </para>
-    <itemizedlist>
-     <listitem>
-      <para>
-       <constant>PDO::ERRMODE_SILENT</constant>
-      </para>
-      <para>
-        デフォルトのモードです。ステートメントおよびデータベースオブジェクトの
-        エラーについて、PDO は単にそのエラーコードのみを設定します。
-        これを取得するには <xref linkend="function.PDO-errorCode" /> および
-        <xref linkend="function.PDO-errorInfo" /> メソッドを使用します。
-        ステートメントオブジェクトへのコールによってエラーが発生した場合は、
-        そのオブジェクトの
-        <xref linkend="function.PDOStatement-errorCode" /> あるいは
-        <xref linkend="function.PDO-errorInfo" /> メソッドを呼び出します。
-        データベースオブジェクトへのコールによってエラーが発生した場合は、
-        その代わりにデータベースオブジェクト上の同じメソッドを呼び出します。
-       </para>
-     </listitem>
-     <listitem>
-      <para>
-       <constant>PDO::ERRMODE_WARNING</constant>
-      </para>
-      <para>
-        エラーコードを設定することに加え、PDO は 伝統的な E_WARNING
-        メッセージも出力します。この設定はデバッグ/テストの際に有用で、
-        アプリケーションの動作を妨げることなしに問題点を確認できるように
-        なります。
-       </para>
-      </listitem>
-      <listitem>
-       <para>
-        <constant>PDO::ERRMODE_EXCEPTION</constant>
-       </para>
-       <para>
-        エラーコードを設定することに加え、PDO は
-        <classname>PDOException</classname> をスローします。エラーコードや
-        関連情報が、クラスのプロパティとして設定されます。
-        この設定もまたデバッグ時に有用で、エラーが発生した時点で
-        スクリプトの実行を停止させることによりコード内の問題点を
-        見つけやすくなります
-        (例外によりスクリプトが終了した際には、トランザクションは自動的に
-        ロールバックされることを覚えておきましょう)。
-       </para>
-       <para>
-        このモードが有用である理由のひとつとして、伝統的な PHP 形式の警告よりも
-        より明確にエラー処理コードが書けることがあります。例外を発生させず、
-        データベースへのコールのたびに毎回明示的に返り値をチェックすることに
-        比べると、コードの量やネストを減らすことができます。
-       </para>
-       <para>
-        PHP の例外についての詳細な情報は、
-        <link linkend='language.exceptions'>例外</link>
-        を参照ください。
-       </para>
-      </listitem>
-    </itemizedlist>
-    <para>
-     PDO のエラーコードは、SQL-92 の SQLSTATE エラーコード文字列に
-     標準化されています。
-     ネイティブのコードを適切な SQLSTATE コードに変換するのは、個々の PDO
-     ドライバの仕事となります。
-     <xref linkend="function.PDO-errorCode" /> メソッドは SQLSTATE コードを返します。
-     エラーについての詳細な銃尾法が知りたい場合、PDO では
-     <xref linkend="function.PDO-errorInfo" /> メソッドも提供しており、
-     これは SQLSTATE コード、ドライバ固有のエラーコードおよびドライバ固有の
-     エラーメッセージを含む配列を返します。
-    </para>
-   </section>
-
-   <section xml:id='pdo.lobs'>
-    <title>ラージオブジェクト (LOB)</title>
-    <para>
-      アプリケーション内で、データベースに「大きな」データを格納する
-      必要を感じることがあるかもしれません。「大きな」とは、一般的には
-      「4kb 程度以上」を指しますが、データベースによっては 32kb くらいまでは
-      「大きい」と判断されずにすむこともあります。ラージオブジェクトは
-      テキストあるいはバイナリの両方の形式をとり得ます。
-      PDO でこのラージデータ型を扱うには、
-      <xref linkend="function.PDOStatement-bindParam" /> や
-      <xref linkend="function.PDOStatement-bindColumn" /> のコール時に
-      型コードとして <constant>PDO::PARAM_LOB</constant> を使用します。
-      <constant>PDO::PARAM_LOB</constant> を指定すると、PDO は
-      データをストリームにマップします。これにより、
-      <link linkend='ref.stream'>PHP ストリーム API</link>
-      を使用してデータを扱えるようになります。
-    </para>
-    <para>
-     
-    </para>
-    <para>
-     <example><title>データベース内の画像を表示する</title>
-     <para>
-      この例では $lob という名前の変数に LOB をバインドし、
-      <function>fpassthru</function> を使用してそれをブラウザに送信します
-      LOB はストリームで表されるので、
-      <function>fgets</function>、<function>fread</function> および
-      <function>stream_get_contents</function> といった関数を
-      使用することができます。
-     </para>
-     <programlisting role='php'>
-<![CDATA[
-<?php
-$db = new PDO('odbc:SAMPLE', 'db2inst1', 'ibmdb2');
-$stmt = $db->prepare("select contenttype, imagedata from images where id=?");
-$stmt->execute(array($_GET['id']));
-$stmt->bindColumn(1, $type, PDO::PARAM_STR, 256);
-$stmt->bindColumn(2, $lob, PDO::PARAM_LOB);
-$stmt->fetch(PDO::FETCH_BOUND);
-
-header("Content-Type: $type");
-fpassthru($lob);
-?>
-]]>
-     </programlisting>
-    </example>
-   </para>
-   <para>
-    <example><title>画像をデータベースに挿入する</title>
-     <para>
-      この例では、ファイルをオープンしてそのハンドルを PDO に渡し、
-      LOB としてデータベースに挿入します。PDO は、データベースに応じた
-      もっとも適切な方法でデータを取得します。
-     </para>
-     <programlisting role='php'>
-<![CDATA[
-<?php
-$db = new PDO('odbc:SAMPLE', 'db2inst1', 'ibmdb2');
-$stmt = $db->prepare("insert into images (id, contenttype, imagedata) values (?, ?, ?)");
-$id = get_new_id(); // 新しい ID を割り当てるための何らかの関数
-
-// フォームからファイルをアップロードしていると仮定します。
-// 詳細な情報は PHP のドキュメントを参照ください。
-
-$fp = fopen($_FILES['file']['tmp_name'], 'rb');
-
-$stmt->bindParam(1, $id);
-$stmt->bindParam(2, $_FILES['file']['type']);
-$stmt->bindParam(3, $fp, PDO::PARAM_LOB);
-
-$db->beginTransaction();
-$stmt->execute();
-$db->commit();
-?>
-]]>
-     </programlisting>
-    </example>
-   </para>
-   <para>
-    <example><title>画像をデータベースに挿入する: Oracle</title>
-     <para>
-      Oracle は、ファイルから LOB を挿入する方法が他とは少し違います。
-      また、必ずトランザクション内で挿入しなければなりません。
-      それ以外の場合、新しく挿入された LOB は長さゼロとなり、クエリの
-      実行時に暗黙的にコミットされます。
-     </para>
-     <programlisting role='php'>
-<![CDATA[
-<?php
-$db = new PDO('oci:', 'scott', 'tiger');
-$stmt = $db->prepare("insert into images (id, contenttype, imagedata) " .
-  "VALUES (?, ?, EMPTY_BLOB()) RETURNING imagedata INTO ?");
-$id = get_new_id(); // 新しい ID を割り当てるための何らかの関数
-
-// フォームからファイルをアップロードしていると仮定します。
-// 詳細な情報は PHP のドキュメントを参照ください。
-
-$fp = fopen($_FILES['file']['tmp_name'], 'rb');
-
-$stmt->bindParam(1, $id);
-$stmt->bindParam(2, $_FILES['file']['type']);
-$stmt->bindParam(3, $fp, PDO::PARAM_LOB);
-
-$stmt->beginTransaction();
-$stmt->execute();
-$stmt->commit();
-?>
-]]>
-     </programlisting>
-     </example>
-    </para>
-
-   </section>
-
+   <!-- FIXME: Replace this section with out new OO markup -->
    <section xml:id='pdo.classes'>
     &reftitle.classes;
     <section xml:id='pdo.class.PDO'>
@@ -730,7 +76,9 @@ $stmt->commit();
       &reftitle.constructor;
       <itemizedlist>
        <listitem>
-        <para><link linkend='function.PDO-construct'>PDO</link> - PDO オブジェクトのコンストラクタ</para>
+        <para>
+         <link linkend='function.PDO-construct'>PDO</link> - PDO オブジェクトのコンストラクタ
+        </para>
        </listitem>
       </itemizedlist>
      </section>
@@ -738,45 +86,75 @@ $stmt->commit();
       &reftitle.methods;
       <itemizedlist>
        <listitem>
-        <para><link linkend='function.PDO-beginTransaction'>beginTransaction
-        </link> - トランザクションを開始する</para>
+        <para>
+         <link linkend='function.PDO-beginTransaction'>beginTransaction
+         </link> - トランザクションを開始する
+        </para>
        </listitem>
        <listitem>
-        <para><link linkend='function.PDO-commit'>commit</link> - トランザクションを
-         コミットする</para>
+        <para>
+         <link linkend='function.PDO-commit'>commit</link> - トランザクションをコミットする
+        </para>
        </listitem>
        <listitem>
-        <para><link linkend='function.PDO-errorCode'>errorCode</link> -
-         エラーが発生した場合に、データベースからエラーコードを取得する</para>
+        <para>
+         <link linkend='function.PDO-errorCode'>errorCode</link> -
+         エラーが発生した場合に、データベースからエラーコードを取得する
+        </para>
        </listitem>
        <listitem>
-        <para><link linkend='function.PDO-errorInfo'>errorInfo</link> -
+        <para>
+         <link linkend='function.PDO-errorInfo'>errorInfo</link> -
          エラーが発生した場合に、データベースからエラー情報の配列を取得する
         </para>
        </listitem>
        <listitem>
-        <para><link linkend='function.PDO-exec'>exec</link> - SQL ステートメントを
-         発行し、作用された行の数を返す</para>
+        <para>
+         <link linkend='function.PDO-exec'>exec</link> - SQL ステートメントを発行し、
+         作用された行の数を返す
+        </para>
        </listitem>
        <listitem>
-        <para><link linkend='function.PDO-getAttribute'>getAttribute</link> -
-         データベース接続属性を取得する</para>
+        <para>
+         <link linkend='function.PDO-getAttribute'>getAttribute</link> -
+         データベース接続属性を取得する
+        </para>
        </listitem>
        <listitem>
-        <para><link linkend='function.PDO-lastInsertId'>lastInsertId</link> -
-         テーブルに挿入された直近の行の値を取得する</para>
+        <para>
+         <link linkend='function.PDO-lastInsertId'>lastInsertId</link> -
+         テーブルに挿入された直近の行の値を取得する
+        </para>
        </listitem>
        <listitem>
-        <para><link linkend='function.PDO-prepare'>prepare</link> -
-         SQL ステートメントを実行するために準備する</para>
+        <para>
+         <link linkend='function.PDO-prepare'>prepare</link> -
+         SQL ステートメントを実行するために準備する
+        </para>
        </listitem>
        <listitem>
-        <para><link linkend='function.PDO-rollBack'>rollBack</link> -
-         トランザクションをロールバックする</para>
+        <para>
+         <link linkend='function.PDO-query'>query</link> 
+         - SQL ステートメントを発行し、結果セットを返す
+        </para>
        </listitem>
        <listitem>
-        <para><link linkend='function.PDO-setAttribute'>setAttribute</link> -
-         データベース接続属性を設定する</para>
+        <para>
+         <link linkend='function.PDO-quote'>quote</link> 
+         - 文字列をクォートし、SQL ステートメントで使用できる形式にして返す
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         <link linkend='function.PDO-rollBack'>rollBack</link> -
+         トランザクションをロールバックする
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         <link linkend='function.PDO-setAttribute'>setAttribute</link> -
+         データベース接続属性を設定する
+        </para>
        </listitem>
       </itemizedlist>
      </section>
@@ -791,16 +169,22 @@ $stmt->commit();
       &reftitle.methods;
       <itemizedlist>
        <listitem>
-        <para><link linkend='function.PDOStatement-bindColumn'>bindColumn</link> -
-         PHP 変数を結果セットの出力カラムにバインドする</para>
+        <para>
+         <link linkend='function.PDOStatement-bindColumn'>bindColumn</link> -
+         PHP 変数を結果セットの出力カラムにバインドする
+        </para>
        </listitem>
        <listitem>
-        <para><link linkend='function.PDOStatement-bindParam'>bindParam</link> -
-         プリペアドステートメントのパラメータに PHP 変数をバインドする</para>
+        <para>
+         <link linkend='function.PDOStatement-bindParam'>bindParam</link> -
+         プリペアドステートメントのパラメータに PHP 変数をバインドする
+        </para>
        </listitem>
        <listitem>
-        <para><link linkend='function.PDOStatement-bindValue'>bindValue</link> -
-         プリペアドステートメントのパラメータに値をバインドする</para>
+        <para>
+         <link linkend='function.PDOStatement-bindValue'>bindValue</link> -
+         プリペアドステートメントのパラメータに値をバインドする
+        </para>
        </listitem>
        <listitem>
         <para>
@@ -809,28 +193,40 @@ $stmt->commit();
         </para>
        </listitem>
        <listitem>
-        <para><link linkend='function.PDOStatement-columnCount'>columnCount</link> -
-         結果セットのカラム数を返す</para>
+        <para>
+         <link linkend='function.PDOStatement-columnCount'>columnCount</link> -
+         結果セットのカラム数を返す
+        </para>
        </listitem>
        <listitem>
-        <para><link linkend='function.PDOStatement-errorCode'>errorCode</link> -
-         エラーが発生した場合、ステートメントからエラーコードを取得する</para>
+        <para>
+         <link linkend='function.PDOStatement-errorCode'>errorCode</link> -
+         エラーが発生した場合、ステートメントからエラーコードを取得する
+        </para>
        </listitem>
        <listitem>
-        <para><link linkend='function.PDOStatement-errorInfo'>errorInfo</link> -
-         エラーが発生した場合、ステートメントからエラー情報の配列を取得する</para>
+        <para>
+         <link linkend='function.PDOStatement-errorInfo'>errorInfo</link> -
+         エラーが発生した場合、ステートメントからエラー情報の配列を取得する
+        </para>
        </listitem>
        <listitem>
-        <para><link linkend='function.PDOStatement-execute'>execute</link> -
-         プリペアドステートメントを実行する</para>
+        <para>
+         <link linkend='function.PDOStatement-execute'>execute</link> -
+         プリペアドステートメントを実行する
+        </para>
        </listitem>
        <listitem>
-        <para><link linkend='function.PDOStatement-fetch'>fetch</link> -
-         結果セットから行を取得する</para>
+        <para>
+         <link linkend='function.PDOStatement-fetch'>fetch</link> -
+         結果セットから行を取得する
+        </para>
        </listitem>
        <listitem>
-        <para><link linkend='function.PDOStatement-fetchAll'>fetchAll</link> -
-         結果セットからすべての行を含む配列を返す</para>
+        <para>
+         <link linkend='function.PDOStatement-fetchAll'>fetchAll</link> -
+         結果セットからすべての行を含む配列を返す
+        </para>
        </listitem>
        <listitem>
         <para>
@@ -839,12 +235,16 @@ $stmt->commit();
         </para>
        </listitem>
        <listitem>
-        <para><link linkend='function.PDOStatement-getAttribute'>getAttribute</link> -
-         PDOStatement 属性を取得する</para>
+        <para>
+         <link linkend='function.PDOStatement-getAttribute'>getAttribute</link> -
+         PDOStatement 属性を取得する
+        </para>
        </listitem>
        <listitem>
-        <para><link linkend='function.PDOStatement-getColumnMeta'>getColumnMeta</link> -
-         結果セットのカラムのメタデータを取得する</para>
+        <para>
+         <link linkend='function.PDOStatement-getColumnMeta'>getColumnMeta</link> -
+         結果セットのカラムのメタデータを取得する
+        </para>
        </listitem>
        <listitem>
         <para>
@@ -853,16 +253,22 @@ $stmt->commit();
         </para>
        </listitem>
        <listitem>
-        <para><link linkend='function.PDOStatement-rowCount'>rowCount</link> -
-         SQL ステートメントの実行により作用された行の数を返す</para>
+        <para>
+         <link linkend='function.PDOStatement-rowCount'>rowCount</link> -
+         SQL ステートメントの実行により作用された行の数を返す
+        </para>
        </listitem>
        <listitem>
-        <para><link linkend='function.PDOStatement-setAttribute'>setAttribute</link> -
-         PDOStatement 属性を設定する</para>
+        <para>
+         <link linkend='function.PDOStatement-setAttribute'>setAttribute</link> -
+         PDOStatement 属性を設定する
+        </para>
        </listitem>
        <listitem>
-        <para><link linkend='function.PDOStatement-setFetchMode'>setFetchMode</link> -
-         PDOStatement の取得モードを設定する</para>
+        <para>
+         <link linkend='function.PDOStatement-setFetchMode'>setFetchMode</link> -
+         PDOStatement の取得モードを設定する
+        </para>
        </listitem>
       </itemizedlist>
      </section>
@@ -898,7 +304,6 @@ class PDOException extends Exception
     </section>
     
    </section>
-  &reference.pdo.constants;
   </partintro>
  &reference.pdo.entities.functions;
  </reference>
@@ -922,3 +327,4 @@ vim600: syn=xml fen fdm=syntax fdl=2 si
 vim: et tw=78 syn=sgml
 vi: ts=1 sw=1
 -->
+

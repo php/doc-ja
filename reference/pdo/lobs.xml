@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.1 $ -->
+<!-- EN-Revision: 1.2 Maintainer: takagi Status: ready -->
+<!-- CREDITS: hirokawa,shimooka -->
+
+<chapter xml:id="pdo.lobs" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <title>ラージオブジェクト (LOB)</title>
+ <para>
+   アプリケーション内で、データベースに「大きな」データを格納する
+   必要を感じることがあるかもしれません。「大きな」とは、一般的には
+   「4kb 程度以上」を指しますが、データベースによっては 32kb くらいまでは
+   「大きい」と判断されずにすむこともあります。ラージオブジェクトは
+   テキストあるいはバイナリの両方の形式をとり得ます。
+   PDO でこのラージデータ型を扱うには、
+   <xref linkend="function.PDOStatement-bindParam" /> や
+   <xref linkend="function.PDOStatement-bindColumn" /> のコール時に
+   型コードとして <constant>PDO::PARAM_LOB</constant> を使用します。
+   <constant>PDO::PARAM_LOB</constant> を指定すると、PDO は
+   データをストリームにマップします。これにより、
+   <link linkend='ref.stream'>PHP ストリーム API</link>
+   を使用してデータを扱えるようになります。
+ </para>
+ <para>
+  <example>
+   <title>データベース内の画像を表示する</title>
+   <para>
+    この例では $lob という名前の変数に LOB をバインドし、
+    <function>fpassthru</function> を使用してそれをブラウザに送信します
+    LOB はストリームで表されるので、
+    <function>fgets</function>、<function>fread</function> および
+    <function>stream_get_contents</function> といった関数を
+    使用することができます。
+   </para>
+   <programlisting role='php'>
+<![CDATA[
+<?php
+$db = new PDO('odbc:SAMPLE', 'db2inst1', 'ibmdb2');
+$stmt = $db->prepare("select contenttype, imagedata from images where id=?");
+$stmt->execute(array($_GET['id']));
+$stmt->bindColumn(1, $type, PDO::PARAM_STR, 256);
+$stmt->bindColumn(2, $lob, PDO::PARAM_LOB);
+$stmt->fetch(PDO::FETCH_BOUND);
+
+header("Content-Type: $type");
+fpassthru($lob);
+?>
+]]>
+   </programlisting>
+  </example>
+ </para>
+ <para>
+  <example>
+   <title>画像をデータベースに挿入する</title>
+   <para>
+    この例では、ファイルをオープンしてそのハンドルを PDO に渡し、
+    LOB としてデータベースに挿入します。PDO は、データベースに応じた
+    もっとも適切な方法でデータを取得します。
+   </para>
+   <programlisting role='php'>
+<![CDATA[
+<?php
+$db = new PDO('odbc:SAMPLE', 'db2inst1', 'ibmdb2');
+$stmt = $db->prepare("insert into images (id, contenttype, imagedata) values (?, ?, ?)");
+$id = get_new_id(); // 新しい ID を割り当てるための何らかの関数
+
+// フォームからファイルをアップロードしていると仮定します。
+// 詳細な情報は PHP のドキュメントを参照ください。
+
+$fp = fopen($_FILES['file']['tmp_name'], 'rb');
+
+$stmt->bindParam(1, $id);
+$stmt->bindParam(2, $_FILES['file']['type']);
+$stmt->bindParam(3, $fp, PDO::PARAM_LOB);
+
+$db->beginTransaction();
+$stmt->execute();
+$db->commit();
+?>
+]]>
+   </programlisting>
+  </example>
+ </para>
+ <para>
+  <example>
+   <title>画像をデータベースに挿入する: Oracle</title>
+   <para>
+    Oracle は、ファイルから LOB を挿入する方法が他とは少し違います。
+    また、必ずトランザクション内で挿入しなければなりません。
+    それ以外の場合、新しく挿入された LOB は長さゼロとなり、クエリの
+    実行時に暗黙的にコミットされます。
+   </para>
+   <programlisting role='php'>
+<![CDATA[
+<?php
+$db = new PDO('oci:', 'scott', 'tiger');
+$stmt = $db->prepare("insert into images (id, contenttype, imagedata) " .
+"VALUES (?, ?, EMPTY_BLOB()) RETURNING imagedata INTO ?");
+$id = get_new_id(); // 新しい ID を割り当てるための何らかの関数
+
+// フォームからファイルをアップロードしていると仮定します。
+// 詳細な情報は PHP のドキュメントを参照ください。
+
+$fp = fopen($_FILES['file']['tmp_name'], 'rb');
+
+$stmt->bindParam(1, $id);
+$stmt->bindParam(2, $_FILES['file']['type']);
+$stmt->bindParam(3, $fp, PDO::PARAM_LOB);
+
+$stmt->beginTransaction();
+$stmt->execute();
+$stmt->commit();
+?>
+]]>
+   </programlisting>
+  </example>
+ </para>
+</chapter>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"../../../manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
+
