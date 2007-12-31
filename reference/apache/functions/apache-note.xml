@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.7 $ -->
-<!-- EN-Revision: 1.5 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.8 $ -->
+<!-- EN-Revision: 1.6 Maintainer: hirokawa Status: ready -->
 <refentry xml:id="function.apache-note" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>apache_note</refname>
@@ -15,9 +15,13 @@
    <methodparam choice="opt"><type>string</type><parameter>note_value</parameter></methodparam>
   </methodsynopsis>
   <para>
-   <function>apache_note</function>はApache専用の関数であり、
-   リクエストの<literal>notes</literal>テーブルから値を得たり、
-   値を設定します。
+   Apache 専用の関数であり、
+   リクエストの <literal>notes</literal> テーブルから値を得たり、
+   値を設定したりします。
+  </para>
+  <para>
+   <function>apache_note</function> の主な使用法は、
+   同一リクエスト内でのモジュール間の情報のやりとりです。
   </para>
  </refsect1>
 
@@ -56,6 +60,71 @@
    もし記号が処理できない場合、&false; が返されます。
   </para>
  </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title>PHP と Perl との間での情報のやりとり</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+apache_note('name', 'Fredrik Ekengren');
+
+// perl スクリプトをコールします
+virtual("/perl/some_script.pl");
+
+$result = apache_note("resultdata");
+?>
+]]>
+    </programlisting>
+    <programlisting role="perl">
+<![CDATA[
+# Apache リクエストオブジェクトを取得します
+my $r = Apache->request()->main();
+
+# 受け取ったデータを取得します
+my $name = $r->notes('name');
+
+# 何らかの処理をします
+
+# 結果を PHP 側に戻します
+$r->notes('resultdata', $result);
+]]>
+    </programlisting>
+   </example>
+  </para>
+  <para>
+   <example>
+    <title>access.log への出力</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+apache_note('sessionID', session_id());
+
+?>
+]]>
+    </programlisting>
+    <programlisting role="apache">
+<![CDATA[
+# "%{sessionID}n" を LogFormat ディレクティブで使用できます
+]]>
+    </programlisting>
+   </example>
+  </para>
+ </refsect1>
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <para>
+   <simplelist>
+    <member><function>virtual</function></member>
+   </simplelist>
+  </para>
+ </refsect1>
+
 </refentry>
 
 <!-- Keep this comment at the end of the file
