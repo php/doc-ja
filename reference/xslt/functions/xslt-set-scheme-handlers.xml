@@ -1,22 +1,69 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.6 $ -->
-<!-- EN-Revision: 1.5 Maintainer: shimooka Status: ready -->
+<!-- $Revision: 1.7 $ -->
+<!-- EN-Revision: 1.7 Maintainer: shimooka Status: ready -->
 <!-- CREDITS: hirokawa -->
 <refentry xml:id='function.xslt-set-scheme-handlers' xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>xslt_set_scheme_handlers</refname>
   <refpurpose>XSLT プロセッサに関するスキーマハンドラを設定する</refpurpose>
  </refnamediv>
- 
+
  <refsect1 role="description">
   &reftitle.description;
   <methodsynopsis>
    <type>void</type><methodname>xslt_set_scheme_handlers</methodname>
-   <methodparam><type>resource</type><parameter>processor</parameter></methodparam>
+   <methodparam><type>resource</type><parameter>xh</parameter></methodparam>
    <methodparam><type>array</type><parameter>handlers</parameter></methodparam>
   </methodsynopsis>
   <para>
-   &warn.undocumented.func;
+   ドキュメントのスキーマハンドラ (XPath ハンドラ) を登録します。
+  </para>
+ </refsect1>
+
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <para>
+   <variablelist>
+    <varlistentry>
+     <term><parameter>xh</parameter></term>
+     <listitem>
+      <para>
+       <function>xslt_create</function> で作成した
+       XSLT プロセッサリンク ID。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>handlers</parameter></term>
+     <listitem>
+      <para>
+       "get_all"、"open"、"get"、"put"
+       および "close" というキーを持つ配列。
+      </para>
+      <para>
+       すべてのエントリは、関数名を表す文字列あるいは
+       array($obj, "method") 形式の配列である必要があります。
+      </para>
+      <para>
+       この配列には、すべてのスキームハンドラの要素を含める必要はありません
+       (もちろん含めることもできます) が、
+       少なくとも "handler" =&gt; "function" 形式を満たさなければなりません。
+      </para>
+      <para>
+       各スキームハンドラ関数は、以下のフォーマットでコールされます。
+       <screen>
+<![CDATA[
+string   get_all(resource processor, string scheme, string rest)
+resource open(resource processor, string scheme, string rest)
+int      get(resource processor, resource fp, string &data)
+int      put(resource processor, resource fp, string data)
+void     close(resource processor, resource fp)
+]]>
+       </screen>
+      </para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
   </para>
  </refsect1>
 
@@ -24,6 +71,67 @@
   &reftitle.returnvalues;
   <para>
    &return.void;
+  </para>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title><function>xslt_set_scheme_handlers</function> の例</title>
+    <para>
+     たとえば、これは PHP の関数 "file_exists()" を実装したものです。
+    </para>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+// ハンドラの定義
+function mySchemeHandler($processor, $scheme, $rest)
+{
+    $rest = substr($rest,1);    // to remove the first / automatically added by the engine
+    if ($scheme == 'file_exists') {
+        // result is embedded in a small xml string
+        return '<?xml version="1.0" encoding="UTF-8"?><root>' . (file_exists($rest) ? 'true' : 'false') . '</root>';
+    }
+}
+
+$SchemeHandlerArray = array('get_all' => 'mySchemeHandler');
+
+// エンジンを開始します
+$params = array();
+$xh = xslt_create();
+
+xslt_set_scheme_handlers($xh, $SchemeHandlerArray);
+
+$result = xslt_process($xh, "myFile.xml", "myFile.xsl", NULL, array(), $params);
+xslt_free($xh);
+
+echo $result;
+
+?>
+]]>
+    </programlisting>
+    <para>
+     これで、スタイルシート側で特定のファイルが存在するかどうかを調べることができます。
+    </para>
+    <programlisting role="xml">
+<![CDATA[
+<xsl:if test="document('file_exists:anotherXMLfile.xml')/root='true'">
+ <!-- ファイルが存在する -->
+</xsl:if>
+]]>
+    </programlisting>
+   </example>
+  </para>
+ </refsect1>
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <para>
+   <simplelist>
+    <member><function>xslt_set_scheme_handler</function></member>
+   </simplelist>
   </para>
  </refsect1>
 
