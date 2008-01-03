@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.1 $ -->
+<!-- EN-Revision: 1.3 Maintainer: takagi Status: ready -->
+<refentry xml:id="mysqli-stmt.prepare" xmlns="http://docbook.org/ns/docbook">
+ <refnamediv>
+  <refname>mysqli_stmt::prepare</refname>
+  <refname>mysqli_stmt_prepare</refname>
+  <refpurpose>SQL ステートメントを実行するために準備する</refpurpose>
+ </refnamediv>
+
+ <refsect1 role="description">
+  &reftitle.description;
+  <para>オブジェクト指向型（メソッド）</para>
+  <methodsynopsis>
+   <type>mixed</type><methodname>mysqli_stmt::prepare</methodname>
+   <methodparam><type>string</type><parameter>query</parameter></methodparam>
+  </methodsynopsis>
+  <para>手続き型:</para>
+  <methodsynopsis>
+   <type>bool</type><methodname>mysqli_stmt_prepare</methodname>
+   <methodparam><type>mysqli_stmt</type><parameter>stmt</parameter></methodparam>
+   <methodparam><type>string</type><parameter>query</parameter></methodparam>
+  </methodsynopsis>
+  <para>
+   null で終わる文字列で指定した SQL クエリを準備します。
+  </para>
+  <para>
+   パラメータマーカは、ステートメントの実行や行の取得の前に
+   <function>mysqli_stmt_bind_param</function>
+   や <function>mysqli_stmt_bind_result</function> を使用して
+   アプリケーション変数にバインドする必要があります。
+  </para>
+ </refsect1>
+
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <para>
+   <variablelist>
+    &mysqli.stmt.description;
+    <varlistentry>
+     <term><parameter>query</parameter></term>
+     <listitem>
+      <para>
+       クエリを表す文字列。単一の SQL 文で構成されている必要があります。
+      </para>
+      <para>
+       ひとつまたは複数のパラメータを SQL 文に含めることができます。
+       そのためには、適切な位置にクエスチョンマーク
+       (<literal>?</literal>) を埋め込みます。
+      </para>
+      <note>
+       <para>
+        ステートメントの最後にセミコロンや <literal>\g</literal>
+        を追加してはいけません。
+       </para>
+      </note>
+      <note>
+       <para>
+        パラメータのマーカは、それが SQL 文の適切な位置にある場合のみ
+        有効です。例えば INSERT 文の VALUES() リストの中
+        (行に登録するカラム値を指定する) や 
+        WHERE 句で列のデータと比較する値などが適切な位置の例です。
+       </para>
+       <para>
+        しかし、識別子 (テーブルやカラムの名前) や SELECT 文で選択する
+        項目の名前に指定したり、(等号 <literal>=</literal> のような)
+        二項演算子の両側にパラメータを指定したりすることはできません。
+        後者の制限は、パラメータの型が判断できなくなることによるものです。
+        また、パラメータのマーカを <literal>NULL</literal> と比較して
+        <literal>? IS NULL</literal> のようにすることもできません。
+        一般に、パラメータが使用可能なのはデータ操作言語 (DML)
+        ステートメントであり、データ定義言語 (DDL) ステートメントでは
+        使用できません。
+       </para>
+      </note>
+     </listitem>
+    </varlistentry>
+   </variablelist>
+  </para>
+ </refsect1>
+
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <para>
+   &return.success;
+  </para>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <example>
+   <title>オブジェクト指向型</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+$mysqli = new mysqli("localhost", "my_user", "my_password", "world");
+
+/* 接続状況をチェックします */
+if (mysqli_connect_errno()) {
+    printf("Connect failed: %s\n", mysqli_connect_error());
+    exit();
+}
+
+$city = "Amersfoort";
+
+/* プリペアドステートメントを作成します */
+$stmt =  $mysqli->stmt_init();
+if ($stmt->prepare("SELECT District FROM City WHERE Name=?")) {
+
+    /* マーカにパラメータをバインドします */
+    $stmt->bind_param("s", $city);
+
+    /* クエリを実行します */
+    $stmt->execute();
+
+    /* 結果変数をバインドします */
+    $stmt->bind_result($district);
+
+    /* 値を取得します */
+    $stmt->fetch();
+
+    printf("%s is in district %s\n", $city, $district);
+
+    /* ステートメントを閉じます */
+    $stmt->close();
+}
+
+/* 接続を閉じます */
+$mysqli->close();
+?>
+]]>
+  </programlisting>
+  </example>
+  <example>
+   <title>手続き型</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+$link = mysqli_connect("localhost", "my_user", "my_password", "world");
+
+/* 接続状況をチェックします */
+if (mysqli_connect_errno()) {
+    printf("Connect failed: %s\n", mysqli_connect_error());
+    exit();
+}
+
+$city = "Amersfoort";
+
+/* プリペアドステートメントを作成します */
+$stmt = mysqli_stmt_init($link);
+if (mysqli_stmt_prepare($stmt, 'SELECT District FROM City WHERE Name=?')) {
+
+    /* マーカにパラメータをバインドします */
+    mysqli_stmt_bind_param($stmt, "s", $city);
+
+    /* クエリを実行します */
+    mysqli_stmt_execute($stmt);
+
+    /* 結果変数をバインドします */
+    mysqli_stmt_bind_result($stmt, $district);
+
+    /* 値を取得します */
+    mysqli_stmt_fetch($stmt);
+
+    printf("%s is in district %s\n", $city, $district);
+
+    /* ステートメントを閉じます */
+    mysqli_stmt_close($stmt);
+}
+
+/* 接続を閉じます */
+mysqli_close($link);
+?>
+]]>
+   </programlisting>
+  </example>
+  &example.outputs;
+  <screen>
+<![CDATA[
+Amersfoort is in district Utrecht
+]]>
+  </screen>
+ </refsect1>
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <para>
+   <function>mysqli_stmt_init</function>,
+   <function>mysqli_stmt_execute</function>,
+   <function>mysqli_stmt_fetch</function>,
+   <function>mysqli_stmt_bind_param</function>,
+   <function>mysqli_stmt_bind_result</function>
+   <function>mysqli_stmt_close</function>.
+  </para>
+ </refsect1>
+
+</refentry>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"../../../../manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
