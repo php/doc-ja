@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.1 $ -->
-<!-- EN-Revision: 1.2 Maintainer: takagi Status: ready -->
+<!-- $Revision: 1.2 $ -->
+<!-- EN-Revision: 1.3 Maintainer: takagi Status: ready -->
 <refentry xml:id="mysqli.set-local-infile-handler" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>mysqli::set_local_infile_handler</refname>
@@ -15,9 +15,172 @@
    <methodparam><type>mysqli</type><parameter>link</parameter></methodparam>
    <methodparam><type>callback</type><parameter>read_func</parameter></methodparam>
   </methodsynopsis>
+  <para>Object oriented style (method)</para>
+  <classsynopsis>
+   <ooclass><classname>mysqli</classname></ooclass>
+   <methodsynopsis>
+    <type>bool</type><methodname>set_local_infile_handler</methodname>
+    <methodparam><type>mysqli</type><parameter>link</parameter></methodparam>
+    <methodparam><type>callback</type><parameter>read_func</parameter></methodparam>
+   </methodsynopsis>
+  </classsynopsis>
+  
+  <para>LOAD DATA LOCAL INFILE コマンド用のコールバック関数を設定します。</para>
 
-  &warn.undocumented.func;
+  <para>
+   コールバック関数では、<literal>LOAD DATA LOCAL INFILE</literal>
+   で指定したファイルの内容を読み込んで、それを
+   <literal>LOAD DATA INFILE</literal>
+   で使用できる形式に変換します。
+  </para>
 
+  <para>
+   返されるデータは、
+   <literal>LOAD DATA</literal> で指定した書式にマッチする必要があります。
+  </para>
+ </refsect1>
+
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <para>
+   <variablelist>
+    &mysqli.link.description;
+    <varlistentry>
+     <term><parameter>read_func</parameter></term>
+     <listitem>
+      <para>
+       以下のパラメータを受け取るコールバック関数あるいはオブジェクトのメソッド。
+      </para>
+      <variablelist>
+       <varlistentry>
+        <term><parameter>stream</parameter></term>
+        <listitem><para>SQL の INFILE コマンドに関連付けられた PHP ストリーム</para></listitem>
+       </varlistentry>
+       <varlistentry>
+        <term><parameter>&amp;buffer</parameter></term>
+        <listitem><para>入力を書き換えた内容を保存する文字列バッファ</para></listitem>
+       </varlistentry>
+       <varlistentry>
+        <term><parameter>buflen</parameter></term>
+        <listitem><para>バッファに格納する最大文字数</para></listitem>
+       </varlistentry>
+       <varlistentry>
+        <term><parameter>&amp;errormsg</parameter></term>
+        <listitem><para>エラーが発生した場合にエラーメッセージを保存する場所</para></listitem>
+       </varlistentry>
+      </variablelist>
+     </listitem>
+    </varlistentry>
+   </variablelist>
+  </para>
+  <para>
+   コールバック関数の返り値は、<parameter>buffer</parameter>
+   に書き込んだ文字数となります。エラー発生時は負の値を返します。
+  </para>
+ </refsect1>
+
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <para>
+   &return.success;
+  </para>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <example>
+   <title>オブジェクト指向型</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+  $db = mysqli_init();
+  $db->real_connect("localhost","root","","test");
+
+  function callme($stream, &$buffer, $buflen, &$errmsg)
+  {
+    $buffer = fgets($stream);
+
+    echo $buffer;
+
+    // 大文字に変換し、"," を [TAB] に変換します
+    $buffer = strtoupper(str_replace(",", "\t", $buffer));
+
+    return strlen($buffer);
+  }
+
+  $db->set_local_infile_handler("callme");
+
+  echo "Input:\n";
+
+  $db->query("LOAD DATA LOCAL INFILE 'input.txt' INTO TABLE t1");
+
+  $res = $db->query("SELECT * FROM t1");
+
+  echo "\nResult:\n";
+  while ($row = $res->fetch_assoc()) {
+    echo join(",", $row)."\n";
+  }
+?>
+]]>
+   </programlisting>
+  </example>
+  <example>
+   <title>手続き型</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+  $db = mysqli_init();
+  mysqli_real_connect($db, "localhost","root","","test");
+
+  function callme($stream, &$buffer, $buflen, &$errmsg)
+  {
+    $buffer = fgets($stream);
+
+    echo $buffer;
+
+    // 大文字に変換し、"," を [TAB] に変換します
+    $buffer = strtoupper(str_replace(",", "\t", $buffer));
+
+    return strlen($buffer);
+  }
+
+  mysqli_set_local_infile_handler($db, "callme");
+
+  echo "Input:\n";
+
+  mysqli_query($db, "LOAD DATA LOCAL INFILE 'input.txt' INTO TABLE t1");
+
+  $res = mysqli_query($db, "SELECT * FROM t1");
+
+  echo "\nResult:\n";
+  while ($row = mysqli_fetch_assoc($res)) {
+    echo join(",", $row)."\n";
+  }
+?>
+]]>
+   </programlisting>
+  </example>
+  &example.outputs;
+  <screen>
+<![CDATA[
+Input:
+23,foo
+42,bar
+
+Output:
+23,FOO
+42,BAR
+]]>
+  </screen>
+ </refsect1>
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <para>
+   <simplelist>
+    <member><function>mysqli_set_local_infile_default</function></member>
+   </simplelist>
+  </para>
  </refsect1>
 
 </refentry>
