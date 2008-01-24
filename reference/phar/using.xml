@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.7 $ -->
-<!-- EN-Revision: 1.7 Maintainer: takagi Status: ready -->
-<chapter xml:id="phar.using.basics" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+<!-- $Revision: 1.8 $ -->
+<!-- EN-Revision: 1.9 Maintainer: takagi Status: ready -->
+<chapter xml:id="phar.using" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>Phar アーカイブの使用法</title>
 
- <section>
+ <section xml:id="phar.using.intro" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>Phar アーカイブの使用法: 導入</title>
  <para>
   Phar アーカイブは Java の JAR アーカイブと似た概念のものですが、
@@ -37,15 +37,15 @@ include 'coollibrary.phar';
   </informalexample>
  </para>
  <para>
-  Phar アーカイブを非常に便利なものとしている機能が
-  <literal>phar</literal> ストリームラッパーです。
+  <literal>phar</literal> ストリームラッパーは phar 拡張モジュールの要となるものです。
   詳細については <link linkend="phar.using.stream">こちら</link>
   で説明します。このストリームラッパーを使用すると、
-  phar 内の個々のファイルに対して、
+  phar 内の個々のファイルに対して
+  <function>fopen</function> や <function>opendir</function>
+  といった標準のファイル操作関数を使用でき、
   まるで通常のファイルシステム上にあるのと同じような感覚でアクセスできます。
   <literal>phar</literal> ストリームラッパーは、
-  ファイルに対する読み書きや、ディレクトリに対する
-  <function>opendir</function> をすべてサポートしています。
+  ファイルやディレクトリに対する読み書き操作をすべてサポートしています。
  </para>
  <para>
   <informalexample>
@@ -62,11 +62,9 @@ echo file_get_contents('phar:///fullpath/to/coollibrary.phar/images/wow.jpg');
   </informalexample>
  </para>
  <para>
-  Phar 拡張モジュールで提供されているもうひとつの機能が
-  <classname>Phar</classname> クラスです。
-  これにより、Phar アーカイブ内のファイルに対して
-  まるでそれが連想配列であるかのようにアクセスできるようになります。
-  またその他の機能も用意されています。Phar クラスについての説明は
+  <classname>Phar</classname> クラスでは、
+  ファイルへのアクセスや phar アーカイブ作成用により高度な機能も実装しています。
+  Phar クラスについての説明は
   <link linkend="phar.using.object">こちら</link> をご覧ください。
  </para>
  <para>
@@ -76,11 +74,12 @@ echo file_get_contents('phar:///fullpath/to/coollibrary.phar/images/wow.jpg');
 <?php
 try {
     // 既存の phar をオープンします
-    $p = new Phar('coollibrary.phar');
-    foreach ($p as $file) {
+    $p = new Phar('coollibrary.phar', 0);
+    // Phar は SPL の DirectoryIterator クラスを継承しています
+    foreach (new RecursiveIteratorIterator($p) as $file) {
         // $file は PharFileInfo クラスで、これは SplFileInfo を継承しています
         echo $file->getFileName() . "\n";
-        echo $file . "\n"; // 内容を表示します
+        echo file_get_contents($file->getPathName()) . "\n"; // 内容を表示します
     }
     if (isset($p['internal/file.php'])) {
         var_dump($p['internal/file.php']->getMetaData());
@@ -91,29 +90,32 @@ try {
     // 実際の運用サーバでは、決して Phar を作成する必要はないはずで、
     // 単に実行できるだけでよいはずです。
     if (Phar::canWrite()) {
-        $p = new Phar(dirname(__FILE__) . '/newphar.phar', 0, 'newphar.phar');
-        // トランザクションを作成します - stopBuffering() がコールされるまで、
-        // newphar.phar には何も書き込まれません。しかし一時ストレージが必要となります
+        $p = new Phar('newphar.tar.phar', 0, 'newphar.tar.phar');
+        // tar 形式の phar アーカイブを作成し、gzip で圧縮します (.tar.gz)
+        $p->convertToTar(Phar::GZ);
+
+        // トランザクションの作成 - newphar.phar には、
+        // stopBuffering() がコールされるまで (一時的なストレージが必要となっても) なにも書き込まれません
         $p->startBuffering();
-        // 新しいファイルを追加し、その内容を設定します
+        // すべてのファイルを /path/to/project に追加し、プレフィックス "project" で phar に保存します
+        $p->buildFromIterator(new RecursiveIteratorIterator(new DirectoryIterator('/path/to/project')), '/path/to/');
+
+        // 配列形式の API で新しいファイルを追加します
         $p['file1.txt'] = 'Information';
         $fp = fopen('hugefile.dat', 'rb');
-        // ストリームからコピーします
+        // すべてのデータをストリームからコピーします
         $p['data/hugefile.dat'] = $fp;
-        if (Phar::canCompress()) {
+
+        if (Phar::canCompress(Phar::GZ)) {
             $p['data/hugefile.dat']->setCompressedGZ();
         }
+
         $p['images/wow.jpg'] = file_get_contents('images/wow.jpg');
-        // ファイル固有のメタデータとして、任意のデータを保存できます
+        // ファイルのメタデータには任意の値を保存できます
         $p['images/wow.jpg']->setMetaData(array('mime-type' => 'image/jpeg'));
         $p['index.php'] = file_get_contents('index.php');
         $p->setMetaData(array('bootstrap' => 'index.php'));
-        // ローダースタブを設定します
-        $p->setStub('<?php
-$p = new Phar(__FILE__);
-$m = $p->getMetaData();
-require "phar://" . __FILE__ . "/" . $m["bootstrap"];
-__HALT_COMPILER();');
+
         // phar アーカイブをディスクに保存します
         $p->stopBuffering();
     }
@@ -122,6 +124,73 @@ __HALT_COMPILER();');
 }
 ?>
 ]]>
+   </programlisting>
+  </informalexample>
+ </para>
+ <para>
+  バージョン 2.0.0 以降、<classname>Phar</classname> には 3 つの静的メソッド
+  <function>Phar::webPhar</function>、
+  <function>Phar::mungServer</function> そして <function>Phar::interceptFileFuncs</function>
+  が追加されました。これは、通常のファイルシステム用あるいはウェブアプリケーション用の
+  PHP アプリケーションのパッケージを作成する際に重要となります。
+  <function>Phar::webPhar</function> は、HTTP のコールを phar
+  アーカイブ内の特定の場所に転送するフロントコントローラを実装します。
+  <function>Phar::mungServer</function> は
+  <literal>$_SERVER</literal> 配列の中身をうまく変更して
+  アプリケーションでその値を使えるようにします。
+  <function>Phar::interceptFileFuncs</function> は、
+  <function>fopen</function> や <function>file_get_contents</function>、<function>opendir</function>
+  そしてすべての stat 系関数 (<function>file_exists</function>、<function>is_readable</function> など)
+  のコールを Phar が横取りして、相対パスを phar アーカイブ内の適切な位置に変換するようにします。
+ </para>
+ <para>
+  たとえば、あの有名な phpMyAdmin を phar アーカイブにすることを考えてみましょう。
+  必要なのは、こんな単純なスクリプトだけです。あとは、
+  ユーザ名とパスワードを変更してウェブサーバ上から
+  <literal>phpMyAdmin.phar.tar.php</literal> にアクセスするだけで利用できます。
+ </para>
+ <para>
+  <informalexample>
+   <programlisting>
+    <![CDATA[
+<?php
+@unlink('phpMyAdmin.phar.tar.php');
+copy('phpMyAdmin-2.11.3-english.tar.gz', 'phpMyAdmin.phar.tar.php');
+$a = new Phar('phpMyAdmin.phar.tar.php');
+$a->startBuffering();
+$a["phpMyAdmin-2.11.3-english/config.inc.php"] = '<?php
+/* サーバの設定 */
+$i = 0;
+
+/* Server localhost (config:root) [1] */
+$i++;
+$cfg[\'Servers\'][$i][\'host\'] = \'localhost\';
+$cfg[\'Servers\'][$i][\'extension\'] = \'mysqli\';
+$cfg[\'Servers\'][$i][\'connect_type\'] = \'tcp\';
+$cfg[\'Servers\'][$i][\'compress\'] = false;
+$cfg[\'Servers\'][$i][\'auth_type\'] = \'config\';
+$cfg[\'Servers\'][$i][\'user\'] = \'root\';
+$cfg[\'Servers\'][$i][\'password\'] = \'\';
+
+
+/* サーバの設定はここまで */
+if (strpos(PHP_OS, \'WIN\') !== false) {
+    $cfg[\'UploadDir\'] = getcwd();
+} else {
+    $cfg[\'UploadDir\'] = \'/tmp/pharphpmyadmin\';
+    @mkdir(\'/tmp/pharphpmyadmin\');
+    @chmod(\'/tmp/pharphpmyadmin\', 0777);
+}';
+$a->setStub('<?php
+Phar::interceptFileFuncs();
+Phar::webPhar("phpMyAdmin.phar", "phpMyAdmin-2.11.3-english/index.php");
+echo "phpMyAdmin is intended to be executed from a web browser\n";
+exit -1;
+__HALT_COMPILER();
+');
+$a->stopBuffering();
+?>
+    ]]>
    </programlisting>
   </informalexample>
  </para>
@@ -134,9 +203,8 @@ __HALT_COMPILER();');
   <function>fstat</function>、<function>fseek</function>、<function>rename</function>
   そしてディレクトリに対する <function>opendir</function>
   といった機能に完全に対応しています。
-  Phar ストリームラッパーはディレクトリの作成や削除には対応していません。
-  ファイルは単なるファイルとしてしか格納されず、
-  ディレクトリを抽象化した概念は存在しないからです。
+  バージョン 2.0.0 以降では <function>rmdir</function>
+  や <function>mkdir</function> にも対応します。
  </para>
  <para>
   Phar アーカイブ内の各ファイルの圧縮やファイル単位のメタデータの操作も、
@@ -166,7 +234,7 @@ file_put_contents('phar://my.phar/somefile.php', 0, $context);
  <para>
   ストリーム操作だけで新しい phar アーカイブをゼロから作成することも可能ですが、
   そんな場合は Phar クラスの組み込み機能を使用するほうが便利です。
-  ストリームラッパーが有用なのは、読み込み操作を行う場合です。
+  ストリームラッパーが有用なのは、読み込み専用の操作を行う場合です。
  </para>
 </section>
 <section xml:id="phar.using.object" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
@@ -264,10 +332,10 @@ $f = file_get_contents('phar://myphar.phar/whatever.txt');
  <para>
   さらに、Phar 固有のメタデータにアクセスするためには
   <classname>Phar</classname> オブジェクトを使用することが唯一の方法となります。そのためには
-  <link linkend="function.phar-getmetadata"><function>Phar-&gt;getMetaData</function></link>
+  <function>Phar::getMetaData</function>
   を使用します。また、Phar アーカイブの PHP ローダスタブを設定したり取得したりするための唯一の方法が
-  <link linkend="function.phar-getstub"><function>Phar-&gt;getStub</function></link> および
-  <link linkend="function.phar-setstub"><function>Phar-&gt;setStub</function></link> です。
+  <function>Phar::getStub</function> および
+  <function>Phar::setStub</function> です。
   また、Phar アーカイブ全体の圧縮を行うには
   <classname>Phar</classname> クラスが必要となります。
  </para>

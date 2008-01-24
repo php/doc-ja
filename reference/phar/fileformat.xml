@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.6 $ -->
-<!-- EN-Revision: 1.7 Maintainer: takagi Status: ready -->
+<!-- $Revision: 1.7 $ -->
+<!-- EN-Revision: 1.9 Maintainer: takagi Status: ready -->
 <!-- Credits: shimooka -->
 <chapter xml:id="phar.fileformat" xmlns="http://docbook.org/ns/docbook">
- <title>Phar ファイルフォーマット</title>
- <section>
-  <title>Phar ファイルフォーマット</title>
+ <title>phar って、tar や zip とは何が違うの?</title>
+ <section xml:id="phar.fileformat.ingredients" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <title>Phar アーカイブの原料のうち、ファイル形式に依存しないもの</title>
   <para>
-   Phar ファイルは、三つあるいは四つの部分から構成されています。
+   すべての Phar アーカイブは、三つあるいは四つの部分から構成されています。
    <orderedlist>
     <listitem>
      <para>スタブ</para>
@@ -19,12 +19,12 @@
      <para>ファイルの内容</para>
     </listitem>
     <listitem>
-     <para>[オプション] Phar の整合性を検証するためのシグネチャ</para>
+     <para>[オプション] Phar の整合性を検証するためのシグネチャ (phar 形式の場合のみ)</para>
     </listitem>
    </orderedlist>
   </para>
  </section>
-<section>
+<section xml:id="phar.fileformat.stub" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>Phar ファイルのスタブ</title>
  <para>
   Phar のスタブは、単純な PHP ファイルです。必要最小限のスタブは、次のようになります。
@@ -57,9 +57,166 @@ __HALT_COMPILER();
   もしそうしてしまうと、phar 拡張モジュールは
   その Phar アーカイブのマニフェストを処理できなくなります。
  </para>
-</section>
-<section>
- <title>Phar マニフェストの書式</title>
+ <para>
+  tar 形式あるいは zip 形式の phar アーカイブでは、スタブは
+  <literal>.phar/stub.php</literal> というファイルに保存されます。
+  phar 形式の phar アーカイブのデフォルトのスタブには
+  約 7k のコードが含まれており、このコードが phar の展開と実行を行います。
+  詳細は <function>Phar::createDefaultStub</function> を参照ください。
+ </para>
+ <para>
+  tar 形式あるいは zip 形式の phar アーカイブにおける
+  phar エイリアスの保存先は
+  <literal>.phar/alias.txt</literal> で、これはプレーンテキスト形式となります。
+ </para>
+ </section>
+ <section xml:id="phar.fileformat.comparison" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <title>Phar 形式と Tar 形式、Zip 形式の徹底比較</title>
+  <para>
+   phar 拡張モジュールがサポートする 3 つのファイル形式って、何がどう違うのでしょう?
+   その答えを次の表にまとめました。
+  <table>
+   <title>機能マトリックス: Phar vs. Tar vs. Zip</title>
+   <tgroup cols="4">
+    <thead>
+     <row>
+      <entry>機能</entry>
+      <entry>Phar</entry>
+      <entry>Tar</entry>
+      <entry>Zip</entry>
+     </row>
+    </thead>
+    <tbody>
+     <row>
+      <entry>一般的なファイル形式</entry>
+      <entry>No</entry>
+      <entry>Yes</entry>
+      <entry>Yes</entry>
+     </row>
+     <row>
+      <entry>Phar 拡張モジュールなしでの実行
+       <link linkend="phar.fileformat.phartip">[1]</link>
+      </entry>
+      <entry>Yes</entry>
+      <entry>No</entry>
+      <entry>No</entry>
+     </row>
+     <row>
+      <entry>ファイル単位での圧縮</entry>
+      <entry>Yes</entry>
+      <entry>No</entry>
+      <entry>Yes</entry>
+     </row>
+     <row>
+      <entry>アーカイブ全体の圧縮</entry>
+      <entry>Yes</entry>
+      <entry>Yes</entry>
+      <entry>No</entry>
+     </row>
+     <row>
+      <entry>アーカイブ全体のシグネチャによる検証</entry>
+      <entry>Yes</entry>
+      <entry>No</entry>
+      <entry>No</entry>
+     </row>
+     <row>
+      <entry>ウェブアプリケーションへの対応</entry>
+      <entry>Yes</entry>
+      <entry>Yes</entry>
+      <entry>Yes</entry>
+     </row>
+     <row>
+      <entry>ファイルごとのメタデータ</entry>
+      <entry>Yes</entry>
+      <entry>No</entry>
+      <entry>Yes</entry>
+     </row>
+     <row>
+      <entry>アーカイブ単位のメタデータ</entry>
+      <entry>Yes</entry>
+      <entry>No</entry>
+      <entry>Yes</entry>
+     </row>
+     <row>
+      <entry>アーカイブの作成/変更
+       <link linkend="phar.fileformat.phartip2">[2]</link>
+      </entry>
+      <entry>Yes</entry>
+      <entry>Yes</entry>
+      <entry>Yes</entry>
+     </row>
+     <row>
+      <entry>すべてのストリームラッパー関数への対応</entry>
+      <entry>Yes</entry>
+      <entry>Yes</entry>
+      <entry>Yes</entry>
+     </row>
+    </tbody>
+   </tgroup>
+  </table>
+  </para>
+  <para xml:id="phar.fileformat.phartip">
+   <tip>
+    <para>
+    [1] Phar 拡張モジュールが使用できない環境で Phar
+    アーカイブの中身に PHP からアクセスする場合は、その
+    <literal>スタブ</literal> を使用します。ここに
+    phar アーカイブの中身を展開するコードが含まれています。
+    phar 拡張モジュールが見つからない場合は、
+    <function>Phar::createDefaultStub</function> で作成したスタブが
+    phar アーカイブを展開し、テンポラリディレクトリ内でそれを実行します。
+    </para>
+   </tip>
+  </para>
+  <para xml:id="phar.fileformat.phartip2">
+   <tip>
+    <para>
+    [2] 書き込みアクセスを行うには、php.ini あるいはコマンドラインで
+    <literal>phar.readonly</literal> を無効にする必要があります。
+    </para>
+   </tip>
+  </para>
+ </section>
+ <section xml:id="phar.fileformat.tar" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <title>Tar 形式の phar アーカイブ</title>
+  <para>
+   tar 形式のアーカイブは、より近代的な USTAR フォーマットを使用しています。
+   tar 形式のファイルヘッダは、zip 形式よりも効率的にアクセスできるよう設計されています。
+   また、phar ファイルフォーマットともほぼ同じくらいに効率的です。
+   phar アーカイブ内のファイル名は、フルパスで 255 バイトまでという制限があります。
+   tar 形式の phar アーカイブでは、アーカイブ内のファイルの数に制限はありません。
+   このアーカイブは gzip や bzip2 で圧縮することができ、
+   そのまま Phar 拡張モジュールで実行できます。
+  </para>
+  <para>
+   アーカイブ全体を圧縮するには <function>Phar::compressAllFilesGZ</function>
+   あるいは <function>Phar::compressAllFilesBZIP2</function> を使用します。
+   アーカイブ全体の圧縮を解くには
+   <function>Phar::uncompressAllFiles</function> を使用します。
+  </para>
+ </section>
+ <section xml:id="phar.fileformat.zip" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <title>Zip 形式の phar アーカイブ</title>
+  <para>
+   zip 形式のアーカイブは、zip ファイル形式に組み込まれているいくつかの機能に対応しています。
+   ファイルごとのメタデータやアーカイブ全体のメタデータを、
+   文字列にシリアル化して
+   zip ファイルのコメントや zip アーカイブのコメントとして格納することができます。
+   また、既存の zip コメントも文字列として読み込むことができます。
+   zlib 圧縮ではファイル単位の圧縮の読み書き、
+   そして bzip2 圧縮ではファイル単位の圧縮の読み込みに対応しています。
+   zip 形式の phar アーカイブでは、アーカイブ内のファイルの数に制限はありません。
+   空のディレクトリを zip アーカイブに保存する際には、最後にスラッシュをつけた
+   <literal>my/directory/</literal> のような形式のファイルとなります。
+  </para>
+ </section>
+ <section xml:id="phar.fileformat.phar" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <title>Phar ファイルフォーマット</title>
+ <para>
+  phar ファイル形式は スタブ/マニフェスト/コンテンツ/シグネチャ
+  で構成されており、phar アーカイブ内に何が含まれているのかについての重要な情報は
+  <literal>マニフェスト</literal> に格納されます。
+ </para>
  <para>
   Phar マニフェストは高度に最適化された書式で、
   ファイル単位で圧縮やパーミッションの情報を指定することができ、
@@ -129,7 +286,7 @@ __HALT_COMPILER();
  </table>
  </para>
 </section>
-<section>
+<section xml:id="phar.fileformat.flags" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>グローバルな Phar ビットマップフラグ</title>
  <para>
   これが、Phar 拡張モジュールが現在 Phar フラットビットマップとして認識するフラグです。
@@ -225,6 +382,10 @@ __HALT_COMPILER();
   </table>
  </para>
  <para>
+  API バージョン 1.1.1 では、空のディレクトリの最後にスラッシュをつけて
+  <literal>my/directory/</literal> のような形式で保存されることに注意しましょう。
+ </para>
+ <para>
   ファイル固有のビットマップ値として認識される値は次のとおりです。
  </para>
  <para>
@@ -265,7 +426,7 @@ __HALT_COMPILER();
   </table>
  </para>
 </section>
-<section>
+<section xml:id="phar.fileformat.signature" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>Phar のシグネチャの書式</title>
  <para>
   シグネチャを含む Phar は、常にシグネチャを保持しています。
@@ -290,7 +451,9 @@ __HALT_COMPILER();
       <entry>16 あるいは 20 バイト</entry>
       <entry>
        実際のシグネチャ。SHA1 の場合は 20 バイト、
-       MD5 の場合は 16 バイトとなります。
+       MD5 の場合は 16 バイト、
+       SHA256 の場合は 32 バイト、
+       そして SHA512 の場合は 64 バイトとなります。
       </entry>
      </row>
      <row>
@@ -298,7 +461,10 @@ __HALT_COMPILER();
       <entry>
        シグネチャのフラグ。<literal>0x0001</literal> は
        MD5 シグネチャ、そして <literal>0x0002</literal> は
-       SHA1 シグネチャを表します。
+       SHA1 シグネチャ、
+       <literal>0x0004</literal> は SHA256 シグネチャ、
+       <literal>0x0008</literal> は SHA512 シグネチャを表します。
+       SHA256 および SHA512 は、API バージョン 1.1.0 以降で対応します。
       </entry>
      </row>
      <row>

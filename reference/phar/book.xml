@@ -1,74 +1,164 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.1 $ -->
-<!-- EN-Revision: 1.2 Maintainer: takagi Status: ready -->
+<!-- $Revision: 1.2 $ -->
+<!-- EN-Revision: 1.3 Maintainer: takagi Status: ready -->
 <!-- CREDITS: shimooka -->
 <!-- Purpose: compression -->
 <!-- Membership: pecl -->
 
 <book xml:id="book.phar" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
- <title>PHAR</title>
+ <title>Phar</title>
  
  <!-- {{{ preface -->
  <preface xml:id="intro.phar">
   &reftitle.intro;
   <para>
-   phar 拡張モジュールは、
-   <literal>phar</literal> ストリームラッパーおよび
-   <classname>Phar</classname> クラスを提供し、
-   PHP アーカイブ (phar) ファイルを操作することができます。
-   Phar クラスを使用すると、phar ファイルの作成や展開、
-   そしてその中身を順に処理することなどができます。
+   Phar って何? Phar アーカイブは、複数のファイルをひとつにまとめるための便利な仕組みです。
+   Phar アーカイブを使用すれば、PHP のアプリケーションをひとつのファイルとして配布できるようになります。
+   また、それをディスク上に展開しなくてもそのまま実行できるのです。
   </para>
   <para>
-   PHP アーカイブファイル (Phar) は複数のファイルをまとめたもので、
-   外部からその中のファイルを透過的に実行することができます。
-   Java の jar アーカイブファイルと似たものです。
-   phar アーカイブを使用すると、
-   PHP アプリケーションをひとつのファイルにまとめて配布できるようになります。
-   このファイルは、変更したり展開したりすることなくそのまま外部から実行できます。
-   phar アーカイブは、tar や zip のアーカイブと同様に、
-   ファイルを保存するために使用することもできます。
-   Phar は圧縮もサポートしています。
-   <link linkend="book.zlib">zlib</link> 拡張モジュールが存在する場合には
-   gzip を、そして
-   <link linkend="book.bzip2">bz2</link> 拡張モジュールが存在する場合には
-   bzip2 を使用します。
-   さらに、<link linkend="book.spl">SPL</link>
-   拡張モジュールが存在する場合には、
-   順次処理やその他の機能が使用可能となります。
-   md5 や sha1 による Phar の署名の検証は
-   ネイティブでサポートされており、アーカイブの整合性を確かめることができます。
+   Phar はこの機能を実装するために <link linkend="book.stream">ストリームラッパー</link>
+   を使用しています。通常は、PHP スクリプトから外部のファイルを使用するには
+   <function>include</function> を用います。
   </para>
   <para>
-   Phar アーカイブのネイティブな実装は PEAR パッケージ
+   <example>
+    <title>外部ファイルの使用</title>
+    <programlisting role="php">
+     <![CDATA[
+ <?php
+ include '/path/to/external/file.php';
+ ?>
+     ]]>
+    </programlisting>
+   </example>
+  </para>
+  <para>
+   PHP は、実際には
+   <literal>/path/to/external/file.php</literal> をストリームラッパー
+   <literal>file:///path/to/external/file.php</literal> とみなし、
+   内部的にはファイルストリームラッパーのストリーム関数でローカルファイルにアクセスしています。
+  </para>
+  <para>
+   Phar アーカイブ <literal>/path/to/myphar.phar</literal>
+   の中に含まれるファイル <literal>file.php</literal> を使用する場合に構文は、
+   先ほどの <literal>file://</literal> 構文と似ています。
+  </para>
+  <para>
+   <example>
+    <title>Phar アーカイブ内のファイルの使用</title>
+    <programlisting role="php">
+     <![CDATA[
+ <?php
+ include 'phar:///path/to/myphar.phar/file.php';
+ ?>
+     ]]>
+    </programlisting>
+   </example>
+  </para>
+  <para>
+   実際のところ、phar アーカイブは外部ディスクと同様に扱うことができます。
+   <function>fopen</function> 系の関数や <function>opendir</function>、そして
+   <function>mkdir</function> 系の関数を使用して、
+   phar アーカイブ内のファイルの読み書きや新しいファイルの作成が可能です。
+   これにより、完全な PHP アプリケーションを単一のファイルで配布して
+   そのままの形式で直接実行できるようになるのです。
+  </para>
+  <para>
+   Phar アーカイブのもっとも一般的な使用法は、
+   完全なアプリケーションをひとつのファイルにまとめて配布することです。
+   たとえば、PHP に同梱されている PEAR インストーラは
+   phar アーカイブとして配布されています。
+   このような形式の phar アーカイブを使用するには、
+   コマンドラインあるいはウェブサーバからアーカイブを実行します。
+  </para>
+  <para>
+   Phar アーカイブの配布形式は <literal>tar</literal> アーカイブか
+   <literal>zip</literal> アーカイブ (<link linkend="book.zip">zip</link>
+   拡張モジュールが使用可能な場合)、あるいは専用の <literal>phar</literal>
+   独自ファイルフォーマットのいずれかとなります。
+   それぞれの形式には利点と欠点があります。
+   tar 形式や zip 形式は、他のツールからでも内容を読んだり展開したりできるという利点がありますが、
+   それを実行する環境にも phar 拡張モジュールが必要となります。
+   phar 独自フォーマットは phar 拡張モジュールにしか作成できない形式ですが、
+   この形式で作成したアプリケーションは phar 拡張モジュールのない環境でも動作するという利点があります。
+  </para>
+  <para>
+   言い換えると、phar 拡張モジュールが無効になっている環境でも
+   phar アーカイブを実行できるということです。
+   しかし、phar アーカイブ内の個別のファイルにアクセスするには、
+   phar 拡張モジュールが必要です。
+  </para>
+  <para>
+   phar 拡張モジュールには、tar ファイルを zip 形式や
+   phar 形式に変換する機能があります。
+  </para>
+  <para>
+   <example>
+    <title>phar 形式から tar 形式への phar アーカイブの変換</title>
+    <programlisting role="php">
+     <![CDATA[
+ <?php
+ $phar = new Phar('myphar.phar');
+ $phar->convertToTar();
+ ?>
+     ]]>
+    </programlisting>
+   </example>
+  </para>
+  <para>
+   phar には、特定のファイルあるいはアーカイブ全体を
+   <link linkend="book.zlib">gzip</link> あるいは
+   <link linkend="book.bzip2">bzip2</link> で圧縮する機能があります。
+   また、アーカイブの整合性を <function>md5</function>、
+   <function>sha1</function>、<function>sha256</function> あるいは <function>sha512</function>
+   シグネチャで自動的に検証します。
+  </para>
+  <para>
+   最後に、phar 拡張モジュールはセキュリティにも注意を払っており、
+   phar アーカイブへの書き込みアクセスはデフォルトで無効にしています。
+   phar アーカイブを作成したり変更したりするには、php.ini の設定
+   <literal>phar.readonly</literal> をシステムレベルで無効にする必要があります。
+  </para>
+  <para>
+   アプリケーションを配布したい場合は
+   <link linkend="phar.creating">Phar アーカイブのつくりかた</link>
+   を読みましょう。phar がサポートする各形式の違いをより詳しく知りたい場合は
+   <link linkend="phar.fileformat">Phar、Tar そして Zip</link>
+   を読みましょう。
+  </para>
+  <para>
+   phar 形式のアプリケーションを使用したい場合は
+   <link linkend="phar.using">Phar アーカイブの使いかた</link>
+   が参考となるでしょう。
+  </para>
+  <para>
+   <literal>phar</literal> という単語は <literal>PHP</literal> と
+   <literal>Archive</literal> を組み合わせたもので、
+   Java 開発者ならおなじみの <literal>jar</literal> (Java Archive)
+   を参考にしています。
+  </para>
+  <para>
+   Phar アーカイブの実装は PEAR の
    <link xlink:href="http://pear.php.net/PHP_Archive">PHP_Archive</link>
-   であり、この拡張モジュールの実装はこれと非常によく似ています。
-   しかし Phar 拡張モジュールのほうが、より多くの機能をサポートしています。
-   PHP_Archive はより柔軟に Phar を作成することができます。また
-   <classname>PHP_Archive_Manager</classname>
-   クラスのような便利なデバッグツールも用意されています。
-   一方 Phar 拡張モジュールは、Phar の中身の順次処理や
-   配列形式でのアクセス、そして中身の変更などが
-   シンプルなインターフェイスでできるようになります。
-   PHP_Archive は、Phar 拡張モジュールあるいは PHP_Archive
-   のいずれかでシームレスに処理できる Phar アーカイブの作成をサポートしています。
-   一方、Phar 拡張モジュールは、
-   Phar 拡張モジュールで動作するアーカイブを作成するよう設計されています。
-   さらに Phar 拡張モジュールは、INI 設定
-   <link linkend="ini.allow-url-include">allow_url_include</link> あるいは
-   <link linkend="ini.allow-url-fopen">allow_url_fopen</link>
-   が無効になっていても動作します。一方 PHP_Archive
-   で (Phar 拡張モジュールを使用せずに) 作成したアーカイブは動作しません。
+   パッケージに基づいています。実装の詳細は同じですが、
+   Phar 拡張モジュールのほうがずっと強力です。
+   さらに、Phar 拡張モジュールで作成した PHP アプリケーションは
+   ほとんどの場合は何も修正せずに動かすことができます。
+   PHP_Archive で作った phar アーカイブは、
+   動かす前に多少手を入れなければならないことがよくあります。
   </para>
  </preface>
  <!-- }}} -->
  
  &reference.phar.setup;
  &reference.phar.constants;
- &reference.phar.fileformat;
  &reference.phar.using;
- <!-- FIXME: Apparently these are 3 classes -->
- &reference.phar.reference;
+ &reference.phar.creating;
+ &reference.phar.fileformat;
+ &reference.phar.Phar;
+ &reference.phar.PharFileInfo;
+ &reference.phar.PharException;
 
 </book>
 
