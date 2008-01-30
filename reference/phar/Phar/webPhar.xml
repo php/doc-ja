@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.1 $ -->
+<!-- EN-Revision: 1.2 Maintainer: takagi Status: ready -->
+<refentry xml:id="phar.webphar" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <refnamediv>
+  <refname>Phar::webPhar</refname>
+  <refpurpose>ウェブベースの phar で使用するフロントコントローラ</refpurpose>
+ </refnamediv>
+
+ <refsect1 role="description">
+  &reftitle.description;
+  <methodsynopsis>
+   <type>void</type><methodname>Phar::webPhar</methodname>
+   <methodparam><type>string</type><parameter>alias</parameter></methodparam>
+   <methodparam><type>string</type><parameter>index</parameter></methodparam>
+   <methodparam><type>string</type><parameter>f404</parameter></methodparam>
+   <methodparam><type>array</type><parameter>mimetypes</parameter></methodparam>
+   <methodparam><type>array</type><parameter>rewrites</parameter></methodparam>
+  </methodsynopsis>
+  <para>
+   <function>Phar::mapPhar</function> は、ウェブベースの phar で使用します。
+   このメソッドは、
+   <literal>$_SERVER['REQUEST_URI']</literal> をパースして
+   ウェブサーバからのリクエストを phar アーカイブ内のファイルに転送します。
+   要は、このメソッド自体がウェブサーバをシミュレートするということです。
+   正しいファイルにリクエストを転送し、正しいヘッダを出力し、
+   必要に応じて PHP ファイルをパースします。
+   この強力なメソッドがあることで、
+   既存の PHP アプリケーションを phar アーカイブ化するのが容易になります。
+   <function>Phar::mungServer</function> や <function>Phar::interceptFileFuncs</function>
+   と組み合わせて使用すると、任意のウェブアプリケーションをそのまま
+   phar アーカイブ化することができます。
+  </para>
+  <para>
+   <function>Phar::webPhar</function> をコールするのは、
+   phar アーカイブのスタブ内からのみとしましょう
+   (スタブって何? という方は <link linkend="phar.fileformat.stub">ここ</link>
+   をごらんください)。
+  </para>
+ </refsect1>
+
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <para>
+   <variablelist>
+    <varlistentry>
+     <term><parameter>alias</parameter></term>
+     <listitem>
+      <para>
+       <literal>phar://</literal> URL でこのアーカイブを指す際に、
+       フルパスの代わりに使用するエイリアス。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>index</parameter></term>
+     <listitem>
+      <para>
+       phar の中でディレクトリインデックスとなるファイルの場所。デフォルトは
+       <literal>index.php</literal>。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>f404</parameter></term>
+     <listitem>
+      <para>
+       ファイルが見つからないときに実行するスクリプトの場所。
+       このスクリプトは HTTP 404 ヘッダを返さなければなりません。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>mimetypes</parameter></term>
+     <listitem>
+      <para>
+       ファイルの拡張子と MIME タイプを関連付けた配列。
+       デフォルトで、これらの関連が定義されています。
+       <programlisting role="php">
+        <![CDATA[
+$mimes = array(
+    'phps' => 2, // highlight_file() に渡します
+    'c' => 'text/plain',
+    'cc' => 'text/plain',
+    'cpp' => 'text/plain',
+    'c++' => 'text/plain',
+    'dtd' => 'text/plain',
+    'h' => 'text/plain',
+    'log' => 'text/plain',
+    'rng' => 'text/plain',
+    'txt' => 'text/plain',
+    'xsd' => 'text/plain',
+    'php' => 1, // PHP としてパースします
+    'inc' => 1, // PHP としてパースします
+    'avi' => 'video/avi',
+    'bmp' => 'image/bmp',
+    'css' => 'text/css',
+    'gif' => 'image/gif',
+    'htm' => 'text/html',
+    'html' => 'text/html',
+    'htmls' => 'text/html',
+    'ico' => 'image/x-ico',
+    'jpe' => 'image/jpeg',
+    'jpg' => 'image/jpeg',
+    'jpeg' => 'image/jpeg',
+    'js' => 'application/x-javascript',
+    'midi' => 'audio/midi',
+    'mid' => 'audio/midi',
+    'mod' => 'audio/mod',
+    'mov' => 'movie/quicktime',
+    'mp3' => 'audio/mp3',
+    'mpg' => 'video/mpeg',
+    'mpeg' => 'video/mpeg',
+    'pdf' => 'application/pdf',
+    'png' => 'image/png',
+    'swf' => 'application/shockwave-flash',
+    'tif' => 'image/tiff',
+    'tiff' => 'image/tiff',
+    'wav' => 'audio/wav',
+    'xbm' => 'image/xbm',
+    'xml' => 'text/xml',
+);
+        ]]>
+       </programlisting>
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>rewrites</parameter></term>
+     <listitem>
+      <para>
+       URI と内部のファイルを関連付けた配列。apache の mod_rewrite をシミュレートしたものです。
+       たとえば、次のような配列を定義すると、
+       <programlisting role="php">
+        <![CDATA[
+array(
+    'myinfo' => 'myinfo.php'
+);
+        ]]>
+       </programlisting>
+       <literal>http://&lt;host&gt;/myphar.phar/myinfo</literal>
+       がコールされた際に <literal>phar:///path/to/myphar.phar/myinfo.php</literal>
+       に転送します。その際に GET/POST の内容はそのまま維持します。
+       これは mod_rewrite とまったく同じ挙動になるわけではありません。たとえば
+       <literal>http://&lt;host&gt;/myphar.phar/myinfo/another</literal>
+       にはマッチしません。
+      </para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
+  </para>
+
+ </refsect1>
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <para>
+   値を返しません。
+  </para>
+ </refsect1>
+
+ <refsect1 role="errors">
+  &reftitle.errors;
+  <para>
+   出力したい内部ファイルのオープンに失敗した場合、
+   <link linkend="ini.phar.extract-list">展開した Phar アーカイブ</link>
+   の内部で <function>Phar::webPhar</function> を使用した場合、
+   あるいはスタブ以外からコールした場合には
+   <classname>PharException</classname> をスローします。
+   無効な配列が
+   <parameter>mimetypes</parameter> あるいは <parameter>rewrites</parameter>
+   に渡された場合は
+   <classname>UnexpectedValueException</classname> をスローします。
+  </para>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title><function>Phar::webPhar</function> の例</title>
+    <para>
+     この例で作成した phar は、<literal>/myphar.phar/index.php</literal>
+     や <literal>/myphar.phar</literal> をブラウズしたときには
+     <literal>Hello World</literal> を表示し、
+     <literal>/myphar.phar/index.phps</literal> をブラウズしたときには
+     <literal>index.phps</literal> のソースを表示します。
+    </para>
+    <programlisting role="php">
+<![CDATA[
+<?php
+// phar アーカイブを作成します
+try {
+    $phar = new Phar('myphar.phar');
+    $phar['index.php'] = '<?php echo "Hello World"; ?>';
+    $phar['index.phps'] = '<?php echo "Hello World"; ?>';
+    $phar->setStub('<?php
+Phar::webPhar();
+__HALT_COMPILER(); ?>');
+} catch (Exception $e) {
+    // ここでエラー処理をします
+}
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+ </refsect1>
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <para>
+   <simplelist>
+    <member><function>Phar::mungServer</function></member>
+    <member><function>Phar::interceptFileFuncs</function></member>
+   </simplelist>
+  </para>
+ </refsect1>
+
+</refentry>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"../../../../manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
