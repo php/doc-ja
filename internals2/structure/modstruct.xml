@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.3 $ -->
-<!-- EN-Revision: 1.4 Maintainer: takagi Status: ready -->
+<!-- $Revision: 1.4 $ -->
+<!-- EN-Revision: 1.6 Maintainer: takagi Status: ready -->
  <sect1 xml:id="internals2.structure.modstruct" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
   <title>zend_module 構造体</title>
   <para>
@@ -14,14 +14,14 @@
    その他重要なデータを Zend Engine に伝える役割を果たします。
    この構造体の中身は、何度も大幅に変更されています。
    ここでは、PHP 5.0 の時点の情報をもとにして説明します。
-   PHP 5.1 や 5.2 では、少々変更されている点もあります。
+   PHP 5.1 や 5.2、5.3 では少々変更されている点もあります。
   </para>
   
   <para>
    <filename>example.c</filename> での <literal>zend_module</literal>
-   の宣言は、次のようになります (これは、
+   の宣言は、次のようになります。これは、
    <command>ext_skel --extname=example</command>
-   で生成したものに何も手を加えていない状態です)。
+   で生成したものをもとにして、既に存在しないいくつかの構造体を削除したものです。
   </para>
   
   <example xml:id="internals2.structure.modstruct.example-decl">
@@ -31,9 +31,7 @@
 /* {{{ example_module_entry
  */
 zend_module_entry example_module_entry = {
-#if ZEND_MODULE_API_NO >= 20010901
     STANDARD_MODULE_HEADER,
-#endif
     "example",
     example_functions,
     PHP_MINIT(example),
@@ -41,9 +39,7 @@ zend_module_entry example_module_entry = {
     PHP_RINIT(example),        /* Replace with NULL if there's nothing to do at request start */
     PHP_RSHUTDOWN(example),    /* Replace with NULL if there's nothing to do at request end */
     PHP_MINFO(example),
-#if ZEND_MODULE_API_NO >= 20010901
     "0.1", /* Replace with version number for your extension */
-#endif
     STANDARD_MODULE_PROPERTIES
 };
 /* }}} */
@@ -54,25 +50,23 @@ zend_module_entry example_module_entry = {
   <para>
    最初はちょっとひるむかも知れませんが、
    大半の部分はよく見れば非常に単純です。
-   次に示すのは、PHP 5.2 の <filename>zend_modules.h</filename>
+   次に示すのは、PHP 5.3 の <filename>zend_modules.h</filename>
    における <literal>zend_module</literal> の宣言部です。
-   関連する定数の定義も含めています。
   </para>
   
   <example xml:id="internals2.structure.modstruct.struct-defn">
-   <title>PHP 5.2 における zend_module の定義</title>
+   <title>PHP 5.3 における zend_module の定義</title>
    <programlisting role="c">
 <![CDATA[
-#define ZEND_MODULE_API_NO 20060613
 struct _zend_module_entry {
     unsigned short size;
     unsigned int zend_api;
     unsigned char zend_debug;
     unsigned char zts;
-    struct _zend_ini_entry *ini_entry;
-    struct _zend_module_dep *deps;
-    char *name;
-    struct _zend_function_entry *functions;
+    const struct _zend_ini_entry *ini_entry;
+    const struct _zend_module_dep *deps;
+    const char *name;
+    const struct _zend_function_entry *functions;
     int (*module_startup_func)(INIT_FUNC_ARGS);
     int (*module_shutdown_func)(SHUTDOWN_FUNC_ARGS);
     int (*request_startup_func)(INIT_FUNC_ARGS);
@@ -93,257 +87,384 @@ struct _zend_module_entry {
     void *handle;
     int module_number;
 };
-#define STANDARD_MODULE_HEADER_EX sizeof(zend_module_entry), ZEND_MODULE_API_NO, ZEND_DEBUG, USING_ZTS
-#define STANDARD_MODULE_HEADER \
-    STANDARD_MODULE_HEADER_EX, NULL, NULL
-#define NO_VERSION_YET NULL
-
-#define STANDARD_MODULE_PROPERTIES_EX 0, 0, NULL, 0
-#define STANDARD_MODULE_PROPERTIES \
-	NO_MODULE_GLOBALS, NULL, STANDARD_MODULE_PROPERTIES_EX
-#define NO_MODULE_GLOBALS 0, NULL, NULL, NULL
 ]]>
    </programlisting>
   </example>
+  
+  <para>
+   これらのフィールドの多くは、決して拡張モジュールの作者が触ることはありません。
+   数多くのマクロが標準で用意されており、
+   そのマクロが適切な値を自動的に設定します。
+   <constant>STANDARD_MODULE_HEADER</constant> マクロは、
+   <varname>deps</varname> フィールドまでのすべての内容を埋めます。
+   一方 <constant>STANDARD_MODULE_HEADER_EX</constant> は
+   <varname>deps</varname> フィールドを空のままにしておき、
+   開発者が使えるようにします。<varname>name</varname> から
+   <varname>version</varname> までのすべてのフィールドは、開発者が設定する必要があります。
+   その後、<constant>STANDARD_MODULE_PROPERTIES</constant>
+   マクロで構造体の残りのフィールドを埋めます。あるいは
+   <constant>STANDARD_MODULE_PROPERTIES_EX</constant> マクロを使用すると、
+   extension global と post-deactivation function のフィールドを空のままにします。
+   いまどきの拡張モジュールのほとんどは、モジュールグローバルを使用します。
+  </para>
+  
+  <note>
+   <para>
+    ショートカットマクロに頼らず、構造体のフィールドをすべて自分で設定したい場合は、
+    この表の値を使用します。
+    <emphasis>これはお勧めしません。</emphasis>
+    そのフィールドの &quot;正しい&quot; 値は変わる可能性があります。
+    可能な限りマクロを使用するようにしましょう。
+   </para>
+  </note>
 
-  <variablelist>
+  <table xml:id="internals2.structure.modstruct.struct-values">
+   <title>モジュール構造体のフィールドの値</title>
+   <tgroup cols="3">
+    <thead>
+     <row>
+      <entry>フィールド</entry>
+      <entry>値</entry>
+      <entry>説明</entry>
+     </row>
+    </thead>
+    <tbody>
 
-   <varlistentry>
-    <term><literal>size</literal></term>
-    <listitem>
-     <para>
-      構造体のサイズをバイト数で表したもの。常に
-      <literal>sizeof(zend_module_entry)</literal> となります。
-     </para>
-    </listitem>
-   </varlistentry>
-   
-   <varlistentry>
-    <term><literal>zend_api</literal></term>
-    <listitem>
-     <para>
-      モジュールをコンパイルした Zend API のバージョン。常に定数
-      <constant>ZEND_MODULE_API_NO</constant> となります。
-     </para>
-    </listitem>
-   </varlistentry>
-   
-   <varlistentry>
-    <term><literal>zend_debug</literal></term>
-    <term><literal>zts</literal></term>
-    <listitem>
-     <para>
-      モジュールがデバッグモードでコンパイルされている、
-      あるいは ZTS (TSRM) を有効にしてコンパイルされていることを示すフラグ。
-      常に定数
-      <constant>ZEND_DEBUG</constant> および <constant>USING_ZTS</constant>
-      となります。
-     </para>
-    </listitem>
-   </varlistentry>
-   
-   <varlistentry>
-    <term><literal>ini_entry</literal></term>
-    <listitem>
-     <para>
-      このポインタは Zend の内部で用い、
-      モジュールで宣言した非ローカルの INI エントリへの参照を保持します。
-      これは Zend によって管理され、常に初期値 &null; となります。
-     </para>
-    </listitem>
-   </varlistentry>
-   
-   <varlistentry>
-    <term><literal>deps</literal></term>
-    <listitem>
-     <para>
-      モジュールの依存性一覧へのポインタ。
-     </para>
-    </listitem>
-   </varlistentry>
-   
-   <varlistentry>
-    <term><literal>name</literal></term>
-    <listitem>
-     <para>
-      モジュールの名前。これは
-      &quot;spl&quot; あるいは &quot;standard&quot;
-      のような短い名前です。
-     </para>
-    </listitem>
-   </varlistentry>
-   
-   <varlistentry>
-    <term><literal>functions</literal></term>
-    <listitem>
-     <para>
-      モジュールの関数テーブルへのポインタ。
-      Zend は、これを使用してモジュール内の関数をユーザ空間に公開します。
-     </para>
-    </listitem>
-   </varlistentry>
-   
-   <varlistentry>
-    <term><literal>module_startup_func</literal></term>
-    <term><literal>module_shutdown_func</literal></term>
-    <term><literal>request_startup_func</literal></term>
-    <term><literal>request_shutdown_func</literal></term>
-    <listitem>
-     <para>
-      これらはコールバック関数で、Zend は PHP の処理時に特定の箇所でこれらをコールします。
-      具体的に言うと、最初の初期化時や終了処理時、
-      各リクエストの開始時や終了時などです。
-     </para>
-    </listitem>
-   </varlistentry>
+     <row>
+      <entry>
+       <varname>size</varname>
+       <footnote xml:id="internals2.structure.modstruct.struct-values.not-for-dev">
+        <para>
+         このフィールドは、モジュール開発者が使うものではありません。
+        </para>
+       </footnote>
+       <footnote xml:id="internals2.structure.modstruct.struct-values.given-by-SMHE">
+        <para>
+         このフィールドは <constant>STANDARD_MODULE_HEADER_EX</constant> が設定します。
+        </para>
+       </footnote>
+       <footnote xml:id="internals2.structure.modstruct.struct-values.given-by-SMH">
+        <para>
+         このフィールドは <constant>STANDARD_MODULE_HEADER</constant> が設定します。
+        </para>
+       </footnote>
+      </entry>
+      <entry><code>sizeof(zend_module_entry)</code></entry>
+      <entry>
+       この構造体の大きさ (バイト数)。
+      </entry>
+     </row>
+     
+     <row>
+      <entry>
+       <varname>zend_api</varname>
+       <footnoteref linkend="internals2.structure.modstruct.struct-values.not-for-dev"/>
+       <footnoteref linkend="internals2.structure.modstruct.struct-values.given-by-SMHE"/>
+       <footnoteref linkend="internals2.structure.modstruct.struct-values.given-by-SMH"/>
+      </entry>
+      <entry><constant>ZEND_MODULE_API_NO</constant></entry>
+      <entry>
+       モジュールをコンパイルした Zend API のバージョン。
+      </entry>
+     </row>
+     
+     <row>
+      <entry>
+       <varname>zend_debug</varname>
+       <footnoteref linkend="internals2.structure.modstruct.struct-values.not-for-dev"/>
+       <footnoteref linkend="internals2.structure.modstruct.struct-values.given-by-SMHE"/>
+       <footnoteref linkend="internals2.structure.modstruct.struct-values.given-by-SMH"/>
+      </entry>
+      <entry><constant>ZEND_DEBUG</constant></entry>
+      <entry>
+       モジュールがデバッグモードでコンパイルされていることを示すフラグ。
+      </entry>
+     </row>
+     
+     <row>
+      <entry>
+       <varname>zts</varname>
+       <footnoteref linkend="internals2.structure.modstruct.struct-values.not-for-dev"/>
+       <footnoteref linkend="internals2.structure.modstruct.struct-values.given-by-SMHE"/>
+       <footnoteref linkend="internals2.structure.modstruct.struct-values.given-by-SMH"/>
+      </entry>
+      <entry><constant>USING_ZTS</constant></entry>
+      <entry>
+       モジュールが ZTS (TSRM) を有効にしてコンパイルされていることを示すフラグ
+       (<xref linkend="internals2.memory"/> を参照ください)。
+      </entry>
+     </row>
+     
+     <row>
+      <entry>
+       <varname>ini_entry</varname>
+       <footnoteref linkend="internals2.structure.modstruct.struct-values.not-for-dev"/>
+       <footnoteref linkend="internals2.structure.modstruct.struct-values.given-by-SMH"/>
+      </entry>
+      <entry>&null;</entry>
+      <entry>
+       このポインタは Zend の内部で用い、
+       モジュールで宣言した非ローカルの INI エントリへの参照を保持します。
+      </entry>
+     </row>
+     
+     <row>
+      <entry>
+       <varname>deps</varname>
+       <footnoteref linkend="internals2.structure.modstruct.struct-values.given-by-SMH"/>
+      </entry>
+      <entry>&null;</entry>
+      <entry>
+       モジュールの依存性一覧へのポインタ。
+      </entry>
+     </row>
+
+     <row>
+      <entry>
+       <varname>name</varname>
+      </entry>
+      <entry>&quot;mymodule&quot;</entry>
+      <entry>
+       モジュールの名前。これは
+       &quot;spl&quot; あるいは &quot;standard&quot;
+       のような短い名前です。
+      </entry>
+     </row>
+     
+     <row>
+      <entry>
+       <varname>functions</varname>
+      </entry>
+      <entry>mymodule_functions</entry>
+      <entry>
+       モジュールの関数テーブルへのポインタ。
+       Zend は、これを使用してモジュール内の関数をユーザ空間に公開します。
+      </entry>
+     </row>
+     
+     <row>
+      <entry>
+       <varname>module_startup_func</varname>
+      </entry>
+      <entry>PHP_MINIT(mymodule)</entry>
+      <entry>
+       コールバック関数です。Zend は、特定の PHP インスタンスで
+       そのモジュールが最初にロードされるときにこれをコールします。
+      </entry>
+     </row>
+
+     <row>
+      <entry>
+       <varname>module_shutdown_func</varname>
+      </entry>
+      <entry>PHP_MSHUTDOWN(mymodule)</entry>
+      <entry>
+       コールバック関数です。Zend は、特定の PHP インスタンスから
+       そのモジュールがアンロードされるとき (通常は最後のシャットダウン時) にこれをコールします。
+      </entry>
+     </row>
+
+     <row>
+      <entry>
+       <varname>request_startup_func</varname>
+      </entry>
+      <entry>PHP_RINIT(mymodule)</entry>
+      <entry>
+       コールバック関数です。Zend は、各リクエストの開始時にこれをコールします。
+      </entry>
+     </row>
+
+     <row>
+      <entry>
+       <varname>request_shutdown_func</varname>
+      </entry>
+      <entry>PHP_RSHUTDOWN(mymodule)</entry>
+      <entry>
+       コールバック関数です。Zend は、各リクエストの終了時にこれをコールします。
+      </entry>
+     </row>
+
+     <row>
+      <entry>
+       <varname>info_func</varname>
+      </entry>
+      <entry>PHP_MINFO(mymodule)</entry>
+      <entry>
+       コールバック関数です。Zend は、<function>phpinfo</function>
+       関数がコールされたときにこれをコールします。
+      </entry>
+     </row>
+
+     <row>
+      <entry>
+       <varname>version</varname>
+      </entry>
+      <entry><constant>NO_VERSION_YET</constant></entry>
+      <entry>
+       モジュールのバージョンを表す文字列。モジュールの作者が指定したものです。
+       バージョン番号の形式は、
+       version_compare() に対応したもの (たとえば &quot;1.0.5-dev&quot;) か
+       CVS や SVN のリビジョン番号 (たとえば &quot;$Rev$&quot;)
+       にあわせたものにしておくことを推奨します。
+      </entry>
+     </row>
+
+     <row>
+      <entry>
+       <varname>globals_size</varname>
+       <footnoteref linkend="internals2.structure.modstruct.struct-values.not-for-dev"/>
+       <footnote xml:id="internals2.structure.modstruct.struct-values.given-by-SMP">
+        <para>
+         このフィールドは <constant>STANDARD_MODULE_PROPERTIES</constant> が設定します。
+        </para>
+       </footnote>
+       <footnote xml:id="internals2.structure.modstruct.struct-values.given-by-NMG">
+        <para>
+         このフィールドは <constant>NO_MODULE_GLOBALS</constant> が設定します。
+        </para>
+       </footnote>
+       <footnote xml:id="internals2.structure.modstruct.struct-values.given-by-PMG">
+        <para>
+         このフィールドは <constant>PHP_MODULE_GLOBALS</constant> が設定します。
+        </para>
+       </footnote>
+      </entry>
+      <entry>sizeof(zend_mymodule_globals)</entry>
+      <entry>
+       このモジュール用のグローバル構造体が存在する場合のサイズ。
+      </entry>
+     </row>
+     
+     <row>
+      <entry>
+       <varname>globals_id_ptr</varname>
+       <footnoteref linkend="internals2.structure.modstruct.struct-values.not-for-dev"/>
+       <footnoteref linkend="internals2.structure.modstruct.struct-values.given-by-SMP"/>
+       <footnoteref linkend="internals2.structure.modstruct.struct-values.given-by-NMG"/>
+       <footnoteref linkend="internals2.structure.modstruct.struct-values.given-by-PMG"/>
+       <footnote xml:id="internals2.structure.modstruct.struct-values.only-with-ZTS">
+        <para>
+         このフィールドが存在するのは <constant>USING_ZTS</constant> が &true;
+         のときだけです。
+        </para>
+       </footnote>
+      </entry>
+      <entry>&amp;mymodule_globals_id</entry>
+      <entry morerows="1">
+       定数 <constant>USING_ZTS</constant> が &true; かどうかによって、
+       これらふたつのフィールドのうちのいずれかひとつだけが存在します。
+       最初のほうはモジュールのグローバル用の TSRM アロケーションテーブルへのインデックス、
+       後のほうはグローバルへの直接のポインタとなります。
+      </entry>
+     </row>
+     
+     <row>
+      <entry>
+       <varname>globals_ptr</varname>
+       <footnoteref linkend="internals2.structure.modstruct.struct-values.not-for-dev"/>
+       <footnoteref linkend="internals2.structure.modstruct.struct-values.given-by-SMP"/>
+       <footnoteref linkend="internals2.structure.modstruct.struct-values.given-by-NMG"/>
+       <footnoteref linkend="internals2.structure.modstruct.struct-values.given-by-PMG"/>
+       <footnote xml:id="internals2.structure.modstruct.struct-values.only-without-ZTS">
+        <para>
+         このフィールドが存在するのは <constant>USING_ZTS</constant> が &false;
+         のときだけです。
+        </para>
+       </footnote>
+      </entry>
+      <entry>&amp;mymodule_globals</entry>
+     </row>
+     
+     <row>
+      <entry>
+       <varname>globals_ctor</varname>
+       <footnoteref linkend="internals2.structure.modstruct.struct-values.given-by-SMP"/>
+       <footnoteref linkend="internals2.structure.modstruct.struct-values.given-by-NMG"/>
+       <footnoteref linkend="internals2.structure.modstruct.struct-values.given-by-PMG"/>
+      </entry>
+      <entry>PHP_GINIT(mymodule)</entry>
+      <entry>
+       この関数は <varname>module_startup_func</varname> の <emphasis>前に</emphasis>
+       コールされ、モジュールのグローバルを初期化します。
+      </entry>
+     </row>
+
+     <row>
+      <entry>
+       <varname>globals_dtor</varname>
+       <footnoteref linkend="internals2.structure.modstruct.struct-values.given-by-SMP"/>
+       <footnoteref linkend="internals2.structure.modstruct.struct-values.given-by-NMG"/>
+       <footnoteref linkend="internals2.structure.modstruct.struct-values.given-by-PMG"/>
+      </entry>
+      <entry>PHP_GSHUTDOWN(mymodule)</entry>
+      <entry>
+       この関数は <varname>module_shutdown_func</varname> の <emphasis>後に</emphasis>
+       コールされ、モジュールのグローバルを破棄します。
+      </entry>
+     </row>
+     
+     <row>
+      <entry>
+       <varname>post_deactivate_func</varname>
+       <footnoteref linkend="internals2.structure.modstruct.struct-values.given-by-SMP"/>
+      </entry>
+      <entry>ZEND_MODULE_POST_ZEND_DEACTIVATE_N(mymodule)</entry>
+      <entry>
+       この関数は、リクエストの終了処理の後で Zend からコールされます。
+       めったに使われることはありません。
+      </entry>
+     </row>
+     
+     <row>
+      <entry>
+       <varname>module_started</varname>
+       <footnoteref linkend="internals2.structure.modstruct.struct-values.not-for-dev"/>
+       <footnote xml:id="internals2.structure.modstruct.struct-values.given-by-SMPE">
+        <para>
+         このフィールドは <constant>STANDARD_MODULE_PROPERTIES_EX</constant> が設定します。
+        </para>
+       </footnote>
+       <footnoteref linkend="internals2.structure.modstruct.struct-values.given-by-SMP"/>
+      </entry>
+      <entry>0</entry>
+      <entry morerows="3">
+       これらのフィールドは、Zend の内部管理用の情報を扱うために使用します。
+      </entry>
+     </row>
+     
+     <row>
+      <entry>
+       <varname>type</varname>
+       <footnoteref linkend="internals2.structure.modstruct.struct-values.not-for-dev"/>
+       <footnoteref linkend="internals2.structure.modstruct.struct-values.given-by-SMPE"/>
+       <footnoteref linkend="internals2.structure.modstruct.struct-values.given-by-SMP"/>
+      </entry>
+      <entry>0</entry>
+     </row>
+     
+     <row>
+      <entry>
+       <varname>handle</varname>
+       <footnoteref linkend="internals2.structure.modstruct.struct-values.not-for-dev"/>
+       <footnoteref linkend="internals2.structure.modstruct.struct-values.given-by-SMPE"/>
+       <footnoteref linkend="internals2.structure.modstruct.struct-values.given-by-SMP"/>
+      </entry>
+      <entry>&null;</entry>
+     </row>
     
-   <varlistentry>
-    <term><literal>info_func</literal></term>
-    <listitem>
-     <para>
-      これもコールバック関数で、スクリプトが
-      invokes <function>phpinfo</function>
-      を実行したときに Zend がコールします。
-     </para>
-    </listitem>
-   </varlistentry>
-    
-   <varlistentry>
-    <term><literal>version</literal></term>
-    <listitem>
-     <para>
-      モジュールのバージョンを表す文字列。モジュールの作者が指定したものです。
-      バージョン番号の形式は、
-      <function>version_compare</function> に対応したものか
-      CVS や SVN のリビジョン番号 (つまり &quot;$Rev$&quot;)
-      にあわせたものにしておくことを
-      <emphasis>強く</emphasis> 推奨します。
-     </para>
-    </listitem>
-   </varlistentry>
-    
-   <varlistentry>
-    <term><literal>globals_size</literal></term>
-    <listitem>
-     <para>
-      このモジュール用のグローバル構造体が存在する場合のサイズ。
-     </para>
-    </listitem>
-   </varlistentry>
-   
-   <varlistentry>
-    <term><literal>globals_id_ptr</literal></term>
-    <term><literal>globals_ptr</literal></term>
-    <listitem>
-     <para>
-      定数 <constant>USING_ZTS</constant> が &true; かどうかによって、
-      これらふたつのフィールドのうちのいずれかひとつだけが存在します。
-      最初のほうはモジュールのグローバル用の TSRM アロケーションテーブルへのインデックス、
-      後のほうはグローバルへの直接のポインタとなります。
-     </para>
-    </listitem>
-   </varlistentry>
-   
-   <varlistentry>
-    <term><literal>globals_ctor</literal></term>
-    <term><literal>globals_dtor</literal></term>
-    <listitem>
-     <para>
-      これらの関数は、モジュールのグローバルを作成したり破棄したりするときに
-      Zend からコールされます。
-     </para>
-    </listitem>
-   </varlistentry>
-   
-   <varlistentry>
-    <term><literal>post_deactivate_func</literal></term>
-    <listitem>
-     <para>
-      この関数は、リクエストの終了処理時に Zend からコールされます。
-      めったに使われることはありません。
-     </para>
-    </listitem>
-   </varlistentry>
-   
-   <varlistentry>
-    <term><literal>module_started</literal></term>
-    <term><literal>type</literal></term>
-    <term><literal>handle</literal></term>
-    <term><literal>module_number</literal></term>
-    <listitem>
-     <para>
-      これらのフィールドは、Zend の内部管理用の情報を扱うために使用します。
-      すべて予約済みです。
-     </para>
-    </listitem>
-   </varlistentry>
-   
-   <varlistentry>
-    <term><constant>STANDARD_MODULE_HEADER_EX</constant></term>
-    <listitem>
-     <para>
-      このマクロはモジュールの作者が使用するもので、
-      モジュールが INI エントリや依存性を定義する際の
-      <varname>zend_module</varname> 構造体の初期化に使用します。
-     </para>
-    </listitem>
-   </varlistentry>
-   
-   <varlistentry>
-    <term><constant>STANDARD_MODULE_HEADER</constant></term>
-    <listitem>
-     <para>
-      このマクロは <varname>zend_module</varname>
-      構造体を開始するためのものです。
-      開発者が INI エントリや依存性を使用しないときに用います。
-     </para>
-    </listitem>
-   </varlistentry>
-   
-   <varlistentry>
-    <term><constant>NO_VERSION_YET</constant></term>
-    <listitem>
-     <para>
-      このマクロはモジュールの作者が使用するもので、
-      まだこのモジュールにはバージョンがないことを表します。
-      これは使わないことをお勧めします。
-     </para>
-    </listitem>
-   </varlistentry>
-   
-   <varlistentry>
-    <term><constant>STANDARD_MODULE_PROPERTIES_EX</constant></term>
-    <listitem>
-     <para>
-      このマクロはモジュールの作者が使用するもので、
-      <varname>zend_module</varname> を終了させるためのものです。
-      モジュールが自動グローバルや終了時コールバックなどを使用するときに用います。
-     </para>
-    </listitem>
-   </varlistentry>
-   
-   <varlistentry>
-    <term><constant>STANDARD_MODULE_PROPERTIES</constant></term>
-    <listitem>
-     <para>
-      このマクロはモジュールの作者が使用するもので、
-      <varname>zend_module</varname> を終了させるためのものです。
-      モジュールが自動グローバルや終了時コールバックなどを使用しないときに用います。
-     </para>
-    </listitem>
-   </varlistentry>
+     <row>
+      <entry>
+       <varname>module_number</varname>
+       <footnoteref linkend="internals2.structure.modstruct.struct-values.not-for-dev"/>
+       <footnoteref linkend="internals2.structure.modstruct.struct-values.given-by-SMPE"/>
+       <footnoteref linkend="internals2.structure.modstruct.struct-values.given-by-SMP"/>
+      </entry>
+      <entry>0</entry>
+     </row>
 
-   <varlistentry>
-    <term><constant>NO_MODULE_GLOBALS</constant></term>
-    <listitem>
-     <para>
-      このマクロはモジュールの作者が使用するもので、
-      モジュールがグローバル変数を使用しないことを Zend に伝えます。
-     </para>
-    </listitem>
-   </varlistentry>
-
-  </variablelist>
+    </tbody>
+   </tgroup>
+  </table>
   
  </sect1>
 
