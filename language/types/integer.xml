@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.1 $ -->
+<!-- EN-Revision: 1.2 Maintainer: takagi Status: ready -->
+<!-- CREDITS: hirokawa,shimooka -->
+<sect1 xml:id="language.types.integer">
+ <title>整数</title>
+ 
+ <simpara>
+  <type>integer</type> は、Z = {..., -2, -1, 0, 1, 2, ...}という集合です。
+ </simpara>
+  
+ <para>
+  <link linkend="ref.gmp">任意精度整数 / GMP</link> および
+  <link linkend="language.types.float">float</link>、
+  <link linkend="ref.bc">任意精度整数 / BCMath</link> も参照ください。
+ </para>
+
+ <sect2 xml:id="language.types.integer.syntax">
+  <title>構文</title>
+
+  <simpara>
+   整数 (integer) は、10 進数(基数 10)、16 進数 (基数 16)、8 進数 (基数 8)
+   表記で指定可能です。オプションで、符号(-または+)を前に付けることが可能です。
+  </simpara>
+
+  <para>
+   8 進数表記を使用する場合、数の前に <literal>0</literal> (ゼロ)
+   を付ける必要があります。また、16 進数表記を使用するには、数の前に
+   <literal>0x</literal> を付ける必要があります。
+
+   <example>
+    <title>整数リテラル</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$a = 1234; // 10進整数
+$a = -123; // 負の数
+$a = 0123; // 8進数 (10進数の83と等価)
+$a = 0x1A; // 16進数 (10進数の26と等価)
+?>
+]]>
+    </programlisting>
+   </example>
+
+   使用可能な整数リテラルの形式は以下のように定義されています。
+
+   <informalexample>
+    <programlisting>
+<![CDATA[
+decimal     : [1-9][0-9]*
+            | 0
+
+hexadecimal : 0[xX][0-9a-fA-F]+
+
+octal       : 0[0-7]+
+
+integer     : [+-]?decimal
+            | [+-]?hexadecimal
+            | [+-]?octal
+]]>
+    </programlisting>
+   </informalexample>
+
+   整数のサイズはプラットフォームに依存しますが、
+   約 20 億 (32 ビット符号付) が一般的な値です。
+   PHP は符号無し整数をサポートしていません。
+   整数のサイズは <constant>PHP_INT_SIZE</constant> で決まります。
+   最大値は、PHP 4.4.0 から PHP 5.0.5 までは <constant>PHP_INT_MAX</constant>
+   でした。
+  </para>
+
+  <warning>
+   <para>
+    8 進数の整数値として不正な数字（例: 8 または 9）が渡された場合、
+    数値の残りの部分は無視されます。
+
+    <example>
+     <title>おかしな 8 進数</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+var_dump(01090); // 010（8 進数）= 8（10 進数）
+?>
+]]>
+     </programlisting>
+    </example>
+   </para>
+  </warning>
+ </sect2>
+
+ <sect2 xml:id="language.types.integer.overflow">
+  <title>整数のオーバーフロー</title>
+
+  <para>
+   <type>integer</type>型の範囲外の数を指定した場合、かわりに
+   <type>float</type>として解釈されます。また、結果が
+   <type>integer</type>型の範囲外の数となるような計算を行うと
+   <type>float</type>が代わりに返されます。
+
+   <informalexample>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$large_number =  2147483647;
+var_dump($large_number);
+// 出力: int(2147483647)
+
+$large_number =  2147483648;
+var_dump($large_number);
+// 出力: float(2147483648)
+
+// 2^31 から 2^32-1 までの値については、指定した 16 進表現整数を出力できる
+var_dump( 0xffffffff );
+// 出力: float(4294967295)
+
+// 2^32-1 を超える値については、指定した 16 進表現整数を出力できない
+var_dump( 0x100000000 );
+// 出力: int(2147483647)
+
+$million = 1000000;
+$large_number =  50000 * $million;
+var_dump($large_number);
+// 出力: float(50000000000)
+?>
+]]>
+    </programlisting>
+   </informalexample>
+
+   <warning>
+    <simpara>
+     不幸にして、過去のスクリプトエンジンにはバグがあり、
+     負の数が含まれている場合に、常に正しく動作するわけではありませんでした。例えば、
+     <literal>-50000 * $million</literal> を実行した場合、結果は、
+     <literal>-429496728</literal> となりました。
+     しかし、オペランドが共に正の場合は問題ありませんでした。
+    </simpara>
+
+    <simpara>
+     この問題は PHP 4.1.0 で解決されました。
+    </simpara>
+   </warning>
+  </para>
+
+  <para>
+   PHP には整数の割り算はありません。<literal>1/2</literal> は <type>
+   float </type> 型の <literal>0.5</literal> になります。
+   下方向の整数値に値を丸めるためにキャストを使用することができ、
+   また、<function>round</function> 関数を使用することもできます。
+
+   <informalexample>
+    <programlisting role="php">
+<![CDATA[
+<?php
+var_dump(25/7);         // float(3.5714285714286) 
+var_dump((int) (25/7)); // int(3)
+var_dump(round(25/7));  // float(4) 
+?>
+]]>
+    </programlisting>
+   </informalexample>
+  </para>
+ </sect2>
+
+ <sect2 xml:id="language.types.integer.casting">
+  <title>整数への変換</title>
+
+   <simpara>
+    <type>integer</type> に値を明示的に変換するには、キャスト
+    <literal>(int)</literal> または <literal>(integer)</literal>
+    のどちらかを使用してください。しかし、多くの場合、演算子、関数、制御構造が
+    <type>integer</type> 引数を必要とする場合、値は自動的に変換されるため、
+    キャストを使用する必要はありません。
+    関数 <function>intval</function> を用いて値を整数に変換することも可能です。
+   </simpara>
+
+   <simpara>
+    <link linkend="language.types.type-juggling">型の相互変換</link>
+    を参照ください。
+   </simpara>
+   
+   <sect3 xml:id="language.types.integer.casting.from-boolean">
+    <title><link linkend="language.types.boolean">booleans</link> から</title>
+
+    <simpara>
+     &false; は、<literal>0</literal> (ゼロ) となり、
+     &true; は、<literal>1</literal> となります。
+    </simpara>
+   </sect3>
+
+   <sect3 xml:id="language.types.integer.casting.from-float">
+    <title>
+     <link linkend="language.types.float">浮動小数点数</link>から
+    </title> 
+
+    <simpara>
+     float から整数に変換する場合、その数は<emphasis>ゼロのほうに</emphasis>丸められます。
+    </simpara>
+    
+    <para>
+     float が整数の範囲 (通常は <literal>+/- 2.15e+9 =
+     2^31</literal>) を越える場合、結果は undefined となります。これは、
+     その float が正しい整数の結果を得るために十分な精度を得られなかったからです。
+     この場合、警告も通知も発生しません!
+    </para>
+    
+    <warning>
+     <para>
+      未知の端数を <type>integer</type> にキャストしないでください。
+      この場合、予期しない結果となることがあります。
+
+      <informalexample>
+       <programlisting role="php">
+<![CDATA[
+<?php
+echo (int) ( (0.1+0.7) * 10 ); // 7が出力されます!
+?>
+]]>
+       </programlisting>
+      </informalexample>
+     
+      より詳細な情報については、<link linkend="warn.float-precision">
+      float の精度に関する注意</link>を参照ください。
+     </para>
+    </warning>
+   </sect3>
+   
+   <sect3 xml:id="language.types.integer.casting.from-string">
+    <title>文字列から</title>
+
+    <simpara>
+     <link linkend="language.types.string.conversion">文字列変換
+     </link>を参照ください。
+    </simpara>
+   </sect3>
+   
+   <sect3 xml:id="language.types.integer.casting.from-other">
+    <title>他の型から</title>
+
+    <para>
+     <caution>
+      <simpara>
+       整数への変換の動作は、他の型については定義されません。
+       現在の動作は、その値がまず
+       <link linkend="language.types.boolean.casting">論理値に変換された</link>
+       場合と同じです。しかし、この動作は予告なく変更されることがありえるので、
+       これを前提にしていはいけません。
+      </simpara>
+     </caution>
+    </para>
+   </sect3>
+
+ </sect2>
+</sect1>
+ 
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"../../manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->

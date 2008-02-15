@@ -1,0 +1,857 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.1 $ -->
+<!-- EN-Revision: 1.2 Maintainer: takagi Status: ready -->
+<!-- CREDITS: hirokawa,shimooka -->
+<sect1 xml:id="language.types.array">
+ <title>配列</title>
+
+ <para>
+  PHP の配列は、実際には順番付けられたマップです。マップは型の一種で、
+  <emphasis>値</emphasis>を<emphasis>キー</emphasis>に関連付けます。
+  この型は、いくつかの手法で最適化されます。このため、
+  実際の配列またはリスト (ベクトル)、(あるマップの実装である)
+  ハッシュテーブル、ディレクトリ、コレクション、スタック、
+  キュー等として使用することが可能です。
+  PHP の配列には他の PHP 配列を値として保持することができるため、
+  非常に簡単にツリー構造を表現することが可能です。
+ </para>
+ <para>
+  これらのデータ構造に関する説明は本マニュアルの範囲外ですが、
+  これらの構造に各々に関する例を少なくとも一つ見付けることが可能です。
+  この分野は広範囲にまたがるので、
+  より詳細な情報については他の書籍を参照ください。
+ </para>
+   
+ <sect2 xml:id="language.types.array.syntax">
+  <title>構文</title>
+  
+  <sect3 xml:id="language.types.array.syntax.array-func">
+   <title><function>array</function> で指定</title>
+   <para>
+    <type>配列</type> は、言語に組み込まれた
+    <function>array</function> で作成することが可能です。この構造は、
+    特定の数のカンマで区切られた
+    <literal><replaceable>key</replaceable> =&gt; <replaceable
+    >value</replaceable></literal> の組を引数とします。
+   </para>
+   <para>
+    <synopsis>
+array( <optional> <replaceable>key</replaceable> =&gt; </optional> <replaceable>value</replaceable>
+   , ...
+   )
+// <replaceable>key</replaceable> は、<type>文字列</type>または
+// 非負の<type>整数</type>です。
+// <replaceable>value</replaceable> に制約はありません.
+    </synopsis>
+   </para>
+   <para>
+    <informalexample>
+     <programlisting role="php">
+<![CDATA[
+<?php
+$arr = array("foo" => "bar", 12 => true);
+
+echo $arr["foo"]; // bar
+echo $arr[12];    // 1
+?>
+]]>
+     </programlisting>
+    </informalexample>
+   </para>
+   <para>
+    <varname>key</varname> は、<type>整数</type> または
+    <type>文字列</type>です。
+    あるキーが、<type>整数</type>の標準的な表現形式である場合、
+    そのように解釈されます (つまり、<literal>"8"</literal> は
+    <literal>8</literal> として解釈されます。一方、
+    <literal>"08"</literal> は <literal>"08"</literal> として解釈されます)。
+    <varname>key</varname> に浮動小数点数値を指定すると、
+    その値は <type>integer</type> に切り詰められます。
+    PHP においては添字配列と連想配列の間に違いはなく、配列型は 1 つだけで、
+    整数または文字列のインデックスを使用することができます。
+   </para>
+   <para>
+    値には、PHP の全ての型を使用することができます。
+    <informalexample>
+     <programlisting role="php">
+<![CDATA[
+<?php
+$arr = array("somearray" => array(6 => 5, 13 => 9, "a" => 42));
+
+echo $arr["somearray"][6];    // 5
+echo $arr["somearray"][13];   // 9
+echo $arr["somearray"]["a"];  // 42
+?>
+]]>
+     </programlisting>
+    </informalexample>
+   </para>
+   <para>
+    キーを省略した場合、整数添字の最大値が使用され、
+    新しいキーはその最大値 +1 となります。整数値は負の数とすることができ、
+    負の添字についても同様となります。例えば、最高時の添字が <literal>-6</literal>
+    の場合、次のキーは <literal>-5</literal> となります。
+    整数添字がまだ存在しない場合、キーは <literal>0</literal> (ゼロ) となります。
+    値が既に代入されているキーを指定した場合、元の値は上書きされます。
+    <informalexample>
+     <programlisting role="php">
+<![CDATA[
+<?php
+// この配列は以下の配列と同じです ...
+array(5 => 43, 32, 56, "b" => 12);
+
+// この配列は上の配列と同じです
+array(5 => 43, 6 => 32, 7 => 56, "b" => 12);
+?>
+]]>
+     </programlisting>
+    </informalexample>
+   </para>
+   <warning>
+    <simpara>
+     PHP 4.3.0 以降、上記のような添字生成動作は変更されました。
+     現在では、配列に追加する際に、その配列の最大添字が負である場合は
+     次の添字はゼロ (<literal>0</literal>) となります。
+     以前は、正の添字の場合と同様に新しい添字は最大添字に +1
+     したものにセットされていました。
+    </simpara>
+   </warning>
+   <para>
+    キーとして &true; を使用した場合、
+    <type>整数</type>型の <literal>1</literal> がキーとして解釈されます。
+    キーとして &false; を使用した場合、
+    <type>整数</type>型の <literal>0</literal> がキーとして解釈されます。
+    キーとして <literal>NULL</literal> を使用した場合、
+    空の文字列として評価されます。キーとして空の文字列を使用すると、
+    空の文字列のキーとその値を作成 (または上書き) します。
+    空の括弧を用いた場合と同じではありません。
+   </para>
+   <para>
+    配列またはオブジェクトをキーとして使用することはできません。
+    これを行なうと、warning: <literal>Illegal offset type</literal>
+    が発生します。
+   </para>
+  </sect3>
+  
+  <sect3 xml:id="language.types.array.syntax.modifying">
+   <title>角括弧構文で作成/修正</title>
+   <para>
+    明示的に値を設定することにより、既存の配列を修正することも可能です。
+   </para>
+   <para>
+    これは、角括弧の中にキーを指定し、配列に値を代入することにより行います。
+    キーを省略することも可能です。この場合、空の角括弧
+    ("<literal>[]</literal>") の変数名として追加してください。
+    <synopsis>
+$arr[<replaceable>key</replaceable>] = <replaceable>value</replaceable>;
+$arr[] = <replaceable>value</replaceable>;
+// <replaceable>key</replaceable> は <type>文字列</type> または
+// 非負の<type>整数</type>のどちらかです。
+// <replaceable>value</replaceable> は何でもかまいません
+    </synopsis>
+    <varname>$arr</varname> がまだ存在しない場合、作成されます。
+    配列を指定する別の手段でもあります。ある値を変更するには、
+    新しい値に値を代入します。特定のキー/値の組を削除したい場合には、
+    <function>unset</function> を使用する必要があります。
+    <informalexample>
+     <programlisting role="php">
+<![CDATA[
+<?php
+$arr = array(5 => 1, 12 => 2);
+
+$arr[] = 56;    // このスクリプトのこの位置に記述した場合、
+                // $arr[13] = 56; と同じです
+
+$arr["x"] = 42; // キー"x"の新しい要素を配列に追加します
+                
+unset($arr[5]); // 配列から要素を削除します
+
+unset($arr);    // 配列全体を削除します
+?>
+]]> 
+     </programlisting>
+    </informalexample>
+   </para>
+   <note>
+    <para>
+     上記のように、キーを省略して新規要素を追加する場合、
+     追加される数値添字は、使用されている添字の最大値 +1 になります。
+     既に値が割り当てられているキーを指定した場合には、
+     値は上書きされます。
+    </para>
+    <para>
+     <warning>
+      <simpara>
+       PHP 4.3.0 以降、上記のような添字生成動作は変更されました。
+       現在では、配列に追加する際に、
+       その配列の最大添字が負である場合は次の添え字はゼロ
+       (<literal>0</literal>) となります。
+       以前は、正の添字の場合と同様に新しい添字は最大添字に +1
+       したものがセットされました。
+      </simpara>
+     </warning>
+    </para>
+    <para>
+     次のキー生成において、オフセットとして使われる整数値
+     (添字の最大値) に対応するエントリーが、
+     必ずしも配列内に存在するわけではないことに注意してください。
+     しかし、その値は、多くの場合、
+     配列にある整数のキー値の最大値と等しいはずです。以下に例を示します。
+    </para>
+
+    <informalexample>
+     <programlisting role="php">
+<![CDATA[
+<?php
+// 簡単な配列を生成します。
+$array = array(1, 2, 3, 4, 5);
+print_r($array);
+
+// 全てのアイテムを削除しますが、配列自体は削除しないでおきます。
+foreach ($array as $i => $value) {
+    unset($array[$i]);
+}
+print_r($array);
+
+// アイテムを追加します(新しい添え字は0ではなく
+// 5となることに注意)
+$array[] = 6;
+print_r($array);
+
+// 添え字を振りなおします。
+$array = array_values($array);
+$array[] = 7;
+print_r($array);
+?>
+]]> 
+     </programlisting>
+     &example.outputs;
+     <screen>
+<![CDATA[
+Array
+(
+    [0] => 1
+    [1] => 2
+    [2] => 3
+    [3] => 4
+    [4] => 5
+)
+Array
+(
+)
+Array
+(
+    [5] => 6
+)
+Array
+(
+    [0] => 6
+    [1] => 7
+)
+]]>
+     </screen>
+    </informalexample>       
+
+   </note>
+  </sect3>
+ </sect2><!-- end syntax -->
+ 
+ <sect2 xml:id="language.types.array.useful-funcs">
+  <title>有用な関数</title>
+  <para>
+   配列で使用する便利な関数がたくさんあります。
+   <link linkend="ref.array">配列関数</link> の節を参照ください。
+  </para>
+  <note>
+   <para>
+    <function>unset</function>関数は配列のキーを削除することが出来ます。
+    ただし、これによってインデックスの再構築が行われるわけではないことに
+    注意してください。
+    "通常の整数添字" (0 から始まり、1 つずつ増加) のみを使用している場合、
+    <function>array_values</function>
+    を用いてインデックスを再構築することができます。
+    <informalexample>
+     <programlisting role="php">
+<![CDATA[
+<?php
+$a = array(1 => 'one', 2 => 'two', 3 => 'three');
+unset($a[2]);
+/* これにより配列は以下の様に定義されます。
+   $a = array(1 => 'one', 3 => 'three');
+   以下ではありません：
+   $a = array(1 => 'one', 2 =>'three');
+*/
+
+$b = array_values($a);
+// bは、array(0 => 'one', 1 =>'three')となります
+?>
+]]>
+    </programlisting>
+   </informalexample>
+   
+   </para>    
+  </note> 
+  <para>
+   配列専用の制御構造として<link
+   linkend="control-structures.foreach">foreach</link> があります。
+   この構造は、配列の要素に簡単に連続的にアクセスする手段を提供します。
+  </para>
+ </sect2>
+ 
+ <sect2 xml:id="language.types.array.donts">
+  <title>配列ですべきこととしてはならないこと</title>
+
+  <sect3 xml:id="language.types.array.foo-bar">
+   <title>なぜ、<literal>$foo[bar]</literal> は使用できないのか?</title>
+   <para>
+    連想配列の添字の前後は常に引用符で括る必要があります。
+    例えば、$foo[bar] ではなく $foo['bar'] を使用してください。
+    しかし、$foo[bar] はなぜ誤りなのでしょうか?
+    古いスクリプトで次のような構文を見たことがあるかもしれません。
+    <informalexample>
+     <programlisting role="php">
+<![CDATA[
+<?php
+$foo[bar] = 'enemy';
+echo $foo[bar];
+// etc
+?>
+]]>
+     </programlisting>
+    </informalexample>
+    これは間違っていますが、動作します。では、なぜ間違っているのでしょう?
+    その理由は、このコードには文字列 ('bar' - 引用符で括られている)
+    ではなく未定義の定数 (bar) が使用されており、PHP
+    が同じ名前の定数を不幸にして同じコードの中に定義する可能性があるためです。
+    下位互換性の維持のため、未定義の定数は同じ名前の文字列に自動的に変換されます。
+    そのため、このコードは動作します。
+    例えば、<constant>bar</constant> という名前の定義されていない定数があるとすると、
+    PHP は <literal>'bar'</literal> という文字列でそれを置換して使用します。
+   </para>
+   <note>
+    <simpara>
+     これは、添字を<emphasis>常に</emphasis>クォートするという意味ではありません。
+     <link linkend="language.constants">定数</link>や
+     <link linkend="language.variables">変数</link>
+     を添字として使う際には、クォートしてしまうと PHP
+     はそれを解釈できなくなってしまいます。
+    </simpara>
+    <informalexample>
+     <programlisting role="php">
+<![CDATA[
+<?php
+error_reporting(E_ALL);
+ini_set('display_errors', true);
+ini_set('html_errors', false);
+// 単純な配列
+$array = array(1, 2);
+$count = count($array);
+for ($i = 0; $i < $count; $i++) {
+    echo "\nChecking $i: \n";
+    echo "Bad: " . $array['$i'] . "\n";
+    echo "Good: " . $array[$i] . "\n";
+    echo "Bad: {$array['$i']}\n";
+    echo "Good: {$array[$i]}\n";
+}
+?>
+]]>
+     </programlisting>
+    </informalexample>
+    &example.outputs;
+    <screen>
+<![CDATA[
+Checking 0: 
+Notice: Undefined index:  $i in /path/to/script.html on line 9
+Bad: 
+Good: 1
+Notice: Undefined index:  $i in /path/to/script.html on line 11
+Bad: 
+Good: 1
+
+Checking 1: 
+Notice: Undefined index:  $i in /path/to/script.html on line 9
+Bad: 
+Good: 2
+Notice: Undefined index:  $i in /path/to/script.html on line 11
+Bad: 
+Good: 2
+]]>        
+    </screen>
+   </note>
+   <para>
+    この具体例を以下に示します。
+    <informalexample>
+     <programlisting role="php">
+<![CDATA[
+<?php
+// エラーを全て表示するよう設定
+error_reporting(E_ALL);
+
+$arr = array('fruit' => 'apple', 'veggie' => 'carrot');
+
+// 正しい
+print $arr['fruit'];  // apple
+print $arr['veggie']; // carrot
+
+// 間違い。これは動作しますが、未定義の定数fruitを使用しているため、
+// 同時にE_NOTICEレベルのPHPエラーを発生します
+//
+// Notice: Use of undefined constant fruit - assumed 'fruit' in...
+print $arr[fruit];    // apple
+
+// 検証のため、定数を定義してみましょう。
+// fruitという名前の定数に値'veggie'を代入します。
+define('fruit', 'veggie');
+
+// ここでは、出力が異なることに注意してください。
+print $arr['fruit'];  // apple
+print $arr[fruit];    // carrot
+
+// 以下は文字列の中であるためOKです。定数は、文字列の中では解釈されな
+// いため、E_NOTICEエラーはここでは発生しません。
+print "Hello $arr[fruit]";      // Hello apple
+
+// 例外が１つあり、文字列の中で波括弧で配列を括った場合には、
+// 定数が解釈されます
+print "Hello {$arr[fruit]}";    // Hello carrot
+print "Hello {$arr['fruit']}";  // Hello apple
+
+// これは動作せず、以下のようなパースエラーを発生します:
+// Parse error: parse error, expecting T_STRING' or T_VARIABLE' or T_NUM_STRING'
+// 文字列の中でスーパーグローバルを使用した場合も無論同様です。
+print "Hello $arr['fruit']";
+print "Hello $_GET['foo']";
+
+// 文字列結合で同じことをすることもできます。
+print "Hello " . $arr['fruit']; // Hello apple
+?>
+]]>
+     </programlisting>
+    </informalexample>
+   </para>
+   <para>
+    <function>error_reporting</function> で
+    (<constant>E_ALL</constant> を指定する等により)
+    <literal>E_NOTICE</literal> レベルのエラー出力を有効にした場合、
+    上記のエラーが出力されます。
+    デフォルトでは、<link linkend="ini.error-reporting">
+    error_reporting</link> はこれらを表示しない設定になっています。
+   </para>
+   <para>
+    <link linkend="language.types.array.syntax"
+    >構文</link>の節に記述したように、角括弧
+    ('<literal>[</literal>' および '<literal>]</literal>')
+    の間には、式がなければなりません。これは、
+    次のように書くことが可能であることを意味します。
+    <informalexample>
+     <programlisting role="php">
+<![CDATA[
+<?php
+echo $arr[somefunc($bar)];
+?>
+]]>
+     </programlisting>
+    </informalexample>
+    これは、関数の戻り値を配列の添字として使用する例です。PHP
+    は定数についても認識します。以下のような <literal>E_*</literal>
+    の使用例を見たことがあるかもしれません。
+
+    <informalexample>
+     <programlisting role="php">
+<![CDATA[
+<?php
+$error_descriptions[E_ERROR]   = "A fatal error has occured";
+$error_descriptions[E_WARNING] = "PHP issued a warning";
+$error_descriptions[E_NOTICE]  = "This is just an informal notice";
+?>
+]]>
+     </programlisting>
+    </informalexample>
+    最初の例の <literal>bar</literal> と全く同様に
+    <literal>E_ERROR</literal> も有効な添字であることに注意してください。
+    しかし、実際には最後の例は次のように書くことと同じです。
+    <informalexample>
+     <programlisting role="php">
+<![CDATA[
+<?php
+$error_descriptions[1] = "A fatal error has occured";
+$error_descriptions[2] = "PHP issued a warning";
+$error_descriptions[8] = "This is just an informal notice";
+?>
+]]>
+     </programlisting>
+    </informalexample>
+    これは、<literal>E_ERROR</literal> が <literal>1</literal>
+    と等しいこと等によります。
+   </para>
+   <para>
+    では、なぜ <literal>$foo[bar]</literal> は動作することが可能なのでしょう?
+    それは、<literal>bar</literal> が定数式であることを
+    期待される構文で使用されているためです。しかし、この場合、
+    <literal>bar</literal> という名前の定数は存在しません。PHP は、
+    この場合、あなたが文字列<literal>"bar"</literal> のようにリテラル
+    <literal>bar</literal> を指定したが引用符を忘れたと仮定します。
+   </para>
+   <sect4 xml:id="language.types.array.foo-bar.why">
+    <title>では、なぜ間違っているのでしょう?</title>
+    <para>
+     将来的に、PHP 開発チームが他の定数またはキーワードを追加したいと思うかもしれず、
+     問題となる可能性があります。例えば、現在でも、
+     単語 <literal>empty</literal> および
+     <literal>default</literal>を使用することはできません。
+     これは、これらが特別な
+     <link linkend="reserved">予約済みのキーワード</link>であるためです。
+    </para>
+    <note>
+     <simpara>
+      二重引用符で括られた<type>文字列</type>の中では
+      引用符で配列の添字を括らないことができ、このため、
+      <literal>"$foo[bar]"</literal> は有効です。
+      この理由の詳細については、上記の例や
+      <link linkend="language.types.string.parsing">
+      文字列中での変数のパース</link>を参照してください。
+     </simpara>
+    </note>
+   </sect4>
+  </sect3>
+ </sect2>
+
+ <sect2 xml:id="language.types.array.casting">
+  <title>配列への変換</title>
+  
+  <para>
+   <type>integer</type>, <type>float</type>, <type>string</type>,
+   <type>boolean</type>, <type>resource</type>のいずれの型においても、
+   <type>array</type> に変換する場合、
+   最初のスカラー値が割り当てられている一つの要素 (添字は 0)
+   を持つ配列を得ることになります。
+  </para>
+  
+  <para>
+   <type>object</type>を配列にする場合には、配列の要素として
+   オブジェクトの属性 (メンバ変数) を持つ配列を得ることになります。
+   添字はメンバ変数名となりますが、いくつか注意すべき例外があります。
+   private 変数の場合、変数名の頭にクラス名がつきます。また、
+   protected 変数の場合は、変数名の頭に '*' がつきます。
+   このとき、頭に追加される値の前後に null バイトがついてきます。
+   その結果、予期せぬ振る舞いをすることがあります。
+    <informalexample>
+     <programlisting role="php">
+<![CDATA[
+<?php
+
+class A {
+    private $A; // これは '\0A\0A' となります
+}
+
+class B extends A {
+    private $A; // これは '\0B\0A' となります
+    public $AA; // これは 'AA' となります
+}
+
+var_dump((array) new B());
+?>
+]]>
+     </programlisting>
+    </informalexample>
+
+   上の例では 'AA' というキーがふたつあるように見えますが、
+   そのうちひとつは、実際は '\0A\0A' ということになります。
+  </para>
+  
+  <para>
+   &null; を配列に変換すると、空の配列を得ます。
+  </para>
+ </sect2>
+
+ <sect2 xml:id="language.types.array.comparing">
+  <title>比較</title>
+  <para>
+   <function>array_diff</function> と
+   <link linkend="language.operators.array">配列演算子</link>
+   を用いると、配列を比較することができます。
+  </para>
+ </sect2>
+
+ <sect2 xml:id="language.types.array.examples">
+  <title>例</title>
+  <para>
+   PHP の配列型は、いろいろな使い方ができます。配列の強力な機能を示すため、
+   ここでいくつかの例を紹介します。
+  </para>
+  <para>
+    <informalexample>
+     <programlisting role="php">
+<![CDATA[
+<?php
+// これは、
+$a = array( 'color' => 'red',
+            'taste' => 'sweet',
+            'shape' => 'round',
+            'name'  => 'apple',
+                       4        // キーは0になります
+          );
+
+// これと完全に同じです。
+$a['color'] = 'red';
+$a['taste'] = 'sweet';
+$a['shape'] = 'round';
+$a['name']  = 'apple';
+$a[]        = 4;        // キーは0になります
+
+$b[] = 'a';
+$b[] = 'b';
+$b[] = 'c';
+// この結果は配列 array(0 => 'a' , 1 => 'b' , 2 => 'c'),
+// または単に array('a', 'b', 'c') となります
+?>
+]]>
+     </programlisting>
+    </informalexample>
+   </para>
+  
+  <example>
+   <title>array() の使用例</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+// マップを行う配列
+$map = array( 'version'    => 4,
+              'OS'         => 'Linux',
+              'lang'       => 'english',
+              'short_tags' => true
+            );
+            
+// 数値キーのみを有する
+$array = array( 7,
+                8,
+                0,
+                156,
+                -10
+              );
+// これは、array( 0 => 7, 1 => 8, ...) と同じです
+
+$switching = array(         10, // key = 0
+                    5    =>  6,
+                    3    =>  7, 
+                    'a'  =>  4,
+                            11, // key = 6 (最大の添字は5です)
+                    '8'  =>  2, // key = 8 (整数!)
+                    '02' => 77, // key = '02'
+                    0    => 12  // 値10は12で上書きされます
+                  );
+                  
+// 空の配列
+$empty = array();         
+?>
+]]>
+<!-- TODO example of
+- overwriting keys
+- using vars/functions as key/values
+- warning about references
+-->
+   </programlisting>
+  </example>
+
+  <example xml:id="language.types.array.examples.loop">
+   <title>コレクション</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+$colors = array('red', 'blue', 'green', 'yellow');
+
+foreach ($colors as $color) {
+    echo "Do you like $color?\n";
+}
+
+?>
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+Do you like red?
+Do you like blue?
+Do you like green?
+Do you like yellow?
+]]>
+   </screen>
+  </example>
+  
+  <para>
+   PHP 5 以降では、配列を参照渡しすることでその値を直接変更できるようになりました。
+   それ以前のバージョンでは、以下のような回避策が必要です。
+   <example xml:id="language.types.array.examples.changeloop">
+    <title>コレクション</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+// PHP 5
+foreach ($colors as &$color) {
+    $color = strtoupper($color);
+}
+unset($color); /* これ以降の $color への書き込みが
+配列の要素を書き換えてしまわないことを保証する */
+
+// 旧バージョンでの回避策
+foreach ($colors as $key => $color) {
+    $colors[$key] = strtoupper($color);
+}
+
+print_r($colors);
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+Array
+(
+    [0] => RED
+    [1] => BLUE
+    [2] => GREEN
+    [3] => YELLOW
+)
+]]>
+    </screen>
+   </example>
+  </para>
+  <para>
+   この例は、1 から始まる配列を作成します。
+   <example>
+    <title>1 から始まる添字</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$firstquarter  = array(1 => 'January', 'February', 'March');
+print_r($firstquarter);
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+Array 
+(
+    [1] => 'January'
+    [2] => 'February'
+    [3] => 'March'
+)
+]]>   
+    </screen>
+   </example>
+  </para>
+  <example>
+   <title>配列に代入する</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+// ディレクトリから全てのアイテムを配列に代入する
+$handle = opendir('.');
+while (false !== ($file = readdir($handle))) {
+    $files[] = $file;
+}
+closedir($handle); 
+?>
+]]>
+   </programlisting>
+  </example>
+  <para>
+   配列には順番が付けられます。異なったソート関数を用いて順番を変更することも可能です。
+   より詳細な情報については、<link linkend="ref.array">配列関数</link> を参照ください。
+   <function>count</function> 関数を使用することで、
+   配列の要素数を数えることが可能です。
+  </para>
+  <example>
+   <title>配列のソート</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+sort($files);
+print_r($files);
+?>
+]]>
+   </programlisting>
+  </example>
+  <para>
+   配列の値は何でも良いため、その値を他の配列とすることも可能です。
+   これにより、再帰的な配列や多次元の配列を作成することが可能です。
+  </para>
+  <example>
+   <title>再帰および多次元配列</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+$fruits = array ( "fruits"  => array ( "a" => "orange",
+                                       "b" => "banana",
+                                       "c" => "apple"
+                                     ),
+                  "numbers" => array ( 1,
+                                       2,
+                                       3,
+                                       4,
+                                       5,
+                                       6
+                                     ),
+                  "holes"   => array (      "first",
+                                       5 => "second",
+                                            "third"
+                                     )
+                );
+
+// 上の配列の内容を取得するための例
+echo $fruits["holes"][5];    // "second" を表示します
+echo $fruits["fruits"]["a"]; // "orange" を表示します
+unset($fruits["holes"][0]);  // "first"  を削除します
+
+// 新しい多次元配列を作成します
+$juices["apple"]["green"] = "good"; 
+?>
+]]>
+   </programlisting>
+  </example>
+  <para>
+   配列の割り当てにおいては、常に値がコピーされることに注意してください。
+   これは、<function>current</function> および類似の関数が使用する
+   内部配列ポインタの値がリセットされるということを意味します。
+   配列をリファレンスでコピーする場合には、
+   リファレンス演算子を使う必要があります。
+   <informalexample>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$arr1 = array(2, 3);
+$arr2 = $arr1;
+$arr2[] = 4; // $arr2 が変更されます。
+             // $arr1 は array(2,3) のままです。
+             
+$arr3 = &$arr1;
+$arr3[] = 4; // $arr1 と $arr3 は同じ内容になります。
+?>
+]]>
+    </programlisting>
+   </informalexample>
+  </para>
+ </sect2>
+</sect1>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"../../manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
