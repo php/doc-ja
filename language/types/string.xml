@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.1 $ -->
-<!-- EN-Revision: 1.2 Maintainer: takagi Status: ready -->
+<!-- $Revision: 1.2 $ -->
+<!-- EN-Revision: 1.7 Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa,shimooka -->
 <sect1 xml:id="language.types.string">
  <title>文字列</title>
@@ -25,26 +25,32 @@
   <title>構文</title>
 
   <para>
-   文字列リテラルは、3 つの異なる方法で指定することが可能です。
-
-   <itemizedlist>
-    <listitem>
-     <simpara>
-      <link linkend="language.types.string.syntax.single">引用符</link>
-     </simpara>
-    </listitem>
-    <listitem>
-     <simpara>
-      <link linkend="language.types.string.syntax.double">二重引用符</link>
-     </simpara>
-    </listitem>
-    <listitem>
-     <simpara>
-      <link linkend="language.types.string.syntax.heredoc">ヒアドキュメント構文</link>
-     </simpara>
-    </listitem>
-   </itemizedlist>
+   文字列リテラルは、4 つの異なる方法で指定することが可能です。
   </para>
+
+  <itemizedlist>
+   <listitem>
+    <simpara>
+     <link linkend="language.types.string.syntax.single">引用符</link>
+    </simpara>
+   </listitem>
+   <listitem>
+    <simpara>
+     <link linkend="language.types.string.syntax.double">二重引用符</link>
+    </simpara>
+   </listitem>
+   <listitem>
+    <simpara>
+     <link linkend="language.types.string.syntax.heredoc">ヒアドキュメント構文</link>
+    </simpara>
+   </listitem>
+   <listitem>
+    <simpara>
+     <link linkend="language.types.string.syntax.nowdoc">nowdoc 構文</link>
+     (PHP 5.3.0 以降)
+    </simpara>
+   </listitem>
+  </itemizedlist>
 
   <sect3 xml:id="language.types.string.syntax.single">
    <title>引用符</title>
@@ -61,23 +67,18 @@
     二重にする必要があります。この他の文字をエスケープする場合には、
     バックスラッシュも出力されることに注意してください! このため、
     通常はバックスラッシュ自体をエスケープする必要はありません。
+   </para>
 
-    <note>
-     <simpara>
-      PHP 3 では、この場合、<literal>E_NOTICE</literal> レベルの警告が出力されます。
-     </simpara>
-    </note>
+   <note>
+    <simpara>
+     他の二つの構文と異なり、
+     <link linkend="language.variables">変数</link>と特殊文字のエスケープシーケンスは、
+     引用符 (シングルクオート) で括られた文字列にある場合には展開<emphasis>されません</emphasis>。
+    </simpara>
+   </note>
 
-    <note>
-     <simpara>
-      他の二つの構文と異なり、
-      <link linkend="language.variables">変数</link>と特殊文字のエスケープシーケンスは、
-      引用符 (シングルクオート) で括られた文字列にある場合には展開<emphasis>されません</emphasis>。
-     </simpara>
-    </note>
-
-    <informalexample>
-     <programlisting role="php">
+   <informalexample>
+    <programlisting role="php">
 <![CDATA[
 <?php
 echo 'this is a simple string';
@@ -102,9 +103,8 @@ echo 'This will not expand: \n a newline';
 echo 'Variables do not $expand $either';
 ?>
 ]]>
-     </programlisting>
-    </informalexample>
-   </para>
+    </programlisting>
+   </informalexample>
 
   </sect3>
 
@@ -229,11 +229,13 @@ echo 'Variables do not $expand $either';
 
     <para>
      ヒアドキュメント構文を、クラスのメンバの初期化に用いることはできません。
-     他の文字列構文を利用してください。
+     <link linkend="language.types.string.syntax.nowdoc">nowdoc</link>
+     を使用しましょう。
+    </para>
 
-     <example>
-      <title>間違った例</title>
-      <programlisting role="php">
+    <example>
+     <title>間違った例</title>
+     <programlisting role="php">
 <![CDATA[
 <?php
 class foo {
@@ -243,9 +245,8 @@ EOT;
 }
 ?>
 ]]>
-      </programlisting>
-     </example>
-    </para>
+     </programlisting>
+    </example>
    </warning>
 
    <para>
@@ -254,10 +255,11 @@ EOT;
     しかし、この場合でも上記のリストでエスケープされたコードを使用することも可能です。
     変数は展開されますが、文字列の場合と同様に
     ヒアドキュメントの内部で複雑な変数を表わす場合には注意が必要です。
+   </para>
 
-    <example> 
-     <title>ヒアドキュメントで文字列を括る例</title>
-     <programlisting role="php">
+   <example> 
+    <title>ヒアドキュメントで文字列を括る例</title>
+    <programlisting role="php">
 <![CDATA[
 <?php
 $str = <<<EOD
@@ -289,13 +291,116 @@ This should print a capital 'A': \x41
 EOT;
 ?>
 ]]>
-     </programlisting>
-    </example>
-   </para>
+    </programlisting>
+   </example>
+   &example.outputs;
+   <screen>
+<![CDATA[
+My name is "MyName". I am printing some foo.
+Now I am printing some Bar2.
+This should print a capital 'A': \x41]]></screen>
 
    <note>
     <para>
      ヒアドキュメントは PHP 4 で追加されました。
+    </para>
+   </note>
+
+  </sect3>
+  
+  <sect3 xml:id="language.types.string.syntax.nowdoc">
+   <title>Nowdoc</title>
+   
+   <para>
+    Nowdoc はヒアドキュメントと似ていますが、
+    ヒアドキュメントがダブルクォートで囲んだ文字列として扱われるのに対して、
+    Nowdoc はシングルクォートで囲んだ文字列として扱われます。
+    Nowdoc の使用方法はヒアドキュメントとほぼ同じですが、
+    その中身について <emphasis>パース処理を行いません</emphasis>。
+    PHP のコードや大量のテキストを埋め込む際に、
+    エスケープが不要になるので便利です。この機能は、SGML 
+    <literal>&amp;lt;![CDATA[ ]]&amp;gt;</literal>
+    (ブロック内のテキストをパースしないことを宣言する)
+    と同じようなものです。
+   </para>
+   
+   <para>
+    Nowdoc の書き方は、ヒアドキュメントと同じように
+    <literal>&lt;&lt;&lt;</literal> を使用します。
+    しかし、その後に続く識別子をシングルクォートで囲んで
+    <literal>&lt;&lt;&lt;'EOT'</literal> のようにします。
+    ヒアドキュメントの識別子に関する決まりがすべて Nowdoc
+    の識別子にも当てはまります。特に終了識別子の書き方に関する決まりに注意しましょう。
+   </para>
+   
+   <example>
+    <title>Nowdoc による文字列のクォートの例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$str = <<<'EOD'
+Example of string
+spanning multiple lines
+using nowdoc syntax.
+EOD;
+
+/* 変数を使った、より複雑な例 */
+class foo
+{
+    var $foo;
+    var $bar;
+
+    function foo()
+    {
+        $this->foo = 'Foo';
+        $this->bar = array('Bar1', 'Bar2', 'Bar3');
+    }
+}
+
+$foo = new foo();
+$name = 'MyName';
+
+echo <<<'EOT'
+My name is "$name". I am printing some $foo->foo.
+Now, I am printing some {$foo->bar[1]}.
+This should not print a capital 'A': \x41
+EOT;
+?>
+]]>
+    </programlisting>
+   </example>
+   &example.outputs;
+   <screen>
+<![CDATA[
+My name is "$name". I am printing some $foo->foo.
+Now, I am printing some {$foo->bar[1]}.
+This should not print a capital 'A': \x41]]></screen>
+   
+   <note>
+    <para>
+     ヒアドキュメントと異なり、Nowdoc は任意の静的データコンテキストで使用できます。
+     典型的な使用例は、クラスのメンバーや定数の初期化です。
+    </para>
+    
+    <example>
+     <title>静的データの例</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+class foo {
+    public $bar = <<<'EOT'
+bar
+EOT;
+}
+?>
+]]>
+     </programlisting>
+    </example>
+   </note>
+
+   <note>
+    <para>
+     Nowdoc のサポートは PHP 5.3.0 で追加されました。
     </para>
    </note>
   </sect3>
@@ -413,19 +518,19 @@ echo "This square is $square->{width}00 centimeters broad.";
      この構文が「複雑(complex)な構文」と呼ばれているのは、
      構文が複雑であるからではなく、
      この方法では複雑な式を含めることができるからです。
-   </simpara>
+    </simpara>
 
-   <simpara>
-    事実、この構文により、文字列の中に名前空間内のあらゆる値を含めることが可能です。
-    文字列の外側に置く場合と同様に式を書き、これを
-    { と } の間に含めてください。'{' はエスケープすることができないため、
-    この構文は $ が { のすぐ後に続く場合にのみ認識されます
-    (リテラル "{$" を指定するには、"{\$" を使用してください)。
-    以下のいくつかの例を見ると理解しやすくなるでしょう。
-   </simpara>
+    <simpara>
+     事実、この構文により、文字列の中に名前空間内のあらゆる値を含めることが可能です。
+     文字列の外側に置く場合と同様に式を書き、これを
+     { と } の間に含めてください。'{' はエスケープすることができないため、
+     この構文は $ が { のすぐ後に続く場合にのみ認識されます
+     (リテラル "{$" を指定するには、"{\$" を使用してください)。
+     以下のいくつかの例を見ると理解しやすくなるでしょう。
+    </simpara>
 
-   <informalexample>
-    <programlisting role="php">
+    <informalexample>
+     <programlisting role="php">
 <![CDATA[
 <?php
 // すべてのエラーを表示します
@@ -492,6 +597,7 @@ echo "I'd like to have another {${ strrev('reeb') }}, hips";
       変数のパースを用いるのではなく、連結演算子 (.) を使用しましょう。
      </para>
     </note>
+
    </sect4>
   </sect3>
   
@@ -515,11 +621,9 @@ echo "I'd like to have another {${ strrev('reeb') }}, hips";
     </simpara>
    </note>
 
-   <para>
-
-    <example>
-     <title>文字列の例</title>
-     <programlisting role="php">
+   <example>
+    <title>文字列の例</title>
+    <programlisting role="php">
 <![CDATA[
 <?php
 // 文字列の最初の文字を取得します
@@ -542,9 +646,8 @@ $third = $str{2};
 
 ?>
 ]]>
-     </programlisting>
-    </example>
-   </para>
+    </programlisting>
+   </example>
 
    <note>
     <para>
@@ -552,8 +655,8 @@ $third = $str{2};
      でアクセスすると、何もメッセージを出さずに単に &null; を返します。
     </para>
    </note>
-  </sect3>
 
+  </sect3>
  </sect2><!-- end syntax -->
 
  <sect2 xml:id="language.types.string.useful-funcs">
@@ -718,17 +821,17 @@ $foo = "10.0 pigs " + 1.0;      // $foo は float です (11)
   <para>
    本節の例を試したい場合、その例をカットアンドペーストしてから
    動作を確認するために次の行を挿入してください。
+  </para>
 
-   <informalexample>
-    <programlisting role="php">
+  <informalexample>
+   <programlisting role="php">
 <![CDATA[
 <?php
 echo "\$foo==$foo; type is " . gettype ($foo) . "<br />\n";
 ?>
 ]]>
-    </programlisting>
-   </informalexample>
-  </para>
+   </programlisting>
+  </informalexample>
 
   <para>
    (C 言語で行われるように) 数値に変換することで
