@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.13 $ -->
-<!-- EN-Revision: 1.21 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.14 $ -->
+<!-- EN-Revision: 1.25 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: shimooka -->
 
  <sect1 xml:id="language.oop5.overloading" xmlns="http://docbook.org/ns/docbook">
@@ -13,9 +13,6 @@
    アクセスしようとしている <modifier>public</modifier>
    メンバーもしくはメソッドを含んでいない場合でも、
    これらのメソッドは実行されます。
-   オーバーロードしている全てのメソッドは、
-   <link linkend="language.oop5.static">static</link>
-   として定義されていてはいけません。
    オーバーロードしている全てのメソッドは
    <link linkend="language.oop5.visibility">public</link>
    として定義されていなければなりません。
@@ -25,6 +22,11 @@
    <function>isset</function> 関数や <function>unset</function>
    関数を個々にオーバーロードする事も可能です。
    メソッド __isset は、<function>empty</function> でもコールされます。
+  </para>
+  <para>
+   PHP 5.3.0 では、
+   <link linkend="language.oop5.static">static</link>
+   メソッドのオーバーロードも __callStatic でできるようになりました。
   </para>
 
   <sect2 xml:id="language.oop5.overloading.members">
@@ -178,36 +180,43 @@ object(Setter)#1 (2) {
     <methodparam><type>string</type><parameter>name</parameter></methodparam>
     <methodparam><type>array</type><parameter>arguments</parameter></methodparam>
    </methodsynopsis>
+   <methodsynopsis>
+    <type>mixed</type><methodname>__callStatic</methodname>
+    <methodparam><type>string</type><parameter>name</parameter></methodparam>
+    <methodparam><type>array</type><parameter>arguments</parameter></methodparam>
+   </methodsynopsis>
 
    <para>
-    特別なメソッド __call() を使用すると、存在しないメソッドの呼び出しを捕捉することができます。
-	つまり、__call() を使用すると、実際にコールされたメソッドの名前に応じた
-	ユーザ定義の処理を実装することができるということです。
+    特別なメソッド __call() および __callStatic() を使用すると、
+    存在しないメソッドの呼び出しを捕捉することができます。
+    これらのメソッドを使用すると、実際にコールされたメソッドの名前に応じた
+    ユーザ定義の処理を実装することができます。
     これは、たとえばプロキシを実装する場合などに便利です。
-	関数に渡された引数はパラメータ
+    関数に渡された引数はパラメータ
     <varname>$arguments</varname> で受け取ることができ、
-    __call() メソッドの返り値が呼び出し元のメソッドの返り値となります。
+    これらのメソッドの返り値が呼び出し元のメソッドの返り値となります。
    </para>
 
+
    <example>
-    <title>__call を使ったオーバーロードの例</title>
+    <title>__call による、インスタンス化されたメソッドのオーバーロードの例</title>
     <programlisting role="php">
   <![CDATA[
 <?php
 class Caller
 {
-    private $x = array(1, 2, 3);
+    private $x = array(10, 20);
 
     public function __call($m, $a)
     {
-        print "Method $m called:\n";
+        print "Instantiated method '$m' called:\n";
         var_dump($a);
         return $this->x;
     }
 }
 
 $foo = new Caller();
-$a = $foo->test(1, "2", 3.4, true);
+$a = $foo->test('a', 'b');
 var_dump($a);
 ?>
 ]]>
@@ -216,24 +225,61 @@ var_dump($a);
     <screen role="php">
 <![CDATA[
 
-Method test called:
-array(4) {
-    [0]=>
-    int(1)
-    [1]=>
-    string(1) "2"
-    [2]=>
-    float(3.4)
-    [3]=>
-    bool(true)
+Instantiated method 'test' called:
+array(2) {
+  [0]=>
+  string(1) "a"
+  [1]=>
+  string(1) "b"
 }
-array(3) {
-    [0]=>
-    int(1)
-    [1]=>
-    int(2)
-    [2]=>
-    int(3)
+array(2) {
+  [0]=>
+  int(10)
+  [1]=>
+  int(20)
+}
+]]>
+    </screen>
+   </example>
+
+   <example>
+    <title>__call による、インスタンス化されたメソッドのオーバーロードの例</title>
+    <programlisting role="php">
+  <![CDATA[
+<?php
+class Caller
+{
+    private static $x = array(10, 20);
+
+    public static function __callStatic($m, $a)
+    {
+        print "Static method '$m' called:\n";
+        var_dump($a);
+        return self::$x;
+    }
+}
+
+$a = Caller::test('a', 'b');
+var_dump($a);
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen role="php">
+<![CDATA[
+
+Static method 'test' called:
+array(2) {
+  [0]=>
+  string(1) "a"
+  [1]=>
+  string(1) "b"
+}
+array(2) {
+  [0]=>
+  int(10)
+  [1]=>
+  int(20)
 }
 ]]>
     </screen>
