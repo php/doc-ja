@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.4 $ -->
-<!-- EN-Revision: 1.6 Maintainer: takagi Status: ready -->
+<!-- $Revision: 1.5 $ -->
+<!-- EN-Revision: 1.7 Maintainer: takagi Status: ready -->
  <sect1 xml:id="internals2.structure.modstruct" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
   <title>zend_module 構造体</title>
   <para>
@@ -465,7 +465,99 @@ struct _zend_module_entry {
     </tbody>
    </tgroup>
   </table>
-  
+
+  <sect2 xml:id="internals2.structure.modstruct.filling-it-in">
+   <title>構造体の設定の実例</title>
+
+   <para>
+    これだけ多くのフィールドがあると、
+    どれが何のためのものなのかがなかなかわかりにくいものです。
+    ここで、実際のサンプル拡張モジュールにおける
+    <literal>zend_module</literal> の定義を見てみましょう。
+    この拡張モジュールは、カウンタ機能を提供するものです。
+    カウンタの現在値を取得する関数がコールされるたびに、カウンタの値がひとつ増えます。
+    カウンタをリセットする方法については INI スイッチで制御します。
+    なんだか実際にはあまり役に立たなさそうですが、
+    拡張モジュールの作成時に使用するテクニックをたくさん紹介するためにこうしています。
+   </para>
+   
+   <example xml:id="internals2.structure.modstruct.filling-it-in.counter-mod-ex">
+    <title>Counter 拡張モジュールの定義</title>
+    <programlisting role="c">
+<![CDATA[
+/* {{{ counter_module_entry
+ */
+zend_module_entry counter_module_entry = {
+    STANDARD_MODULE_HEADER,
+    "counter",
+    counter_functions,
+    PHP_MINIT(counter),
+    PHP_MSHUTDOWN(counter),
+    PHP_RINIT(counter),
+    PHP_RSHUTDOWN(counter),
+    PHP_MINFO(counter),
+    NO_VERSION_YET,
+    PHP_MODULE_GLOBALS(counter),
+    PHP_GINIT(counter),
+    PHP_GSHUTDOWN(counter),
+    NULL,
+    STANDARD_MODULE_PROPERTIES_EX
+};
+/* }}} */
+]]>
+    </programlisting>
+   </example>
+   
+   <itemizedlist>
+    <listitem>
+     <simpara>
+      このモジュールは他の何にも依存していないので、
+      <constant>STANDARD_MODULE_HEADER</constant> を使用します。
+     </simpara>
+    </listitem>
+    
+    <listitem>
+     <simpara>
+      &quot;counter&quot; がこの拡張モジュールの名前で、
+      このモジュールが Zend に渡すさまざまなコールバック関数の名前がこれをもとに決まります。
+     </simpara>
+    </listitem>
+    
+    <listitem>
+     <simpara>
+      モジュール定義を含むファイルの前のほうには
+      <type>zend_function_entry *</type> 型の変数
+      <varname>counter_functions</varname> が定義されているはずです。
+      この部分では、そのモジュールがユーザに公開する関数の一覧が見られます。
+     </simpara>
+    </listitem>
+    
+    <listitem>
+     <simpara>
+      <constant>NO_VERSION_YET</constant> は、そのモジュールにバージョンがないことを
+      Zend に教えてあげるうまいやりかたです。実際に使用するモジュールの場合は、
+      この部分には <literal>&quot;1.0&quot;</literal> などを入れることになるでしょう。
+     </simpara>
+    </listitem>
+    
+    <listitem>
+     <simpara>
+      このモジュールには後処理後の関数がないので、&null; を指定しています。
+     </simpara>
+    </listitem>
+    
+    <listitem>
+     <simpara>
+      このモジュールはグローバル変数を <emphasis>使う</emphasis> ので、
+      構造体の最後には
+      <constant>STANDARD_MODULE_PROPERTIES_EX</constant> を使用しています。
+     </simpara>
+    </listitem>
+   
+   </itemizedlist>
+
+  </sect2>
+
  </sect1>
 
 <!-- Keep this comment at the end of the file
