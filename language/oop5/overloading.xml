@@ -1,33 +1,92 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.14 $ -->
-<!-- EN-Revision: 1.25 Maintainer: hirokawa Status: ready -->
-<!-- CREDITS: shimooka -->
+<!-- $Revision: 1.15 $ -->
+<!-- EN-Revision: 1.27 Maintainer: takagi Status: ready -->
+<!-- CREDITS: hirokawa,shimooka -->
 
  <sect1 xml:id="language.oop5.overloading" xmlns="http://docbook.org/ns/docbook">
   <title>オーバーロード</title>
 
   <para>
-   メソッド呼び出しとメンバーへのアクセスのいずれについても、
-   __call, __get そして __set メソッドを通してオーバーロードすることができます。
-   オブジェクトや継承されたオブジェクトが
-   アクセスしようとしている <modifier>public</modifier>
-   メンバーもしくはメソッドを含んでいない場合でも、
-   これらのメソッドは実行されます。
-   オーバーロードしている全てのメソッドは
-   <link linkend="language.oop5.visibility">public</link>
-   として定義されていなければなりません。
+   PHP におけるオーバーロード機能は、
+   メンバーやメソッドを動的に
+   <quote>作成する</quote> ための手法です。
+   これらの動的エンティティは、マジックメソッドを用いて処理されます。
+   マジックメソッドは、クラス内でさまざまなアクションに対して用意することができます。
   </para>
+
   <para>
-   PHP 5.1.0 以降、__isset や __unset メソッドを通じて
-   <function>isset</function> 関数や <function>unset</function>
-   関数を個々にオーバーロードする事も可能です。
-   メソッド __isset は、<function>empty</function> でもコールされます。
+   オーバーロードメソッドが起動するのは、
+   宣言されていないメンバーやメソッドを操作しようとしたときです。
+   また、現在のスコープからは
+   <link linkend="language.oop5.visibility">アクセス不能な</link>
+   メンバーやメソッドを操作しようとしたときにも起動します。
+   このセクションでは、これらの (宣言されていない、
+   あるいは現在のスコープからはアクセス不能な) メンバーやメソッドのことを
+   <quote>アクセス不能メンバー</quote> および
+   <quote>アクセス不能メソッド</quote>
+   と表記することにします。
   </para>
+
   <para>
-   PHP 5.3.0 では、
-   <link linkend="language.oop5.static">static</link>
-   メソッドのオーバーロードも __callStatic でできるようになりました。
+<!--
+Test scripts indicate otherwise.
+Will communicate with internals to see what's up.
+http://bugs.php.net/bug.php?id=43924
+-->
+   オーバーロードメソッドは、すべて <literal>public</literal>
+   で定義しなければなりません。
   </para>
+
+  <note>
+   <para>
+    これらのマジックメソッドの引数は、
+    <link linkend="functions.arguments.by-reference">参照渡し</link>
+    とすることはできません。
+   </para>
+  </note>
+
+  <note>
+   <para>
+    PHP における <quote>オーバーロード</quote>
+    の解釈は、他の多くのオブジェクト指向言語とは異なります。
+    一般的に「オーバーロード」とは、
+    「名前は同じだけれども引数の数や型が異なるメソッドを複数用意できる」
+    という機能のことを指します。
+   </para>
+  </note>
+
+
+  <sect2 xml:id="language.oop5.overloading.changelog">
+   &reftitle.changelog;
+   <para>
+    <informaltable>
+     <tgroup cols="2">
+      <thead>
+       <row>
+        <entry>&Version;</entry>
+        <entry>&Description;</entry>
+       </row>
+      </thead>
+      <tbody>
+       <row>
+        <entry>5.1.0</entry>
+        <entry>
+         <literal>__isset()</literal> と <literal>__unset()</literal>
+         が追加されました。
+        </entry>
+       </row>
+       <row>
+        <entry>5.3.0</entry>
+        <entry>
+         <literal>__callStatic()</literal> が追加されました。
+        </entry>
+       </row>
+      </tbody>
+     </tgroup>
+    </informaltable>
+   </para>
+  </sect2>
+
 
   <sect2 xml:id="language.oop5.overloading.members">
    <title>メンバーのオーバーロード</title>
@@ -51,121 +110,134 @@
    </methodsynopsis>
 
    <para>
-    独自のクラスで定義されているカスタムコードを実行するために、
-    特別な名前を持つメソッドによってクラスメンバーをオーバーロード
-    することができます。
-    使用される <varname>$name</varname> パラメータは、
-    設定あるいは取得される変数名です。
-    __set() メソッドの <varname>$value</varname> パラメータにより
-    オブジェクトが <varname>$name</varname> に設定する値を指定します。
+    <literal>__set()</literal> は、
+    アクセス不能メンバーへデータを書き込む際に実行されます。
    </para>
 
-   <note>
-    <para>
-     <literal>__set()</literal> メソッドでは、引数を参照渡しで受け取ることはできません。
-    </para>
-   </note>
+   <para>
+    <literal>__get()</literal> は、
+    アクセス不能メンバーからデータを読み込む際に使用します。
+   </para>
+
+   <para>
+    <literal>__isset()</literal> は、
+    <function>isset</function> あるいは <function>empty</function>
+    をアクセス不能メンバーに対して実行したときに起動します。
+   </para>
+
+   <para>
+    <literal>__unset()</literal> は、
+    <function>unset</function>
+    をアクセス不能メンバーに対して実行したときに起動します。
+   </para>
+
+   <para>
+    引数 <varname>$name</varname> は、
+    操作しようとしたメンバーの名前です。
+    <literal>__set()</literal> メソッドの引数
+    <varname>$value</varname> は、
+    <varname>$name</varname> に設定しようとした値となります。
+   </para>
+
+   <para>
+    メンバーのオーバーロードはオブジェクトのコンテキストでのみ動作します。
+    これらのマジックメソッドは、静的コンテキストでは起動しません。
+    したがって、これらのメソッドは
+    <link linkend="language.oop5.static">static</link>
+    宣言することはできません。
+   </para>
 
    <example>
     <title>__get, __set, __isset, __unset を使ったオーバーロードの例</title>
     <programlisting role="php">
 <![CDATA[
 <?php
-class Setter
-{
-    public $n;
-    private $x = array("a" => 1, "b" => 2, "c" => 3);
+class MemberTest {
+    /**  オーバーロードされるデータの場所  */
+    private $data = array();
 
-    public function __get($nm)
-    {
-        echo "Getting [$nm]\n";
+    /**  宣言されているメンバーにはオーバーロードは起動しません */
+    public $declared = 1;
 
-        if (isset($this->x[$nm])) {
-            $r = $this->x[$nm];
-            print "Returning: $r\n";
-            return $r;
-        } else {
-            echo "Nothing!\n";
+    /**  クラス内からアクセスした場合にはオーバーロードは起動しません  */
+    private $hidden = 2;
+
+    public function __set($name, $value) {
+        echo "Setting '$name' to '$value'\n";
+        $this->data[$name] = $value;
+    }
+
+    public function __get($name) {
+        echo "Getting '$name'\n";
+        if (array_key_exists($name, $this->data)) {
+            return $this->data[$name];
         }
+
+        $trace = debug_backtrace();
+        trigger_error(
+            'Undefined property: ' . $name .
+            ' in ' . $trace[0]['file'] .
+            ' on line ' . $trace[0]['line'],
+            E_USER_NOTICE);
+        $tmp = null;
+        return $tmp;
     }
 
-    public function __set($nm, $val)
-    {
-        echo "Setting [$nm] to $val\n";
-
-        if (isset($this->x[$nm])) {
-            $this->x[$nm] = $val;
-            echo "OK!\n";
-        } else {
-            echo "Not OK!\n";
-        }
+    /**  PHP 5.1.0 以降 */
+    public function __isset($name) {
+        echo "Is '$name' set?\n";
+        return isset($this->data[$name]);
     }
 
-    public function __isset($nm)
-    {
-        echo "Checking if $nm is set\n";
-
-        return isset($this->x[$nm]);
+    /**  PHP 5.1.0 以降 */
+    public function __unset($name) {
+        echo "Unsetting '$name'\n";
+        unset($this->data[$name]);
     }
 
-    public function __unset($nm)
-    {
-        echo "Unsetting $nm\n";
-
-        unset($this->x[$nm]);
+    /**  マジックメソッドではありません。単なる例として示しています  */
+    public function getHidden() {
+        echo "'hidden' visible here so __get() not used\n";
+        return $this->hidden;
     }
 }
 
-$foo = new Setter();
-$foo->n = 1;
-$foo->a = 100;
-$foo->a++;
-$foo->z++;
 
-var_dump(isset($foo->a)); //true
-unset($foo->a);
-var_dump(isset($foo->a)); //false
+echo "<pre>\n";
 
-// this doesn't pass through the __isset() method
-// because 'n' is a public property
-var_dump(isset($foo->n));
+$obj = new MemberTest;
 
-var_dump($foo);
+$obj->a = 1;
+echo $obj->a . "\n";
+
+var_dump(isset($obj->a));
+unset($obj->a);
+var_dump(isset($obj->a));
+
+echo $obj->declared . "\n";
+echo $obj->getHidden() . "\n";
+echo $obj->hidden . "\n";
 ?>
 ]]>
     </programlisting>
     &example.outputs;
     <screen role="php">
 <![CDATA[
-Setting [a] to 100
-OK!
-Getting [a]
-Returning: 100
-Setting [a] to 101
-OK!
-Getting [z]
-Nothing!
-Setting [z] to 1
-Not OK!
-
-Checking if a is set
+Setting 'a' to '1'
+Getting 'a'
+1
+Is 'a' set?
 bool(true)
-Unsetting a
-Checking if a is set
+Unsetting 'a'
+Is 'a' set?
 bool(false)
-bool(true)
+1
+'hidden' visible here so __get() not used
+2
+Getting 'hidden'
 
-object(Setter)#1 (2) {
-  ["n"]=>
-  int(1)
-  ["x":"Setter":private]=>
-  array(2) {
-    ["b"]=>
-    int(2)
-    ["c"]=>
-    int(3)
-  }
-}
+
+Notice:  Undefined property: hidden in <file> on line 64 in <file> on line 28
 ]]>
     </screen>
 
@@ -187,100 +259,53 @@ object(Setter)#1 (2) {
    </methodsynopsis>
 
    <para>
-    特別なメソッド __call() および __callStatic() を使用すると、
-    存在しないメソッドの呼び出しを捕捉することができます。
-    これらのメソッドを使用すると、実際にコールされたメソッドの名前に応じた
-    ユーザ定義の処理を実装することができます。
-    これは、たとえばプロキシを実装する場合などに便利です。
-    関数に渡された引数はパラメータ
-    <varname>$arguments</varname> で受け取ることができ、
-    これらのメソッドの返り値が呼び出し元のメソッドの返り値となります。
+    <literal>__call()</literal> は、
+    アクセス不能メソッドをオブジェクトのコンテキストで実行したときに起動します。
    </para>
 
+   <para>
+    <literal>__callStatic()</literal> は、
+    アクセス不能メソッドを静的コンテキストで実行したときに起動します。
+   </para>
+
+   <para>
+    引数 <varname>$name</varname> は、
+    コールしようとしたメソッドの名前です。
+    引数 <varname>$arguments</varname>
+    は配列で、メソッド <varname>$name</varname>
+    に渡そうとしたパラメータが格納されます。
+   </para>
 
    <example>
-    <title>__call による、インスタンス化されたメソッドのオーバーロードの例</title>
+    <title>__call および ___callStatic による、インスタンス化されたメソッドのオーバーロードの例</title>
     <programlisting role="php">
   <![CDATA[
 <?php
-class Caller
-{
-    private $x = array(10, 20);
+class MethodTest {
+    public function __call($name, $arguments) {
+        echo "Calling object method '$name' "
+             . implode(', ', $arguments). "\n";
+    }
 
-    public function __call($m, $a)
-    {
-        print "Instantiated method '$m' called:\n";
-        var_dump($a);
-        return $this->x;
+    /**  PHP 5.3.0 以降 */
+    public static function __callStatic($name, $arguments) {
+        echo "Calling static method '$name' "
+             . implode(', ', $arguments). "\n";
     }
 }
 
-$foo = new Caller();
-$a = $foo->test('a', 'b');
-var_dump($a);
+$obj = new MethodTest;
+$obj->test('in object context');
+
+MethodTest::test('in static context');  // PHP 5.3.0 以降
 ?>
 ]]>
     </programlisting>
     &example.outputs;
     <screen role="php">
 <![CDATA[
-
-Instantiated method 'test' called:
-array(2) {
-  [0]=>
-  string(1) "a"
-  [1]=>
-  string(1) "b"
-}
-array(2) {
-  [0]=>
-  int(10)
-  [1]=>
-  int(20)
-}
-]]>
-    </screen>
-   </example>
-
-   <example>
-    <title>__call による、インスタンス化されたメソッドのオーバーロードの例</title>
-    <programlisting role="php">
-  <![CDATA[
-<?php
-class Caller
-{
-    private static $x = array(10, 20);
-
-    public static function __callStatic($m, $a)
-    {
-        print "Static method '$m' called:\n";
-        var_dump($a);
-        return self::$x;
-    }
-}
-
-$a = Caller::test('a', 'b');
-var_dump($a);
-?>
-]]>
-    </programlisting>
-    &example.outputs;
-    <screen role="php">
-<![CDATA[
-
-Static method 'test' called:
-array(2) {
-  [0]=>
-  string(1) "a"
-  [1]=>
-  string(1) "b"
-}
-array(2) {
-  [0]=>
-  int(10)
-  [1]=>
-  int(20)
-}
+Calling object method 'test' in object context
+Calling static method 'test' in static context
 ]]>
     </screen>
    </example>
