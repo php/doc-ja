@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.28 $ -->
-<!-- EN-Revision: 1.77 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.29 $ -->
+<!-- EN-Revision: 1.79 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi -->
  <appendix xml:id="wrappers" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
   <title>サポートされるプロトコル/ラッパー</title>
@@ -101,61 +101,6 @@
    </para>
   </section>
 
- <section xml:id="wrappers.socket">
-  <title>ソケット</title>
-  <para>
-   ここでは、ソケット越しに動作するラッパー
-   すなわち <literal>tcp</literal>、<literal>http</literal>
-   あるいは <literal>ftp</literal> でサポートされるオプションを扱います。
-  </para>
-  <para>
-   PHP 5.1.0 以降、ひとつのオプション <literal>bindto</literal> のみが
-   サポートされます。これは PHP がネットワークにアクセスする際の IP アドレス
-   （IPv4 あるいは IPv6 のどちらか）やポート番号を指定する際に使用されます。
-   その書式は <literal>ip:port</literal>（IP やポート番号に
-   <literal>0</literal> を指定すると、それをシステムに自動的に設定させる
-   ことができます）です。
-  </para>
-  <note>
-   <para>
-    FTP の通常の操作では 2 つのソケット接続を使用するので、
-    <literal>bindto</literal> オプションでポート番号を指定することができません。
-    そのため、FTP ラッパーでサポートされる唯一の書式は
-    <literal>ip:0</literal> となります。
-   </para>
-  </note>
-  <example>
-   <title>bindto オプションの使用例</title>
-   <programlisting role="php">
-<![CDATA[
-<?php
-// IP アドレス '192.168.0.100' でインターネットに接続する
-$opts = array('socket' =>
-            array('bindto' => '192.168.0.100:0'));
-
-
-// IP アドレス '192.168.0.100' とポート番号 '7000' でインターネットに接続する
-$opts = array('socket' =>
-            array('bindto' => '192.168.0.100:7000'));
-
-
-// ポート番号 '7000' でインターネットに接続する
-$opts = array('socket' =>
-            array('bindto' => '0:7000'));
-
-
-// コンテキストを作成し…
-$context = stream_context_create($opts);
-
-// …そしてデータを取得するためにそれを使用する
-echo file_get_contents('http://www.example.com', false, $context);
-
-?>
-]]>
-   </programlisting>
-  </example>
- </section>
-
   <section xml:id="wrappers.http">
    <title>HTTP と HTTPS</title>
    <simpara>PHP 4、PHP 5、PHP 6。<filename>https://</filename> は PHP 4.3.0以降。</simpara>
@@ -209,35 +154,6 @@ foreach($meta_data['wrapper_data'] as $response) {
 ]]>
    </programlisting>
   </informalexample>
-  <example>
-   <title>ページの取得および POST データの送信</title>
-   <programlisting role="php">
-<![CDATA[
-<?php
-
-$postdata = http_build_query(
-    array(
-        'var1' => 'some content',
-        'var2' => 'doh'
-    )
-);
-
-$opts = array('http' =>
-    array(
-        'method'  => 'POST',
-        'header'  => 'Content-type: application/x-www-form-urlencoded',
-        'content' => $postdata
-    )
-);
-
-$context  = stream_context_create($opts);
-
-$result = file_get_contents('http://example.com/submit.php', false, $context);
-
-?>
-]]>
-   </programlisting>
-  </example>
   <simpara>
     ストリームにより、リソースの <emphasis>body</emphasis> にアクセスすることが
     できます。ヘッダは、<varname>$http_response_header</varname> 変数に保存されます。
@@ -308,114 +224,6 @@ $result = file_get_contents('http://example.com/submit.php', false, $context);
      </tgroup>
     </table>
    </para>
-   <para>
-    <table>
-     <title>コンテキストのオプション</title>
-     <tgroup cols="3">
-      <thead>
-       <row>
-        <entry>名前</entry>
-        <entry>使用法</entry>
-        <entry>デフォルト</entry>
-       </row>
-      </thead>
-      <tbody>
-       <row>
-        <entry><literal>method</literal></entry>
-        <entry>
-         リモートサーバでサポートされる <constant>GET</constant>、
-         <constant>POST</constant> あるいはその他の HTTP メソッド。
-        </entry>
-        <entry><constant>GET</constant></entry>
-       </row>
-       <row>
-        <entry><literal>header</literal></entry>
-        <entry>リクエストに付加されるヘッダ。ここで指定した値が
-         （<literal>User-agent:</literal>、<literal>Host:</literal>、
-         および <literal>Authentication:</literal> などの）他の値を
-         上書きすることもあります。
-        </entry>
-        <entry></entry>
-       </row>
-       <row>
-        <entry><literal>user_agent</literal></entry>
-        <entry>User-Agent: ヘッダとして送信する値。上で説明した
-         <literal>header</literal> オプションで user-agent が
-         定義されて<emphasis>いない</emphasis>場合のみ使用されます。
-       </entry>
-        <entry>
-         &php.ini; での <literal>user_agent</literal> の設定
-        </entry>
-       </row>
-       <row>
-        <entry><literal>content</literal></entry>
-        <entry>
-         ヘッダの後に送信する追加データ。通常、POST または PUT
-         リクエストの際に使用されます。
-        </entry>
-        <entry></entry>
-       </row>
-       <row>
-        <entry><literal>proxy</literal></entry>
-        <entry>
-         プロキシサーバを示す URI（例: 
-         <literal>tcp://proxy.example.com:5100</literal>）。
-         （HTTP プロキシを使用した）HTTPS のプロキシ処理は、
-         PHP 5.1.0 以降でのみ動作します。
-        </entry>
-        <entry></entry>
-       </row>
-       <row>
-        <entry><literal>request_fulluri</literal></entry>
-        <entry>
-         &true; を指定すると、リクエストを生成する際に完全な URI
-         （<literal>GET http://www.example.com/path/to/file.html HTTP/1.0</literal>）
-         が用いられます。これは標準のリクエストフォーマットではありませんが、
-         このようなフォーマットを要求するプロキシサーバも存在します。
-        </entry>
-        <entry>&false;</entry>
-       </row>
-      <row>
-       <entry><literal>max_redirects</literal></entry>
-       <entry>
-        リダイレクトをたどる最大数。値が <literal>1</literal> 以下の場合は
-        リダイレクトをたどらないことを意味します。
-        PHP 5.1.0 で追加されました。
-       </entry>
-       <entry>20</entry>
-      </row>
-      <row>
-       <entry><literal>protocol_version</literal></entry>
-       <entry>
-        HTTP プロトコルのバージョン。PHP 5.1.0 で追加されました。
-       </entry>
-       <entry>1.0</entry>
-      </row>
-      <row>
-       <entry><literal>timeout</literal></entry>
-       <entry>
-        読み込みタイムアウト秒数を <type>float</type> (例
-        <literal>10.5</literal>) で指定します。PHP 5.2.1 で追加されました。
-       </entry>
-       <entry><link linkend="ini.default-socket-timeout">default_socket_timeout</link></entry>
-      </row>
-      </tbody>
-     </tgroup>
-    </table>
-   </para>
-
-  <note>
-   <title>基盤となるソケットストリームのコンテキストオプション</title>
-   <simpara>
-    これ以外のコンテキストオプションが
-    <link linkend="transports.inet">基盤となるトランスポート</link>
-    でサポートされています。
-    <literal>http://</literal> ストリームの場合は、<literal>tcp://</literal>
-    のコンテキストオプションを参照ください。
-    <literal>https://</literal> ストリームの場合は、<literal>ssl://</literal>
-    のコンテキストオプションを参照ください。
-   </simpara>
-  </note>
 
   <para>
    バージョン 5 より前では、HTTP リクエストで独自のヘッダを送信することができます。
@@ -569,59 +377,6 @@ X-MyCustomHeader: Foo
      </tgroup>
     </table>
    </para>
-   <para>
-    <table>
-     <title>コンテキストオプション（PHP 5.0.0 以降）</title>
-     <tgroup cols="3">
-      <thead>
-      <row>
-        <entry>名前</entry>
-        <entry>使用法</entry>
-        <entry>デフォルト</entry>
-       </row>
-      </thead>
-      <tbody>
-       <row>
-        <entry><literal>overwrite</literal></entry>
-        <entry>
-         リモートサーバ上の既存のファイルに対する上書きを許可する。
-         書き込みモード（アップロード）時のみ有効。
-        </entry>
-        <entry>&false;（無効）</entry>
-       </row>
-       <row>
-        <entry><literal>resume_pos</literal></entry>
-        <entry>
-         転送を開始するファイル内の位置。
-         読み込みモード（ダウンロード）時のみ有効。
-        </entry>
-        <entry>0（ファイルの先頭）</entry>
-       </row>
-      <row>
-        <entry><literal>proxy</literal>（PHP 5.1.0 以降）</entry>
-        <entry>
-         FTP リクエストを、http プロキシサーバ経由で行う。
-         ファイルの読み込み操作にのみ適用される。
-         例: <literal>tcp://squid.example.com:8000</literal>
-        </entry>
-       <entry/>
-       </row>
-      </tbody>
-     </tgroup>
-    </table>
-   </para>
-   <note>
-    <title>基盤となるソケットストリームのコンテキストオプション</title>
-    <simpara>
-     これ以外のコンテキストオプションが
-     <link linkend="transports.inet">基盤となるトランスポート</link>
-     でサポートされています。
-     <literal>ftp://</literal> ストリームの場合は、<literal>tcp://</literal>
-     のコンテキストオプションを参照ください。
-     <literal>ftps://</literal> ストリームの場合は、<literal>ssl://</literal>
-     のコンテキストオプションを参照ください。
-    </simpara>
-   </note>
   </section>
   
   <section xml:id="wrappers.php">
