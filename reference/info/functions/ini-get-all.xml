@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.7 $ -->
-<!-- EN-Revision: 1.11 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.8 $ -->
+<!-- EN-Revision: 1.12 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi -->
 <refentry xml:id="function.ini-get-all" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>ini_get_all</refname>
-  <refpurpose>全ての設定オプションを得る</refpurpose>
+  <refpurpose>すべての設定オプションを得る</refpurpose>
  </refnamediv>
  
  <refsect1 role="description">
@@ -13,6 +13,7 @@
   <methodsynopsis>
    <type>array</type><methodname>ini_get_all</methodname>
    <methodparam choice="opt"><type>string</type><parameter>extension</parameter></methodparam>
+   <methodparam choice="opt"><type>bool</type><parameter>details</parameter></methodparam>
   </methodsynopsis>
   <para>
    すべての登録済み設定オプションを返します。
@@ -32,6 +33,15 @@
       </para>
      </listitem>
     </varlistentry>
+    <varlistentry>
+     <term><parameter>details</parameter></term>
+     <listitem>
+      <para>
+       詳細な設定を取得するか、あるいは各設定の現在の値のみを取得するか。
+       デフォルトは &true; (詳細情報を取得する) です。
+      </para>
+     </listitem>
+    </varlistentry>
    </variablelist>
   </para>
  </refsect1>
@@ -39,22 +49,53 @@
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
-   返される配列ではキーとしてディレクティブの名前が使用されています。
-   配列の要素には、
-   <literal>global_value</literal>(&php.ini;で設定されている)、
-   <literal>local_value</literal>(おそらく<function>ini_set</function>または
-   &htaccess;でセットされている)、<literal>access</literal>(アクセスレベル)
-   の配列が入ります。
-   アクセスレベルの意味についてはマニュアルの
-   <link linkend="configuration.changes">設定を変更するには</link>
-   をご覧ください。
+   ディレクティブ名をキーとする連想配列を返します。
+  </para>
+  <para>
+   <parameter>details</parameter> が &true; (デフォルト) の場合、
+   配列の値は、
+   <literal>global_value</literal> (&php.ini;で設定されている)、
+   <literal>local_value</literal> (おそらく<function>ini_set</function>または
+   &htaccess;でセットされている)、<literal>access</literal> (アクセスレベル)
+   を含む配列となります。
+  </para>
+  <para>
+   <parameter>details</parameter> が &false; の場合、
+   配列の値はそのオプションの現在の値となります。
+  </para>
+  <para>
+   アクセスレベルの意味についてはマニュアルを参照ください。
   </para>
   <note>
    <para>
-    ディレクティブに複数のアクセスレベルを設定することができます。
-    それが、<literal>access</literal> が妥当なビットマスク値を持っている理由です。
+    ひとつのディレクティブに複数のアクセスレベルを設定することができます。
+    <literal>access</literal> がビットマスク値となっているのはそのためです。
    </para>
   </note>
+ </refsect1>
+
+ <refsect1 role="changelog">
+  &reftitle.changelog;
+  <para>
+   <informaltable>
+    <tgroup cols="2">
+     <thead>
+      <row>
+       <entry>&Version;</entry>
+       <entry>&Description;</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry>5.3.0</entry>
+       <entry>
+        <parameter>details</parameter> が追加されました。
+       </entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </informaltable>
+  </para>
  </refsect1>
 
  <refsect1 role="examples">
@@ -65,10 +106,8 @@
     <programlisting role="php">
 <![CDATA[
 <?php
-$inis = ini_get_all();
-
-print_r($inis);
-
+print_r(ini_get_all("pcre"));
+print_r(ini_get_all());
 ?>
 ]]>
     </programlisting>
@@ -77,21 +116,66 @@ print_r($inis);
 <![CDATA[
 Array
 (
+    [pcre.backtrack_limit] => Array
+        (
+            [global_value] => 100000
+            [local_value] => 100000
+            [access] => 7
+        )
+
+    [pcre.recursion_limit] => Array
+        (
+            [global_value] => 100000
+            [local_value] => 100000
+            [access] => 7
+        )
+
+)
+Array
+(
     [allow_call_time_pass_reference] => Array
-    (
-        [global_value] => 1
-        [local_value] => 1
-        [access] => 6
-    )
+        (
+            [global_value] => 0
+            [local_value] => 0
+            [access] => 6
+        )
+
     [allow_url_fopen] => Array
-    (
-        [global_value] => 1
-        [local_value] => 1
-        [access] => 7
-    )
+        (
+            [global_value] => 1
+            [local_value] => 1
+            [access] => 4
+        )
 
     ...
 
+)
+]]>
+    </screen>
+   </example>
+   <example>
+    <title><parameter>details</parameter> を無効にする例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+print_r(ini_get_all("pcre", false)); // PHP 5.3.0 で追加されました
+print_r(ini_get_all(null, false)); // PHP 5.3.0 で追加されました
+?>
+]]>
+    </programlisting>
+    &example.outputs.similar;
+    <screen>
+<![CDATA[
+Array
+(
+    [pcre.backtrack_limit] => 100000
+    [pcre.recursion_limit] => 100000
+)
+Array
+(
+    [allow_call_time_pass_reference] => 0
+    [allow_url_fopen] => 1
+    ...
 )
 ]]>
     </screen>
@@ -103,6 +187,7 @@ Array
   &reftitle.seealso;
   <para>
    <simplelist>
+    <member><xref linkend="configuration.changes" /></member>
     <member><function>ini_get</function></member>
     <member><function>ini_restore</function></member>
     <member><function>ini_set</function></member>
