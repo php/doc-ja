@@ -1,9 +1,78 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.1 $ -->
-<!-- EN-Revision: 1.1 Maintainer: takagi Status: ready -->
+<!-- $Revision: 1.2 $ -->
+<!-- EN-Revision: 1.2 Maintainer: takagi Status: ready -->
  <sect1 xml:id="internals2.structure.globals" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
   <title>拡張モジュールのグローバル変数</title>
-  <para/>
+
+  <sect2 xml:id="internals2.structure.globals.intro">
+   <title>PHP 拡張モジュールのグローバル変数とは</title>
+
+   <simpara>
+    C のような言語における "グローバル" 変数とは、
+    特別な宣言をしなくてもすべての関数からアクセスできる変数のことです。
+    この昔ながらのグローバル変数には、いくつかの弱点があります。
+   </simpara>
+   <itemizedlist>
+    <listitem>
+     <simpara>
+      コンパイラに特別なオプションを設定しない限り、
+      グローバル変数はプログラム内の任意の場所からアクセスしたり変更したりできるようになります。
+      実際にコード中でそれが必要になるかどうかにかかわらずです。
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      標準的なグローバル変数はスレッドセーフではありません。
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      変数そのものだけでなく、グローバル変数の名前もグローバルとなります。
+     </simpara>
+    </listitem>
+   </itemizedlist>
+   <simpara>
+    PHP 拡張モジュールのグローバル変数は、どちらかというと
+    "extension state (拡張モジュールの状態)" と呼んだほうが適切でしょう。
+    ほとんどのモジュールは、関数コールの間に自分が何をしているのかを覚えておく必要があるからです。
+    "counter" 拡張モジュールは、その最たる例でしょう。
+    基本インターフェイスでは、カウンタの値を永続化させています。
+    Zend や PHP にあまりなじみのないプログラマのみなさんは、<filename>counter.c</filename>
+    で値を保存するときにこんな風にしてしまいがちです。
+   </simpara>
+   <example xml:id="internals2.structure.globals.intro.wrong-way">
+    <title>カウンタの基本インターフェイスで値を保存するときの間違った方法</title>
+    <programlisting role="c">
+<![CDATA[
+/* ... */
+static long basic_counter_value;
+
+/* ... */
+
+PHP_FUNCTION(counter_get)
+{
+    RETURN_LONG(basic_counter_value);
+}
+]]>
+    </programlisting>
+   </example>
+   <simpara>
+    上っ面だけ見ればこれは正しそうに見えるでしょうし、
+    実際のところ単純なテストでは正しく動作します。
+    しかし、複数の PHP が同一スレッドで動作することもよくあります。
+    そんな場合は counter モジュールの複数のインスタンスが存在することになります。
+    そして複数のスレッドが同じカウンタの値を共有することになりますが、
+    これが望ましい結果でないことは明らかです。
+    さらに別の問題もあります。別の拡張モジュールが
+    ある日たまたま同じ名前のグローバル変数を持つことになったとしましょう。
+    C のスコープの規則では、この場合コンパイルが失敗してしまう可能性があります。
+    さらに悪いことに、実行時エラーとなる可能性もあります。
+    少し頭を使う必要があるでしょう。
+    そこで Zend では、スレッドセーフなモジュール単位のグローバル変数をサポートしています。
+   </simpara>
+
+  </sect2>
+
  </sect1>
 
 <!-- Keep this comment at the end of the file
