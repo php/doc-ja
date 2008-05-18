@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.1 $ -->
+<!-- EN-Revision: 1.1 Maintainer: takagi Status: ready -->
+<refentry xml:id="phar.converttoexecutable" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <refnamediv>
+  <refname>Phar::convertToExecutable</refname>
+  <refpurpose>phar アーカイブを実行可能な別の phar アーカイブ形式に変換する</refpurpose>
+ </refnamediv>
+
+
+ <refsect1 role="description">
+  &reftitle.description;
+  <methodsynopsis>
+   <type>Phar</type><methodname>Phar::convertToExecutable</methodname>
+   <methodparam choice="opt"><type>int</type><parameter>format</parameter></methodparam>
+   <methodparam choice="opt"><type>int</type><parameter>compression</parameter></methodparam>
+   <methodparam choice="opt"><type>string</type><parameter>extension</parameter></methodparam>
+  </methodsynopsis>
+  &phar.write;
+  <para>
+   このメソッドは、phar アーカイブを別のファイル形式に変換します。
+   たとえば、zip 形式の実行可能な phar アーカイブあるいは
+   phar 形式の実行可能な phar アーカイブから
+   tar 形式の実行可能な phar アーカイブを作成することができます。
+   さらに、tar あるいは phar 形式のアーカイブについてはアーカイブ全体を圧縮することもできます。
+  </para>
+  <para>
+   何も変更しなかった場合、このメソッドは
+   <classname>BadMethodCallException</classname> をスローします。
+  </para>
+  <para>
+   成功した場合は、このメソッドはディスク上に新しいアーカイブを作成して
+   <classname>Phar</classname> オブジェクトを返します。
+   古いアーカイブは削除されずディスク上に残るので、
+   処理を終えたら手動で削除する必要があります。
+  </para>
+ </refsect1>
+
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <para>
+   <variablelist>
+    <varlistentry>
+     <term><parameter>format</parameter></term>
+     <listitem>
+      <para>
+       これは <literal>Phar::PHAR</literal>、<literal>Phar::TAR</literal>
+       あるいは <literal>Phar::ZIP</literal> のいずれかとなります。
+       &null; を指定すると、現在のファイル形式をそのまま保持します。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>compression</parameter></term>
+     <listitem>
+      <para>
+       アーカイブ全体の圧縮を行わない場合は <literal>Phar::NONE</literal>、
+       zlib による圧縮の場合は <literal>Phar::GZ</literal>、そして bzip による圧縮の場合は
+       <literal>Phar::BZ2</literal> のいずれかを指定します。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>extension</parameter></term>
+     <listitem>
+      <para>
+       このパラメータは、変換後のアーカイブのデフォルトのファイル拡張子を変更します。
+       実行可能でない tar や zip アーカイブのファイル名としては
+       <literal>.phar</literal> は使用できないことに注意しましょう。
+      </para>
+      <para>
+       phar 形式のアーカイブに変換する場合、デフォルトの拡張子は圧縮形式によって
+       <literal>.phar</literal>、<literal>.phar.gz</literal> あるいは <literal>.phar.bz2</literal>
+       のいずれかとなります。tar 形式のアーカイブの場合、デフォルトの拡張子は
+       <literal>.phar.tar</literal>、<literal>.phar.tar.gz</literal>
+       および <literal>.phar.tar.bz2</literal> です。zip 形式のアーカイブの場合、
+       デフォルトの拡張子は <literal>.phar.zip</literal> となります。
+      </para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
+  </para>
+
+ </refsect1>
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <para>
+   このメソッドは、成功した場合に <classname>Phar</classname>
+   オブジェクトを返します。失敗した場合は例外をスローします。
+  </para>
+ </refsect1>
+
+ <refsect1 role="errors">
+  &reftitle.errors;
+  <para>
+   圧縮ができない場合や無効な圧縮方式が指定された場合、あるいは
+   <function>Phar::startBuffering</function> でバッファリングしたまま
+   <function>Phar::stopBuffering</function> を実行していないアーカイブを処理しようとした場合に
+   <classname>BadMethodCallException</classname> をスローします。
+   また、書き込みサポートが無効な場合に
+   <classname>UnexpectedValueException</classname>、
+   phar 作成中に何らかの問題が発生した場合に
+   <classname>PharException</classname> をスローします。
+  </para>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title><function>Phar::convertToExecutable</function> の例</title>
+    <para>
+     Using Phar::convertToExecutable():
+    </para>
+    <programlisting role="php">
+<![CDATA[
+<?php
+try {
+    $tarphar = new Phar('myphar.phar.tar');
+    // phar ファイル形式に変換します
+    // myphar.phar.tar は削除 *されない* ことに注意しましょう
+    $phar = $tarphar->convertToExecutable(Phar::PHAR); // myphar.phar を作成します
+    $phar->setStub($phar->createDefaultStub('cli.php', 'web/index.php'));
+    // myphar.phar.tgz を作成します
+    $compressed = $phar->convertToExecutable(Phar::TAR, Phar::GZ, '.phar.tgz');
+} catch (Exception $e) {
+    // ここでエラー処理をします
+}
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+ </refsect1>
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <para>
+   <simplelist>
+    <member><function>Phar::convertToData</function></member>
+    <member><function>PharData::convertToExecutable</function></member>
+    <member><function>PharData::convertToData</function></member>
+   </simplelist>
+  </para>
+ </refsect1>
+
+</refentry>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"../../../../manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->

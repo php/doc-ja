@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.1 $ -->
+<!-- EN-Revision: 1.1 Maintainer: takagi Status: ready -->
+<refentry xml:id="phar.mount" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <refnamediv>
+  <refname>Phar::mount</refname>
+  <refpurpose>外部のパスあるいはファイルを phar アーカイブ内に仮想的にマウントする</refpurpose>
+ </refnamediv>
+
+ <refsect1 role="description">
+  &reftitle.description;
+  <methodsynopsis>
+   <type>void</type><methodname>Phar::mount</methodname>
+   <methodparam><type>string</type><parameter>pharpath</parameter></methodparam>
+   <methodparam><type>string</type><parameter>externalpath</parameter></methodparam>
+  </methodsynopsis>
+  <para>
+   Unix のファイルシステムで外部のデバイスをディレクトリツリー上にマウントできるのと同様に、
+   <function>Phar::mount</function> を使用すると
+   外部のファイルやディレクトリをあたかもアーカイブ内にあるかのように参照することができるようになります。
+   これを使用すると、外部の設定ファイルをアーカイブ内にあるかのように扱うなどの高度な抽象化が可能となります。
+  </para>
+ </refsect1>
+
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <para>
+   <variablelist>
+    <varlistentry>
+     <term><parameter>pharpath</parameter></term>
+     <listitem>
+      <para>
+       マウントする場所として使用する phar アーカイブ内のパス。
+       phar アーカイブ内で使用した場合は、これは相対パスとなります。
+       それ以外の場合は、完全な <literal>phar</literal> URL にしなければなりません。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>externalpath</parameter></term>
+     <listitem>
+      <para>
+       phar アーカイブ内にマウントしたい外部ファイルあるいはディレクトリのパスあるいは URL。
+      </para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
+  </para>
+
+ </refsect1>
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <para>
+   返り値はありません。失敗した場合は <classname>PharException</classname> をスローします。
+  </para>
+ </refsect1>
+
+ <refsect1 role="errors">
+  &reftitle.errors;
+  <para>
+   パスのマウント時に問題が発生した場合は
+   <classname>PharException</classname> をスローします。
+  </para>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title><function>Phar::mount</function> の例</title>
+    <para>
+     次の例は、外部の設定ファイルをまるでそれが
+     phar アーカイブ内のパス上にあるかのように扱うものです。
+    </para>
+    <para>
+     まず、phar アーカイブ内のコードを示します。
+    </para>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$configuration = simplexml_load_string(file_get_contents(
+    Phar::running(false) . '/config.xml'));
+?>
+]]>
+    </programlisting>
+    <para>
+     次は、設定ファイルをマウントする外部コードです。
+    </para>
+    <programlisting role="php">
+<![CDATA[
+<?php
+// まずは、抽象化した config.xml
+// と実際のディスク上のファイルを関連づけます
+Phar::mount('phar:///path/to/archive.phar/config.xml', '/home/example/config.xml');
+// アプリケーションを実行します
+include '/path/to/archive.phar';
+?>
+]]>
+    </programlisting>
+    <para>
+     もうひとつの方法として、コードを phar アーカイブのスタブ内に置くというものがあります。
+     これは、ユーザが設定ファイルを指定しなかった場合にデフォルトの設定ファイルを使用する例です。
+    </para>
+    <programlisting role="php">
+<![CDATA[
+<?php
+// まずは、抽象化した config.xml
+// と実際のディスク上のファイルを関連づけます
+if (defined('EXTERNAL_CONFIG')) {
+    Phar::mount('config.xml', EXTERNAL_CONFIG);
+} else {
+    Phar::mount('config.xml', Phar::running(false) . '/default_config.xml');
+}
+// アプリケーションを実行します
+include '/path/to/archive.phar';
+?>
+]]>
+    </programlisting>
+    <para>
+     ...and the code externally to load this phar archive:
+    </para>
+    <programlisting role="php">
+<![CDATA[
+<?php
+define('EXTERNAL_CONFIG', '/home/example/config.xml');
+// アプリケーションを実行します
+include '/path/to/archive.phar';
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+ </refsect1>
+
+</refentry>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"../../../../manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
