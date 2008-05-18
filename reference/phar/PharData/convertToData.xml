@@ -1,36 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.2 $ -->
+<!-- $Revision: 1.1 $ -->
 <!-- EN-Revision: 1.1 Maintainer: takagi Status: ready -->
-<refentry xml:id="phar.converttoexecutable" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+<refentry xml:id="phardata.converttodata" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
-  <refname>Phar::convertToExecutable</refname>
-  <refpurpose>phar アーカイブを実行可能な別の phar アーカイブ形式に変換する</refpurpose>
+  <refname>PharData::convertToData</refname>
+  <refpurpose>phar アーカイブを実行可能でない tar あるいは zip ファイルに変換する</refpurpose>
  </refnamediv>
 
 
  <refsect1 role="description">
   &reftitle.description;
   <methodsynopsis>
-   <type>Phar</type><methodname>Phar::convertToExecutable</methodname>
+   <type>PharData</type><methodname>PharData::convertToData</methodname>
    <methodparam choice="opt"><type>int</type><parameter>format</parameter></methodparam>
    <methodparam choice="opt"><type>int</type><parameter>compression</parameter></methodparam>
    <methodparam choice="opt"><type>string</type><parameter>extension</parameter></methodparam>
   </methodsynopsis>
-  &phar.write;
+
   <para>
-   このメソッドは、phar アーカイブを別のファイル形式に変換します。
-   たとえば、zip 形式の実行可能な phar アーカイブあるいは
-   phar 形式の実行可能な phar アーカイブから
-   tar 形式の実行可能な phar アーカイブを作成することができます。
-   さらに、tar あるいは phar 形式のアーカイブについてはアーカイブ全体を圧縮することもできます。
+   このメソッドは、実行可能でない tar あるいは zip アーカイブを別の実行可能でない形式に変換します。
   </para>
   <para>
    何も変更しなかった場合、このメソッドは
    <classname>BadMethodCallException</classname> をスローします。
+   このメソッドは、tar アーカイブを zip 形式に変換するか
+   あるいはその逆の変換をする場合に使用するものです。
+   このメソッドで単に tar アーカイブの圧縮方法だけを変更することもできますが、
+   その場合は <function>PharData::compress</function> を使うことをおすすめします。
   </para>
   <para>
    成功した場合は、このメソッドはディスク上に新しいアーカイブを作成して
-   <classname>Phar</classname> オブジェクトを返します。
+   <classname>PharData</classname> オブジェクトを返します。
    古いアーカイブは削除されずディスク上に残るので、
    処理を終えたら手動で削除する必要があります。
   </para>
@@ -44,7 +44,7 @@
      <term><parameter>format</parameter></term>
      <listitem>
       <para>
-       これは <literal>Phar::PHAR</literal>、<literal>Phar::TAR</literal>
+       これは <literal>Phar::TAR</literal>
        あるいは <literal>Phar::ZIP</literal> のいずれかとなります。
        &null; を指定すると、現在のファイル形式をそのまま保持します。
       </para>
@@ -69,12 +69,11 @@
        <literal>.phar</literal> は使用できないことに注意しましょう。
       </para>
       <para>
-       phar 形式のアーカイブに変換する場合、デフォルトの拡張子は圧縮形式によって
-       <literal>.phar</literal>、<literal>.phar.gz</literal> あるいは <literal>.phar.bz2</literal>
-       のいずれかとなります。tar 形式のアーカイブの場合、デフォルトの拡張子は
-       <literal>.phar.tar</literal>、<literal>.phar.tar.gz</literal>
-       および <literal>.phar.tar.bz2</literal> です。zip 形式のアーカイブの場合、
-       デフォルトの拡張子は <literal>.phar.zip</literal> となります。
+       tar 形式の phar アーカイブの場合、デフォルトの拡張子は圧縮形式によって
+       <literal>.tar</literal>、<literal>.tar.gz</literal>、
+       <literal>.tar.bz2</literal> のいずれかとなります。
+       zip 形式のアーカイブの場合、デフォルトの拡張子は
+       <literal>.zip</literal> となります。
       </para>
      </listitem>
     </varlistentry>
@@ -85,7 +84,7 @@
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
-   このメソッドは、成功した場合に <classname>Phar</classname>
+   このメソッドは、成功した場合に <classname>PharData</classname>
    オブジェクトを返します。失敗した場合は例外をスローします。
   </para>
  </refsect1>
@@ -97,9 +96,7 @@
    <function>Phar::startBuffering</function> でバッファリングしたまま
    <function>Phar::stopBuffering</function> を実行していないアーカイブを処理しようとした場合に
    <classname>BadMethodCallException</classname> をスローします。
-   また、書き込みサポートが無効な場合に
-   <classname>UnexpectedValueException</classname>、
-   phar 作成中に何らかの問題が発生した場合に
+   また、phar 作成中に何らかの問題が発生した場合に
    <classname>PharException</classname> をスローします。
   </para>
  </refsect1>
@@ -108,21 +105,23 @@
   &reftitle.examples;
   <para>
    <example>
-    <title><function>Phar::convertToExecutable</function> の例</title>
+    <title><function>PharData::convertToData</function> の例</title>
     <para>
-     Phar::convertToExecutable() の使用例です。
+     PharData::convertToData() の使用法です。
     </para>
     <programlisting role="php">
 <![CDATA[
 <?php
 try {
-    $tarphar = new Phar('myphar.phar.tar');
-    // phar ファイル形式に変換します
-    // myphar.phar.tar は削除 *されない* ことに注意しましょう
-    $phar = $tarphar->convertToExecutable(Phar::PHAR); // myphar.phar を作成します
-    $phar->setStub($phar->createDefaultStub('cli.php', 'web/index.php'));
+    $tarphar = new PharData('myphar.tar');
+    // myphar.tar は削除 *されない* ことに注意しましょう
+    // 実行可能ではない tar 形式に変換し
+    // myphar.zip を作成します
+    $zip = $tarphar->convertToData(Phar::ZIP);
+    // myphar.tbz を作成します
+    $tgz = $zip->convertToData(Phar::TAR, Phar::BZ2, '.tbz');
     // myphar.phar.tgz を作成します
-    $compressed = $phar->convertToExecutable(Phar::TAR, Phar::GZ, '.phar.tgz');
+    $phar = $tarphar->convertToData(Phar::PHAR); // throws exception
 } catch (Exception $e) {
     // ここでエラー処理をします
 }
@@ -137,9 +136,9 @@ try {
   &reftitle.seealso;
   <para>
    <simplelist>
+    <member><function>Phar::convertToExecutable</function></member>
     <member><function>Phar::convertToData</function></member>
     <member><function>PharData::convertToExecutable</function></member>
-    <member><function>PharData::convertToData</function></member>
    </simplelist>
   </para>
  </refsect1>
