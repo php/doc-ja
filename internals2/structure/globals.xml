@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.3 $ -->
-<!-- EN-Revision: 1.3 Maintainer: takagi Status: ready -->
+<!-- $Revision: 1.4 $ -->
+<!-- EN-Revision: 1.4 Maintainer: takagi Status: ready -->
  <sect1 xml:id="internals2.structure.globals" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
   <title>拡張モジュールのグローバル変数</title>
 
@@ -12,7 +12,9 @@
     特別な宣言をしなくてもすべての関数からアクセスできる変数のことです。
     この昔ながらのグローバル変数には、いくつかの弱点があります。
    </simpara>
+
    <itemizedlist>
+
     <listitem>
      <simpara>
       コンパイラに特別なオプションを設定しない限り、
@@ -20,17 +22,21 @@
       実際にコード中でそれが必要になるかどうかにかかわらずです。
      </simpara>
     </listitem>
+
     <listitem>
      <simpara>
       標準的なグローバル変数はスレッドセーフではありません。
      </simpara>
     </listitem>
+
     <listitem>
      <simpara>
       変数そのものだけでなく、グローバル変数の名前もグローバルとなります。
      </simpara>
     </listitem>
+
    </itemizedlist>
+
    <simpara>
     PHP 拡張モジュールのグローバル変数は、どちらかというと
     "extension state (拡張モジュールの状態)" と呼んだほうが適切でしょう。
@@ -40,6 +46,7 @@
     Zend や PHP にあまりなじみのないプログラマのみなさんは、<filename>counter.c</filename>
     で値を保存するときにこんな風にしてしまいがちです。
    </simpara>
+
    <example xml:id="internals2.structure.globals.intro.wrong-way">
     <title>カウンタの基本インターフェイスで値を保存するときの間違った方法</title>
     <programlisting role="c">
@@ -56,6 +63,7 @@ PHP_FUNCTION(counter_get)
 ]]>
     </programlisting>
    </example>
+
    <simpara>
     上っ面だけ見ればこれは正しそうに見えるでしょうし、
     実際のところ単純なテストでは正しく動作します。
@@ -87,6 +95,7 @@ PHP_FUNCTION(counter_get)
     counter モジュールの場合は <literal>"counter"</literal> となります。
     <filename>php_counter.h</filename> でのグローバル構造体の宣言の例を示します。
    </simpara>
+
    <example xml:id="internals2.structure.globals.declaring.doth">
     <title>counter モジュールのグローバル変数</title>
     <programlisting role="c">
@@ -97,9 +106,11 @@ ZEND_END_MODULE_GLOBALS(counter)
 ]]>
     </programlisting>
    </example>
+
    <simpara>
     そして、これが <filename>counter.c</filename> での宣言です。
    </simpara>
+
    <example xml:id="internals2.structure.globals.declaring.dotc">
     <title>counter モジュールのグローバル構造体宣言</title>
     <programlisting role="c">
@@ -108,6 +119,70 @@ ZEND_DECLARE_MODULE_GLOBALS(counter)
 ]]>
     </programlisting>
    </example>
+  
+  </sect2>
+  
+  <sect2 xml:id="internals2.structure.globals.using">
+   <title>モジュールグローバルへのアクセス</title>
+   
+   <simpara>
+    先ほど説明したように、モジュール単位のグローバルは C
+    の構造体の内部で宣言されており、その名前は Zend マクロで隠蔽されています。
+    構造体のメンバーにアクセスするための最もよい方法は、
+    これらのマクロを使用することです。
+    したがって、ほとんどすべてといっていいほどの拡張モジュールには、
+    ヘッダファイルのどこかに次のような宣言があります。
+   </simpara>
+
+   <example xml:id="internals2.structure.globals.using.accessor">
+    <title>モジュール単位のグローバルにアクセスするためのマクロ</title>
+    <programlisting role="c">
+<![CDATA[
+#ifdef ZTS
+#define COUNTER_G(v) TSRMG(counter_globals_id, zend_counter_globals *, v)
+#else
+#define COUNTER_G(v) (counter_globals.v)
+#endif
+]]>
+    </programlisting>
+   </example>
+
+   <note>
+    <simpara>
+     これは Zend API によって Zend マクロに一般化されるようになるかもしれません。
+     しかし PHP 5.3 の時点では (そして執筆時点では PHP 6 でも)、
+     まだそのようにはなっていません。
+     グローバルへのアクセサは、
+     <command>ext_skel</command> がヘッダに書き込みます。
+     開発者がそのマクロの名前を変更しようとしない限り、通常はそのままにしておきます。
+    </simpara>
+   </note>
+
+   <note>
+    <simpara>
+     <constant>COUNTER_G</constant> は
+     <command>ext_skel</command> がつけたマクロ名ですが、
+     この名前でなければならないというわけではありません。たとえば
+     <literal>FOO</literal> などに変更してもかまいません。
+    </simpara>
+   </note>
+
+   <simpara>
+    したがって、counter 拡張モジュールのコード内でグローバルにアクセスするには必ず
+    <constant>COUNTER_G</constant> マクロを使用しなければなりません。
+   </simpara>
+
+   <warning>
+    <simpara>
+     グローバルにアクセスする関数は、Zend マクロで宣言するか最後の引数を
+     <constant>TSRMLS_DC</constant> にするか、
+     あるいはグローバルにアクセスする前に
+     <constant>TSRMLS_FETCH</constant> マクロをコールするようにしなければなりません。
+     詳細は
+     <!--<link linkend="internals2.memory.tsrm">-->TSRM のドキュメント<!--</link>-->
+     を参照ください。
+    </simpara>
+   </warning>
   
   </sect2>
 
