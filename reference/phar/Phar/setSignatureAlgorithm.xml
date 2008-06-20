@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.1 $ -->
-<!-- EN-Revision: 1.2 Maintainer: takagi Status: ready -->
+<!-- $Revision: 1.2 $ -->
+<!-- EN-Revision: 1.3 Maintainer: takagi Status: ready -->
 <refentry xml:id="phar.setsignaturealgorithm" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
   <refname>Phar::setSignatureAlgorithm</refname>
-  <refpurpose>phar のシグネチャのアルゴリズムを設定する</refpurpose>
+  <refpurpose>phar のシグネチャのアルゴリズムを設定して適用する</refpurpose>
  </refnamediv>
 
  <refsect1 role="description">
@@ -12,6 +12,7 @@
   <methodsynopsis>
    <type>array</type><methodname>Phar::setSignatureAlgorithm</methodname>
    <methodparam><type>int</type><parameter>sigtype</parameter></methodparam>
+   <methodparam choice="opt"><type>string</type><parameter>privatekey</parameter></methodparam>
   </methodsynopsis>
   &phar.write;
 
@@ -19,9 +20,18 @@
    phar のシグネチャのアルゴリズムを設定します。
    シグネチャのアルゴリズムは <literal>Phar::MD5</literal>、
    <literal>Phar::SHA1</literal>、<literal>Phar::SHA256</literal>、
-   <literal>Phar::SHA512</literal> あるいは <literal>Phar::PGP</literal>
-   のいずれかでなければなりません
-   (pgp は現時点ではまだサポートされておらず、自動的に SHA-1 に読みかえられます)。
+   <literal>Phar::SHA512</literal> あるいは <literal>Phar::OPENSSL</literal>
+   のいずれかでなければなりません。
+  </para>
+  <para>
+   phar 形式および tar 形式の phar アーカイブについては、
+   <literal>SHA1</literal> 形式のシグネチャが
+   デフォルトで自動的に作成されることに注意しましょう。
+   データ tar 形式のアーカイブ
+   (<classname>PharData</classname> クラスで作成したアーカイブ)
+   の場合は、
+   <function>Phar::setSignatureAlgorithm</function>
+   で明示的にシグネチャを作成して設定する必要があります。
   </para>
  </refsect1>
 
@@ -35,8 +45,26 @@
       <para>
        <literal>Phar::MD5</literal>、
    <literal>Phar::SHA1</literal>、<literal>Phar::SHA256</literal>、
-   <literal>Phar::SHA512</literal> あるいは <literal>Phar::PGP</literal>
+   <literal>Phar::SHA512</literal> あるいは <literal>Phar::OPENSSL</literal>
        のいずれか。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>privatekey</parameter></term>
+     <listitem>
+      <para>
+       OpenSSL 秘密鍵の中身。証明書あるいは OpenSSL 鍵ファイルから取り出したもの。
+       <programlisting role="php">
+        <![CDATA[
+$private = openssl_get_privatekey(file_get_contents('private.pem'));
+$pkey = '';
+openssl_pkey_export($private, $pkey);
+$p->setSignatureAlgorithm(Phar::OPENSSL, $pkey);
+        ]]>
+       </programlisting>
+       公開鍵ファイルの名前や置き場所については
+       <link linkend="phar.using">phar の導入</link> を参照ください。
       </para>
      </listitem>
     </varlistentry>
@@ -55,7 +83,7 @@
   <para>
    さまざまなエラーが発生した場合に
    <classname>UnexpectedValueException</classname> をスローします。
-   zip 形式や tar 形式の phar アーカイブに対してコールした場合は
+   zip 形式の phar アーカイブに対してコールした場合は
    <classname>BadMethodCallException</classname> をスローします。
    変更内容をディスクに書き込むときにエラーが発生した場合は
    <classname>PharException</classname> をスローします。
