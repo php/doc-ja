@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.7 $ -->
-<!-- EN-Revision: 1.8 Maintainer: haruki Status: ready -->
+<!-- $Revision: 1.8 $ -->
+<!-- EN-Revision: 1.10 Maintainer: haruki Status: ready -->
 <!-- Credits: hirokawa, haruki -->
 <sect1 xml:id="install.unix.apache2" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>Apache 2.0 (Unixシステム用)</title>
@@ -99,33 +99,49 @@
 
       LoadModule php5_module modules/libphp5.so
    
-15. Apache が特定の拡張子のファイルを PHP としてパースするよう（httpd.conf 
-    を編集して）設定します。例えば、Apache が拡張子 .php のファイルを PHP 
-    としてパースするように設定します。複数の拡張子も、空白で区切って記述する
-    だけで PHP としてパースさせることができます。以下の例は .php と .phtml 
-    とを指定した場合です。
+15. Apache が特定の拡張子のファイルを PHP としてパースするよう設定します。
+    たとえば、Apache が拡張子 .php のファイルを PHP としてパースするようにします。
+    単に Apache の AddType ディレクティブを使うだけではなく、
+    悪意を持ってアップロード (あるいは作成) された exploit.php.jpg
+    のようなファイルが PHP として実行されてしまわないようにしたいものです。
+    この例では、PHP としてパースさせたい任意の拡張子を追加していくだけです。
+    ためしに .phtml を追加してみましょう。
+            
+      <FilesMatch \.php$>
+          SetHandler application/x-httpd-php
+      </FilesMatch>
 
-      AddType application/x-httpd-php .php .phtml
+    あるいは、拡張子 .php, .php2, .php3, .php4, .php5, .php6, そして
+    .phtml のファイルだけを PHP として実行したいは、このようにします。
 
-    PHP のソースをハイライト表示させるために、拡張子 .phps を設定することも
-    よく行われています。
+      <FilesMatch "\.ph(p[2-6]?|tml)$">
+          SetHandler application/x-httpd-php
+      </FilesMatch>
     
-      AddType application/x-httpd-php-source .phps
-   
+    拡張子 .phps のファイルを PHP ソースファイルとして扱うには、これを追加します。
+
+      <FilesMatch "\.phps$">
+          SetHandler application/x-httpd-php-source
+      </FilesMatch>
+
 16. Apache サーバを、通常の手順通り、起動させます。
-    例、/usr/local/apache2/bin/apachectl start
+      /usr/local/apache2/bin/apachectl start
+
+          - あるいは -
+
+      service httpd restart
 
 ]]>
 
   </screen>
  </example>
  <para>
-    上記の手順で、<literal>SAPI</literal> モジュールとして PHP を
-    Apache 2.0 で動作させることができます。もちろん、Apacheと<literal>
+    上記の手順で、Apache2 ウェブサーバ上で
+    <literal>SAPI</literal> モジュールとして PHP を動作させることができます。もちろん、Apacheと<literal>
     PHP</literal> の双方とも、もっと多くの configure オプションを指定することが出来ます。
     詳しい情報を得るには、ソースツリーディレクトリで <command>./configure
-    --help</command> を実行してください。また、マルチスレッド版の Apache 2.0を
-    ビルドする場合は、デフォルトの MPM である <filename>prefork</filename> を
+    --help</command> を実行してください。また、マルチスレッド版の Apache2
+    をビルドする場合は、デフォルトの MPM である <filename>prefork</filename> を
     <filename>worker</filename> もしくは <filename>perchild</filename> で
     上書きする必要があります。このためには、上記の手順 6 で<option
     role="configure">--with-mpm=worker</option> もしくは<option
