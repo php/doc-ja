@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.19 $ -->
-<!-- EN-Revision: 1.31 Maintainer: takagi Status: ready -->
+<!-- $Revision: 1.20 $ -->
+<!-- EN-Revision: 1.32 Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa,shimooka -->
 
  <sect1 xml:id="language.oop5.overloading" xmlns="http://docbook.org/ns/docbook">
@@ -155,7 +155,7 @@ class MemberTest {
     /**  宣言されているメンバーにはオーバーロードは起動しません */
     public $declared = 1;
 
-    /**  クラス内からアクセスした場合にはオーバーロードは起動しません  */
+    /**  クラスの外部からアクセスした場合にのみこれがオーバーロードされます  */
     private $hidden = 2;
 
     public function __set($name, $value) {
@@ -171,7 +171,7 @@ class MemberTest {
 
         $trace = debug_backtrace();
         trigger_error(
-            'Undefined property: ' . $name .
+            'Undefined property via __get(): ' . $name .
             ' in ' . $trace[0]['file'] .
             ' on line ' . $trace[0]['line'],
             E_USER_NOTICE);
@@ -192,7 +192,6 @@ class MemberTest {
 
     /**  マジックメソッドではありません。単なる例として示しています  */
     public function getHidden() {
-        echo "'hidden' visible here so __get() not used\n";
         return $this->hidden;
     }
 }
@@ -203,14 +202,19 @@ echo "<pre>\n";
 $obj = new MemberTest;
 
 $obj->a = 1;
-echo $obj->a . "\n";
+echo $obj->a . "\n\n";
 
 var_dump(isset($obj->a));
 unset($obj->a);
 var_dump(isset($obj->a));
+echo "\n";
 
-echo $obj->declared . "\n";
+echo $obj->declared . "\n\n";
+
+echo "Let's experiment with the private property named 'hidden':\n";
+echo "Privates are visible inside the class, so __get() not used...\n";
 echo $obj->getHidden() . "\n";
+echo "Privates not visible outside of class, so __get() is used...\n";
 echo $obj->hidden . "\n";
 ?>
 ]]>
@@ -221,18 +225,23 @@ echo $obj->hidden . "\n";
 Setting 'a' to '1'
 Getting 'a'
 1
+
 Is 'a' set?
 bool(true)
 Unsetting 'a'
 Is 'a' set?
 bool(false)
+
 1
-'hidden' visible here so __get() not used
+
+Let's experiment with the private property named 'hidden':
+Privates are visible inside the class, so __get() not used...
 2
+Privates not visible outside of class, so __get() is used...
 Getting 'hidden'
 
 
-Notice:  Undefined property: hidden in <file> on line 64 in <file> on line 28
+Notice:  Undefined property via __get(): hidden in <file> on line 70 in <file> on line 29
 ]]>
     </screen>
 
