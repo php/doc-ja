@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.24 $ -->
-<!-- EN-Revision: 1.36 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.25 $ -->
+<!-- EN-Revision: 1.38 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: shimooka -->
 
 <sect1 xml:id="language.oop5.reflection" xmlns="http://docbook.org/ns/docbook">
@@ -181,6 +181,7 @@ class ReflectionFunction extends ReflectionFunctionAbstract implements Reflector
     public string getName()
     public bool isInternal()
     public bool isDisabled()
+    public mixed getClosure() /* PHP 5.3.0 以降 */
     public bool isUserDefined()
     public string getFileName()
     public int getStartLine()
@@ -590,6 +591,7 @@ class ReflectionMethod extends ReflectionFunctionAbstract implements Reflector
     public bool isConstructor()
     public bool isDestructor()
     public int getModifiers()
+    public mixed getClosure() /* PHP 5.3.0 以降 */
     public ReflectionClass getDeclaringClass()
 
     // ReflectionFunctionAbstract から継承したメソッド
@@ -680,6 +682,27 @@ var_dump($method->invoke(NULL));
 ]]>
    </programlisting>
   </example>
+   <example>
+    <title><classname>ReflectionMethod</classname> クラスを用いたクロージャの取得</title>
+    <programlisting role='php'>
+<![CDATA[
+<?php
+
+class Example {
+    static function printer () {
+        echo "Hello World!\n";
+    }
+}
+ 
+$class = new ReflectionClass('Example');
+$method = $class->getMethod('printer');
+$closure = $method->getClosure(); /* PHP 5.3.0 以降 */
+$closure(); // Hello World!
+
+?>
+]]>
+    </programlisting>
+   </example>
   <note>
    <simpara>
     private, protectedまたはabstractメソッドのinvokeを行うと、
@@ -780,6 +803,32 @@ var_dump($prop->getValue($obj));
 
 // オブジェクトをダンプする
 var_dump($obj);
+?>
+]]>
+    </programlisting>
+   </example>
+   <example>
+    <title><classname>ReflectionProperty</classname> クラスを用いた、private および protected プロパティの値の取得</title>
+    <programlisting role='php'>
+<![CDATA[
+<?php
+
+class Foo {
+    public $x = 1;
+    protected $y = 2;
+    private $z = 3;
+}
+
+$obj = new Foo;
+
+$prop = new ReflectionProperty('Foo', 'y');
+$prop->setAccessible(true); /* PHP 5.3.0 以降 */
+var_dump($prop->getValue($obj)); // int(2)
+
+$prop = new ReflectionProperty('Foo', 'z');
+$prop->setAccessible(true); /* PHP 5.3.0 以降 */
+var_dump($prop->getValue($obj)); // int(2)
+
 ?>
 ]]>
    </programlisting>
