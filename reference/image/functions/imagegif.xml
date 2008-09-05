@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.14 $ -->
-<!-- EN-Revision: 1.18 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.15 $ -->
+<!-- EN-Revision: 1.19 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi -->
 <refentry xml:id="function.imagegif" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -50,6 +50,55 @@
    &return.success;
   </para>
  </refsect1>
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title><function>imagegif</function> による画像の出力</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+// 新しい画像のインスタンスを作成します
+$im = imagecreatetruecolor(100, 100);
+
+// 背景を白にします
+imagefilledrectangle($im, 0, 0, 99, 99, 0xFFFFFF);
+
+// テキスト文字列を画像の上に描画します
+imagestring($im, 3, 40, 20, 'GD Library', 0xFFBA00);
+
+// 画像をブラウザに出力します
+header('Content-type: image/gif');
+
+imagegif($im);
+imagedestroy($im);
+?>
+]]>
+    </programlisting>
+   </example>
+   <example>
+    <title><function>imagegif</function> による PNG 画像から GIF への変換</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+// PNG を読み込みます
+$png = imagecreatefrompng('./php.png');
+
+// 画像を GIF 形式で保存します
+imagegif($png, './php.gif');
+
+// メモリから開放します
+imagedestroy($png);
+
+// 終了です
+echo 'Converted PNG image to GIF with success!';
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+ </refsect1>
  <refsect1 role="notes">
   &reftitle.notes;
   <note>
@@ -72,20 +121,52 @@
      <programlisting role="php">
 <![CDATA[
 <?php
-if (function_exists("imagegif")) {
-    header("Content-type: image/gif");
+// Create a new image instance
+$im = imagecreatetruecolor(100, 100);
+
+// Do some image operations here
+
+// Handle output
+if(function_exists('imagegif'))
+{
+    // For GIF
+    header('Content-type: image/gif');
+
     imagegif($im);
-} elseif (function_exists("imagejpeg")) {
-    header("Content-type: image/jpeg");
-    imagejpeg($im, "", 0.5);
-} elseif (function_exists("imagepng")) {
-    header("Content-type: image/png");
+}
+elseif(function_exists('imagejpeg'))
+{
+    // For JPEG
+    header('Content-type: image/jpeg');
+
+    imagejpeg($im, NULL, 100);
+}
+elseif(function_exists('imagepng'))
+{
+    // For PNG
+    header('Content-type: image/png');
+
     imagepng($im);
-} elseif (function_exists("imagewbmp")) {
-    header("Content-type: image/vnd.wap.wbmp");
+}
+elseif(function_exists('imagewbmp'))
+{
+    // For WBMP
+    header('Content-type: image/vnd.wap.wbmp');
+
     imagewbmp($im);
-} else {
-    die("No image support in this PHP server");
+}
+else
+{
+    imagedestroy($im);
+
+    die('No image support in this PHP server');
+}
+
+// If image support was found for one of these
+// formats, then free it from memory
+if($im)
+{
+    imagedestroy($im);
 }
 ?>
 ]]>
@@ -95,17 +176,20 @@ if (function_exists("imagegif")) {
   </note>
   <note>
    <para>
-    バージョン 4.0.2 以降および 3.0.18 以降では、種々のイメージ関数の
+    4.0.2 以降および 3.0.18 以降では、種々のイメージ関数の
     サポートを調べるために <function>function_exists</function> の
     代わりに関数 <function>imagetypes</function> を使用することが可能です。
     <informalexample>
      <programlisting role="php">
 <![CDATA[
 <?php
-if (imagetypes() & IMG_GIF) {
-    header ("Content-type: image/gif");
-    imagegif ($im);
-} elseif (imagetypes() & IMG_JPG) {
+if(imagetypes() & IMG_GIF)
+{
+    header('Content-type: image/gif');
+    imagegif($im);
+}
+elseif(imagetypes() & IMG_JPG)
+{
     /* ... etc. */
 }
 ?>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.7 $ -->
-<!-- EN-Revision: 1.7 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.8 $ -->
+<!-- EN-Revision: 1.9 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: shimooka -->
 <refentry xml:id='function.iptcembed' xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -54,6 +54,71 @@
    成功し、かつ spool フラグが 2 より小さい場合は、JPEG は文字列では返されません。
    エラー時には &false; を返します。
   </para>
+ </refsect1>
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <example>
+   <title>IPTC データの JPEG への埋め込み</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+// Thies C. Arntzen による iptc_make_tag() 関数
+function iptc_make_tag($rec, $data, $value)
+{
+    $length = strlen($value);
+    $retval = chr(0x1C) . chr($rec) . chr($data);
+
+    if($length < 0x8000)
+    {
+        $retval .= chr($length >> 8) .  chr($length & 0xFF);
+    }
+    else
+    {
+        $retval .= chr(0x80) . 
+                   chr(0x04) . 
+                   chr(($length >> 24) & 0xFF) . 
+                   chr(($length >> 16) & 0xFF) . 
+                   chr(($length >> 8) & 0xFF) . 
+                   chr($length & 0xFF);
+    }
+
+    return $retval . $value;
+}
+
+// jpeg ファイルへのパス
+$path = './phplogo.jpg';
+
+// jpeg 画像内に IPTC データがあるかどうかをチェックしなければなりません。
+// 既に IPTC データを持っている画像に埋め込むことはできないからです。
+$image = getimagesize($path, $info);
+
+if(isset($info['APP13']))
+{
+    die('Error: IPTC data found in source image, cannot continue');
+}
+
+// IPTC タグを設定します
+$iptc = array(
+    '2#120' => 'Test image',
+    '2#116' => 'Copyright 2008, The PHP Group'
+);
+
+// IPTC タグをバイナリコードに変換します
+$data = '';
+
+foreach($iptc as $tag => $string)
+{
+    $tag = substr($tag, 2);
+    $data .= iptc_make_tag(2, substr($tag, 2), $string);
+}
+
+// IPTC データを埋め込みます
+$content = iptcembed($data, $path);
+?>
+]]>
+   </programlisting>
+  </example>
  </refsect1>
  <refsect1 role="notes">
   &reftitle.notes;
