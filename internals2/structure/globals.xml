@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.4 $ -->
-<!-- EN-Revision: 1.4 Maintainer: takagi Status: ready -->
+<!-- $Revision: 1.5 $ -->
+<!-- EN-Revision: 1.5 Maintainer: takagi Status: ready -->
  <sect1 xml:id="internals2.structure.globals" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
   <title>拡張モジュールのグローバル変数</title>
 
@@ -183,6 +183,44 @@ ZEND_DECLARE_MODULE_GLOBALS(counter)
      を参照ください。
     </simpara>
    </warning>
+
+   <simpara>
+    これらすべてを考慮すると、
+    <function>counter_get</function> の新しいバージョンはこのようになります。
+   </simpara>
+  
+   <example xml:id="internals2.structure.globals.intro.right-way">
+    <title>正しい方法での基本カウンタインターフェイスの値の保存</title>
+    <programlisting role="c">
+<![CDATA[
+/* php_counter.h */
+ZEND_BEGIN_MODULE_GLOBALS(counter)
+    long        basic_counter_value;
+ZEND_END_MODULE_GLOBALS(counter)
+
+#ifdef ZTS
+#define COUNTER_G(v) TSRMG(counter_globals_id, zend_counter_globals *, v)
+#else
+#define COUNTER_G(v) (counter_globals.v)
+#endif
+
+/* counter.c */
+ZEND_DECLARE_MODULE_GLOBALS(counter)
+
+/* ... */
+
+PHP_FUNCTION(counter_get)
+{
+    RETURN_LONG(COUNTER_G(basic_counter_value));
+}
+]]>
+    </programlisting>
+   </example>
+
+   <simpara>
+    これは正しい実装です。しかし、完全なものではありません。その理由は
+    <xref linkend="internals2.structure.lifecycle"/> で説明します。
+   </simpara>
   
   </sect2>
 

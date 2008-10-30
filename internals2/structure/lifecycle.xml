@@ -1,9 +1,75 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.1 $ -->
-<!-- EN-Revision: 1.1 Maintainer: takagi Status: ready -->
+<!-- $Revision: 1.2 $ -->
+<!-- EN-Revision: 1.2 Maintainer: takagi Status: ready -->
  <sect1 xml:id="internals2.structure.lifecycle" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
   <title>拡張モジュールのライフサイクル</title>
-  <para/>
+
+  <simpara>
+   Zend 拡張モジュールは、そのライフサイクルにおいていくつかの段階をたどります。
+   これらの段階を通じて、開発者はさまざまな初期化や後処理そして情報の取得などを行います。
+   Zend API には、拡張モジュールの 5 つの段階のそれぞれに対するフックがあります。
+   これらは PHP の関数からコールされるのとは別のものです。
+  </simpara>
+  
+  <sect2 xml:id="internals2.structure.lifecycle.mod-vs-req">
+   <title>ロード、アンロードそしてリクエスト</title>
+   
+   <simpara>
+    Zend エンジンは、クライアントからのひとつあるいは複数の "リクエスト"
+    を処理します。昔ながらの CGI の実装では、
+    このリクエストごとにひとつのプロセスを実行します。
+    しかし、それ以外の多くの実装 (有名どころでは Apache モジュールなど)
+    では、複数のリクエストを単一の PHP プロセスに関連付けることができます。
+    したがって、Zend 拡張モジュールはその生存期間中に多くのリクエストを処理することもありえます。
+   </simpara>
+  </sect2>
+
+  <sect2 xml:id="internals2.structure.lifecycle.overview">
+   <title>概要</title>
+   
+   <itemizedlist>
+    <listitem>
+     <simpara>
+      Zend API では、モジュールがメモリにロードされるのは対応する
+      PHP プロセスが立ち上がる際だけです。
+      各モジュールは、<constant>zend_module</constant>
+      構造体で定義された "モジュール初期化"
+      関数をロード時に実行します。
+     </simpara>
+    </listitem>
+    
+    <listitem>
+     <simpara>
+      対応する PHP プロセスがクライアントからのリクエストの処理を開始する
+      (つまり、PHP インタプリタが動き始める) ときには、
+      各モジュールは <constant>zend_module</constant>
+      構造体で定義された "リクエスト初期化"
+      関数を実行します。
+     </simpara>
+    </listitem>
+
+    <listitem>
+     <simpara>
+      対応する PHP プロセスがリクエストの処理を終了したときには、
+      各モジュールは <constant>zend_module</constant>
+      構造体で定義された "リクエスト後処理"
+      関数を実行します。
+     </simpara>
+    </listitem>
+    
+    <listitem>
+     <simpara>
+      対応する PHP プロセスが終了する際に、
+      モジュールも順にメモリからアンロードされます。そのときには、
+      各モジュールは <constant>zend_module</constant>
+      構造体で定義された "モジュール後処理"
+      関数を実行します。
+     </simpara>
+    </listitem>
+   </itemizedlist>
+
+  </sect2>
+
  </sect1>
 
 <!-- Keep this comment at the end of the file
