@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.2 $ -->
-<!-- EN-Revision: 1.4 Maintainer: takagi Status: ready -->
+<!-- $Revision: 1.3 $ -->
+<!-- EN-Revision: 1.6 Maintainer: takagi Status: ready -->
 <refentry xml:id="domdocument.registernodeclass" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>DOMDocument::registerNodeClass</refname>
@@ -31,11 +31,8 @@
      <term><parameter>baseclass</parameter></term>
      <listitem>
       <para>
-       拡張したい DOM クラス。クラス名の一覧は、この章の導入部にあります。
-      </para>
-      <para>
-       もちろん、DOMDocument を拡張したクラスを登録することはできません。
-       しかし、拡張したクラスのインスタンスを作成することで、常にドキュメントを開始できます。
+       拡張したい DOM クラス。クラス名の一覧は、
+       <link linkend="book.dom">この章の導入部</link>にあります。
       </para>
      </listitem>
     </varlistentry>
@@ -169,7 +166,52 @@ text in child
 ]]>
     </screen>
    </example>
+  </para>
+  <para>
+   <example>
+    <title>オーナードキュメントの取得</title>
+    <para>
+     自作の <classname>DOMDocument</classname> インスタンスを作成すると、
+     <varname>ownerDocument</varname> プロパティが作成元のクラスを指すようになります。
+     つまり <classname>DOMDocument</classname> の
+     <function>DOMDocument::registerNodeClass</function> を使う必要はない
+     (実際、使えない) ということです。
+    </para>
+    <programlisting role="php">
+<![CDATA[
+<?php
+class myDOMDocument extends DOMDocument {
+}
 
+class myOtherDOMDocument extends DOMDocument {
+}
+
+// XML から myDOMDocument を作成します
+$doc = new myDOMDocument;
+$doc->loadXML("<root><element><child>text in child</child></element></root>");
+
+$child = $doc->getElementsByTagName("child")->item(0);
+
+// このノードの現在のオーナーは myDOMDocument です
+var_dump(get_class($child->ownerDocument));
+
+// ノードを myDOMDocument からインポートします
+$newdoc = new myOtherDOMDocument;
+$child = $newdoc->importNode($child);
+
+// ノードの新しいオーナーは myOtherDOMDocument に変わりました
+var_dump(get_class($child->ownerDocument));
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen role="xml">
+<![CDATA[
+string(13) "myDOMDocument"
+string(18) "myOtherDOMDocument"
+]]>
+    </screen>
+   </example>
   </para>
  </refsect1>
 
