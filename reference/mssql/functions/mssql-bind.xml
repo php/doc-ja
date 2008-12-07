@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.8 $ -->
-<!-- EN-Revision: 1.13 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.9 $ -->
+<!-- EN-Revision: 1.16 Maintainer: hirokawa Status: ready -->
 <refentry xml:id='function.mssql-bind' xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>mssql_bind</refname>
@@ -17,8 +17,8 @@
    <methodparam><type>string</type><parameter>param_name</parameter></methodparam>
    <methodparam><type>mixed</type><parameter role="reference">var</parameter></methodparam>
    <methodparam><type>int</type><parameter>type</parameter></methodparam>
-   <methodparam choice="opt"><type>int</type><parameter>is_output</parameter></methodparam>
-   <methodparam choice="opt"><type>int</type><parameter>is_null</parameter></methodparam>
+   <methodparam choice="opt"><type>bool</type><parameter>is_output</parameter></methodparam>
+   <methodparam choice="opt"><type>bool</type><parameter>is_null</parameter></methodparam>
    <methodparam choice="opt"><type>int</type><parameter>maxlen</parameter></methodparam>
   </methodsynopsis>
   <para>
@@ -124,18 +124,23 @@
     <programlisting role="php">
 <![CDATA[
 <?php
+// MSSQL に接続します
+mssql_connect('KALLESPC\SQLEXPRESS', 'sa', 'phpfi');
+mssql_select_db('php');
 
-$cn = mssql_connect($DBSERVER, $DBUSER, $DBPASS);
-mssql_select_db($DB, $cn);
+// 新しいストアドプロシージャを作成します
+$stmt = mssql_init('NewUserRecord');
 
-$sp = mssql_init("WDumpAdd"); // ストアドプロシージャ名
+// フィールド名をバインドします
+mssql_bind($stmt, '@username',  'Kalle',        SQLVARCHAR,     false,  false,  60);
+mssql_bind($stmt, '@name',      'Kalle',        SQLVARCHAR,     false,  false,  60);
+mssql_bind($stmt, '@age',       19,             SQLINT1,        false,  false,   3);
 
-mssql_bind($sp, "@productname", stripslashes($newproduct), SQLVARCHAR, false, false, 150);
-mssql_bind($sp, "@quantity", stripslashes($newquantity), SQLVARCHAR, false, false, 50);
+// 実行します
+mssql_execute($stmt);
 
-mssql_execute($sp);
-mssql_close($cn);
-
+// ステートメントを開放します
+mssql_free_statement($stmt);
 ?>
 ]]>
     </programlisting>
