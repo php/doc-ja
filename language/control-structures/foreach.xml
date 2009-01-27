@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 1.1 $ -->
+<!-- EN-Revision: 1.1 Maintainer: takagi Status: ready -->
+
+<sect1 xml:id="control-structures.foreach" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <title><literal>foreach</literal></title>
+ <para>
+  PHP 4には、Perlや他の言語とよく似た
+  <literal>foreach</literal>構文があります。これにより
+  配列要素に関する反復処理が容易になります。この構造には、
+  2種類の構文があります。2番目の構文はあまり知られていませんが、
+  最初の構文の便利な拡張になっています。
+  <informalexample>
+   <programlisting>
+<![CDATA[
+foreach (array_expression as $value)
+    文
+foreach (array_expression as $key => $value)
+    文
+]]>
+   </programlisting>
+  </informalexample>
+ </para>
+ <simpara>
+  最初の形式は、<literal>array_expression</literal>で指定した配列に
+  関してループ処理を行います。各ループにおいて現在の要素の値が
+  <literal>$value</literal>に代入され、内部配列ポインタが一つ前に
+  進められます。(よって、次のループでは次の要素を見ることになります。)
+ </simpara>
+ <simpara>
+  2番目の形式も同様ですが、各ループで現在の要素のキーが変数
+  <literal>$key</literal>に代入されるところが異なります。
+ </simpara>
+ <simpara>
+  PHP 5 では、
+  <link linkend="language.oop5.iterations">オブジェクトのイタレーション</link>
+  を用いることもできます。
+ </simpara>
+ <para>
+  <note>
+   <para>
+    <literal>foreach</literal>の実行開始時に内部配列ポインタは、
+    配列の先頭要素を指すように自動的にリセットされます。
+    このため、<literal>foreach</literal>ループの前に
+    <function>reset</function>をコールする必要はありません。
+   </para>
+  </note>
+ </para>
+ <para>
+  <note>
+   <para>
+    配列が <link linkend="language.references">リファレンス</link>
+    でない限り、<literal>foreach</literal>は、指定した配列自体に対してではなく、
+    そのコピーに対して処理を行います。
+    <literal>foreach</literal> は配列のポインタに副作用を及ぼします。
+    foreach の最中やその後で配列のポインタを使用する際は、まずポインタをリセットしてください。
+   </para>
+  </note>
+ </para>
+ <para>
+  PHP 5 以降、<literal>$value</literal> の前に &amp; を付けることで、
+  容易に配列の要素の値を変更できるようになっています。
+  これにより、値をコピーするのではなく、
+  <link linkend="language.references">リファレンス</link>
+  が代入されます。
+  <informalexample>
+   <programlisting role="php">
+<![CDATA[
+<?php
+$arr = array(1, 2, 3, 4);
+foreach ($arr as &$value) {
+    $value = $value * 2;
+}
+// $arr は array(2, 4, 6, 8) となります
+unset($value); // 最後の要素への参照を解除します
+?>
+]]>
+   </programlisting>
+  </informalexample>
+  この機能は、ループ処理される配列が参照可能である場合 (すなわち、
+  変数である) のみ使用可能です。
+ </para>
+ <warning>
+  <para>
+   <literal>foreach</literal> ループを終えた後でも、
+   <literal>$value</literal> は配列の最後の要素を参照したままとなります。
+   <function>unset</function> でその参照を解除しておくようにしましょう。
+  </para>
+ </warning>
+ <para>
+  <note>
+   <para>
+    <literal>foreach</literal> は、'@' によりエラーメッセージ出力を抑
+    制する機能をサポートしていません。
+   </para>
+  </note>
+ </para>
+ <para>
+  既にご存知かと思いますが、以下の文は機能的に等価です。
+  <informalexample>
+   <programlisting role="php">
+<![CDATA[
+<?php
+$arr = array("one", "two", "three");
+reset($arr);
+while (list(, $value) = each($arr)) {
+    echo "Value: $value<br />\n";
+}
+
+foreach ($arr as $value) {
+    echo "Value: $value<br />\n";
+}
+?>
+]]>
+   </programlisting>
+  </informalexample>
+  以下の文も機能的に等価です。
+  <informalexample>
+   <programlisting role="php">
+<![CDATA[
+<?php
+$arr = array("one", "two", "three");
+reset($arr);
+while (list($key, $value) = each($arr)) {
+    echo "Key: $key; Value: $value<br />\n";
+}
+
+foreach ($arr as $key => $value) {
+    echo "Key: $key; Value: $value<br />\n";
+}
+?>
+]]>
+   </programlisting>
+  </informalexample>
+ </para>
+ <para>
+  使用法を示すためにその他の例を示します。
+  <informalexample>
+   <programlisting role="php">
+<![CDATA[
+<?php
+/* foreach の例 1: 値のみ */
+
+$a = array(1, 2, 3, 17);
+
+foreach ($a as $v) {
+    echo "Current value of \$a: $v.\n";
+}
+
+/* foreachの例2: 値 (説明用に、手動でアクセスする際の表記を出力) */
+
+$a = array(1, 2, 3, 17);
+
+$i = 0; /* 説明用 */
+
+foreach ($a as $v) {
+    echo "\$a[$i] => $v.\n";
+    $i++;
+}
+
+/* foreachの例3: キーと値 */
+
+$a = array(
+    "one" => 1,
+    "two" => 2,
+    "three" => 3,
+    "seventeen" => 17
+);
+
+foreach ($a as $k => $v) {
+    echo "\$a[$k] => $v.\n";
+}
+
+/* foreach の例4: 多次元配列 */
+$a = array();
+$a[0][0] = "a";
+$a[0][1] = "b";
+$a[1][0] = "y";
+$a[1][1] = "z";
+
+foreach ($a as $v1) {
+    foreach ($v1 as $v2) {
+        echo "$v2\n";
+    }
+}
+
+/* foreach の例5: 動的配列 */
+
+foreach (array(1, 2, 3, 4, 5) as $v) {
+    echo "$v\n";
+}
+?>
+]]>
+   </programlisting>
+  </informalexample>
+ </para>
+</sect1>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"../../manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
