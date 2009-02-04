@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.7 $ -->
-<!-- EN-Revision: 1.12 Maintainer: takagi Status: ready -->
+<!-- $Revision: 1.8 $ -->
+<!-- EN-Revision: 1.14 Maintainer: takagi Status: ready -->
 <refentry xml:id="function.db2-connect" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>db2_connect</refname>
@@ -164,8 +164,34 @@
        </variablelist>
       </para>
       <para>
+       以下の新しいオプションは、ibm_db2 のバージョン 1.7.0 以降で使用可能です。
+       <variablelist>
+        <varlistentry>
+         <term><parameter>trustedcontext</parameter></term>
+         <listitem>
+          <para>
+           DB2_TRUSTED_CONTEXT_ENABLE を渡すと、この接続ハンドルでの信頼済みコンテキストを有効にします。
+           このパラメータを <function>db2_set_option</function> で設定することはできません。
+          </para>
+          <para>
+           このキーは、カタログ接続の場合 (たとえローカルデータベースであっても)
+           あるいは接続時に完全な DSN を指定した場合にのみ動作します。
+          </para>
+          <para>
+           データベースをカタログするには次のコマンドを実行します。
+          </para>
+          <para>
+           <literallayout>db2 catalog tcpip node loopback remote &lt;SERVERNAME&gt; server &lt;SERVICENAME&gt;
+db2 catalog database &lt;LOCALDBNAME&gt; as &lt;REMOTEDBNAME&gt; at node loopback
+db2 "update dbm cfg using svcename &lt;SERVICENAME&gt;"
+db2set DB2COMM=TCPIP</literallayout>
+          </para>
+         </listitem>
+        </varlistentry>             
+      </variablelist>
+      </para>     
+      <para>
        以下の新しい i5/OS オプションは、ibm_db2 のバージョン 1.5.1 以降で使用可能です。
-       注意: それ以前のバージョンの ibm_db2 は、これらの新しい i5 オプションをサポートしていません。
        <variablelist>
         <varlistentry>
          <term><parameter>i5_lib</parameter></term>
@@ -203,12 +229,14 @@
            接続が確立された後にこの値が変更され、その接続がリモートデータソースに対するものだった場合は、
            その接続ハンドルに対してもう一度 <function>db2_connect</function>
            がコールされるまで変更は反映されません。
-          </para>
-          <para>
-           注意: php.ini の設定は <parameter>ibm_db2.i5_allow_commit</parameter>==0
-           あるいは <literal>DB2_I5_TXN_NO_COMMIT</literal> がデフォルトです。
-           しかし、その設定よりも <parameter>i5_commit</parameter>
-           オプションの内容のほうが優先されます。
+           <note>
+            <para>
+             php.ini の設定は <parameter>ibm_db2.i5_allow_commit</parameter>==0
+             あるいは <literal>DB2_I5_TXN_NO_COMMIT</literal> がデフォルトです。
+             しかし、その設定よりも <parameter>i5_commit</parameter>
+             オプションの内容のほうが優先されます。
+            </para>
+           </note>           
           </para>
           <para>
            <literal>DB2_I5_TXN_NO_COMMIT</literal> - コミットの管理を使用しません。
@@ -275,7 +303,7 @@
          <term><parameter>i5_date_fmt</parameter></term>
          <listitem>
           <para>
-           <literal>SQL_FMT_ISO</literal> - 国際標準化機構 (ISO) の日付書式
+           <literal>DB2_I5_FMT_ISO</literal> - 国際標準化機構 (ISO) の日付書式
            yyyy-mm-dd を使用します。デフォルトです。
           </para>
           <para>
@@ -388,6 +416,27 @@
           </para>
          </listitem>
         </varlistentry>
+       </variablelist>
+      </para>
+      <para>
+       以下の新しい i5/OS オプションは、ibm_db2 のバージョン 1.8.0 以降で使用可能です。
+       <variablelist>
+        <varlistentry>
+         <term><parameter>i5_libl</parameter></term>
+         <listitem>
+          <para>
+           ファイル参照を解決する際に用いるライブラリ一覧を表す文字。
+           ライブラリ一覧の項目を指定する際は、空白で区切って
+           'i5_libl'=>"MYLIB YOURLIB ANYLIB" のようにします。
+          </para>
+          <note>
+           <para>
+            <parameter>i5_libl</parameter> は qsys2/qcmdexc('cmd',cmdlen) をコールします。
+            これは i5/OS V5R4 以降でのみ使用可能です。
+           </para>
+          </note>
+         </listitem>
+        </varlistentry>         
        </variablelist>
       </para>
      </listitem>
@@ -543,6 +592,68 @@ else {
 ANIMALS
 NAMES
 PICTURES
+]]>
+    </screen>
+   </example>
+   <example>
+    <title>信頼済みコンテキストの使用</title>
+    <para>
+     次の例は、信頼済みのコンテキストを有効にしてユーザを変更し、現在のユーザ ID
+     を取得するものです。
+    </para>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+$database = "SAMPLE";
+$hostname = "localhost";
+$port = 50000;
+$authID = "db2inst1";
+$auth_pass = "ibmdb2";
+
+$tc_user = "tcuser";
+$tc_pass = "tcpassword";
+
+$dsn = "DATABASE=$database;HOSTNAME=$hostname;PORT=$port;
+  PROTOCOL=TCPIP;UID=$authID;PWD=$auth_pass;";
+$options = array ("trustedcontext" => DB2_TRUSTED_CONTEXT_ENABLE);
+
+$tc_conn = db2_connect($dsn, "", "", $options);
+if($tc_conn) {
+    echo "Explicit trusted connection succeeded.\n";
+
+    if(db2_get_option($tc_conn, "trustedcontext")) {
+        $userBefore = db2_get_option($tc_conn, "trusted_user");
+        
+        // user 1 で何らかの作業をします
+
+        // 信頼済みユーザに切り替えます
+        $parameters = array("trusted_user" => $tc_user, 
+          "trusted_password" => $tcuser_pass);
+        $res = db2_set_option ($tc_conn, $parameters, 1);
+
+        $userAfter = db2_get_option($tc_conn, "trusted_user");
+        // 信頼済みユーザとして何らかの作業をします
+
+        if($userBefore != $userAfter) {
+            echo "User has been switched." . "\n";    
+        }
+    }
+
+    db2_close($tc_conn);
+}
+else {
+    echo "Explicit trusted connection failed.\n";
+}
+?>
+
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+Explicit trusted connection succeeded.
+User has been switched.
 ]]>
     </screen>
    </example>
