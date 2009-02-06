@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.3 $ -->
-<!-- EN-Revision: 1.3 Maintainer: takagi Status: ready -->
+<!-- $Revision: 1.4 $ -->
+<!-- EN-Revision: 1.4 Maintainer: takagi Status: ready -->
 <refentry xmlns="http://docbook.org/ns/docbook" xml:id="function.imagick-distortimage">
  <refnamediv>
   <refname>Imagick::distortImage</refname>
@@ -89,13 +89,40 @@
     <programlisting role="php">
 <![CDATA[
 <?php
+/* 新しいオブジェクトを作成します */
+$im = new Imagick();
 
-$im = new imagick( "example.jpg" );
+/* 新しいチェッカー板パターンを作成します */
+$im->newPseudoImage(100, 100, "pattern:checkerboard");
 
-$im->distortImage( Imagick::DISTORTION_PERSPECTIVE, array( 7,40, 4,30, 4,124, 4,123, 85,122, 100,123, 85,2, 100,30 ), true );
+/* 画像フォーマットを png に設定します */
+$im->setImageFormat('png');
 
-$im->writeImage( "example_out.jpg" );
+/* 新しい透明な可視領域を設定します */
+$im->setImageVirtualPixelMethod(Imagick::VIRTUALPIXELMETHOD_TRANSPARENT);
 
+/* マット処理を有効にします */
+$im->setImageMatte(true);
+
+/* 歪め用の制御点 */
+$controlPoints = array( 10, 10, 
+                        10, 5,
+
+                        10, $im->getImageHeight() - 20,
+                        10, $im->getImageHeight() - 5,
+
+                        $im->getImageWidth() - 10, 10,
+                        $im->getImageWidth() - 10, 20,
+
+                        $im->getImageWidth() - 10, $im->getImageHeight() - 10,
+                        $im->getImageWidth() - 10, $im->getImageHeight() - 30);
+
+/* 歪め処理を行います */                       
+$im->distortImage(Imagick::DISTORTION_PERSPECTIVE, $controlPoints, true);
+
+/* 画像を出力します */
+header("Content-Type: image/png");
+echo $im;
 ?>
 ]]>
     </programlisting>
