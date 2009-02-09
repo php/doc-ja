@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.8 $ -->
-<!-- EN-Revision: 1.19 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.9 $ -->
+<!-- EN-Revision: 1.20 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi -->
 <refentry xmlns="http://docbook.org/ns/docbook" xml:id="function.socket-create-pair">
  <refnamediv>
@@ -82,6 +82,36 @@
   </para>
  </refsect1>
 
+ <refsect1 role="changelog">
+  &reftitle.changelog;
+  <para>
+   <informaltable>
+    <tgroup cols="2">
+     <thead>
+      <row>
+       <entry>&Version;</entry>
+       <entry>&Description;</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry>5.3.0</entry>
+       <entry>
+        この関数は、ふたたび Windows プラットフォームで使用可能となりました。
+       </entry>
+      </row>
+      <row>
+       <entry>4.3.0</entry>
+       <entry>
+        この関数は、バグが原因で Windows プラットフォームでは動作しなくなりました。
+       </entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </informaltable>
+  </para>
+ </refsect1>
+
  <refsect1 role="examples">
   &reftitle.examples;
   <para>
@@ -91,15 +121,19 @@
 <![CDATA[
 <?php
 $sockets = array();
+
+/* Windows では AF_INET を使う必要があります */
+$domain = (strtoupper(substr(PHP_OS, 0, 3)) == 'WIN' ? AF_INET : AF_UNIX);
+
 /* ソケットの組の設定 */
-if (socket_create_pair(AF_UNIX, SOCK_STREAM, 0, $sockets) === false) {
+if (socket_create_pair($domain, SOCK_STREAM, 0, $sockets) === false) {
     echo "socket_create_pair failed. Reason: ".socket_strerror(socket_last_error());
 }
 /* データの送受信 */
 if (socket_write($sockets[0], "ABCdef123\n", strlen("ABCdef123\n")) === false) {
     echo "socket_write() failed. Reason: ".socket_strerror(socket_last_error($sockets[0]));
 }
-if (($data = socket_read($sockets[1], strlen("ABCdef123\n"), PHP_BINARY_READ) === false) {
+if (($data = socket_read($sockets[1], strlen("ABCdef123\n"), PHP_BINARY_READ)) === false) {
     echo "socket_read() failed. Reason: ".socket_strerror(socket_last_error($sockets[1]));
 }
 var_dump($data);
@@ -121,6 +155,7 @@ socket_close($sockets[1]);
 $ary = array();
 $strone = 'Message From Parent.';
 $strtwo = 'Message From Child.';
+
 if (socket_create_pair(AF_UNIX, SOCK_STREAM, 0, $ary) === false) {
     echo "socket_create_pair() failed. Reason: ".socket_strerror(socket_last_error());
 }
