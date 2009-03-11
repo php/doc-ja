@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- $Revision: 1.7 $ -->
+<!-- $Revision: 1.8 $ -->
 <!-- EN-Revision: 1.10 Maintainer: takagi Status: working -->
 <chapter xml:id="language.namespaces" xmlns="http://docbook.org/ns/docbook"
  version="1.1">
@@ -59,7 +59,7 @@ const MYCONST = 1;
 $a = new MyClass;
 $c = new \my\name\MyClass; // "グローバル空間" を参照ください
 
-$a = strlen('hi'); // "名前空間の使用法: グローバル関数や変数への
+$a = strlen('hi'); // "名前空間の使用法: グローバル関数/定数への
                    // 移行" を参照ください
 
 $d = namespace\MYCONST; // "namespace 演算子および __NAMESPACE__ 定数"
@@ -257,75 +257,79 @@ echo MyProject\Connection::start();
   </para>
  </sect1>
  <sect1 xml:id="language.namespaces.basics">
-  <title>Using namespaces: Basics</title>
+  <title>名前空間の使用法: 基本編</title>
   <para>
-   Before discussing the use of namespaces, it is important to understand how PHP
-   knows which namespaced element your code is requesting.  A simple analogy can be made
-   between PHP namespaces and a filesystem.  There are three ways to access a file in a
-   file system:
+   名前空間の使い方についてあれこれ言う前に、まずは
+   PHP がどのようにしてコード中の要素の名前空間を知るのかを理解しておくことが重要です。
+   PHP の名前空間は、ファイルシステムにたとえて考えることができます。
+   たとえば、ファイルシステム内のファイルにアクセスするには次の 3 つの方法があります。
    <orderedlist>
     <listitem>
      <simpara>
-      Relative file name like <literal>foo.txt</literal>.  This resolves to
-      <literal>currentdirectory/foo.txt</literal> where currentdirectory is the
-      directory currently occupied.  So if the current directory is
-      <literal>/home/foo</literal>, the name resolves to <literal>/home/foo/foo.txt</literal>.
+      <literal>foo.txt</literal> のような相対ファイル名を使う。これは
+      <literal>currentdirectory/foo.txt</literal> と解釈されます。ここで、
+      currentdirectory は現在いるディレクトリを表します。したがって、カレントディレクトリが
+      <literal>/home/foo</literal> であった場合はこれは <literal>/home/foo/foo.txt</literal>
+      となります。
      </simpara>
     </listitem>
     <listitem>
      <simpara>
-      Relative path name like <literal>subdirectory/foo.txt</literal>.  This resolves
-      to <literal>currentdirectory/subdirectory/foo.txt</literal>.
+      <literal>subdirectory/foo.txt</literal> のような相対パス名を使う。これは
+      <literal>currentdirectory/subdirectory/foo.txt</literal> と解釈されます。
      </simpara>
     </listitem>
     <listitem>
      <simpara>
-      Absolute path name like <literal>/main/foo.txt</literal>.  This resolves
-      to <literal>/main/foo.txt</literal>.
+      <literal>/main/foo.txt</literal> のような絶対パス名を使う。これは
+      <literal>/main/foo.txt</literal> と解釈されます。
      </simpara>
     </listitem>
    </orderedlist>
-   The same principle can be applied to namespaced elements in PHP.  For
-   example, a class name can be referred to in three ways:
+   PHP の名前空間内の要素についても同じ理屈があてはまります。
+   たとえば、クラス名を参照するには次の 3 つの方法があります。
    <orderedlist>
     <listitem>
      <simpara>
-      Unqualified name, or an unprefixed class name like
-      <literal>$a = new foo();</literal> or
-      <literal>foo::staticmethod();</literal>.  If the current namespace is
-      <literal>currentnamespace</literal>, this resolves to
-      <literal>currentnamespace\foo</literal>.  If
-      the code is global, non-namespaced code, this resolves to <literal>foo</literal>.
+      <literal>$a = new foo();</literal> あるいは
+      <literal>foo::staticmethod();</literal> のような非修飾名
+      あるいはプレフィックスなしのクラス名。
+      現在の名前空間が <literal>currentnamespace</literal> である場合、これは
+      <literal>currentnamespace\foo</literal> と解釈されます。
+      名前空間に属さないグローバルなコードにおいては、これは
+      <literal>foo</literal> と解釈されます。
      </simpara>
      <simpara>
-      One caveat: unqualified names for functions and constants will
-      resolve to global functions and constants if the namespaced function or constant
-      is not defined.  See <link linkend="language.namespaces.fallback">Using namespaces:
-      fallback to global function/constant</link> for details.
-     </simpara>
-    </listitem>
-    <listitem>
-     <simpara>
-      Qualified name, or a prefixed class name like
-      <literal>$a = new subnamespace\foo();</literal> or
-      <literal>subnamespace\foo::staticmethod();</literal>.  If the current namespace is
-      <literal>currentnamespace</literal>, this resolves to
-      <literal>currentnamespace\subnamespace\foo</literal>.  If
-      the code is global, non-namespaced code, this resolves to <literal>subnamespace\foo</literal>.
+      注意: 修飾されていない関数や定数は、名前空間内にその関数や定数がなければ
+      グローバルな関数あるいは変数とみなされます。詳細は
+      <link linkend="language.namespaces.fallback">名前空間の使用法:
+      グローバルな関数/定数への移行</link> を参照ください。
      </simpara>
     </listitem>
     <listitem>
      <simpara>
-      Fully qualified name, or a prefixed name with global prefix operator like
-      <literal>$a = new \currentnamespace\foo();</literal> or
-      <literal>\currentnamespace\foo::staticmethod();</literal>.  This always resolves
-      to the literal name specified in the code, <literal>currentnamespace\foo</literal>.
+      <literal>$a = new subnamespace\foo();</literal> あるいは
+      <literal>subnamespace\foo::staticmethod();</literal> のような修飾名
+      あるいはプレフィックスつきクラス名。
+      現在の名前空間が <literal>currentnamespace</literal> である場合、これは
+      <literal>currentnamespace\subnamespace\foo</literal> と解釈されます。
+      名前空間に属さないグローバルなコードにおいては、これは
+      <literal>subnamespace\foo</literal> と解釈されます。
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <literal>$a = new \currentnamespace\foo();</literal> あるいは
+      <literal>\currentnamespace\foo::staticmethod();</literal> のような完全修飾名
+      あるいはグローバルプレフィックス演算子つきのクラス名。
+      これは、常にコードで記述されたとおりの名前である
+      <literal>currentnamespace\foo</literal> と解釈されます。
      </simpara>
     </listitem>
    </orderedlist>
   </para>
   <para>
-   Here is an example of the three kinds of syntax in actual code:
+   これら 3 つの構文を実際のコードで使う例を次に示します。
    <informalexample>
     <simpara>file1.php</simpara>
     <programlisting role="php">
@@ -356,33 +360,32 @@ class foo
     static function staticmethod() {}
 }
 
-/* Unqualified name */
-foo(); // resolves to function Foo\Bar\foo
-foo::staticmethod(); // resolves to class Foo\Bar\foo, method staticmethod
-echo FOO; // resolves to constant Foo\Bar\FOO
+/* 非修飾名 */
+foo(); // Foo\Bar\foo 関数と解釈されます
+foo::staticmethod(); // Foo\Bar\foo クラスの staticmethod メソッドと解釈されます
+echo FOO; // 定数 Foo\Bar\FOO と解釈されます
 
-/* Qualified name */
-subnamespace\foo(); // resolves to function Foo\Bar\subnamespace\foo
-subnamespace\foo::staticmethod(); // resolves to class Foo\Bar\subnamespace\foo,
-                                  // method staticmethod
-echo subnamespace\FOO; // resolves to constant Foo\Bar\subnamespace\FOO
+/* 修飾名 */
+subnamespace\foo(); // Foo\Bar\subnamespace\foo 関数と解釈されます
+subnamespace\foo::staticmethod(); // Foo\Bar\subnamespace\foo クラスの
+                                  // staticmethod メソッドと解釈されます
+echo subnamespace\FOO; // 定数 Foo\Bar\subnamespace\FOO と解釈されます
                                   
-/* Fully qualified name */
-\Foo\Bar\foo(); // resolves to function Foo\Bar\foo
-\Foo\Bar\foo::staticmethod(); // resolves to class Foo\Bar\foo, method staticmethod
-echo \Foo\Bar\FOO; // resolves to constant Foo\Bar\FOO
+/* 完全修飾名 */
+\Foo\Bar\foo(); // Foo\Bar\foo 関数と解釈されます
+\Foo\Bar\foo::staticmethod(); // Foo\Bar\foo クラスの staticmethod メソッドと解釈されます
+echo \Foo\Bar\FOO; // 定数 Foo\Bar\FOO と解釈されます
 ?>
      ]]>
     </programlisting>
    </informalexample>
   </para>
   <para>
-   Note that to access any global
-   class, function or constant, a fully qualified name can be used, such as
-   <function>\strlen</function> or <classname>\Exception</classname> or
-   <literal>\INI_ALL</literal>.
+   グローバルなクラス、関数あるいは定数にアクセスするには、完全修飾名を使用して
+   <function>\strlen</function>、<classname>\Exception</classname> あるいは
+   <literal>\INI_ALL</literal> などとすることができます。
    <example>
-    <title>Accessing global classes, functions and constants from within a namespace</title>
+    <title>グローバルなクラス、関数および定数への名前空間内からのアクセス</title>
     <programlisting role="php">
      <![CDATA[
 <?php
@@ -392,9 +395,9 @@ function strlen() {}
 const INI_ALL = 3;
 class Exception {}
 
-$a = \strlen('hi'); // calls global function strlen
-$b = \INI_ALL; // accesses global constant INI_ALL
-$c = new \Exception('error'); // instantiates global class Exception
+$a = \strlen('hi'); // グローバル関数 strlen をコールします
+$b = \INI_ALL; // グローバル定数 INI_ALL にアクセスします
+$c = new \Exception('error'); // グローバルクラス Exception のインスタンスを作成します
 ?>
      ]]>
     </programlisting>
@@ -402,12 +405,12 @@ $c = new \Exception('error'); // instantiates global class Exception
   </para>
  </sect1>
  <sect1 xml:id="language.namespaces.dynamic">
-  <title>Namespaces and dynamic language features</title>
+  <title>名前空間と動的言語機能</title>
   <para>
-   PHP's implementation of namespaces is influenced by its dynamic nature as a programming
-   language.  Thus, to convert code like the following example into namespaced code:
+   PHP における名前空間の実装は、PHP 自身が動的プログラミング言語であるという性質に影響を受けています。
+   したがって、次の例のようなコードを名前空間を使って書き直すには
    <example>
-    <title>Dynamically accessing elements</title>
+    <title>要素への動的なアクセス</title>
     <simpara>example1.php:</simpara>
     <programlisting role="php">
      <![CDATA[
@@ -426,20 +429,19 @@ function funcname()
 const constname = "global";
 
 $a = 'classname';
-$obj = new $a; // prints classname::__construct
+$obj = new $a; // classname::__construct と表示します
 $b = 'funcname';
-$b(); // prints funcname
-echo constant('constname'), "\n"; // prints global
+$b(); // funcname と表示します
+echo constant('constname'), "\n"; // global と表示します
 ?>
     ]]>
     </programlisting>
    </example>
-   One must use the fully qualified name (class name with namespace prefix).
-   Note that because there is no difference between a qualified and a fully qualified Name
-   inside a dynamic class name, function name, or constant name, the leading backslash is
-   not necessary.
+   完全修飾名 (クラス名に名前空間プレフィックスをつけたもの) を使う必要があります。
+   動的なクラス名、関数名あるいは定数名においては修飾名と完全修飾名に差はないので、
+   先頭のバックスラッシュはなくてもかまいません。
    <example>
-    <title>Dynamically accessing namespaced elements</title>
+    <title>名前空間つき要素への動的なアクセス</title>
     <programlisting role="php">
      <![CDATA[
 <?php
@@ -460,69 +462,70 @@ const constname = "namespaced";
 include 'example1.php';
 
 $a = 'classname';
-$obj = new $a; // prints classname::__construct
+$obj = new $a; // classname::__construct と表示します
 $b = 'funcname';
-$b(); // prints funcname
-echo constant('constname'), "\n"; // prints global
+$b(); // funcname と表示します
+echo constant('constname'), "\n"; // global と表示します
 
-/* note that if using double quotes, "\\namespacename\\classname" must be used */
+/* ダブルクォートを使う場合は "\\namespacename\\classname" としなければなりません */
 $a = '\namespacename\classname';
-$obj = new $a; // prints namespacename\classname::__construct
+$obj = new $a; // namespacename\classname::__construct と表示します
 $a = 'namespacename\classname';
-$obj = new $a; // also prints namespacename\classname::__construct
+$obj = new $a; // これも namespacename\classname::__construct と表示します
 $b = 'namespacename\funcname';
-$b(); // prints namespacename\funcname
+$b(); // namespacename\funcname と表示します
 $b = '\namespacename\funcname';
-$b(); // also prints namespacename\funcname
-echo constant('\namespacename\constname'), "\n"; // prints namespaced
-echo constant('namespacename\constname'), "\n"; // also prints namespaced
+$b(); // これも namespacename\funcname と表示します
+echo constant('\namespacename\constname'), "\n"; // namespaced と表示します
+echo constant('namespacename\constname'), "\n"; // これも namespaced と表示します
 ?>
     ]]>
     </programlisting>
    </example>
   </para>
   <para>
-   Be sure to read the <link linkend="language.namespaces.faq.quote">note about
-   escaping namespace names in strings</link>.
+   <link linkend="language.namespaces.faq.quote">
+   文字列中の名前空間名のエスケープに関する注意</link>
+   を読んでおくことを忘れないようにしましょう。
   </para>
  </sect1>
  <sect1 xml:id="language.namespaces.nsconstants">
-  <title>namespace keyword and __NAMESPACE__ constant</title>
+  <title>namespace キーワードおよび __NAMESPACE__ 定数</title>
   <para>
-   PHP supports two ways of abstractly accessing elements within the current namespace,
-   the <constant>__NAMESPACE__</constant> magic constant, and the <literal>namespace</literal>
-   keyword.
+   PHP には、現在の名前空間内の要素へのアクセスを抽象化するための方法が 2 通りあります。
+   マジック定数 <constant>__NAMESPACE__</constant> および <literal>namespace</literal>
+   キーワードがそれです。
   </para>
   <para>
-   The value of <constant>__NAMESPACE__</constant> is a string that contains the current
-   namespace name.  In global, un-namespaced code, it contains an empty string.
+   <constant>__NAMESPACE__</constant> の値は文字列で、現在の名前空間の名前が格納されます。
+   名前空間に属さないグローバルなコードでは、この中身は空文字列となります。
    <example>
-    <title>__NAMESPACE__ example, namespaced code</title>
+    <title>名前空間内のコードでの __NAMESPACE__ の例</title>
     <programlisting role="php">
      <![CDATA[
 <?php
 namespace MyProject;
 
-echo '"', __NAMESPACE__, '"'; // outputs "MyProject"
+echo '"', __NAMESPACE__, '"'; // "MyProject" と出力します
 ?>
 ]]>
     </programlisting>
    </example>
    <example>
-    <title>__NAMESPACE__ example, global code</title>
+    <title>グローバルなコードでの __NAMESPACE__ の例</title>
     <programlisting role="php">
      <![CDATA[
 <?php
 
-echo '"', __NAMESPACE__, '"'; // outputs ""
+echo '"', __NAMESPACE__, '"'; // "" と出力します
 ?>
 ]]>
     </programlisting>
    </example>
-   The <constant>__NAMESPACE__</constant> constant is useful for dynamically constructing
-   names, for instance:
+   <constant>__NAMESPACE__</constant> 定数は、動的に名前を作成する場合に便利です。
+   たとえば次のようになります。
    <example>
-    <title>using __NAMESPACE__ for dynamic name construction</title>
+    <title>__NAMESPACE__ による動的な名前の作成</title>
     <programlisting role="php">
      <![CDATA[
 <?php
@@ -539,41 +542,42 @@ function get($classname)
    </example>
   </para>
   <para>
-   The <literal>namespace</literal> keyword can be used to explicitly request
-   an element from the current namespace or a sub-namespace.  It is the namespace
-   equivalent of the <literal>self</literal> operator for classes.
+   <literal>namespace</literal> キーワードを使用すると、
+   現在の名前空間あるいはサブ名前空間内の要素を明示的に指定することができます。
+   これは、クラスにおける <literal>self</literal>
+   演算子と同じ意味合いのものです。
    <example>
-    <title>the namespace operator, inside a namespace</title>
+    <title>名前空間内での namespace 演算子</title>
     <programlisting role="php">
      <![CDATA[
 <?php
 namespace MyProject;
 
-use blah\blah as mine; // see "Using namespaces: importing/aliasing"
+use blah\blah as mine; // "名前空間の使用法: インポート/エイリアス" を参照ください
 
-blah\mine(); // calls function blah\blah\mine()
-namespace\blah\mine(); // calls function MyProject\blah\mine()
+blah\mine(); // blah\blah\mine() 関数をコールします
+namespace\blah\mine(); // MyProject\blah\mine() 関数をコールします
 
-namespace\func(); // calls function MyProject\func()
-namespace\sub\func(); // calls function MyProject\sub\func()
-namespace\cname::method(); // calls static method "method" of class MyProject\cname
-$a = new namespace\sub\cname(); // instantiates object of class MyProject\sub\cname
-$b = namespace\CONSTANT; // assigns value of constant MyProject\CONSTANT to $b
+namespace\func(); // MyProject\func() 関数をコールします
+namespace\sub\func(); // MyProject\sub\func() 関数をコールします
+namespace\cname::method(); // MyProject\cname クラスの静的メソッド "method" をコールします
+$a = new namespace\sub\cname(); // MyProject\sub\cname クラスのオブジェクトのインスタンスを作成します
+$b = namespace\CONSTANT; // 定数 MyProject\CONSTANT の値を $b に代入します
 ?>
 ]]>
     </programlisting>
    </example>
    <example>
-    <title>the namespace operator, in global code</title>
+    <title>グローバルコードでの namespace 演算子</title>
     <programlisting role="php">
      <![CDATA[
 <?php
 
-namespace\func(); // calls function func()
-namespace\sub\func(); // calls function sub\func()
-namespace\cname::method(); // calls static method "method" of class cname
-$a = new namespace\sub\cname(); // instantiates object of class sub\cname
-$b = namespace\CONSTANT; // assigns value of constant CONSTANT to $b
+namespace\func(); // func() 関数をコールします
+namespace\sub\func(); // sub\func() 関数をコールします
+namespace\cname::method(); // cname クラスの静的メソッド "method" をコールします
+$a = new namespace\sub\cname(); // sub\cname クラスのオブジェクトのインスタンスを作成します
+$b = namespace\CONSTANT; // 定数 CONSTANT の値を $b に代入します
 ?>
 ]]>
     </programlisting>
@@ -581,98 +585,97 @@ $b = namespace\CONSTANT; // assigns value of constant CONSTANT to $b
   </para>
  </sect1>
  <sect1 xml:id="language.namespaces.importing">
-  <title>Using namespaces: Aliasing/Importing</title>
+  <title>名前空間の使用法: エイリアス/インポート</title>
   <para>
-   The ability to refer to an external fully qualified name with an alias, or importing,
-   is an important feature of namespaces.  This is similar to the
-   ability of unix-based filesystems to create symbolic links to a file or to a directory.
+   外部の完全修飾名をエイリアスで参照したりインポートしたりする機能は、
+   名前空間において非常に重要なものです。
+   これは、Unix 系のファイルシステムでファイルやディレクトリへのシンボリックリンクを作成することに似ています。
   </para>
   <para>
-   PHP namespaces support
-   two kinds of aliasing or importing: aliasing a class name, and aliasing a namespace name.
-   Note that importing a function or constant is not supported.
+   PHP の名前空間では、2 通りの方法でエイリアスやインポートをサポートしています。
+   クラス名のエイリアスを作成する方法と名前空間名のエイリアスを作成する方法です。
+   関数や定数のインポートはサポートしていないことに注意しましょう。
   </para>
   <para>
-   In PHP, aliasing is accomplished with the <literal>use</literal> operator.  Here
-   is an example showing all 3 kinds of importing:
+   PHP でのエイリアス作成には <literal>use</literal> 演算子を使用します。
+   ここに、3 種類すべてのインポート方法の例を示します。
    <example>
-    <title>importing/aliasing with the use operator</title>
+    <title>use 演算子によるインポート/エイリアス</title>
     <programlisting role="php">
      <![CDATA[
 <?php
 namespace foo;
 use My\Full\Classname as Another;
 
-// this is the same as use My\Full\NSname as NSname
+// これは use My\Full\NSname as NSname と同じです
 use My\Full\NSname;
 
-// importing a global class
+// グローバルクラスをインポートします
 use \ArrayObject;
 
-$obj = new namespace\Another; // instantiates object of class foo\Another
-$obj = new Another; // instantiates object of class My\Full\Classname
-NSname\subns\func(); // calls function My\Full\NSname\subns\func
-$a = new ArrayObject(array(1)); // instantiates object of class ArrayObject
-// without the "use \ArrayObject" we would instantiate an object of class foo\ArrayObject
+$obj = new namespace\Another; // foo\Another クラスのオブジェクトのインスタンスを作成します
+$obj = new Another; // My\Full\Classname クラスのオブジェクトのインスタンスを作成します
+NSname\subns\func(); // My\Full\NSname\subns\func 関数をコールします
+$a = new ArrayObject(array(1)); // ArrayObject クラスのオブジェクトのインスタンスを作成します
+// "use \ArrayObject" がなければ、foo\ArrayObject クラスのオブジェクトのインスタンスを作成することになります
 ?>
 ]]>
     </programlisting>
    </example>
-   Note that for namespaced names (fully qualified namespace names containing
-   namespace separator, such as <literal>Foo\Bar</literal> as opposed to global names that
-   do not, such as <literal>FooBar</literal>), the leading backslash is unnecessary and not
-   allowed, as import names
-   must be fully qualified, and are not processed relative to the current namespace.
+   名前空間つきの名前 (完全修飾形式の名前空間は区切り文字を含んだ
+   <literal>Foo\Bar</literal> のようなもので、グローバルな場合は区切り文字を含まない
+   <literal>FooBar</literal> のようになります)
+   では先頭のバックスラッシュは不要で、許可されないことに注意しましょう。
+   インポートする名前は完全修飾形式でなければならず、
+   現在の名前空間からの相対指定で処理されることはないからです。
   </para>
   <para>
-   PHP additionally supports a convenience shortcut to place multiple use statements
-   on the same line
+   PHP では、複数の use 文を同一行に置くための便利なショートカットもサポートしています。
    <example>
-    <title>importing/aliasing with the use operator, multiple use statements combined</title>
+    <title>use 演算子によるインポート/エイリアスで、複数の use 文を組み合わせる例</title>
     <programlisting role="php">
      <![CDATA[
 <?php
 use My\Full\Classname as Another, My\Full\NSname;
 
-$obj = new Another; // instantiates object of class My\Full\Classname
-NSname\subns\func(); // calls function My\Full\NSname\subns\func
+$obj = new Another; // My\Full\Classname クラスのオブジェクトのインスタンスを作成します
+NSname\subns\func(); // My\Full\NSname\subns\func 関数をコールします
 ?>
 ]]>
     </programlisting>
    </example>
   </para>
   <para>
-   Importing is performed at compile-time, and so does not affect dynamic class, function
-   or constant names.
+   インポートはコンパイル時に行われるので、動的なクラス名、関数名や定数名には影響を及ぼしません。
    <example>
-    <title>Importing and dynamic names</title>
+    <title>インポートと動的名</title>
     <programlisting role="php">
      <![CDATA[
 <?php
 use My\Full\Classname as Another, My\Full\NSname;
 
-$obj = new Another; // instantiates object of class My\Full\Classname
+$obj = new Another; // My\Full\Classname クラスのオブジェクトのインスタンスを作成します
 $a = 'Another';
-$obj = new $a;      // instantiates object of class Another
+$obj = new $a;      // Another クラスのオブジェクトのインスタンスを作成します
 ?>
 ]]>
     </programlisting>
    </example>
   </para>
   <para>
-   In addition, importing only affects unqualified and qualified names.  Fully qualified
-   names are absolute, and unaffected by imports.
+   さらにインポートの影響が及ぶのは非修飾名および修飾名のみです。
+   完全修飾名は絶対的なものであり、インポートの影響を受けることはありません。
    <example>
-    <title>Importing and fully qualified names</title>
+    <title>インポートと完全修飾名</title>
     <programlisting role="php">
      <![CDATA[
 <?php
 use My\Full\Classname as Another, My\Full\NSname;
 
-$obj = new Another; // instantiates object of class My\Full\Classname
-$obj = new \Another; // instantiates object of class Another
-$obj = new Another\thing; // instantiates object of class My\Full\Classname\thing
-$obj = new \Another\thing; // instantiates object of class Another\thing
+$obj = new Another; // My\Full\Classname クラスのオブジェクトのインスタンスを作成します
+$obj = new \Another; // Another クラスのオブジェクトのインスタンスを作成します
+$obj = new Another\thing; // My\Full\Classname\thing クラスのオブジェクトのインスタンスを作成します
+$obj = new \Another\thing; // Another\thing クラスのオブジェクトのインスタンスを作成します
 ?>
 ]]>
     </programlisting>
@@ -680,24 +683,23 @@ $obj = new \Another\thing; // instantiates object of class Another\thing
   </para>
  </sect1>
  <sect1 xml:id="language.namespaces.global">
-  <title>Global space</title>
+  <title>グローバル空間</title>
   <para>
-   Without any namespace definition, all class and function definitions are
-   placed into the global space - as it was in PHP before namespaces were
-   supported. Prefixing a name with <literal>\</literal> will specify that 
-   the name is required from the global space even in the context of the 
-   namespace.
+   名前空間の定義がない場合、すべてのクラスや関数の定義はグローバル空間に配置されます。
+   これは、名前空間に対応する前の PHP がサポートしていた空間です。
+   名前の先頭に <literal>\</literal> をつけると、
+   名前空間の内部からであってもグローバル空間の名前を指定することができます。
    <example>
-    <title>Using global space specification</title>
+    <title>グローバル空間を指定する方法</title>
     <programlisting role="php">
      <![CDATA[
 <?php
 namespace A\B\C;
 
-/* This function is A\B\C\fopen */
+/* この関数は A\B\C\fopen です */
 function fopen() { 
      /* ... */
-     $f = \fopen(...); // call global fopen
+     $f = \fopen(...); // グローバルな fopen をコールします
      return $f;
 } 
 ?>
@@ -707,22 +709,23 @@ function fopen() {
   </para>
  </sect1>
  <sect1 xml:id="language.namespaces.fallback">
-  <title>Using namespaces: fallback to global function/constant</title>
+  <title>名前空間の使用法: グローバル関数/定数への移行</title>
   <para>
-   Inside a namespace, when PHP encounters a unqualified Name in a class name, function or
-   constant context, it resolves these with different priorities.  Class names always
-   resolve to the current namespace name.  Thus to access internal or non-namespaced
-   user classes, One must refer to them with their fully qualified Name as in:
+   名前空間内で、PHP が未定義のクラス名や関数、定数に出会った場合、
+   それぞれに応じて異なる優先順位で解決を行います。
+   クラス名は、常に現在の名前空間での名前として解釈されます。
+   したがって、内部クラスあるいは名前空間に属さないクラスにアクセスするには
+   次のように完全修飾名で指定しなければなりません。
    <example>
-    <title>Accessing global classes inside a namespace</title>
+    <title>名前空間内からのグローバルクラスへのアクセス</title>
     <programlisting role="php">
      <![CDATA[
 <?php
 namespace A\B\C;
 class Exception extends \Exception {}
 
-$a = new Exception('hi'); // $a is an object of class A\B\C\Exception
-$b = new \Exception('hi'); // $b is an object of class Exception
+$a = new Exception('hi'); // $a は A\B\C\Exception クラスのオブジェクトです
+$b = new \Exception('hi'); // $b は Exception クラスのオブジェクトです
 
 $c = new ArrayObject; // fatal error, class A\B\C\ArrayObject not found
 ?>
@@ -731,10 +734,10 @@ $c = new ArrayObject; // fatal error, class A\B\C\ArrayObject not found
    </example>
   </para>
   <para>
-   For functions and constants, PHP will fall back to global functions or constants
-   if a namespaced function or constant does not exist.
+   関数や定数の場合、名前空間内にその関数や定数が見つからなければ
+   PHP はグローバル関数/定数を探します。
    <example>
-    <title>global functions/constants fallback inside a namespace</title>
+    <title>名前空間内からのグローバル関数/定数への移行</title>
     <programlisting role="php">
      <![CDATA[
 <?php
@@ -746,11 +749,11 @@ function strlen($str)
     return \strlen($str) - 1;
 }
 
-echo E_ERROR, "\n"; // prints "45"
-echo INI_ALL, "\n"; // prints "7" - falls back to global INI_ALL
+echo E_ERROR, "\n"; // "45" と表示します
+echo INI_ALL, "\n"; // "7" と表示します - グローバルの INI_ALL に移行しました
 
-echo strlen('hi'), "\n"; // prints "1"
-if (is_array('hi')) { // prints "is not array"
+echo strlen('hi'), "\n"; // "1" と表示します
+if (is_array('hi')) { // "is not array" と表示します
     echo "is array\n";
 } else {
     echo "is not array\n";
@@ -763,200 +766,199 @@ if (is_array('hi')) { // prints "is not array"
  </sect1>
 
  <sect1 xml:id="language.namespaces.rules">
-  <title>Name resolution rules</title>
+  <title>名前解決のルール</title>
   <para>
-   For the purposes of these resolution rules, here are some important definitions:
+   名前解決のルールを説明するにあたって、いくつかの重要な定義を示しておきます。
    <variablelist>
-    <title>Namespace name definitions</title>
+    <title>名前空間名の定義</title>
     <varlistentry>
-     <term>Unqualified name</term>
+     <term>非修飾名</term>
      <listitem>
       <para>
-       This is an identifier without a namespace separator, such as <literal>Foo</literal>
+       これは名前空間区切り文字を含まない識別子で、<literal>Foo</literal> のようなものです。
       </para>
      </listitem>
     </varlistentry>
     <varlistentry>
-     <term>Qualified name</term>
+     <term>修飾名</term>
      <listitem>
       <para>
-       This is an identifier with a namespace separator, such as <literal>Foo\Bar</literal>
+       これは名前空間区切り文字を含む識別子で、<literal>Foo\Bar</literal> のようなものです。
       </para>
      </listitem>
     </varlistentry>
     <varlistentry>
-     <term>Fully qualified name</term>
+     <term>完全修飾名</term>
      <listitem>
       <para>
-       This is an identifier with a namespace separator that begins with a namespace
-       separator, such as <literal>\Foo\Bar</literal>.  <literal>namespace\Foo</literal>
-       is also a fully qualified name.
+       これは名前空間区切り文字を含む識別子のうち先頭が名前空間区切り文字で始まるもので、
+       <literal>\Foo\Bar</literal> のようなものです。<literal>namespace\Foo</literal>
+       も完全修飾名です。
       </para>
      </listitem>
     </varlistentry>
    </variablelist>
   </para>
   <para>
-   Names are resolved following these resolution rules:
+   名前解決は、これらの解決ルールによって行われます。
    <orderedlist>
     <listitem>
      <simpara>
-      Calls to fully qualified functions, classes or constants are resolved at compile-time.
-      For instance <literal>new \A\B</literal> resolves to class <literal>A\B</literal>.
+      完全修飾された関数、クラス、定数へのコールはコンパイル時に解決されます。
+      たとえば、<literal>new \A\B</literal> は <literal>A\B</literal> クラスと解釈されます。
      </simpara>
     </listitem>
     <listitem>
      <simpara>
-      All unqualified and qualified names (not fully qualified names) are translated during
-      compilation according to current
-      import rules. For example, if the namespace <literal>A\B\C</literal> is imported as
-      <literal>C</literal>, a call to 
-      <literal>C\D\e()</literal> is translated to <literal>A\B\C\D\e()</literal>.
+      非修飾名および (完全修飾でない) 修飾名の変換は、現在のインポートルールに基づいてコンパイル時に行われます。
+      たとえば、名前空間 <literal>A\B\C</literal> が
+      <literal>C</literal> という名前でインポートされている場合、
+      <literal>C\D\e()</literal> へのコールは <literal>A\B\C\D\e()</literal>
+      と変換されます。
      </simpara>
     </listitem>
     <listitem>
      <simpara>
-      Inside a namespace, all qualified names not translated according to import
-      rules have the current namespace prepended.  For example, if a call
-      to <literal>C\D\e()</literal> is performed within namespace <literal>A\B</literal>,
-      it is translated to <literal>A\B\C\D\e()</literal>.
+      名前空間内で、インポートルールによる変換が行われなかった修飾名は
+      現在の名前区間が先頭に付加されます。たとえば、
+      <literal>C\D\e()</literal> へのコールが名前空間 <literal>A\B</literal>
+      内で行われた場合、それは <literal>A\B\C\D\e()</literal> に変換されます。
      </simpara>
     </listitem>
     <listitem>
      <simpara>
-      Unqualified class names are translated during compilation according to current
-      import rules (full name substituted for short imported name). In example, if 
-      the namespace <literal>A\B\C</literal> is imported as C, <literal>new C()</literal> is 
-      translated to <literal>new A\B\C()</literal>.
+      非修飾クラス名の変換は、現在のインポートルールに基づいてコンパイル時に行われます
+      (フルネームが、インポートされた短い名前に置き換えられます)。たとえば、
+      名前空間 <literal>A\B\C</literal> が C という名前でインポートされている場合、
+      <literal>new C()</literal> は <literal>new A\B\C()</literal> と変換されます。
      </simpara>
     </listitem>
     <listitem>
      <simpara>
-      Inside namespace (say A\B), calls to unqualified functions are resolved at run-time.
-      Here is how a 
-      call to function <literal>foo()</literal> is resolved:
+      名前空間内 (ここでは A\B としましょう) で、非修飾な関数へのコールは実行時に解決されます。
+      関数 <literal>foo()</literal> のコールは、次のように解決されます。
      </simpara>
       <orderedlist>
        <listitem>
         <simpara>
-         It looks for a function from the current namespace:
-         <literal>A\B\foo()</literal>.
+         まず現在の名前空間から関数
+         <literal>A\B\foo()</literal> を探します。
         </simpara>
        </listitem>
        <listitem>
         <simpara>
-         It tries to find and call the <emphasis>global</emphasis> function
-         <literal>foo()</literal>.
+         次に <emphasis>グローバル</emphasis> 関数
+         <literal>foo()</literal> を探します。
         </simpara>
        </listitem>
       </orderedlist>
     </listitem>
     <listitem>
      <simpara>
-      Inside namespace (say <literal>A\B</literal>), calls to unqualified or qualified
-      class names (not fully qualified class names)
-      are resolved at run-time. Here is how a call to 
-      <literal>new C()</literal> or <literal>new D\E()</literal> is resolved.
-      For <literal> new C()</literal>:
+      名前空間内 (ここでは <literal>A\B</literal> としましょう) で、
+      非修飾あるいは (完全修飾でない) 修飾なクラスへのコールは実行時に解決されます。
+      <literal>new C()</literal> や <literal>new D\E()</literal>
+      がどのように解決されるかを示します。
+      <literal> new C()</literal> の場合は、
      </simpara>
      <orderedlist>
       <listitem>
        <simpara>
-        It looks for a class from the current namespace:
-        <literal>A\B\C</literal>.
+        まず現在の名前空間からクラス
+        <literal>A\B\C</literal> を探します。
        </simpara>
       </listitem>
       <listitem>
        <simpara>
-        It attemts to autoload <literal>A\B\C</literal>.
+        <literal>A\B\C</literal> を autoload します。
        </simpara>
       </listitem>
      </orderedlist>
      <simpara>
-      For <literal> new D\E()</literal>:
+      <literal> new D\E()</literal> の場合は、
      </simpara>
      <orderedlist>
       <listitem>
        <simpara>
-        It looks for a class by prepending the current namespace:
-        <literal>A\B\D\E</literal>.
+        現在の名前空間を先頭につけた
+        <literal>A\B\D\E</literal> を探します。
        </simpara>
       </listitem>
       <listitem>
        <simpara>
-        It attemts to autoload <literal>A\B\D\E</literal>.
+        <literal>A\B\D\E</literal> を autoload します。
        </simpara>
       </listitem>
      </orderedlist>
      <simpara>
-      To reference any global class in the global namespace, 
-      its fully qualified name <literal>new \C()</literal> must be used.
+      グローバル名前空間内のグローバルクラスを参照するには、完全修飾形式の
+      <literal>new \C()</literal> を使わなければなりません。
      </simpara>
     </listitem>
    </orderedlist>
   </para>
   <example>
-   <title>Name resolutions illustrated</title>
+   <title>名前解決の例</title>
    <programlisting role="php">
 <![CDATA[
 <?php
 namespace A;
 use B\D, C\E as F;
 
-// function calls
+// 関数のコール
 
-foo();      // first tries to call "foo" defined in namespace "A"
-            // then calls global function "foo"
+foo();      // まず名前空間 "A" で定義されている "foo" のコールを試み、
+            // 次にグローバル関数 "foo" をコールします
 
-\foo();     // calls function "foo" defined in global scope
+\foo();     // グローバルスコープで定義されている関数 "foo" をコールします
 
-my\foo();   // calls function "foo" defined in namespace "A\my"
+my\foo();   // 名前空間 "A\my" で定義されている関数 "foo" をコールします
 
-F();        // first tries to call "F" defined in namespace "A"
-            // then calls global function "F"
+F();        // まず名前空間 "A" で定義されている "F" のコールを試み、
+            // 次にグローバル関数 "F" をコールします
 
-// class references
+// クラスの参照
 
-new B();    // creates object of class "B" defined in namespace "A"
-            // if not found, it tries to autoload class "A\B"
+new B();    // 名前空間 "A" で定義されているクラス "B" のオブジェクトを作成します
+            // 見つからない場合は、クラス "A\B" の autoload を試みます
 
-new D();    // using import rules, creates object of class "D" defined in namespace "B"
-            // if not found, it tries to autoload class "B\D"
+new D();    // インポートルールを使用し、名前空間 "B" で定義されているクラス "D" のオブジェクトを作成します
+            // 見つからない場合は、クラス "B\D" の autoload を試みます
 
-new F();    // using import rules, creates object of class "E" defined in namespace "C"
-            // if not found, it tries to autoload class "C\E"
+new F();    // インポートルールを使用し、名前空間 "C" で定義されているクラス "E" のオブジェクトを作成します
+            // 見つからない場合は、クラス "C\E" の autoload を試みます
 
-new \B();   // creates object of class "B" defined in global scope
-            // if not found, it tries to autoload class "B"
+new \B();   // グローバルスコープで定義されているクラス "B" のオブジェクトを作成します
+            // 見つからない場合は、クラス "B" の autoload を試みます
 
-new \D();   // creates object of class "D" defined in global scope
-            // if not found, it tries to autoload class "D"
+new \D();   // グローバルスコープで定義されているクラス "D" のオブジェクトを作成します
+            // 見つからない場合は、クラス "D" の autoload を試みます
 
-new \F();   // creates object of class "F" defined in global scope
-            // if not found, it tries to autoload class "F"
+new \F();   // グローバルスコープで定義されているクラス "F" のオブジェクトを作成します
+            // 見つからない場合は、クラス "F" の autoload を試みます
 
-// static methods/namespace functions from another namespace
+// 別の名前空間から使用する静的メソッド/関数
 
-B\foo();    // calls function "foo" from namespace "A\B"
+B\foo();    // 名前空間 "A\B" の関数 "foo" をコールします
 
-B::foo();   // calls method "foo" of class "B" defined in namespace "A"
-            // if class "A\B" not found, it tries to autoload class "A\B"
+B::foo();   // 名前空間 "A" で定義されているクラス "B" のメソッド "foo" をコールします
+            // クラス "A\B" が見つからない場合はクラス "A\B" の autoload を試みます
 
-D::foo();   // using import rules, calls method "foo" of class "D" defined in namespace "B"
-            // if class "B\D" not found, it tries to autoload class "B\D"
+D::foo();   // インポートルールを使用し、名前空間 "B" で定義されているクラス "D" のメソッド "foo" をコールします
+            // クラス "B\D" が見つからない場合はクラス "B\D" の autoload を試みます
 
-\B\foo();   // calls function "foo" from namespace "B"
+\B\foo();   // 名前空間 "B" の関数 "foo" をコールします
 
-\B::foo();  // calls method "foo" of class "B" from global scope
-            // if class "B" not found, it tries to autoload class "B"
+\B::foo();  // グローバルスコープのクラス "B" のメソッド "foo" をコールします
+            // クラス "B" が見つからない場合はクラス "B" の autoload を試みます
 
-// static methods/namespace functions of current namespace
+// 現在の名前空間から使用する静的メソッド/関数
 
-A\B::foo();   // calls method "foo" of class "B" from namespace "A\A"
-              // if class "A\A\B" not found, it tries to autoload class "A\A\B"
+A\B::foo();   // 名前空間 "A\A" のクラス "B" のメソッド "foo" をコールします
+              // クラス "A\A\B" が見つからない場合はクラス "A\A\B" の autoload を試みます
 
-\A\B::foo();  // calls method "foo" of class "B" from namespace "A\B"
-              // if class "A\B" not found, it tries to autoload class "A\B"
+\A\B::foo();  // 名前空間 "A\B" のクラス "B" のメソッド "foo" をコールします
+              // クラス "A\B" が見つからない場合はクラス "A\B" の autoload を試みます
 ?>
 ]]>
    </programlisting>
