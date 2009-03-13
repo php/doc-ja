@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.8 $ -->
-<!-- EN-Revision: 1.9 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.9 $ -->
+<!-- EN-Revision: 1.10 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi -->
 <refentry xml:id="function.ingres-query" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -11,9 +11,11 @@
  <refsect1 role="description">
   &reftitle.description;
   <methodsynopsis>
-   <type>bool</type><methodname>ingres_query</methodname>
+   <type>mixed</type><methodname>ingres_query</methodname>
+   <methodparam><type>resource</type><parameter>link</parameter></methodparam>
    <methodparam><type>string</type><parameter>query</parameter></methodparam>
-   <methodparam choice="opt"><type>resource</type><parameter>link</parameter></methodparam>
+   <methodparam choice="opt"><type>array</type><parameter>params</parameter></methodparam>
+   <methodparam choice="opt"><type>string</type><parameter>types</parameter></methodparam>
   </methodsynopsis>
   <para>
    <function>ingres_query</function> は、指定した
@@ -33,6 +35,16 @@
    <function>ingres_autocommit</function> を使用することも可能です。
    この場合、各 SQL クエリは直ちにコミットされます。
   </para>
+  <note>
+   <title>関連する設定項目</title>
+   <para>
+    <link linkend="ingres.configuration">実行時設定</link> での
+    <link linkend="ini.ingres.describe">ingres.describe</link>、
+    <link linkend="ini.ingres.scrollable">ingres.scrollable</link> および
+    <link linkend="ini.ingres.utf8">ingres.utf8</link>
+    の説明も参照ください。
+   </para>
+  </note>
  </refsect1>
 
  <refsect1 role="parameters">
@@ -40,11 +52,20 @@
   <para>
    <variablelist>
     <varlistentry>
+     <term><parameter>link</parameter></term>
+     <listitem>
+      <para>
+       接続リンク ID。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry xml:id="function.ingres-query.query">
      <term><parameter>query</parameter></term>
      <listitem>
       <para>
        有効な SQL クエリ
-       (Ingres SQL リファレンスガイドを参照ください)。
+       (Ingres ドキュメントにある Ingres <emphasis>SQL
+       リファレンスガイド</emphasis> を参照ください)。
       </para>
       <para>
        次の型の SQL クエリは、この関数で送信できません。
@@ -94,11 +115,89 @@
      </listitem>
     </varlistentry>
     <varlistentry>
-     <term><parameter>link</parameter></term>
+     <term><parameter>params</parameter></term>
      <listitem>
       <para>
-       接続リンク ID。省略した場合は、最後にオープンしたリンクを使用します。
+       クエリで使用するパラメータの値のの配列。
       </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry xml:id="function.ingres-query.types">
+     <term><parameter>types</parameter></term>
+     <listitem>
+      <para>
+       渡されたパラメータの値の型を含む文字列。
+       <link linkend="ini.ingres.describe">ingres.describe</link> が有効な場合は
+       このパラメータは無視され、サーバが期待している型をドライバが自動的に取得します。
+      </para>
+      <informaltable>
+       <tgroup cols='4'>
+        <thead>
+         <row>
+          <entry>型コード</entry>
+          <entry>Ingres の型</entry>
+         </row>
+        </thead>
+        <tbody>
+         <row>
+          <entry>b</entry>
+          <entry><type>BYTE</type></entry>
+         </row>
+         <row>
+          <entry>B</entry>
+          <entry><type>LONG BYTE/BLOB</type></entry>
+         </row>
+         <row>
+          <entry>c</entry>
+          <entry><type>CHAR</type></entry>
+         </row>
+         <row>
+          <entry>d</entry>
+          <entry><type>DATE/ANSIDATE/TIMESTAMP/TIME</type></entry>
+         </row>
+         <row>
+          <entry>f</entry>
+          <entry><type>FLOAT</type></entry>
+         </row>
+         <row>
+          <entry>i</entry>
+          <entry><type>INTEGER</type></entry>
+         </row>
+         <row>
+          <entry>L</entry>
+          <entry><type>LONG TEXT</type></entry>
+         </row>
+         <row>
+          <entry>m</entry>
+          <entry><type>MONEY</type></entry>
+         </row>
+         <row>
+          <entry>M</entry>
+          <entry><type>LONG NVARCHAR</type></entry>
+         </row>
+         <row>
+          <entry>n</entry>
+          <entry><type>NCHAR</type></entry>
+         </row>
+         <row>
+          <entry>N</entry>
+          <entry><type>NVARCHAR</type></entry>
+         </row>
+         <row>
+          <entry>t</entry>
+          <entry><type>TEXT</type></entry>
+         </row>
+         <row>
+          <entry>v</entry>
+          <entry><type>VARCHAR</type></entry>
+         </row>
+         <row>
+          <entry>V</entry>
+          <entry><type>LONG VARCHAR</type></entry>
+         </row>
+        </tbody>
+       </tgroup>
+      </informaltable>
      </listitem>
     </varlistentry>
    </variablelist>
@@ -108,7 +207,14 @@
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
-   &return.success;
+   <function>ingres_query</function> は、
+   取得する行がある場合はクエリ結果 ID を返します。
+   それ以外の場合 (INSERT、UPDATE あるいは DELETE 文の場合)
+   は &false; を返します。
+   エラーが発生したかどうかを知るには
+   <function>ingres_errno</function>、
+   <function>ingres_error</function> あるいは
+   <function>ingres_errsqlstate</function> を使用します。
   </para>
  </refsect1>
 
@@ -116,17 +222,69 @@
   &reftitle.examples;
   <para>
    <example>
-    <title><function>ingres_query</function> の例</title>
+    <title>単純な select の送信</title>
     <programlisting role="php">
 <![CDATA[
 <?php
-ingres_connect($database, $user, $password);
+$link = ingres_connect("demodb");
 
-ingres_query("select * from table");
-while ($row = ingres_fetch_row()) {
+$result = ingres_query($link, "select * from user_profile");
+while ($row = ingres_fetch_row($result)) {
     echo $row[1];
     echo $row[2];
 }
+?>
+]]>
+    </programlisting>
+   </example>
+   <example>
+    <title><function>ingres_query</function> へクエリパラメータを渡す</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$link = ingres_connect("demodb");
+
+$params[] = "Emma";
+$query = "select * from user_profile where up_first = ?";
+$result = ingres_query($link, $query, $params);
+while ($row = ingres_fetch_row($result)) {
+    echo $row[1];
+    echo $row[2];
+}
+?>
+]]>
+    </programlisting>
+   </example>
+   <example>
+    <title>パラメータの型を指定した BLOB の挿入</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$link = ingres_connect("demodb");
+
+// 写真をオープンします
+$fh = fopen("photo.jpg","r");
+$blob_data = stream_get_contents($fh);
+fclose($fh);
+
+// パラメータを準備します
+$params[] = $blob_data;
+$params[] = 1201;
+
+// パラメータの型を定義します
+$param_types = "Bi";
+
+$query = "update user_profile set up_image = ? where up_id = ?";
+$result = ingres_query($link, $query , $params, $param_types);
+
+if (ingres_errno())
+{
+    echo ingres_errno() . "-" . ingres_error() . "\n";
+}
+
+ingres_commit($link);
+
+ingres_close($link);
 ?>
 ]]>
     </programlisting>
@@ -138,12 +296,16 @@ while ($row = ingres_fetch_row()) {
   &reftitle.seealso;
   <para>
    <simplelist>
+    <member><function>ingres_unbuffered_query</function></member>
     <member><function>ingres_fetch_array</function></member>
     <member><function>ingres_fetch_object</function></member>
     <member><function>ingres_fetch_row</function></member>
     <member><function>ingres_commit</function></member>
     <member><function>ingres_rollback</function></member>
     <member><function>ingres_autocommit</function></member>
+    <member><function>ingres_set_environment</function></member>
+    <member><function>ingres_errno</function></member>
+    <member><function>ingres_error</function></member>
    </simplelist>
   </para>
  </refsect1>
