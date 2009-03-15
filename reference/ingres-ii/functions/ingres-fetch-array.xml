@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.7 $ -->
-<!-- EN-Revision: 1.10 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.8 $ -->
+<!-- EN-Revision: 1.11 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi -->
 <refentry xml:id="function.ingres-fetch-array" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -12,8 +12,8 @@
   &reftitle.description;
   <methodsynopsis>
    <type>array</type><methodname>ingres_fetch_array</methodname>
+   <methodparam><type>resource</type><parameter>result</parameter></methodparam>
    <methodparam choice="opt"><type>int</type><parameter>result_type</parameter></methodparam>
-   <methodparam choice="opt"><type>resource</type><parameter>link</parameter></methodparam>
   </methodsynopsis>
   <para>
    この関数は、<function>ingres_fetch_row</function> の拡張版です。
@@ -29,10 +29,10 @@
 <![CDATA[
 <?php
 
-ingres_query("select t1.f1 as foo t2.f1 as bar from t1, t2");
-$result = ingres_fetch_array();
-$foo = $result["foo"];
-$bar = $result["bar"];
+$result = ingres_query($link, "select ap_place as city, ap_ccode as country from airport where ap_iatacode = 'VLL'"); 
+$result = ingres_fetch_array($result);
+$foo = $result["city"];
+$bar = $result["country"];
 
 ?>
 ]]>
@@ -44,6 +44,24 @@ $bar = $result["bar"];
    と同じで、<function>ingres_fetch_row</function> とほぼ同等です
    (差は僅かです)。
   </para>
+  <para>
+   デフォルトでは、<function>ingres_fetch_array</function>
+   が作成する配列のインデックスは 1 から始まります。これは、
+   他の DBMS の拡張モジュールが 0 から始めるのと異なっています。
+   他と同様に 0 から始めるようにするには、設定パラメータ <link
+   linkend="ini.ingres.array-index-start">ingres.array_index_start</link>
+   を使用します。
+  </para>
+  <note>
+   <title>関連する設定項目</title>
+   <para>
+    <link linkend="ingres.configuration">実行時設定</link> の <link
+    linkend="ini.ingres.array-index-start">ingres.array_index_start</link>, <link
+    linkend="ini.ingres.fetch-buffer-size">ingres.fetch_buffer_size</link>
+    および <link linkend="ini.ingres.utf8">ingres.utf8</link>
+    ディレクティブも参照ください。
+   </para>
+  </note>
  </refsect1>
 
  <refsect1 role="parameters">
@@ -51,20 +69,20 @@ $bar = $result["bar"];
   <para>
    <variablelist>
     <varlistentry>
+     <term><parameter>result</parameter></term>
+     <listitem>
+      <para>
+       クエリ結果 ID。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
      <term><parameter>result_type</parameter></term>
      <listitem>
       <para>
        <parameter>result_type</parameter> には、数値添字の場合に
        INGRES_NUM、連想配列の場合にINGRES_ASSOC、両方の場合に
        INGRES_BOTH(デフォルト)を指定可能です。
-      </para>
-     </listitem>
-    </varlistentry>
-    <varlistentry>
-     <term><parameter>link</parameter></term>
-     <listitem>
-      <para>
-       接続リンク ID。省略した場合は、最後にオープンしたリンクを使用します。
       </para>
      </listitem>
     </varlistentry>
@@ -84,14 +102,14 @@ $bar = $result["bar"];
   &reftitle.examples;
   <para>
    <example>
-    <title><function>ingres_fetch_array</function> の例</title>
+    <title>配列への結果の行の取得</title>
     <programlisting role="php">
 <![CDATA[
 <?php
-ingres_connect($database, $user, $password);
+$link = ingres_connect($database, $user, $password);
 
-ingres_query("select * from table");
-while ($row = ingres_fetch_array()) {
+$result = ingres_query($link,"select * from table");
+while ($row = ingres_fetch_array($result)) {
     echo $row["user_id"];  // 連想配列を使用する
     echo $row["fullname"];
     echo $row[1];          // 数値添字配列を使用する

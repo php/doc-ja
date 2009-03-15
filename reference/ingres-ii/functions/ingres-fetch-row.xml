@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.7 $ -->
-<!-- EN-Revision: 1.8 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.8 $ -->
+<!-- EN-Revision: 1.10 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi -->
 <refentry xml:id="function.ingres-fetch-row" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>ingres_fetch_row</refname>
   <refpurpose>1 行分の結果を数値添字配列として取得する</refpurpose>
  </refnamediv>
- 
+
  <refsect1 role="description">
   &reftitle.description;
   <methodsynopsis>
    <type>array</type><methodname>ingres_fetch_row</methodname>
-   <methodparam choice="opt"><type>resource</type><parameter>link</parameter></methodparam>
+   <methodparam><type>resource</type><parameter>result</parameter></methodparam>
   </methodsynopsis>
   <para>
    <function>ingres_fetch_row</function> は取得したレコード(行)を有
@@ -24,6 +24,24 @@
    結果集合の中の次のレコードが返され、もうレコードがない場合は&false;
    を返します。
   </para>
+  <para>
+   デフォルトでは、<function>ingres_fetch_row</function>
+   が作成する配列のインデックスは 1 から始まります。これは、
+   他の DBMS の拡張モジュールが 0 から始めるのと異なっています。
+   他と同様に 0 から始めるようにするには、設定パラメータ <link
+   linkend="ini.ingres.array-index-start">ingres.array_index_start</link>
+   を使用します。
+  </para>
+  <note>
+   <title>関連する設定項目</title>
+   <para>
+    <link linkend="ingres.configuration">実行時設定</link> の <link
+    linkend="ini.ingres.array-index-start">ingres.array_index_start</link>, <link
+    linkend="ini.ingres.fetch-buffer-size">ingres.fetch_buffer_size</link>
+    および <link linkend="ini.ingres.utf8">ingres.utf8</link>
+    ディレクティブも参照ください。
+   </para>
+  </note>
  </refsect1>
 
  <refsect1 role="parameters">
@@ -31,10 +49,10 @@
   <para>
    <variablelist>
     <varlistentry>
-     <term><parameter>link</parameter></term>
+     <term><parameter>result</parameter></term>
      <listitem>
       <para>
-       接続リンク ID。省略した場合は、最後にオープンしたリンクを使用します。
+       クエリ結果 ID。
       </para>
      </listitem>
     </varlistentry>
@@ -54,14 +72,14 @@
   &reftitle.examples;
   <para>
    <example>
-    <title><function>ingres_fetch_row</function> の例</title>
+    <title>クエリの結果からの行の取得</title>
     <programlisting role="php">
 <![CDATA[
 <?php
-ingres_connect($database, $user, $password);
+$link = ingres_connect($database, $user, $password);
 
-ingres_query("select * from table");
-while ($row = ingres_fetch_row()) {
+$result = ingres_query($link, "select * from table");
+while ($row = ingres_fetch_row($result)) {
     echo $row[1];
     echo $row[2];
 }
