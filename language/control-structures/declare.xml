@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.1 $ -->
-<!-- EN-Revision: 1.1 Maintainer: takagi Status: ready -->
+<!-- $Revision: 1.2 $ -->
+<!-- EN-Revision: 1.3 Maintainer: takagi Status: ready -->
 
 <sect1 xml:id="control-structures.declare" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title><literal>declare</literal></title>
@@ -64,18 +64,16 @@ declare(ticks=1);
 
  <sect2 xml:id="control-structures.declare.ticks">
   <title>Ticks</title>
-  <caution>
-   <simpara>
-    PHP 5.3.0 で tick は非推奨となりました。
-    PHP 6.0.0 で削除される予定です。
-   </simpara>
-  </caution>
   <para>tickとは<literal>declare</literal>ブロックの実行中にパーサが
-  <varname>N</varname>個の低レベル命令を実行するごとに
+  <varname>N</varname>個の低レベル tick 可能命令を実行するごとに
   発生するイベントのことです。<varname>N</varname>の値は
   <literal>declare</literal>ブロックの<literal>命令</literal>の箇所で
   <literal>ticks=N</literal>のように
   指定します。
+ </para>
+ <para>
+  すべての文が tick 可能なわけではありません。
+  たとえば条件式や引数式などは tick できません。
  </para>
  <para>
   tickごとに発生させるイベントは<function>register_tick_function</function>
@@ -84,55 +82,61 @@ declare(ticks=1);
  </para>
  <para>
   <example>
-   <title>PHPのコードの一部をプロファイルする</title>
+   <title>Tick の使用例</title>
    <programlisting role="php">
 <![CDATA[
 <?php
-// 呼び出されるとその時間を記録する関数
-function profile($dump = FALSE)
+
+declare(ticks=1);
+
+// tick イベントごとにコールされる関数
+function tick_handler()
 {
-    static $profile;
-
-    // 格納されたプロファイルを返し、その値を削除します
-    if ($dump) {
-        $temp = $profile;
-        unset($profile);
-        return $temp;
-    }
-
-    $profile[] = microtime();
+ 	echo "tick_handler() called\n";
 }
 
-// tickハンドラを設定します
-register_tick_function("profile");
+register_tick_function('tick_handler');
 
-// declareブロックの前で初期化します
-profile();
+$a = 1;
 
-// 2命令ごとにtickを投げるように設定し、ブロックを実行します
-declare(ticks=2) {
-    for ($x = 1; $x < 50; ++$x) {
-        echo similar_text(md5($x), md5($x*$x)), "<br />;";
-    }
+if ($a > 0) {
+  	$a += 2;
+  	print($a);
 }
 
-// プロファイラに格納されたデータを表示します
-print_r(profile(TRUE));
 ?>
 ]]>
    </programlisting>
   </example>
-  この例では、'declare'ブロックのコード中で2個の低レベル
-  命令が実行されるごとにその時間を記録してプロファイルを
-  行っています。この情報はコードのあるセクションの中で
-  遅い箇所を探すのに使用できます。この処理は他の手法でも
-  使用できます。ticksを使用することで実装が簡単になる
-  場合が多々あるのです。
  </para>
- <simpara>
-  ticksはデバッグ、単純なマルチタスク処理、バックグラウンドI/Oや
-  その他多くの処理を実装するのに便利です。
- </simpara>
+  &example.outputs.similar;
+ <para>
+  <example>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+function tick_handler()
+{
+  echo "tick_handler() called\n";
+}
+
+$a = 1;
+tick_handler();
+
+if ($a > 0) {
+  	$a += 2;
+  	tick_handler();
+  	print($a);
+  	tick_handler();
+}
+tick_handler();
+
+?>
+]]>
+   </programlisting>
+  </example>
+ </para>
  <simpara>
   <function>register_tick_function</function> および
   <function>unregister_tick_function</function> も参照ください。
