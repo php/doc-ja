@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.8 $ -->
-<!-- EN-Revision: 1.18 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.9 $ -->
+<!-- EN-Revision: 1.20 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi -->
 <refentry xml:id="function.register-shutdown-function" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -16,35 +16,15 @@
    <methodparam choice="opt"><type>mixed</type><parameter>parameter</parameter></methodparam>
    <methodparam choice="opt"><type>mixed</type><parameter>...</parameter></methodparam>
   </methodsynopsis>
-  <simpara>
+  <para>
    スクリプト処理が完了した際に実行される <parameter>func</parameter> 
    という名前の関数を登録します。
-  </simpara>
+  </para>
   <para>
    <function>register_shutdown_function</function> は複数回コールする
    ことが可能で、登録された順に関数がコールされます。
    登録した関数内で <function>exit</function> をコールした場合、
    処理はそこで終了してその他のシャットダウン関数はコールされません。
-  </para>
-  <para>
-   PHP 4.0.6 以前のバージョンを Apache で動かしている場合、
-   登録されたシャットダウン関数はリクエストの完了後（結果の出力を含む）
-   に実行されます。そのため、<function>echo</function>
-   や <function>print</function> を用いてブラウザに出力したり
-   <function>ob_get_contents</function>
-   を用いて出力バッファの内容を取得したりすることができませんでした。
-   PHP 4.1 以降、シャットダウン関数はリクエストの一部として実行されるようになり、
-   そこから結果を出力できるようになりました。現在のところ、
-   シャットダウン関数の中で出力バッファリング関数を用いてデータを加工する方法はありません。
-   シャットダウン関数はすべての出力バッファを閉じてからコールされます。
-   そのため、たとえ <link
-   linkend="ini.zlib.output-compression">zlib.output_compression</link>
-   が有効になっていたとしても出力結果は圧縮されません。
-  </para>
-  <para>
-   PHP 4 以降、<function>register_shutdown_function</function>
-   に追加のパラメータを渡すことで
-   シャットダウン関数にパラメータを渡せるようになりました。
   </para>
  </refsect1>
 
@@ -56,6 +36,18 @@
      <term><parameter>function</parameter></term>
      <listitem>
       <para>
+       登録するシャットダウン関数。
+      </para>
+      <para>
+       シャットダウン関数はリクエストの一部としてコールされるので、
+       そこから何かを出力することもできます。
+       現在のところ、シャットダウン関数から出力バッファリング関数にデータを送ることはできません。
+      </para>
+      <para>
+       シャットダウン関数がコールされるのは、すべての出力バッファを閉じたあとのことです。
+       したがって、たとえば <link
+       linkend="ini.zlib.output-compression">zlib.output_compression</link>
+       を有効にしていたとしてもその出力は圧縮されません。
       </para>
      </listitem>
     </varlistentry>
@@ -63,6 +55,7 @@
      <term><parameter>parameter</parameter></term>
      <listitem>
       <para>
+       シャットダウン関数にパラメータを渡すには、ここで追加のパラメータを渡します。
       </para>
      </listitem>
     </varlistentry>
@@ -81,6 +74,43 @@
   &reftitle.returnvalues;
   <para>
    &return.void;
+  </para>
+ </refsect1>
+
+ <refsect1 role="changelog">
+  &reftitle.changelog;
+  <para>
+   <informaltable>
+    <tgroup cols="2">
+     <thead>
+      <row>
+       <entry>&Version;</entry>
+       <entry>&Description;</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry>4.1.0</entry>
+       <entry>
+        シャットダウン関数がリクエストの一部としてコールされるようになりました。
+        以前のバージョンを Apache で動かしている場合、
+        登録されたシャットダウン関数はリクエストの完了後（結果の出力を含む）
+        に実行されます。そのため、<function>echo</function>
+        や <function>print</function> を用いてブラウザに出力したり
+        <function>ob_get_contents</function>
+        を用いて出力バッファの内容を取得したりすることができませんでした。
+        ヘッダも常に送信された後でした。
+       </entry>
+      </row>
+      <row>
+       <entry>4.0.0</entry>
+       <entry>
+        シャットダウン関数にパラメータを渡せるようになりました。
+       </entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </informaltable>
   </para>
  </refsect1>
 
@@ -125,12 +155,6 @@ register_shutdown_function('shutdown');
    <para>
     Apache などいくつかの Web サーバでは、スクリプトの実行時ディレクトリを
     シャットダウン関数内で変更可能です。
-   </para>
-  </note>
-  <note>
-   <para>
-    シャットダウン関数はスクリプトがシャットダウンする際にコールされるので、
-    その際は常にヘッダが送信されています。
    </para>
   </note>
  </refsect1>
