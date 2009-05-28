@@ -1,581 +1,69 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- $Revision: 1.8 $ -->
-<!-- EN-Revision: 1.16 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.9 $ -->
+<!-- EN-Revision: 1.22 Maintainer: hirokawa Status: ready -->
 <refentry xml:id="function.stream-wrapper-register" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>stream_wrapper_register</refname>
-  <refpurpose>PHP のクラスとして実装された URL ラッパを登録する</refpurpose>
+  <refpurpose>PHP のクラスとして実装された URL ラッパーを登録する</refpurpose>
  </refnamediv>
- <refsect1>
-  <title>説明</title>
+ <refsect1 role="description"><!-- {{{ -->
+  &reftitle.description;
   <methodsynopsis>
    <type>bool</type><methodname>stream_wrapper_register</methodname>
    <methodparam><type>string</type><parameter>protocol</parameter></methodparam>
    <methodparam><type>string</type><parameter>classname</parameter></methodparam>
+   <methodparam choice="opt"><type>int</type><parameter>flags</parameter> <initializer>0</initializer></methodparam>
   </methodsynopsis>
   <para>
-   <function>stream_wrapper_register</function> は、自分で作った
-   プロトコルハンドラとストリームを実装し、それを <function>fopen</function>
+   自分で作ったプロトコルハンドラとストリームを実装し、それを <function>fopen</function>
    や <function>fread</function> といったファイルシステムの関数と利用することを可能にします。
   </para>
+ </refsect1><!-- }}} -->
+
+ <refsect1 role="parameters">
+  &reftitle.parameters;
   <para>
-   ラッパを実装するには、下記のようないくつかのメンバ関数を持った
-   クラスを定義しなくてはなりません。もし、誰かがあなたの作った
-   ストリームを <function>fopen</function> したとき、
-   <literal>PHP</literal> は <parameter>classname</parameter> のインスタンスを作り
-   以後そのインスタンスと共にメソッドを呼び出そうとします。
-   これらのメソッドは、下記に示したとおり、正確に実装されなければなりません。
-   さもないと、定義されていない動作をします。
+   <variablelist>
+    <varlistentry>
+     <term><parameter>protocol</parameter></term>
+     <listitem>
+      <para>
+       登録したいラッパー名。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>classname</parameter></term>
+     <listitem>
+      <para>
+       <parameter>protocol</parameter> を実装したクラス名。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>flags</parameter></term>
+     <listitem>
+      <para>
+       <parameter>protocol</parameter> が URL プロトコルである場合は
+       <constant>STREAM_IS_URL</constant> を設定しなければなりません。
+       デフォルトは 0 で、ローカルストリームを意味します。
+      </para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
   </para>
-  <note>
-   <simpara>
-    PHP 5.0.0 より新たに、<parameter>classname</parameter>
-    のインスタンス内の <parameter>context</parameter> プロパティが、
-    <literal>コンテキストリソース</literal> を参照する形で
-    初期化されるようになります。なお、
-    この <literal>コンテキストリソース</literal>は、
-    <function>stream_context_get_options</function> によっても
-    取得することができます。
-    もし、コンテキストがストリーム生成関数に対し渡されていない場合は、
-    <parameter>context</parameter> の値は &null; にセットされます。
-   </simpara>
-  </note>
+ </refsect1>
+
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <para>
+   &return.success;
+  </para>
   <para>
    <function>stream_wrapper_register</function> は、
    <parameter>protocol</parameter> というハンドラが既にある場合、
    &false; を返します。
   </para>
-
-  <methodsynopsis>
-   <type>bool</type><methodname>stream_open</methodname>
-   <methodparam><type>string</type><parameter>path</parameter></methodparam>
-   <methodparam><type>string</type><parameter>mode</parameter></methodparam>
-   <methodparam><type>int</type><parameter>options</parameter></methodparam>
-   <methodparam><type>string</type><parameter>opened_path</parameter></methodparam>
-  </methodsynopsis>
-  <para>
-   このメソッドは、ストリームオブジェクトが生成された直後に呼び出されます。
-   <parameter>path</parameter> には、<function>fopen</function> に
-   与えられ、データの取得元となる URL が入ります。
-   <function>parse_url</function> を使えば、この URL を解釈できます。
-  </para>
-  <para>
-   <parameter>mode</parameter> は、ファイルを開く際に使われるモードです。
-   <function>fopen</function> で詳しく述べられているように、
-   この関数の側で、<parameter>mode</parameter> が要求された
-   <parameter>path</parameter> に適切かどうかを調べなくてはなりません。
-  </para>
-  <para>
-   <parameter>options</parameter> は、ストリーム API によってセットされる
-   付加的なフラグです。この値は次に挙げた値のいずれかか、
-   それらを二つ以上 OR 演算した値となります。
-   <informaltable>
-    <tgroup cols="2">
-     <thead>
-      <row>
-       <entry>フラグ</entry>
-       <entry>説明</entry>
-      </row>
-     </thead>
-     <tbody>
-      <row>
-       <entry>STREAM_USE_PATH</entry>
-       <entry>もし <parameter>path</parameter> が相対パスだった場合、
-        include_path で指定されたパス内を探索します。
-       </entry>
-      </row>
-      <row>
-       <entry>STREAM_REPORT_ERRORS</entry>
-       <entry>このフラグがセットされている場合は、ストリームのオープン時に
-        ラッパ側で <function>trigger_error</function> 関数を使い、エラーを
-        発生させる必要があります。逆に、このフラグがセットされていない場合は、
-        ラッパ側でエラーを発生させてはいけません。
-       </entry>
-      </row>
-     </tbody>
-    </tgroup>
-   </informaltable>
-  </para>
-  <para>
-   もし <parameter>path</parameter> に対するストリームのオープンに成功し、
-   STREAM_USE_PATH が <parameter>options</parameter> にセットされていた
-   際には、<parameter>opened_path</parameter> に、実際に開かれた
-   ファイルまたはリソースへの絶対パスをセットしなくてはなりません。
-  </para>
-  <para>
-   もし要求されたリソースを正常に開けた場合、&true; を、そうでなければ、
-   &false; を返さなくてはなりません。
-  </para>
-
-  <methodsynopsis>
-   <type>void</type><methodname>stream_close</methodname>
-   <void/>
-  </methodsynopsis>
-  <para>
-   このメソッドは、<function>fclose</function>によってストリームが閉じられるときに呼び出されます。
-   この時点で、カスタムストリームの中でロックされたか確保されたリソースを
-   開放しなくてはなりません。
-  </para>
-
-  <methodsynopsis>
-   <type>string</type><methodname>stream_read</methodname>
-   <methodparam><type>int</type><parameter>count</parameter></methodparam>
-  </methodsynopsis>
-  <para>
-   このメソッドはカスタムストリームに対する <function>fread</function> または
-   <function>fgets</function> に対応して呼び出されます。
-   <parameter>count</parameter> バイトを超えない長さのデータが返される
-   ようにする必要があります。
-   <parameter>count</parameter> バイトよりも少ないデータしか準備できていない
-   場合は、その時点にあるだけを返します。もし渡すべきデータがもうなければ、
-   &false; または空文字列を返してください。
-   また、正常に読み込めた分だけ、ストリームの読み込み/書き出し操作における
-   内部位置を更新しなくてはなりません。
-  </para>
-
-  <methodsynopsis>
-   <type>int</type><methodname>stream_write</methodname>
-   <methodparam><type>string</type><parameter>data</parameter></methodparam>
-  </methodsynopsis>
-  <para>
-   このメソッドは、カスタムストリームに対する <function>fwrite</function> などの
-   書き出し動作に対応して呼び出されます。<parameter>data</parameter> には、
-   カスタムストリームで使われている下層にあるストレージに書き出されるべき
-   データが入っています。渡されたデータをすべて書き出せない場合は、
-   書き出せるだけ書き出します。このとき、正常にデータを書き出せた場合は、
-   その書き出せたバイト数を、書き出せなかった場合は 0 を返さなくては
-   なりません。
-   また、正常に読み込めた分だけ、ストリームの読み込み/書き出し操作における
-   内部位置を更新しなくてはなりません。
-  </para>
-
-  <methodsynopsis>
-   <type>bool</type><methodname>stream_eof</methodname>
-   <void/>
-  </methodsynopsis>
-  <para>
-   このメソッドは、ストリームに対する <function>feof</function> 関数の実行に
-   対応して呼び出されます。
-   もし、ストリームの読み込み/書き出し操作における内部位置が、
-   ストリームの終端にある場合は、あるいは、もう読み込むべきデータがない
-   場合は &true; を、その他の場合には &false; をそれぞれ返さなくては
-   なりません。
-  </para>
-
-  <methodsynopsis>
-   <type>int</type><methodname>stream_tell</methodname>
-   <void/>
-  </methodsynopsis>
-  <para>
-   このメソッドは、ストリームに対する <function>ftell</function> 関数の
-   実行に対応して呼び出されます。
-   ストリームの読み込み/書き出し操作における内部位置を返します。
-  </para>
-
-  <methodsynopsis>
-   <type>bool</type><methodname>stream_seek</methodname>
-   <methodparam><type>int</type><parameter>offset</parameter></methodparam>
-   <methodparam><type>int</type><parameter>whence</parameter></methodparam>
-  </methodsynopsis>
-  <para>
-   このメソッドは、ストリームに対する <function>fseek</function> 関数の
-   実行に対応して呼び出されます。
-   ストリームの読み込み/書き出し操作における内部位置を、
-   <parameter>offset</parameter> パラメータと <parameter>whence</parameter>
-   パラメータの値に従って更新しなければなりません。
-   なお、これらの値の取り方については、<function>fseek</function> を参照ください。
-   正常に位置が更新できた場合には &true; を、失敗した場合は &false;
-   を返します。
-  </para>
-
-  <methodsynopsis>
-   <type>bool</type><methodname>stream_flush</methodname>
-   <void/>
-  </methodsynopsis>
-  <para>
-   このメソッドは、ストリームに対する <function>fflush</function> 関数の
-   実行に対応して呼び出されます。
-   もしカスタムストリームがデータをキャッシュしていて、
-   それをまだ下層にあるストレージへ記録していない場合は、
-   このメソッドが呼ばれた時に、それを書き出します。
-   もしキャッシュされたデータが正常に書き出された (あるいは、もう書くべきデータ
-   がない) 場合は、&true; を、もしくは、データを書き出すことができなかった
-   場合は &false; を返します。
-  </para>
-
-  <methodsynopsis>
-   <type>array</type><methodname>stream_stat</methodname>
-   <void/>
-  </methodsynopsis>
-  <para>
-   このメソッドは、ストリームに対する <function>fstat</function> 関数の
-   実行に対応して呼び出されます。
-   <function>fstat</function> が返すのと同じような要素をもつ配列に、
-   適切な値を入れて返さなくてはなりません。
-  </para>
- 
-  <methodsynopsis>
-   <type>resource</type><methodname>stream_cast</methodname>
-   <methodparam><type>int</type><parameter>cast_as</parameter></methodparam>
-  </methodsynopsis>
-  <para>
-   このメソッドは、ストリーム上での <function>stream_select</function>
-   に対応してコールされ、ラッパーが使用するストリームリソースあるいは
-   &false; を返します。
-   <parameter>cast_as</parameter> パラメータは、
-   <function>stream_select</function> が
-   <function>stream_cast</function> をコールした場合は
-   <constant>STREAM_CAST_FOR_SELECT</constant> となり、
-   <function>stream_cast</function> がそれ以外からコールされた場合は
-   <constant>STREAM_CAST_AS_STREAM</constant> となります。
-  </para>
-  <note>
-   <simpara>
-    ユーザ空間のラッパーメソッド stream_cast は、
-    PHP 5.3.0 より前のバージョンではサポートされていません。
-   </simpara>
-  </note>
-
-  <methodsynopsis>
-   <type>bool</type><methodname>stream_set_option</methodname>
-   <methodparam><type>int</type><parameter>option</parameter></methodparam>
-   <methodparam><type>int</type><parameter>arg1</parameter></methodparam>
-   <methodparam><type>int</type><parameter>arg2</parameter></methodparam>
-  </methodsynopsis>
-  <para>
-   このメソッドは、オプションをストリームに設定する際にコールされます。
-   <parameter>option</parameter> に設定できる値は次のとおりです。
-   <simplelist>
-    <member><constant>STREAM_OPTION_BLOCKING</constant>: このメソッドは
-     <function>stream_set_blocking</function> に対応してコールされます。
-     <parameter>arg1</parameter> はブロックモードです。</member>
-    <member><constant>STREAM_OPTION_READ_TIMEOUT</constant>: このメソッドは
-     <function>stream_set_timeout</function> に対応してコールされます。
-     <parameter>arg1</parameter> はタイムアウトの秒数、
-     <parameter>arg2</parameter> はタイムアウトのマイクロ秒数です。</member>
-    <member><constant>STREAM_OPTION_WRITE_BUFFER</constant>: このメソッドは
-     <function>stream_set_write_buffer</function> に対応してコールされます。
-     <parameter>arg1</parameter> はバッファモード
-     (<constant>STREAM_BUFFER_NONE</constant> あるいは
-     <constant>STREAM_BUFFER_FULL</constant>)、<parameter>arg2</parameter>
-     はバッファサイズです。</member>
-   </simplelist>
-  </para>
-  <para>
-   <function>stream_set_option</function> は、失敗した場合あるいは
-   <parameter>option</parameter> が実装されていない場合に &false;、
-   それ以外の場合に &true; を返さなければなりません。
-  </para>
-  <note>
-   <simpara>
-    ユーザ空間のラッパーメソッド stream_set_option は、
-    PHP 5.3.0 より前のバージョンではサポートされていません。
-   </simpara>
-  </note>
-
-  <methodsynopsis>
-   <type>bool</type><methodname>unlink</methodname>
-   <methodparam><type>string</type><parameter>path</parameter></methodparam>
-  </methodsynopsis>
-  <para>
-   このメソッドは、ラッパに関連付けられた URL のパスに対する
-   <function>unlink</function> 関数の実行に対応して呼び出されます。
-   <parameter>path</parameter> で指定されたパスにあるアイテムを
-   削除しようと試みなければなりません。その時、削除に成功したら
-   &true; を、失敗したら &false; を返してください。
-   適切なエラーメッセージがユーザに返されるよう、ラッパ側で削除を
-   サポートしない場合は、このメソッドを定義しないでください。
-  </para>
-  <note>
-   <simpara>
-    ユーザ定義のラッパにおける unlink メソッドは、
-    PHP 5.0.0 以前ではサポートされていません。
-   </simpara>
-  </note>
-
-  <methodsynopsis>
-   <type>bool</type><methodname>rename</methodname>
-   <methodparam><type>string</type><parameter>path_from</parameter></methodparam>
-   <methodparam><type>string</type><parameter>path_to</parameter></methodparam>
-  </methodsynopsis>
-  <para>
-   このメソッドは、ラッパに関連付けられた URL のパスに対する
-   <function>rename</function> 関数の実行に対応して呼び出され、
-   <parameter>path_from</parameter> で指定されたパスにある項目を
-   <parameter>path_to</parameter> にリネームすることを試みなければなりません。
-   成功した場合に &true;、失敗した場合に &false; を返さなければなりません。
-   適切なエラーメッセージが返されるよう、ラッパ側でリネームをサポートしない
-   場合はこのメソッドを定義しないでください。
-  </para>
-  <note>
-   <simpara>
-    ユーザ定義のラッパにおける rename メソッドは、
-    PHP 5.0.0 以前ではサポートされていません。
-   </simpara>
-  </note>
-
-  <methodsynopsis>
-   <type>bool</type><methodname>mkdir</methodname>
-   <methodparam><type>string</type><parameter>path</parameter></methodparam>
-   <methodparam><type>int</type><parameter>mode</parameter></methodparam>
-   <methodparam><type>int</type><parameter>options</parameter></methodparam>
-  </methodsynopsis>
-  <para>
-   このメソッドは、ラッパに関連付けられた URL のパスに対する
-   <function>mkdir</function> 関数の実行に対応して呼び出され、
-   <parameter>path</parameter> で指定されたディレクトリの作成を
-   試みなければなりません。
-   成功した場合に &true;、失敗した場合に &false; を返さなければなりません。
-   適切なエラーメッセージが返されるよう、ラッパ側でディレクトリの作成を
-   サポートしない場合はこのメソッドを定義しないでください。
-   <parameter>options</parameter> でとりうる値には
-   <constant>STREAM_REPORT_ERRORS</constant> および
-   <constant>STREAM_MKDIR_RECURSIVE</constant> が含まれます。
-  </para>
-  <note>
-   <simpara>
-    ユーザ定義のラッパにおける mkdir メソッドは、
-    PHP 5.0.0 以前ではサポートされていません。
-   </simpara>
-  </note>
-
-  <methodsynopsis>
-   <type>bool</type><methodname>rmdir</methodname>
-   <methodparam><type>string</type><parameter>path</parameter></methodparam>
-   <methodparam><type>int</type><parameter>options</parameter></methodparam>
-  </methodsynopsis>
-  <para>
-   このメソッドは、ラッパに関連付けられた URL のパスに対する
-   <function>rmdir</function> 関数の実行に対応して呼び出され、
-   <parameter>path</parameter> で指定されたディレクトリの削除を
-   試みなければなりません。
-   成功した場合に &true;、失敗した場合に &false; を返さなければなりません。
-   適切なエラーメッセージが返されるよう、ラッパ側でディレクトリの削除を
-   サポートしない場合はこのメソッドを定義しないでください。
-   <parameter>options</parameter> でとりうる値には
-   <constant>STREAM_REPORT_ERRORS</constant> が含まれます。
-  </para>
-  <note>
-   <simpara>
-    ユーザ定義のラッパにおける rmdir メソッドは、
-    PHP 5.0.0 以前ではサポートされていません。
-   </simpara>
-  </note>
-
-  <methodsynopsis>
-   <type>bool</type><methodname>dir_opendir</methodname>
-   <methodparam><type>string</type><parameter>path</parameter></methodparam>
-   <methodparam><type>int</type><parameter>options</parameter></methodparam>
-  </methodsynopsis>
-  <para>
-   このメソッドは、ディレクトリの内容を走査するために、
-   ストリームオブジェクトが <function>opendir</function>によって
-   生成されるその時に呼び出されます。
-   <parameter>path</parameter> は、<function>opendir</function> に
-   渡された、このオブジェクトが走査すべき場所を示す URL を指定します。
-   このとき、<function>parse_url</function> を使えば、この URL を
-   細分することができます。
-  </para>
-
-  <methodsynopsis>
-   <type>array</type><methodname>url_stat</methodname>
-   <methodparam><type>string</type><parameter>path</parameter></methodparam>
-   <methodparam><type>int</type><parameter>flags</parameter></methodparam>
-  </methodsynopsis>
-  <para>
-   このメソッドは、ラッパに関連付けられた URL のパスに対する
-   <function>stat</function> 関数の実行に対応して呼び出され、
-   システムの関数が返す要素とできるだけ同じ内容を返さなければなりません。
-   不明な、あるいは取得できない値には、妥当な値を設定しておくべきです
-   （通常は <constant>0</constant> です）。
-  </para>
-  <para>
-   <parameter>flags</parameter> には、ストリーム API によって設定された
-   追加のフラグを保持します。以下のうちのひとつまたは複数を OR で結合した
-   値を保持します。
-   <informaltable>
-    <tgroup cols="2">
-     <thead>
-      <row>
-       <entry>フラグ</entry>
-       <entry>説明</entry>
-      </row>
-     </thead>
-     <tbody>
-      <row>
-       <entry>STREAM_URL_STAT_LINK</entry>
-       <entry>
-        他のリソースへのリンク機能があるリソース（たとえば
-        HTTP の Location: forward やファイルシステムのシンボリック
-        リンクなど）。このフラグはリンクそのものについての情報のみを
-        返し、リンクが指している先のリソースについては返しません。
-        このフラグは <function>lstat</function>、
-        <function>is_link</function> あるいは <function>filetype</function>
-        のコールへの応答として設定されます。
-       </entry>
-      </row>
-      <row>
-       <entry>STREAM_URL_STAT_QUIET</entry>
-       <entry>このフラグが設定されている場合、ラッパは一切エラーを
-        報告してはいけません。このフラグが設定されていない場合は、
-        パスを調べている間に発生したエラーについて
-        <function>trigger_error</function> で報告する義務があります。
-       </entry>
-      </row>
-     </tbody>
-    </tgroup>
-   </informaltable>
-  </para>
-
-  <methodsynopsis>
-   <type>string</type><methodname>dir_readdir</methodname>
-   <void/>
-  </methodsynopsis>
-  <para>
-   このメソッドは、<function>readdir</function> 関数の呼び出しに
-   対応して呼ばれます。<function>dir_opendir</function> メソッドにおいて
-   指定された場所にあるファイルのリスト上の、次のファイル名を表す
-   文字列を返さなくてはなりません。
-  </para>
-
-  <methodsynopsis>
-   <type>bool</type><methodname>dir_rewinddir</methodname>
-   <void/>
-  </methodsynopsis>
-  <para>
-   このメソッドは、<function>rewinddir</function> 関数の呼び出しに
-   対応して呼ばれます。このとき、<function>dir_readdir</function>
-   メソッドにおいて変更された状態をリセットしなくてはなりません。
-   つまり、このメソッドの呼び出しに続いて <function>dir_readdir</function> が
-   呼ばれると、<function>dir_opendir</function> によって開かれた
-   ファイルのリスト上の、最初のエントリを返すことになります。
-  </para>
-
-  <methodsynopsis>
-   <type>bool</type><methodname>dir_closedir</methodname>
-   <void/>
-  </methodsynopsis>
-  <para>
-   このメソッドは、<function>closedir</function> 関数の呼び出しに
-   対応して呼ばれます。このとき、ディレクトリストリームの利用に際して
-   確保されたりロックされたリソースを全て開放しなければなりません。
-  </para>
-
-
-  <para>
-   下記の例は、var:// プロトコルハンドラを実装し、
-   <function>fread</function> などの標準のファイルシステム関数
-   を利用して、指定されたグローバル変数に対するアクセスができるように
-   するものです。
-   var:// プロトコルは、"var://foo" として与えられた URL に対応して、
-   $GLOBALS["foo"] からデータを読み込んだり、そこにデータを書き込んだり
-   します。
-
-   <example>
-    <title>グローバル変数を読み書きするストリーム</title>
-    <programlisting role="php">
-<![CDATA[
-<?php
-
-class VariableStream {
-    var $position;
-    var $varname;
-
-    function stream_open($path, $mode, $options, &$opened_path)
-    {
-        $url = parse_url($path);
-        $this->varname = $url["host"];
-        $this->position = 0;
-
-        return true;
-    }
-
-    function stream_read($count)
-    {
-        $ret = substr($GLOBALS[$this->varname], $this->position, $count);
-        $this->position += strlen($ret);
-        return $ret;
-    }
-
-    function stream_write($data)
-    {
-        $left = substr($GLOBALS[$this->varname], 0, $this->position);
-        $right = substr($GLOBALS[$this->varname], $this->position + strlen($data));
-        $GLOBALS[$this->varname] = $left . $data . $right;
-        $this->position += strlen($data);
-        return strlen($data);
-    }
-
-    function stream_tell()
-    {
-        return $this->position;
-    }
-
-    function stream_eof()
-    {
-        return $this->position >= strlen($GLOBALS[$this->varname]);
-    }
-
-    function stream_seek($offset, $whence)
-    {
-        switch ($whence) {
-            case SEEK_SET:
-                if ($offset < strlen($GLOBALS[$this->varname]) && $offset >= 0) {
-                     $this->position = $offset;
-                     return true;
-                } else {
-                     return false;
-                }
-                break;
-
-            case SEEK_CUR:
-                if ($offset >= 0) {
-                     $this->position += $offset;
-                     return true;
-                } else {
-                     return false;
-                }
-                break;
-
-            case SEEK_END:
-                if (strlen($GLOBALS[$this->varname]) + $offset >= 0) {
-                     $this->position = strlen($GLOBALS[$this->varname]) + $offset;
-                     return true;
-                } else {
-                     return false;
-                }
-                break;
-
-            default:
-                return false;
-        }
-    }
-}
-
-stream_wrapper_register("var", "VariableStream")
-    or die("プロトコルの登録に失敗しました");
-
-$myvar = "";
-
-$fp = fopen("var://myvar", "r+");
-
-fwrite($fp, "line1\n");
-fwrite($fp, "line2\n");
-fwrite($fp, "line3\n");
-
-rewind($fp);
-while (!feof($fp)) {
-    echo fgets($fp);
-}
-fclose($fp);
-var_dump($myvar);
-
-?>
-]]>
-    </programlisting>
-   </example>
-  </para>
-
  </refsect1>
 
  <refsect1 role="changelog"><!-- {{{ -->
@@ -591,18 +79,9 @@ var_dump($myvar);
      </thead>
      <tbody>
       <row>
-       <entry>5.0.0</entry>
+       <entry>5.2.4</entry>
        <entry>
-        <function>unlink</function>、<function>rename</function>、
-        <function>mkdir</function> および <function>rmdir</function>
-        メソッドが追加されました。
-       </entry>
-      </row>
-      <row>
-       <entry>5.3.0</entry>
-       <entry>
-        <function>stream_cast</function> および <function>stream_set_option</function>
-        メソッドが追加されました。
+        <parameter>flags</parameter> パラメータが追加されました。
        </entry>
       </row>
      </tbody>
@@ -610,6 +89,72 @@ var_dump($myvar);
    </informaltable>
   </para>
  </refsect1><!-- }}} -->
+ 
+
+ <refsect1 role="examples"><!-- {{{ -->
+  &reftitle.examples;
+  <para>
+   <example>
+    <title>ストリームラッパーの登録方法</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$existed = in_array("var", stream_get_wrappers());
+if ($existed) {
+    stream_wrapper_unregister("var");
+}
+stream_wrapper_register("var", "VariableStream");
+$myvar = "";
+
+$fp = fopen("var://myvar", "r+");
+
+fwrite($fp, "line1\n");
+fwrite($fp, "line2\n");
+fwrite($fp, "line3\n");
+
+rewind($fp);
+while (!feof($fp)) {
+    echo fgets($fp);
+}
+fclose($fp);
+var_dump($myvar);
+
+if ($existed) {
+    stream_wrapper_restore("var");
+}
+
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+line1
+line2
+line3
+string(18) "line1
+line2
+line3
+"
+]]>
+    </screen>
+   </example>
+  </para>
+ </refsect1><!-- }}} -->
+
+ <refsect1 role="seealso"><!-- {{{ -->
+  &reftitle.seealso;
+  <para>
+   <simplelist>
+    <member><xref linkend="class.streamwrapper" /> プロトタイプクラス</member>
+    <member><xref linkend="stream.streamwrapper.example-1" /></member>
+    <member><function>stream_wrapper_unregister</function></member>
+    <member><function>stream_wrapper_restore</function></member>
+    <member><function>stream_get_wrappers</function></member>
+   </simplelist>
+  </para>
+ </refsect1><!-- }}} -->
+
 
 </refentry>
 

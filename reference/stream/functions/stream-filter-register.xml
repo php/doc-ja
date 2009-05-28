@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- $Revision: 1.6 $ -->
-<!-- EN-Revision: 1.14 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.7 $ -->
+<!-- EN-Revision: 1.17 Maintainer: hirokawa Status: ready -->
 <refentry xml:id="function.stream-filter-register" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>stream_filter_register</refname>
-  <refpurpose><literal>php_user_filter</literal> に由来するクラスとして実装されたストリームフィルタを登録する</refpurpose>
+  <refpurpose>ユーザ定義のストリームフィルタを登録する</refpurpose>
  </refnamediv>
- <refsect1>
-  <title>説明</title>
+ <refsect1 role="description">
+  &reftitle.description;
   <methodsynopsis>
    <type>bool</type><methodname>stream_filter_register</methodname>
    <methodparam><type>string</type><parameter>filtername</parameter></methodparam>
@@ -19,146 +19,186 @@
    登録されているどの種類のストリームとも一緒に使うことのできる
    カスタムフィルタを登録します。
   </para>
+ </refsect1>
+
+ <refsect1 role="parameters">
+  &reftitle.parameters;
   <para>
-   フィルタを実装するには、まず、<literal>php_user_fitler</literal>
-   を継承したクラスの下記に示されたメンバ関数を実装しなくてはなりません。
-   <literal>PHP</literal> は、書き込みまたは読み出し操作を
-   カスタムフィルタの付加されたストリームに対して行う際に、まず
-   データをそのフィルタに(そして、付加されている他のすべてのフィルタにも)
-   渡し、指示どおりストリームのデータが変更されるようにします。
-   下記のメソッドは、説明の通り実装されなくてはなりません。
-   さもないと、定義されていない動作をします。
+   <variablelist>
+    <varlistentry>
+     <term><parameter>filtername</parameter></term>
+     <listitem>
+      <para>
+       登録するフィルタ名。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>classname</parameter></term>
+     <listitem>
+      <para>
+       フィルタを実装するには、まず、<literal>php_user_fitler</literal>
+       を継承したクラスの下記に示されたメンバ関数を実装しなくてはなりません。
+       <literal>PHP</literal> は、書き込みまたは読み出し操作を
+       カスタムフィルタの付加されたストリームに対して行う際に、まず
+       データをそのフィルタに(そして、付加されている他のすべてのフィルタにも)
+       渡し、指示どおりストリームのデータが変更されるようにします。
+       下記のメソッドは、説明の通り実装されなくてはなりません。
+       さもないと、定義されていない動作をします。
+      </para>
+      <methodsynopsis>
+       <type>int</type><methodname>filter</methodname>
+       <methodparam><type>resource</type><parameter>in</parameter></methodparam>
+       <methodparam><type>resource</type><parameter>out</parameter></methodparam>
+       <methodparam><type>int</type><parameter role="reference">consumed</parameter></methodparam>
+       <methodparam><type>bool</type><parameter>closing</parameter></methodparam>
+      </methodsynopsis>
+      <para>
+       このメソッドは、<function>fread</function> や <function>fwrite</function>
+       等の関数で、付加されたストリームからデータを読み出す時や、
+       データを書き込む度に呼ばれます。
+       <parameter>in</parameter> は、<literal>bucket brigade</literal> (バケツリレー隊) を指すポインタです。
+       これは、フィルタの対象になるデータを含む複数の
+       <literal>bucket</literal> オブジェクトから成っています。
+       <parameter>out</parameter> は、変更されたバケットが渡される
+       <literal>bucket brigade</literal> を示しています。
+       <parameter>consumed</parameter> は、参照渡しされるパラメータで、
+       ここには、フィルタが実際に処理した元のデータ長を加算します。
+       ほとんどの場合、それぞれのバケットについて、そのデータ長
+       <literal>$bucket->datalen</literal> を、そこに足すだけでいいはずです。
+       もし、ストリームが閉じようとしている時 (すなわちフィルタ連鎖の中の
+       最後の呼び出しだった時)、<parameter>closing</parameter> パラメータは、
+       &true; となります。<methodname>filter</methodname> メソッドは、さらに、
+       次の値のいずれかを終了時に返さなくてはなりません。
+       <informaltable>
+        <tgroup cols="2">
+         <thead>
+          <row>
+           <entry>返り値</entry>
+           <entry>意味</entry>
+          </row>
+         </thead>
+         <tbody>
+          <row>
+           <entry><constant>PSFS_PASS_ON</constant></entry>
+           <entry>
+            フィルタの処理に成功し、
+            <parameter>out</parameter> の <literal>バケツ隊</literal> に
+            データが渡されました。
+           </entry>
+          </row>
+          <row>
+           <entry><constant>PSFS_FEED_ME</constant></entry>
+           <entry>
+            フィルタの処理に成功しましたが、データは返されませんでした。
+            ストリームあるいは前段階のフィルタに対してさらにデータが必要です。
+           </entry>
+          </row>
+          <row>
+           <entry><constant>PSFS_ERR_FATAL</constant> (default)</entry>
+           <entry>
+            フィルタにおいて復旧不可能なエラーが発生し、処理を継続できません。
+           </entry>
+          </row>
+         </tbody>
+        </tgroup>
+       </informaltable>
+      </para>
+      <methodsynopsis>
+       <type>bool</type><methodname>onCreate</methodname>
+       <void/>
+      </methodsynopsis>
+      <simpara>
+       このメソッドは、フィルタクラスのオブジェクトが実体化されるときに
+       呼び出されます。もし、フィルタがバッファなど他のリソースを
+       確保したり初期化しなくてはならない場合、この時点で行ってください。
+       このメソッドを実装する際には、失敗した場合に &false;、成功した場合に
+       &true; を返すようにする必要があります。
+      </simpara>
+      <simpara>
+       最初にフィルタのインスタンスが作成され
+       <literal>yourfilter-&gt;onCreate()</literal> がコールされた際に、
+       以下の表に示す多くのプロパティが使用可能となります。
+      </simpara>
+      <para>
+       <informaltable>
+        <tgroup cols="2">
+         <thead>
+          <row>
+           <entry>プロパティ</entry>
+           <entry>内容</entry>
+          </row>
+         </thead>
+         <tbody>
+          <row>
+           <entry><literal>FilterClass-&gt;filtername</literal></entry>
+           <entry>
+            インスタンス化されたフィルタの名前を含む文字列。
+            フィルタは複数の名前で登録されりワイルドカードで登録されたり
+            することもありえます。どのような名前が使われたのか、
+            このプロパティで調べます。
+           </entry>
+          </row>
+          <row>
+           <entry><literal>FilterClass-&gt;params</literal></entry>
+           <entry>
+            <function>stream_filter_append</function> あるいは
+            <function>stream_filter_prepend</function>
+            に渡すパラメータの内容。
+           </entry>
+          </row>
+          <row>
+           <entry><literal>FilterClass-&gt;stream</literal></entry>
+           <entry>
+            The stream resource being filtered. Maybe available only during
+            <methodname>filter</methodname> calls when the 
+            <literal>closing</literal> parameter is set to &false;.
+           </entry>
+          </row>
+         </tbody>
+        </tgroup>
+       </informaltable>
+      </para>
+      <methodsynopsis>
+       <type>void</type><methodname>onClose</methodname>
+       <void/>
+      </methodsynopsis>
+      <para>
+       このメソッドは、フィルタが遮断される時(通常、ストリームが遮断
+       される時)に呼ばれます。また、同様に、<literal>flush</literal> メソッドが
+       呼ばれた<emphasis>後に</emphasis>呼び出されます。
+       もし、何らかのリソースが、<literal>oncreate</literal> メソッドの
+       呼び出し時に確保されていた場合は、それらをここで廃棄するのが
+       いいでしょう。
+      </para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
+  </para>
+ </refsect1>
+
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <para>
+   &return.success;
   </para>
   <para>
    <function>stream_filter_register</function> は、
    指定された <parameter>filtername</parameter> がすでに定義されている場合、
    &false; を返します。
   </para>
+ </refsect1>
 
-  <methodsynopsis>
-   <type>int</type><methodname>filter</methodname>
-   <methodparam><type>resource</type><parameter>in</parameter></methodparam>
-   <methodparam><type>resource</type><parameter>out</parameter></methodparam>
-   <methodparam><type>int</type><parameter role="reference">consumed</parameter></methodparam>
-   <methodparam><type>bool</type><parameter>closing</parameter></methodparam>
-  </methodsynopsis>
+ <refsect1 role="examples">
+  &reftitle.examples;
   <para>
-   このメソッドは、<function>fread</function> や <function>fwrite</function>
-   等の関数で、付加されたストリームからデータを読み出す時や、
-   データを書き込む度に呼ばれます。
-   <parameter>in</parameter> は、<literal>bucket brigade</literal> (バケツリレー隊) を指すポインタです。
-   これは、フィルタの対象になるデータを含む複数の
-   <literal>bucket</literal> オブジェクトから成っています。
-   <parameter>out</parameter> は、変更されたバケットが渡される
-   <literal>bucket brigade</literal> を示しています。
-   <parameter>consumed</parameter> は、参照渡しされるパラメータで、
-   ここには、フィルタが実際に処理した元のデータ長を加算します。
-   ほとんどの場合、それぞれのバケットについて、そのデータ長
-   <literal>$bucket->datalen</literal> を、そこに足すだけでいいはずです。
-   もし、ストリームが閉じようとしている時 (すなわちフィルタ連鎖の中の
-   最後の呼び出しだった時)、<parameter>closing</parameter> パラメータは、
-   &true; となります。<methodname>filter</methodname> パラメータは、さらに、
-   次の値のいずれかを終了時に返さなくてはなりません。
-
-   <informaltable>
-    <tgroup cols="2">
-     <thead>
-      <row>
-       <entry>返り値</entry>
-       <entry>意味</entry>
-      </row>
-     </thead>
-     <tbody>
-      <row>
-       <entry><constant>PSFS_PASS_ON</constant></entry>
-       <entry>
-        フィルタの処理に成功し、
-        <parameter>out</parameter> の <literal>バケツ隊</literal> に
-        データが渡されました。
-       </entry>
-      </row>
-      <row>
-       <entry><constant>PSFS_FEED_ME</constant></entry>
-       <entry>
-        フィルタの処理に成功しましたが、データは返されませんでした。
-        ストリームあるいは前段階のフィルタに対してさらにデータが必要です。
-       </entry>
-      </row>
-      <row>
-       <entry><constant>PSFS_ERR_FATAL</constant> (default)</entry>
-       <entry>
-        フィルタにおいて復旧不可能なエラーが発生し、処理を継続できません。
-       </entry>
-      </row>
-     </tbody>
-    </tgroup>
-   </informaltable>
-  </para>
-
-  <methodsynopsis>
-   <type>bool</type><methodname>onCreate</methodname>
-   <void/>
-  </methodsynopsis>
-  <simpara>
-   このメソッドは、フィルタクラスのオブジェクトが実体化されるときに
-   呼び出されます。もし、フィルタがバッファなど他のリソースを
-   確保したり初期化しなくてはならない場合、この時点で行ってください。
-   このメソッドを実装する際には、失敗した場合に &false;、成功した場合に
-   &true; を返すようにする必要があります。
-  </simpara>
-  <simpara>
-   最初にフィルタのインスタンスが作成され
-   <literal>yourfilter-&gt;onCreate()</literal> がコールされた際に、
-   以下の表に示す多くのプロパティが使用可能となります。
-  </simpara>
-  <para>
-   <informaltable>
-    <tgroup cols="2">
-     <thead>
-      <row>
-       <entry>プロパティ</entry>
-       <entry>内容</entry>
-      </row>
-     </thead>
-     <tbody>
-      <row>
-       <entry><literal>FilterClass-&gt;filtername</literal></entry>
-       <entry>インスタンス化されたフィルタの名前を含む文字列。
-              フィルタは複数の名前で登録されりワイルドカードで登録されたり
-              することもありえます。どのような名前が使われたのか、
-              このプロパティで調べます。</entry>
-      </row>
-      <row>
-       <entry><literal>FilterClass-&gt;params</literal></entry>
-       <entry><function>stream_filter_append</function> あるいは
-              <function>stream_filter_prepend</function>
-              に渡すパラメータの内容。</entry> 
-      </row>
-     </tbody>
-    </tgroup>
-   </informaltable>
-  </para>
-
-  <methodsynopsis>
-   <type>void</type><methodname>onClose</methodname>
-   <void/>
-  </methodsynopsis>
-  <para>
-   このメソッドは、フィルタが遮断される時(通常、ストリームが遮断
-   される時)に呼ばれます。また、同様に、<literal>flush</literal> メソッドが
-   呼ばれた<emphasis>後に</emphasis>呼び出されます。
-   もし、何らかのリソースが、<literal>oncreate</literal> メソッドの
-   呼び出し時に確保されていた場合は、それらをここで廃棄するのが
-   いいでしょう。
-  </para>
-
-  <para>
-   下記の例は、読み込まれたり書き出されたりするデータに含まれるすべての英文字を
-   大文字化する <literal>strtoupper</literal> ストリームを実装し、<literal>foo-bar.txt</literal>
-   ストリームに適用するものです。
-
    <example>
-    <title>foo-bar.txt ストリームの文字を大文字化するフィルタ</title>
+    <title><filename>foo-bar.txt</filename> ストリームの文字を大文字化するフィルタ</title>
+    <para>
+     下記の例は、読み込まれたり書き出されたりするデータに含まれるすべての英文字を
+     大文字化する <literal>strtoupper</literal> ストリームを実装し、<literal>foo-bar.txt</literal>
+     ストリームに適用するものです。
+    </para>
     <programlisting role="php">
 <![CDATA[
 <?php
@@ -191,7 +231,7 @@ fwrite($fp, "Easy As 123\n");
 
 fclose($fp);
 
-/* ファイルを読み出し出力する。 
+/* ファイルを読み出し出力する
  */
 readfile("foo-bar.txt");
 
@@ -266,7 +306,7 @@ fwrite($fp, "Easy As 123\n");
 
 fclose($fp);
 
-/* ファイルを読み出し出力する。 
+/* ファイルを読み出し出力する
  */
 readfile("foo-bar.txt");
 ?>
@@ -282,12 +322,17 @@ EASY AS 123
     </screen>
    </example>
   </para>
+ </refsect1>
 
-  <simpara>
-   <function>stream_wrapper_register</function>、
-   <function>stream_filter_prepend</function> および
-   <function>stream_filter_append</function> も参照ください。
-  </simpara>
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <para>
+   <simplelist>
+    <member><function>stream_wrapper_register</function></member>
+    <member><function>stream_filter_append</function></member>
+    <member><function>stream_filter_prepend</function></member>
+   </simplelist>
+  </para>
  </refsect1>
 </refentry>
 
