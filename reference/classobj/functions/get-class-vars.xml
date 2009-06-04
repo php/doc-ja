@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.8 $ -->
-<!-- EN-Revision: 1.12 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.9 $ -->
+<!-- EN-Revision: 1.13 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: shimooka -->
 <refentry xml:id="function.get-class-vars" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -51,6 +51,30 @@
       </row>
      </thead>
      <tbody>
+      <row>
+       <entry>5.0.3</entry>
+       <entry>
+        スコープに応じて、<function>get_class_vars</function>
+        は現在のスコープからアクセスできるプロパティのみを返すようになりました。
+       </entry>
+      </row>
+      <row>
+       <entry>5.0.2</entry>
+       <entry>
+        <function>get_class_vars</function> をコールすると、
+        すべてのプロパティが配列として公開されるようになりました。
+        これまでは、protected や private なプロパティの先頭には nul
+        バイトが付加されていました。
+       </entry>
+      </row>
+      <row>
+       <entry>5.0.1</entry>
+       <entry>
+        <function>get_class_vars</function> をコールすると、
+        オブジェクトをクラスに変換するときのように
+        すべてのプロパティを公開するようになりました。
+       </entry>
+      </row>
       <row>
        <entry>4.2.0 より前</entry>
        <entry>
@@ -111,6 +135,52 @@ var3 : 100
 var1 :
 var2 : xyz
 var3 : 100
+]]>
+    </screen>
+   </example>
+  </para>
+  <para>
+   <example>
+    <title><function>get_class_vars</function> でのスコープの挙動</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+function format($array)
+{
+	return implode('|', array_keys($array)) . "\r\n";
+}
+
+class TestCase
+{
+	public $a	= 1;
+	protected $b	= 2;
+	private $c	= 3;
+
+	public static function expose()
+	{
+		echo format(get_class_vars(__CLASS__));
+	}
+}
+
+TestCase::expose();
+echo format(get_class_vars('TestCase'));
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+// 5.0.0
+a| * b| TestCase c
+a| * b| TestCase c
+
+// 5.0.1 - 5.0.2
+a|b|c
+a|b|c
+
+// 5.0.3 +
+a|b|c
+a
 ]]>
     </screen>
    </example>

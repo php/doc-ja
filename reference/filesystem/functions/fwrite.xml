@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.11 $ -->
-<!-- EN-Revision: 1.18 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.12 $ -->
+<!-- EN-Revision: 1.19 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: shimooka -->
 <refentry xmlns="http://docbook.org/ns/docbook" xml:id="function.fwrite">
  <refnamediv>
@@ -73,6 +73,29 @@
   &reftitle.notes;
   <note>
    <para>
+    ネットワークストリームへの書き込みは、
+    すべての文字列を書き込み終える前に終了する可能性があります。
+    <function>fwrite</function> の返り値を確かめるようにしましょう。
+    <programlisting role="php">
+<![CDATA[
+<?php
+function fwrite_stream($fp, $string) {
+    for ($written = 0; $written < strlen($string); $written += $fwrite) {
+        $fwrite = fwrite($fp, substr($string, $written));
+        if (!$fwrite) {
+            return $fwrite;
+        }
+    }
+    return $written;
+}
+?>
+]]>
+    </programlisting>
+   </para>
+  </note>
+  
+  <note>
+   <para>
     (Windowsのように)バイナリとテキストファイルの形式が異なるシステムにおいては、ファイルをオープンする際に
     <function>fopen</function>の mode パラメータに 'b' を指定する必要があります。
    </para>
@@ -94,8 +117,6 @@
    <para>
     同じファイルポインタに 2 回書き込みを行うと、
     データはファイルの末尾に追記されます。
-    つまり、以下の例は期待通りに動作しないということです。
-
         <programlisting role="php">
 <![CDATA[
 <?php
