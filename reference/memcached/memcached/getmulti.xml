@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.1 $ -->
-<!-- EN-Revision: 1.5 Maintainer: takagi Status: ready -->
+<!-- $Revision: 1.2 $ -->
+<!-- EN-Revision: 1.6 Maintainer: takagi Status: ready -->
 
 <refentry xml:id="memcached.getmulti" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -14,6 +14,7 @@
    <modifier>public</modifier> <type>mixed</type><methodname>Memcached::getMulti</methodname>
    <methodparam><type>array</type><parameter>keys</parameter></methodparam>
    <methodparam choice="opt"><type>array</type><parameter role="reference">cas_tokens</parameter></methodparam>
+   <methodparam choice="opt"><type>integer</type><parameter>flags</parameter></methodparam>
   </methodsynopsis>
   <para>
    <function>Memcached::getMulti</function> は
@@ -29,6 +30,13 @@
      memcache プロトコルでは、複数キーのリクエストでどのキーが見つからなかったのかを知る手段がないからです。
     </para>
    </note>
+  </para>
+  <para>
+   <parameter>flags</parameter> パラメータを使用して、
+   <function>Memcached::getMulti</function>
+   用の追加のオプションを設定します。現在使用可能なオプションは
+   <constant>Memcached::GET_PRESERVE_ORDER</constant> だけで、
+   これは要求したのと同じ順番でキーが返されることを保障します。
   </para>
  </refsect1>
 
@@ -49,6 +57,14 @@
      <listitem>
       <para>
        見つかったアイテムの CAS トークンを格納する変数。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>flags</parameter></term>
+     <listitem>
+      <para>
+       取得操作のオプション。
       </para>
      </listitem>
     </varlistentry>
@@ -101,6 +117,49 @@ array(2) {
   ["key3"]=>
   float(2362)
 }
+]]>
+    </screen>
+   </example>
+  </para>
+  <para>
+   <example>
+    <title><constant>Memcached::GET_PRESERVE_ORDER</constant> の例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$m = new Memcached();
+$m->addServer('localhost', 11211);
+
+$data = array(
+    'foo' => 'foo-data',
+    'bar' => 'bar-data',
+    'baz' => 'baz-data',
+    'lol' => 'lol-data',
+    'kek' => 'kek-data',
+);
+
+$m->setMulti($data, 3600);
+
+$null = null;
+$keys = array_keys($data);
+$keys[] = 'zoo';
+$got = $m->getMulti($keys, $null, Memcached::GET_PRESERVE_ORDER);
+
+foreach ($got as $k => $v) {
+    echo "$k $v\n";
+}
+?>
+]]>
+    </programlisting>
+    &example.outputs.similar;
+    <screen>
+<![CDATA[
+foo foo-data
+bar bar-data
+baz baz-data
+lol lol-data
+kek kek-data
+zoo 
 ]]>
     </screen>
    </example>
