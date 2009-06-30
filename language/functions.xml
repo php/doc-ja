@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision: 1.30 $ -->
-<!-- EN-Revision: 1.70 Maintainer: hirokawa Status: ready -->
+<!-- $Revision: 1.31 $ -->
+<!-- EN-Revision: 1.73 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi -->
  <chapter xml:id="language.functions" xmlns="http://docbook.org/ns/docbook">
   <title>関数</title>
@@ -610,15 +610,17 @@ $foo->$funcname();  // $foo->Variable() をコールする
   
   <sect1 xml:id="functions.anonymous">
    <title>無名関数</title>
-   <para>
-    無名関数は、関数名を指定せずに関数を作成できるようにするものです。
+
+   <simpara>
+    無名関数は<literal>クロージャ</literal>とも呼ばれ、
+    関数名を指定せずに関数を作成できるようにするものです。
     <link linkend="language.types.callback">コールバック</link>
     パラメータとして使う際に便利ですが、用途はそれにとどまりません。
-   </para>
-   <para>
-    <example>
-     <title>無名関数の例</title>
-     <programlisting role="php">
+   </simpara>
+
+   <example>
+    <title>無名関数の例</title>
+    <programlisting role="php">
 <![CDATA[
 <?php
 echo preg_replace_callback('~-([a-z])~', function ($match) {
@@ -627,19 +629,125 @@ echo preg_replace_callback('~-([a-z])~', function ($match) {
 // helloWorld と出力します
 ?>
 ]]>
-     </programlisting>
-    </example>
-   </para>
-   <para>
-    無名関数は、内部的には
-    <link linkend="reserved.classes.closure"><literal>Closure</literal>
-    クラス</link> で実装されています。
-   </para>
+    </programlisting>
+   </example>
+
+   <simpara>
+    クロージャは、変数の値として使用することもできます。
+    PHP は、そのような記述があると自動的に内部クラス
+    <classname>Closure</classname> のインスタンスに変換します。
+    変数へのクロージャの代入は、他の代入と同じように記述し、
+    同じく最後にセミコロンをつけます。
+   </simpara>
+
+   <example>
+    <title>変数への無名関数の代入</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$greet = function($name)
+{
+    printf("Hello %s\r\n", $name);
+};
+
+$greet('World');
+$greet('PHP');
+?>
+]]>
+    </programlisting>
+   </example>
+   
+   <simpara>
+    クロージャは、変数を親のスコープから引き継ぐことができます。
+    引き継ぐ変数は、関数のヘッダで宣言しなければなりません。
+    親のスコープからの変数の引き継ぎは、グローバル変数を使うのとは
+    <emphasis>異なります</emphasis>。グローバル変数は、
+    関数が実行されるかどうかにかかわらずグローバルスコープに存在します。
+    クロージャの親スコープは、クロージャが宣言されている関数です
+    (関数の呼び出し元のスコープである必要はありません)。
+    次の例を参照ください。
+   </simpara>
+
+   <example>
+    <title>クロージャのスコープ</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+// 基本的なショッピングカートで、追加した商品の一覧や各商品の
+// 数量を表示します。カート内の商品の合計金額を計算するメソッド
+// では、クロージャをコールバックとして使用します。
+class Cart
+{
+    const PRICE_BUTTER  = 1.00;
+    const PRICE_MILK    = 3.00;
+    const PRICE_EGGS    = 6.95;
+
+    protected   $products = array();
+    
+    public function add($product, $quantity)
+    {
+        $this->products[$product] = $quantity;
+    }
+    
+    public function getQuantity($product)
+    {
+        return isset($this->products[$product]) ? $this->products[$product] :
+               FALSE;
+    }
+    
+    public function getTotal($tax)
+    {
+        $total = 0.00;
+        
+        $callback =
+            function ($quantity, $product) use ($tax, &$total)
+            {
+                $pricePerItem = constant(__CLASS__ . "::PRICE_" .
+                    strtoupper($product));
+                $total += ($pricePerItem * $quantity) * ($tax + 1.0);
+            };
+        
+        array_walk($this->products, $callback);
+        return round($total, 2);;
+    }
+}
+
+$my_cart = new Cart;
+
+// カートに商品を追加します
+$my_cart->add('バター', 1);
+$my_cart->add('牛乳', 3);
+$my_cart->add('卵', 6);
+
+// 合計に消費税 5% を付加した金額を表示します
+print $my_cart->getTotal(0.05) . "\n";
+// 結果は 54.29 です
+?>
+]]>
+    </programlisting>
+   </example>
+   
+   <simpara>
+    無名関数は、現在は
+    <link linkend="reserved.classes.closure">
+    <classname>Closure</classname></link> クラスで実装されています。
+    これはあくまでも内部実装の問題であり、この事実に依存したコードを書いてはいけません。
+   </simpara>
+   
    <note>
-    <para>
+    <simpara>
      無名関数は PHP 5.3.0 以降で使用可能です。
-    </para>
+    </simpara>
    </note>
+
+   <note>
+    <simpara>
+     クロージャ内から <function>func_num_args</function>、
+     <function>func_get_arg</function> および <function>func_get_args</function>
+     を使用することができます。
+    </simpara>
+   </note>
+
   </sect1>
 
  </chapter>
@@ -660,4 +768,7 @@ sgml-exposed-tags:nil
 sgml-local-catalogs:nil
 sgml-local-ecat-files:nil
 End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
 -->
