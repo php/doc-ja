@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 50f05a02f3267ca1461b6bc51349b3b6a7542db9 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 1cbf677fff3203e82d42aec580dccffcf1240177 Maintainer: takagi Status: ready -->
 <refentry xml:id="function.json-decode" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>json_decode</refname>
@@ -45,7 +45,7 @@
      <term><parameter>depth</parameter></term>
      <listitem>
       <para>
-       ユーザ指定のネストの制限。
+       ユーザ指定の再帰の深さ。
       </para>
      </listitem>
     </varlistentry>
@@ -59,6 +59,8 @@
    オブジェクトを返します。あるいは、オプションのパラメータ
    <parameter>assoc</parameter> が &true; の場合には、
    連想配列を返します。
+   <parameter>json</parameter> のデコードに失敗したり
+   エンコードされたデータが再帰制限を超えていたりした場合は &null; を返します。
   </para>
  </refsect1>
 
@@ -139,6 +141,72 @@ json_decode($bad_json); // null
 ]]>
     </programlisting>
    </example>
+   <example>
+    <title><parameter>depth</parameter> エラー</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+// データをエンコードします
+$json = json_encode(
+	array(
+		1 => array(
+			'English' => array(
+				'One',
+				'January'
+			),
+			'French' => array(
+				'Une',
+				'Janvier'
+			)
+		)
+	)
+);
+
+// エラーを定義します
+$json_errors = array(
+	JSON_ERROR_NONE => 'No error has occurred',
+	JSON_ERROR_DEPTH => 'The maximum stack depth has been exceeded',
+	JSON_ERROR_CTRL_CHAR => 'Control character error, possibly incorrectly encoded',
+	JSON_ERROR_SYNTAX => 'Syntax error',
+);
+
+// さまざまな深さのエラーを表示します
+foreach(range(4, 3, -1) as $depth) {
+	var_dump(json_decode($json, True, $depth));
+	echo 'Last error : ', $json_errors[json_last_error()], PHP_EOL, PHP_EOL;
+	}
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+array(1) {
+  [1]=>
+  array(2) {
+    ["English"]=>
+    array(2) {
+      [0]=>
+      string(3) "One"
+      [1]=>
+      string(7) "January"
+    }
+    ["French"]=>
+    array(2) {
+      [0]=>
+      string(3) "Une"
+      [1]=>
+      string(7) "Janvier"
+    }
+  }
+}
+Last error : No error has occurred
+
+NULL
+Last error : The maximum stack depth has been exceeded
+]]>
+    </screen>
+   </example>
   </para>
  </refsect1>
 
@@ -149,12 +217,12 @@ json_decode($bad_json); // null
     JSON の仕様は JavaScript そのものではなく、JavaScript のサブセットです。
    </para>
   </note>
-  <caution>
+  <note>
    <para>
-    JSON エンコードされたデータのネストの深さが 127 を超えると、
-    この関数は &false; を返します。
+    デコードに失敗した場合は、<function>json_last_error</function>
+    を使用すればエラーの正確な状態を知ることができます。
    </para>
-  </caution>
+  </note>
  </refsect1>
 
  <refsect1 role="changelog">
@@ -171,7 +239,7 @@ json_decode($bad_json); // null
      <tbody>
       <row>
        <entry>5.3.0</entry>
-       <entry>オプションの <parameter>depth</parameter> が追加されました。</entry>
+       <entry>オプションの <parameter>depth</parameter> が追加されました。デフォルトの再帰の深さが 128 から 512 に増えました。</entry>
       </row>
       <row>
        <entry>5.2.3</entry>
@@ -188,6 +256,7 @@ json_decode($bad_json); // null
   <para>
    <simplelist>
     <member><function>json_encode</function></member>
+    <member><function>json_last_error</function></member>
    </simplelist>
   </para>
  </refsect1>
