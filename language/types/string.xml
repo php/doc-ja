@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 282e60fbe996cf4daf11c93d8f537e4273612398 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 19cbd580fd2bc41d87b31b82cefe6d862947c47e Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa,shimooka -->
 <sect1 xml:id="language.types.string">
  <title>文字列</title>
@@ -228,7 +228,7 @@ echo 'Variables do not $expand $either';
     </simpara>
 
     <para>
-     ヒアドキュメント構文を、クラスのメンバの初期化に用いることはできません。
+     ヒアドキュメント構文を、クラスのプロパティの初期化に用いることはできません。
      PHP 5.3 以降では、変数を含まないヒアドキュメントではこの制約はなくなりました。
     </para>
 
@@ -320,7 +320,7 @@ EOD
    </example>
 
    <para>
-    PHP 5.3.0 以降、静的な変数やクラスのメンバー/定数を
+    PHP 5.3.0 以降、静的な変数やクラスのプロパティ/定数を
     ヒアドキュメント構文で初期化できるようになりました。
    </para>
 
@@ -337,7 +337,7 @@ Nothing in here...
 LABEL;
 }
 
-// クラスのメンバー/定数
+// クラスのプロパティ/定数
 class foo
 {
 	const BAR = <<<FOOBAR
@@ -449,7 +449,7 @@ This should not print a capital 'A': \x41]]></screen>
    <note>
     <para>
      ヒアドキュメントと異なり、Nowdoc は任意の静的データコンテキストで使用できます。
-     典型的な使用例は、クラスのメンバーや定数の初期化です。
+     典型的な使用例は、クラスのプロパティや定数の初期化です。
     </para>
     
     <example>
@@ -652,21 +652,69 @@ echo "I'd like to have another {${ strrev('reeb') }}, hips";
  -->
      </programlisting>
     </informalexample>
+
+    <para>
+     文字列内で、変数を使ってクラスのプロパティにアクセスすることもできます。
+     このような構文を使います。
+    </para>
+
+   <informalexample>
+    <programlisting role="php">
+<![CDATA[
+<?php
+class foo {
+    var $bar = 'I am bar.';
+}
+
+$foo = new foo();
+$bar = 'bar';
+$baz = array('foo', 'bar', 'baz', 'quux');
+echo "{$foo->$bar}\n";
+echo "{$foo->$baz[1]}\n";
+?>
+]]>
+    </programlisting>
+   &example.outputs;
+   <screen>
+I am bar.
+I am bar.
+   </screen>
+   </informalexample>
     
     <note>
      <para>
-      <literal>{$ }</literal> の内部における
-      関数やメソッドのコールは、PHP 5 から動作します。
+      <literal>{$}</literal> の内部における
+      関数やメソッドのコール、静的クラス変数、クラス定数は、PHP 5 から動作します。
+      しかし、アクセスする値は文字列が定義されたスコープにおける変数名として解釈します。
+      ひとつの波括弧 (<literal>{}</literal>) では、
+      関数やメソッドの返り値、クラス定数や静的クラス変数の値にはアクセスできません。
      </para>
     </note>
 
-    <note>
-     <para>
-      文字列内での変数のパースは、文字列の連結に比べてよりメモリを消費します。
-      メモリの使用量をできるだけ抑えた PHP スクリプトを書きたいのなら、
-      変数のパースを用いるのではなく、連結演算子 (.) を使用しましょう。
-     </para>
-    </note>
+    <informalexample>
+     <programlisting role="php">
+<![CDATA[
+<?php
+// すべてのエラーを表示します
+error_reporting(E_ALL);
+
+class beers {
+    const softdrink = 'rootbeer';
+    public static $ale = 'ipa';
+}
+
+$rootbeer = 'A & W';
+$ipa = 'Alexander Keith\'s';
+
+// これは動作し、出力は I'd like an A & W となります
+echo "I'd like an {${beers::softdrink}}\n";
+
+// これも動作し、出力は I'd like an Alexander Keith's となります
+echo "I'd like an {${beers::$ale}}\n";
+?>
+]]>
+     </programlisting>
+    </informalexample>
 
    </sect4>
   </sect3>

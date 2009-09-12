@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 04077dd209c5fb9de2b55fcaf57cd4beef8c4273 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 459f5061ab6a48748d0a0cc1ca2e085ca6e2b17f Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa,shimooka -->
 
  <sect1 xml:id="language.oop5.overloading" xmlns="http://docbook.org/ns/docbook">
@@ -8,7 +8,7 @@
 
   <para>
    PHP におけるオーバーロード機能は、
-   メンバーやメソッドを動的に
+   プロパティやメソッドを動的に
    <quote>作成する</quote> ための手法です。
    これらの動的エンティティは、マジックメソッドを用いて処理されます。
    マジックメソッドは、クラス内でさまざまなアクションに対して用意することができます。
@@ -16,13 +16,13 @@
 
   <para>
    オーバーロードメソッドが起動するのは、
-   宣言されていないメンバーやメソッドを操作しようとしたときです。
+   宣言されていないプロパティやメソッドを操作しようとしたときです。
    また、現在のスコープからは
    <link linkend="language.oop5.visibility">アクセス不能な</link>
-   メンバーやメソッドを操作しようとしたときにも起動します。
+   プロパティやメソッドを操作しようとしたときにも起動します。
    このセクションでは、これらの (宣言されていない、
-   あるいは現在のスコープからはアクセス不能な) メンバーやメソッドのことを
-   <quote>アクセス不能メンバー</quote> および
+   あるいは現在のスコープからはアクセス不能な) プロパティやメソッドのことを
+   <quote>アクセス不能プロパティ</quote> および
    <quote>アクセス不能メソッド</quote>
    と表記することにします。
   </para>
@@ -66,14 +66,14 @@
        <row>
         <entry>5.3.0</entry>
         <entry>
-         <literal>__callStatic()</literal> が追加されました。
+         <function>__callStatic</function> が追加されました。
          public で、かつ static でない宣言を強制するような警告が追加されました。
         </entry>
        </row>
        <row>
         <entry>5.1.0</entry>
         <entry>
-         <literal>__isset()</literal> と <literal>__unset()</literal>
+         <function>__isset</function> と <function>__unset</function>
          が追加されました。
         </entry>
        </row>
@@ -85,7 +85,7 @@
 
 
   <sect2 xml:id="language.oop5.overloading.members">
-   <title>メンバーのオーバーロード</title>
+   <title>プロパティのオーバーロード</title>
 
    <methodsynopsis>
     <type>void</type><methodname>__set</methodname>
@@ -106,53 +106,67 @@
    </methodsynopsis>
 
    <para>
-    <literal>__set()</literal> は、
-    アクセス不能メンバーへデータを書き込む際に実行されます。
+    <function>__set</function> は、
+    アクセス不能プロパティへデータを書き込む際に実行されます。
    </para>
 
    <para>
-    <literal>__get()</literal> は、
-    アクセス不能メンバーからデータを読み込む際に使用します。
+    <function>__get</function> は、
+    アクセス不能プロパティからデータを読み込む際に使用します。
    </para>
 
    <para>
-    <literal>__isset()</literal> は、
+    <function>__isset</function> は、
     <function>isset</function> あるいは <function>empty</function>
-    をアクセス不能メンバーに対して実行したときに起動します。
+    をアクセス不能プロパティに対して実行したときに起動します。
    </para>
 
    <para>
-    <literal>__unset()</literal> は、
+    <function>__unset</function> は、
     <function>unset</function>
-    をアクセス不能メンバーに対して実行したときに起動します。
+    をアクセス不能プロパティに対して実行したときに起動します。
    </para>
 
    <para>
     引数 <varname>$name</varname> は、
-    操作しようとしたメンバーの名前です。
-    <literal>__set()</literal> メソッドの引数
+    操作しようとしたプロパティの名前です。
+    <function>__set</function> メソッドの引数
     <varname>$value</varname> は、
     <varname>$name</varname> に設定しようとした値となります。
    </para>
 
    <para>
-    メンバーのオーバーロードはオブジェクトのコンテキストでのみ動作します。
+    プロパティのオーバーロードはオブジェクトのコンテキストでのみ動作します。
     これらのマジックメソッドは、静的コンテキストでは起動しません。
     したがって、これらのメソッドは
     <link linkend="language.oop5.static">static</link>
     宣言することはできません。
    </para>
 
+   <note>
+    <para>
+     <function>__set</function> の返り値は無視されます。
+     これは、PHP が代入演算子を処理する方法によるものです。
+     同様に <function>__get</function> は、
+     <literal><![CDATA[ $a = $obj->b = 8; ]]></literal>
+     のように代入と連結した場合には決してコールされません。
+    </para>
+   </note>
+
    <example>
-    <title>__get, __set, __isset, __unset を使ったオーバーロードの例</title>
+    <title>
+     <function>__get</function>、
+     <function>__set</function>、<function>__isset</function> および
+     <function>__unset</function> メソッドを使ったプロパティのオーバーロードの例
+    </title>
     <programlisting role="php">
 <![CDATA[
 <?php
-class MemberTest {
+class PropertyTest {
     /**  オーバーロードされるデータの場所  */
     private $data = array();
 
-    /**  宣言されているメンバーにはオーバーロードは起動しません */
+    /**  宣言されているプロパティにはオーバーロードは起動しません */
     public $declared = 1;
 
     /**  クラスの外部からアクセスした場合にのみこれがオーバーロードされます  */
@@ -199,7 +213,7 @@ class MemberTest {
 
 echo "<pre>\n";
 
-$obj = new MemberTest;
+$obj = new PropertyTest;
 
 $obj->a = 1;
 echo $obj->a . "\n\n";
@@ -263,12 +277,12 @@ Notice:  Undefined property via __get(): hidden in <file> on line 70 in <file> o
    </methodsynopsis>
 
    <para>
-    <literal>__call()</literal> は、
+    <function>__call</function> は、
     アクセス不能メソッドをオブジェクトのコンテキストで実行したときに起動します。
    </para>
 
    <para>
-    <literal>__callStatic()</literal> は、
+    <function>__callStatic</function> は、
     アクセス不能メソッドを静的コンテキストで実行したときに起動します。
    </para>
 
@@ -281,7 +295,10 @@ Notice:  Undefined property via __get(): hidden in <file> on line 70 in <file> o
    </para>
 
    <example>
-    <title>__call および __callStatic による、インスタンス化されたメソッドのオーバーロードの例</title>
+    <title>
+     <function>__call</function> および
+     <function>__callStatic</function> メソッドによる、メソッドのオーバーロードの例
+    </title>
     <programlisting role="php">
   <![CDATA[
 <?php

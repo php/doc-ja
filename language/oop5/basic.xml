@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: d48001214d871a5844eff2614252a94d8e30fd54 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 813758ad4fea24d978930d9115d4c81790faadb3 Maintainer: hirokawa Status: ready -->
 
 <sect1 xml:id="language.oop5.basic" xmlns="http://docbook.org/ns/docbook">
  <title>クラスの基礎</title>
@@ -10,26 +10,56 @@
   <para>
    各クラスの定義は、<literal>class</literal>キーワードで始まり、クラス名が続きます。
    そしてその後に波括弧のペアが続き、
-   その中にはクラスのメンバーとメソッドの定義を記述します。
-   メソッドがオブジェクトコンテキストからコールされる場合
-   (通常は、メソッドが属するオブジェクトですが、
-   メソッドが第二のオブジェクトのオブジェクトの
-   コンテキストから <link linkend="language.oop5.static">スタティックに</link>
-   コールされる場合には、別のオブジェクトとなる場合もあります)、
-   疑似変数 <varname>$this</varname> が利用可能です。
+   その中にはクラスのプロパティとメソッドの定義を記述します。
    </para>
    <para>
     クラス名には、PHP の<link linkend="reserved">予約語</link>
     以外でラベルとして有効なあらゆる名前を使用することができます。
-    「ラベルとして有効な」とは、
-    <link linkend="language.variables.basics">PHP
-    の変数命名規則</link> を満たし、かつ先頭のドル記号を除いたものという意味です。
+    有効なクラス名は、先頭が文字あるいはアンダースコアで始まり、
+    その後に任意の数の文字/数字/アンダースコアが続くものです。
+    正規表現で表すと、
+    <literal>[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*</literal>
+    のようになります。
    </para>
    <para>
-    クラスの定義やオブジェクトの作成、そして擬似変数
-    <varname>$this</varname> の使用法についての基本例を示します。
+    クラスの中には、
+    <link linkend="language.oop5.constants">定数</link> や
+    <link linkend="language.oop5.properties">変数</link>
+    ("プロパティ" といいます) そして関数 ("メソッド" といいます)
+    を含めることができます。
+   </para>
+   <example>
+    <title>簡単なクラス定義</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+class SimpleClass
+{
+    // プロパティの宣言
+    public $var = 'a default value';
+
+    // メソッドの宣言
+    public function displayVar() {
+        echo $this->var;
+    }
+}
+?>
+]]>
+    </programlisting>
+   </example>
+   <para>
+    メソッドがオブジェクトコンテキストからコールされる場合は、
+    疑似変数 <varname>$this</varname> が利用可能です。
+    <varname>$this</varname> は、呼び出し元オブジェクト
+    (通常は、メソッドが属するオブジェクトですが、
+    メソッドが第二のオブジェクトのオブジェクトの
+    コンテキストから <link linkend="language.oop5.static">スタティックに</link>
+    コールされる場合には、別のオブジェクトとなる場合もあります)
+    への参照です。
+   </para>
+   <para>
     <example>
-     <title>オブジェクト指向言語における <varname>$this</varname> 変数</title>
+     <title><varname>$this</varname> 疑似変数の例</title>
     <programlisting role="php">
 <![CDATA[
 <?php
@@ -51,15 +81,20 @@ class B
 {
     function bar()
     {
+        // 注意: E_STRICT が有効な場合、次の行で警告が発生します
         A::foo();
     }
 }
 
 $a = new A();
 $a->foo();
+
+// 注意: E_STRICT が有効な場合、次の行で警告が発生します
 A::foo();
 $b = new B();
 $b->bar();
+
+// 注意: E_STRICT が有効な場合、次の行で警告が発生します
 B::bar();
 ?>
 ]]>
@@ -67,96 +102,14 @@ B::bar();
     &example.outputs;
     <screen>
 <![CDATA[
-$this is defined (a)
+$this is defined (A)
 $this is not defined.
-$this is defined (b)
+$this is defined (B)
 $this is not defined.
 ]]>
     </screen>
     </example>
   </para>
-  <example>
-   <title>簡単なクラス定義</title>
-   <programlisting role="php">
-<![CDATA[
-<?php
-class SimpleClass
-{
-    // メンバ宣言
-    public $var = 'a default value';
-
-    // メソッド宣言
-    public function displayVar() {
-        echo $this->var;
-    }
-}
-?>
-]]>
-   </programlisting>
-  </example>
-
-   <para>
-    デフォルト値は定数でなければなりません。(たとえば)
-    変数、クラスのメンバあるいは関数コールなどは使用できません。
-    <example>
-     <title>クラスのメンバのデフォルト値</title>
-     <programlisting role="php">
-<![CDATA[
-<?php
-class SimpleClass
-{
-    // 無効な形式のメンバ宣言
-    public $var1 = 'hello '.'world';
-    public $var2 = <<<EOD
-hello world
-EOD;
-    public $var3 = 1+2;
-    public $var4 = self::myStaticMethod();
-    public $var5 = $myVar;
-
-    // 有効な宣言
-    public $var6 = myConstant;
-    public $var7 = self::classConstant;
-    public $var8 = array(true, false);
-    
-    
-}
-?>
-]]>
-     </programlisting>   
-    </example>
-   </para>
-   <note>
-    <para>
-    クラスやオブジェクトを扱うための、便利な関数があります。
-    <link linkend="ref.classobj">クラス/オブジェクト関数</link>
-    を参照ください。
-    </para>
-   </note>
-
-   <para>
-    ヒアドキュメントとは異なり、nowdoc は静的データコンテキストでも使用することができます。
-    <example>
-     <title>静的なデータの例</title>
-     <programlisting role="php">
-<![CDATA[
-<?php
-class foo {
-    // PHP 5.3.0 以降で対応
-    public $bar = <<<'EOT'
-bar
-EOT;
-}
-?>
-]]>
-     </programlisting>
-    </example>
-   </para>
-   <note>
-    <para>
-     Nowdoc は PHP 5.3.0 以降で使用可能です。
-    </para>
-   </note>
  </sect2>
 
  <sect2 xml:id="language.oop5.basic.new">
@@ -234,17 +187,19 @@ object(SimpleClass)#1 (1) {
  <sect2 xml:id="language.oop5.basic.extends">
   <title>extends</title>
   <para>
-   クラスは、宣言部にextendsキーワードを含めることで、他のクラスのメソッドとメソッドと
-   メンバーを継承することができます。多重継承を行うことはできず、クラスが継承できるベース
+   クラスは、宣言部に <literal>extends</literal> キーワードを含めることで、他のクラスのメソッドと
+   プロパティを継承することができます。多重継承を行うことはできず、クラスが継承できるベース
    クラスは一つだけです。
   </para>
   <para>
-   継承されたメソッドとメンバーは、親クラスで <link linkend="language.oop5.final">final</link>
-   としてメソッドが定義されていない限り、親クラスで定義されたのと同じ名前で
-   再度宣言を行うことでオーバーライドすることができます。
-   <link linkend="language.oop5.paamayim-nekudotayim">parent::</link>で
-   参照することにより、このオーバーライドされたメソッドまたはスタティックメンバーに
-   アクセスすることができます。
+    継承されたメソッドやプロパティをオーバーライドするには、
+    親クラスで定義されているのと同じ名前でそれを再宣言します。
+    しかし、親クラスでそのメソッドが
+    <link linkend="language.oop5.final">final</link>
+    定義されている場合はオーバーライドできません。
+    オーバーライドされた元のメソッドや静的プロパティにアクセスするには、
+    <link linkend="language.oop5.paamayim-nekudotayim">parent::</link>
+    で参照します。
   </para>
   <example>
    <title>簡単なクラスの継承</title>
