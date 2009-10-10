@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: af4410a7e15898c3dbe83d6ea38246745ed9c6fb Maintainer: haruki Status: ready -->
+<!-- EN-Revision: 87d45e5f4e6693fee649f7144cc868afee0064f3 Maintainer: haruki Status: ready -->
 <!-- Credits: hirokawa, haruki -->
 <sect1 xml:id="install.unix.apache2" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
- <title>Apache 2.0 (Unixシステム用)</title>
+ <title>Apache 2.x (Unixシステム用)</title>
  <para>
-  このセクションでは、PHPを Unix システム上の Apache 2.0 にインストールする際の
+  このセクションでは、PHPを Unix システム上の Apache 2.x にインストールする際の
   手引きと注意事項について説明します。
  </para>
  
@@ -13,38 +13,46 @@
  
  <para>
   <link xlink:href="&url.apache2.docs;">Apache ドキュメンテーション</link>
-  を参照し、Apache 2.0.x の基本的な事項について理解しておくことを
-  強く推奨します。
+  を参照し、Apache 2.x の基本的な事項について理解しておくことを強く推奨します。
+  Apache のインストールオプションについてのより詳しい情報が得られます。
  </para>
  
  &install.snippet.apache2.compat;
  
  <para>
-  最新バージョンの <link xlink:href="&url.apache;">Apache 2.0</link> を
-  ダウンロードし、上述のいずれかのバージョンの PHP を用意してください。
-  この手引きでは Apache 2.0 で <literal>PHP</literal> を動作させるための
+  最新バージョンの Apache HTTP Server を
+  <link xlink:href="&url.apache;">Apache ダウンロードサイト</link>
+  からダウンロードし、上述のいずれかのバージョンの PHP を用意してください。
+  この手引きでは Apache 2.x で PHP を動作させるための
   基本的な部分しかカバーしていません。さらに詳しい情報については、<link
   xlink:href="&url.apache2.docs;">Apache ドキュメンテーション</link> を参照してください。
   情報が古く不正確になってしまうため、以下では詳細なバージョン番号は
   記述されていません。'NN' という文字列をご使用のバージョンに適宜置き換えて
   ください。
  </para>
+    <para>
+     現在、Apache 2.x には 2.0 と 2.2 の二種類があります。
+     どちらを選ぶにしてもそれなりの理由があるでしょうが、
+     2.2 が現在の最新版です。もし選択の余地があるのなら
+     2.2 を使うことを推奨します。しかし、この例では 2.0 と 2.2
+     のどちらでも使えるようにしています。
+    </para>
  <example>
   <title>
    インストール手順 (Apache 2 共有モジュール版)
   </title>
   <screen>
 <![CDATA[
-1.  gzip -d httpd-2_0_NN.tar.gz
-2.  tar xvf httpd-2_0_NN.tar
+1.  gzip -d httpd-2_x_NN.tar.gz
+2.  tar xvf httpd-2_x_NN.tar
 3.  gunzip php-NN.tar.gz
 4.  tar -xvf php-NN.tar
-5.  cd httpd-2_0_NN
+5.  cd httpd-2_x_NN
 6.  ./configure --enable-so
 7.  make
 8.  make install
 
-    以上で Apache 2.0.NN が、モジュールの動的ロードとデフォルトの
+    以上で Apache 2.x.NN が、モジュールの動的ロードとデフォルトの
     MPM（マルチプロセッシングモジュール）である prefork が有効になった
     状態で、/usr/local/apache2 にインストールされます。
     
@@ -76,13 +84,13 @@
     
 13. php.ini ファイルを設定する
     
-      cp php.ini-dist /usr/local/lib/php.ini
+      cp php.ini-development /usr/local/lib/php.ini
       
     PHP の実行時設定を変更するには、.ini ファイルを編集します。
     このファイルを他の場所に置きたい場合は、手順 10 で、
     オプション --with-config-file-path=/path を使用します。
 
-    php.ini-dist ではなく、php.ini-recommended を使用する場合は、PHP の
+    php.ini-development ではなく、php.ini-production を使用する場合は、PHP の
     動作が変化しますので、ファイル中に記載されている変更点の一覧を確認する
     ようにしてください。
 
@@ -90,12 +98,6 @@
     LoadModule 命令の右側に記述するパスは、システムの PHP 共有モジュール
     を指している必要があります。上記の make install により既にこの設定は
     追加されている場合もありますが、確認が必要です。
-
-    PHP 4 の場合:
-
-      LoadModule php4_module modules/libphp4.so
-
-    PHP 5 の場合:
 
       LoadModule php5_module modules/libphp5.so
    
@@ -118,11 +120,21 @@
           SetHandler application/x-httpd-php
       </FilesMatch>
     
-    拡張子 .phps のファイルを PHP ソースファイルとして扱うには、これを追加します。
+    拡張子 .phps のファイルを php ソースフィルタに処理させて
+    構文ハイライトつきのソースコードとして表示させるには、このようにします。
 
       <FilesMatch "\.phps$">
           SetHandler application/x-httpd-php-source
       </FilesMatch>
+
+    mod_rewrite を使うと、.phps ファイルに名前を変えたりコピーしたりしなくても
+    任意の .php ファイルを構文ハイライトつきのソースコードとして表示させることができます。
+
+      RewriteEngine On
+      RewriteRule (.*\.php)s$ $1 [H=application/x-httpd-php-source]
+
+    php ソースフィルタは、実運用環境では無効にしておかなければなりません。
+    有効にしてしまうと、ソースコードに埋め込まれた機密情報や重要情報が漏れてしまう危険があります。
 
 16. Apache サーバを、通常の手順通り、起動させます。
       /usr/local/apache2/bin/apachectl start
@@ -140,34 +152,39 @@
     <literal>SAPI</literal> モジュールとして PHP を動作させることができます。もちろん、Apacheと<literal>
     PHP</literal> の双方とも、もっと多くの configure オプションを指定することが出来ます。
     詳しい情報を得るには、ソースツリーディレクトリで <command>./configure
-    --help</command> を実行してください。また、マルチスレッド版の Apache2
-    をビルドする場合は、デフォルトの MPM である <filename>prefork</filename> を
-    <filename>worker</filename> もしくは <filename>perchild</filename> で
-    上書きする必要があります。このためには、上記の手順 6 で<option
-    role="configure">--with-mpm=worker</option> もしくは<option
-    role="configure">--with-mpm=perchild</option> を指定します。マルチスレッド版
-    については、その動作に関して十分注意してください。
-    詳細については Apacheドキュメントの
-    <link xlink:href="&url.apache2.mpm;">マルチプロセッシングモジュール (MPM)</link>
-    を参照してください。
+    --help</command> を実行してください。
  </para>
- <note>
-  <para>
-   コンテントネゴシエーションを使用する場合には、
-   <link linkend="faq.installation.apache.multiviews">
-   Apache の MultiViews オプションに関するFAQ</link> を参照してください。
-  </para>
- </note>
- <note>
-  <para>
-   マルチスレッド版の Apache をビルドする場合は、システムがスレッドを
-   サポートしている必要があります。また、<literal>PHP</literal> は
-   実験的なステータスにある Zend Thread Safety (ZTS) でビルドされます。
-   そのため、使用できない拡張モジュールがあります。デフォルトの<filename>
-   prefork</filename> MPM でのビルドが推奨されます。
-  </para>
- </note>
-</sect1>
+    <para>
+     マルチスレッド版の Apache をビルドするには、Apache のビルド時に標準の
+     <filename>prefork</filename> MPM ではなく <filename>worker</filename> MPM を選択します。
+     そのためには、先ほどの手順 6 のところで ./configure の引数に次のオプションを追加します。
+    </para>
+    <example>
+    <screen>
+     --with-mpm=worker
+    </screen>
+    </example>
+    <para>
+     そうすることで何がどのようになるのかをきちんと認識したうえで、これを行わなければなりません。
+     詳細については Apacheドキュメントの
+     <link xlink:href="&url.apache2.mpm;">マルチプロセッシングモジュール (MPM)</link>
+     を参照してください。
+    </para>
+    <note>
+     <para>
+      <link linkend="faq.installation.apache.multiviews">Apache MultiViews 
+      FAQ</link> では、PHP でマルチビューを使う方法について解説しています。
+     </para>
+    </note>
+    <note>
+     <para>
+      マルチスレッド版の Apache をビルドするには、ターゲットシステムがスレッドに対応していなければなりません。
+      その場合は、PHP についても実験的な Zend Thread Safety (ZTS) でビルドしなければなりません。
+      この構成では使用できない拡張モジュールもあります。推奨される方法は、Apache をデフォルトの
+      <filename>prefork</filename> MPM モジュールでビルドすることです。
+     </para>
+    </note>
+   </sect1>
 
 <!-- Keep this comment at the end of the file
 Local variables:
