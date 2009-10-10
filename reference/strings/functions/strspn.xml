@@ -1,24 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: ed67b3c502586ccf07d9b854512272e4cbe0db26 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: af4410a7e15898c3dbe83d6ea38246745ed9c6fb Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: shimooka -->
 <refentry xmlns="http://docbook.org/ns/docbook" xml:id="function.strspn">
  <refnamediv>
   <refname>strspn</refname>
-  <refpurpose>マスクに一致する最初のセグメントの長さを返す</refpurpose>
+  <refpurpose>
+   指定したマスク内に含まれる文字からなる文字列の最初のセグメントの長さを探す
+  </refpurpose>
  </refnamediv>
  
  <refsect1 role="description">
   &reftitle.description;
   <methodsynopsis>
    <type>int</type><methodname>strspn</methodname>
-   <methodparam><type>string</type><parameter>str1</parameter></methodparam>
-   <methodparam><type>string</type><parameter>str2</parameter></methodparam>
+   <methodparam><type>string</type><parameter>subject</parameter></methodparam>
+   <methodparam><type>string</type><parameter>mask</parameter></methodparam>
    <methodparam choice="opt"><type>int</type><parameter>start</parameter></methodparam>
    <methodparam choice="opt"><type>int</type><parameter>length</parameter></methodparam>
   </methodsynopsis>
   <para>
-   マスクに一致する最初のセグメントの長さを求めます。
+   <parameter>subject</parameter> の中で、
+   <parameter>mask</parameter> 内の文字が連続する最初の部分の長さを返します。
+  </para>
+  <para>
+   <parameter>start</parameter> と <parameter>length</parameter>
+   を省略した場合は、<parameter>subject</parameter> 全体を調べます。
+   指定した場合は、<literal>strspn(substr($subject, $start, $length),
+   $mask)</literal> (詳細は <xref linkend="function.substr" />
+   を参照ください) をコールするのと同じ働きをします。
   </para>
   <para>
    たとえば、
@@ -26,13 +36,14 @@
     <programlisting role="php">
 <![CDATA[
 <?php
-$var = strspn("42 is the answer, what is the question ...", "1234567890");
+$var = strspn("42 is the answer to the 128th question.", "1234567890");
 ?>
 ]]>
     </programlisting>
    </informalexample>
-   このコードは、<varname>$var</varname> に 2 を代入します。これは、
-   "1234567890" からの文字を含む最長の部分が "42" であるためです。
+   このコードは、<varname>$var</varname> に <literal>2</literal> を代入します。これは、
+   <parameter>subject</parameter> の中で "1234567890" 内の文字だけで構成される
+   最初の部分が "42" であるためです。
   </para>
  </refsect1>
 
@@ -41,18 +52,18 @@ $var = strspn("42 is the answer, what is the question ...", "1234567890");
   <para>
    <variablelist>
     <varlistentry>
-     <term><parameter>str1</parameter></term>
+     <term><parameter>subject</parameter></term>
      <listitem>
       <para>
-       最初の文字列。
+       調べたい文字列。
       </para>
      </listitem>
     </varlistentry>
     <varlistentry>
-     <term><parameter>str2</parameter></term>
+     <term><parameter>mask</parameter></term>
      <listitem>
       <para>
-       次の文字列。
+       セグメントを数える際に許可する文字の一覧。
       </para>
      </listitem>
     </varlistentry>
@@ -60,8 +71,23 @@ $var = strspn("42 is the answer, what is the question ...", "1234567890");
      <term><parameter>start</parameter></term>
      <listitem>
       <para>
-       調べ始める位置。
-       負の値を指定すると、文字列の末尾から数えた位置となります。
+       <parameter>subject</parameter> の中で調べ始める位置。
+      </para>
+      <para>
+       <parameter>start</parameter> に非負の値を指定すると、
+       <function>strspn</function> は
+       <parameter>subject</parameter> の
+       <parameter>start</parameter> 番目の位置から調査を始めます。
+       たとえば、文字列 '<literal>abcdef</literal>' において
+       <literal>0</literal> 番目の位置にある文字は '<literal>a</literal>'
+       で <literal>2</literal> 番目の位置にある文字は
+       '<literal>c</literal>' のようになります。
+      </para>
+      <para>
+       <parameter>start</parameter> に負の値を指定すると、
+       <function>strspn</function> は
+       <parameter>subject</parameter> の最後から
+       <parameter>start</parameter> 番目の位置から調査を始めます。
       </para>
      </listitem>
     </varlistentry>
@@ -69,8 +95,18 @@ $var = strspn("42 is the answer, what is the question ...", "1234567890");
      <term><parameter>length</parameter></term>
      <listitem>
       <para>
-       調べる文字列の長さ。
-       負の値を指定すると、文字列の末尾からの長さとなります。
+       <parameter>subject</parameter> 内で調べる部分の長さ。
+      </para>
+      <para>
+       <parameter>length</parameter> に非負の値を指定すると、
+       <parameter>subject</parameter> の開始位置から
+       <parameter>length</parameter> 文字ぶんの範囲を調査します。
+      </para>
+      <para>
+        <parameter>length</parameter> に負の値を指定すると、
+        <parameter>subject</parameter> の調査範囲は
+        開始位置から始まって <parameter>subject</parameter>
+        の最後から <parameter>length</parameter> だけさかのぼったところまでとなります。
       </para>
      </listitem>
     </varlistentry>
@@ -119,7 +155,7 @@ $var = strspn("42 is the answer, what is the question ...", "1234567890");
     <programlisting role="php">
 <![CDATA[
 <?php
-echo strspn("foo", "o", 1, 2); // 2
+echo strspn("foo", "o", 1, 2); // 出力は 2
 ?>
 ]]>
     </programlisting>
@@ -154,7 +190,7 @@ sgml-indent-step:1
 sgml-indent-data:t
 indent-tabs-mode:nil
 sgml-parent-document:nil
-sgml-default-dtd-file:"../../../../manual.ced"
+sgml-default-dtd-file:"~/.phpdoc/manual.ced"
 sgml-exposed-tags:nil
 sgml-local-catalogs:nil
 sgml-local-ecat-files:nil
