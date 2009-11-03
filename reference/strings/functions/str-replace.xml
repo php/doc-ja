@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: af4410a7e15898c3dbe83d6ea38246745ed9c6fb Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 1b72640345862f505ae6d7fa53ee45bacc8dfb4d Maintainer: hirokawa Status: ready -->
 <refentry xmlns="http://docbook.org/ns/docbook" xml:id="function.str-replace">
  <refnamediv>
   <refname>str_replace</refname>
@@ -52,6 +52,8 @@
      <term><parameter>search</parameter></term>
      <listitem>
       <para>
+       The value being searched for, otherwise known as the <emphasis>needle</emphasis>.
+       An array may be used to designate multiple needles.
       </para>
      </listitem>
     </varlistentry>
@@ -59,12 +61,18 @@
      <term><parameter>replace</parameter></term>
      <listitem>
       <para>
+       The replacement value that replaces found <parameter>search</parameter>
+       values. An array may be used to designate multiple replacements.
       </para>
      </listitem>
     </varlistentry>
     <varlistentry>
      <term><parameter>subject</parameter></term>
      <listitem>
+      <para>
+       The string or array being searched and replaced on,
+       otherwise known as the <emphasis>haystack</emphasis>.
+      </para>
       <para>
        <parameter>subject</parameter> が配列の場合、
        <parameter>subject</parameter> の各エントリについて検索と置換が行われ、
@@ -139,7 +147,7 @@
   &reftitle.examples;
   <para>
    <example>
-    <title><function>str_replace</function> の例</title>
+    <title>基本的な <function>str_replace</function> の例</title>
     <programlisting role="php">
 <![CDATA[
 <?php
@@ -157,18 +165,37 @@ $yummy   = array("pizza", "beer", "ice cream");
 
 $newphrase = str_replace($healthy, $yummy, $phrase);
 
-// パラメータ count は PHP 5.0.0 で使用可能になりました
+// 2 となります
 $str = str_replace("ll", "", "good golly miss molly!", $count);
-echo $count; // 2
-
+echo $count;
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+  <para>
+   <example>
+    <title><function>str_replace</function> に関するちょっとした事実</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
 // 置換の順番を指定します
 $str     = "Line 1\nLine 2\rLine 3\r\nLine 4\n";
 $order   = array("\r\n", "\n", "\r");
 $replace = '<br />';
-// まず \r\n を最初に置換するので、二重に変換されることはありません
+
+// まず最初に \r\n を置換するので、二重に変換されることはありません
 $newstr = str_replace($order, $replace, $str);
 
+// 出力は F となります。A が B に、そして B が C に、そして……
+// 最終的に E が F に置換されるからです。置換は左から右へと順に行われます
+$search  = array('A', 'B', 'C', 'D', 'E');
+$replace = array('B', 'C', 'D', 'E', 'F');
+$subject = 'A';
+echo str_replace($search, $replace, $subject);
+
 // 出力は apearpearle pear となります
+// 上で説明したのと同じ理由です
 $letters = array('a', 'p');
 $fruit   = array('apple', 'pear');
 $text    = 'a p';
@@ -184,6 +211,14 @@ echo $output;
  <refsect1 role="notes">
   &reftitle.notes;
   &note.bin-safe;
+  <caution>
+   <title>置換の順番に関するメモ</title>
+   <para>
+    <function>str_replace</function> は左から右へと置換を行うので、
+    複数の置換を行うときには、前に追加された値を置換する可能性もあります。
+    このドキュメントのサンプルを参照ください。
+   </para>
+  </caution>
   <note>
    <para>
     この関数は大文字小文字を区別します。区別せずに置換するには
