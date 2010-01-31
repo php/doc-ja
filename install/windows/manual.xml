@@ -1,136 +1,54 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 9aff12cf574c8ce7552caa334676c328678525f6 Maintainer: haruki Status: ready -->
+<!-- EN-Revision: 20e103c83e613249569977f11eeb02dd5d519cf2 Maintainer: haruki Status: working -->
 <!-- CREDITS: fujimoto, hirokawa, yuw, haruki, takagi -->
    <sect1 xml:id="install.windows.manual" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
     <title>マニュアルインストール</title>
-    
     <para>
-     ここからは、Microsoft Windows に手動で PHP をインストールし、Web サーバを
-     設定する手順について説明します。
+     This section contains instructions for manually installing and configuring 
+     PHP on Microsoft Windows. For the instructions on how to use PHP installer to 
+     setup and configure PHP and a web server on Windows refer to 
+     <link linkend="install.windows.installer.msi">Windows Installer (PHP 5.2 and later)</link>.
     </para>
-    <para>
-     始めに、<link xlink:href="&url.php.downloads;">&url.php.downloads;</link>
-     のダウンロードページから zip バイナリアーカイブをダウンロードしてください。 
-    </para>
-    
-    <para>
-     公式に配布されている Microsoft Window 向けの PHP インストーラを含め
-     多数のオールインワンのインストールキットが存在しますが、
-     まずは、幾ばくかの時間を割いて独力で PHP をセットアップしてみることをお勧めします。
-     そうすることで、システムをより理解することができ、PHP 拡張モジュールの
-     インストールも必要に応じて容易にできるようになるでしょう。
-    </para>
-    
-    <note xml:id="install.windows.manual.upgrade">
-     <title>前バージョンから PHP をアップグレードする場合</title>
+    <sect2 xml:id="install.windows.manual.download">
+     <title>Selecting and downloading the PHP distribution package</title>
      <para>
-      古いバージョンのマニュアルでは、ini ファイルおよび <acronym>DLL</acronym>
-      ファイルをシステムフォルダ (<filename class="directory">C:\WINDOWS</filename> など)
-      へ移動させることを推奨していました。この移動により、インストール手順は簡単になりますが、
-      アップグレードは面倒になっていました。
-      新しいバージョンのインストールにあたっては、これら移動させたファイル（システムフォルダ内の
-      &php.ini; や PHP 関連の DLLなど）をすべて削除することを推奨します。
-      この時システムを壊さないようにするために、バックアップを確実に行ってください。
-      古い  &php.ini; は新しい PHP を設定するのに有用です。
-      本解説で推奨する PHP のインストール方法は、以下の解説に示すとおり、すべての PHP 関連の
-      ファイルをひとつのフォルダにまとめ、システムパスにそのフォルダを登録する方法です。
+      Download the PHP zip binary distribution from 
+      <link xlink:href="&url.php.win.downloads;">PHP for Windows: Binaries and Sources</link>. 
+      There are several different versions of the zip package - chose the version that is suitable for 
+      the web server being used:
+      <itemizedlist spacing="compact">
+       <listitem>
+        <para>
+         If PHP is used with IIS then choose PHP 5.3 <emphasis>VC9 Non Thread Safe</emphasis> or 
+         PHP 5.2 <emphasis>VC6 Non Thread Safe</emphasis>;
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         If PHP is used with Apache 1 or Apache 2 then choose PHP 5.3 <emphasis>VC6</emphasis> or 
+         PHP 5.2 <emphasis>VC6</emphasis>.
+        </para>
+       </listitem>
+      </itemizedlist>
+      <note>
+       <para>
+        VC9 Versions are compiled with the Visual Studio 2008 compiler and have improvements 
+        in performance and stability. The VC9 versions require you to have the 
+        <link xlink:href="&url.microsoft.vc9.x86;">Microsoft 2008 C++ Runtime (x86)</link> or 
+        the <link xlink:href="&url.microsoft.vc9.x64;">Microsoft 2008 C++ Runtime (x64)</link> installed.
+       </para>
+      </note>
      </para>
-    </note>
-    
-    <note>
-     <title>MDAC 要件</title>
+    </sect2>
+    <sect2 xml:id="install.windows.manual.package">
+     <title>The PHP package structure and content</title>
      <para>
-      <emphasis>Windows 98/NT4</emphasis> を使用している場合には、
-      プラットフォームに合う Microsoft Data Access Components (MDAC) の最新版を
-      入手してください。<link xlink:href="&url.mdac;">&url.mdac;</link>
-      からダウンロードできます。MDAC が必要な理由は、<link linkend="ref.uodbc">ODBC</link>
-      が Windows バイナリにビルトインされているためです。
-     </para>
-    </note>
-    
-    <para>
-     各サーバ特有の設定を行う前に、以下に示すステップを完了させてください。
-    </para>
-    <para>
-     まず、配布ファイルを適当なフォルダに展開します。PHP 4 の場合は、<filename
-     class="directory">C:\</filename> がよいでしょう。zip パッケージは
-     <filename>php-4.3.7-Win32</filename> のようなフォルダ名で展開されます。
-     PHP 5 の場合は、PHP 4 のようにフォルダ内に展開されないので、<filename
-     class="directory">C:\php</filename> 内で展開してください。
-     他の位置に展開することもできますが、空白を含むパス (例:c:\program files\php)
-     にすることはお勧めできません。Web サーバによってはクラッシュを引き起こします。
-    </para>
-    <para>
-     展開されたフォルダの構造は、PHP 4 と PHP 5 とで異なり、以下のようになります。
-    </para>
-    <example>
-     <title>PHP 4 パッケージ構造</title>
-     <programlisting>
-<![CDATA[
-
-c:\php
-   |
-   +--cli
-   |  |
-   |  |-php.exe           -- CLI 実行ファイル - コマンドラインでのスクリプト実行専用
-   |
-   +--dlls                -- 拡張モジュールの利用に必要な DLL
-   |  |
-   |  |-expat.dll
-   |  |
-   |  |-fdftk.dll
-   |  |
-   |  |-...
-   |
-   +--extensions          -- PHP 拡張モジュールの DLL
-   |  |
-   |  |-php_bz2.dll
-   |  |
-   |  |-php_cpdf.dll
-   |  |
-   |  |-...
-   |
-   +--mibs                -- SNMP 用サポートファイル
-   |
-   +--openssl             -- Openssl 用サポートファイル
-   |
-   +--pdf-related         -- PDF 用サポートファイル
-   |
-   +--sapi                -- SAPI (server module support) DLL
-   |  |
-   |  |-php4apache.dll
-   |  |
-   |  |-php4apache2.dll
-   |  |
-   |  |-...
-   |
-   +--PEAR                -- PEAR の初期コピー
-   |
-   |
-   |-go-pear.bat          -- PEAR セットアップ用スクリプト
-   |
-   |-...
-   |
-   |-php.exe              -- CGI 実行ファイル
-   |
-   |-...
-   |
-   |-php.ini-development         -- デフォルトの php.ini 設定
-   |
-   |-php.ini-production  -- 推奨される php.ini 設定
-   | 
-   |-php4ts.dll           -- コア PHP DLL
-   | 
-   |-...
-
-]]>
-     </programlisting>
-    </example> 
-    <para>
-    </para>
-    <example>
-     <title>PHP 5 パッケージ構造</title>
+      Unpack the content of the zip archive into a directory of your choice, for 
+      example C:\PHP\. The directory and file structure extracted from the zip will 
+      look as below:
+      <example>
+       <title>PHP 5 パッケージ構造</title>
      <programlisting>
 <![CDATA[
 
@@ -138,9 +56,9 @@ c:\php
    |
    +--dev
    |  |
-   |  |-php5ts.lib
+   |  |-php5ts.lib                 -- 非スレッドセーフバージョンの場合は php5.lib
    |
-   +--ext                 -- PHP 拡張モジュールの DLL
+   +--ext                          -- PHP 拡張モジュールの DLL
    |  |
    |  |-php_bz2.dll
    |  |
@@ -148,222 +66,194 @@ c:\php
    |  |
    |  |-...
    |
-   +--extras
-   |  |
-   |  +--mibs             -- SNMP 用サポートファイル
-   |  |
-   |  +--openssl          -- Openssl 用サポートファイル
-   |  |
-   |  +--pdf-related      -- PDF 用サポートファイル
-   |  |
-   |  |-mime.magic
+   +--extras                       -- 空
    |
-   +--pear                -- PEAR の初期コピー
+   +--pear                         -- PEAR の初期コピー
    |
    |
-   |-go-pear.bat          -- PEAR セットアップ用スクリプト
-   |
-   |-fdftk.dll
+   |-go-pear.bat                   -- PEAR セットアップ用スクリプト
    |
    |-...
    |
-   |-php-cgi.exe          -- CGI 実行ファイル
+   |-php-cgi.exe                   -- CGI 実行ファイル
    |
-   |-php-win.exe          -- コマンドプロンプトを開かずにスクリプトを実行する
+   |-php-win.exe                   -- コマンドプロンプトを開かずにスクリプトを実行する
    |
-   |-php.exe              -- CLI 実行ファイル - コマンドラインでのスクリプト実行専用
-   |
-   |-...
-   |
-   |-php.ini-development         -- デフォルトの php.ini 設定
-   |
-   |-php.ini-production  -- 推奨される php.ini 設定
-   | 
-   |-php5activescript.dll
-   |
-   |-php5apache.dll
-   |
-   |-php5apache2.dll
+   |-php.exe                       -- コマンドラインの PHP 実行ファイル (CLI)
    |
    |-...
    |
-   |-php5ts.dll           -- コア PHP DLL
+   |-php.ini-development           -- デフォルトの php.ini 設定
+   |
+   |-php.ini-production            -- 推奨される php.ini 設定
+   |
+   |-php5apache2_2.dll             -- 非スレッドセーフバージョンには存在しません
+   |
+   |-php5apache2_2_filter.dll      -- 非スレッドセーフバージョンには存在しません
+   |
+   |-...
+   |
+   |-php5ts.dll                    -- コア PHP DLL ( 非スレッドセーフバージョンの場合は php5.dll )
    | 
    |-...
 
 ]]>
-     </programlisting>
-    </example> 
-    <para>
-     PHP 4 と PHP 5 とで、相違点もあり、共通点もあります。
-     双方とも、<acronym>CGI</acronym> 実行ファイル、<acronym>CLI</acronym>
-     実行ファイル、およびサーバモジュールがあります。しかし、フォルダや
-     ファイル名が異なります。PHP 4 では、サーバモジュールは、
-     <filename class="directory">sapi</filename> フォルダ内にありますが、
-     PHP 5 ではそういったフォルダは無く、PHP を展開したフォルダのルートにあります。
-     PHP 5 の拡張モジュールが必要とする DLL も、別フォルダ内には納められていません。
-    </para>
-    <note>
-     <para>
-      PHP 4 では、<filename class="directory">dll</filename> フォルダおよび
-      <filename class="directory">sapi</filename> フォルダ内のすべてのファイルを
-      メインのフォルダ（<filename class="directory">C:\php</filename> など）に
-      移動してください。
+       </programlisting>
+      </example>
      </para>
-    </note>
-    <para>
-     PHP 4 および PHP 5 で提供されているサーバモジュールは以下の通りです。
-     <itemizedlist>
-      <listitem><para>
-       <filename>sapi/php4activescript.dll (php5activescript.dll)</filename>
-       - <link linkend="install.windows.activescript">ActiveScript
-       エンジン</link>。Windows アプリケーションに PHP を埋め込むことが可能
-      </para></listitem>
-      <listitem><para>
-       <filename>sapi/php4apache.dll (php5apache.dll)</filename> - Apache 1.3.x モジュール
-      </para></listitem>
-      <listitem><para>
-       <filename>sapi/php4apache2.dll (php5apache2.dll)</filename> - Apache 2.0.x モジュール
-      </para></listitem>
-      <listitem><para>
-       <filename>sapi/php5apache2_2.dll</filename> - Apache 2.2.x モジュール
-      </para></listitem>
-      <listitem><para>
-       <filename>sapi/php4isapi.dll (php5isapi.dll)</filename> - ISAPI モジュール。
-       IIS 4.0/PWS 4.0 以降を始とした ISAPI 互換サーバ用
-      </para></listitem>
-      <listitem><para>
-       <filename>sapi/php4nsapi.dll (php5nsapi.dll)</filename> - Sun/iPlanet/Netscape
-       用サーバモジュール
-      </para></listitem>
-      <listitem><para>
-       <filename>sapi/php4pi3web.dll (PHP 5 では提供なし)</filename> - Pi3Web 用サーバモジュール
-      </para></listitem>
-       <!-- TODO: servlets? -->
-     </itemizedlist>
-    </para>
-    <para>
-     サーバモジュールは、CGI バイナリと比べ、パフォーマンスが非常に高く、
-     機能も追加されています。CLI 版は、PHP をコマンドライン用のスクリプトとして
-     使うためのものです。CLI 版について詳しくは <link linkend="features.commandline">PHP
-     をコマンドラインから使用する</link>の章を参照してください。
-    </para>
-    <warning>
-     <simpara>
-      SAPI モジュールは、バージョン 4.1 以降、顕著な改善が行われています。
-      一方、古いシステムにおいては、サーバエラーが発生したり、ASP 等のサーバモジュールが
-      落ちたりする可能性があります。
-     </simpara>
-    </warning>
-    <para>
-     <acronym>CGI</acronym> バイナリ、<acronym>CLI</acronym>
-     バイナリ、およびサーバモジュールのいずれも <filename>php4ts.dll</filename> 
-     (<filename>php5ts.dll</filename>) を必要とします。
-     PHP がこのファイルを見つけられるようにする必要があります。
-     探索順は、以下の通りです。
-     <itemizedlist>
-      <listitem>
-       <para>
-        <filename>php.exe</filename> のコール元のフォルダ。SAPI モジュールを
-        使用している場合、WEB サーバのフォルダ (例、
-        <filename>C:\Program Files\Apache Group\Apache2\bin</filename>)
-       </para>
-      </listitem>
-      <listitem>
-       <para>
-        Windows の <varname>PATH</varname> 環境変数に登録されたフォルダ
-       </para>
-      </listitem>
-     </itemizedlist>
-    </para>
-    <para>
-     <filename>php4ts.dll</filename> / <filename>php5ts.dll</filename> を有効に
-     するには、[1] Windows のシステムフォルダにコピーする方法、
-     [2] WEB サーバのフォルダにコピーする方法、[3] PHP フォルダ
-     (<filename class="directory">C:\php</filename>) を <varname>PATH</varname>
-     環境変数に登録する方法の３つの選択肢があります。メンテナンスを考慮すると、
-     ３番目の環境変数に登録する方法をとるべきでしょう。こうすれば、将来の PHP の
-     アップグレードが容易になります。PHP フォルダを環境変数に登録する方法に
-     ついては、<link linkend="faq.installation.addtopath">FAQ</link> を参照して
-     ください (また、コンピュータを再起動することを忘れないでください。
-     ログオフするだけでは不十分です)。
-    </para>
-    <para>
-     次のステップは、PHP の設定ファイル &php.ini; を正しく記述することです。 
-     配布される zip ファイルには <filename>php.ini-development</filename> と 
-     <filename>php.ini-production</filename> の二つの ini ファイルが含まれています。
-     パフォーマンスとセキュリティの観点から最適化された初期設定がなされているので、
-     <filename>php.ini-production</filename> の使用を推奨します。 
-     <filename>php.ini-development</filename> から多くの点で変更が行われています。
-     ini ファイルには詳しくコメントが書かれているので、注意深く読んでみると良いでしょう。
-     たとえば、<link linkend="ini.display-errors">display_errors</link> や
-     <link linkend="ini.magic-quotes-gpc">magic_quotes_gpc</link> が 
-     <literal>off</literal> となっていたりします。
-     さらに、<link linkend="configuration.file">設定ファイル</link>のセクションもよく読んで 
-     各要素を自ら設定してみてください。 
-     PHP は、デフォルトの ini ファイルの設定できちんと動作するとはいえ、
-     最高のセキュリティを達成したいならば、自ら手を動かして設定することが最善の方法です。
-     選んだ ini ファイルを、PHP がアクセスできるフォルダにコピーし、&php.ini; 
-     にリネームしてください。PHP は、<xref linkend="configuration.file"/>
-     の節で述べられている場所から &php.ini; を探します。
-    </para>
-    <para>
-     Apache 2 を使用する場合、PHPIniDir ディレクティブを使うのが最も簡単でしょう
-     (<link linkend="install.windows.apache2">Apache 2 へのインストール</link> ページ参照。)
-     他の場合、<varname>PHPRC</varname> 環境変数を設定するのが良いでしょう。
-     詳しい方法については、こちらの <link linkend="faq.installation.phprc">FAQ エントリ</link> で解説されています。
-    </para>
-    <note>
-     <simpara>
-      Windows NT, 2000, XP または 2003 で NTFS を使用している場合、WEB サーバを
-      実行するユーザが、&php.ini; を読める権限があることを確認してください。
-     </simpara>
-    </note>
-    <para>
-      以下のステップは、必要に応じて行ってください。
-     <itemizedlist>
-      <listitem>
-       <para>
-        &php.ini; ファイルを編集し、 
-        <link linkend="ini.doc-root">doc_root</link> に Web サーバーの
-        ドキュメントルートを設定します（ただし、OmniHTTPd を使用する場合は編集しないこと。）
-        例えば、以下のように設定します。
-        <informalexample>
-          <programlisting role="ini">
-<![CDATA[
-doc_root = c:\inetpub       // IIS/PWS の場合
-
-doc_root = c:\apache\htdocs // Apache の場合 
-]]>
-         </programlisting>
-        </informalexample>
-       </para>
-      </listitem>
-      <listitem>
-       <simpara>
-        PHP の起動時に、必要な拡張モジュールがロードされるように設定します。セットアップの方法や、
-        ビルトイン済みのモジュールについては
-        <link linkend="install.windows.extensions">Windows 用拡張モジュール</link> のセクションを
-        参照してください。PHP の新規インストールの場合は、まず PHP が拡張モジュールなしで正しく動作することを
-        確認してから、php.ini を変更して拡張モジュールを有効にするほうが賢明です。
-       </simpara>
-      </listitem>
-      <listitem>
-       <simpara>
-        PWS と IIS においては、<link linkend="ini.browscap">browscap</link>
-        を 次のように指定することができます。
-        <filename>c:\windows\system\inetsrv\browscap.ini</filename> 
-        (Windows 9x/Me の場合)、
-        <filename>c:\winnt\system32\inetsrv\browscap.ini</filename> 
-        (NT/2000 の場合)、
-        <filename>c:\windows\system32\inetsrv\browscap.ini</filename>
-        (XP の場合)。  
-        <filename>browscap.ini</filename> の編集については、
-        <link linkend="faq.obtaining.browscap">FAQ</link> を参照してください。
-       </simpara>
-      </listitem>
-     </itemizedlist>
-    </para> 
+     <para>
+      Below is the list of the modules and executables included in the PHP zip 
+      distribution:
+      <itemizedlist spacing="compact">
+       <listitem>
+        <para>
+         <filename>go-pear.bat</filename> - the PEAR setup script. Refer to <link xlink:href="&url.pear.installation;">Installation (PEAR)</link> 
+         for more details.
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         <filename>php-cgi.exe</filename> - CGI executable that can be used when running PHP on IIS via CGI or FastCGI.
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         <filename>php-win.exe</filename> - the PHP executable for executing PHP scripts without using a command line window 
+         (for example PHP applications that use Windows GUI).
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         <filename>php.exe</filename> - the PHP executable for executing PHP scripts within a command line interface (CLI).
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         <filename>php5apache2_2.dll</filename> - Apache 2.2.X module.
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         <filename>php5apache2_2_filter.dll</filename> - Apache 2.2.X filter.
+        </para>
+       </listitem>
+      </itemizedlist>
+     </para>
+    </sect2>
+    <sect2 xml:id="install.windows.manual.phpini">
+     <title>Changing the <filename>php.ini</filename> file</title>
+     <para>
+     After the php package content has been extracted, copy the <filename>php.ini-production</filename> into <filename>php.ini</filename>
+     in the same folder. If necessary, it is also possible to place the <filename>php.ini</filename> into any other location of your choice 
+     but that will require additional configuration steps as described in <link linkend="configuration.file">PHP Configuration</link>.
+     </para>
+     <para>
+      The <filename>php.ini</filename> file tells PHP how to configure itself, and how to work with the 
+      environment that it runs in. Here are a number of settings for the <filename>php.ini</filename> file 
+      that help PHP work better with Windows. Some of these are optional. There are 
+      many other directives that may be relevant to your environment - refer to the 
+      <link linkend="ini.list">list of php.ini directives</link> for more information.
+     </para>
+     <para>
+      Required directives:
+      <itemizedlist spacing="compact">
+       <listitem>
+        <para>
+         <varname>extension_dir</varname> = <literal>&lt;path to extension directory&gt;</literal> - The <varname>extension_dir</varname> needs 
+         to point to the directory where PHP extensions files are stored. The path can be absolute 
+         (i.e. &quot;C:\PHP\ext&quot;) or relative (i.e. &quot;.\ext&quot;). Extensions that are listed lower in the <filename>php.ini</filename> file need 
+         to be located in the <varname>extension_dir</varname>.
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         <varname>extension</varname> = <literal>xxxxx.dll</literal> - For each extension you wish to enable, you need a corresponding &quot;extension=&quot; 
+         directive that tells PHP which extensions in the <varname>extension_dir</varname> to load at startup time.
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         <varname>log_errors</varname> = <literal>On</literal> - PHP has an error logging facility that can be used to send errors to a file, 
+         or to a service (i.e. syslog) and works in conjunction with the <varname>error_log</varname> directive below. When running under IIS, 
+         the <varname>log_errors</varname> should be enabled, with a valid <varname>error_log</varname>.
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         <varname>error_log</varname> = <literal>&lt;path to the error log file&gt;</literal> - The error_log needs to specify the absolute, 
+         or relative path to the file where PHP errors should be logged. This file needs to be writable for the web server. 
+         The most common places for this file are in various TEMP directories, for example &quot;C:\inetpub\temp\php-errors.log&quot;.
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         <varname>cgi.force_redirect</varname> = <literal>0</literal> - This directive is required for running under IIS. 
+         It is a directory security facility required by many other web servers. However, enabling it under IIS will 
+         cause the PHP engine to fail on Windows. 
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         <varname>cgi.fix_pathinfo</varname> = <literal>1</literal> - This lets PHP access real path info following the CGI Spec. 
+         The IIS FastCGI implementation needs this set.
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         <varname>fastcgi.impersonate</varname> = <literal>1</literal> - FastCGI under IIS supports the ability to impersonate 
+         security tokens of the calling client. This allows IIS to define the security context that the request runs under.
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         <varname>fastcgi.logging</varname> = <literal>0</literal> - FastCGI logging should be disabled on IIS. If it is left enabled, 
+         then any messages of any class are treated by FastCGI as error conditions which will cause IIS to generate an HTTP 500 exception.
+        </para>
+       </listitem>
+      </itemizedlist>
+     </para>
+     <para>
+      Optional directives
+      <itemizedlist spacing="compact">
+       <listitem>
+        <para>
+         <varname>max_execution_time</varname> = <literal>##</literal> - This directive tells PHP the maximum amount of time that it can spend 
+         executing any given script. The default for this is 30 seconds. Increase the value of this directive if PHP application take long time to execute.
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         <varname>memory_limit</varname> = <literal>###M</literal> - The amount of memory available for the PHP process, in Megabytes. 
+         The default is 128, which is fine for most PHP applications. Some of the more complex ones might need more.
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         <varname>display_errors</varname> = <literal>Off</literal> - This directive tells PHP whether to include any error messages in the 
+         stream that it returns to the Web server. If this is set to &quot;On&quot;, then PHP will send whichever classes of errors 
+         that you define with the <varname>error_reporting</varname> directive back to web server as part of the error stream. 
+         For security reasons it is recommended to set it to &quot;Off&quot; on production servers in order not to reveal any 
+         security sensitive information that is often included in the error messages.
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         <varname>open_basedir</varname> = <literal>&lt;paths to directories, separated by semicolon&gt;</literal>, e.g. 
+         openbasedir=&quot;C:\inetpub\wwwroot;C:\inetpub\temp&quot;. This directive specified the directory paths where PHP 
+         is allowed to perform file system operations. Any file operation outside of the specified paths will result in an error. 
+         This directive is especially useful for locking down the PHP installation in shared hosting environments to prevent 
+         PHP scripts from accessing any files outside of the web site's root directory.
+        </para>
+       </listitem>
+       <listitem>
+         <para>
+          <varname>upload_max_filesize</varname> = <literal>###M</literal> and <varname>post_max_size</varname> = <literal>###M</literal> - 
+          The maximum allowed size of an uploaded file and post data respectively. The values of these directives should be 
+          increased if PHP applications need to perform large uploads, such as for example photos or video files.
+         </para>
+        </listitem>
+      </itemizedlist>
+     </para>
     <para>
      以上で、Windows への PHP のインストールが完了しました。ついで、
      使用する WEB サーバ にあわせて、PHP を利用可能とするための設定を行います。
@@ -376,6 +266,7 @@ doc_root = c:\apache\htdocs // Apache の場合
      <link linkend="install.windows.commandline">Microsoft
      Windows コマンドラインでの PHP</link> を参照ください。
     </para>
+    </sect2>
    </sect1>
 
 <!-- Keep this comment at the end of the file
