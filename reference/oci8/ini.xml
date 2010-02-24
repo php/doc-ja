@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: af4410a7e15898c3dbe83d6ea38246745ed9c6fb Maintainer: shimooka Status: ready -->
+<!-- EN-Revision: 2608446272007a0a933d4d6e9cc314bd99dc5b27 Maintainer: satoruyoshida Status: working -->
+<!-- CREDITS: shimooka -->
    <section xml:id="oci8.configuration" xmlns="http://docbook.org/ns/docbook">
     &reftitle.runtime;
     &extension.runtime;
@@ -18,46 +19,58 @@
        </thead>
        <tbody>
         <row>
-         <entry>oci8.privileged_connect</entry>
-         <entry>"0"</entry>
+         <entry>oci8.connection_class</entry>
+         <entry>""</entry>
+         <entry>PHP_INI_ALL</entry>
+         <entry>PHP 5.3 以降で使用可能 (PECL OCI8 1.3)</entry>
+        </row>
+        <row>
+         <entry>oci8.default_prefetch</entry>
+         <entry>"100"</entry>
          <entry>PHP_INI_SYSTEM</entry>
-         <entry>PHP 5.1.2 以降で使用可能</entry>
+         <entry>PHP 5.1.2 以降で使用可能 (PECL OCI8 1.1)</entry>
+        </row>
+        <row>
+         <entry>oci8.events</entry>
+         <entry>Off</entry>
+         <entry>PHP_INI_SYSTEM</entry>
+         <entry>PHP 5.3 以降で使用可能 (PECL OCI8 1.3)</entry>
         </row>
         <row>
          <entry>oci8.max_persistent</entry>
          <entry>"-1"</entry>
          <entry>PHP_INI_SYSTEM</entry>
-         <entry>PHP 5.1.2 以降で使用可能</entry>
+         <entry>PHP 5.1.2 以降で使用可能 (PECL OCI8 1.1)</entry>
+        </row>
+        <row>
+         <entry>oci8.old_oci_close_semantics</entry>
+         <entry>Off</entry>
+         <entry>PHP_INI_SYSTEM</entry>
+         <entry>PHP 5.1.2 以降で使用可能 (PECL OCI8 1.1)</entry>
         </row>
         <row>
          <entry>oci8.persistent_timeout</entry>
          <entry>"-1"</entry>
          <entry>PHP_INI_SYSTEM</entry>
-         <entry>PHP 5.1.2 以降で使用可能</entry>
+         <entry>PHP 5.1.2 以降で使用可能 (PECL OCI8 1.1)</entry>
         </row>
         <row>
          <entry>oci8.ping_interval</entry>
          <entry>"60"</entry>
          <entry>PHP_INI_SYSTEM</entry>
-         <entry>PHP 5.1.2 以降で使用可能</entry>
+         <entry>PHP 5.1.2 以降で使用可能 (PECL OCI8 1.1)</entry>
+        </row>
+        <row>
+         <entry>oci8.privileged_connect</entry>
+         <entry>Off</entry>
+         <entry>PHP_INI_SYSTEM</entry>
+         <entry>PHP 5.1.2 以降で使用可能 (PECL OCI8 1.1)</entry>
         </row>
         <row>
          <entry>oci8.statement_cache_size</entry>
          <entry>"20"</entry>
          <entry>PHP_INI_SYSTEM</entry>
-         <entry>PHP 5.1.2 以降で使用可能</entry>
-        </row>
-        <row>
-         <entry>oci8.default_prefetch</entry>
-         <entry>"10"</entry>
-         <entry>PHP_INI_SYSTEM</entry>
-         <entry>PHP 5.1.2 以降で使用可能</entry>
-        </row>
-        <row>
-         <entry>oci8.old_oci_close_semantics</entry>
-         <entry>"0"</entry>
-         <entry>PHP_INI_SYSTEM</entry>
-         <entry>PHP 5.1.2 以降で使用可能</entry>
+         <entry>PHP 5.1.2 以降で使用可能 (PECL OCI8 1.1)</entry>
         </row>
        </tbody>
       </tgroup>
@@ -68,16 +81,110 @@
 
     <para>
      <variablelist>
-      <varlistentry xml:id="ini.oci8.privileged-connect">
+      <varlistentry xml:id="ini.oci8.connection.class">
        <term>
-        <parameter>oci8.privileged_connect</parameter>
+        <parameter>oci8.connection_class</parameter>
+        <type>string</type>
+       </term>
+       <listitem>
+        <para>
+         This user defined text is used by Oracle 11g Database
+         Resident Connection Pooling (DRCP) connections to
+         sub-partition the connection pool.  It allows OCI8 persistent
+         connections from an application to reuse database sessions
+         from a previous PHP script, giving better scalability.  When
+         an application uses a database pooled process previously used
+         with a different connection class, the session settings such
+         as the default Oracle date format are reset.  This prevents
+         accidental sharing of information between different
+         applications.
+        </para>
+        <para>
+         接続する前に、 <function>ini_set</function> で実行時に
+         値を設定できます。
+        </para>
+        <para>
+         To use DRCP, OCI8 must be linked with Oracle 11g libraries
+         and the database must be Oracle 11g.  The connection pool
+         must be enabled in the database,
+         the <literal>oci8.connection_class</literal> should be set to
+         the same string for all web servers running the same
+         application, and the OCI8 connection string must specify to
+         use a pooled server.
+        </para>
+       </listitem>
+      </varlistentry>
+      <varlistentry xml:id="ini.oci8.default-prefetch">
+       <term>
+        <parameter>oci8.default_prefetch</parameter>
+        <type>int</type>
+       </term>
+       <listitem>
+        <para>
+         このオプションは、データベースからのデータに対する低レベルの
+         要求が作成されたときにいつでも自動的にフェッチされ、キャッシュ
+         されるデフォルトの追加行数を設定します。
+         プリフェッチを無効にするには、値を <literal>0</literal> に
+         設定します。
+        </para>
+        <para>
+         The prefetch value does not alter the number of rows that
+         functions like <function>oci_fetch_array</function> return to
+         the user; the prefetching and caching of rows is handled
+         internally in OCI8.
+        </para>
+        <para>
+         The value can be set per-statement
+         with <function>oci_set_prefetch</function> prior to statement
+         execution.
+        </para>
+        <para>
+         PHP 5.3 (PECL OCI8 1.3.4) で既定値が <literal>10</literal>
+         から <literal>100</literal> に増やされました。
+        </para>
+        <para>
+         In PHP 5.3.2 (PECL OCI8 1.4) the minimum value settable was
+         reduced from <literal>1</literal> to <literal>0</literal>,
+         allowing prefetching to be turned off.
+        </para>
+        <note>
+         <simpara>
+          より大きなプリフェッチは、メモリ使用量の増加と引き替えに
+          パフォーマンスの改善をもたらします。
+          For queries that return
+          large amounts of data, the performance benefit can be
+          significant.
+         </simpara>
+        </note>
+       </listitem>
+      </varlistentry>
+      <varlistentry xml:id="ini.oci8.events">
+       <term>
+        <parameter>oci8.events</parameter>
         <type>boolean</type>
        </term>
        <listitem>
         <para>
-         このオプションは外部の信用
-         (<constant>OCI_SYSOPER</constant>, <constant>OCI_SYSDBA</constant>)
-         を利用して権限付きの接続を有効にします。
+         Using <literal>On</literal> allows PHP to be notified of
+         database Fast Application Notification (FAN) events.
+        </para>
+        <para>
+         Without FAN, when a database instance or machine node fails
+         unexpectedly, PHP applications may be blocked waiting for a
+         database response until a TCP timeout expires.  With FAN
+         events, PHP applications are quickly notified of failures
+         that affect their established database connections.  The OCI8
+         extension will clean up unusable connections in the
+         persistent connection cache.
+        </para>
+        <para>
+         When using <literal>On</literal>, the database must also be
+         configured to post FAN events.
+        </para>
+        <para>
+         FAN support is available when OCI8 is linked with Oracle
+         10gR2 (or later) libraries and connected to Oracle Database
+         10gR2 (or later).
         </para>
        </listitem>
       </varlistentry>
@@ -88,8 +195,26 @@
        </term>
        <listitem>
         <para>
-         プロセスあたりの永続的な OCI8 接続の最大値を指定します。
+         PHP プロセスあたりの永続的な OCI8 接続の最大値を指定します。
          このオプションを -1 に設定することは、制限なしを意味します。
+        </para>
+       </listitem>
+      </varlistentry>
+      <varlistentry xml:id="ini.oci8.old-oci-close-semantics">
+       <term>
+        <parameter>oci8.old_oci_close_semantics</parameter>
+        <type>boolean</type>
+       </term>
+       <listitem>
+        <para>
+         このオプションは <function>oci_close</function>
+         の動作を制御します。有効にすると、<function>oci_close</function>
+         は何も行いません。接続はスクリプトの終了まで閉じられません。
+         これは後方互換性のためのみに存在しています。
+         この設定を有効にする必要があると判明した場合、
+         このオプションを有効にする代わりに、
+         アプリケーションで <function>oci_close</function> を調整することが
+         <emphasis>強く推奨</emphasis>されます。
         </para>
        </listitem>
       </varlistentry>
@@ -100,11 +225,32 @@
        </term>
        <listitem>
         <para>
-         与えられたプロセスがアイドル状態の永続的接続を維持する最大時間
-         (秒単位) を指定します。
-         このオプションを -1 に設定することは、
-         アイドル状態の永続的接続は永久に維持されることを意味します。
+         アイドル状態の永続的接続を PHP プロセスが開いたままにする最大秒数
+         を指定します。
+         このオプションを -1 に設定すると、 PHP 処理が終了するか、または
+         接続が <function>oci_close</function> で明示的に終了されるまで、
+         アイドル状態の永続的接続は保持されます。
         </para>
+        <note>
+         <simpara>
+          In PHP, the expiry of idle resources is not alarm-based. It
+          occurs when PHP finishes processing a script and checks the
+          last-used timestamp of resources.  Hence there is a paradox
+          that idle connections can only be closed when there is some
+          activity (though not necessarily OCI8 related) in the PHP
+          process.  The introduction of Database Resident Connection
+          Pooling (DRCP) in Oracle 11g resolves the memory and
+          resource issues that <literal>oci8.max_persistent</literal>
+          and <literal>oci8.persistent_timeout</literal> previously
+          attempted to overcome.
+         </simpara>
+        </note>
+        <note>
+         <simpara>
+          PHP 5.3 (PECL OCI8 1.3) では、永続的接続は
+          <function>oci_close</function> で閉じることができます。
+         </simpara>
+        </note>
        </listitem>
       </varlistentry>
       <varlistentry xml:id="ini.oci8.ping-interval">
@@ -115,18 +261,41 @@
        <listitem>
         <para>
           <function>oci_pconnect</function> の間、ping
-          を発行するまでに経過させる時間 (秒単位) を指定します。
-          0 に設定した場合、永続的接続は再利用される度に ping を発行します。
+          を発行するまでに経過させる秒数を指定します。
+          ping はデータベース接続が有効か確認します。
+          0 に設定した場合、永続的接続は <function>oci_pconnect</function> が
+          呼び出される度に ping を発行します。
           ping を完全に無効にするためには、このオプションを -1 に設定します。
         </para>
         <note>
          <simpara>
-          ping を無効にすることで <function>oci_pconnect</function>
-          は最高の効率で処理をコールしますが、ネットワークが分断された場合や
-          PHP が接続した後に Oracle サーバがダウンし、
-          その後に実行されるスクリプト中において
-          PHP が接続の失敗を検知しなくなります。
+          ping を無効にすることにより <function>oci_pconnect</function>
+          は最高の効率で処理できますが、ネットワークの脱落や
+          PHP が接続した後に Oracle データベースがダウンした場合、
+          その後のスクリプトで接続が使われるまで
+          利用できない接続を PHP は検出できないでしょう。
           詳細な情報は <function>oci_pconnect</function> を参照ください。
+         </simpara>
+        </note>
+       </listitem>
+      </varlistentry>
+      <varlistentry xml:id="ini.oci8.privileged-connect">
+       <term>
+        <parameter>oci8.privileged_connect</parameter>
+        <type>boolean</type>
+       </term>
+       <listitem>
+        <para>
+         このオプションにより特権のある外部の信用
+         (<constant>OCI_SYSOPER</constant>, <constant>OCI_SYSDBA</constant>)
+         を利用して接続できます。
+        </para>
+        <note>
+         <simpara>
+          Seting this <literal>On</literal> can allow scripts on web
+          servers running with the appropriate OS user privileges to
+          connect as privileged database users without requiring a
+          database password.  This can be a security risk.
          </simpara>
         </note>
        </listitem>
@@ -143,48 +312,24 @@
          ステートメントキャッシュを無効にする場合、このオプションを 0
          に設定してください。
         </para>
-        <note>
-         <simpara>
-          より大きなキャッシュは、メモリ使用量の増加と引き替えに
-          パフォーマンスの改善をもたらします。
-         </simpara>
-        </note>
-       </listitem>
-      </varlistentry>
-      <varlistentry xml:id="ini.oci8.default-prefetch">
-       <term>
-        <parameter>oci8.default_prefetch</parameter>
-        <type>int</type>
-       </term>
-       <listitem>
         <para>
-         このオプションはステートメントのプリフェッチを有効にし、
-         ステートメントの実行後自動的にフェッチされるデフォルトの行数を
-         設定します。
+         Statement caching removes the need to transmit the statement
+         text to the database and removes the need to transmit any
+         meta data about the statement back to PHP.  This can
+         significantly improve overall system performance in
+         applications which reuse statements during the lifetime of a
+         connection.  Some extra database &quot;cursors&quot; may be
+         held open under the assumption that statements will be
+         reused.
         </para>
-        <note>
-         <simpara>
-          より大きなプリフェッチは、メモリ使用量の増加と引き替えに
-          パフォーマンスの改善をもたらします。
-         </simpara>
-        </note>
-       </listitem>
-      </varlistentry>
-      <varlistentry xml:id="ini.oci8.old-oci-close-semantics">
-       <term>
-        <parameter>oci8.old_oci_close_semantics</parameter>
-        <type>boolean</type>
-       </term>
-       <listitem>
         <para>
-         このオプションは <function>oci_close</function>
-         の動作を制御します。有効にすると、<function>oci_close</function>
-         は何も行いません。接続はスクリプトの終了まで閉じられません。
-         これは後方互換性のためのみに存在しています。
-         この設定を有効にする必要があると判明した場合、
-         このオプションを有効にする代わりに、
-         <function>oci_close</function> をアプリケーションから削除することが
-         <emphasis>強く推奨</emphasis>されます。
+         Set this value to the size of the working set of statements
+         used by your application. Setting too small a value can cause
+         statements to be flushed from the cache before they are
+         reused.
+        </para>
+        <para>
+         このオプションは、永続的接続の利用の多くの場合に役立ちます。
         </para>
        </listitem>
       </varlistentry>
