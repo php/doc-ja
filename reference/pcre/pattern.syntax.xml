@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
 <!-- splitted from ./ja/functions/pcre.xml, last change in rev 1.1 -->
-<!-- EN-Revision: af4410a7e15898c3dbe83d6ea38246745ed9c6fb Maintainer: hirokawa Status: ready -->
-<!-- Credits: haruki -->
+<!-- EN-Revision: 96c9d88bad9a7d7d44bfb7f26c226df7ee9ddf26 Maintainer: takagi Status: ready -->
+<!-- Credits: haruki,hirokawa -->
 <chapter xml:id="reference.pcre.pattern.syntax" xmlns="http://docbook.org/ns/docbook">
  <title>パターン構文</title>
  <titleabbrev>PCRE 正規表現構文</titleabbrev>
@@ -32,9 +32,69 @@
       は、検索対象文字列内にある、このパターンと同一の部分にマッチします。
      </para>
     </section>
+    <section xml:id="regexp.reference.delimiters">
+     <title>デリミタ</title>
+     <para>
+      PCRE 関数を使うときには、パターンを
+      <emphasis>delimiters</emphasis> で囲まなければなりません。
+      英数字、バックスラッシュ、空白文字以外の任意の文字をデリミタとして使うことができます。
+     </para>
+     <para>
+      デリミタとしてよく使われる文字は、スラッシュ (<literal>/</literal>)、
+      ハッシュ記号 (<literal>#</literal>) およびチルダ (<literal>~</literal>) です。
+      次に示す例は、どれも正しいデリミタです。
+      <informalexample>
+       <programlisting>
+<![CDATA[
+/foo bar/
+#^[^0-9]$#
++php+
+%[a-zA-Z0-9_-]%
+]]>
+       </programlisting>
+      </informalexample>
+     </para>
+     <para>
+      パターンの中でデリミタ文字をマッチさせたい場合は、バックスラッシュでエスケープしなければなりません。
+      パターン内でデリミタが頻繁にあらわれる場合は、
+      デリミタを別の文字に変更したほうが読みやすくなります。
+      <informalexample>
+       <programlisting>
+<![CDATA[
+/http:\/\//
+#http://#
+]]>
+       </programlisting>
+      </informalexample>
+      <function>preg_quote</function> 関数を使うと、パターンに使う文字列をエスケープすることができます。
+      オプションの二番目のパラメータで、エスケープするデリミタを指定します。
+     </para>
+     <para>
+      前述のデリミタのほかに、角括弧形式のデリミタを使うこともできます。
+      これは、開き角括弧と閉じ角括弧がそれぞれ開始デリミタ、終了デリミタを表す形式です。
+      <informalexample>
+       <programlisting>
+<![CDATA[
+{this is a pattern}
+]]>
+       </programlisting>
+      </informalexample>
+     </para>
+     <para>
+      終了デリミタの後に <link linkend="reference.pcre.pattern.modifiers">
+      パターン修飾子</link> を付加することもできます。次の例は、大文字小文字を区別しないマッチを行うものです。
+      <informalexample>
+       <programlisting>
+<![CDATA[
+#[a-z]#i
+]]>
+       </programlisting>
+      </informalexample>
+     </para>
+    </section>
     <section xml:id="regexp.reference.meta">
      <title>メタ文字</title>
-     <para>    
+     <para>
       正規表現の強力さは、パターン中に選択肢や繰り返しを記述できることに
       あります。選択肢や繰り返しは、<emphasis>メタ文字</emphasis>
        (meta-character) を使ってパターン中に記述します。メタ文字は、
@@ -124,7 +184,8 @@
         <term><emphasis>?</emphasis></term>
         <listitem>
          <simpara>
-           ( の意味を拡張／0 または 1 回マッチ／なるべく少ない回数だけマッチ 
+           ( の意味を拡張／0 または 1 回マッチ／なるべく少ない回数だけマッチ
+           (<link linkend="regexp.reference.repetition">繰り返し</link> を参照)
          </simpara>
         </listitem>
        </varlistentry>
@@ -249,73 +310,79 @@
        <varlistentry>
         <term><emphasis>\a</emphasis></term>
         <listitem>
-         <simpara>
-          アラーム、ベル文字 (16進 07) 
-         </simpara>
+         <simpara>アラーム、ベル文字 (16進 07)</simpara>
         </listitem>
        </varlistentry>
        <varlistentry>
         <term><emphasis>\cx</emphasis></term>
         <listitem>
-         <simpara>
-          "control-x", ここで x は任意の文字 
-         </simpara>
+         <simpara>"control-x", ここで x は任意の文字</simpara>
         </listitem>
        </varlistentry>
        <varlistentry>
         <term><emphasis>\e</emphasis></term>
         <listitem>
-         <simpara>
-          エスケープ文字 (16進 1B) 
-         </simpara>
+         <simpara>エスケープ文字 (16進 1B)</simpara>
         </listitem>
        </varlistentry>
        <varlistentry>
         <term><emphasis>\f</emphasis></term>
         <listitem>
-         <simpara>
-          改ページ (formfeed) (16進 0C)
-         </simpara>
+         <simpara>改ページ (formfeed) (16進 0C)</simpara>
         </listitem>
        </varlistentry>
        <varlistentry>
         <term><emphasis>\n</emphasis></term>
         <listitem>
+         <simpara>改行 (newline) (16進 0A)</simpara>
+        </listitem>
+       </varlistentry>
+       <varlistentry>
+        <term><emphasis>\p{xx}</emphasis></term>
+        <listitem>
          <simpara>
-          改行 (newline) (16進 0A) 
+          xx プロパティを持つ文字、詳細は
+          <link linkend="regexp.reference.unicode">unicode プロパティ</link>
+          を参照
+         </simpara>
+        </listitem>
+       </varlistentry>
+       <varlistentry>
+        <term><emphasis>\P{xx}</emphasis></term>
+        <listitem>
+         <simpara>
+          xx プロパティを持たない文字、詳細は
+          <link linkend="regexp.reference.unicode">unicode プロパティ</link>
+          を参照
          </simpara>
         </listitem>
        </varlistentry>
        <varlistentry>
         <term><emphasis>\r</emphasis></term>
         <listitem>
-         <simpara>
-          復帰 (carriage return) (16進 0D) 
-         </simpara>
+         <simpara>復帰 (carriage return) (16進 0D)</simpara>
         </listitem>
        </varlistentry>
        <varlistentry>
         <term><emphasis>\t</emphasis></term>
         <listitem>
-         <simpara>
-          タブ (16進 09) 
-         </simpara>
+         <simpara>タブ (16進 09)</simpara>
         </listitem>
        </varlistentry>
        <varlistentry>
         <term><emphasis>\xhh</emphasis></term>
         <listitem>
          <simpara>
-          16 進コードで hh の文字 
+          16 進コードで hh の文字、詳細は
+          <link linkend="regexp.reference.unicode">unicode プロパティ</link>
+          を参照
          </simpara>
         </listitem>
        </varlistentry>
        <varlistentry>
         <term><emphasis>\ddd</emphasis></term>
         <listitem>
-         <simpara>
-          8 進コードで ddd の文字、もしくは、後方参照
-         </simpara>
+         <simpara>8 進コードで ddd の文字、もしくは、後方参照</simpara>
         </listitem>
        </varlistentry>
       </variablelist>
@@ -683,45 +750,204 @@
      </literallayout>
      <table>
       <title>使用可能なプロパティコード</title>
-      <tgroup cols="2">
+      <tgroup cols="3">
+       <thead>
+        <row>
+         <entry>プロパティ</entry>
+         <entry>マッチ</entry>
+         <entry>備考</entry>
+        </row>
+       </thead>
        <tbody>
-        <row><entry><literal>C</literal></entry><entry>その他 (Other)</entry></row>
-        <row><entry><literal>Cc</literal></entry><entry>コントロール文字 (Control)</entry></row>
-        <row><entry><literal>Cf</literal></entry><entry>非可視整形用文字 (Format)</entry></row>
-        <row><entry><literal>Cn</literal></entry><entry>未定義コードポイント (Unassigned)</entry></row>
-        <row><entry><literal>Co</literal></entry><entry>私的利用領域 (Private use)</entry></row>
-        <row rowsep="1"><entry><literal>Cs</literal></entry><entry>サロゲート (Surrogate)</entry></row>
-        <row><entry><literal>L</literal></entry><entry>アルファベット (Letter)</entry></row>
-        <row><entry><literal>Ll</literal></entry><entry>小文字アルファベット (Lower case letter)</entry></row>
-        <row><entry><literal>Lm</literal></entry><entry>擬似文字 (Modifier letter)</entry></row>
-        <row><entry><literal>Lo</literal></entry><entry>その他の文字 (Other letter)</entry></row>
-        <row><entry><literal>Lt</literal></entry><entry>タイトル文字 (Title case letter)</entry></row>
-        <row rowsep="1"><entry><literal>Lu</literal></entry><entry>大文字アルファベット (Upper case letter)</entry></row>
-        <row><entry><literal>M</literal></entry><entry>記号 (Mark)</entry></row>
-        <row><entry><literal>Mc</literal></entry><entry>修飾文字 (Spacing mark)</entry></row>
-        <row><entry><literal>Me</literal></entry><entry>他の文字を囲むための文字 (Enclosing mark)</entry></row>
-        <row rowsep="1"><entry><literal>Mn</literal></entry><entry>他の文字を修飾するための文字 (Non-spacing mark)</entry></row>
-        <row><entry><literal>N</literal></entry><entry>数字 (Number)</entry></row>
-        <row><entry><literal>Nd</literal></entry><entry>10 進数字 (Decimal number)</entry></row>
-        <row><entry><literal>Nl</literal></entry><entry>数値を表す文字 (Letter number)</entry></row>
-        <row rowsep="1"><entry><literal>No</literal></entry><entry>その他の数字 (Other number)</entry></row>
-        <row><entry><literal>P</literal></entry><entry>句読記号 (Punctuation)</entry></row>
-        <row><entry><literal>Pc</literal></entry><entry>連結用句読記号 (Connector punctuation)</entry></row>
-        <row><entry><literal>Pd</literal></entry><entry>ダッシュ (Dash punctuation)</entry></row>
-        <row><entry><literal>Pe</literal></entry><entry>閉じ句読記号 (Close punctuation)</entry></row>
-        <row><entry><literal>Pf</literal></entry><entry>末尾句読記号 (Final punctuation)</entry></row>
-        <row><entry><literal>Pi</literal></entry><entry>先頭句読記号 (Initial punctuation)</entry></row>
-        <row><entry><literal>Po</literal></entry><entry>その他の句読記号 (Other punctuation)</entry></row>
-        <row rowsep="1"><entry><literal>Ps</literal></entry><entry>開き句読記号 (Open punctuation)</entry></row>
-        <row><entry><literal>S</literal></entry><entry>記号 (Symbol)</entry></row>
-        <row><entry><literal>Sc</literal></entry><entry>通貨記号 (Currency symbol)</entry></row>
-        <row><entry><literal>Sk</literal></entry><entry>合わせ文字 (Modifier symbol)</entry></row>
-        <row><entry><literal>Sm</literal></entry><entry>数学記号 (Mathematical symbol)</entry></row>
-        <row rowsep="1"><entry><literal>So</literal></entry><entry>その他の記号 (Other symbol)</entry></row>
-        <row><entry><literal>Z</literal></entry><entry>区切り文字 (Separator)</entry></row>
-        <row><entry><literal>Zl</literal></entry><entry>行区切り文字 (Line separator)</entry></row>
-        <row><entry><literal>Zp</literal></entry><entry>段落区切り文字 (Paragraph separator)</entry></row>
-        <row><entry><literal>Zs</literal></entry><entry>空白文字 (Space separator)</entry></row>
+        <row>
+         <entry><literal>C</literal></entry>
+         <entry>その他 (Other)</entry>
+         <entry></entry>
+        </row>
+        <row>
+         <entry><literal>Cc</literal></entry>
+         <entry>コントロール文字 (Control)</entry>
+         <entry></entry>
+        </row>
+        <row>
+         <entry><literal>Cf</literal></entry>
+         <entry>非可視整形用文字 (Format)</entry>
+         <entry></entry>
+        </row>
+        <row>
+         <entry><literal>Cn</literal></entry>
+         <entry>未定義コードポイント (Unassigned)</entry>
+         <entry></entry>
+        </row>
+        <row>
+         <entry><literal>Co</literal></entry>
+         <entry>私的利用領域 (Private use)</entry>
+         <entry></entry>
+        </row>
+        <row rowsep="1">
+         <entry><literal>Cs</literal></entry>
+         <entry>サロゲート (Surrogate)</entry>
+         <entry></entry>
+        </row>
+        <row>
+         <entry><literal>L</literal></entry>
+         <entry>アルファベット (Letter)</entry>
+         <entry>
+          <literal>Ll</literal>、
+          <literal>Lm</literal>、<literal>Lo</literal>、<literal>Lt</literal> および
+          <literal>Lu</literal> を含む
+         </entry>
+        </row>
+        <row>
+         <entry><literal>Ll</literal></entry>
+         <entry>小文字アルファベット (Lower case letter)</entry>
+         <entry></entry>
+        </row>
+        <row>
+         <entry><literal>Lm</literal></entry>
+         <entry>擬似文字 (Modifier letter)</entry>
+         <entry></entry>
+        </row>
+        <row>
+         <entry><literal>Lo</literal></entry>
+         <entry>その他の文字 (Other letter)</entry>
+         <entry></entry>
+        </row>
+        <row>
+         <entry><literal>Lt</literal></entry>
+         <entry>タイトル文字 (Title case letter)</entry>
+         <entry></entry>
+        </row>
+        <row rowsep="1">
+         <entry><literal>Lu</literal></entry>
+         <entry>大文字アルファベット (Upper case letter)</entry>
+         <entry></entry>
+        </row>
+        <row>
+         <entry><literal>M</literal></entry>
+         <entry>記号 (Mark)</entry>
+         <entry></entry>
+        </row>
+        <row>
+         <entry><literal>Mc</literal></entry>
+         <entry>修飾文字 (Spacing mark)</entry>
+         <entry></entry>
+        </row>
+        <row>
+         <entry><literal>Me</literal></entry>
+         <entry>他の文字を囲むための文字 (Enclosing mark)</entry>
+         <entry></entry>
+        </row>
+        <row rowsep="1">
+         <entry><literal>Mn</literal></entry>
+         <entry>他の文字を修飾するための文字 (Non-spacing mark)</entry>
+         <entry></entry>
+        </row>
+        <row>
+         <entry><literal>N</literal></entry>
+         <entry>数字 (Number)</entry>
+         <entry></entry>
+        </row>
+        <row>
+         <entry><literal>Nd</literal></entry>
+         <entry>10 進数字 (Decimal number)</entry>
+         <entry></entry>
+        </row>
+        <row>
+         <entry><literal>Nl</literal></entry>
+         <entry>数値を表す文字 (Letter number)</entry>
+         <entry></entry>
+        </row>
+        <row rowsep="1">
+         <entry><literal>No</literal></entry>
+         <entry>その他の数字 (Other number)</entry>
+         <entry></entry>
+        </row>
+        <row>
+         <entry><literal>P</literal></entry>
+         <entry>句読記号 (Punctuation)</entry>
+         <entry></entry>
+        </row>
+        <row>
+         <entry><literal>Pc</literal></entry>
+         <entry>連結用句読記号 (Connector punctuation)</entry>
+         <entry></entry>
+        </row>
+        <row>
+         <entry><literal>Pd</literal></entry>
+         <entry>ダッシュ (Dash punctuation)</entry>
+         <entry></entry>
+        </row>
+        <row>
+         <entry><literal>Pe</literal></entry>
+         <entry>閉じ句読記号 (Close punctuation)</entry>
+         <entry></entry>
+        </row>
+        <row>
+         <entry><literal>Pf</literal></entry>
+         <entry>末尾句読記号 (Final punctuation)</entry>
+         <entry></entry>
+        </row>
+        <row>
+         <entry><literal>Pi</literal></entry>
+         <entry>先頭句読記号 (Initial punctuation)</entry>
+         <entry></entry>
+        </row>
+        <row>
+         <entry><literal>Po</literal></entry>
+         <entry>その他の句読記号 (Other punctuation)</entry>
+         <entry></entry>
+        </row>
+        <row rowsep="1">
+         <entry><literal>Ps</literal></entry>
+         <entry>開き句読記号 (Open punctuation)</entry>
+         <entry></entry>
+        </row>
+        <row>
+         <entry><literal>S</literal></entry>
+         <entry>記号 (Symbol)</entry>
+         <entry></entry>
+        </row>
+        <row>
+         <entry><literal>Sc</literal></entry>
+         <entry>通貨記号 (Currency symbol)</entry>
+         <entry></entry>
+        </row>
+        <row>
+         <entry><literal>Sk</literal></entry>
+         <entry>合わせ文字 (Modifier symbol)</entry>
+         <entry></entry>
+        </row>
+        <row>
+         <entry><literal>Sm</literal></entry>
+         <entry>数学記号 (Mathematical symbol)</entry>
+         <entry></entry>
+        </row>
+        <row rowsep="1">
+         <entry><literal>So</literal></entry>
+         <entry>その他の記号 (Other symbol)</entry>
+         <entry></entry>
+        </row>
+        <row>
+         <entry><literal>Z</literal></entry>
+         <entry>区切り文字 (Separator)</entry>
+         <entry></entry>
+        </row>
+        <row>
+         <entry><literal>Zl</literal></entry>
+         <entry>行区切り文字 (Line separator)</entry>
+         <entry></entry>
+        </row>
+        <row>
+         <entry><literal>Zp</literal></entry>
+         <entry>段落区切り文字 (Paragraph separator)</entry>
+         <entry></entry>
+        </row>
+        <row>
+         <entry><literal>Zs</literal></entry>
+         <entry>空白文字 (Space separator)</entry>
+         <entry></entry>
+        </row>
        </tbody>
       </tgroup>
      </table>
@@ -908,6 +1134,46 @@
       エスケープしても問題はありません。
       パターンの終端文字は常に特別扱いされるので、
       正規表現内で私用する場合は必ずエスケープしなければなりません。
+     </para>
+     <para>
+      Perl は、POSIX 記法の文字クラスもサポートしています。これは、
+      <literal>[:</literal> と <literal>:]</literal> で囲んだ名前を角カッコ内で使うものです。
+      PCRE でもこの記法に対応しています。たとえば <literal>[01[:alpha:]%]</literal> は
+      "0"、"1"、任意のアルファベット、あるいは "%" にマッチします。対応しているクラス名は次のとおりです。
+      <table>
+       <title>文字クラス</title>
+       <tgroup cols="2">
+        <tbody>
+         <row><entry><literal>alnum</literal></entry><entry>letters and digits</entry></row>
+         <row><entry><literal>alpha</literal></entry><entry>letters</entry></row>
+         <row><entry><literal>ascii</literal></entry><entry>character codes 0 - 127</entry></row>
+         <row><entry><literal>blank</literal></entry><entry>space or tab only</entry></row>
+         <row><entry><literal>cntrl</literal></entry><entry>control characters</entry></row>
+         <row><entry><literal>digit</literal></entry><entry>decimal digits (same as \d)</entry></row>
+         <row><entry><literal>graph</literal></entry><entry>printing characters, excluding space</entry></row>
+         <row><entry><literal>lower</literal></entry><entry>lower case letters</entry></row>
+         <row><entry><literal>print</literal></entry><entry>printing characters, including space</entry></row>
+         <row><entry><literal>punct</literal></entry><entry>printing characters, excluding letters and digits</entry></row>
+         <row><entry><literal>space</literal></entry><entry>white space (not quite the same as \s)</entry></row>
+         <row><entry><literal>upper</literal></entry><entry>upper case letters</entry></row>
+         <row><entry><literal>word</literal></entry><entry>"word" characters (same as \w)</entry></row>
+         <row><entry><literal>xdigit</literal></entry><entry>hexadecimal digits</entry></row>
+        </tbody>
+       </tgroup>
+      </table>
+      <literal>space</literal> 文字は HT (9), LF (10), VT (11), FF (12), CR (13),
+      およびスペース (32) です。この中に VT 文字 (コード 11) が含まれていることに注目しましょう。
+      この点で、"space" は <literal>\s</literal> と異なります。こちらは VT を含みません
+      (Perl との互換性のため)。
+     </para>
+     <para>
+      <literal>word</literal> は Perl 拡張で、<literal>blank</literal> は Perl 5.8
+      からの GNU 拡張です。それ以外の Perl 拡張には否定があります。否定を指示するには
+      <literal>^</literal> をコロンの後に続けます。たとえば
+      <literal>[12[:^digit:]]</literal> は "1"、"2"、あるいは任意の非数値にマッチします。
+     </para>
+     <para>
+      UTF-8 モードでは、128 より大きなコードはどの POSIX 文字クラスにもマッチしません。
      </para>
     </section>
 
@@ -1407,11 +1673,11 @@
      前述しました。より複雑な言明は、サブパターンを用いて記述します
      〔言明サブパターン (assertion subpattern) と呼ばれる〕。
      言明サブパターンには、2 種類あります。対象文字列において
-     カレントの位置の先を読むものと、後ろを読むものです。
+     カレントの位置の<emphasis>先を読む</emphasis>ものと、<emphasis>後ろを読む</emphasis>ものです。
     </para>
     <para>
      言明サブパターンは、カレントのマッチング位置を変更しないことを除き、
-     通常と同じようにマッチングが行われます。先読み言明 (lookahead assertion) は、
+     通常と同じようにマッチングが行われます。<emphasis>先読み</emphasis>言明 (lookahead assertion) は、
      肯定の言明 (positive assertion) の場合 (?= で始まり、
      否定の言明 (negative assertion) の場合 (?! で始まります。例えば、
      
@@ -1440,7 +1706,7 @@
      が必要です。
     </para>
     <para>
-     戻り読み言明は、肯定の言明の場合 (?&lt;= で始まり、
+     <emphasis>戻り読み</emphasis>言明は、肯定の言明の場合 (?&lt;= で始まり、
      否定の言明の場合 (?&lt;! で始まります。例えば、
 
       <literallayout>
