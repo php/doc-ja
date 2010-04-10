@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 41dba5e20227294d940b517b20874f3a68404aea Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 96c9d88bad9a7d7d44bfb7f26c226df7ee9ddf26 Maintainer: hirokawa Status: ready -->
 
  <sect1 xml:id="language.oop5.autoload" xmlns="http://docbook.org/ns/docbook">
  <title>クラスのオートローディング</title>
@@ -20,9 +20,13 @@
  </para>
  <note>
   <para>
-   __autoload 関数の内部でスローされた例外は、
-   <link linkend="language.exceptions">catch</link> ブロックでキャッチすることが
-   できず、致命的なエラーとなります。
+   5.3.0 より前のバージョンでは、__autoload 関数の内部でスローされた例外を
+   <link linkend="language.exceptions">catch</link>
+   ブロックでキャッチすることができず、致命的なエラーとなります。
+   5.3.0 以降では __autoload 関数の内部でスローされた例外を <link linkend="language.exceptions">
+   catch</link> ブロックでキャッチできますが、ひとつだけ条件があります。
+   独自の例外クラスをスローした場合は、その例外クラスが利用可能でなければなりません。
+   __autoload 関数を再帰的に用いて、独自の例外クラスをオートロードします。
   </para>
  </note>
   <note>
@@ -85,9 +89,69 @@ Fatal error: Interface 'ITest' not found in ...
 */
 ?>
 ]]>
-   </programlisting>
-  </example>
- </para>
+    </programlisting>
+   </example>
+   <example>
+    <title>5.3.0 以降での例外処理つきのオートロード</title>
+    <para>
+     この例は、例外をスローして try/catch ブロックの動きを示します。
+    </para>
+    <programlisting role="php">
+<![CDATA[
+<?php
+function __autoload($name) {
+    echo "Want to load $name.\n";
+    throw new Exception("Unable to load $name.");
+}
+
+try {
+    $obj = new NonLoadableClass();
+} catch (Exception $e) {
+    echo $e->getMessage(), "\n";
+}
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+Want to load NonLoadableClass.
+Unable to load NonLoadableClass.
+]]>
+    </screen>
+   </example>
+   <example>
+    <title>5.3.0 以降での例外処理つきのオートロード - 独自の例外が見つからない場合</title>
+    <para>
+     この例では、ロードできない独自の例外クラスをスローします。
+    </para>
+    <programlisting role="php">
+<![CDATA[
+<?php
+function __autoload($name) {
+    echo "Want to load $name.\n";
+    throw new MissingException("Unable to load $name.");
+}
+
+try {
+    $obj = new NonLoadableClass();
+} catch (Exception $e) {
+    echo $e->getMessage(), "\n";
+}
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+Want to load NonLoadableClass.
+Want to load MissingException.
+
+Fatal error: Class 'MissingException' not found in testMissingException.php on line 4
+]]>
+    </screen>
+   </example>
+  </para>
 
   <simplesect role="seealso">
    &reftitle.seealso;
@@ -101,8 +165,8 @@ Fatal error: Interface 'ITest' not found in ...
    </para>
   </simplesect>
 
-</sect1>
-
+ </sect1>
+ 
 <!-- Keep this comment at the end of the file
 Local variables:
 mode: sgml

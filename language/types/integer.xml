@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: af4410a7e15898c3dbe83d6ea38246745ed9c6fb Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 11c3994c5a501117e6b4ac28856a3898b61117c4 Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa,shimooka -->
 <sect1 xml:id="language.types.integer">
  <title>整数</title>
@@ -83,6 +83,7 @@ integer     : [+-]?decimal
   <para>
    整数のサイズはプラットフォームに依存しますが、
    約 20 億 (32 ビット符号付) が一般的な値です。
+   64 ビットプラットフォームでの通常の最大値は、約 9E18 です。
    PHP は符号無し整数をサポートしていません。
    整数のサイズは <constant>PHP_INT_SIZE</constant> で決まります。
    最大値は、PHP 4.4.0 から PHP 5.0.5 までは <constant>PHP_INT_MAX</constant>
@@ -118,34 +119,43 @@ var_dump(01090); // 010（8 進数）= 8（10 進数）
    <type>float</type>が代わりに返されます。
   </para>
 
-  <informalexample>
+  <example>
+   <title>32 ビットシステムにおける整数のオーバーフロー</title>
    <programlisting role="php">
 <![CDATA[
 <?php
-$large_number =  2147483647;
-var_dump($large_number);
-// 出力: int(2147483647)
+$large_number = 2147483647;
+var_dump($large_number);                     // int(2147483647)
 
-$large_number =  2147483648;
-var_dump($large_number);
-// 出力: float(2147483648)
-
-// 2^31 から 2^32-1 までの値については、指定した 16 進表現整数を出力できる
-var_dump( 0xffffffff );
-// 出力: float(4294967295)
-
-// 2^32-1 を超える値については、指定した 16 進表現整数を出力できない
-var_dump( 0x100000000 );
-// 出力: int(2147483647)
+$large_number = 2147483648;
+var_dump($large_number);                     // float(2147483648)
 
 $million = 1000000;
 $large_number =  50000 * $million;
-var_dump($large_number);
-// 出力: float(50000000000)
+var_dump($large_number);                     // float(50000000000)
 ?>
 ]]>
    </programlisting>
-  </informalexample>
+  </example>
+
+  <example>
+   <title>64 ビットシステムにおける整数のオーバーフロー</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+$large_number = 9223372036854775807;
+var_dump($large_number);                     // int(9223372036854775807)
+
+$large_number = 9223372036854775808;
+var_dump($large_number);                     // float(9.2233720368548E+18)
+
+$million = 1000000;
+$large_number =  50000000000000 * $million;
+var_dump($large_number);                     // float(5.0E+19)
+?>
+]]>
+   </programlisting>
+  </example>
 
   <warning>
    <simpara>
@@ -217,8 +227,9 @@ var_dump(round(25/7));  // float(4)
    </simpara>
     
    <para>
-    float が整数の範囲 (通常は <literal>+/- 2.15e+9 =
-    2^31</literal>) を越える場合、結果は undefined となります。これは、
+    float が整数の範囲 (通常は、32 ビットプラットフォームでは <literal>+/- 2.15e+9 =
+    2^31</literal>、64 ビットプラットフォームでは <literal>+/- 9.22e+18 = 2^63</literal>
+    ) を越える場合、結果は undefined となります。これは、
     その float が正しい整数の結果を得るために十分な精度を得られなかったからです。
     この場合、警告も通知も発生しません!
    </para>
