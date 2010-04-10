@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: af4410a7e15898c3dbe83d6ea38246745ed9c6fb Maintainer: takagi Status: ready -->
+<!-- EN-Revision: bafb2042b6c75f62f2678e55265b1918f280f8f3 Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa -->
  <chapter xml:id="language.operators" xmlns="http://docbook.org/ns/docbook">
   <title>演算子</title>
@@ -69,7 +69,7 @@
         </entry>
        </row>
        <row>
-        <entry>結合しない</entry>
+        <entry>right</entry>
         <entry>~ - (int) (float) (string) (array) (object) (bool) @</entry>
         <entry>
          <link linkend="language.types">型</link>
@@ -169,7 +169,7 @@
        <row>
         <entry>right</entry>
         <entry>
-         = += -= *= /= .= %= &amp;= |= ^= &lt;&lt;= &gt;&gt;=
+         = += -= *= /= .= %= &amp;= |= ^= &lt;&lt;= &gt;&gt;= =&gt;
         </entry>
         <entry>
          <link linkend="language.operators.assignment">代入演算子</link>
@@ -325,12 +325,17 @@ $a = $b += 3; // $a = ($b += 3) -> $a = 5, $b = 5
 <![CDATA[
 <?php
 
-$a = ($b = 4) + 5; // $a は 9 に等しく、$b は 4 にセットされます。
+$a = ($b = 4) + 5; // $a は 9 に等しくなり、$b には 4 が代入されます
 
 ?>
 ]]>
      </programlisting>
     </informalexample>
+   </para>
+   <para>
+    配列の場合、キーの名前を指定して値を代入するには "=&gt;"
+    演算子を使います。この演算子の <link linkend="language.operators.precedence">優先順位</link>
+    は、その他の代入演算子と同じです。
    </para>
    <para>
     基本代入演算子に加えて、全ての<link linkend="language.operators">
@@ -1078,18 +1083,20 @@ Expression: 0 = -4 << 62
     </tgroup>
    </table>
    <para>
-    整数値を文字列と比較する際、文字列が
-    <link linkend="language.types.string.conversion">数値に変換されます</link>。
-    数値形式の文字列を比較する場合、それは整数として比較されます。これらの
-    ルールは、
+    整数値を文字列と比較したり、比較に数値形式の文字が含まれる場合は、文字列が
+    <link linkend="language.types.string.conversion">数値に変換され</link>、
+    数値としての比較を行います。これらのルールは、
     <link linkend="control-structures.switch">switch</link> 文にも適用されます。
+    === あるいは !== による比較では型変換は発生しません。
+    この場合は値だけでなく型も比較します。
     <informalexample>
      <programlisting role="php">
 <![CDATA[
 <?php
 var_dump(0 == "a"); // 0 == 0 -> true
 var_dump("1" == "01"); // 1 == 1 -> true
-var_dump("1" == "1e0"); // 1 == 1 -> true
+var_dump("10" == "1e1"); // 10 == 10 -> true
+var_dump(100 == "1e2"); // 100 == 100 -> true
 
 switch ("a") {
 case 0:
@@ -1202,6 +1209,19 @@ function standard_array_compare($op1, $op2)
     <link linkend="language.types">型</link> のセクションも参照してください。
    </para>
 
+   <warning>
+    <title>浮動小数点数値の比較</title>
+
+    <para>
+     ふたつの <type>float</type> 値が等しいかどうかを調べてはいけません。
+     <type>float</type> の内部的な表現方法がその理由です。
+    </para>
+
+    <para>
+     詳細な情報は <type>float</type> のドキュメントを参照ください。
+    </para>
+   </warning>
+
    <sect2 xml:id="language.operators.comparison.ternary">
     <title>三項演算子</title>
     <para>
@@ -1263,7 +1283,7 @@ echo (true?'true':false?'t':'f');
 // なぜなら、三項演算子は左から右へ順に評価されるからです。
 
 // 上のコードをもう少しわかりやすく書くと、このようになります。
-echo ((true ? 'true' : 'false') ? 't' : 'f');
+echo ((true ? 'true' : false) ? 't' : 'f');
 
 // まず、最初の式が 'true' と評価されます。この 'true' は
 // (bool)true と評価されるので、それをもとに二番目の三項
