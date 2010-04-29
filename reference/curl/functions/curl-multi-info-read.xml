@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 96c9d88bad9a7d7d44bfb7f26c226df7ee9ddf26 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 6b08984abd8a621afe1c19d5c1386f703864a4fb Maintainer: takagi Status: ready -->
 <refentry xml:id="function.curl-multi-info-read" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>curl_multi_info_read</refname>
@@ -54,6 +54,109 @@
   &reftitle.returnvalues;
   <para>
    成功した場合にメッセージの連想配列、失敗した場合に &false; を返します。
+  </para>
+  <para>
+   <table>
+    <title>配列の内容</title>
+    <tgroup cols="2">
+     <thead>
+      <row>
+       <entry>キー</entry>
+       <entry>値</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry><literal>msg</literal></entry>
+       <entry>定数 <constant>CURLMSG_DONE</constant>。その他の返り値は現在は存在しません。</entry>
+      </row>
+      <row>
+       <entry><literal>result</literal></entry>
+       <entry>定数 <constant>CURLE_*</constant> のいずれか。すべて OK なら
+       <constant>CURLE_OK</constant> が返ります。</entry>
+      </row>
+      <row>
+       <entry><literal>handle</literal></entry>
+       <entry>curl が扱うハンドルの型を表すリソース。</entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </table>
+  </para>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title><function>curl_multi_info_read</function> の例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+$urls = array(
+   "http://www.cnn.com/",
+   "http://www.bbc.co.uk/",
+   "http://www.yahoo.com/"
+);
+
+$mh = curl_multi_init();
+
+foreach ($urls as $i => $url) {
+    $conn[$i] = curl_init($url);
+    curl_setopt($conn[$i], CURLOPT_RETURNTRANSFER, 1);
+    curl_multi_add_handle($mh, $conn[$i]);
+}
+
+do {
+    $status = curl_multi_exec($mh, $active);
+    $info = curl_multi_info_read($mh);
+    if (false !== $info) {
+        var_dump($info);
+    }
+} while ($status === CURLM_CALL_MULTI_PERFORM || $active);
+
+foreach ($urls as $i => $url) {
+    $res[$i] = curl_multi_getcontent($conn[$i]);
+    curl_close($conn[$i]);
+}
+
+var_dump(curl_multi_info_read($mh));
+
+?>
+]]>
+    </programlisting>
+    &example.outputs.similar;
+    <screen>
+<![CDATA[
+array(3) {
+  ["msg"]=>
+  int(1)
+  ["result"]=>
+  int(0)
+  ["handle"]=>
+  resource(5) of type (curl)
+}
+array(3) {
+  ["msg"]=>
+  int(1)
+  ["result"]=>
+  int(0)
+  ["handle"]=>
+  resource(7) of type (curl)
+}
+array(3) {
+  ["msg"]=>
+  int(1)
+  ["result"]=>
+  int(0)
+  ["handle"]=>
+  resource(6) of type (curl)
+}
+bool(false)
+]]>
+    </screen>
+   </example>
   </para>
  </refsect1>
  
