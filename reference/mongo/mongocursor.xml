@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: af4410a7e15898c3dbe83d6ea38246745ed9c6fb Maintainer: takagi Status: ready -->
+<!-- EN-Revision: f96b346ba564453a7343706bde5b5817d3d83a6c Maintainer: takagi Status: working -->
 
 <phpdoc:classref xml:id="class.mongocursor" xmlns:phpdoc="http://php.net/ns/phpdoc" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xi="http://www.w3.org/2001/XInclude">
 
@@ -16,11 +16,28 @@
     データベースクエリの結果を表すオブジェクトです。
    </para>
    <para>
-    データベースへの実際の問い合わせは、next() あるいは hasNext()
-    がコールされるまで行われません。問い合わせが行われる前に、
-    コマンドを次のように連ねることができます。
+    A <classname>MongoCursor</classname> has two "life stages": pre- and post-
+    query.  A cursor can be created manually by calling the constructor, but it
+    is most often created by calling <function>MongoCollection::find</function>.
+    When a cursor is created, it has not yet contacted the database, so it is in
+    its pre-query state.  In this state, the client can further specify what
+    they want the query to do, including adding limits, skips, sorts, and more
+    advanced options.
+   </para>
+   <para>
+    When the client attempts to get a result (by calling 
+    <function>MongoCursor::next</function>, directly or indirectly), the cursor
+    moves into the post-query stage.  At this point, the query has been executed
+    by the database and cannot be modified anymore.  At this point, the only
+    functions available are the <classname>Iterator</classname> functions, 
+    <function>MongoCursor::hasNext</function>, and 
+    <function>MongoCursor::getNext</function>.
+   </para>
+   <para>
+    <programlisting role="php">
 <![CDATA[
 <?php
+
 $cursor = $collection->find()->limit(10);
 
 // まだデータベースへの問い合わせは行われていないので、検索オプションをさらに追加することができます
@@ -33,6 +50,7 @@ var_dump($cursor->getNext());
 $cursor->skip(4);
 ?>
 ]]>
+    </programlisting>
    </para>
   </section>
   <!-- }}} -->
@@ -61,11 +79,19 @@ $cursor->skip(4);
      <initializer>&false;</initializer>
     </fieldsynopsis>
 
-    <classsynopsisinfo role="comment">メソッド</classsynopsisinfo>
+    <classsynopsisinfo role="comment">&Methods;</classsynopsisinfo>
     <xi:include xpointer="xmlns(db=http://docbook.org/ns/docbook) xpointer(id('class.mongocursor')/db:refentry/db:refsect1[@role='description']/descendant::db:methodsynopsis[1])" />
    </classsynopsis>
    <!-- }}} -->
 
+  </section>
+
+  <section>
+   &reftitle.seealso;
+   <para>
+    MongoDB コアドキュメントの <link xlink:href="&url.mongodb.dochub.cursors;">カーソル</link>
+    を参照ください。
+   </para>
   </section>
 
  </partintro>

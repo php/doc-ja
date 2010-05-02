@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: af4410a7e15898c3dbe83d6ea38246745ed9c6fb Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 96c9d88bad9a7d7d44bfb7f26c226df7ee9ddf26 Maintainer: takagi Status: ready -->
 
 <chapter xml:id="libevent.examples" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  &reftitle.examples;
@@ -11,36 +11,35 @@
 <![CDATA[
 <?php
 
-function callback_func($fd, $events, $arg)
+function print_line($fd, $events, $arg)
 {
-    static $max_requests;
+    static $max_requests = 0;
 
     $max_requests++;
 
-    if ($max_requests == 10) { /* 10 回書き込んだらループを抜けます */
+    if ($max_requests == 10) {
+        // 10 回書き込んだらループを抜けます
         event_base_loopexit($arg[1]);
     }
 
-    /* 読める限り読み込みます */
-    while (false !=== ($data = fread($fd, 4096))) {
-        echo $data;
-    }
+    // 行を表示します
+    echo  fgets($fd);
 }
 
-/* ベースとイベントを作成します */
+// ベースとイベントを作成します
 $base = event_base_new();
 $event = event_new();
 
 $fd = STDIN;
 
-/* イベントフラグを設定します */
-event_set($event, $fd, EV_READ | EV_PERSIST, "callback_func", array($event, $base));
-/* イベントベースを設定します */
+// イベントフラグを設定します
+event_set($event, $fd, EV_READ | EV_PERSIST, "print_line", array($event, $base));
+// イベントベースを設定します
 event_base_set($event, $base);
 
-/* イベントを有効にします */
+// イベントを有効にします
 event_add($event);
-/* イベントループを開始します */
+// イベントループを開始します
 event_base_loop($base);
 
 ?>
@@ -55,7 +54,7 @@ event_base_loop($base);
 <![CDATA[
 <?php
 
-function callback_func($buf, $arg)
+function print_line($buf, $arg)
 {
     static $max_requests;
 
@@ -65,22 +64,20 @@ function callback_func($buf, $arg)
         event_base_loopexit($arg);
     }
 
-    /* 読める限り読み込みます */
-    while (false !=== ($data = event_buffer_read($buf, 10))) {
-        echo $data;
-    }
+    // 行を表示します
+    echo event_buffer_read($buf, 4096);
 }
 
 function error_func($buf, $what, $arg)
 {
-    /* エラーを処理します */
+    // エラーを処理します
 }
 
 $base = event_base_new();
-$b = event_buffer_new(STDIN, "callback_func", NULL, "error_func", $base);
+$eb = event_buffer_new(STDIN, "print_line", NULL, "error_func", $base);
 
-event_buffer_base_set($b, $base);
-event_buffer_enable($b, EV_READ);
+event_buffer_base_set($eb, $base);
+event_buffer_enable($eb, EV_READ);
 
 event_base_loop($base);
 

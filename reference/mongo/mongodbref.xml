@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: af4410a7e15898c3dbe83d6ea38246745ed9c6fb Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 41251fe567724b9f453d7cecf1ddecf27cb94bd3 Maintainer: takagi Status: working -->
 
 <phpdoc:classref xml:id="class.mongodbref" xmlns:phpdoc="http://php.net/ns/phpdoc" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xi="http://www.w3.org/2001/XInclude">
 
@@ -14,6 +14,71 @@
    &reftitle.intro;
    <para>
     このクラスを使用して、別々のコレクション内にあるオブジェクト間の軽量なリンクを作成します。
+   </para>
+   <para>
+    <emphasis>Motivation</emphasis>: Suppose we need to refer to a document in 
+    another collection. The easiest way is to create a field in the current 
+    document.  For example, if we had a "people" collection and an "addresses"
+    collection, we might want to create a link between each person document and
+    and address document:
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+$people = $db->people;
+$addresses = $db->addresses;
+
+$myAddress = array("line 1" => "123 Main Street", 
+    "line 2" => null,
+    "city" => "Springfield",
+    "state" => "Vermont",
+    "country" => "USA");
+
+// save the address
+$addresses->insert($myAddress);
+
+// save a person with a reference to the address
+$me = array("name" => "Fred", "address" => $myAddress['_id']);
+$people->insert($me);
+
+?>
+]]>
+    </programlisting>
+   </para>
+   <para>
+    Then, later on, we can find the person's address by querying the "addresses"
+    collection with the <classname>MongoId</classname> we saved in the "people"
+    collection.
+   </para>
+   <para>
+    Suppose now that we have a more general case, where we don't know which
+    collection (or even which database) contains the referenced document.  
+    <classname>MongoDBRef</classname> is a good choice for this case, as it is a
+    common format that all of the drivers and the database understand.
+   </para>
+   <para>
+    If each person had a list of things they liked which could come from
+    multiple collections, such as "hobbies", "sports", "books", etc., we could
+    use <classname>MongoDBRef</classname>s to keep track of what "like" went
+    with what collection:
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+$people = $db->selectCollection("people");
+
+// model trains are in the "hobbies" collection
+$trainRef = MongoDBRef::create("hobbies", $modelTrains['_id']);
+// soccer is in the "sports" collection
+$soccerRef = MongoDBRef::create("sports", $soccer['_id']);
+
+// now we'll know what collections the items in the "likes" array came from when
+// we retrieve this document
+$people->insert(array("name" => "Fred", "likes" => array($trainRef, $soccerRef)));
+
+?>
+]]>
+    </programlisting>
    </para>
   </section>
 <!-- }}} -->
@@ -33,13 +98,20 @@
     </classsynopsisinfo>
 <!-- }}} -->
     
-    <classsynopsisinfo role="comment">メソッド</classsynopsisinfo>
+    <classsynopsisinfo role="comment">&Methods;</classsynopsisinfo>
     <xi:include xpointer="xmlns(db=http://docbook.org/ns/docbook) xpointer(id('class.mongodbref')/db:refentry/db:refsect1[@role='description']/descendant::db:methodsynopsis[1])" />
    </classsynopsis>
 <!-- }}} -->
 
   </section>
 
+  <section>
+   &reftitle.seealso;
+   <para>
+    MongoDB コアドキュメントの <link xlink:href="&url.mongodb.dochub.dbrefs;">データベース参照</link>
+    を参照ください。
+   </para>
+  </section>
  </partintro>
 
  &reference.mongo.entities.mongodbref;
@@ -66,3 +138,6 @@ vim600: syn=xml fen fdm=syntax fdl=2 si
 vim: et tw=78 syn=sgml
 vi: ts=1 sw=1
 -->
+
+<!--  LocalWords:  trainRef soccerRef MongoDBRef
+ -->

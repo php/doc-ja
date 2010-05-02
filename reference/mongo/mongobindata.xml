@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: af4410a7e15898c3dbe83d6ea38246745ed9c6fb Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 4724b47c25b48f509355d27291aa6893ad0b40c0 Maintainer: takagi Status: ready -->
 
 <phpdoc:classref xml:id="class.mongobindata" xmlns:phpdoc="http://php.net/ns/phpdoc" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xi="http://www.w3.org/2001/XInclude">
 
@@ -14,6 +14,35 @@
    &reftitle.intro;
    <para>
     データベースからのバイナリデータを保存したり取得したりする際に使用するオブジェクトです。
+   </para>
+   <para>
+    データベースに挿入できるひとつのオブジェクトの最大サイズは 4Mb です。
+    それよりも大きいデータ (動画や音楽、キッシンジャーの自伝など) の場合は
+    <classname>MongoGridFS</classname> を使います。4Mb より小さなデータの場合は、
+    <classname>MongoBinData</classname> を使ってドキュメントに埋め込むほうが簡単でしょう。
+   </para>
+   <para>
+    たとえば画像をドキュメントに埋め込むには、このようにします。
+   </para>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+$profile = array("username" => "foobity",
+    "pic" => new MongoBinData(get_file_contents("gravatar.jpg"));
+
+$users->save($profile);
+
+?>
+]]>
+   </programlisting>
+   <para>
+    このクラスには <varname>type</varname> フィールドがありますが、
+    現時点ではこのフィールドはドライバやデータベースに対して何の効果も及ぼしません。
+    5 種類の型が定義済み (以下のクラス定数を参照ください) です。
+    (BSON 仕様からはずれることを覚悟の上で)
+    ユーザが自分で定義することもできます。
+    デフォルトでは、PHP ドライバは常に type 2: バイト配列を使います。
    </para>
   </section>
 <!-- }}} -->
@@ -33,12 +62,113 @@
     </classsynopsisinfo>
 <!-- }}} -->
     
-    <classsynopsisinfo role="comment">メソッド</classsynopsisinfo>
+    <classsynopsisinfo role="comment">&Constants;</classsynopsisinfo>
+    <fieldsynopsis>
+     <modifier>const</modifier>
+     <type>int</type>
+     <varname linkend="mongobindata.constants.func">MongoBinData::FUNC</varname>
+     <initializer>1</initializer>
+    </fieldsynopsis>
+    <fieldsynopsis>
+     <modifier>const</modifier>
+     <type>int</type>
+     <varname linkend="mongobindata.constants.bytearray">MongoBinData::BYTE_ARRAY</varname>
+     <initializer>2</initializer>
+    </fieldsynopsis>
+    <fieldsynopsis>
+     <modifier>const</modifier>
+     <type>int</type>
+     <varname linkend="mongobindata.constants.uuid">MongoBinData::UUID</varname>
+     <initializer>3</initializer>
+    </fieldsynopsis>
+    <fieldsynopsis>
+     <modifier>const</modifier>
+     <type>int</type>
+     <varname linkend="mongobindata.constants.md5">MongoBinData::MD5</varname>
+     <initializer>5</initializer>
+    </fieldsynopsis>
+    <fieldsynopsis>
+     <modifier>const</modifier>
+     <type>int</type>
+     <varname linkend="mongobindata.constants.custom">MongoBinData::CUSTOM</varname>
+     <initializer>128</initializer>
+    </fieldsynopsis>
+
+    <classsynopsisinfo role="comment">フィールド</classsynopsisinfo>
+    <fieldsynopsis>
+     <modifier>public</modifier>
+     <type>string</type>
+     <varname>bin</varname>
+    </fieldsynopsis>
+    <fieldsynopsis>
+     <modifier>public</modifier>
+     <type>int</type>
+     <varname>type</varname>
+     <initializer>2</initializer>
+    </fieldsynopsis>
+
+    <classsynopsisinfo role="comment">&Methods;</classsynopsisinfo>
     <xi:include xpointer="xmlns(db=http://docbook.org/ns/docbook) xpointer(id('class.mongobindata')/db:refentry/db:refsect1[@role='description']/descendant::db:methodsynopsis[1])" />
    </classsynopsis>
 <!-- }}} -->
 
   </section>
+
+<!-- {{{ MongoBinData constants -->
+  <section>
+   &reftitle.constants;
+   <section xml:id="mongobindata.constants.types">
+    <title>バイナリデータ型</title>
+    <variablelist>
+     <varlistentry xml:id="mongobindata.constants.func">
+      <term><constant>MongoBinData::FUNC</constant></term>
+      <term><constant>0x01</constant></term>
+      <listitem>
+       <simpara>
+        関数。
+       </simpara>
+      </listitem>
+     </varlistentry>
+     <varlistentry xml:id="mongobindata.constants.bytearray">
+      <term><constant>MongoBinData::BYTE_ARRAY</constant></term>
+      <term><constant>0x02</constant></term>
+      <listitem>
+       <simpara>
+        バイト配列。
+       </simpara>
+      </listitem>
+     </varlistentry>
+     <varlistentry xml:id="mongobindata.constants.uuid">
+      <term><constant>MongoBinData::UUID</constant></term>
+      <term><constant>0x03</constant></term>
+      <listitem>
+       <simpara>
+        全体で一意な識別子。
+       </simpara>
+      </listitem>
+     </varlistentry>
+     <varlistentry xml:id="mongobindata.constants.md5">
+      <term><constant>MongoBinData::MD5</constant></term>
+      <term><constant>0x05</constant></term>
+      <listitem>
+       <simpara>
+        MD5。
+       </simpara>
+      </listitem>
+     </varlistentry>
+     <varlistentry xml:id="mongobindata.constants.custom">
+      <term><constant>MongoBinData::CUSTOM</constant></term>
+      <term><constant>0xf0</constant></term>
+      <listitem>
+       <simpara>
+        ユーザ定義型。
+       </simpara>
+      </listitem>
+     </varlistentry>
+    </variablelist>
+   </section>
+  </section>
+<!-- }}} -->
 
  </partintro>
 
