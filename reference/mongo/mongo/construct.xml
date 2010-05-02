@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: af4410a7e15898c3dbe83d6ea38246745ed9c6fb Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 6472ebd9a5c221b6187b57802ad68e2d7c03ed92 Maintainer: takagi Status: working -->
 
 <refentry xml:id="mongo.construct" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -12,11 +12,81 @@
   &reftitle.description;
   <methodsynopsis>
    <methodname>Mongo::__construct</methodname>
-   <methodparam choice="opt"><type>string</type><parameter>server</parameter><initializer>&null;</initializer></methodparam>
-   <methodparam choice="opt"><type>boolean</type><parameter>connect</parameter><initializer>&true;</initializer></methodparam>
-   <methodparam choice="opt"><type>boolean</type><parameter>persistent</parameter><initializer>&false;</initializer></methodparam>
-   <methodparam choice="opt"><type>boolean</type><parameter>paired</parameter><initializer>&false;</initializer></methodparam>
+   <methodparam choice="opt"><type>string</type><parameter>server</parameter><initializer>"mongodb://localhost:27017"</initializer></methodparam>
+   <methodparam choice="opt"><type>array</type><parameter>options</parameter><initializer>array("connect" => &true;)</initializer></methodparam>
   </methodsynopsis>
+  <para>
+   If no parameters are passed, this connects to "localhost:27017" (or whatever
+   was specified in php.ini for 
+   <link linkend="ini.mongo.default-host">mongo.default_host</link> and 
+   <link linkend="ini.mongo.default-port">mongo.default_port</link>).
+  </para>
+  <para>
+   As of version 1.0.2, <parameter>server</parameter> can have a special form: 
+   <programlisting>
+<![CDATA[
+mongodb://[username:password@]host1[:port1][,host2[:port2:],...]/db
+]]>
+   </programlisting>
+  </para>
+  <para>
+   It starts with <literal>mongodb://</literal>, to indicate it is a connection
+   string in this form. 
+  </para>
+  <para>If <literal>username</literal> and <literal>password</literal>
+   are specified, the constructor will attempt to authenticate the connection 
+   with the database before returning.  Username and password are optional
+   and must be followed by an <literal>@</literal>, if specified.  
+  </para>
+  <para>
+   At least one host must be given (port optional, always defaulting to 27017) 
+   and as many hosts as desired may be connected to.  Host names are 
+   comma-separated and the constructor will return successfully if it connected 
+   to at least one host. If it could not connect to any of the hosts, it will 
+   throw a  <classname>MongoConnectionException</classname>.
+  </para>
+  <para>
+   Finally, if you specified a username and password, you may specify a database
+   to authenticate with.  If <literal>db</literal> is not specified, "admin" 
+   will be used.
+  </para>
+
+  <warning>
+
+   <title><parameter>server</parameter> Format</title>
+
+   <para>
+    Before version 1.0.2, <parameter>server</parameter> could not be prefixed
+    with <literal>mongodb://</literal>, contain username and password, or 
+    contain more than two hostnames.  See the changelog below for more details.
+   </para>
+
+  </warning>
+
+  <para>
+   If you elect not to connect immediately (you pass the option 
+   <literal>array("connect" => false)</literal>), you will need to call 
+   <function>Mongo::connect</function> before doing any database operations.
+  </para>
+
+  <informalexample>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+$mongo = new Mongo("mongodb://localhost", array("connect" => false);
+
+// throws a MongoException, as $mongo has not been fully initialized yet
+$mongo->selectDB("foo")->command(array("distinct" => "bar", "key" => "age"));
+
+// okay
+$mongo->connect();
+$mongo->selectDB("foo")->command(array("distinct" => "bar", "key" => "age"));
+
+?>
+]]>
+   </programlisting>
+  </informalexample>
  </refsect1>
 
  <refsect1 role="parameters">
@@ -35,31 +105,47 @@
     </varlistentry>
     <varlistentry>
      <term>
-      <parameter>connect</parameter>
+      <parameter>options</parameter>
      </term>
      <listitem>
       <para>
-       ドライバがデータベースに接続してから結果を返すようにするかどうか。
-      </para>
-     </listitem>
-    </varlistentry>
-    <varlistentry>
-     <term>
-      <parameter>persistent</parameter>
-     </term>
-     <listitem>
-      <para>
-       持続的な接続を行うかどうか。
-      </para>
-     </listitem>
-    </varlistentry>
-    <varlistentry>
-     <term>
-      <parameter>paired</parameter>
-     </term>
-     <listitem>
-      <para>
-       接続をペアにするかどうか。
+       An array of options for the connection.  Currently available options
+       include:
+       <itemizedlist>
+        <listitem>
+         <para>
+          <literal>"connect"</literal>
+         </para>
+         <para>
+          If the constructor should connect before returning.  Default is 
+          &true;.
+         </para>
+        </listitem>
+        <listitem>
+         <para>
+          <literal>"persist"</literal>
+         </para>
+         <para>
+          If the connection should be persistent.  If set, the connection will 
+          be persistent.  The string representation of the value is used as an
+          id for the connection, so two instances of 
+          <classname>Mongo</classname> that are initialized with
+          <literal>array("persist" => "foobar")</literal> will share the same
+          database connection, whereas an instance initialized with 
+          <literal>array("persist" => "barbaz")</literal> will use a different
+          database connection.
+         </para>
+        </listitem>
+        <listitem>
+         <para>
+          <literal>"timeout"</literal>
+         </para>
+         <para>
+          For how long the driver should try to connect to the database (in
+          milliseconds).
+         </para>
+        </listitem>
+       </itemizedlist>
       </para>
      </listitem>
     </varlistentry>
@@ -77,8 +163,177 @@
  <refsect1 role="errors">
   &reftitle.errors;
   <para>
-   データベースへの接続に失敗した場合に MongoConnectionException をスローします。
+   指定したすべてのホスト名へのデータベースへの接続に失敗した場合に
+   <classname>MongoConnectionException</classname> をスローします。
+   指定したユーザ名やパスワードが間違っている場合にも
+   <classname>MongoConnnectionException</classname> をスローします。
   </para>
+ </refsect1>
+
+ <refsect1 role="changelog">
+  &reftitle.changelog;
+  <para>
+   <informaltable>
+    <tgroup cols="2">
+     <thead>
+      <row>
+       <entry>&Version;</entry>
+       <entry>&Description;</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry>1.0.2</entry>
+       <entry>
+        Changed constructor to take an array of options.  Pre-1.0.2, the
+        constructor took the following parameters:
+        <variablelist>
+         <varlistentry>
+          <term>
+           <parameter>server</parameter>
+          </term>
+          <listitem>
+           <para>
+            The server name.
+           </para>
+          </listitem>
+         </varlistentry>
+         <varlistentry>
+          <term>
+           <parameter>connect</parameter>
+          </term>
+          <listitem>
+           <para>
+            Optional boolean parameter specifying if the constructor should 
+            connect to the database before returning.  Defaults to &true;.
+           </para>
+          </listitem>
+         </varlistentry>
+         <varlistentry>
+          <term>
+           <parameter>persistent</parameter>
+          </term>
+          <listitem>
+           <para>
+            If the connection should be persistent.
+           </para>
+          </listitem>
+         </varlistentry>
+         <varlistentry>
+          <term>
+           <parameter>paired</parameter>
+          </term>
+          <listitem>
+           <para>
+            If the connection should be paired.
+           </para>
+          </listitem>
+         </varlistentry>
+        </variablelist>
+       </entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </informaltable>
+  </para>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <example>
+   <title><function>Mongo::__construct</function> paired connection example</title>
+   <para>
+    This example shows how to connect the driver to a replica pair of Mongo 
+    servers.
+   </para>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+// pass a comma-separated list of server names to the constructor
+$m1 = new Mongo("mongodb://www.example1.com,www.example2.com");
+
+// if the database servers are not running on the default port (27017),
+// you'll need to specify the port
+$m2 = new Mongo("mongodb://www.example1.com:12345,www.example.com:54321");
+
+// you can connect to more that two, as well
+$m3 = new Mongo("mongodb://localhost:27017,localhost:27018,localhost:27019");
+
+?>
+]]>
+   </programlisting>
+  </example>
+  <example>
+   <title><function>Mongo::__construct</function> persistent connection example</title>
+   <para>
+    A persistent connection will last for more than one request (usually... 
+    milage may vary depending on server).  It can save significant time to 
+    reuse connections, as creating a connection is a time-intensive process.
+   </para>
+   <para>
+    A persistent connection is identified by the server string and and id 
+    string. 
+   </para>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+// creates a persistent connection
+$m1 = new Mongo("mongodb://localhost", array("persist" => ""));
+
+// uses the same connection as $m1
+$m2 = new Mongo("mongodb://localhost", array("persist" => ""));
+
+// creates a new connection
+$m3 = new Mongo("mongodb://127.0.0.1", array("persist" => ""));
+
+// creates a new connection
+$m4 = new Mongo("mongodb://127.0.0.1:27017", array("persist" => ""));
+
+// creates a new connection
+$m5 = new Mongo("mongodb://localhost", array("persist" => "foo"));
+
+// uses the $m5 connection
+$m6 = new Mongo("mongodb://localhost", array("persist" => "foo"));
+
+?>
+]]>
+   </programlisting>
+  </example>
+  <example>
+   <title><function>Mongo::__construct</function> authentication example</title>
+   <para>
+    A user must exist in the admin database before attempting to use 
+    authentication.  You can create one with the Mongo shell by running:
+   </para>
+   <programlisting>
+<![CDATA[
+> use admin
+switched to db admin
+> db.addUser("testUser", "testPass");
+{
+        "_id" : ObjectId("4b21272fd9ab21611d19095c"),
+        "user" : "testUser",
+        "pwd" : "03b9b27e0abf1865e2f6fcbd9845dd59"
+}
+>
+]]>
+   </programlisting>
+   <para>
+    After creating a user with, in this case, username "testUser" and password
+    "testPass", you can create an authenticated connection:
+   </para>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+$m = new Mongo("mongodb://testUser:testPass@localhost");
+
+?>
+]]>
+   </programlisting>
+  </example>
  </refsect1>
 
 </refentry>

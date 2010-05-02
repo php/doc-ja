@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: af4410a7e15898c3dbe83d6ea38246745ed9c6fb Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 4a55fca3ce92340e53ad60af7774666d8387f7de Maintainer: takagi Status: working -->
 
 <refentry xml:id="mongodb.command" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -13,6 +13,25 @@
    <modifier>public</modifier> <type>array</type><methodname>MongoDB::command</methodname>
    <methodparam><type>array</type><parameter>data</parameter></methodparam>
   </methodsynopsis>
+  <para>
+   Almost everything that is not a CRUD operation can be done with a database command.
+   Need to know the database version?  There's a command for that.  Need to do aggregation?
+   There's a command for that.  Need to turn up logging?  You get the idea.
+  </para>
+  <para>
+   This method is identical to the function:
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+public function command($data) {
+    return $this->selectCollection('$cmd')->findOne($data);
+}
+
+?>
+]]>
+   </programlisting>
+  </para>
  </refsect1>
  <refsect1 role="parameters">
   &reftitle.parameters;
@@ -35,6 +54,116 @@
   &reftitle.returnvalues;  
   <para>
    データベースの応答を返します。
+  </para>
+ </refsect1>
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <example>
+   <title><function>MongoDB::command</function> "distinct" example</title>
+   <para>
+    Finding all of the distinct values for a key.
+   </para>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+$people = $db->people;
+
+$people->insert(array("name" => "Joe", "age" => 4));
+$people->insert(array("name" => "Sally", "age" => 22));
+$people->insert(array("name" => "Dave", "age" => 22));
+$people->insert(array("name" => "Molly", "age" => 87));
+
+$ages = $db->command(array("distinct" => "people", "key" => "age"));
+
+foreach ($ages['values'] as $age) {
+    echo "$age\n";
+}
+
+?>
+]]>
+   </programlisting>
+   &example.outputs.similar;
+   <screen>
+4
+22
+87
+   </screen>
+  </example>
+  <example>
+   <title><function>MongoDB::command</function> MapReduce example</title>
+   <para>
+    Get all users with at least on "sale" event, and how many times each
+    of these users has had a sale.
+   </para>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+// sample event document
+$events->insert(array("user_id" => $id, 
+    "type" => $type, 
+    "time" => new MongoDate(), 
+    "desc" => $description));
+
+// construct map and reduce functions
+$map = new MongoCode("function() { emit(this.user_id,1); }");
+$reduce = new MongoCode("function(k, vals) { ".
+    "var sum = 0;".
+    "for (var i in vals) {".
+        "sum += vals[i];". 
+    "}".
+    "return sum; }");
+
+$sales = $db->command(array(
+    "mapreduce" => "events", 
+    "map" => $map,
+    "reduce" => $reduce,
+    "query" => array("type" => "sale")));
+
+$users = $db->selectCollection($sales['result'])->find();
+
+foreach ($users as $user) {
+    echo "{$user['_id']} had {$user['value']} sale(s).\n";
+}
+
+?>
+]]>
+   </programlisting>
+   &example.outputs.similar;
+   <screen>
+User 47cc67093475061e3d9536d2 had 3 sale(s).
+User 49902cde5162504500b45c2c had 14 sale(s).
+User 4af467e4fd543cce7b0ea8e2 had 1 sale(s).
+   </screen>
+   <note>
+    <title>Using <classname>MongoCode</classname></title>
+    <para>
+     This example uses <classname>MongoCode</classname>, which can also take a 
+     scope argument.  However, at the moment, MongoDB does not support using
+     scopes in MapReduce.  If you would like to use client-side variables in the
+     MapReduce functions, you can add them to the global scope by using the 
+     optional scope field with the database command.  See 
+     <link xlink:href="&url.mongodb.dochub.mapreduce;">MapReduce</link> for more
+     information.
+    </para>
+   </note>
+   <para>
+    If you are going to be using MapReduce, Prajwal Tuladhar created an API for 
+    Mongo PHP users which provides a nicer interface than the bare command.  You
+    can download it from
+    <link xlink:href="&url.mongodb.mapreduceapi;">Github</link>
+    and there is a 
+    <link xlink:href="&url.mongodb.mapreduceapi.blog;">blog post</link> 
+    on how to use it.
+   </para>
+  </example>
+ </refsect1>
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <para>
+   MongoDB core docs on <link xlink:href="&url.mongodb.dochub.commands;">database commands</link>.
   </para>
  </refsect1>
 </refentry>

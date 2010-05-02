@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 52b30600380c2cd221d761c5fcff6f851862f6bd Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 13d9a87041ee11fbffc2846d5c643344c9bc5d58 Maintainer: takagi Status: ready -->
 
 <refentry xml:id="mongocollection.insert" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -13,7 +13,7 @@
   <methodsynopsis>
    <modifier>public</modifier> <type>mixed</type><methodname>MongoCollection::insert</methodname>
    <methodparam><type>array</type><parameter>a</parameter></methodparam>
-   <methodparam choice="opt"><type>boolean</type><parameter>safe</parameter><initializer>false</initializer></methodparam>
+   <methodparam choice="opt"><type>array</type><parameter>options</parameter><initializer>array()</initializer></methodparam>
   </methodsynopsis>
  </refsect1>
 
@@ -33,14 +33,24 @@
     </varlistentry>   
     <varlistentry>
      <term>
-      <parameter>safe</parameter>
+      <parameter>options</parameter>
      </term>
      <listitem>
       <para>
-       追加に成功したことをデータベースに確認させるかどうか。
+       追加時のオプション。
+       <itemizedlist>
+        <listitem>
+         <para>
+          <literal>"safe"</literal>
+         </para>
+         <para>
+          追加に成功したかどうかをチェックします。
+         </para>
+        </listitem>
+       </itemizedlist>
       </para>
      </listitem>
-    </varlistentry>   
+    </varlistentry>
    </variablelist>
   </para>
  </refsect1>
@@ -51,6 +61,40 @@
    <parameter>safe</parameter> が設定されている場合は、
    追加結果を含む配列を返します。設定されていない場合は、
    配列が空でなかったかどうかをあらわす boolean 値を返します (空の配列は追加されません)。
+  </para>
+ </refsect1>
+
+ <refsect1 role="errors">
+  &reftitle.errors;
+  <para>
+   "safe" オプションが設定されていて追加に失敗した場合に
+   MongoCursorException をスローします (バージョン 1.0.1 以降)。
+  </para>
+ </refsect1>
+
+ <refsect1 role="changelog">
+  &reftitle.changelog;
+  <para>
+   <informaltable>
+    <tgroup cols="2">
+     <thead>
+      <row>
+       <entry>&Version;</entry>
+       <entry>&Description;</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry>1.0.5</entry>
+       <entry>
+        二番目のパラメータがオプションの配列に変わりました。1.0.5
+        より前のバージョンでは、二番目のパラメータは "safe"
+        オプションを表す boolean 値でした。
+       </entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </informaltable>
   </para>
  </refsect1>
 
@@ -94,6 +138,42 @@ array(1) {
 ]]>
    </screen>
   </example>
+
+  <example>
+   <title><function>MongoCollection::insert</function> での safe の例</title>
+   <para>
+    この例は、同じ _id を持つ二つの要素を追加しようとするものです。
+    <parameter>safe</parameter> が設定されていれば、
+    <classname>MongoCursorException</classname> がスローされます。
+   </para>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+$person = array("name" => "Joe", "age" => 20);
+$collection->insert($person, true);
+
+// $person には _id フィールドができたので、
+// もう一度追加しようとすると例外が発生します
+try {
+    $collection->insert($person, true);
+}
+catch(MongoCursorException $e) {
+    echo "Can't save the same person twice!\n";
+}
+
+?>
+]]>
+   </programlisting>
+  </example>
+ </refsect1>
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <para>
+   MongoDB コアドキュメントの <link xlink:href="&url.mongodb.dochub.insert;">insert</link>
+   を参照ください。
+  </para>
  </refsect1>
 
 </refentry>

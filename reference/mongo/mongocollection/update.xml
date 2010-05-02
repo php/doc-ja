@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: ba9e4bfd2288e990b1ae3754448ab6bc5b594872 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 13d9a87041ee11fbffc2846d5c643344c9bc5d58 Maintainer: takagi Status: working -->
 
 <refentry xml:id="mongocollection.update" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -14,12 +14,12 @@
    <modifier>public</modifier> <type>boolean</type><methodname>MongoCollection::update</methodname>
    <methodparam><type>array</type><parameter>criteria</parameter></methodparam>
    <methodparam><type>array</type><parameter>newobj</parameter></methodparam>
-   <methodparam choice="opt"><type>boolean</type><parameter>upsert</parameter><initializer>&false;</initializer></methodparam>
+   <methodparam choice="opt"><type>array</type><parameter>options</parameter><initializer>array()</initializer></methodparam>
   </methodsynopsis>
  </refsect1>
 
  <refsect1 role="parameters">
-  &reftitle.parameters;  
+  &reftitle.parameters;
   <para>
    <variablelist>
     <varlistentry>
@@ -31,7 +31,7 @@
        更新したいオブジェクトの条件。
       </para>
      </listitem>
-    </varlistentry>   
+    </varlistentry>
     <varlistentry>
      <term>
       <parameter>newobj</parameter>
@@ -41,27 +41,103 @@
        マッチするレコードを更新するオブジェクト。
       </para>
      </listitem>
-    </varlistentry>   
+    </varlistentry>
     <varlistentry>
      <term>
-      <parameter>upsert</parameter>
+      <parameter>options</parameter>
      </term>
      <listitem>
       <para>
-       条件にマッチするレコードが見つからない場合に <literal>$newobj</literal>
-       を追加するかどうか。
+       This parameter is an associative array of the form 
+       <literal>array("optionname" => &lt;boolean&gt;, ...)</literal>. Currently 
+       supported options are: 
+       <itemizedlist>
+        <listitem>
+         <para>
+          <literal>"upsert"</literal>
+         </para>
+         <para>
+          $criteria にマッチするレコードが見つからない場合に
+          $criteria と $newobj から新しいオブジェクトを作ります
+          (以下の upsert の例を参照ください)。
+         </para>
+        </listitem>
+        <listitem>
+         <para>
+          <literal>"multiple"</literal>
+         </para>
+         <para>
+          All documents matching $criteria will be updated.  
+          <function>MongoCollection::update</function> has exactly the opposite 
+          behavior of <function>MongoCollection::remove</function>: it updates 
+          one document by default, not all matching documents.  <emphasis>It is 
+          recommended that you always specify whether you want to update 
+           multiple documents or a single document</emphasis>, as the database 
+          may change its default behavior at some point in the future.
+         </para>
+        </listitem>
+        <listitem>
+         <para>
+          <literal>"safe"</literal>
+         </para>
+         <para>
+          Check that the update succeeded.
+         </para>
+        </listitem>
+       </itemizedlist>
       </para>
      </listitem>
-    </varlistentry>   
+    </varlistentry>
    </variablelist>
   </para>
  </refsect1>
+
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
    更新のデータベースへの送信が成功したかどうかを返します。
   </para>
  </refsect1>
+
+ <refsect1 role="errors">
+  &reftitle.errors;
+  <para>
+   Throws <classname>MongoCursorException</classname> if the "safe" option is 
+   set and the update fails.
+  </para>
+ </refsect1>
+
+ <refsect1 role="changelog">
+  &reftitle.changelog;
+  <para>
+   <informaltable>
+    <tgroup cols="2">
+     <thead>
+      <row>
+       <entry>&Version;</entry>
+       <entry>&Description;</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry>1.0.1</entry>
+       <entry>
+        Changed "options" parameter from boolean to array.  Pre-1.0.1, the
+        second parameter was an optional boolean value specifying an upsert. 
+       </entry>
+      </row>
+      <row>
+       <entry>1.0.5</entry>
+       <entry>
+        Added "safe" option.
+       </entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </informaltable>
+  </para>
+ </refsect1>
+
  <refsect1 role="examples">
   &reftitle.examples;
   <example>
@@ -99,7 +175,70 @@ array(4) {
 ]]>
    </screen>
   </example>
+  <example>
+   <title><function>MongoCollection::update</function> upsert example</title>
+   <para>
+    Upserts can simplify code, as a single line can create the object if it does
+    not exist yet and update it if it does.
+   </para>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+$c->drop();
+$c->update(array("uri" => "/summer_pics"), array('$inc' => array("page hits" => 1)), array("upsert" => true));
+var_dump($c->findOne());
+
+?>
+]]>
+   </programlisting>
+   &example.outputs.similar;
+   <screen>
+<![CDATA[
+array(3) {
+  ["_id"]=>
+  object(MongoId)#9 (0) {
+  }
+  ["uri"]=>
+  string(12) "/summer_pics"
+  ["page hits"]=>
+  int(1)
+}
+]]>
+   </screen>
+  </example>
+  <example>
+   <title><function>MongoCollection::update</function> multiple example</title>
+   <para>
+    By default, <function>MongoCollection::update</function> will only update
+    the first document matching $criteria that it finds.  Using the "multiple"
+    option can override this behavior, if needed.
+   </para>
+   <para>
+    This example adds a "gift" field to every person whose birthday is in the
+    next day.
+   </para>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+$today = array('$gt' => new MongoDate(), '$lt' => new MongoDate(strtotime("+1 day")));
+$people->update("birthday" => $today), array('$set' => array('gift' => $surprise), array("multiple" => true));
+
+?>
+]]>
+   </programlisting>
+  </example>
  </refsect1>
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <para>
+   MongoDB コアドキュメントの <link xlink:href="&url.mongodb.dochub.update;">update</link>
+   を参照ください。
+  </para>
+ </refsect1>
+
 </refentry>
 <!-- Keep this comment at the end of the file
 Local variables:
