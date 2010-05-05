@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 631a7e0046db9bf5ba2d3ddfa20f988e037974c9 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 5da1c6eac52c6626f59470896f301e2bba9bdb0e Maintainer: takagi Status: ready -->
 
 <refentry xml:id="datetime.construct" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -94,7 +94,13 @@
    <programlisting role="php">
 <![CDATA[
 <?php
-$date = new DateTime('2000-01-01');
+try {
+    $date = new DateTime('2000-01-01');
+} catch (Exception $e) {
+    echo $e->getMessage();
+    exit(1);
+}
+
 echo $date->format('Y-m-d');
 ?>
 ]]>
@@ -104,6 +110,14 @@ echo $date->format('Y-m-d');
 <![CDATA[
 <?php
 $date = date_create('2000-01-01');
+if (!$date) {
+    $e = date_get_last_errors();
+    foreach ($e['errors'] as $error) {
+        echo "$error\n";
+    }
+    exit(1);
+}
+
 echo date_format($date, 'Y-m-d');
 ?>
 ]]>
@@ -139,6 +153,10 @@ echo $date->format('Y-m-d H:i:sP') . "\n";
 // UNIX タイムスタンプの使用例。結果のタイムゾーンは UTC となることに注意しましょう。
 $date = new DateTime('@946684800');
 echo $date->format('Y-m-d H:i:sP') . "\n";
+
+// 存在しない値は繰り上がります
+$date = new DateTime('2000-02-30');
+echo $date->format('Y-m-d H:i:sP') . "\n";
 ?>
 ]]>
    </programlisting>
@@ -150,6 +168,7 @@ echo $date->format('Y-m-d H:i:sP') . "\n";
 2010-04-24 10:24:16-04:00
 2010-04-25 02:24:16+12:00
 2000-01-01 00:00:00+00:00
+2000-03-01 00:00:00-05:00
 ]]>
    </screen>
   </example>
