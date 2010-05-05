@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: af4410a7e15898c3dbe83d6ea38246745ed9c6fb Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 96c9d88bad9a7d7d44bfb7f26c226df7ee9ddf26 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: shimooka -->
 <refentry xmlns="http://docbook.org/ns/docbook" xml:id="function.flock">
  <refnamediv>
@@ -29,7 +29,7 @@
    (これは、アクセスする全プログラムが同一のロックの方法を使用する必要があり、
    そうでない場合は動作しないことを意味します)。
    デフォルトでは、要求したロックが確保されるまでこの関数はブロックします。
-   (非 Windows プラットフォームでは) 以下で説明する LOCK_MB
+   (非 Windows プラットフォームでは) 以下で説明する <constant>LOCK_NB</constant>
    オプションでこの挙動を制御することができます。
   </para>
  </refsect1>
@@ -73,14 +73,12 @@
           をセットします。
          </simpara>
         </listitem>
-        <listitem>
-         <simpara>
-          ロック中に <function>flock</function> でブロックを行いたくない場合は、
-          <constant>LOCK_NB</constant>
-          をセットします (Windows ではサポートされていません)。
-         </simpara>
-        </listitem>
        </itemizedlist>
+      </para>
+      <para>
+       上の操作のいずれかに <constant>LOCK_NB</constant> をビットマスクとして追加すれば、
+       ロック中に <function>flock</function> でブロックを行わないことができます
+       (Windows ではサポートされていません)。
       </para>
      </listitem>
     </varlistentry>
@@ -141,10 +139,10 @@
 <![CDATA[
 <?php
 
-$fp = fopen("/tmp/lock.txt", "w");
+$fp = fopen("/tmp/lock.txt", "r+");
 
 if (flock($fp, LOCK_EX)) { // 排他ロックを行います
-    ftruncate($fp, 0);  // ファイルを切り詰めます
+    ftruncate($fp, 0); // ファイルを切り詰めます
     fwrite($fp, "Write something here\n");
     flock($fp, LOCK_UN); // ロックを解放します
 } else {
@@ -158,6 +156,28 @@ fclose($fp);
     </programlisting>
    </example>
   </para>
+  <para>
+   <example>
+    <title><function>flock</function> で <constant>LOCK_NB</constant> オプションを使う例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$fp = fopen('/tmp/lock.txt', 'r+');
+
+/* LOCK_NB オプションを LOCK_EX で有効にします */
+if(!flock($fp, LOCK_EX | LOCK_NB)) {
+    echo 'Unable to obtain lock';
+    exit(-1);
+}
+
+/* ... */
+
+fclose($fp);
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
  </refsect1>
 
  <refsect1 role="notes">
@@ -165,6 +185,7 @@ fclose($fp);
   <note>
    <para>
     <function>flock</function> は、Windows 環境下では必ずロックを行います。
+    POSIX ベースの OS の中にも同様の動きをするものがあります。
    </para>
   </note>
   <note>
@@ -175,12 +196,19 @@ fclose($fp);
     特別なロックファイルを使用する必要があるかもしれません。
    </para>
   </note>
+  <note>
+   <para>
+    POSIX.1 準拠のシステムでは、スクリプトで <function>fclose</function>
+    を使ったときにそのファイルの <function>flock</function> を解放します。
+   </para>
+  </note>
   <warning>
    <para>
-    <function>flock</function> は NFS
-    及び他の多くのネットワークファイルシステムでは動作しません。
-    詳細についてはオペレーティングシステムのドキュメントを確認ください。
+    一連のコードで別の値を <parameter>handle</parameter> 引数に代入すると、
+    ロックを解放します。
    </para>
+  </warning>
+  <warning>
    <para>
     いくつかのオーペレーティングシステムで<function>flock</function>
     はプロセスレベルで実装されています。ISAPIのようなマルチスレッド

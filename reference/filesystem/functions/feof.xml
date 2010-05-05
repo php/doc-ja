@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: af4410a7e15898c3dbe83d6ea38246745ed9c6fb Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 96c9d88bad9a7d7d44bfb7f26c226df7ee9ddf26 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: shimooka -->
 <refentry xmlns="http://docbook.org/ns/docbook" xml:id="function.feof">
  <refnamediv>
@@ -45,13 +45,35 @@
  <refsect1 role="notes">
   &reftitle.notes;
   <warning>
-   <simpara>
-    もし <function>fsockopen</function> でオープンされた接続がサーバによって
-    閉じられていない場合、<function>feof</function>
-    はタイムアウトになるまで待ち、&true; を返します。
-    デフォルトのタイムアウト値は 60 秒です。この値を変更するには
-    <function>stream_set_timeout</function> を使用します。
-   </simpara>
+   <para>
+    <function>fsockopen</function>
+    でオープンした接続がサーバによって閉じられていない場合、<function>feof</function>
+    はハングします。回避策は以下の例を参照ください。
+    <example>
+     <title><function>feof</function> のタイムアウト処理</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+function safe_feof($fp, &start = NULL) {
+ $start = microtime(true);
+
+ return feof($fp);
+}
+
+/* $fp は事前に fsockopen() でオープンしているものとします */
+
+$start = NULL;
+$timeout = ini_get('default_socket_timeout');
+
+while(!safe_feof($fp, $start) && (microtime(true) - $start) < $timeout)
+{
+ /* 処理 */
+}
+?>
+]]>
+     </programlisting>
+    </example>
+   </para>
   </warning>
   <warning>
    <para>
@@ -60,7 +82,7 @@
     <example>
      <title><function>feof</function> に無効なファイルポインタを使用する例</title>
      <programlisting role="php">
- <![CDATA[
+<![CDATA[
 <?php
 // ファイルを読み込めなかったりファイルが存在しなかったりした場合、
 // fopen 関数は FALSE を返します。
