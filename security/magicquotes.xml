@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 9aff12cf574c8ce7552caa334676c328678525f6 Maintainer: shimooka Status: ready -->
+<!-- EN-Revision: ab6785b01ce1006e3a9761988575289f40c9b678 Maintainer: shimooka Status: ready -->
 <!-- CREDITS: hirokawa -->
 <chapter xml:id="security.magicquotes" xmlns="http://docbook.org/ns/docbook">
   <title>マジッククオート</title>
    &warn.deprecated.feature-5-3-0.removed-6-0-0;
   <para>
-   マジッククオートは、PHPスクリプトに入力されるデータを
+   マジッククオートは、<acronym>PHP</acronym>スクリプトに入力されるデータを
    自動的にエスケープする機能です。
    コードでは、マジッククオートをオフにして
    実行する際必要な時にデータをエスケープすることが望まれます。
@@ -29,9 +29,9 @@
       <link linkend="ini.magic-quotes-gpc">magic_quotes_gpc</link>
      </simpara>
      <simpara>
-      HTTPリクエストデータ(GET, POST, そして COOKIE)に作用します。
+      <acronym>HTTP</acronym>リクエストデータ(GET, POST, そして COOKIE)に作用します。
       実行時に設定することはできません。
-      PHPのデフォルトは、<emphasis>on</emphasis>です。
+      <acronym>PHP</acronym>のデフォルトは、<emphasis>on</emphasis>です。
      </simpara>
      <simpara>
       <function>get_magic_quotes_gpc</function>も参照してください。
@@ -45,7 +45,7 @@
       有効な場合、データベースやテキストファイルを含む
       外部ソースからデータを返す関数の多くは、
       バックスラッシュをクオートでエスケープします。
-      実行時に設定することができ、PHPでのデフォルトは
+      実行時に設定することができ、<acronym>PHP</acronym>でのデフォルトは
       <emphasis>off</emphasis>です。
      </simpara>
      <simpara>
@@ -81,7 +81,7 @@
      <listitem>
       <simpara>
        もはやマジッククオートを使う理由はありません。
-       PHP ではサポートされなくなるからです。以前は確かに存在し、
+       <acronym>PHP</acronym> ではサポートされなくなるからです。以前は確かに存在し、
        特に意識せずによりよい (安全な) コードを書けるという意味で
        一部の初心者の助けとなっていました。
        しかし、この挙動を前提としたコードを見かけたときは
@@ -211,19 +211,19 @@ php_flag magic_quotes_gpc Off
 <![CDATA[
 <?php
 if (get_magic_quotes_gpc()) {
-    function stripslashes_deep($value)
-    {
-        $value = is_array($value) ?
-                    array_map('stripslashes_deep', $value) :
-                    stripslashes($value);
-
-        return $value;
+    $process = array(&$_GET, &$_POST, &$_COOKIE, &$_REQUEST);
+    while (list($key, $val) = each($process)) {
+        foreach ($val as $k => $v) {
+            unset($process[$key][$k]);
+            if (is_array($v)) {
+                $process[$key][stripslashes($k)] = $v;
+                $process[] = &$process[$key][stripslashes($k)];
+            } else {
+                $process[$key][stripslashes($k)] = stripslashes($v);
+            }
+        }
     }
-
-    $_POST = array_map('stripslashes_deep', $_POST);
-    $_GET = array_map('stripslashes_deep', $_GET);
-    $_COOKIE = array_map('stripslashes_deep', $_COOKIE);
-    $_REQUEST = array_map('stripslashes_deep', $_REQUEST);
+    unset($process);
 }
 ?>
 ]]>
