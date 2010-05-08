@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: af4410a7e15898c3dbe83d6ea38246745ed9c6fb Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: b1ff25f2fb23215a3d80d166c3b1ce2f2d7f0e8e Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi -->
 <refentry xml:id="function.exit" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -20,6 +20,9 @@
   </methodsynopsis>
   <para>
    スクリプトの実行を終了します。
+   <link linkend="function.register-shutdown-function">シャットダウン関数</link>
+   や <link linkend="language.oop5.decon.destructor">オブジェクトのデストラクタ</link>
+   は、<function>exit</function> がコールされた場合にも実行されます。
   </para>
  </refsect1>
 
@@ -35,8 +38,8 @@
        <parameter>status</parameter> を表示します。
       </para>
       <para>
-       <parameter>status</parameter> が <type>integer</type> の場合は、
-       その値は終了ステータスとしても用いられます。終了ステータスは
+       <parameter>status</parameter> が <type>integer</type> の場合は
+       その値が終了ステータスとして使われ、表示はされません。終了ステータスは
        0 から 254 までの値でなければなりません。終了ステータス 255 は
        PHP に予約されており、使用してはいけません。ステータス 0 は、
        プログラムを正常終了させる際に使用します。
@@ -97,6 +100,42 @@ exit(0376); // 八進数
 ?>
 ]]>
     </programlisting>
+   </example>
+  </para>
+  <para>
+   <example>
+    <title>シャットダウン関数やデストラクタが実行される例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+class Foo
+{
+    public function __destruct()
+    {
+        echo 'Destruct: ' . __METHOD__ . '()' . PHP_EOL;
+    }
+}
+
+function shutdown()
+{
+    echo 'Shutdown: ' . __FUNCTION__ . '()' . PHP_EOL;
+}
+
+$foo = new Foo();
+register_shutdown_function('shutdown');
+
+exit();
+echo 'これは出力されません。';
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+ <![CDATA[
+ Shutdown: shutdown()
+ Destruct: Foo::__destruct()
+ ]]>
+    </screen>
    </example>
   </para>
  </refsect1>
