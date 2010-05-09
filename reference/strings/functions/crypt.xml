@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 316087ba956dda93cd2cd36de13782c33b73e3c2 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 957d01e3508598f9b6e280e1d5340763630e6150 Maintainer: hirokawa Status: working -->
 <!-- CREDITS: shimooka -->
-<refentry xmlns="http://docbook.org/ns/docbook" xml:id="function.crypt">
+<refentry xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://docbook.org/ns/docbook" xml:id="function.crypt">
  <refnamediv>
   <refname>crypt</refname>
-  <refpurpose>文字列の一方向の暗号化 (ハッシュ化) を行う</refpurpose>
+  <refpurpose>文字列の一方向のハッシュ化を行う</refpurpose>
  </refnamediv>
 
  <refsect1 role="description">
@@ -16,54 +16,86 @@
    <methodparam choice="opt"><type>string</type><parameter>salt</parameter></methodparam>
   </methodsynopsis>
   <para>
-   <function>crypt</function> は暗号化した文字列を返します。
-   Unix 標準の <abbrev>DES</abbrev> ベースの暗号化方式か、
-   あるいはそのシステム上で使用できるその他のアルゴリズムを使用します。
+   <function>crypt</function> 文字列のハッシュを返します。
+   Unix 標準の <abbrev>DES</abbrev> ベースのアルゴリズムか、
+   あるいはシステム上で使えるその他のアルゴリズムを使用します。
   </para>
   <para>
-   複数の暗号化方式をサポートしているオペレーティングシステムもあります。
-   実際、標準の DES ベースの暗号化方式を MD5 ベースのものに置き換えることもあります。
-   暗号化方式は、salt 引数によって決まります。
-   PHP のインストール時に、そのシステムで使用できる暗号化関数を判別します。
-   salt を省略した場合は、デフォルトで 2 文字の salt を自動生成します。
-   ただし、そのシステムのデフォルトの暗号化方式が MD5
-   の場合は、MD5 互換のランダムな salt を生成します。
-   PHP の定数 <constant>CRYPT_SALT_LENGTH</constant>
-   を確認すると、そのシステムで使用できる salt
-   が通常の 2 文字のものなのか 12 文字のものが使用できるのかがわかります。
+   複数のハッシュ方式をサポートしているオペレーティングシステムもあります。
+   実際、標準の DES ベースのアルゴリズムを MD5 ベースのものに置き換えることもあります。
+   ハッシュ方式は、salt 引数によって決まります。
+   PHP 5.3 より前のバージョンでは、PHP のインストール時に、
+   システムの crypt() 関数から使用できるアルゴリズムを判別します。
+   salt を省略した場合は、標準の 2 文字 (DES) の salt を自動生成します。
+   あるいは、MD5 crypt() が使えれば 12 文字 (MD5) の salt を自動生成します。
+   PHP の定数 <constant>CRYPT_SALT_LENGTH</constant> には、
+   ハッシュで使用できる salt の最大長が格納されています。
   </para>
   <para>
-   標準の DES ベースの暗号化の場合、<function>crypt</function>
+   標準の DES ベースの場合、<function>crypt</function>
    は出力の最初の 2 文字を salt として使用します。また、
    <parameter>str</parameter> の最初の 8 文字しか使用しません。
    つまり、最初の 8 文字が同じである長い文字列は、
    同じ salt を使う限り同じ結果となります。
   </para>
   <simpara>
-   crypt() が複数の暗号化方式をサポートしているシステムでは、
+   crypt() が複数のハッシュ方式をサポートしているシステムでは、
    その方式が使用可能かどうかによって次の定数群が
    0 か 1 に設定されます。
   </simpara>
   <itemizedlist>
    <listitem>
     <simpara>
-     <constant>CRYPT_STD_DES</constant> - 標準の DES ベースの暗号化方式で、2 文字の salt を使用するもの
+     <constant>CRYPT_STD_DES</constant> - 標準の DES ベースのハッシュで、
+       アルファベット "./0-9A-Za-z" からなる 2 文字の salt を使用するもの。
+       salt として無効な文字を使うと crypt() は失敗します。
     </simpara>
    </listitem>
    <listitem>
     <simpara>
-     <constant>CRYPT_EXT_DES</constant> - 拡張した DES ベースの暗号化方式で、9 文字の salt を使用するもの
+     <constant>CRYPT_EXT_DES</constant> - 拡張した DES ベースのハッシュ。"salt" は 9 文字で、
+     9-character string consisting of an underscore followed by 4 bytes of iteration count and
+     4 bytes of salt. 
+     These are encoded as printable characters, 6 bits per character, least
+     significant character first. 
+     The values 0 to 63 are encoded as "./0-9A-Za-z". Using invalid
+     characters in the salt will cause crypt() to fail.
     </simpara>
    </listitem>
    <listitem>
     <simpara>
-     <constant>CRYPT_MD5</constant> - $1$ ではじまる 12 文字の salt を使用する MD5 暗号化方式
+     <constant>CRYPT_MD5</constant> - $1$ ではじまる 12 文字の salt を使用する MD5 ハッシュ。
     </simpara>
    </listitem>
    <listitem>
     <simpara>
-     <constant>CRYPT_BLOWFISH</constant> - $2$ あるいは $2a$ ではじまる 16 文字の salt
-     を使用する Blowfish 暗号化方式
+     <constant>CRYPT_BLOWFISH</constant> - Blowfish ハッシュ。salt の形式は、
+     "$2a$"、2 桁のコストパラメータ、"$"、そして アルファベット "./0-9A-Za-z"
+     からなる 22 進数 64 桁となります。
+     Using characters outside of this range in the salt will cause crypt() to
+     return a zero-length string. The two digit cost parameter is the base-2 logarithm of the
+     iteration count for the underlying Blowfish-based hashing algorithmeter and must be in
+     range 04-31, values outside this range will cause crypt() to fail.
+    </simpara>
+   </listitem>
+   <listitem>
+    <simpara>
+     <constant>CRYPT_SHA256</constant> - SHA-256 hash with a sixteen character salt
+     prefixed with $5$. If the salt string starts with 'rounds=&lt;N&gt;$', the numeric value of N
+     is used to indicate how many times the hashing loop should be executed, much like the cost
+     parameter on Blowfish. The default number of rounds is 5000, there is a minimum of
+     1000 and a maximum of 999,999,999. Any selection of N outside this range will be truncated to
+     the nearest limit.
+    </simpara>
+   </listitem>
+   <listitem>
+    <simpara>
+     <constant>CRYPT_SHA512</constant> - SHA-512 hash with a sixteen character salt
+     prefixed with $6$. If the salt string starts with 'rounds=&lt;N&gt;$', the numeric value of N
+     is used to indicate how many times the hashing loop should be executed, much like the cost
+     parameter on Blowfish. The default number of rounds is 5000, there is a minimum of
+     1000 and a maximum of 999,999,999. Any selection of N outside this range will be truncated to
+     the nearest limit.
     </simpara>
    </listitem>
   </itemizedlist>
@@ -83,7 +115,7 @@
      <term><parameter>str</parameter></term>
      <listitem>
       <para>
-       暗号化したい文字列。
+       ハッシュしたい文字列。
       </para>
      </listitem>
     </varlistentry>
@@ -91,7 +123,7 @@
      <term><parameter>salt</parameter></term>
      <listitem>
       <para>
-       暗号化のもととなる salt 文字列。省略した場合は、
+       ハッシュのもととなる salt 文字列。省略した場合は、
        この関数がコールされるたびに PHP がランダムな値を生成します。
       </para>
       <para>
@@ -109,7 +141,8 @@
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
-   暗号化した文字列を返します。
+   ハッシュした文字列を返します。
+   失敗した場合は、salt とは異なることが保証されている 13 文字未満の文字列を返します。
   </para>
  </refsect1>
 
@@ -125,6 +158,20 @@
       </row>
      </thead>
      <tbody>
+      <row>
+       <entry>5.3.2</entry>
+       <entry>
+        Added SHA-256 and SHA-512 crypt based on Ulrich Drepper's 
+        <link xlink:href="&url.crypt.sha;">implementation</link>.
+       </entry>
+      </row>
+      <row>
+       <entry>5.3.2</entry>
+       <entry>
+        Fixed Blowfish behaviour on invalid rounds to return "failure" 
+        string ("*0" or "*1"), instead of falling back to DES.
+       </entry>
+      </row>
       <row>
        <entry>5.3.0</entry>
        <entry>
@@ -179,7 +226,7 @@ $hash = crypt($password);
   </para>
   <para>
    <example>
-    <title>異なる暗号化手法を用いた <function>crypt</function> の例</title>
+    <title>異なるハッシュ形式を用いた <function>crypt</function> の例</title>
     <programlisting role="php">
 <![CDATA[
 <?php
@@ -198,16 +245,26 @@ if (CRYPT_MD5 == 1) {
 if (CRYPT_BLOWFISH == 1) {
     echo 'Blowfish:     ' . crypt('rasmuslerdorf', '$2a$07$usesomesillystringforsalt$') . "\n";
 }
+
+if (CRYPT_SHA256 == 1) {
+    echo 'SHA-256:      ' . crypt('rasmuslerdorf', '$5$rounds=5000$usesomesillystringforsalt$') . "\n";
+}
+
+if (CRYPT_SHA512 == 1) {
+    echo 'SHA-512:      ' . crypt('rasmuslerdorf', '$6$rounds=5000$usesomesillystringforsalt$') . "\n";
+}
 ?>
 ]]>
     </programlisting>
-     &example.outputs.similar;
+    &example.outputs.similar;
     <screen>
 <![CDATA[
 Standard DES: rl.3StKT.4T8M
 Extended DES: _J9..rasmBYk8r9AiWNc
 MD5:          $1$rasmusle$rISCgZzpwk3UhDidwXvin0
 Blowfish:     $2a$07$usesomesillystringfore2uDLvp1Ii2e./U9C8sBjqp8I90dH6hi
+SHA-256:      $5$rounds=5000$usesomesillystri$KqJWpanXZHKq2BOB43TSaYhEWsQ1Lr5QNyPCDH/Tp.6
+SHA-512:      $6$rounds=5000$usesomesillystri$D4IrlXatmP7rx3P3InaxBeoomnAihCKRVQP22JZ6EY47Wc6BkroIuUUBOov1i.S5KPgErtP/EN5mcO.ChWQW21
 ]]>
     </screen>
    </example>
