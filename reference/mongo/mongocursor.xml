@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: f96b346ba564453a7343706bde5b5817d3d83a6c Maintainer: takagi Status: working -->
+<!-- EN-Revision: 9bd7ff84794cde343127e864da941458fb305069 Maintainer: takagi Status: ready -->
 
 <phpdoc:classref xml:id="class.mongocursor" xmlns:phpdoc="http://php.net/ns/phpdoc" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xi="http://www.w3.org/2001/XInclude">
 
@@ -16,22 +16,21 @@
     データベースクエリの結果を表すオブジェクトです。
    </para>
    <para>
-    A <classname>MongoCursor</classname> has two "life stages": pre- and post-
-    query.  A cursor can be created manually by calling the constructor, but it
-    is most often created by calling <function>MongoCollection::find</function>.
-    When a cursor is created, it has not yet contacted the database, so it is in
-    its pre-query state.  In this state, the client can further specify what
-    they want the query to do, including adding limits, skips, sorts, and more
-    advanced options.
+    <classname>MongoCursor</classname> には二段階の「ライフステージ」があります。
+    クエリ前とクエリ後です。カーソルを作成するにはコンストラクタをコールすることもできますが、
+    たいていは <function>MongoCollection::find</function> をコールすることになります。
+    カーソルを作った時点ではまだデータベースに接続していません。
+    つまり、クエリ前の段階です。この段階では、クエリに何をしてほしいのかをさらに指定することができます。
+    取得数の制限や読み飛ばし、ソートなどのオプションを指定できるのです。
    </para>
    <para>
-    When the client attempts to get a result (by calling 
-    <function>MongoCursor::next</function>, directly or indirectly), the cursor
-    moves into the post-query stage.  At this point, the query has been executed
-    by the database and cannot be modified anymore.  At this point, the only
-    functions available are the <classname>Iterator</classname> functions, 
-    <function>MongoCursor::hasNext</function>, and 
-    <function>MongoCursor::getNext</function>.
+    クライアントが結果を取得しようとする (直接的あるいは間接的に
+    <function>MongoCursor::next</function> をコールする) と、
+    そのカーソルはクエリ後の段階に進みます。この時点では
+    すでにデータベースでクエリが実行されており、クエリを変更することはできません。
+    使える関数は、<classname>Iterator</classname> の関数や
+    <function>MongoCursor::hasNext</function>、および
+    <function>MongoCursor::getNext</function> だけとなります。
    </para>
    <para>
     <programlisting role="php">
@@ -78,12 +77,48 @@ $cursor->skip(4);
      <varname>slaveOkay</varname>
      <initializer>&false;</initializer>
     </fieldsynopsis>
+    <fieldsynopsis>
+     <modifier>static</modifier>
+     <type>integer</type>
+     <varname>timeout</varname>
+     <initializer>20000</initializer>
+    </fieldsynopsis>
 
     <classsynopsisinfo role="comment">&Methods;</classsynopsisinfo>
     <xi:include xpointer="xmlns(db=http://docbook.org/ns/docbook) xpointer(id('class.mongocursor')/db:refentry/db:refsect1[@role='description']/descendant::db:methodsynopsis[1])" />
    </classsynopsis>
    <!-- }}} -->
 
+  </section>
+
+  <section>
+   <title>静的変数</title>
+
+   <variablelist>
+    <varlistentry>
+     <term><property>MongoCursor::slaveOkay</property></term>
+     <listitem>
+      <para>
+       クエリに "slaveOkay" フラグが設定されていると、スレーブ側での読み込みを許可します
+       (スレーブは、デフォルトでは単なるバックアップ用であり読み込みはできません)。
+       <function>MongoCursor::slaveOkay</function> で上書きすることができます。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><property>MongoCursor::timeout</property></term>
+     <listitem>
+      <para>
+       データベースからのすべての応答に対するタイムアウトをミリ秒単位で設定します。
+       ずっと待ち続ける場合は -1 を指定します。
+       <function>MongoCursor::timeout</function> で上書きすることができます。
+       これは MongoDB サーバに対する操作をキャンセルするわけではなく、
+       単にドライバ側で応答を待つのをやめて
+       MongoCursorTimeoutException をスローするだけです。
+      </para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
   </section>
 
   <section>
