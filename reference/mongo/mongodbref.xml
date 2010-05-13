@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 41251fe567724b9f453d7cecf1ddecf27cb94bd3 Maintainer: takagi Status: working -->
+<!-- EN-Revision: 41251fe567724b9f453d7cecf1ddecf27cb94bd3 Maintainer: takagi Status: ready -->
 
 <phpdoc:classref xml:id="class.mongodbref" xmlns:phpdoc="http://php.net/ns/phpdoc" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xi="http://www.w3.org/2001/XInclude">
 
@@ -16,11 +16,10 @@
     このクラスを使用して、別々のコレクション内にあるオブジェクト間の軽量なリンクを作成します。
    </para>
    <para>
-    <emphasis>Motivation</emphasis>: Suppose we need to refer to a document in 
-    another collection. The easiest way is to create a field in the current 
-    document.  For example, if we had a "people" collection and an "addresses"
-    collection, we might want to create a link between each person document and
-    and address document:
+    <emphasis>動機</emphasis>: 別のコレクションにあるドキュメントを参照する必要が出てきたとしましょう。
+    いちばん簡単な方法は、現在のドキュメントにフィールドを作ることです。
+    たとえば、"people" コレクションと "addresses" コレクションがあるときに
+    人物のドキュメントと住所のドキュメントをリンクさせたいことがあるでしょう。
     <programlisting role="php">
 <![CDATA[
 <?php
@@ -34,10 +33,10 @@ $myAddress = array("line 1" => "123 Main Street",
     "state" => "Vermont",
     "country" => "USA");
 
-// save the address
+// 住所を保存します
 $addresses->insert($myAddress);
 
-// save a person with a reference to the address
+// その住所を参照する人物を保存します
 $me = array("name" => "Fred", "address" => $myAddress['_id']);
 $people->insert($me);
 
@@ -46,34 +45,33 @@ $people->insert($me);
     </programlisting>
    </para>
    <para>
-    Then, later on, we can find the person's address by querying the "addresses"
-    collection with the <classname>MongoId</classname> we saved in the "people"
-    collection.
+    そうすれば、誰かの住所を知りたくなったときには、
+    "people" コレクションに保存した <classname>MongoId</classname>
+    を使って "addresses" コレクションを検索することができます。
    </para>
    <para>
-    Suppose now that we have a more general case, where we don't know which
-    collection (or even which database) contains the referenced document.  
-    <classname>MongoDBRef</classname> is a good choice for this case, as it is a
-    common format that all of the drivers and the database understand.
+    もう少し一般化してみましょう。参照したいドキュメントがどのコレクション
+    (あるいはどのデータベース) にあるかわからない場合です。こんな場合に
+    <classname>MongoDBRef</classname> が使えます。
+    これは共通のフォーマットであり、すべてのドライバやデータベースが理解できるからです。
    </para>
    <para>
-    If each person had a list of things they liked which could come from
-    multiple collections, such as "hobbies", "sports", "books", etc., we could
-    use <classname>MongoDBRef</classname>s to keep track of what "like" went
-    with what collection:
+    各個人が「好きなもの」リストを持っており、それはいろいろなコレクション
+    ("hobbies", "sports", "books" など) にあるとしましょう。
+    <classname>MongoDBRef</classname> を使えば、それぞれがどのコレクションからのものかを管理できます。
     <programlisting role="php">
 <![CDATA[
 <?php
 
 $people = $db->selectCollection("people");
 
-// model trains are in the "hobbies" collection
+// 鉄道模型は "hobbies" コレクションにあります
 $trainRef = MongoDBRef::create("hobbies", $modelTrains['_id']);
-// soccer is in the "sports" collection
+// サッカーは "sports" コレクションにあります
 $soccerRef = MongoDBRef::create("sports", $soccer['_id']);
 
-// now we'll know what collections the items in the "likes" array came from when
-// we retrieve this document
+// このドキュメントを取得したときに、"likes" 配列の各項目がどのドキュメントのものなのかを
+// 知ることができます
 $people->insert(array("name" => "Fred", "likes" => array($trainRef, $soccerRef)));
 
 ?>
