@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- $Revision$ -->
-<!-- EN-Revision: af4410a7e15898c3dbe83d6ea38246745ed9c6fb Maintainer: shimooka Status: ready -->
+<!-- EN-Revision: 96c9d88bad9a7d7d44bfb7f26c226df7ee9ddf26 Maintainer: shimooka Status: ready -->
 <refentry xml:id="function.oci-statement-type" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>oci_statement_type</refname>
-  <refpurpose>OCI ステートメントの種類を返す</refpurpose>
+  <refpurpose>ステートメントの種類を返す</refpurpose>
  </refnamediv>
  
  <refsect1 role="description">
@@ -15,7 +15,7 @@
   </methodsynopsis>
   <para>
    OCI ステートメント <parameter>statement</parameter>
-   の種類を返します。
+   の種類をあらわすキーワードを返します。
   </para>
  </refsect1>
 
@@ -27,7 +27,7 @@
      <term><parameter>statement</parameter></term>
      <listitem>
       <para>
-       有効な OCI ステートメント ID。
+       <function>oci_parse</function> が返す、有効な OCI8 ステートメント ID。
       </para>
      </listitem>
     </varlistentry>
@@ -39,21 +39,66 @@
   &reftitle.returnvalues;
   <para>
    ステートメント <parameter>statement</parameter>
-   のクエリの種類を次のいずれかの値で返します。
-   <orderedlist>
-    <listitem><simpara><literal>SELECT</literal></simpara></listitem>
-    <listitem><simpara><literal>UPDATE</literal></simpara></listitem>
-    <listitem><simpara><literal>DELETE</literal></simpara></listitem>
-    <listitem><simpara><literal>INSERT</literal></simpara></listitem>
-    <listitem><simpara><literal>CREATE</literal></simpara></listitem>
-    <listitem><simpara><literal>DROP</literal></simpara></listitem>
-    <listitem><simpara><literal>ALTER</literal></simpara></listitem>
-    <listitem><simpara><literal>BEGIN</literal></simpara></listitem>
-    <listitem><simpara><literal>DECLARE</literal></simpara></listitem>
-    <listitem><simpara><literal>CALL</literal> (PHP 5.2.1 および OCI8
-      1.2.3 以降)</simpara></listitem>
-    <listitem><simpara><literal>UNKNOWN</literal></simpara></listitem>
-   </orderedlist>
+   の種類を次のいずれかの値で返します。
+   <table>
+    <title>ステートメントの種類</title>
+    <tgroup cols="2">
+     <thead>
+      <row>
+       <entry>返される文字列</entry>
+       <entry>注意</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry><literal>ALTER</literal></entry>
+       <entry>&nbsp;</entry>
+      </row>
+      <row>
+       <entry><literal>BEGIN</literal></entry>
+       <entry>&nbsp;</entry>
+      </row>
+      <row>
+       <entry><literal>CALL</literal></entry>
+       <entry>PHP 5.2.1 (PECL OCI8 1.2.3) 以降で使用可能です。</entry>
+      </row>
+      <row>
+       <entry><literal>CREATE</literal></entry>
+       <entry>&nbsp;</entry>
+      </row>
+      <row>
+       <entry><literal>DECLARE</literal></entry>
+       <entry>&nbsp;</entry>
+      </row>
+      <row>
+       <entry><literal>DELETE</literal></entry>
+       <entry>&nbsp;</entry>
+      </row>
+      <row>
+       <entry><literal>DROP</literal></entry>
+       <entry>&nbsp;</entry>
+      </row>
+      <row>
+       <entry><literal>INSERT</literal></entry>
+       <entry>&nbsp;</entry>
+      </row>
+      <row>
+       <entry><literal>SELECT</literal></entry>
+       <entry>&nbsp;</entry>
+      </row>
+      <row>
+       <entry><literal>UPDATE</literal></entry>
+       <entry>&nbsp;</entry>
+      </row>
+      <row>
+       <entry><literal>UNKNOWN</literal></entry>
+       <entry>&nbsp;</entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </table>
+  </para>
+  <para>
    エラー時には &false; を返します。
   </para>
  </refsect1>
@@ -66,15 +111,20 @@
     <programlisting role="php">
 <![CDATA[
 <?php
-    $conn = oci_connect("scott", "tiger");
-    $sql  = "delete from emp where deptno = 10";
 
-    $stmt = oci_parse($conn, $sql);
-    if (oci_statement_type($stmt) == "DELETE") {
-        die("このテーブルを削除することはできません<br />");
-    }
+$conn = oci_connect('hr', 'welcome', 'localhost/XE');
 
-    oci_close($conn);
+$stid = oci_parse($conn, 'DELETE FROM departments WHERE department_id = 130;');
+if (oci_statement_type($stid) == "DELETE") {
+    trigger_error('このテーブルを削除する権限がありません', E_USER_ERROR);
+}
+else {
+    oci_execute($stid);  // 行を削除します
+}
+
+oci_free_statement($stid);
+oci_close($conn);
+
 ?>
 ]]>
     </programlisting>
@@ -89,9 +139,7 @@
     PHP バージョン 5.0.0 以前では、代わりに
     <function>ocistatementtype</function>
     を使用しなければなりません。
-    まだこの名前を使用することができ、下位互換性のため
-    <function>oci_fetch_all</function> への別名として残されていますが、
-    推奨されません。
+    &oci.name.compat.note;
    </para>
   </note>
  </refsect1>
