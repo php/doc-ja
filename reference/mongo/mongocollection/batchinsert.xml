@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 13d9a87041ee11fbffc2846d5c643344c9bc5d58 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 59e9f400e0800d86ce02de1868d80433940ebd82 Maintainer: takagi Status: ready -->
 
 <refentry xml:id="mongocollection.batchinsert" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -106,29 +106,40 @@
    <programlisting role="php">
 <![CDATA[
 <?php
-$batch = array();
-for ($i=0; $i<100; $i++) {
-  $batch[] = array("i" => i);
+
+$users = array();
+for ($i = 0; $i<100; $i++) {
+  $users[] = array('username' => 'user'.$i, 'i' => $i);
 }
 
-$m = new Mongo();
-$c = $m->foo->bar->baz;
-$c->batchInsert($batch);
+$mongo = new Mongo();
+$collection = $mongo->my_db->users;
+$collection->drop();
 
-$cursor = $c->find()->sort(array("i" => 1));
-while ($cursor->hasNext()) {
-  $obj = $cursor->next();
-  var_dump($obj["i"]);
+$collection->batchInsert($users);
+
+foreach ($users as $user) {
+  echo $user['_id']."\n"; // MongoId のインスタンスが格納されています
 }
+
+$users = $collection->find()->sort(array('i' => 1));
+foreach ($users as $user) {
+    var_dump($user['username']);
+}
+
 ?>
 ]]>
    </programlisting>
    &example.outputs.similar;
    <screen>
 <![CDATA[
-int(0)
-int(1)
-int(2)
+4bf43ac68ead0e1971000000
+4bf43ac68ead0e1971010000
+4bf43ac68ead0e1971020000
+...
+string(5) "user1"
+string(5) "user2"
+string(5) "user3"
 ...
 ]]>
    </screen>
