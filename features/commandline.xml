@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 96c9d88bad9a7d7d44bfb7f26c226df7ee9ddf26 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 89a79ec8c9a229e85d7d2b3ab472e0b241c3351f Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: shimooka,takagi -->
 <chapter xml:id="features.commandline" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>PHP をコマンドラインから使用する</title>
@@ -370,30 +370,10 @@ Usage: php [options] [-f] <file> [--] [args...]
        <entry>--interactive</entry>
        <entry>
         <para>
-         PHP を対話的に実行します。PHP のコンパイル時に <link
-          linkend="ref.readline">Readline</link> 拡張モジュール（Windows 
-         版では利用できません）を含めた場合、補完（例: 変数名の一部を
-         入力して TAB キーを押すと、PHP が完全な変数名に変換する）・
-         矢印キーによるコマンド履歴
-         などの高度な機能が利用できます。コマンドの履歴は
-         <filename>~/.php_history</filename> ファイルに保存されます。
+         PHP を対話的に実行します。詳細な情報は、<link
+         linkend="features.commandline.interactive">対話シェル</link>
+         を参照ください。
         </para>
-        <note>
-         <para>
-          <link
-          linkend="ini.auto-prepend-file">auto_prepend_file</link> および <link
-          linkend="ini.auto-append-file">auto_append_file</link> で
-          インクルードされたファイルはこのモードでもパースされますが、
-          いくつかの制限があります。例えば、関数はそれがコールされる前に
-          定義されていなければなりません。
-         </para>
-        </note>
-        <note>
-         <para>
-          <link linkend="language.oop5.autoload">オートローディング</link>
-          は、PHP を CLI 対話シェルで実行している場合は使用できません。
-         </para>
-        </note>
        </entry>
       </row>
       <row>
@@ -1417,6 +1397,203 @@ php -r 'fwrite(STDERR, "stderr\n");'
   </note>
  </section>
  <!--}}}-->
+
+ <!--Interactive shell: {{{-->
+ <section xml:id="features.commandline.interactive">
+  <title>対話シェル</title>
+
+  <para>
+   PHP 5.1.0 以降では、<option
+   role="configure">--with-readline</option> オプションつきで
+   PHP をコンパイルした場合に &cli.sapi; で対話シェルが使えるようになりました。
+   対話シェルは、<option>-a</option> オプションで使うことができます。
+  </para>
+
+  <para>
+   対話シェルを使うと、PHP のコードを打ち込んで直接実行できるようになります。
+  </para>
+
+  <example>
+   <title>対話シェル上でのコードの実行</title> 
+   <programlisting role="shell">
+<![CDATA[
+$ php -a
+Interactive shell
+
+php > echo 5+8;
+13
+php > function addTwo($n)
+php > {
+php { return $n + 2;
+php { }
+php > var_dump(addtwo(2));
+int(4)
+php > 
+]]>
+   </programlisting>
+  </example>
+
+  <para>
+   対話シェル上では、タブ補完機能を使って
+   関数や定数、クラス名、変数名、静的なメソッドコール、そしてクラス定数を補完することができます。
+  </para>
+
+  <example>
+   <title>タブ補完</title>
+   <simpara>
+    補完候補が複数あるときにタブキーを二度押すと、
+    補完候補の一覧が表示されます。
+   </simpara>
+   <programlisting role="shell">
+<![CDATA[
+php > strp[TAB][TAB]
+strpbrk   strpos    strptime  
+php > strp
+]]>
+   </programlisting>
+   <simpara>
+    候補がひとつしかないときは、タブキーを一度押せば残りを補完してくれます。
+   </simpara>
+   <programlisting role="shell">
+<![CDATA[
+php > strpt[TAB]ime(
+]]>
+   </programlisting>
+   <simpara>
+    対話シェルのセッション上で定義したものについても補完することができます。
+   </simpara>
+   <programlisting role="shell">
+<![CDATA[
+php > $fooThisIsAReallyLongVariableName = 42;
+php > $foo[TAB]ThisIsAReallyLongVariableName
+]]>
+   </programlisting>
+  </example>
+
+  <para>
+   対話シェル上では操作履歴が保存され、上矢印キーと下矢印キーで履歴にアクセスすることができます。
+   履歴の保存先は <filename>~/.php_history</filename> ファイルです。
+  </para>
+
+  <!-- NOT YET AVAILABLE, UNCOMMENT AND FIX VERSIONS WHEN RELEASED
+  <para>
+   [whatever becomes the next version] 以降、&cli.sapi; に二つの新たな
+   &php.ini; 設定が追加されました。<parameter>cli.pager</parameter> と
+   <parameter>cli.prompt</parameter> です。<parameter>cli.pager</parameter>
+   は、外部のプログラム (<filename>less</filename> など)
+   を出力のページャとして指定することができます。
+   出力が画面に直接送られるかわりに、このページャに送られるようになります。
+   <parameter>cli.prompt</parameter> を指定すると、
+   <literal>php &gt;</literal> プロンプトを変更することができます。
+  </para>
+
+  <para>
+   また、[whatever becoems the next version] 以降では、対話シェルの中で
+   &php.ini; 項目を設定する際に短縮記法が使えるようにもなりました。
+  </para>
+
+  <example>
+   <title>対話シェル内での &php.ini; の設定</title>
+   <simpara>
+    <parameter>cli.prompt</parameter> を設定します。
+   </simpara>
+   <programlisting role="shell">
+<![CDATA[
+php > #cli.prompt=hello world :> 
+hello world :> 
+]]>
+   </programlisting>
+   <simpara>
+    バッククォートを使うと、PHP のコードの実行結果をプロンプトとして用いることができます。
+   </simpara>
+   <programlisting role="shell">
+<![CDATA[
+php > #cli.prompt=`echo date('H:i:s');` php > 
+15:49:35 php > echo 'hi';
+hi
+15:49:43 php > sleep(2);
+15:49:45 php > 
+]]>
+   </programlisting>
+   <simpara>
+    ページャを <filename>less</filename> に設定します。
+   </simpara>
+   <programlisting role="shell">
+<![CDATA[
+php > #cli.pager=less
+php > phpinfo();
+(出力が less に送られます)
+php > 
+]]>
+   </programlisting>
+  </example>
+
+  <para>
+   <parameter>cli.prompt</parameter> の設定は、次のようなエスケープシーケンスに対応しています。
+   <table>
+    <title><parameter>cli.prompt</parameter> のエスケープシーケンス</title>
+    <tgroup cols="2">
+     <thead>
+      <row>
+       <entry>シーケンス</entry>
+       <entry>説明</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry><literal>\e</literal></entry>
+       <entry>
+        プロンプトに色をつけます。たとえば
+        <literal>\e[032m\v \e[031m\b \e[34m\> \e[0m</literal>
+        のように使います。
+       </entry>
+      </row>
+      <row>
+       <entry><literal>\v</literal></entry>
+       <entry>PHP のバージョン。</entry>
+      </row>
+      <row>
+       <entry><literal>\b</literal></entry>
+       <entry>
+        PHP が今どのブロックにいるのかを示します。たとえば、
+        複数行コメントの中にいる場合は <literal>/*</literal> となります。
+        外側のスコープは <literal>php</literal> で表します。
+       </entry>
+      </row>
+      <row>
+       <entry><literal>\&gt;</literal></entry>
+       <entry>
+        プロンプト文字を示します。デフォルトでは
+        <literal>&gt;</literal> ですが、ブロックや文字列の途中にあるときは変わります。
+        <literal>' " {
+        ( &gt;</literal> のような文字になることがあります。
+       </entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </table>
+  </para>
+  -->
+
+  <note>
+   <para>
+    <link
+    linkend="ini.auto-prepend-file">auto_prepend_file</link> および <link
+    linkend="ini.auto-append-file">auto_append_file</link> で
+    インクルードされたファイルはこのモードでもパースされますが、
+    いくつかの制限があります。例えば、関数はそれがコールされる前に
+    定義されていなければなりません。
+   </para>
+  </note>
+
+  <note>
+   <para>
+    <link linkend="language.oop5.autoload">オートローディング</link>
+    は、PHP を &cli; の対話モードで実行している場合は使用できません。
+   </para>
+  </note>
+ </section>
+ <!--}}}-->
  
 </chapter>
 
@@ -1436,7 +1613,7 @@ sgml-exposed-tags:nil
 sgml-local-catalogs:nil
 sgml-local-ecat-files:nil
 End:
-vim600: syn=xml fen fdm=syntax fdl=2 si
+vim600: syn=xml fen fdm=marker fdl=2 si
 vim: et tw=78 syn=sgml
 vi: ts=1 sw=1
 -->
