@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- $Revision$ -->
-<!-- EN-Revision: af4410a7e15898c3dbe83d6ea38246745ed9c6fb Maintainer: shimooka Status: ready -->
+<!-- EN-Revision: 96c9d88bad9a7d7d44bfb7f26c226df7ee9ddf26 Maintainer: shimooka Status: working -->
 <refentry xml:id="function.oci-fetch-all" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>oci_fetch_all</refname>
-  <refpurpose>結果データの全ての行を配列に取得する</refpurpose>
+  <refpurpose>クエリからの複数の行を二次元配列に取得する</refpurpose>
  </refnamediv>
  
  <refsect1 role="description">
@@ -15,12 +15,16 @@
    <methodparam><type>array</type><parameter role="reference">output</parameter></methodparam>
    <methodparam choice="opt"><type>int</type><parameter>skip</parameter><initializer>0</initializer></methodparam>
    <methodparam choice="opt"><type>int</type><parameter>maxrows</parameter><initializer>-1</initializer></methodparam>
-   <methodparam choice="opt"><type>int</type><parameter>flags</parameter><initializer>0</initializer></methodparam>
+   <methodparam choice="opt"><type>int</type><parameter>flags</parameter><initializer><constant>OCI_FETCHSTATEMENT_BY_COLUMN</constant> + <constant>OCI_ASSOC</constant></initializer></methodparam>
   </methodsynopsis>
   <para>
-   全ての行の結果をユーザー定義の配列に格納して取得します。
+   クエリからの複数の行を二次元配列に取得します。
+   デフォルトでは、すべての行を返します。
   </para>
-  &oci.datatypes;
+  <para>
+   この関数は、クエリを
+   <function>oci_execute</function> で実行した後でのみコールすることができます。
+  </para>
  </refsect1>
 
  <refsect1 role="parameters">
@@ -30,15 +34,23 @@
     <varlistentry>
      <term><parameter>statement</parameter></term>
      <listitem>
-      <para>
-       有効な OCI ステートメント ID。
-      </para>
+       &oci.arg.statement.id;
      </listitem>
     </varlistentry>
     <varlistentry>
      <term><parameter>output</parameter></term>
      <listitem>
-      &database.fetch-null;
+      <para>
+       The variable to contain the returned rows.
+      </para>
+      <para>
+        LOB columns are returned as strings, where Oracle supports
+        conversion.
+      </para>
+      <para>
+        See <function>oci_fetch_array</function> for more information
+        on how data and types are fetched.
+      </para>
      </listitem>
     </varlistentry>
     <varlistentry>
@@ -46,7 +58,7 @@
      <listitem>
       <para>
        結果を取得する際に無視する行数
-       (デフォルトの値は 0 で、最初の行から開始されます) 。
+       (デフォルトの値は 0 で、最初の行から開始されます)。
       </para>
      </listitem>
     </varlistentry>
@@ -54,9 +66,8 @@
      <term><parameter>maxrows</parameter></term>
      <listitem>
       <para>
-       読み込む行数。
-       <parameter>skip</parameter> 番目の行から開始されます
-       (デフォルトは -1 で、全ての行 を意味します)。
+       読み込む行数。デフォルトは -1 で、これは
+       <parameter>skip</parameter> + 1 番目の行以降のすべての行を意味します。
       </para>
      </listitem>
     </varlistentry>
@@ -64,21 +75,73 @@
      <term><parameter>flags</parameter></term>
      <listitem>
       <para>
-       パラメータ <parameter>flags</parameter> には次の値の組み合わせが可能です。
-       <simplelist>
-        <member>
-         <constant>OCI_FETCHSTATEMENT_BY_ROW</constant>
-        </member>
-        <member>
-         <constant>OCI_FETCHSTATEMENT_BY_COLUMN</constant> (デフォルト値)
-        </member>
-        <member>
-         <constant>OCI_NUM</constant>
-        </member>
-        <member>
-         <constant>OCI_ASSOC</constant>
-        </member>
-       </simplelist>
+       パラメータ <parameter>flags</parameter> は、
+       配列の構造をあらわし、また連想配列を使うかどうかもあらわします。
+       <table>
+        <title><function>oci_fetch_all</function> の配列構造モード</title>
+        <tgroup cols="2">
+         <thead>
+          <row>
+           <entry>定数</entry>
+           <entry>説明</entry>
+          </row>
+         </thead>
+         <tbody>
+          <row>
+           <entry><constant>OCI_FETCHSTATEMENT_BY_ROW</constant></entry>
+           <entry>The outer array will contain one sub-array per query
+           row.</entry>
+          </row>
+          <row>
+           <entry><constant>OCI_FETCHSTATEMENT_BY_COLUMN</constant></entry>
+           <entry>The outer array will contain one sub-array per query
+           column. This is the default.</entry>
+          </row>
+         </tbody>
+        </tgroup>
+       </table>
+      </para>
+      <para>
+        配列のインデックスには、カラム名あるいは数値を使うことができます。
+       <table>
+        <title><function>oci_fetch_all</function> の配列インデックスモード</title>
+        <tgroup cols="2">
+         <thead>
+          <row>
+           <entry>定数</entry>
+           <entry>説明</entry>
+          </row>
+         </thead>
+         <tbody>
+          <row>
+           <entry><constant>OCI_NUM</constant></entry>
+           <entry>Numeric indexes are used for each column's array.</entry>
+          </row>
+          <row>
+           <entry><constant>OCI_ASSOC</constant></entry>
+           <entry>Associative indexes are used for each column's
+           array. This is the default.</entry>
+          </row>
+         </tbody>
+        </tgroup>
+       </table>
+      </para>
+      <para>
+       Use the addition operator &quot;+&quot; to choose a combination
+       of array structure and index modes.
+      </para>
+      <para>
+       Oracle's default, non-case sensitive column names will have
+       uppercase array keys.  Case-sensitive column names will have
+       array keys using the exact column case.
+       Use <function>var_dump</function>
+       on <parameter>output</parameter>to verify the appropriate case
+       to use for each query.
+      </para>
+      <para>
+        Queries that have more than one column with the same name
+        should use column aliases.  Otherwise only one of the columns
+        will appear in an associative array.
       </para>
      </listitem>
     </varlistentry>
@@ -89,7 +152,8 @@
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
-   取得した行数、失敗した場合 &false; を返します。
+   <parameter>output</parameter> の行数を返します。これは 0 以上の値となります。
+   &return.falseforfailure;.
   </para>
  </refsect1>
 
@@ -101,38 +165,150 @@
     <programlisting role="php">
 <![CDATA[
 <?php
-/* oci_fetch_all の例 mbritton at verinet dot com (990624) */
 
-$conn = oci_connect("scott", "tiger");
-
-$stmt = oci_parse($conn, "select * from emp");
-
-oci_execute($stmt);
-
-$nrows = oci_fetch_all($stmt, $results);
-if ($nrows > 0) {
-   echo "<table border=\"1\">\n";
-   echo "<tr>\n";
-   foreach ($results as $key => $val) {
-      echo "<th>$key</th>\n";
-   }
-   echo "</tr>\n";
-
-   for ($i = 0; $i < $nrows; $i++) {
-      echo "<tr>\n";
-      foreach ($results as $data) {
-         echo "<td>$data[$i]</td>\n";
-      }
-      echo "</tr>\n";
-   }
-   echo "</table>\n";
-} else {
-   echo "No data found<br />\n";
+$conn = oci_connect('hr', 'welcome', 'localhost/XE');
+if (!$conn) {
+    $e = oci_error();
+    trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
 }
-echo "$nrows Records Selected<br />\n";
 
-oci_free_statement($stmt);
+$stid = oci_parse($conn, 'SELECT POSTAL_CODE, CITY FROM locations WHERE ROWNUM < 3');
+oci_execute($stid);
+
+$nrows = oci_fetch_all($stid, $res);
+
+echo "$nrows rows fetched<br>\n";
+var_dump($res);
+
+// var_dump output is:
+//    2 rows fetched
+//    array(2) {
+//      ["POSTAL_CODE"]=>
+//      array(2) {
+//        [0]=>
+//        string(6) "00989x"
+//        [1]=>
+//        string(6) "10934x"
+//      }
+//      ["CITY"]=>
+//      array(2) {
+//        [0]=>
+//        string(4) "Roma"
+//        [1]=>
+//        string(6) "Venice"
+//      }
+//    }
+
+// Pretty-print the results
+echo "<table border='1'>\n";
+foreach ($res as $col) {
+    echo "<tr>\n";
+    foreach ($col as $item) {
+        echo "    <td>".($item !== null ? htmlentities($item, ENT_QUOTES) : "&nbsp;")."</td>\n";
+    }
+    echo "</tr>\n";
+}
+echo "</table>\n";
+
+oci_free_statement($stid);
 oci_close($conn);
+
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+  <para>
+   <example>
+    <title><function>oci_fetch_all</function> で <constant>OCI_FETCHSTATEMENT_BY_ROW</constant> を使う例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+$conn = oci_connect('hr', 'welcome', 'localhost/XE');
+if (!$conn) {
+    $e = oci_error();
+    trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
+}
+
+$stid = oci_parse($conn, 'SELECT POSTAL_CODE, CITY FROM locations WHERE ROWNUM < 3');
+oci_execute($stid);
+
+$nrows = oci_fetch_all($stid, $res, null, null, OCI_FETCHSTATEMENT_BY_ROW);
+
+echo "$nrows rows fetched<br>\n";
+var_dump($res);
+
+// Output is:
+//    2 rows fetched
+//    array(2) {
+//      [0]=>
+//      array(2) {
+//        ["POSTAL_CODE"]=>
+//        string(6) "00989x"
+//        ["CITY"]=>
+//        string(4) "Roma"
+//      }
+//      [1]=>
+//      array(2) {
+//        ["POSTAL_CODE"]=>
+//        string(6) "10934x"
+//        ["CITY"]=>
+//        string(6) "Venice"
+//      }
+//    }
+
+oci_free_statement($stid);
+oci_close($conn);
+
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+  <para>
+   <example>
+    <title><function>oci_fetch_all</function> で <constant>OCI_NUM</constant> を使う例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+$conn = oci_connect('hr', 'welcome', 'localhost/XE');
+if (!$conn) {
+    $e = oci_error();
+    trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
+}
+
+$stid = oci_parse($conn, 'SELECT POSTAL_CODE, CITY FROM locations WHERE ROWNUM < 3');
+oci_execute($stid);
+
+$nrows = oci_fetch_all($stid, $res, null, null, OCI_FETCHSTATEMENT_BY_ROW + OCI_NUM);
+
+echo "$nrows rows fetched<br>\n";
+var_dump($res);
+
+// Output is:
+//    2 rows fetched
+//    array(2) {
+//      [0]=>
+//      array(2) {
+//        [0]=>
+//        string(6) "00989x"
+//        [1]=>
+//        string(4) "Roma"
+//      }
+//      [1]=>
+//      array(2) {
+//        [0]=>
+//        string(6) "10934x"
+//        [1]=>
+//        string(6) "Venice"
+//      }
+//    }
+
+oci_free_statement($stid);
+oci_close($conn);
+
 ?>
 ]]>
     </programlisting>
@@ -144,14 +320,45 @@ oci_close($conn);
   &reftitle.notes;
   <note>
    <para>
-    PHP バージョン 5.0.0 以前では、代わりに
-    <function>ocifetchstatement</function>
-    を使用しなければなりません。
-    まだこの名前を使用することができ、下位互換性のため
-    <function>oci_fetch_all</function> への別名として残されていますが、
-    推奨されません。
+     Using <parameter>skip</parameter> is very inefficient.  All the
+     rows to be skipped are included in the result set that is
+     returned from the database to PHP.  They are then discarded.  It
+     is more efficient to use SQL to restrict the offset and range of
+     rows in the query.  See <function>oci_fetch_array</function> for
+     an example.
    </para>
   </note>
+  <note>
+   <para>
+    Queries that return a large number of rows can be more memory
+    efficient if a single-row fetching function
+    like <function>oci_fetch_array</function> is used.
+   </para>
+  </note>
+  <note>
+   &oci.use.setprefetch;
+  </note>
+  <note>
+   <para>
+    PHP 5.0.0 より前のバージョンでは、かわりに
+    <function>ocifetchstatement</function> を使用します。
+    &oci.name.compat.note;
+   </para>
+  </note>
+ </refsect1>
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <para>
+   <simplelist>
+    <member><function>oci_fetch</function></member>
+    <member><function>oci_fetch_array</function></member>
+    <member><function>oci_fetch_assoc</function></member>
+    <member><function>oci_fetch_object</function></member>
+    <member><function>oci_fetch_row</function></member>
+    <member><function>oci_set_prefetch</function></member>
+   </simplelist>
+  </para>
  </refsect1>
 
 </refentry>

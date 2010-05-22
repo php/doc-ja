@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- $Revision$ -->
-<!-- EN-Revision: af4410a7e15898c3dbe83d6ea38246745ed9c6fb Maintainer: shimooka Status: ready -->
+<!-- EN-Revision: 96c9d88bad9a7d7d44bfb7f26c226df7ee9ddf26 Maintainer: shimooka Status: ready -->
 <refentry xml:id="function.oci-parse" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>oci_parse</refname>
@@ -12,13 +12,18 @@
   <methodsynopsis>
    <type>resource</type><methodname>oci_parse</methodname>
    <methodparam><type>resource</type><parameter>connection</parameter></methodparam>
-   <methodparam><type>string</type><parameter>query</parameter></methodparam>
+   <methodparam><type>string</type><parameter>sql_text</parameter></methodparam>
   </methodsynopsis>
   <para>
    <parameter>connection</parameter>
-   を使って <parameter>query</parameter> をパースし、ステートメント ID
+   を使って <parameter>sql_text</parameter> をパースし、ステートメント ID
    を返します。この ID は、<function>oci_bind_by_name</function>,
    <function>oci_execute</function> や他の関数で使用されます。
+  </para>
+  <para>
+   ステートメント ID を解放するには、
+   <function>oci_free_statement</function> を使うか、あるいは
+   変数に <constant>null</constant> を代入します。
   </para>
  </refsect1>
 
@@ -30,16 +35,22 @@
      <term><parameter>connection</parameter></term>
      <listitem>
       <para>
-       <function>oci_connect</function> あるいは <function>oci_pconnect</function>
+       <function>oci_connect</function>、<function>oci_pconnect</function>
+       あるいは <function>oci_new_connect</function>
        が返す Oracle 接続 ID。
       </para>
      </listitem>
     </varlistentry>
     <varlistentry>
-     <term><parameter>query</parameter></term>
+     <term><parameter>sql_text</parameter></term>
      <listitem>
       <para>
-       SQL クエリ。
+       SQL あるいは PL/SQL ステートメント。
+      </para>
+      <para>
+       SQL の最後にセミコロン (&quot;;&quot;) をつけては
+       <emphasis>いけません</emphasis>。一方、PL/SQL ステートメントの最後はセミコロン
+       (&quot;;&quot;) を <emphasis>つけなければなりません</emphasis>。
       </para>
      </listitem>
     </varlistentry>
@@ -50,7 +61,82 @@
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
-   成功した場合にステートメントハンドル、あるいはエラー時に or &false; を返します。
+   成功した場合にステートメントハンドル、あるいはエラー時に &false; を返します。
+  </para>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title><function>oci_parse</function> での SQL 文の例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+$conn = oci_connect('hr', 'welcome', 'localhost/XE');
+
+// パースします。SQL 文の最後にはセミコロンがないことに注意しましょう
+$stid = oci_parse($conn, 'SELECT * FROM employees');
+oci_execute($stid);
+
+echo "<table border='1'>\n";
+while ($row = oci_fetch_array($stid, OCI_ASSOC+OCI_RETURN_NULLS)) {
+    echo "<tr>\n";
+    foreach ($row as $item) {
+        echo "    <td>" . ($item !== null ? htmlentities($item, ENT_QUOTES) : "&nbsp;") . "</td>\n";
+    }
+    echo "</tr>\n";
+}
+echo "</table>\n";
+
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+  <para>
+   <example>
+    <title><function>oci_parse</function> での PL/SQL の例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+/*
+  この PHP プログラムを実行する前に、SQL*Plus や SQL Developer で
+  ストアドプロシージャを作っておきます
+
+  CREATE OR REPLACE PROCEDURE myproc(p1 IN NUMBER, p2 OUT NUMBER) AS
+  BEGIN
+      p2 := p1 * 2;
+  END;
+
+*/
+
+$conn = oci_connect('hr', 'welcome', 'localhost/XE');
+if (!$conn) {
+    $e = oci_error();
+    trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
+}
+
+$p1 = 8;
+
+// PL/SQL プログラムをパースするには、文字列の最後にセミコロンが必要です
+$stid = oci_parse($conn, 'begin myproc(:p1, :p2); end;');
+oci_bind_by_name($stid, ':p1', $p1);
+oci_bind_by_name($stid, ':p2', $p2, 40);
+
+oci_execute($stid);
+
+print "$p2\n";   // 16 と表示します
+
+oci_free_statement($stid);
+oci_close($conn);
+
+?>
+]]>
+    </programlisting>
+   </example>
   </para>
  </refsect1>
 
@@ -58,22 +144,28 @@
   &reftitle.notes;
   <note>
    <para>
-    この関数は <parameter>query</parameter> を検証
+    この関数は <parameter>sql_text</parameter> を検証
     <emphasis>しません</emphasis>。
-    <parameter>query</parameter> が有効な SQL あるいは PL/SQL
+    <parameter>sql_text</parameter> が有効な SQL あるいは PL/SQL
     文かどうかを検証する唯一の方法 - それは実行することです。
    </para>
   </note>
   <note>
    <para>
-    PHP バージョン 5.0.0 以前では、代わりに
-    <function>ociparse</function>
-    を使用しなければなりません。
-    まだこの名前を使用することができ、下位互換性のため
-    <function>oci_parse</function> への別名として残されていますが、
-    推奨されません。
+    PHP 5.0.0 より前のバージョンでは、かわりに <function>ociparse</function>
+    を使用します。&oci.name.compat.note;
    </para>
   </note>
+ </refsect1>
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <para>
+   <simplelist>
+    <member><function>oci_execute</function></member>
+    <member><function>oci_free_statement</function></member>
+   </simplelist>
+  </para>
  </refsect1>
 
 </refentry>

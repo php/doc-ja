@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- $Revision$ -->
-<!-- EN-Revision: af4410a7e15898c3dbe83d6ea38246745ed9c6fb Maintainer: shimooka Status: ready -->
+<!-- EN-Revision: 96c9d88bad9a7d7d44bfb7f26c226df7ee9ddf26 Maintainer: shimooka Status: working -->
 <refentry xml:id="function.oci-fetch-object" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>oci_fetch_object</refname>
-  <refpurpose>結果の次の行をオブジェクトとして返す</refpurpose>
+  <refpurpose>クエリの次の行をオブジェクトとして返す</refpurpose>
  </refnamediv>
  
  <refsect1 role="description">
@@ -14,11 +14,10 @@
    <methodparam><type>resource</type><parameter>statement</parameter></methodparam>
   </methodsynopsis>
   <para>
-   次の結果行をオブジェクトとして返します。
-  </para>
-  <para>
-   続けて <function>oci_fetch_object</function> をコールすると、
-   次の行を返します。行がない場合は &false; を返します。
+   Returns an object containing the next result-set row of a query.
+   Each attribute of the object corresponds to a column of the row.
+   This function is typically called in a loop until it returns
+   &false;, indicating no more rows exist.
   </para>
   &oci.datatypes;
  </refsect1>
@@ -30,9 +29,7 @@
     <varlistentry>
      <term><parameter>statement</parameter></term>
      <listitem>
-      <para>
-       有効な OCI ステートメント ID。
-      </para>
+       &oci.arg.statement.id;
      </listitem>
     </varlistentry>
    </variablelist>
@@ -46,23 +43,166 @@
    オブジェクトの属性は文中のフィールドと一致しています。
    <parameter>statement</parameter> にもう行がない場合は &false; を返します。
   </para>
-  &database.fetch-null;
-  <note>
-   <simpara>
-    Oracle は全てのフィールド名を大文字で返し、
-    結果オブジェクトの属性名も同様に大文字になります。
-   </simpara>
-  </note>
+  <para>
+    <literal>LOB</literal> カラムは LOB ディスクリプタを返します。
+  </para>
+  <para>
+   <literal>DATE</literal> columns are returned as strings formatted
+   to the current date format.  The default format can be changed with
+   Oracle environment variables such as <literal>NLS_LANG</literal> or
+   by a previously executed <literal>ALTER SESSION SET
+   NLS_DATE_FORMAT</literal> command.
+  </para>
+  <para>
+   Oracle's default, non-case sensitive column names will have
+   uppercase attribute names.  Case-sensitive column names will have
+   attribute names using the exact column case.
+   Use <function>var_dump</function> on the result object to verify
+   the appropriate case to use for each query.
+  </para>
+  <para>
+    Attribute values will be &null; for any <literal>NULL</literal>
+    data fields.
+  </para>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title><function>oci_fetch_object</function> example</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+/*
+  Before running, create the table:
+    CREATE TABLE mytab (id NUMBER, description VARCHAR2(30));
+    INSERT INTO mytab (id, description) values (1, 'Fish and Chips');
+    COMMIT;
+*/
+
+$conn = oci_connect('hr', 'welcome', 'localhost/XE');
+if (!$conn) {
+    $e = oci_error();
+    trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
+}
+
+$stid = oci_parse($conn, 'SELECT id, description FROM mytab');
+oci_execute($stid);
+
+while (($row = oci_fetch_object($stid))) {
+    // Use upper case attribute names for each standard Oracle column
+    echo $row->ID . "<br>\n";
+    echo $row->DESCRIPTION . "<br>\n"; 
+}
+
+// Output is:
+//    1
+//    Fish and Chips
+
+oci_free_statement($stid);
+oci_close($conn);
+
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+  <para>
+   <example>
+    <title><function>oci_fetch_object</function> with case sensitive column names</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+/*
+  Before running, create the table with a case sensitive column name:
+    CREATE TABLE mytab (id NUMBER, "MyDescription" VARCHAR2(30));
+    INSERT INTO mytab (id, "MyDescription") values (1, 'Iced Coffee');
+    COMMIT;
+*/
+
+$conn = oci_connect('hr', 'welcome', 'localhost/XE');
+if (!$conn) {
+    $e = oci_error();
+    trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
+}
+
+$stid = oci_parse($conn, 'SELECT id, "MyDescription" FROM mytab');
+oci_execute($stid);
+
+while (($row = oci_fetch_object($stid))) {
+    // Use upper case attribute names for each standard Oracle column
+    echo $row->ID . "<br>\n";
+    // Use the exact case for the case sensitive column name
+    echo $row->MyDescription . "<br>\n";   
+}
+
+// Output is:
+//    1
+//    Iced Coffee
+
+oci_free_statement($stid);
+oci_close($conn);
+
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+  <para>
+   <example>
+    <title><function>oci_fetch_object</function> with LOBs</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+/*
+  Before running, create the table:
+    CREATE TABLE mytab (id NUMBER, description CLOB);
+    INSERT INTO mytab (id, description) values (1, 'A very long string');
+    COMMIT;
+*/
+
+$conn = oci_connect('hr', 'welcome', 'localhost/XE');
+if (!$conn) {
+    $e = oci_error();
+    trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
+}
+
+$stid = oci_parse($conn, 'SELECT id, description FROM mytab');
+oci_execute($stid);
+
+while (($row = oci_fetch_object($stid))) {
+    echo $row->ID . "<br>\n";
+    // The following will output the first 11 bytes from DESCRIPTION
+    echo $row->DESCRIPTION->read(11) . "<br>\n"; 
+}
+
+// Output is:
+//    1
+//    A very long
+
+oci_free_statement($stid);
+oci_close($conn);
+
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
  </refsect1>
 
  <refsect1 role="seealso">
   &reftitle.seealso;
   <para>
    <simplelist>
-    <member><function>oci_fetch_array</function></member>
-    <member><function>oci_fetch_assoc</function></member>
-    <member><function>oci_fetch_row</function></member>
+    <member><function>oci_fetch</function></member>
     <member><function>oci_fetch_all</function></member>
+    <member><function>oci_fetch_assoc</function></member>
+    <member><function>oci_fetch_array</function></member>
+    <member><function>oci_fetch_row</function></member>
    </simplelist>
   </para>
  </refsect1>

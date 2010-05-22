@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- $Revision$ -->
-<!-- EN-Revision: af4410a7e15898c3dbe83d6ea38246745ed9c6fb Maintainer: shimooka Status: ready -->
+<!-- EN-Revision: 96c9d88bad9a7d7d44bfb7f26c226df7ee9ddf26 Maintainer: shimooka Status: working -->
 <refentry xml:id="function.oci-fetch-array" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>oci_fetch_array</refname>
-  <refpurpose>結果データからの次の行を連想配列または配列、またはその両方で返す
+  <refpurpose>クエリの次の行を連想配列あるいは数値添字配列で返す
   </refpurpose>
  </refnamediv>
  
@@ -16,14 +16,12 @@
    <methodparam choice="opt"><type>int</type><parameter>mode</parameter></methodparam>
   </methodsynopsis>
   <para>
-   次の結果行に相当する配列を返します。
+   クエリから、結果セットの次の行を含む配列を返します。
+   配列の各エントリが行の各カラムをあらわします。
+   この関数の典型的な使い方は、ループの中で &false; を返すまでコールすることです。
+   &false; は、もう行がないことを意味します。
   </para>
   &oci.datatypes;
-  <para>
-   ここで言っておくべき事は、<function>oci_fetch_array</function> は
-   <function>oci_fetch_row</function> よりも <emphasis>無意味に</emphasis>
-   遅い、ということですが、非常に使いやすい関数です。
-  </para>
  </refsect1>
 
  <refsect1 role="parameters">
@@ -33,9 +31,7 @@
     <varlistentry>
      <term><parameter>statement</parameter></term>
      <listitem>
-      <para>
-       有効な OCI ステートメント ID。
-      </para>
+       &oci.arg.statement.id;
      </listitem>
     </varlistentry>
     <varlistentry>
@@ -43,73 +39,111 @@
      <listitem>
       <para>
        オプションの第2引数は、次の定数の組み合わせが可能です。
-       <simplelist>
-        <member>
-         <constant>OCI_BOTH</constant> - 連想配列と配列の両方を返します
-         (<constant>OCI_ASSOC</constant> + <constant>OCI_NUM</constant>
-         と同等)。 これはデフォルトの動作です。
-        </member>
-        <member>
-         <constant>OCI_ASSOC</constant> - 連想配列を返します
-         (<function>oci_fetch_assoc</function> と同等)。
-        </member>
-        <member>
-         <constant>OCI_NUM</constant> - 配列を返します
-         (<function>oci_fetch_row</function> と同等)。
-        </member>
-        <member>
-         <constant>OCI_RETURN_NULLS</constant> - フィールドが &null; の場合、
-         空の要素を返します。
-        </member>
-        <member>
-         <constant>OCI_RETURN_LOBS</constant> - ディスクリプタの LOB
-         の値を返します。
-        </member>
-       </simplelist>
-       デフォルトの <parameter>mode</parameter> は
-       <constant>OCI_BOTH</constant> です。
+       <table>
+        <title><function>oci_fetch_array</function> のモード</title>
+        <tgroup cols="2">
+         <thead>
+          <row>
+           <entry>定数</entry>
+           <entry>説明</entry>
+          </row>
+         </thead>
+         <tbody>
+          <row>
+           <entry><constant>OCI_BOTH</constant></entry>
+           <entry>連想配列と配列の両方を返します。
+            これは <constant>OCI_ASSOC</constant>
+            + <constant>OCI_NUM</constant> と同等で、
+            デフォルトの動作です。</entry>
+          </row>
+          <row>
+           <entry><constant>OCI_ASSOC</constant></entry>
+           <entry>連想配列を返します。</entry>
+          </row>
+          <row>
+           <entry><constant>OCI_NUM</constant></entry>
+           <entry>数値添字配列を返します。</entry>
+          </row>
+          <row>
+           <entry><constant>OCI_RETURN_NULLS</constant></entry>
+           <entry>&null; フィールドの要素も作成します。この要素の値は
+             PHP の &null; となります。
+           </entry>
+          </row>
+          <row>
+           <entry><constant>OCI_RETURN_LOBS</constant></entry>
+           <entry>LOB ディスクリプタではなく LOB の中身を返します。</entry>
+          </row>
+         </tbody>
+        </tgroup>
+       </table>
+      </para>
+      <para>
+       デフォルトの <parameter>mode</parameter> は <constant>OCI_BOTH</constant> です。
+      </para>
+      <para>
+       加算演算子 &quot;+&quot; を使うと、複数のモードを動じに指定できます。
       </para>
      </listitem>
     </varlistentry>
    </variablelist>
+
   </para>
  </refsect1>
 
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
-   連想配列あるいは配列の両方を返します。
-   失敗時あるいは結果行がない場合は &false; を返します。
+   連想配列や数値添字配列を返します。
+   <parameter>statement</parameter> にもう行がない場合は
+   &false; を返します。
   </para>
-  &database.fetch-null;
-  <note>
-   <simpara>
-    Oracle は全てのフィールド名を大文字で返し、
-    結果の連想配列のインデックスも大文字になります。
-   </simpara>
-  </note>
+  <para>
+    デフォルトでは、<literal>LOB</literal> カラムは LOB ディスクリプタを返します。
+  </para>
+  <para>
+   <literal>DATE</literal> columns are returned as strings formatted
+   to the current date format.  The default format can be changed with
+   Oracle environment variables such as <literal>NLS_LANG</literal> or
+   by a previously executed <literal>ALTER SESSION SET
+   NLS_DATE_FORMAT</literal> command.
+  </para>
+  <para>
+   Oracle のデフォルトでは、大文字小文字を区別しないカラム名はすべて大文字となり、
+   結果の連想配列のインデックスも大文字になります。
+   大文字小文字を区別するカラム名は、配列のインデックスもそれと同じになります。
+   結果の配列を <function>var_dump</function> すれば、
+   各クエリの大文字小文字を確かめることができます。
+  </para>
  </refsect1>
 
  <refsect1 role="examples">
   &reftitle.examples;
   <para>
    <example>
-    <title><constant>OCI_BOTH</constant> を使った
-    <function>oci_fetch_array</function> の例</title>
+    <title><function>oci_fetch_array</function> での <constant>OCI_BOTH</constant> の使用例</title>
     <programlisting role="php">
 <![CDATA[
 <?php
-$connection = oci_connect("apelsin", "kanistra");
 
-$query = "SELECT id, name FROM fruits";
-
-$statement = oci_parse ($connection, $query);
-oci_execute ($statement);
-
-while ($row = oci_fetch_array ($statement, OCI_BOTH)) {
-    echo $row[0]." and ".$row['ID']." is the same<br>";
-    echo $row[1]." and ".$row['NAME']." is the same<br>";
+$conn = oci_connect('hr', 'welcome', 'localhost/XE');
+if (!$conn) {
+    $e = oci_error();
+    trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
 }
+
+$stid = oci_parse($conn, 'SELECT department_id, department_name FROM departments');
+oci_execute($stid);
+
+while (($row = oci_fetch_array($stid, OCI_BOTH))) {
+    // Use the uppercase column names for the associative array indices
+    echo $row[0] . " and " . $row['DEPARTMENT_ID']   . " are the same<br>\n";
+    echo $row[1] . " and " . $row['DEPARTMENT_NAME'] . " are the same<br>\n";
+}
+
+oci_free_statement($stid);
+oci_close($conn);
+
 ?>
 ]]>
     </programlisting>
@@ -117,23 +151,39 @@ while ($row = oci_fetch_array ($statement, OCI_BOTH)) {
   </para>
   <para>
    <example>
-    <title><constant>OCI_NUM</constant> を使った
-    <function>oci_fetch_array</function> の例</title>
+    <title><function>oci_fetch_array</function> での <constant>OCI_NUM</constant> の使用例</title>
     <programlisting role="php">
 <![CDATA[
 <?php
-$connection = oci_connect("user", "password");
 
-$query = "SELECT id, name, lob_field FROM fruits";
+/*
+  Before running, create the table:
+      CREATE TABLE mytab (id NUMBER, description CLOB);
+      INSERT INTO mytab (id, description) values (1, 'A very long string');
+      COMMIT;
+*/
 
-$statement = oci_parse ($connection, $query);
-oci_execute ($statement);
-
-while ($row = oci_fetch_array ($statement, OCI_NUM)) {
-    echo $row[0]."<br>";
-    echo $row[1]."<br>";
-    echo $row[2]->read(100)."<br>";  //this will output first 100 bytes from LOB
+$conn = oci_connect('hr', 'welcome', 'localhost/XE');
+if (!$conn) {
+    $e = oci_error();
+    trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
 }
+
+$stid = oci_parse($conn, 'SELECT id, description FROM mytab');
+oci_execute($stid);
+
+while (($row = oci_fetch_array($stid, OCI_NUM))) {
+    echo $row[0] . "<br>\n";
+    echo $row[1]->read(11) . "<br>\n"; // this will output first 11 bytes from DESCRIPTION
+}
+
+// Output is:
+//    1
+//    A very long
+
+oci_free_statement($stid);
+oci_close($conn);
+
 ?>
 ]]>
     </programlisting>
@@ -141,23 +191,39 @@ while ($row = oci_fetch_array ($statement, OCI_NUM)) {
   </para>
   <para>
    <example>
-    <title><constant>OCI_ASSOC</constant> を使った
-    <function>oci_fetch_array</function> の例</title>
+    <title><function>oci_fetch_array</function> での <constant>OCI_ASSOC</constant> の使用例</title>
     <programlisting role="php">
 <![CDATA[
 <?php
-$connection = oci_connect("user", "password");
 
-$query = "SELECT id, name, lob_field FROM fruits";
+/*
+  Before running, create the table:
+      CREATE TABLE mytab (id NUMBER, description CLOB);
+      INSERT INTO mytab (id, description) values (1, 'A very long string');
+      COMMIT;
+*/
 
-$statement = oci_parse ($connection, $query);
-oci_execute ($statement);
-
-while ($row = oci_fetch_array ($statement, OCI_ASSOC)) {
-    echo $row['ID']."<br>";
-    echo $row['NAME']."<br>";
-    echo $row['LOB_FIELD']."<br>";  //this will output "Object id #1"
+$conn = oci_connect('hr', 'welcome', 'localhost/XE');
+if (!$conn) {
+    $e = oci_error();
+    trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
 }
+
+$stid = oci_parse($conn, 'SELECT id, description FROM mytab');
+oci_execute($stid);
+
+while (($row = oci_fetch_array($stid, OCI_ASSOC))) {
+    echo $row['ID'] . "<br>\n";
+    echo $row['DESCRIPTION']->read(11) . "<br>\n"; // this will output first 11 bytes from DESCRIPTION
+}
+
+// Output is:
+//    1
+//    A very long
+
+oci_free_statement($stid);
+oci_close($conn);
+
 ?>
 ]]>
     </programlisting>
@@ -165,23 +231,318 @@ while ($row = oci_fetch_array ($statement, OCI_ASSOC)) {
   </para>
   <para>
    <example>
-    <title><constant>OCI_RETURN_LOBS</constant> を使った
-    <function>oci_fetch_array</function> の例</title>
+    <title><function>oci_fetch_array</function> での <constant>OCI_RETURN_NULLS</constant> の使用例</title>
     <programlisting role="php">
 <![CDATA[
 <?php
-$connection = oci_connect("user", "password");
 
-$query = "SELECT id, name, lob_field FROM fruits";
-
-$statement = oci_parse ($connection, $query);
-oci_execute ($statement);
-
-while ($row = oci_fetch_array ($statement, (OCI_NUM+OCI_RETURN_LOBS))) {
-    echo $row[0]."<br>";
-    echo $row[1]."<br>";
-    echo $row['LOB_FIELD']."<br>";  //this will output LOB's content
+$conn = oci_connect('hr', 'welcome', 'localhost/XE');
+if (!$conn) {
+    $e = oci_error();
+    trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
 }
+
+$stid = oci_parse($conn, 'SELECT 1, null FROM dual');
+oci_execute($stid);
+while (($row = oci_fetch_array ($stid, OCI_ASSOC))) { // Ignore NULLs
+    var_dump($row);
+}
+
+/*
+The above code prints:
+  array(1) {
+    [1]=>
+    string(1) "1"
+  }
+*/
+
+$stid = oci_parse($conn, 'SELECT 1, null FROM dual');
+oci_execute($stid);
+while (($row = oci_fetch_array ($stid, OCI_ASSOC+OCI_RETURN_NULLS))) { // Fetch NULLs
+    var_dump($row);
+}
+
+/*
+The above code prints:
+  array(2) {
+    [1]=>
+    string(1) "1"
+    ["NULL"]=>
+    NULL
+  }
+*/
+
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+  <para>
+   <example>
+    <title><function>oci_fetch_array</function> での <constant>OCI_RETURN_LOBS</constant> の使用例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+/*
+  Before running, create the table:
+      CREATE TABLE mytab (id NUMBER, description CLOB);
+      INSERT INTO mytab (id, description) values (1, 'A very long string');
+      COMMIT;
+*/
+
+$conn = oci_connect('hr', 'welcome', 'localhost/XE');
+if (!$conn) {
+    $e = oci_error();
+    trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
+}
+
+$stid = oci_parse($conn, 'SELECT id, description FROM mytab');
+oci_execute($stid);
+
+while (($row = oci_fetch_array($stid, OCI_ASSOC+OCI_RETURN_LOBS))) {
+    echo $row['ID'] . "<br>\n";
+    echo $row['DESCRIPTION'] . "<br>\n"; // this contains all of DESCRIPTION
+}
+
+// Output is:
+//    1
+//    A very long string
+
+oci_free_statement($stid);
+oci_close($conn);
+
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+  <para>
+   <example>
+    <title><function>oci_fetch_array</function> での大文字小文字を区別するカラムの使用例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+/*
+   Before running, create the table:
+      CREATE TABLE mytab ("Name" VARCHAR2(20), city VARCHAR2(20));
+      INSERT INTO mytab ("Name", city) values ('Chris', 'Melbourne');
+      COMMIT;
+*/
+
+$conn = oci_connect('hr', 'welcome', 'localhost/XE');
+if (!$conn) {
+    $e = oci_error();
+    trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
+}
+
+$stid = oci_parse($conn, 'select * from mytab');
+oci_execute($stid);
+$row = oci_fetch_array($stid, OCI_ASSOC+OCI_RETURN_NULLS);
+
+// Because 'Name' was created as a case-sensitive column, that same
+// case is used for the array index.  However uppercase 'CITY' must
+// be used for the case-insensitive column index
+print $row['Name'] . "<br>\n";   //  prints Chris
+print $row['CITY'] . "<br>\n";   //  prints Melbourne
+
+oci_free_statement($stid);
+oci_close($conn);
+
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+  <para>
+   <example>
+    <title><function>oci_fetch_array</function> での同じ名前のカラムの使用例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+/*
+  Before running, create the tables:
+      CREATE TABLE mycity (id NUMBER, name VARCHAR2(20));
+      INSERT INTO mycity (id, name) values (1, 'Melbourne');
+      CREATE TABLE mycountry (id NUMBER, name VARCHAR2(20));
+      INSERT INTO mycountry (id, name) values (1, 'Australia');
+      COMMIT;
+*/
+
+$conn = oci_connect('hr', 'welcome', 'localhost/XE');
+if (!$conn) {
+    $e = oci_error();
+    trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
+}
+
+$sql = 'SELECT mycity.name, mycountry.name
+        FROM mycity, mycountry
+        WHERE mycity.id = mycountry.id';
+$stid = oci_parse($conn, $sql);
+oci_execute($stid);
+$row = oci_fetch_array($stid, OCI_ASSOC);
+var_dump($row);
+
+// Output only contains one "NAME" entry:
+//    array(1) {
+//      ["NAME"]=>
+//      string(9) "Australia"
+//    }
+
+// To query a repeated column name, use a SQL column alias like "AS ctnm":
+$sql = 'SELECT mycity.name AS ctnm, mycountry.name 
+        FROM mycity, mycountry 
+        WHERE mycity.id = mycountry.id';
+$stid = oci_parse($conn, $sql);
+oci_execute($stid);
+$row = oci_fetch_array($stid, OCI_ASSOC);
+var_dump($row);
+
+// Output now contains both columns selected:
+//    array(2) {
+//      ["CTNM"]=>
+//      string(9) "Melbourne"
+//      ["NAME"]=>
+//      string(9) "Australia"
+//    }
+
+
+oci_free_statement($stid);
+oci_close($conn);
+
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+  <para>
+   <example>
+    <title><function>oci_fetch_array</function> での <literal>DATE</literal> カラムの使用例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+$conn = oci_connect('hr', 'welcome', 'localhost/XE');
+if (!$conn) {
+    $e = oci_error();
+    trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
+}
+
+// Set the date format for this connection.
+// For performance reasons, consider changing the format
+// in a trigger or with environment variables instead
+$stid = oci_parse($conn, "ALTER SESSION SET NLS_DATE_FORMAT = 'YYYY-MM-DD'");
+oci_execute($stid);
+
+$stid = oci_parse($conn, 'SELECT hire_date FROM employees WHERE employee_id = 188');
+oci_execute($stid);
+$row = oci_fetch_array($stid, OCI_ASSOC);
+echo $row['HIRE_DATE'] . "<br>\n";  // prints 1997-06-14
+
+oci_free_statement($stid);
+oci_close($conn);
+
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+  <para>
+   <example>
+    <title><function>oci_fetch_array</function> での <literal>REF CURSOR</literal> の使用例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+/*
+  Create the PL/SQL stored procedure as:
+
+  CREATE OR REPLACE PROCEDURE myproc(p1 OUT SYS_REFCURSOR) AS
+  BEGIN
+    OPEN p1 FOR SELECT * FROM all_objects WHERE ROWNUM < 5000;
+  END;
+*/
+
+$conn = oci_connect('hr', 'welcome', 'localhost/XE');
+if (!$conn) {
+    $e = oci_error();
+    trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
+}
+
+$stid = oci_parse($conn, 'BEGIN myproc(:rc); END;');
+$refcur = oci_new_cursor($conn);
+oci_bind_by_name($stid, ':rc', $refcur, -1, OCI_B_CURSOR);
+oci_execute($stid);
+
+// Execute the returned REF CURSOR and fetch from it like a statement identifier
+oci_execute($refcur);  
+echo "<table border='1'>\n";
+while ($row = oci_fetch_array($refcur, OCI_ASSOC+OCI_RETURN_NULLS)) {
+    echo "<tr>\n";
+    foreach ($row as $item) {
+        echo "    <td>".($item !== null ? htmlentities($item, ENT_QUOTES) : "&nbsp;")."</td>\n";
+    }
+    echo "</tr>\n";
+}
+echo "</table>\n";
+
+oci_free_statement($refcur);
+oci_free_statement($stid);
+oci_close($conn);
+
+?> 
+]]>
+    </programlisting>
+   </example>
+  </para>
+  <para>
+   <example>
+    <title><function>oci_fetch_array</function> での <literal>LIMIT</literal> 風のクエリの使用例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+$conn = oci_connect('hr', 'welcome', 'localhost/XE');
+if (!$conn) {
+    $e = oci_error();
+    trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
+}
+
+// This is the query you want to execute
+$sql = 'SELECT city, postal_code FROM locations ORDER BY city';
+
+// This nested query selects a subset of rows from $sql.
+// In production environments, be careful to avoid SQL Injection
+// issues with concatenated SQL statements
+$limit_sql = 
+   'select *
+    from ( select a.*, rownum as rnum
+        from (' . $sql . ') a
+        where rownum < :FIRST_ROW + :NUM_ROWS )
+    where rnum >= :FIRST_ROW';
+
+$first = 1;  // start with the first row
+$num   = 5;  // return 5 rows
+$stid = oci_parse($conn, $limit_sql);
+oci_bind_by_name($stid, ':FIRST_ROW', $first);
+oci_bind_by_name($stid, ':NUM_ROWS', $num);
+oci_execute($stid);
+
+while (($row = oci_fetch_array($stid, OCI_ASSOC))) {
+    echo $row['CITY'] . " " . $row['POSTAL_CODE'] . "<br>\n";
+}
+
+// Output is:
+//    Beijing 190518x
+//    Bern 3095x
+//    Bombay 490231x
+//    Geneva 1730x
+//    Hiroshima 6823x
+
+oci_free_statement($stid);
+oci_close($conn);
+
 ?>
 ]]>
     </programlisting>
@@ -189,14 +550,38 @@ while ($row = oci_fetch_array ($statement, (OCI_NUM+OCI_RETURN_LOBS))) {
   </para>
  </refsect1>
 
+ <refsect1 role="notes">
+  &reftitle.notes;
+  <note>
+   <para>
+    大文字小文字を区別せずにつくった Oracle のカラムでは、
+    連想配列のインデックスはすべて大文字となることに注意しましょう。
+   </para>
+  </note>
+  <note>
+   &oci.use.setprefetch;
+  </note>
+  <note>
+   <para>
+    <function>oci_fetch_array</function> は
+    <emphasis>ほんの少しだけ</emphasis>
+    <function>oci_fetch_assoc</function> や
+    <function>oci_fetch_row</function> より低速ですが、
+    ずっと柔軟性があります。
+   </para>
+  </note>
+ </refsect1>
+
  <refsect1 role="seealso">
   &reftitle.seealso;
   <para>
    <simplelist>
+    <member><function>oci_fetch</function></member>
+    <member><function>oci_fetch_all</function></member>
     <member><function>oci_fetch_assoc</function></member>
     <member><function>oci_fetch_object</function></member>
     <member><function>oci_fetch_row</function></member>
-    <member><function>oci_fetch_all</function></member>
+    <member><function>oci_set_prefetch</function></member>
    </simplelist>
   </para>
  </refsect1>

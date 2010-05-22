@@ -1,24 +1,42 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- $Revision$ -->
-<!-- EN-Revision: af4410a7e15898c3dbe83d6ea38246745ed9c6fb Maintainer: shimooka Status: ready -->
+<!-- EN-Revision: 96c9d88bad9a7d7d44bfb7f26c226df7ee9ddf26 Maintainer: shimooka Status: working -->
 <refentry xml:id="function.oci-connect" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
   <refname>oci_connect</refname>
-  <refpurpose>Oracle サーバへの接続を確立する</refpurpose>
+  <refpurpose>Oracle データベースに接続する</refpurpose>
  </refnamediv>
-
+ 
  <refsect1 role="description">
   &reftitle.description;
   <methodsynopsis>
    <type>resource</type><methodname>oci_connect</methodname>
    <methodparam><type>string</type><parameter>username</parameter></methodparam>
    <methodparam><type>string</type><parameter>password</parameter></methodparam>
-   <methodparam choice="opt"><type>string</type><parameter>db</parameter></methodparam>
-   <methodparam choice="opt"><type>string</type><parameter>charset</parameter></methodparam>
+   <methodparam choice="opt"><type>string</type><parameter>connection_string</parameter></methodparam>
+   <methodparam choice="opt"><type>string</type><parameter>character_set</parameter></methodparam>
    <methodparam choice="opt"><type>int</type><parameter>session_mode</parameter></methodparam>
   </methodsynopsis>
   <para>
-   他のほとんどの OCI コールで必要な接続 ID を返します。
+   他のほとんどの OCI8 コールで必要な接続 ID を返します。
+  </para>
+  <para>
+   See <link linkend="oci8.connection">Connection Handling</link> for
+   general information on connection management and connection
+   pooling.
+  </para>
+  <para>
+   From PHP 5.1.2 (PECL OCI8 1.1) <function>oci_close</function> can
+   be used to close the connection.
+  </para>
+  <para>
+   The second and subsequent calls to <function>oci_connect</function>
+   with the same parameters will return the connection handle returned
+   from the first call. This means that transactions in one handle are
+   also in the other handles, because they use the
+   <emphasis>same</emphasis> underlying database connection. If two
+   handles need to be transactionally isolated from each other, use
+   <function>oci_new_connect</function> instead.
   </para>
  </refsect1>
 
@@ -43,23 +61,13 @@
      </listitem>
     </varlistentry>
     <varlistentry>
-     <term><parameter>db</parameter></term>
+     <term><parameter>connection_string</parameter></term>
      <listitem>
-      <para>
-       このオプションパラメータには、ローカル Oracle インスタンスの名前か
-       <filename>tnsnames.ora</filename>
-       における接続先のエントリ名を指定することができる。
-      </para>
-      <para>
-       指定されない場合、PHP は接続先のデータベースを決定するために環境変数
-       <constant>ORACLE_SID</constant> と <constant>TWO_TASK</constant>
-       を使用して、ローカル <literal>Oracle インスタンス</literal>名と
-       <filename>tnsnames.ora</filename> の場所を適宜決定する。
-      </para>
+      &oci.db;
      </listitem>
     </varlistentry>
     <varlistentry>
-     <term><parameter>charset</parameter></term>
+     <term><parameter>character_set</parameter></term>
      <listitem>
       &oci.charset;
      </listitem>
@@ -67,19 +75,7 @@
     <varlistentry>
      <term><parameter>session_mode</parameter></term>
      <listitem>
-      <para>
-       このパラメータはバージョン 1.1 から利用可能で、
-       次の値を受け付ける:
-       <constant>OCI_DEFAULT</constant>,
-       <constant>OCI_SYSOPER</constant>, <constant>OCI_SYSDBA</constant> 。
-       <constant>OCI_SYSOPER</constant> もしくは
-       <constant>OCI_SYSDBA</constant> のいずれかが指定された場合、
-       この関数は外部のクレデンシャルを利用して、
-       権限付きの接続を確立しようと試みる。
-       デフォルトでは権限付きの接続は無効である。有効にするためには、<link
-        linkend="ini.oci8.privileged-connect">oci8.privileged_connect</link>
-       を <literal>On</literal> にする必要がある。
-      </para>
+      &oci.sessionmode;
      </listitem>
     </varlistentry>
    </variablelist>
@@ -89,7 +85,7 @@
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
-   接続 ID、もしくはエラー時は &false; を返す。
+   接続 ID、もしくはエラー時は &false; を返します。
   </para>
  </refsect1>
 
@@ -97,95 +93,209 @@
   &reftitle.examples;
   <para>
    <example>
-    <title><function>oci_connect</function> の例</title>
+    <title>Easy Connect 構文を使った基本的な <function>oci_connect</function> の使用例</title>
     <programlisting role="php">
 <![CDATA[
 <?php
-echo "<pre>";
-$db = "";
 
-$c1 = oci_connect("scott", "tiger", $db);
-$c2 = oci_connect("scott", "tiger", $db);
+// Connects to the XE service (i.e. database) on the "localhost" machine
+$conn = oci_connect('hr', 'welcome', 'localhost/XE');
+if (!$conn) {
+    $e = oci_error();
+    trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
+}
+
+$stid = oci_parse($conn, 'SELECT * FROM employees');
+oci_execute($stid);
+
+echo "<table border='1'>\n";
+while ($row = oci_fetch_array($stid, OCI_ASSOC+OCI_RETURN_NULLS)) {
+    echo "<tr>\n";
+    foreach ($row as $item) {
+        echo "    <td>" . ($item !== null ? htmlentities($item, ENT_QUOTES) : "&nbsp;") . "</td>\n";
+    }
+    echo "</tr>\n";
+}
+echo "</table>\n";
+
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+  <para>
+   <example>
+    <title>Network Connect 名を使った基本的な <function>oci_connect</function> の使用例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+// Connects to the MYDB database described in tnsnames.ora file,
+// One example tnsnames.ora entry for MYDB could be:
+//   MYDB =
+//     (DESCRIPTION =
+//       (ADDRESS = (PROTOCOL = TCP)(HOST = mymachine.oracle.com)(PORT = 1521))
+//       (CONNECT_DATA =
+//         (SERVER = DEDICATED)
+//         (SERVICE_NAME = XE)
+//       )
+//     )
+
+$conn = oci_connect('hr', 'welcome', 'MYDB');
+if (!$conn) {
+    $e = oci_error();
+    trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
+}
+
+$stid = oci_parse($conn, 'SELECT * FROM employees');
+oci_execute($stid);
+
+echo "<table border='1'>\n";
+while ($row = oci_fetch_array($stid, OCI_ASSOC+OCI_RETURN_NULLS)) {
+    echo "<tr>\n";
+    foreach ($row as $item) {
+        echo "    <td>" . ($item !== null ? htmlentities($item, ENT_QUOTES) : "&nbsp;") . "</td>\n";
+    }
+    echo "</tr>\n";
+}
+echo "</table>\n";
+
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+  <para>
+   <example>
+    <title><function>oci_connect</function> での明示的な文字セットの指定</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+$conn = oci_connect('hr', 'welcome', 'localhost/XE', 'AL32UTF8');
+if (!$conn) {
+    $e = oci_error();
+    trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
+}
+
+$stid = oci_parse($conn, 'SELECT * FROM employees');
+oci_execute($stid);
+
+echo "<table border='1'>\n";
+while ($row = oci_fetch_array($stid, OCI_ASSOC+OCI_RETURN_NULLS)) {
+    echo "<tr>\n";
+    foreach ($row as $item) {
+        echo "    <td>" . ($item !== null ? htmlentities($item, ENT_QUOTES) : "&nbsp;") . "</td>\n";
+    }
+    echo "</tr>\n";
+}
+echo "</table>\n";
+
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+  <para>
+   <example>
+    <title><function>oci_connect</function> での複数コールの使用</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+$c1 = oci_connect("hr", "welcome", 'localhost/XE');
+$c2 = oci_connect("hr", "welcome", 'localhost/XE');
+
+// Both $c1 and $c2 show the same PHP resource id meaning they use the
+// same underlying database connection
+echo "c1 is $c1<br>\n";
+echo "c2 is $c2<br>\n";
 
 function create_table($conn)
 {
-  $stmt = oci_parse($conn, "create table scott.hallo (test varchar2(64))");
-  oci_execute($stmt);
-  echo $conn . " created table\n\n";
+    $stmt = oci_parse($conn, "create table hallo (test varchar2(64))");
+    oci_execute($stmt);
+    echo "Created table<br>\n";
 }
 
 function drop_table($conn)
 {
-  $stmt = oci_parse($conn, "drop table scott.hallo");
-  oci_execute($stmt);
-  echo $conn . " dropped table\n\n";
+    $stmt = oci_parse($conn, "drop table hallo");
+    oci_execute($stmt);
+    echo "Dropped table<br>\n";
 }
 
-function insert_data($conn)
+function insert_data($connname, $conn)
 {
-  $stmt = oci_parse($conn, "insert into scott.hallo
-            values('$conn' || ' ' || to_char(sysdate,'DD-MON-YY HH24:MI:SS'))");
-  oci_execute($stmt, OCI_DEFAULT);
-  echo $conn . " inserted hallo\n\n";
+    $stmt = oci_parse($conn, "insert into hallo
+              values(to_char(sysdate,'DD-MON-YY HH24:MI:SS'))");
+    oci_execute($stmt, OCI_DEFAULT);
+    echo "$connname inserted row without committing<br>\n";
 }
 
-function delete_data($conn)
+function rollback($connname, $conn)
 {
-  $stmt = oci_parse($conn, "delete from scott.hallo");
-  oci_execute($stmt, OCI_DEFAULT);
-  echo $conn . " deleted hallo\n\n";
+    oci_rollback($conn);
+    echo "$connname rollback<br>\n";
 }
 
-function commit($conn)
+function select_data($connname, $conn)
 {
-  oci_commit($conn);
-  echo $conn . " committed\n\n";
-}
-
-function rollback($conn)
-{
-  oci_rollback($conn);
-  echo $conn . " rollback\n\n";
-}
-
-function select_data($conn)
-{
-  $stmt = oci_parse($conn, "select * from scott.hallo");
-  oci_execute($stmt, OCI_DEFAULT);
-  echo $conn."----selecting\n\n";
-  while (oci_fetch($stmt)) {
-    echo $conn . " [" . oci_result($stmt, "TEST") . "]\n\n";
-  }
-  echo $conn . "----done\n\n";
+    $stmt = oci_parse($conn, "select * from hallo");
+    oci_execute($stmt, OCI_DEFAULT);
+    echo "$connname ----selecting<br>\n";
+    while (oci_fetch($stmt)) {
+        echo "    " . oci_result($stmt, "TEST") . "<br>\n";
+    }
+    echo "$connname ----done<br>\n";
 }
 
 create_table($c1);
-insert_data($c1);   // c1 を使って行を挿入
-insert_data($c2);   // c2 を使って行を挿入
 
-select_data($c1);   // 両方の挿入した結果が返される
-select_data($c2);
+insert_data('c1', $c1);   // Insert a row using c1
+sleep(2);                 // sleep to show a different timestamp for the 2nd row
+insert_data('c2', $c2);   // Insert a row using c2
 
-rollback($c1);      // c1 を使ってロールバック
+select_data('c1', $c1);   // Results of both inserts are returned
+select_data('c2', $c2);   // Results of both inserts are returned
 
-select_data($c1);   // どちらの挿入もロールバックされている
-select_data($c2);
+rollback('c1', $c1);      // Rollback using c1
 
-insert_data($c2);   // c2 を使って行を挿入
-commit($c2);        // c2 を使ってコミット
-
-select_data($c1);   // c2 の結果が返される
-
-delete_data($c1);   // c1 を使ってテーブル内の全ての行を削除
-select_data($c1);   // 行は返されない
-select_data($c2);   // 行は返されない
-commit($c1);        // c1 を使ってコミット
-
-select_data($c1);   // 行は返されない
-select_data($c2);   // 行は返されない
+select_data('c1', $c1);   // Both inserts have been rolled back
+select_data('c2', $c2);
 
 drop_table($c1);
-echo "</pre>";
+
+// Closing one of the connections makes the PHP variable unusable, but
+// the other could be used
+oci_close($c1);
+echo "c1 is $c1<br>\n";
+echo "c2 is $c2<br>\n";
+
+
+// Output is:
+//    c1 is Resource id #5
+//    c2 is Resource id #5
+//    Created table
+//    c1 inserted row without committing
+//    c2 inserted row without committing
+//    c1 ----selecting
+//        09-DEC-09 12:14:43
+//        09-DEC-09 12:14:45
+//    c1 ----done
+//    c2 ----selecting
+//        09-DEC-09 12:14:43
+//        09-DEC-09 12:14:45
+//    c2 ----done
+//    c1 rollback
+//    c1 ----selecting
+//    c1 ----done
+//    c2 ----selecting
+//    c2 ----done
+//    Dropped table
+//    c1 is 
+//    c2 is Resource id #5
+
 ?>
 ]]>
     </programlisting>
@@ -196,37 +306,17 @@ echo "</pre>";
  <refsect1 role="notes">
   &reftitle.notes;
   <note>
-   <simpara>
-    もし、Oracle インスタントクライアントとPHPを使用する場合、
-    次に示す簡単な接続ネーミングメソッドを使用することができます：
-    <link xlink:href="&url.oracle.oic.connect;">&url.oracle.oic.connect;</link>。
-    基本的にこれはデータベース名として "//db_host[:port]/database_name"
-    を指定できることを意味する。しかし、古いネーミング方法を使用したい場合、
-    <constant>ORACLE_HOME</constant> もしくは <constant>TNS_ADMIN</constant>
-    のいずれかを設定する <emphasis>必要があります</emphasis> 。
-   </simpara>
-  </note>
-  <note>
-   <simpara>
-    同じパラメータを使用して 2 回目やそれ以降に
-    <function>oci_connect</function> がコールされた場合、
-    最初のコールで返された接続ハンドルを返します。
-    これは 1 つのハンドルに対して発行されたクエリは、
-    他のハンドルにも適用されることを意味します。なぜなら、
-    これらは <emphasis>同じ</emphasis> ハンドルだからです。
-    この動作は以下の例 1 で例示されています。
-    もしトランザクション的にお互い独立した 2 つのハンドルが必要な場合、
-    <function>oci_new_connect</function> を使用してください。
-   </simpara>
+   <para>
+    OCI8 拡張モジュールのインストールや設定に不備があると、
+    接続時に問題やエラーが発生します。解決策は
+    <link linkend="oci8.setup">インストール/設定</link>
+    を参照ください。
+   </para>
   </note>
   <note>
    <para>
-    PHP 5.0.0 以前では、代わりに
-    <function>ocilogon</function>
-    を使用しなければなりません。
-    まだこの名前を使用することができ、下位互換性のため
-    <function>oci_connect</function> への別名として残されていますが、
-    推奨されません。
+    PHP 5.0.0 より前のバージョンでは、かわりに <function>ocilogon</function>
+    を使用します。&oci.name.compat.note;
    </para>
   </note>
  </refsect1>
@@ -264,3 +354,4 @@ vim600: syn=xml fen fdm=syntax fdl=2 si
 vim: et tw=78 syn=sgml
 vi: ts=1 sw=1
 -->
+

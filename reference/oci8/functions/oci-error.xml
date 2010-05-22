@@ -1,20 +1,24 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- $Revision$ -->
-<!-- EN-Revision: af4410a7e15898c3dbe83d6ea38246745ed9c6fb Maintainer: shimooka Status: ready -->
+<!-- EN-Revision: 96c9d88bad9a7d7d44bfb7f26c226df7ee9ddf26 Maintainer: shimooka Status: ready -->
 <refentry xml:id="function.oci-error" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>oci_error</refname>
   <refpurpose>最後に見つかったエラーを返す</refpurpose>
  </refnamediv>
-
+ 
  <refsect1 role="description">
   &reftitle.description;
   <methodsynopsis>
    <type>array</type><methodname>oci_error</methodname>
-   <methodparam choice="opt"><type>resource</type><parameter>source</parameter></methodparam>
+   <methodparam choice="opt"><type>resource</type><parameter>resource</parameter></methodparam>
   </methodsynopsis>
   <para>
    最後に見つかったエラーを返します。
+  </para>
+  <para>
+   この関数は、エラーが発生した直後にコールしなければなりません。
+   文の実行が成功すると、エラーはクリアされてしまいます。
   </para>
  </refsect1>
 
@@ -23,15 +27,15 @@
   <para>
    <variablelist>
     <varlistentry>
-     <term><parameter>source</parameter></term>
+     <term><parameter>resource</parameter></term>
      <listitem>
       <para>
-       ほとんどのエラーに対応するため、
-       パラメータは適当なリソースハンドルを指定可能。
-       <function>oci_connect</function>、
-       <function>oci_new_connect</function>
-       あるいは <function>oci_pconnect</function> での接続エラーの場合、
-       パラメータを渡さない。
+       大半のエラーでは、<parameter>resource</parameter>
+       は関数コール時に渡されたリソースハンドルとなります。
+       <function>oci_connect</function> や
+       <function>oci_new_connect</function>、
+       <function>oci_pconnect</function> の接続エラーの場合は <parameter>resource</parameter>
+       を渡しません。
       </para>
      </listitem>
     </varlistentry>
@@ -43,10 +47,54 @@
   &reftitle.returnvalues;
   <para>
    もしエラーが見つからない場合、<function>oci_error</function> は
-   &false; を返す。
-   <function>oci_error</function> はエラーを連想配列として返す。
-   この配列には、Oracle エラーコード <literal>code</literal> や
-   Oracle エラー文字列 <literal>message</literal> が含まれる。
+   &false; を返します。それ以外の場合は、
+   <function>oci_error</function> はエラーの情報を連想配列で返します。
+  </para>
+  <para>
+   <table>
+   <title><function>oci_error</function> の配列の形式</title>
+
+    <tgroup cols="3">
+     <thead>
+      <row>
+       <entry>配列のキー</entry>
+       <entry>型</entry>
+       <entry>&Description;</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry><literal>code</literal></entry>
+       <entry><type>integer</type></entry>
+       <entry>
+         Oracle のエラーコード。
+       </entry>
+      </row>
+      <row>
+       <entry><literal>message</literal></entry>
+       <entry><type>string</type></entry>
+       <entry>
+         Oracle のエラーメッセージ。
+       </entry>
+      </row>
+      <row>
+       <entry><literal>offset</literal></entry>
+       <entry><type>integer</type></entry>
+       <entry>
+         SQL 文の中でのエラーが発生した場所のバイト位置。SQL 文がない場合は
+         <literal>0</literal> となります。
+       </entry>
+      </row>
+      <row>
+       <entry><literal>sqltext</literal></entry>
+       <entry><type>string</type></entry>
+       <entry>
+         SQL 文のテキスト。SQL 文がない場合は空文字列となります。
+       </entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </table>
   </para>
  </refsect1>
 
@@ -63,11 +111,10 @@
      </thead>
      <tbody>
       <row>
-       <entry>4.3</entry>
+       <entry>PHP 4.3</entry>
        <entry>
-        エラーの場所と原因となった SQL テキストを示すため、
         <literal>offset</literal> と <literal>sqltext</literal>
-        も返される配列に含まれる。
+        が追加されました。
        </entry>
       </row>
      </tbody>
@@ -80,13 +127,13 @@
   &reftitle.examples;
   <para>
    <example>
-    <title>接続エラー後、Oracle エラーメッセージを表示する</title>
+    <title>接続エラー後の Oracle エラーメッセージの表示</title>
     <programlisting role="php">
 <![CDATA[
-$conn = @oci_connect("scott", "tiger", "mydb");
+$conn = oci_connect("hr", "welcome", "localhost/XE");
 if (!$conn) {
-  $e = oci_error();   // oci_connect のエラーの場合、ハンドルを渡さない
-  echo htmlentities($e['message']);
+    $e = oci_error();   // oci_connect のエラーの場合、ハンドルを渡しません
+    trigger_error(htmlentities($e['message']), E_USER_ERROR);
 }
 ]]>
     </programlisting>
@@ -94,13 +141,13 @@ if (!$conn) {
   </para>
    <para>
    <example>
-    <title>パースエラー後、Oracle エラーメッセージを表示する</title>
+    <title>パースエラー時の Oracle エラーメッセージの表示</title>
     <programlisting role="php">
 <![CDATA[
-$stmt = @oci_parse($conn, "select ' from dual");  // クオートが間違っている事に注意
-if (!$stmt) {
-  $e = oci_error($conn);  // oci_parse のエラーの場合、接続ハンドルを渡す
-  echo htmlentities($e['message']);
+$stid = oci_parse($conn, "select ' from dual");  // クォートが間違っていることに注意
+if (!$stid) {
+    $e = oci_error($conn);  // oci_parse エラーの場合は接続ハンドルを渡します
+    trigger_error(htmlentities($e['message']), E_USER_ERROR);
 }
 ]]>
     </programlisting>
@@ -108,18 +155,19 @@ if (!$stmt) {
   </para>
   <para>
    <example>
-    <title>実行エラー後、
-      Oracle エラーメッセージと問題となった文を表示する</title>
+    <title>実行エラー時の、
+      Oracle エラーメッセージと問題となった文の表示</title>
     <programlisting role="php">
 <![CDATA[
-$r = oci_execute($stmt);
+$stid = oci_parse($conn, "select does_not_exist from dual");
+$r = oci_execute($stid);
 if (!$r) {
-  $e = oci_error($stmt); // oci_execute のエラーの場合、ステートメントハンドルを渡す
-  echo htmlentities($e['message']);
-  echo "<pre>";
-  echo htmlentities($e['sqltext']);
-  printf("\n%".($e['offset']+1)."s", "^");
-  echo "</pre>";
+    $e = oci_error($stid);  // oci_execute のエラーの場合、ステートメントハンドルを渡します
+    print htmlentities($e['message']);
+    print "\n<pre>\n";
+    print htmlentities($e['sqltext']);
+    printf("\n%".($e['offset']+1)."s", "^");
+    print  "\n</pre>\n";
 }
 ]]>
     </programlisting>
@@ -131,12 +179,8 @@ if (!$r) {
   &reftitle.notes;
   <note>
    <para>
-    PHP バージョン 5.0.0 以前では、代わりに
-    <function>ocierror</function>
-    を使用しなければなりません。
-    まだこの名前を使用することができ、下位互換性のため
-    <function>oci_error</function> への別名として残されていますが、
-    推奨されません。
+    PHP 5.0.0 より前のバージョンでは、かわりに
+    <function>ocierror</function> を使います。&oci.name.compat.note;
    </para>
   </note>
  </refsect1>

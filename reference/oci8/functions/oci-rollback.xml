@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- $Revision$ -->
-<!-- EN-Revision: af4410a7e15898c3dbe83d6ea38246745ed9c6fb Maintainer: shimooka Status: ready -->
+<!-- EN-Revision: 96c9d88bad9a7d7d44bfb7f26c226df7ee9ddf26 Maintainer: shimooka Status: ready -->
 <refentry xml:id="function.oci-rollback" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>oci_rollback</refname>
-  <refpurpose>未解決のトランザクションをロールバックする</refpurpose>
+  <refpurpose>未解決のデータベーストランザクションをロールバックする</refpurpose>
  </refnamediv>
  
  <refsect1 role="description">
@@ -14,8 +14,24 @@
    <methodparam><type>resource</type><parameter>connection</parameter></methodparam>
   </methodsynopsis>
   <para>
-   Oracle 接続 <parameter>connection</parameter> に関する
-   全ての未解決の文をロールバックします。
+   Oracle 接続 <parameter>connection</parameter> について、
+   コミットされていないすべての変更を取り消します。
+   取得しているロックはすべて解放します。また、すべての Oracle <literal>SAVEPOINTS</literal>
+   を削除します。
+  </para>
+  <para>
+   トランザクションが始まるのは、データを変更する最初の SQL 文が
+   <constant>OCI_NO_AUTO_COMMIT</constant> フラグつきの
+   <function>oci_execute</function> で実行されたときです。
+   それ以降、他の文で実行されたデータの変更は、同じトランザクションの一部となります。
+   トランザクション内でのデータの変更は、
+   コミットあるいはロールバックされるまでは一時的なものとなります。
+   トランザクションがコミットされるまで、
+   データベースの他のユーザはその変更を見ることができません。
+  </para>
+  <para>
+   データを追加したり更新したりする場合にはトランザクションを使うことを推奨します。
+   これは、データの一貫性やパフォーマンスを考慮したものです。
   </para>
  </refsect1>
 
@@ -27,7 +43,8 @@
      <term><parameter>connection</parameter></term>
      <listitem>
       <para>
-       <function>oci_connect</function> あるいは <function>oci_pconnect</function>
+       <function>oci_connect</function>、<function>oci_pconnect</function>
+       あるいは <function>oci_new_connect</function>.
        が返す Oracle 接続 ID。
       </para>
      </listitem>
@@ -43,6 +60,75 @@
   </para>
  </refsect1>
 
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title><function>oci_rollback</function> の例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+// 複数のテーブルにデータを追加し、エラーが発生したらロールバックします
+
+$conn = oci_connect('hr', 'welcome', 'localhost/XE');
+
+$stid = oci_parse($conn, "INSERT INTO mysalary (id, name) VALUES (1, 'Chris')");
+
+// OCI_NO_AUTO_COMMIT フラグで、INSERT 直後にコミットしないよう Oracle に指示します。
+// PHP <= 5.3.1 では OCI_DEFAULT を使います。これらふたつのフラグは同じ意味です
+$r = oci_execute($stid, OCI_NO_AUTO_COMMIT);
+if (!$r) {    
+    $e = oci_error($stid);
+    trigger_error(htmlentities($e['message']), E_USER_ERROR);
+}
+
+$stid = oci_parse($conn, 'INSERT INTO myschedule (startday) VALUES (12)');
+$r = oci_execute($stid, OCI_NO_AUTO_COMMIT);
+if (!$r) {    
+    $e = oci_error($stid);
+    oci_rollback($conn);  // 両方のテーブルへの変更をロールバックします
+    trigger_error(htmlentities($e['message']), E_USER_ERROR);
+}
+
+// 両方のテーブルへの変更をコミットします
+$r = oci_commit($conn);
+if (!r) {
+    $e = oci_error($conn);
+    trigger_error(htmlentities($e['message']), E_USER_ERROR);
+}
+
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+  <para>
+   <example>
+    <title><literal>SAVEPOINT</literal> へのロールバックの例</title>
+    <programlisting role="php">
+<![CDATA[
+$stid = oci_parse($conn, 'UPDATE mytab SET id = 1111');
+oci_execute($stid, OCI_NO_AUTO_COMMIT);
+
+// セーブポイントを作成します
+$stid = oci_parse($conn, 'SAVEPOINT mysavepoint');
+oci_execute($stid, OCI_NO_AUTO_COMMIT);
+
+$stid = oci_parse($conn, 'UPDATE mytab SET id = 2222');
+oci_execute($stid, OCI_NO_AUTO_COMMIT);
+
+// セーブポイントにロールバックする SQL 文を使います
+$stid = oci_parse($conn, 'ROLLBACK TO SAVEPOINT mysavepoint');
+oci_execute($stid, OCI_NO_AUTO_COMMIT);
+
+oci_commit($conn);  // mytab の id は、この時点で 1111 となります
+]]>
+    </programlisting>
+   </example>
+  </para>
+ </refsect1>
+
  <refsect1 role="notes">
   &reftitle.notes;
   <note>
@@ -51,19 +137,25 @@
     もしくはスクリプトの終了時のいずれの場合でも
     すぐに自動的にロールバックされます。
     トランザクションをコミットするには
-    <function>oci_commit</function> をコールする、
-    もしくはトランザクションを破棄する場合は
-    <function>oci_rollback</function> を明示的にコールする必要があります。
+    <function>oci_commit</function> をコールする必要があります。
+   </para>
+   <para>
+    <function>oci_execute</function> を、
+    <constant>OCI_COMMIT_ON_SUCCESS</constant> モードや
+    デフォルト状態でコールすると、
+    その時点までの未確定のトランザクションをすべてコミットします。
+   </para>
+   <para>
+    Oracle の DDL 文 (<literal>CREATE</literal> や
+    <literal>DROP</literal> など) を実行すると、
+    その時点までの未確定のトランザクションをすべてコミットします。
    </para>
   </note>
   <note>
    <para>
-    PHP バージョン 5.0.0 以前では、代わりに
+    PHP 5.0.0 より前のバージョンでは、かわりに
     <function>ocirollback</function>
-    を使用しなければなりません。
-    まだこの名前を使用することができ、下位互換性のため
-    <function>oci_rollback</function> への別名として残されていますが、
-    推奨されません。
+    を使用します。&oci.name.compat.note;
    </para>
   </note>
  </refsect1>
@@ -73,6 +165,7 @@
   <para>
    <simplelist>
     <member><function>oci_commit</function></member>
+    <member><function>oci_execute</function></member>
    </simplelist>
   </para>
  </refsect1>

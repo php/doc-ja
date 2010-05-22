@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- $Revision$ -->
-<!-- EN-Revision: af4410a7e15898c3dbe83d6ea38246745ed9c6fb Maintainer: shimooka Status: ready -->
+<!-- EN-Revision: 96c9d88bad9a7d7d44bfb7f26c226df7ee9ddf26 Maintainer: shimooka Status: ready -->
 <refentry xml:id="function.oci-fetch" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>oci_fetch</refname>
-  <refpurpose>結果バッファの次の行を取得する</refpurpose>
+  <refpurpose>クエリの次の行を内部バッファに取得する</refpurpose>
  </refnamediv>
  
  <refsect1 role="description">
@@ -14,9 +14,16 @@
    <methodparam><type>resource</type><parameter>statement</parameter></methodparam>
   </methodsynopsis>
   <para>
-   (SELECT文の) 次の行を内部結果バッファに取得します。
+   クエリの次の行を内部バッファに取得します。このバッファへは
+   <function>oci_result</function> でアクセスできます。あるいは、
+   <function>oci_define_by_name</function>
+   で事前に定義した変数を使ってアクセスすることもできます。
   </para>
-  &oci.datatypes;
+  <para>
+    データの取得に関する全般的な情報は <function>oci_fetch_array</function>
+    を参照ください。
+  </para>
+
  </refsect1>
 
  <refsect1 role="parameters">
@@ -26,9 +33,7 @@
     <varlistentry>
      <term><parameter>statement</parameter></term>
      <listitem>
-      <para>
-       有効な OCI ステートメント ID。
-      </para>
+       &oci.arg.statement.id;
      </listitem>
     </varlistentry>
    </variablelist>
@@ -44,18 +49,106 @@
   </para>
  </refsect1>
 
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title><function>oci_fetch</function> での定義済みの変数の使用</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+$conn = oci_connect('hr', 'welcome', 'localhost/XE');
+if (!$conn) {
+    $e = oci_error();
+    trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
+}
+
+$sql = 'SELECT location_id, city FROM locations WHERE location_id < 1200';
+$stid = oci_parse($conn, $sql);
+
+// 実行前に定義しておく必要があります
+oci_define_by_name($stid, 'LOCATION_ID', $locid);
+oci_define_by_name($stid, 'CITY', $city);
+
+oci_execute($stid);
+
+// フェッチするたびに、次の行のデータが定義済みの変数に格納されます
+while (oci_fetch($stid)) {
+    echo "Location id $locid is $city<br>\n";
+}
+
+// 表示:
+//   Location id 1000 is Roma
+//   Location id 1100 is Venice
+
+oci_free_statement($stid);
+oci_close($conn);
+
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+  <para>
+   <example>
+    <title><function>oci_fetch</function> と <function>oci_result</function> の使用例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+$conn = oci_connect('hr', 'welcome', 'localhost/XE');
+if (!$conn) {
+    $e = oci_error();
+    trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
+}
+
+$sql = 'SELECT location_id, city FROM locations WHERE location_id < 1200';
+$stid = oci_parse($conn, $sql);
+oci_execute($stid);
+
+while (oci_fetch($stid)) {
+    echo oci_result($stid, 'LOCATION_ID') . " is ";
+    echo oci_result($stid, 'CITY') . "<br>\n";
+}
+
+// 表示:
+//   1000 is Roma
+//   1100 is Venice
+
+oci_free_statement($stid);
+oci_close($conn);
+
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+ </refsect1>
+
  <refsect1 role="notes">
   &reftitle.notes;
   <note>
    <para>
-    PHP バージョン 5.0.0 以前では、代わりに
-    <function>ocifetch</function>
-    を使用しなければなりません。
-    まだこの名前を使用することができ、下位互換性のため
-    <function>oci_fetch</function> への別名として残されていますが、
-    推奨されません。
+    PHP 5.0.0 より前のバージョンでは、かわりに <function>ocifetch</function>
+    を使用します。&oci.name.compat.note;
    </para>
   </note>
+ </refsect1>
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <para>
+   <simplelist>
+    <member><function>oci_define_by_name</function></member>
+    <member><function>oci_fetch_all</function></member>
+    <member><function>oci_fetch_array</function></member>
+    <member><function>oci_fetch_assoc</function></member>
+    <member><function>oci_fetch_object</function></member>
+    <member><function>oci_fetch_row</function></member>
+    <member><function>oci_result</function></member>
+   </simplelist>
+  </para>
  </refsect1>
 
 </refentry>

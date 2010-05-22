@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- $Revision$ -->
-<!-- EN-Revision: af4410a7e15898c3dbe83d6ea38246745ed9c6fb Maintainer: shimooka Status: ready -->
+<!-- EN-Revision: 96c9d88bad9a7d7d44bfb7f26c226df7ee9ddf26 Maintainer: shimooka Status: ready -->
 <refentry xml:id="function.oci-define-by-name" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>oci_define_by_name</refname>
-  <refpurpose>SELECT 実行中、定義用の PHP 変数を使用する</refpurpose>
+  <refpurpose>PHP の変数を、クエリで取得するカラムに関連づける</refpurpose>
  </refnamediv>
-
+ 
  <refsect1 role="description">
   &reftitle.description;
   <methodsynopsis>
@@ -17,7 +17,11 @@
    <methodparam choice="opt"><type>int</type><parameter>type</parameter><initializer>SQLT_CHR</initializer></methodparam>
   </methodsynopsis>
   <para>
-   SQL カラムカラムをフェッチするための PHP 変数を定義します。
+   PHP の変数を、<function>oci_fetch</function> で取得するクエリのカラムに関連づけます。
+  </para>
+  <para>
+    <function>oci_define_by_name</function> は、
+    <function>oci_execute</function> を実行する前にコールしなければなりません。
   </para>
  </refsect1>
 
@@ -28,21 +32,18 @@
     <varlistentry>
      <term><parameter>statement</parameter></term>
      <listitem>
-      <para>
-       有効な OCI ステートメント ID
-      </para>
+       &oci.arg.statement.id;
      </listitem>
     </varlistentry>
     <varlistentry>
      <term><parameter>column_name</parameter></term>
      <listitem>
       <para>
-       カラム名。大文字であること。
+       クエリで使用するカラム名。
       </para>
       <para>
-       Oracle は、全ての大文字のカラム名を使用するが、
-       select の中で小文字も書くことが可能であることを考慮すること。
-       select 文にない変数を定義する場合、エラーは発生しない。
+       Oracle のデフォルトである大文字小文字を区別しないカラム名では大文字を使います。
+       大文字小文字を区別するカラム名の場合は、正確なカラム名を使います。
       </para>
      </listitem>
     </varlistentry>
@@ -50,7 +51,7 @@
      <term><parameter>variable</parameter></term>
      <listitem>
       <para>
-       PHP 変数
+       返されるカラムの値を格納する PHP 変数。
       </para>
      </listitem>
     </varlistentry>
@@ -58,12 +59,14 @@
      <term><parameter>type</parameter></term>
      <listitem>
       <para>
+        返されるデータの型。一般的には不要です。
+        Oracle 式のデータ変換は行われないことに注意しましょう。たとえば、
+        <literal>SQLT_INT</literal> は無視され、返されるデータの型は
+        <literal>SQLT_CHR</literal> のままとなります。
       </para>
       <para>
-       抽象 Datatype (LOB/ROWID/BFILE) を定義する必要がある場合、
-       まず <function>oci_new_descriptor</function> 関数を用いてその
-       領域を確保する必要がある。
-     <function>oci_bind_by_name</function> 関数も参照のこと。
+       オプションで、<function>oci_new_descriptor</function> を使って
+       LOB/ROWID/BFILE の領域を確保することもできます。
       </para>
      </listitem>
     </varlistentry>
@@ -86,26 +89,173 @@
     <programlisting role="php">
 <![CDATA[
 <?php
-/* oci_define_by_name の例 - thies at thieso dot net (980219) */
 
-$conn = oci_connect("scott", "tiger");
-
-$stmt = oci_parse($conn, "SELECT empno, ename FROM emp");
-
-/* 定義は oci_execute の前に行われなければなりません! */
-
-oci_define_by_name($stmt, "EMPNO", $empno);
-oci_define_by_name($stmt, "ENAME", $ename);
-
-oci_execute($stmt);
-
-while (oci_fetch($stmt)) {
-    echo "empno:" . $empno . "\n";
-    echo "ename:" . $ename . "\n";
+$conn = oci_connect('hr', 'welcome', 'localhost/XE');
+if (!$conn) {
+    $e = oci_error();
+    trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
 }
 
-oci_free_statement($stmt);
+$sql = 'SELECT location_id, city FROM locations WHERE location_id < 1200';
+$stid = oci_parse($conn, $sql);
+
+// 実行する前に定義しなければなりません
+oci_define_by_name($stid, 'LOCATION_ID', $locid);
+oci_define_by_name($stid, 'CITY', $city);
+
+oci_execute($stid);
+
+// フェッチするたびに、さきほど定義した変数に次の行のデータが格納されます
+while (oci_fetch($stid)) {
+    echo "Location id $locid is $city<br>\n";
+}
+
+// 表示:
+//   Location id 1000 is Roma
+//   Location id 1100 is Venice
+
+oci_free_statement($stid);
 oci_close($conn);
+
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+  <para>
+   <example>
+    <title><function>oci_define_by_name</function> での大文字小文字を区別するカラム名の使用</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+/*
+  実行する前に、大文字小文字を区別するカラム名のテーブルを作っておきます
+    CREATE TABLE mytab (id NUMBER, "MyDescription" VARCHAR2(30));
+    INSERT INTO mytab (id, "MyDescription") values (1, 'Iced Coffee');
+    COMMIT;
+*/
+
+$conn = oci_connect('hr', 'welcome', 'localhost/XE');
+if (!$conn) {
+    $e = oci_error();
+    trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
+}
+
+$stid = oci_parse($conn, 'SELECT * FROM mytab');
+
+// 大文字小文字を区別しないカラム名の場合は、大文字を使います
+oci_define_by_name($stid, 'ID', $id);
+
+// 大文字小文字を区別するカラム名の場合は、カラム名にあわせます
+oci_define_by_name($stid, 'MyDescription', $mydesc);
+
+oci_execute($stid);
+
+while (oci_fetch($stid)) {
+    echo "id $id is $mydesc<br>\n";
+}
+
+// 表示:
+//   id 1 is Iced Coffee
+
+oci_free_statement($stid);
+oci_close($conn);
+
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+  <para>
+   <example>
+    <title><function>oci_define_by_name</function> での LOB カラムの使用</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+/*
+  実行する前にテーブルを作ります
+    CREATE TABLE mytab (id NUMBER, fruit CLOB);
+    INSERT INTO mytab (id, fruit) values (1, 'apple');
+    INSERT INTO mytab (id, fruit) values (2, 'orange');
+    COMMIT;
+*/
+
+$conn = oci_connect('hr', 'welcome', 'localhost/XE');
+if (!$conn) {
+    $e = oci_error();
+    trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
+}
+
+$stid = oci_parse($conn, 'SELECT * FROM mytab');
+
+// 実行する前に定義しなければなりません
+oci_define_by_name($stid, 'ID', $id);
+oci_define_by_name($stid, 'FRUIT', $fruit);  // $fruit will become a LOB descriptor
+
+oci_execute($stid);
+
+while (oci_fetch($stid)) {
+    echo $id . " is " . $fruit->load(100) . "<br>\n";
+}
+
+// 表示:
+//   1 is apple
+//   2 is orange
+
+$fruit->free();
+oci_free_statement($stid);
+oci_close($conn);
+
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+  <para>
+   <example>
+    <title><function>oci_define_by_name</function> での型の明示</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+/*
+  実行する前にテーブルを作ります
+    CREATE TABLE mytab (id NUMBER, fruit CLOB);
+    INSERT INTO mytab (id, fruit) values (1, 'apple');
+    INSERT INTO mytab (id, fruit) values (2, 'orange');
+    COMMIT;
+*/
+
+$conn = oci_connect('hr', 'welcome', 'localhost/XE');
+if (!$conn) {
+    $e = oci_error();
+    trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
+}
+
+$stid = oci_parse($conn, 'SELECT * FROM mytab');
+
+// 実行する前に定義しなければなりません
+oci_define_by_name($stid, 'ID', $id);
+
+$fruit = oci_new_descriptor($conn, OCI_D_LOB);
+oci_define_by_name($stid, 'FRUIT', $fruit, OCI_D_CLOB);
+
+oci_execute($stid);
+
+while (oci_fetch($stid)) {
+    echo $id . " is " . $fruit->load(100) . "<br>\n";
+}
+
+// 表示:
+//   1 is apple
+//   2 is orange
+
+$fruit->free();
+oci_free_statement($stid);
+oci_close($conn);
+
 ?>
 ]]>
     </programlisting>
@@ -117,14 +267,21 @@ oci_close($conn);
   &reftitle.notes;
   <note>
    <para>
-    PHP バージョン 5.0.0 以前では、代わりに
-    <function>ocidefinebyname</function>
-    を使用しなければなりません。
-    まだこの名前を使用することができ、下位互換性のため
-    <function>oci_define_by_name</function> への別名として残されていますが、
-    推奨されません。
+    PHP 5.0.0 より前のバージョンでは、かわりに
+    <function>ocidefinebyname</function> を使用します。
+    &oci.name.compat.note;
    </para>
   </note>
+ </refsect1>
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <para>
+   <simplelist>
+    <member><function>oci_fetch</function></member>
+    <member><function>oci_new_descriptor</function></member>
+   </simplelist>
+  </para>
  </refsect1>
 
 </refentry>
@@ -149,3 +306,4 @@ vim600: syn=xml fen fdm=syntax fdl=2 si
 vim: et tw=78 syn=sgml
 vi: ts=1 sw=1
 -->
+
