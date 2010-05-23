@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 51885bf991039890562616999b96791257d54138 Maintainer: takagi Status: working -->
+<!-- EN-Revision: 51885bf991039890562616999b96791257d54138 Maintainer: takagi Status: ready -->
 
 <phpdoc:classref xml:id="class.mongogridfs" xmlns:phpdoc="http://php.net/ns/phpdoc" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xi="http://www.w3.org/2001/XInclude">
 
@@ -17,30 +17,33 @@
    </para>
 
    <para>
-    GridFS is a storage specification all supported drivers implement. 
-    Basically, it defines two collections: <literal>files</literal>, for file 
-    metadata, and <literal>chunks</literal>, for file content.  If the file is 
-    large, it will automatically be split into smaller chunks and each chunk 
-    will be saved as a document in the chunks collection.
+    GridFS はストレージの仕様で、すべてのドライバがこれを実装しています。
+    基本的に、これはふたつのコレクションを定義しています。
+    ファイルのメタデータ用の <literal>files</literal>、
+    そしてファイルの中身用の <literal>chunks</literal> です。
+    大きなファイルの場合は自動的に小さなチャンクに分割し、
+    各チャンクが chunks コレクションのドキュメントとして保存されます。
    </para>
 
    <para>
-    Each document in the files collection contains the filename, upload date, 
-    and md5 hash.  It also contains a unique <literal>_id</literal> field, which
-    can be used to query the chunks collection for the file's content.  Each 
-    document in the chunks collection contains a chunk of binary data, a 
-    <literal>files_id</literal> field that matches its file's 
-    <literal>_id</literal>, and the position of this chunk in the overall file.
+    files コレクション内の各ドキュメントには、ファイル名とアップロードした日付、
+    そして md5 ハッシュが含まれています。
+    また、一意な <literal>_id</literal> フィールドも持っており、
+    これを使ってそのファイルの中身がある chunks コレクションを探すことができます。
+    chunks コレクション内の各ドキュメントには、バイナリデータのチャンクの他に
+    そのファイルの <literal>_id</literal> フィールドにマッチする
+    <literal>files_id</literal> フィールドが含まれ、さらに
+    ファイル全体の中でそのチャンクがどの位置にあるのかという情報も含まれます。
    </para>
 
    <para>
-    For example, the files document is something like:
+    files ドキュメントの内容は、たとえばこのようになります。
     <programlisting role="php">
 <![CDATA[
 array("_id" => 123456789, "filename" => "foo.txt", "chunkSize" => 3, "length" => 12)
 ]]>
     </programlisting>
-    and the chunks documents look like:
+    そして chunks ドキュメントはこのようになります。
     <programlisting role="php">
 <![CDATA[
 array("files_id" => 123456789, "n" => 0, "data" => new MongoBinData("abc"));
@@ -49,18 +52,19 @@ array("files_id" => 123456789, "n" => 2, "data" => new MongoBinData("ghi"));
 array("files_id" => 123456789, "n" => 3, "data" => new MongoBinData("jkl"));
 ]]>
     </programlisting>
-    Of course, the default chunk size is thousands of bytes, but that makes an unweildy example.
+    もちろん、デフォルトのチャンクサイズはもっと大きなものになります。
+    ただそれでは例が見づらくなるのでこのようにしました。
    </para>
   </section>
 
   <section>
-   <title>Inter-Language Compatibility</title>
+   <title>言語間の互換性</title>
    <para>
-    You should be able to use any files created by MongoGridFS with any other 
-    drivers, and visa vera.  However, some drivers expect that all metadata
-    associated with a file be in a "metadata" field.  If you're going to be 
-    using other languages, it's a good idea to wrap info you might want them to
-    see in a "metadata" field.  For example, instead of:
+    MongoGridFS で作ったファイルは他のどのドライバでも使えなければなりませんし、
+    逆もまたそうです。しかし中には、ファイルに関連するすべてのメタデータが
+    "metadata" フィールドにあるという前提で動くドライバもあります。
+    他の言語を使う可能性があるのなら、見せたい情報を
+    "metadata" フィールドに入れておくといいでしょう。たとえば、
    </para>
    <programlisting role="php">
 <![CDATA[
@@ -72,7 +76,7 @@ $grid->storeFile("somefile.txt", array("date" => new MongoDate()));
 ]]>
    </programlisting>
    <para>
-    use something like:
+    こう書くかわりに、下のようにするのです。
    </para>
    <programlisting role="php">
 <![CDATA[
@@ -86,21 +90,21 @@ $grid->storeFile("somefile.txt", array("metadata" => array("date" => new MongoDa
   </section>
 
   <section>
-   <title>The <classname>MongoGridFS</classname> Family</title>
+   <title><classname>MongoGridFS</classname> ファミリー</title>
 
    <para>
-    <classname>MongoGridFS</classname> represents the files and chunks 
-    collections. <classname>MongoGridFS</classname> extends MongoCollection, 
-    and an instance of <classname>MongoGridFS</classname> has access to all of 
-    <classname>MongoCollection</classname> methods, which act on the files
-    collection:
+    <classname>MongoGridFS</classname> は files コレクションと chunks
+    コレクションを表します。<classname>MongoGridFS</classname> は MongoCollection
+    を継承しており、<classname>MongoGridFS</classname> のインスタンスは
+    <classname>MongoCollection</classname> のすべてのメソッドにアクセスできます。
+    これは files コレクションに対する操作となります。
     <informalexample>
      <programlisting role="php">
 <![CDATA[
 <?php
 
 $grid = $db->getGridFS();
-$grid->update(array("filename" => "foo"), $newObj)); // update on the files collection
+$grid->update(array("filename" => "foo"), $newObj)); // files コレクションを更新します
 
 ?>
 ]]>
@@ -109,21 +113,21 @@ $grid->update(array("filename" => "foo"), $newObj)); // update on the files coll
    </para>
 
    <para>
-    Another example of manipulating metadata:
+    メタデータを操作する別の例を示します。
     <informalexample>
      <programlisting role="php">
 <![CDATA[
 <?php
 
-// save a file
+// ファイルを保存します
 $id = $grid->storeFile("game.tgz");
 $game = $grid->findOne();
 
-// add a downloads counter
+// ダウンロードカウンタを追加します
 $game->file['downloads'] = 0;
 $grid->save($game->file);
 
-// increment the counter
+// カウンタをひとつ加算します
 $grid->update(array("_id" => $id), array('$inc' => array("downloads" => 1)));
 
 ?>
@@ -133,14 +137,14 @@ $grid->update(array("_id" => $id), array('$inc' => array("downloads" => 1)));
    </para>
 
    <para>
-    You can also access the chunks collection from an instance of 
-    <classname>MongoGridFS</classname>:
+    <classname>MongoGridFS</classname> のインスタンスから、
+    chunks コレクションにアクセスすることもできます。
     <informalexample>
      <programlisting role="php">
 <![CDATA[
 <?php
 
-  $chunks = $grid->chunks; // $chunks is a normal MongoCollection
+  $chunks = $grid->chunks; // $chunks は通常の MongoCollection です
 $chunks->insert(array("x" => 4));
 
 ?>
@@ -149,16 +153,17 @@ $chunks->insert(array("x" => 4));
     </informalexample>
    </para>
    <para>
-    There are some methods for <classname>MongoGridFS</classname> with the same
-    name as <classname>MongoCollection</classname> methods, that behave 
-    slightly differently. For example, <function>MongoGridFS::remove</function>
-    will remove any objects that match the criteria from the files collection 
-    and their content from the chunks collection.
+    <classname>MongoGridFS</classname> のメソッドの中には
+    <classname>MongoCollection</classname> のメソッドと同じ名前のものもあります。
+    これらのメソッドの挙動は微妙に異なります。
+    たとえば <function>MongoGridFS::remove</function>
+    は、条件にマッチするすべてのオブジェクトを files コレクションから削除し、
+    対応する chunks コレクションの中身も同時に削除します。
    </para>
 
    <para>
-    To store something new in GridFS, there are a couple options.  If you have
-    a filename, you can say:
+    新しい何かを GridFS に格納する際にはいくつかのオプションがあります。
+    ファイル名がわかる場合は、次のように書くことができます。
     <informalexample>
      <programlisting role="php">
 <![CDATA[
@@ -173,8 +178,8 @@ $grid->storeFile($filename, array("whatever" => "metadata", "you" => "want"));
    </para>
 
    <para>
-    If you have a string of bytes that isn't a file, you can also store that
-    using <function>MongoGridFS::storeBytes</function>:
+    ファイルではない文字列やバイト列の場合は、
+    <function>MongoGridFS::storeBytes</function> を使うこともできます。
     <informalexample>
      <programlisting role="php">
 <![CDATA[
@@ -189,23 +194,23 @@ $grid->storeBytes($bytes, array("whatever" => "metadata", "you" => "want");
    </para>
 
    <para>
-    Querying a <classname>MongoGridFS</classname> collection returns a 
-    <classname>MongoGridFSCursor</classname>, which behaves like a normal 
-    <classname>MongoCursor</classname> except that it returns 
-    <classname>MongoGridFSFiles</classname> instead of associative arrays.
+    <classname>MongoGridFS</classname> コレクションへの問い合わせ結果として返されるのは
+    <classname>MongoGridFSCursor</classname> です。これは通常の
+    <classname>MongoCursor</classname> とほぼ同様の動きをしますが、連想配列ではなく
+    <classname>MongoGridFSFiles</classname> を返すという点が異なります。
    </para>
 
    <para>
-    <classname>MongoGridFSFiles</classname> can be written back to disc using 
-    <function>MongoGridFSFile::write</function> or retrieved in memory using 
-    <function>MongoGridFSFile::getBytes</function>. There is currently no 
-    method that automatically streams chunks, but it would be fairly easy to 
-    write by querying the <literal>$grid->chunks</literal> collection.
+    <classname>MongoGridFSFiles</classname> をディスクに書き出すには
+    <function>MongoGridFSFile::write</function> を、メモリに取り込むには
+    <function>MongoGridFSFile::getBytes</function> を使います。
+    自動的にチャンクをつなげるメソッドは今のところありませんが、
+    <literal>$grid->chunks</literal> コレクションに問い合わせて自分でつなげるのはきわめて簡単です。
    </para>
 
    <para>
-    <classname>MongoGridFSFile</classname> objects contain a field file which
-    contains any file metadata.
+    <classname>MongoGridFSFile</classname> オブジェクトには、
+    ファイルのメタデータを格納する file フィールドが含まれます。
    </para>
   </section>
 <!-- }}} -->

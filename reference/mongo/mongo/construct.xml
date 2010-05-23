@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 6472ebd9a5c221b6187b57802ad68e2d7c03ed92 Maintainer: takagi Status: working -->
+<!-- EN-Revision: 6472ebd9a5c221b6187b57802ad68e2d7c03ed92 Maintainer: takagi Status: ready -->
 
 <refentry xml:id="mongo.construct" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -16,13 +16,13 @@
    <methodparam choice="opt"><type>array</type><parameter>options</parameter><initializer>array("connect" => &true;)</initializer></methodparam>
   </methodsynopsis>
   <para>
-   If no parameters are passed, this connects to "localhost:27017" (or whatever
-   was specified in php.ini for 
-   <link linkend="ini.mongo.default-host">mongo.default_host</link> and 
-   <link linkend="ini.mongo.default-port">mongo.default_port</link>).
+   パラメータを省略した場合は、"localhost:27017" (あるいは php.ini の
+   <link linkend="ini.mongo.default-host">mongo.default_host</link> と
+   <link linkend="ini.mongo.default-port">mongo.default_port</link> で設定した場所)
+   に接続します。
   </para>
   <para>
-   As of version 1.0.2, <parameter>server</parameter> can have a special form: 
+   バージョン 1.0.2 以降、<parameter>server</parameter> には次のような形式も使えます。
    <programlisting>
 <![CDATA[
 mongodb://[username:password@]host1[:port1][,host2[:port2:],...]/db
@@ -30,43 +30,47 @@ mongodb://[username:password@]host1[:port1][,host2[:port2:],...]/db
    </programlisting>
   </para>
   <para>
-   It starts with <literal>mongodb://</literal>, to indicate it is a connection
-   string in this form. 
-  </para>
-  <para>If <literal>username</literal> and <literal>password</literal>
-   are specified, the constructor will attempt to authenticate the connection 
-   with the database before returning.  Username and password are optional
-   and must be followed by an <literal>@</literal>, if specified.  
+   <literal>mongodb://</literal> で始まる部分が、
+   この形式の接続文字列であることを示します。
   </para>
   <para>
-   At least one host must be given (port optional, always defaulting to 27017) 
-   and as many hosts as desired may be connected to.  Host names are 
-   comma-separated and the constructor will return successfully if it connected 
-   to at least one host. If it could not connect to any of the hosts, it will 
-   throw a  <classname>MongoConnectionException</classname>.
+   <literal>username</literal> と <literal>password</literal>
+   を指定すれば、コンストラクタが接続を確立する際にデータベースへの認証を試みます。
+   ユーザ名とパスワードはオプションで、もし指定するならその後に
+   <literal>@</literal> を続けなければなりません。
   </para>
   <para>
-   Finally, if you specified a username and password, you may specify a database
-   to authenticate with.  If <literal>db</literal> is not specified, "admin" 
-   will be used.
+   少なくともひとつのホストを指定しなければなりません
+   (ポートはオプションで、デフォルトは常に 27017 となります)。
+   そのあとに、接続させたいホストをいくつでも続けることができます。
+   ホスト名はカンマ区切りで並べ、少なくともひとつのホストへの接続が成功すれば
+   コンストラクタは正常な結果を返します。
+   どのホストにも接続できなかった場合は
+   <classname>MongoConnectionException</classname> をスローします。
+  </para>
+  <para>
+   ユーザ名とパスワードを指定したときには、認証先のデータベースも指定することになるでしょう。
+   <literal>db</literal> を省略した場合は "admin" を使います。
   </para>
 
   <warning>
 
-   <title><parameter>server</parameter> Format</title>
+   <title><parameter>server</parameter> の書式</title>
 
    <para>
-    Before version 1.0.2, <parameter>server</parameter> could not be prefixed
-    with <literal>mongodb://</literal>, contain username and password, or 
-    contain more than two hostnames.  See the changelog below for more details.
+    バージョン 1.0.2 より前は、<parameter>server</parameter> の先頭に
+    <literal>mongodb://</literal> を含めることはできませんでした。
+    また、ユーザ名やパスワードも設定できず、ホスト名もひとつしか設定できませんでした。
+    詳細は、以下の変更履歴を参照ください。
    </para>
 
   </warning>
 
   <para>
-   If you elect not to connect immediately (you pass the option 
-   <literal>array("connect" => false)</literal>), you will need to call 
-   <function>Mongo::connect</function> before doing any database operations.
+   その時点での接続はしないことにした (オプション
+   <literal>array("connect" => false)</literal> を渡した) 場合は、
+   データベースを操作する前に
+   <function>Mongo::connect</function> をコールしなければなりません。
   </para>
 
   <informalexample>
@@ -76,10 +80,10 @@ mongodb://[username:password@]host1[:port1][,host2[:port2:],...]/db
 
 $mongo = new Mongo("mongodb://localhost", array("connect" => false);
 
-// throws a MongoException, as $mongo has not been fully initialized yet
+// MongoException をスローします。$mongo はまだ完全には初期化されていないからです
 $mongo->selectDB("foo")->command(array("distinct" => "bar", "key" => "age"));
 
-// okay
+// これで成功します
 $mongo->connect();
 $mongo->selectDB("foo")->command(array("distinct" => "bar", "key" => "age"));
 
@@ -109,16 +113,15 @@ $mongo->selectDB("foo")->command(array("distinct" => "bar", "key" => "age"));
      </term>
      <listitem>
       <para>
-       An array of options for the connection.  Currently available options
-       include:
+       接続オプションの配列。現在使用できるオプションは次のとおりです。
        <itemizedlist>
         <listitem>
          <para>
           <literal>"connect"</literal>
          </para>
          <para>
-          If the constructor should connect before returning.  Default is 
-          &true;.
+          コンストラクタで接続を行うか。デフォルトは
+          &true;。
          </para>
         </listitem>
         <listitem>
@@ -126,14 +129,13 @@ $mongo->selectDB("foo")->command(array("distinct" => "bar", "key" => "age"));
           <literal>"persist"</literal>
          </para>
          <para>
-          If the connection should be persistent.  If set, the connection will 
-          be persistent.  The string representation of the value is used as an
-          id for the connection, so two instances of 
-          <classname>Mongo</classname> that are initialized with
-          <literal>array("persist" => "foobar")</literal> will share the same
-          database connection, whereas an instance initialized with 
-          <literal>array("persist" => "barbaz")</literal> will use a different
-          database connection.
+          持続的な接続を行うかどうか。これを設定すると、接続が持続的なものとなります。
+          文字列の値を接続 ID として使うので、
+          <literal>array("persist" => "foobar")</literal> で初期化した
+          <classname>Mongo</classname> のインスタンスがふたつあれば、
+          それは同じデータベース接続をあらわします。一方、
+          <literal>array("persist" => "barbaz")</literal>
+          で初期化したインスタンスは別のデータベース接続を使います。
          </para>
         </listitem>
         <listitem>
@@ -141,8 +143,7 @@ $mongo->selectDB("foo")->command(array("distinct" => "bar", "key" => "age"));
           <literal>"timeout"</literal>
          </para>
          <para>
-          For how long the driver should try to connect to the database (in
-          milliseconds).
+          ドライバがデータベースへの接続を試みる時間の長さ (ミリ秒単位)。
          </para>
         </listitem>
        </itemizedlist>
@@ -185,8 +186,8 @@ $mongo->selectDB("foo")->command(array("distinct" => "bar", "key" => "age"));
       <row>
        <entry>1.0.2</entry>
        <entry>
-        Changed constructor to take an array of options.  Pre-1.0.2, the
-        constructor took the following parameters:
+        コンストラクタがオプションの配列を受け取るようになりました。
+        以前のバージョンでは、コンストラクタは以下のパラメータを受け取っていました。
         <variablelist>
          <varlistentry>
           <term>
@@ -194,7 +195,7 @@ $mongo->selectDB("foo")->command(array("distinct" => "bar", "key" => "age"));
           </term>
           <listitem>
            <para>
-            The server name.
+            サーバ名。
            </para>
           </listitem>
          </varlistentry>
@@ -204,8 +205,9 @@ $mongo->selectDB("foo")->command(array("distinct" => "bar", "key" => "age"));
           </term>
           <listitem>
            <para>
-            Optional boolean parameter specifying if the constructor should 
-            connect to the database before returning.  Defaults to &true;.
+            オプションの boolean パラメータで、
+            コンストラクタがデータベースに接続するかどうかを示します。
+            デフォルトは &true; です。
            </para>
           </listitem>
          </varlistentry>
@@ -215,7 +217,7 @@ $mongo->selectDB("foo")->command(array("distinct" => "bar", "key" => "age"));
           </term>
           <listitem>
            <para>
-            If the connection should be persistent.
+            持続的な接続を行うかどうか。
            </para>
           </listitem>
          </varlistentry>
@@ -225,7 +227,7 @@ $mongo->selectDB("foo")->command(array("distinct" => "bar", "key" => "age"));
           </term>
           <listitem>
            <para>
-            If the connection should be paired.
+            ペア接続を行うかどうか。
            </para>
           </listitem>
          </varlistentry>
@@ -241,23 +243,22 @@ $mongo->selectDB("foo")->command(array("distinct" => "bar", "key" => "age"));
  <refsect1 role="examples">
   &reftitle.examples;
   <example>
-   <title><function>Mongo::__construct</function> paired connection example</title>
+   <title><function>Mongo::__construct</function> でのペア接続の例</title>
    <para>
-    This example shows how to connect the driver to a replica pair of Mongo 
-    servers.
+    この例は、Mongo サーバのレプリカペアに接続する方法を示します。
    </para>
    <programlisting role="php">
 <![CDATA[
 <?php
 
-// pass a comma-separated list of server names to the constructor
+// カンマ区切りのサーバ名をコンストラクタに渡します
 $m1 = new Mongo("mongodb://www.example1.com,www.example2.com");
 
-// if the database servers are not running on the default port (27017),
-// you'll need to specify the port
+// データベースサーバがデフォルトポート (27017) 以外で動いている場合は
+// ポートも指定します
 $m2 = new Mongo("mongodb://www.example1.com:12345,www.example.com:54321");
 
-// you can connect to more that two, as well
+// ふたつだけではなく、それより多くのサーバに接続することもできます
 $m3 = new Mongo("mongodb://localhost:27017,localhost:27018,localhost:27019");
 
 ?>
@@ -265,36 +266,36 @@ $m3 = new Mongo("mongodb://localhost:27017,localhost:27018,localhost:27019");
    </programlisting>
   </example>
   <example>
-   <title><function>Mongo::__construct</function> persistent connection example</title>
+   <title><function>Mongo::__construct</function> での持続的接続の例</title>
    <para>
-    A persistent connection will last for more than one request (usually... 
-    milage may vary depending on server).  It can save significant time to 
-    reuse connections, as creating a connection is a time-intensive process.
+    持続的な接続は、ひとつのリクエストだけでなく別のリクエストまでも持続します
+    (普通は…。どの程度続くかはサーバ次第です)。
+    接続の再利用ができ、おおきな時間の節約になります。
+    接続は、時間のかかる処理だからです。
    </para>
    <para>
-    A persistent connection is identified by the server string and and id 
-    string. 
+    持続的な接続の識別は、サーバ文字列と ID 文字列で行います。
    </para>
    <programlisting role="php">
 <![CDATA[
 <?php
 
-// creates a persistent connection
+// 持続的な接続を作成します
 $m1 = new Mongo("mongodb://localhost", array("persist" => ""));
 
-// uses the same connection as $m1
+// $m1 と同じ接続を使います
 $m2 = new Mongo("mongodb://localhost", array("persist" => ""));
 
-// creates a new connection
+// 新しい接続を作ります
 $m3 = new Mongo("mongodb://127.0.0.1", array("persist" => ""));
 
-// creates a new connection
+// 新しい接続を作ります
 $m4 = new Mongo("mongodb://127.0.0.1:27017", array("persist" => ""));
 
-// creates a new connection
+// 新しい接続を作ります
 $m5 = new Mongo("mongodb://localhost", array("persist" => "foo"));
 
-// uses the $m5 connection
+// $m5 の接続を使います
 $m6 = new Mongo("mongodb://localhost", array("persist" => "foo"));
 
 ?>
@@ -302,10 +303,10 @@ $m6 = new Mongo("mongodb://localhost", array("persist" => "foo"));
    </programlisting>
   </example>
   <example>
-   <title><function>Mongo::__construct</function> authentication example</title>
+   <title><function>Mongo::__construct</function> での認証の例</title>
    <para>
-    A user must exist in the admin database before attempting to use 
-    authentication.  You can create one with the Mongo shell by running:
+    認証を使うには、admin データベースにユーザが存在しなければなりません。
+    Mongo シェルでユーザを作るには、次のようにします。
    </para>
    <programlisting>
 <![CDATA[
@@ -321,8 +322,8 @@ switched to db admin
 ]]>
    </programlisting>
    <para>
-    After creating a user with, in this case, username "testUser" and password
-    "testPass", you can create an authenticated connection:
+    ユーザを作ったら、このユーザ名 "testUser" とパスワード
+    "testPass" で次のようにして認証させることができます。
    </para>
    <programlisting role="php">
 <![CDATA[
