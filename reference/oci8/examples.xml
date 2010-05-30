@@ -1,27 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: dab77ef62857c1aa62757be95b918dc01e0c9563 Maintainer: takagi Status: working -->
+<!-- EN-Revision: dab77ef62857c1aa62757be95b918dc01e0c9563 Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa,shimooka -->
 <chapter xml:id="oci8.examples" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  &reftitle.examples;
  <para>
-  These examples connect as the <literal>HR</literal> user, which is
-  the sample &quot;Human Resources&quot; schema supplied with the
-  Oracle database. The account may need to be unlocked and the
-  password reset before you can use it.
+  これらの例では <literal>HR</literal> として接続しています。
+  これは、Oracle データベースに付属するサンプルのスキーマ &quot;Human Resources&quot;
+  用のユーザです。このユーザを使うには、
+  ユーザのロックを解除してパスワードをリセットしなければなりません。
  </para>
 
  <para>
-  The examples connect to the <literal>XE</literal> database on your
-  machine.  Change the connect string to your database before running
-  the examples.
+  このサンプルでは、ローカルマシン上にある <literal>XE</literal>
+  データベースに接続しています。それぞれの環境にあわせて
+  接続文字列を変更してください。
  </para>
 
  <example>
   <title>基本的なクエリ</title>
   <para>
-   This shows querying and displaying results.  Statements in OCI8 use
-   a prepare-execute-fetch sequence of steps.
+   ここでは、クエリの結果を表示させます。OCI8 のステートメントは
+   準備-実行-フェッチ という手順をとります。
   </para>
   <programlisting role="php">
 <![CDATA[
@@ -33,21 +33,21 @@ if (!$conn) {
     trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
 }
 
-// Prepare the statement
+// 文を準備します
 $stid = oci_parse($conn, 'SELECT * FROM departments');
 if (!$stid) {
     $e = oci_error($conn);
     trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
 }
 
-// Perform the logic of the query
+// クエリを実行します
 $r = oci_execute($stid);
 if (!$r) {
     $e = oci_error($stid);
     trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
 }
 
-// Fetch the results of the query
+// クエリの結果を取得します
 print "<table border='1'>\n";
 while ($row = oci_fetch_array($stid, OCI_ASSOC+OCI_RETURN_NULLS)) {
     print "<tr>\n";
@@ -69,15 +69,15 @@ oci_close($conn);
  <example>
   <title>バインド変数を用いた挿入</title>
   <para>
-   Bind variables improve performance by allowing reuse of execution
-   contexts and caches.  Bind variables improve security by preventing
-   some kinds of SQL Injection problems.
+   バインド変数を使うと、実行コンテキストをキャッシュして再利用できるので
+   パフォーマンスが向上します。また、バインド変数を使うと
+   SQL インジェクション対策にもなって安全性が向上します。
   </para>
   <programlisting role="php">
 <![CDATA[
 <?php
 
-// 実行前に表を作成する
+// 実行前に表を作成します
 //   CREATE TABLE MYTABLE (mid NUMBER, myd VARCHAR2(20));
 
 $conn = oci_connect('hr', 'welcome', 'localhost/XE');
@@ -94,7 +94,7 @@ $data = 'Some data';
 oci_bind_by_name($stid, ':myid', $id);
 oci_bind_by_name($stid, ':mydata', $data);
 
-$r = oci_execute($stid);  // executes and commits
+$r = oci_execute($stid);  // 実行してコミットします
 
 if ($r) {
     print "One row inserted";
@@ -111,14 +111,15 @@ oci_close($conn);
  <example>
   <title>CLOB カラムにデータを挿入する</title>
   <para>
-   For large data use binary long object (BLOB) or character long
-   object (CLOB) types.  This example uses CLOB.
+   巨大なデータに対しては、バイナリラージオブジェクト (BLOB)
+   あるいはキャラクタラージオブジェクト (CLOB) 型を使います。
+   この例では CLOB を使います。
   </para>
   <programlisting role="php">
 <![CDATA[
 <?php
 
-// 実行前に表を作成する
+// 実行前に表を作成します
 //     CREATE TABLE MYTABLE (mykey NUMBER, myclob CLOB);
 
 $conn = oci_connect('hr', 'welcome', 'localhost/XE');
@@ -137,12 +138,12 @@ $stid = oci_parse($conn, $sql);
 $clob = oci_new_descriptor($conn, OCI_D_LOB);
 oci_bind_by_name($stid, ":mykey", $mykey, 5);
 oci_bind_by_name($stid, ":myclob", $clob, -1, OCI_B_CLOB);
-oci_execute($stid, OCI_NO_AUTO_COMMIT); // use OCI_DEFAULT for PHP <= 5.3.1
+oci_execute($stid, OCI_NO_AUTO_COMMIT); // PHP <= 5.3.1 では OCI_DEFAULT を使います
 $clob->save("A very long string");
 
 oci_commit($conn);
 
-// CLOB データをフェッチする
+// CLOB データを取得します
 
 $query = 'SELECT myclob FROM mytable WHERE mykey = :mykey';
 
@@ -163,18 +164,18 @@ print '</table>';
  </example>
 
  <example>
-  <title>Using a PL/SQL stored function</title>
+  <title>PL/SQL ストアドファンクションの使用</title>
   <para>
-   You must bind a variable for the return value and optionally for
-   any PL/SQL function arguments.
+   返り値に変数をバインドしなければなりません。
+   オプションで PL/SQL 関数の引数がある場合はそこにも変数をバインドしなければなりません。
   </para>
   <programlisting role="php">
 <![CDATA[
 <?php
 
 /*
-  Before running the PHP program, create a stored function in
-  SQL*Plus or SQL Developer:
+  PHP プログラムを実行する前に、ストアドファンクションを
+  SQL*Plus あるいは SQL Developer で作成します
 
   CREATE OR REPLACE FUNCTION myfunc(p IN NUMBER) RETURN NUMBER AS
   BEGIN
@@ -197,7 +198,7 @@ oci_bind_by_name($stid, ':r', $r, 40);
 
 oci_execute($stid);
 
-print "$r\n";   // prints 24
+print "$r\n";   // 24 と表示します
 
 oci_free_statement($stid);
 oci_close($conn);
@@ -208,17 +209,17 @@ oci_close($conn);
  </example>
 
  <example>
-  <title>Using a PL/SQL stored procedure</title>
+  <title>PL/SQL ストアドプロシージャの使用</title>
   <para>
-   With stored procedures, you should bind variables for any arguments.
+   ストアドプロシージャでは、すべての引数に変数をバインドしなければなりません。
   </para>
   <programlisting role="php">
 <![CDATA[
 <?php
 
 /*
-  Before running the PHP program, create a stored procedure in
-  SQL*Plus or SQL Developer:
+  PHP プログラムを実行する前に、ストアドプロシージャを
+  SQL*Plus あるいは SQL Developer で作成します
 
   CREATE OR REPLACE PROCEDURE myproc(p1 IN NUMBER, p2 OUT NUMBER) AS
   BEGIN
@@ -241,7 +242,7 @@ oci_bind_by_name($stid, ':p2', $p2, 40);
 
 oci_execute($stid);
 
-print "$p2\n";   // prints 16
+print "$p2\n";   // 16 と表示します
 
 oci_free_statement($stid);
 oci_close($conn);
@@ -252,16 +253,16 @@ oci_close($conn);
  </example>
 
  <example>
-  <title>Calling a PL/SQL function that returns a <literal>REF CURSOR</literal></title>
+  <title><literal>REF CURSOR</literal> を返す PL/SQL ファンクションのコール</title>
   <para>
-   Each returned value from the query is a <literal>REF
-   CURSOR</literal> that can be fetched from.
+   クエリが返す値が <literal>REF
+   CURSOR</literal> となり、そこから値を取得することができます。
   </para>
   <programlisting role="php">
 <![CDATA[
 <?php
 /*
-  Create the PL/SQL stored function as:
+  このような PL/SQL ストアドファンクションを作成します
 
   CREATE OR REPLACE FUNCTION myfunc(p1 IN NUMBER) RETURN SYS_REFCURSOR AS
       rc SYS_REFCURSOR;
@@ -289,7 +290,7 @@ while (($row = oci_fetch_array($stid, OCI_ASSOC))) {
 }
 echo "</table>\n";
 
-// Output is:
+// 出力は
 //   Beijing
 //   Bern
 //   Bombay
