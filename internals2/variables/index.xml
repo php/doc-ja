@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 669f2979e308d57c9976227b43fe650a0153c49a Maintainer: takagi Status: working -->
+<!-- EN-Revision: 669f2979e308d57c9976227b43fe650a0153c49a Maintainer: takagi Status: ready -->
  <chapter xml:id="internals2.variables" xmlns="http://docbook.org/ns/docbook">
   <title>変数の作成</title>
   <section xml:id="internals2.variables.intro">
@@ -13,18 +13,17 @@
      linkend="features.gc.refcounting-basics"/> の章を参照ください。
    </para>
    <para>
-    PHP variables, in general, consist out of two things: The label, which 
-    might, for instance, be an entry in a symbol table, and the actual variable
-    container. For the most parts of this manual we will focus on the variable
-    container.
+    PHP の変数は、二つの部分で構成されています。
+    シンボルテーブル内でのエントリとして用いられる「ラベル」と、
+    実際の値を格納する「変数コンテナ」です。ここでは、主に変数コンテナについて扱います。
    </para>
    <para>
-    The variable container, in code called <code>zval</code>, is holding all
-    data needed to handle the variable. This includes not only the actual value
-    but also the current type, a counter counting the number of labels pointing
-    to this container and a flag whether these labels should be treated as
-    references or copies. In PHP 5.3 the relevant structures, which you can
-    find in <code>Zend/zend.h</code>, look like this:
+    変数コンテナは実際のコードの中では <code>zval</code> と呼ばれ、
+    変数を処理するために必要なすべてのデータを保持しています。
+    値そのもののほかにも、現在の型、そのコンテナを指すラベルのカウンタ、
+    ラベルを参照として扱うかコピーとして扱うかを示すフラグなどが含まれます。
+    PHP 5.3 では、それに関連する構造体が
+    <code>Zend/zend.h</code> で次のように定義されています。
    </para>
    <screen>
 <![CDATA[
@@ -52,31 +51,34 @@ struct _zval_struct {
 ]]>
    </screen>
    <para>
-    In the <code>zvalue_value</code> one can find the internal representation
-    for the different types the fields used should be clear from the names and
-    comments - especially if one knows that PHP's arrays are infact hash
-    tables. Nonetheless, knowing PHP's types one might miss a few:
-    <code>NULL</code>, <code>boolean</code> and <code>resources</code>. For
-    <code>NULL</code> we need no value, as <code>NULL</code> is the value of
-    that type. For <code>boolean</code> and <code>resource</code> values PHP
-    re-uses the value field. In the case of a <code>boolean</code> it holds
-    either <code>0</code> for <code>false</code> or <code>1</code> for
-    <code>true</code>. For <code>resource</code>-typed variables it holds the
-    resource id.
+    <code>zvalue_value</code> を見れば、
+    内部的に使う型やフィールドがその名前とコメントから読み取れるでしょう。
+    PHP の配列が実際のところはハッシュテーブルであることなどもわかります。
+    とはいえ、PHP の型のなかでここに登場していないものもあります。
+    <code>NULL</code> や <code>boolean</code>、そして <code>resources</code> です。
+    <code>NULL</code> については値は不要です。<code>NULL</code> がこの型の値となるからです。
+    <code>boolean</code> と <code>resource</code> については、PHP が
+    value フィールドを再利用します。
+    <code>boolean</code> 型の場合、<code>false</code> なら
+    <code>0</code>、<code>true</code> なら <code>1</code> を保持します。
+    <code>resource</code> 型の場合は、リソース id を保持します。
    </para>
    <para>
-    Now the good message is that you don't have to know these things in detail 
-    as there are - like always in PHP - acces macros. The bad news is that there
-    are many of them: There are macros to access any aspect of the
-    <code>zval</code> and then, as one often deals with pointers to 
-    <code>zval</code>s and even pointers to pointers to <code>zval</code>s, for 
-    most of them there are shortcuts dereferencing these pointers. These macros
-    are spread over <code>Zend/zend.h</code>,
-    <code>Zend/zend_operators.h</code> and <code>Zend/zend_API.h</code>.
+    良いお知らせです。このあたりの事情についての詳しい知識は不要です。
+    というのも、アクセス用のマクロがきちんと用意されているからです
+    (PHP にはよくあることでず)。
+    悪いお知らせです。マクロは膨大な数にのぼります。
+    <code>zval</code> をいろいろな方面から使うマクロだけでなく
+    <code>zval</code> へのポインタを扱うマクロもあり、さらには
+    <code>zval</code> のポインタへのポインタを扱うためのマクロや
+    ポインタの参照先を操作するためのショートカットまで存在します。
+    これらのマクロが定義されているのは <code>Zend/zend.h</code>、
+    <code>Zend/zend_operators.h</code> そして <code>Zend/zend_API.h</code>
+    です。
    </para>
   </section>
   <section xml:id="internals2.variables.creating">
-   <title>Creating variables and setting values</title>
+   <title>変数の作成と値の設定</title>
    <para>
     <!-- ... -->
    </para>

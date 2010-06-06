@@ -1,75 +1,75 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 2fd3f0c96d9d221fe37109775af4df4cf949d5d8 Maintainer: takagi Status: working -->
+<!-- EN-Revision: 2fd3f0c96d9d221fe37109775af4df4cf949d5d8 Maintainer: takagi Status: ready -->
  <sect1 xml:id="internals2.memory.management" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
   <title>基本的なメモリ管理</title>
 
   <para>
-   When programming in the C programming language the developer has to manually
-   care about memory management. As PHP is usually used as a web server
-   module memory management is from special relevance in order to prevent memory
-   leaks. Additionally you should be aware that PHP might be used in threaded
-   environments which means that global variables might lead to race
-   conditions. For information about dealing with thread-global data please
-   refer to the documentation on the <xref linkend="internals2.memory.TSRM"/>,
-   which serves as thread-isolation facility.
+   C 言語でのプログラミングでは、開発者がメモリ管理を自分で行う必要があります。
+   PHP はウェブサーバのモジュールとして使われることが多いので、
+   メモリリークを引き起こさないようにメモリ管理が特に重要となります。
+   さらに注意を要するのは、PHP がスレッド環境で使われる可能性があるということです。
+   この場合、グローバル変数が競合状態になる可能性があります。
+   スレッドグローバルなデータの扱いかたについての情報は、
+   スレッドの分離機能を扱う <xref linkend="internals2.memory.TSRM"/>
+   のドキュメントを参照ください。
   </para>
 
   <para>
-   Additionally to these requirements the Zend Engine is faced with a quite
-   special usage pattern where, within a relatively short time, many memory
-   blocks of the size of a zval structure or  other small memory blocks are
-   requested and freed again. Memory management in PHP has also to respect
-   the <link linkend="ini.memory-limit">memory_limit</link>.
+   これらに加え、さらに Zend Engine 独特のパターンとして注意しなければならないのは、
+   比較的短時間の間に zval 構造体やその他の小さなメモリブロックの確保と解放を
+   頻繁に繰り返すということです。PHP のメモリ管理では、
+   <link linkend="ini.memory-limit">memory_limit</link>
+   にも注意を払わなければなりません。
   </para>
 
   <para>
-   For fulfilling the above requirements the Zend Engine provides a special
-   memory manager for handling request-bound data. Request-bound data is data
-   that is needed only for serving a single request and which will be freed at
-   the request's end at latest. Extension authors will mostly only have contact 
-   with the routines listed in the table below. Although they are implemented 
-   as macros for providing some convenience features this documentation will 
-   treat them like functions.
+   これらの要件を満たすために Zend Engine は、
+   リクエスト単位のデータを処理するための特別なメモリマネージャを提供しています。
+   リクエスト単位のデータとは、単一のリクエストを処理するためにのみ必要となるデータで
+   リクエストが終了する時点で解放されるものです。
+   拡張モジュールの作者は、通常は以下の表にあるルーチンを使うだけで済むことになります。
+   これらは利便性を考慮してマクロとして実装されていますが、
+   このドキュメントでは関数として扱います。
   </para>
 
   <table xml:id="internals2.memory.management.apis">
-   <title>Main memory APIs</title>
+   <title>主要メモリ API 群</title>
    <tgroup cols="2">
     <thead>
      <row>
-      <entry>Prototype</entry>
-      <entry>Description</entry>
+      <entry>プロトタイプ</entry>
+      <entry>説明</entry>
      </row>
     </thead>
     <tbody>
      
      <row>
       <entry><code>void *emalloc(size_t size)</code></entry>
-      <entry>Allocate <code>size</code> bytes of memory.</entry>
+      <entry><code>size</code> バイトのメモリを確保する。</entry>
      </row>
 
      <row>
       <entry><code>void *ecalloc(size_t nmemb, size_t size)</code></entry>
       <entry>
-       Allocate a buffer for <code>nmemb</code> elements of
-       <code>size</code> bytes and makes sure it is initialized with zeros.
+       <code>size</code> バイトのバッファを
+       <code>nmemb</code> 件ぶん作成し、ゼロで初期化する。
       </entry>
      </row>
 
      <row>
       <entry><code>void *erealloc(void *ptr, size_t size)</code></entry>
       <entry>
-       Resize the buffer <code>ptr</code>, which was allocated using
-       <code>emalloc</code> to hold <code>size</code> bytes of memory.
+       バッファ <code>ptr</code> のサイズを変更する。
+       <code>emalloc</code> を用いて <code>size</code> バイトのメモリを確保する。
       </entry>
      </row>
 
      <row>
       <entry><code>void efree(void *ptr)</code></entry>
       <entry>
-       Free the buffer pointed by <code>ptr</code>. The buffer had to be 
-       allocated by <code>emalloc</code>.
+       <code>ptr</code> が指すバッファを解放する。
+       解放するバッファは <code>emalloc</code> で確保したものでなければならない。
       </entry>
      </row>
 
@@ -78,18 +78,18 @@
        <code>void *safe_emalloc(size_t nmemb, size_t size, size_t offset)</code>
       </entry>
       <entry>
-       Allocate a buffer for holding <code>nmemb</code> blocks of each
-       <code>size</code> bytes and an additional <code>offset</code> bytes.
-       This is similar to <code>emalloc(nmemb * size + offset)</code> but adds
-       a special protection against overflows.
+       <code>size</code> バイトのブロックを <code>nmemb</code>
+       個、そしてそれに加えて <code>offset</code> バイトを保持するバッファを確保する。
+       <code>emalloc(nmemb * size + offset)</code> と似ているが、
+       それに加えてオーバーフロー対策の特別なプロテクトが施される。
       </entry>
      </row>
 
      <row>
       <entry><code>char *estrdup(const char *s)</code></entry>
       <entry>
-       Allocate a buffer that can hold the NULL-terminated string
-       <code>s</code> and copy the <code>s</code> into that buffer.
+       NULL 終端の文字列 <code>s</code> を保持できる大きさのバッファを確保し、
+       <code>s</code> をそのバッファにコピーする。
       </entry>
      </row>
 
@@ -98,8 +98,7 @@
        <code>char *estrndup(const char *s, unsigned int length)</code>
       </entry>
       <entry>
-       Similar to <code>estrdup</code> while the length of the
-       NULL-terminated string is already known.
+       <code>estrdup</code> と似ているが、NULL 終端文字列の長さが事前にわかっている場合に使う。
       </entry>
      </row>
     </tbody>
@@ -108,24 +107,23 @@
 
   <note>
    <simpara>
-    Unlike their C standard library's counterparts the Zend Engine's memory
-    management functions won't return NULL in case of an problem while 
-    allocating the requested memory but bail out and terminate the current 
-    request.
+    C 標準ライブラリの同等の関数群とは異なり、Zend Engine
+    のメモリ管理関数はメモリの確保に失敗しても NULL を返しません。
+    そのかわりに、処理を放棄して現在のリクエストを終了させます。
    </simpara>
   </note>
 
   <para>
-   As said above it is an essential part of the memory management to avoid
-   having memory leaks and therefore free all memory you've allocated as soon
-   as possible. As a safety net the Zend Engine will free all memory, which had
-   been allocated using above mentioned APIs at the end of a request. If PHP 
-   was built using the <code>--enable-debug</code> configuration option this 
-   will lead to a warning.
+   上でも説明したように、メモリをきちんと管理してメモリリークを防ぐことは非常に大切です。
+   確保したメモリは、不要になったらすぐ解放するようにしましょう。
+   安全策として、Zend Engine では、上の API 群で確保したメモリは
+   リクエストの終了時にすべて解放するようになっています。
+   <code>--enable-debug</code> オプションつきで PHP をビルドした場合は、
+   これは警告を発生させます。
   </para>
 
   <example xml:id="internals2.memory.management.example.leak">
-   <title>PHP's leak warnings</title>
+   <title>PHP のメモリリーク警告</title>
    <programlisting role="c">
 <![CDATA[
 ZEND_FUNCTION(leak)
@@ -152,19 +150,20 @@ ZEND_FUNCTION(leak)
 
   <note>
    <simpara>
-    When dealing with PHP variables you have to make sure the variable's
-    memory is allocated using emalloc and take care of the reference count.
-    Details can be found in <xref linkend="internals2.variables"/>.
+    PHP の変数を扱う際には、変数用のメモリを emalloc
+    で確保して参照カウンタに注意を払う必要があります。
+    詳細は <xref linkend="internals2.variables"/> を参照ください。
    </simpara>
   </note>
 
   <note>
    <simpara>
-    This leak detection can only find leaks caused by blocks allocated by 
-    emalloc. You're advised to use a memory checker like valgrind or libumem
-    for deeper analysis. To simplify the analysis PHP's memory manager can be 
-    disabled by setting the environment variable USE_ZEND_ALLOC=0 before 
-    starting PHP.
+    このリーク検出機能が働くのは、emalloc で確保したメモリブロックに対してのみです。
+    より詳細な解析を行うには、valgrind や libumem
+    といったメモリチェッカーを使うことをおすすめします。
+    これらによる解析時には、PHP のメモリチェッカーを無効化することもできます。
+    そのためには、環境変数 USE_ZEND_ALLOC=0
+    を設定してから PHP を開始させます。
    </simpara>
   </note>
 
