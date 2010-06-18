@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 96c9d88bad9a7d7d44bfb7f26c226df7ee9ddf26 Maintainer: satoruyoshida Status: working -->
+<!-- EN-Revision: 96c9d88bad9a7d7d44bfb7f26c226df7ee9ddf26 Maintainer: satoruyoshida Status: ready -->
 <refentry xml:id="function.oci-close" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>oci_close</refname>
@@ -97,26 +97,26 @@ if (!$conn) {
     trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
 }
 
-$stid = oci_parse($conn, 'SELECT * FROM departments');  // this increases the refcount on $conn
+$stid = oci_parse($conn, 'SELECT * FROM departments');  // これは $conn の参照回数を増やします
 oci_execute($stid);
 oci_fetch_all($stid, $res);
 var_dump($res);
 
 oci_close($conn);
 
-// $conn is no long usable in the script but the underlying database
-// connection is still held open until $stid is freed.
-var_dump($conn);  // prints NULL  
+// $conn はもはやスクリプトで使用できませんが、基礎となるデータベース接続は
+// $stid が解放されるまで開かれたまま保たれます。
+var_dump($conn);  // NULL を出力 
 
-// While PHP sleeps, querying the Oracle V$SESSION view in a
-// terminal window will show that the database user is still connected.
+// PHP が活動していない間にターミナルウィンドウで Oracle の V$SESSION ビューを
+// 参照すると、データベースユーザーがまだ接続されていると表示します。
 sleep(10);
 
-// When $stid is freed, the database connection is physically closed
+// $stid が解放されると、データベース接続は物理的に閉じられます。
 oci_free_statement($stid);  
 
-// While PHP sleeps, querying the Oracle V$SESSION view in a
-// terminal window will show that the database user has disconnected.
+// PHP が活動していない間にターミナルウィンドウで Oracle の V$SESSION ビューを
+// 参照すると、データベースユーザーが切断されたと表示します。
 sleep(10);
 
 ?>
@@ -127,8 +127,8 @@ sleep(10);
   <example>
    <title>一回以上開かれた接続を閉じる</title>
    <para>
-     When database credentials are reused, both connections must be closed
-     before the underlying database connection is closed.
+     データベースクレデンシャルが再利用されるときは、基礎となるデータベース接続が閉じられる前に、
+     両方の接続がともに閉じられていなければいけません。
    </para>
    <programlisting role="php">
 <![CDATA[
@@ -136,17 +136,17 @@ sleep(10);
 
 $conn1 = oci_connect('hr', 'welcome', 'localhost/XE');
 
-// Using the same credentials reuses the same underlying database connection
-// Any uncommitted changes done on $conn1 will be visible in $conn2
+// 同じ基礎となるデータベース接続を再利用するクレデンシャルを使用すると、
+// $conn1 上でなされたコミットされていない変更は全て、 $conn2 で認識できます。
 $conn2 = oci_connect('hr', 'welcome', 'localhost/XE');
 
-// While PHP sleeps, querying the Oracle V$SESSION view in a
-// terminal window will show that only one database user is connected.
+// PHP が活動していない間にターミナルウィンドウで Oracle の V$SESSION ビューを
+// 参照すると、データベースユーザーが一つだけ接続されたと表示します。
 sleep(10);
 
-oci_close($conn1); // doesn't close the underlying database connection
-var_dump($conn1);  // prints NULL because the variable $conn1 is no longer usable
-var_dump($conn2);  // displays that $conn2 is still a valid connection resource
+oci_close($conn1); // 基礎となるデータベース接続を閉じません。
+var_dump($conn1);  // 変数 $conn1 がもはや利用できないので NULL を出力します
+var_dump($conn2);  // $conn2 はまだ有効な接続リソースと表示されます。
 
 ?>
 ]]>
@@ -179,7 +179,7 @@ function myfunc() {
 $r = myfunc();
 // この時点でロールバックが発生し、基礎となるデータベース接続が閉じられます。
 
-print $r;  // displays the function return value "Finished"
+print $r;  // 関数の返り値 "Finished" を表示します
 
 ?>
 ]]>
