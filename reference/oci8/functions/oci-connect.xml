@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 96c9d88bad9a7d7d44bfb7f26c226df7ee9ddf26 Maintainer: shimooka Status: working -->
+<!-- EN-Revision: 96c9d88bad9a7d7d44bfb7f26c226df7ee9ddf26 Maintainer: satoruyoshida Status: ready -->
+<!-- CREDITS: shimooka -->
 <refentry xml:id="function.oci-connect" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
   <refname>oci_connect</refname>
@@ -21,22 +22,21 @@
    他のほとんどの OCI8 コールで必要な接続 ID を返します。
   </para>
   <para>
-   See <link linkend="oci8.connection">Connection Handling</link> for
-   general information on connection management and connection
-   pooling.
+   接続の管理及び接続プーリングについての一般的な情報は
+   <link linkend="oci8.connection">接続のハンドリング</link>をご覧下さい。
   </para>
   <para>
-   From PHP 5.1.2 (PECL OCI8 1.1) <function>oci_close</function> can
-   be used to close the connection.
+   PHP 5.1.2 (PECL OCI8 1.1) 以降で、接続を閉じるために
+   <function>oci_close</function>を使用できます。
   </para>
   <para>
-   The second and subsequent calls to <function>oci_connect</function>
-   with the same parameters will return the connection handle returned
-   from the first call. This means that transactions in one handle are
-   also in the other handles, because they use the
-   <emphasis>same</emphasis> underlying database connection. If two
-   handles need to be transactionally isolated from each other, use
-   <function>oci_new_connect</function> instead.
+   同一の引数で <function>oci_connect</function> を呼び出すと、
+   ２回目以降は最初の呼び出しで返された接続ハンドルを返します。
+   これは、あるハンドル内のトランザクションが、他のハンドル内にも
+   あることを意味します、なぜなら、それらは<emphasis>同一の</emphasis>
+   基礎となるデータベース接続を使用するからです。
+   もし２つのハンドルを互いにトランザクション的に分離する必要があれば、
+   替わりに <function>oci_new_connect</function> を使用してください。
   </para>
  </refsect1>
 
@@ -98,7 +98,7 @@
 <![CDATA[
 <?php
 
-// Connects to the XE service (i.e. database) on the "localhost" machine
+// "localhost" マシン上の XE サービス(例えばデータベース)に接続します。
 $conn = oci_connect('hr', 'welcome', 'localhost/XE');
 if (!$conn) {
     $e = oci_error();
@@ -130,8 +130,8 @@ echo "</table>\n";
 <![CDATA[
 <?php
 
-// Connects to the MYDB database described in tnsnames.ora file,
-// One example tnsnames.ora entry for MYDB could be:
+// tnsnames.ora ファイルに記載された MYDB データベースに接続します。
+// MYDB 用の tnsnames.ora エントリーの一例です。
 //   MYDB =
 //     (DESCRIPTION =
 //       (ADDRESS = (PROTOCOL = TCP)(HOST = mymachine.oracle.com)(PORT = 1521))
@@ -206,8 +206,8 @@ echo "</table>\n";
 $c1 = oci_connect("hr", "welcome", 'localhost/XE');
 $c2 = oci_connect("hr", "welcome", 'localhost/XE');
 
-// Both $c1 and $c2 show the same PHP resource id meaning they use the
-// same underlying database connection
+// 同一の基礎となるデータベース接続を使用することを意味する、
+// 同一の PHP リソース id を $c1 及び $c2 の両方が示します。
 echo "c1 is $c1<br>\n";
 echo "c2 is $c2<br>\n";
 
@@ -252,28 +252,28 @@ function select_data($connname, $conn)
 
 create_table($c1);
 
-insert_data('c1', $c1);   // Insert a row using c1
-sleep(2);                 // sleep to show a different timestamp for the 2nd row
-insert_data('c2', $c2);   // Insert a row using c2
+insert_data('c1', $c1);   // c1 を使用して行を挿入
+sleep(2);                 // ２行目で異なるタイムスタンプを表示するためにスリープします
+insert_data('c2', $c2);   // c2 を使用して行を挿入
 
-select_data('c1', $c1);   // Results of both inserts are returned
-select_data('c2', $c2);   // Results of both inserts are returned
+select_data('c1', $c1);   // 両方の挿入結果が返されます
+select_data('c2', $c2);   // 両方の挿入結果が返されます
 
-rollback('c1', $c1);      // Rollback using c1
+rollback('c1', $c1);      // c1 を使用してロールパック
 
-select_data('c1', $c1);   // Both inserts have been rolled back
+select_data('c1', $c1);   // 両方の挿入行為がロールバックされました
 select_data('c2', $c2);
 
 drop_table($c1);
 
-// Closing one of the connections makes the PHP variable unusable, but
-// the other could be used
+// 接続のうちの一つを閉じると、その PHP 変数が利用できなくなりますが、
+// もう一つは使用できます。
 oci_close($c1);
 echo "c1 is $c1<br>\n";
 echo "c2 is $c2<br>\n";
 
 
-// Output is:
+// 出力です。
 //    c1 is Resource id #5
 //    c2 is Resource id #5
 //    Created table
