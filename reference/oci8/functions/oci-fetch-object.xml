@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 96c9d88bad9a7d7d44bfb7f26c226df7ee9ddf26 Maintainer: shimooka Status: working -->
+<!-- EN-Revision: 96c9d88bad9a7d7d44bfb7f26c226df7ee9ddf26 Maintainer: satoruyoshida Status: ready -->
+<!-- CREDITS: shimooka -->
 <refentry xml:id="function.oci-fetch-object" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>oci_fetch_object</refname>
@@ -14,10 +15,10 @@
    <methodparam><type>resource</type><parameter>statement</parameter></methodparam>
   </methodsynopsis>
   <para>
-   Returns an object containing the next result-set row of a query.
-   Each attribute of the object corresponds to a column of the row.
-   This function is typically called in a loop until it returns
-   &false;, indicating no more rows exist.
+   クエリから、結果セットの次の行を含むオブジェクトを返します。
+   オブジェクトの各属性が行の各カラムをあらわします。
+   この関数の典型的な使い方は、ループの中で &false; を返すまでコールすることです。
+   &false; は、もう行がないことを意味します。
   </para>
   &oci.datatypes;
  </refsect1>
@@ -47,22 +48,19 @@
     <literal>LOB</literal> カラムは LOB ディスクリプタを返します。
   </para>
   <para>
-   <literal>DATE</literal> columns are returned as strings formatted
-   to the current date format.  The default format can be changed with
-   Oracle 環境変数 such as <literal>NLS_LANG</literal> or
-   by a previously executed <literal>ALTER SESSION SET
-   NLS_DATE_FORMAT</literal> command.
+   <literal>DATE</literal> カラムは、現行のデータフォーマットにフォーマットされた
+   文字列として返されます。既定のフォーマットは <literal>NLS_LANG</literal>
+   のような Oracle 環境変数で変更したり、またはあらかじめ
+   <literal>ALTER SESSION SET NLS_DATE_FORMAT</literal> コマンドを実行して変更します。
   </para>
   <para>
-   Oracle's default, non-case sensitive column names will have
-   uppercase attribute names.  Case-sensitive column names will have
-   attribute names using the exact column case.
-   Use <function>var_dump</function> on the result object to verify
-   the appropriate case to use for each query.
+   Oracle のデフォルトでは、文字の大小を区別しないカラム名はすべて大文字となります。
+   文字の大小を区別するカラム名は、属性の名前もそれと同じになります。
+   結果のオブジェクト配列を <function>var_dump</function> すれば、
+   各クエリの文字の大小を確かめられます。
   </para>
   <para>
-    Attribute values will be &null; for any <literal>NULL</literal>
-    data fields.
+    <literal>NULL</literal> データ・フィールドの全てに対して、属性の値は &null; になります。
   </para>
  </refsect1>
 
@@ -70,13 +68,13 @@
   &reftitle.examples;
   <para>
    <example>
-    <title><function>oci_fetch_object</function> example</title>
+    <title><function>oci_fetch_object</function> の例</title>
     <programlisting role="php">
 <![CDATA[
 <?php
 
 /*
-  Before running, create the table:
+  実行する前にテーブルを作成します。
     CREATE TABLE mytab (id NUMBER, description VARCHAR2(30));
     INSERT INTO mytab (id, description) values (1, 'Fish and Chips');
     COMMIT;
@@ -92,12 +90,12 @@ $stid = oci_parse($conn, 'SELECT id, description FROM mytab');
 oci_execute($stid);
 
 while (($row = oci_fetch_object($stid))) {
-    // Use upper case attribute names for each standard Oracle column
+    // 標準的な Oracle カラム それぞれに対して大文字の属性名を使います
     echo $row->ID . "<br>\n";
     echo $row->DESCRIPTION . "<br>\n"; 
 }
 
-// Output is:
+// 出力です。
 //    1
 //    Fish and Chips
 
@@ -111,13 +109,13 @@ oci_close($conn);
   </para>
   <para>
    <example>
-    <title><function>oci_fetch_object</function> with case sensitive column names</title>
+    <title>文字の大小を区別するカラム名を持つ <function>oci_fetch_object</function></title>
     <programlisting role="php">
 <![CDATA[
 <?php
 
 /*
-  Before running, create the table with a case sensitive column name:
+  実行する前に、文字の大小を区別するカラム名を持つテーブルを作成します。
     CREATE TABLE mytab (id NUMBER, "MyDescription" VARCHAR2(30));
     INSERT INTO mytab (id, "MyDescription") values (1, 'Iced Coffee');
     COMMIT;
@@ -133,13 +131,13 @@ $stid = oci_parse($conn, 'SELECT id, "MyDescription" FROM mytab');
 oci_execute($stid);
 
 while (($row = oci_fetch_object($stid))) {
-    // Use upper case attribute names for each standard Oracle column
+    // 標準的な Oracle カラム それぞれに対して大文字の属性名を使います
     echo $row->ID . "<br>\n";
-    // Use the exact case for the case sensitive column name
+    // 文字の大小を区別するカラム名と同じケースを使います
     echo $row->MyDescription . "<br>\n";   
 }
 
-// Output is:
+// 出力です。
 //    1
 //    Iced Coffee
 
@@ -153,13 +151,13 @@ oci_close($conn);
   </para>
   <para>
    <example>
-    <title><function>oci_fetch_object</function> with LOBs</title>
+    <title>LOB を持つ <function>oci_fetch_object</function></title>
     <programlisting role="php">
 <![CDATA[
 <?php
 
 /*
-  Before running, create the table:
+  実行する前にテーブルを作成します。
     CREATE TABLE mytab (id NUMBER, description CLOB);
     INSERT INTO mytab (id, description) values (1, 'A very long string');
     COMMIT;
@@ -176,11 +174,11 @@ oci_execute($stid);
 
 while (($row = oci_fetch_object($stid))) {
     echo $row->ID . "<br>\n";
-    // The following will output the first 11 bytes from DESCRIPTION
+    // 下記では、 DESCRIPTION から最初の 11 バイトを出力します
     echo $row->DESCRIPTION->read(11) . "<br>\n"; 
 }
 
-// Output is:
+// 出力です。
 //    1
 //    A very long
 
