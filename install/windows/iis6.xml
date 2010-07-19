@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 04a0c156efa3fdd2896b4c80a6b644408caf45b6 Maintainer: takagi Status: working -->
+<!-- EN-Revision: 04a0c156efa3fdd2896b4c80a6b644408caf45b6 Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa, haruki -->
 
 <sect1 xml:id="install.windows.iis6" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
@@ -16,22 +16,22 @@
   を参照ください。
  </para>
  <sect2 xml:id="install.windows.iis6.fastcgi">
-  <title>Configuring IIS to process PHP requests</title>
+  <title>IIS で PHP リクエストを処理するための設定</title>
   <para>
-   Download and install PHP in accordance to the instructions described in 
-    <link linkend="install.windows.manual">manual installation steps</link>
+    <link linkend="install.windows.manual">手動インストールの手順</link>
+    での説明にしたがって、PHP をダウンロードしてインストールします。
     <note>
      <para>
-      Non-thread-safe build of PHP is recommended when using IIS. The non-thread-safe 
-      builds are available at <link xlink:href="&url.php.win.downloads;">PHP for Windows: 
-      Binaries and Sources Releases.</link>
+      IIS を使う場合は、非スレッドセーフ版の PHP を推奨します。非スレッドセーフ版は
+      <link xlink:href="&url.php.win.downloads;">PHP for Windows: 
+      Binaries and Sources Releases.</link> で取得できます。
      </para>
     </note>
   </para>
   <para>
-   Configure the CGI- and FastCGI-specific settings in <filename>php.ini</filename> file as shown below:
+   CGI や FastCGI 固有の設定を、<filename>php.ini</filename> で以下のように行います。
    <example>
-    <title>CGI and FastCGI settings in <filename>php.ini</filename></title>
+    <title><filename>php.ini</filename> での CGI および FastCGI 用の設定</title>
     <programlisting role="ini">
 <![CDATA[
 fastcgi.impersonate = 1
@@ -43,14 +43,16 @@ cgi.force_redirect = 0
    </example>
   </para>
   <para>
-   Download and install the <link xlink:href="&url.iis.fastcgi.downloads;">Microsoft FastCGI Extension for IIS 5.1 and 6.0</link>. 
-   The extension is available for 32-bit and 64-bit platforms - select the right download package for your platform.
+   <link xlink:href="&url.iis.fastcgi.downloads;">Microsoft FastCGI Extension for IIS 5.1 and 6.0</link>
+   をダウンロードしてインストールします。32 ビット版と 64 ビット版があるので、
+   環境にあわせて適切なパッケージを選びましょう。
   </para>
-  <para>Configure the FastCGI extension to handle PHP-specific requests by running the command shown below. 
-   Replace the value of the &quot;-path&quot; parameter with the absolute file path to the 
-   <filename>php-cgi.exe</filename> file.
+  <para>
+   FastCGI エクステンションを設定し、PHP のリクエストを処理できるようにするには
+   以下のコマンドを実行します。&quot;-path&quot; パラメータの値は、
+   <filename>php-cgi.exe</filename> の絶対パスに置き換えましょう。
    <example>
-    <title>Configuring FastCGI extension to handle PHP requests</title>
+    <title>FastCGI エクステンションで PHP リクエストを処理するための設定</title>
     <programlisting>
 <![CDATA[
 cscript %windir%\system32\inetsrv\fcgiconfig.js -add -section:"PHP" ^
@@ -60,67 +62,70 @@ cscript %windir%\system32\inetsrv\fcgiconfig.js -add -section:"PHP" ^
    </example>
   </para>
   <para>
-   This command will create an IIS script mapping for *.php file extension, which will result in all URLs 
-   that end with .php being handled by FastCGI extension. Also, it will configure FastCGI extension to 
-   use the executable <filename>php-cgi.exe</filename> to process the PHP requests.
+   このコマンドは、拡張子 *.php 用の IIS スクリプトマッピングを作成します。
+   .php で終わるすべての URL を FastCGI エクステンションで処理するようになります。
+   また、FastCGI エクステンションでの PHP リクエストの処理に
+   <filename>php-cgi.exe</filename> を使うよう設定しています。
    <note>
      <para>
-      At this point the required installation and configuration steps are completed. The remaining 
-      instructions below are optional but highly recommended for achieving optimal functionality 
-      and performance of PHP on IIS.
+      この時点で、最低限必要なインストールと設定は完了しました。
+      これ以降の手順は必須ではありませんが、IIS 上で PHP
+      を効果的に動かすために強く推奨するものです。
      </para>
    </note>
   </para>
  </sect2>
  <sect2 xml:id="install.windows.iis6.impersonation">
-  <title>Impersonation and file system access</title>
+  <title>匿名化およびファイルシステムへのアクセス</title>
   <para>
-   It is recommended to enable FastCGI impersonation in PHP when using IIS. This 
-   is controlled by the <varname>fastcgi.impersonate</varname> directive in <filename>php.ini</filename> file. When 
-   impersonation is enabled, PHP will perform all the file system operations on 
-   behalf of the user account that has been determined by IIS authentication. This 
-   ensures that even if the same PHP process is shared across different IIS web 
-   sites, the PHP scripts in those web sites will not be able to access each 
-   others&#39; files as long as different user accounts are used for IIS authentication 
-   on each web site.
+   PHP を IIS で使う場合は、FastCGI の匿名化を有効にしておくことを推奨します。
+   これは、<filename>php.ini</filename> ファイルの
+   <varname>fastcgi.impersonate</varname> ディレクティブで設定します。
+   匿名化を有効にすると、PHP はすべてのファイルシステム操作を
+   IIS 認証で定義したユーザアカウントで行います。
+   こうしておけば、同じ PHP プロセスを異なる IIS ウェブサイトで共有している場合でも
+   (各サイトで IIS 認証のユーザアカウントを分けておけば)
+   一方の PHP スクリプトからもう一方のファイルはアクセスできなくなります。
   </para>
   <para>
-   For example IIS 5.1 and IIS 6.0, in its default configuration, has anonymous authentication enabled 
-   with built-in user account IUSR_&lt;MACHINE_NAME&gt; used as a default identity. This means that in 
-   order for IIS to execute PHP scripts, it is necessary to grant IUSR_&lt;MACHINE_NAME&gt; account 
-   read permission on those scripts. If PHP applications need to perform write operations on certain 
-   files or write files into some folders then IUSR_&lt;MACHINE_NAME&gt; account should have write permission to those.
+   IIS 5.1 や IIS 6.0 のデフォルト設定では組み込みのユーザアカウント
+   IUSR_&lt;MACHINE_NAME&gt; による匿名認証が有効になっています。
+   つまり、IIS で PHP スクリプトを実行する場合は IUSR_&lt;MACHINE_NAME&gt;
+   アカウントにスクリプトの読み込み権限を付与しなければならないということです。
+   PHP のアプリケーションからファイルへの書き込みやフォルダ内でのファイルの作成などをする場合は、
+   IUSR_&lt;MACHINE_NAME&gt; アカウントに書き込み権限が必要となります。
   </para>
   <para>
-   To determine which user account is used by IIS anonymous authentication, follow these steps:
+   IIS 匿名認証で使うユーザアカウントを設定するには、次のようにします。
    <procedure>
     <step>
-     <simpara>In the Windows Start Menu choose &quot;Run:&quot;, type &quot;inetmgr&quot; and click &quot;Ok&quot;;</simpara>
+     <simpara>Windows のスタートメニューで &quot;ファイル名を指定して実行&quot; を選び、&quot;inetmgr&quot;
+     と入力して &quot;Ok&quot; をクリックする</simpara>
     </step>
     <step>
-     <simpara>Expand the list of web sites under the &quot;Web Sites&quot; node in the tree view, right-click on a web 
-      site that is being used and select &quot;Properties&quot;;
+     <simpara>ツリービューの &quot;Web Sites&quot; ノードにあるウェブサイトの一覧を展開し、
+      使うウェブサイトの上で右クリックして &quot;プロパティ&quot; を選択する
      </simpara>    
     </step>
     <step>
-     <simpara>Click the &quot;Directory Security&quot; tab;</simpara>    
+     <simpara>&quot;ディレクトリセキュリティ&quot; タブを選択する</simpara>    
     </step>
     <step>
-     <simpara>Take note of a &quot;User name:&quot; field in the &quot;Authentication Methods&quot; dialog</simpara>
+     <simpara>&quot;Authentication Methods&quot; ダイアログの &quot;User name:&quot; フィールドで設定</simpara>
     </step>
    </procedure>
    <mediaobject>
-    <alt>Anonymous authenication for IIS 5.1 and IIS 6.0</alt>
+    <alt>IIS 5.1 および IIS 6.0 の匿名認証</alt>
     <imageobject>
      <imagedata fileref="en/install/windows/figures/iis6anonauth.png" width="654" depth="461" />
     </imageobject>
    </mediaobject>
   </para>
   <para>
-   To modify the permissions settings on files and folders, use the Windows Explorer user interface 
-   or <varname>icacls</varname> command.
+   ファイルやフォルダのパーミッションを変更するには、エクスプローラあるいは
+   <varname>icacls</varname> コマンドを使います。
    <example>
-    <title>Configuring file access permissions</title>
+    <title>ファイルのアクセス権の設定</title>
     <programlisting>
 <![CDATA[
 icacls C:\inetpub\wwwroot\upload /grant IUSR:(OI)(CI)(M)
@@ -130,27 +135,30 @@ icacls C:\inetpub\wwwroot\upload /grant IUSR:(OI)(CI)(M)
   </para>
  </sect2>
  <sect2 xml:id="install.windows.iis6.defaultdoc">
-  <title>Set <filename>index.php</filename> as a default document in IIS</title>
+  <title>IIS のデフォルトドキュメントを <filename>index.php</filename> にする</title>
   <para>
-   The IIS default documents are used for HTTP requests that do not specify a document name. With PHP applications, 
-   <filename>index.php</filename> usually acts as a default document. To add <filename>index.php</filename> to the list of 
-   IIS default documents, follow these steps:
+   ドキュメント名を指定しない HTTP リクエストを受け取ったときには、
+   IIS のデフォルトドキュメントが使われます。PHP アプリケーションでは、通常は
+   <filename>index.php</filename> をデフォルトドキュメントとします。
+   <filename>index.php</filename> を IIS のデフォルトドキュメントに追加するには、
+   次のようにします。
    <procedure>
     <step>
-     <simpara>In the Windows Start Menu choose &quot;Run:&quot;, type &quot;inetmgr&quot; and click &quot;Ok&quot;;</simpara>
+     <simpara>Windows のスタートメニューで &quot;ファイル名を指定して実行&quot; を選び、&quot;inetmgr&quot;
+     と入力して &quot;Ok&quot; をクリックする</simpara>
     </step>
     <step>
-     <simpara>Right-click on the &quot;Web Sites&quot; node in the tree view and select &quot;Properties&quot;;</simpara>
+     <simpara>ツリービューの &quot;Web Sites&quot; ノードを右クリックして &quot;プロパティ&quot; を選択する</simpara>
     </step>
     <step>
-     <simpara>Click the &quot;Documents&quot; tab;</simpara>
+     <simpara>&quot;Documents&quot; タブをクリックする</simpara>
     </step>
     <step>
-     <simpara>Click the &quot;Add...&quot; button and enter &quot;index.php&quot; for the &quot;Default content page:&quot;.</simpara>
+     <simpara>&quot;Add...&quot; ボタンをクリックし、&quot;Default content page:&quot; に &quot;index.php&quot; を入力する</simpara>
     </step>
    </procedure>
    <mediaobject>
-    <alt>Setting index.php as default document for IIS</alt>
+    <alt>index.php を IIS のデフォルトドキュメントにする</alt>
     <imageobject>
      <imagedata fileref="en/install/windows/figures/iis6defaultdoc.png" width="659" depth="465" />
     </imageobject>
@@ -158,16 +166,20 @@ icacls C:\inetpub\wwwroot\upload /grant IUSR:(OI)(CI)(M)
   </para>
  </sect2>
  <sect2 xml:id="install.windows.iis6.recycling">
-  <title>FastCGI and PHP Recycling configuration</title>
+  <title>FastCGI および PHP の再利用設定</title>
   <para>
-   Configure IIS FastCGI extension settings for recycling of PHP processes by using the commands shown below. 
-   The FastCGI setting <varname>instanceMaxRequests</varname> controls how many requests will be processed by a single 
-   <filename>php-cgi.exe</filename> process before FastCGI extension shuts it down. The PHP environment variable 
-   <varname>PHP_FCGI_MAX_REQUESTS</varname> controls how many requests a single <filename>php-cgi.exe</filename> process 
-   will handle before it recycles itself. Make sure that the value specified for FastCGI <varname>InstanceMaxRequests</varname>
-   setting is less than or equal to the value specified for <varname>PHP_FCGI_MAX_REQUESTS</varname>.
+   IIS FastCGI エクステンションで PHP プロセスの再利用を設定するには以下のコマンドを使います。
+   FastCGI の設定項目 <varname>instanceMaxRequests</varname> は、
+   ひとつの <filename>php-cgi.exe</filename> が何回リクエストを処理すると
+   FastCGI エクステンションがシャットダウンさせるかを表します。
+   PHP の環境変数 <varname>PHP_FCGI_MAX_REQUESTS</varname> は、
+   ひとつの <filename>php-cgi.exe</filename> プロセスが何回リクエストを処理すると
+   自分をリサイクルするかを表します。
+   FastCGI の <varname>InstanceMaxRequests</varname>
+   で設定した値が <varname>PHP_FCGI_MAX_REQUESTS</varname>
+   以下になるようにしましょう。
    <example>
-    <title>Configuring FastCGI and PHP recycling</title>
+    <title>FastCGI と PHP の再利用設定</title>
     <programlisting>
 <![CDATA[
 cscript %windir%\system32\inetsrv\fcgiconfig.js -set -section:"PHP" ^
@@ -181,14 +193,16 @@ cscript %windir%\system32\inetsrv\fcgiconfig.js -set -section:"PHP" ^
   </para>
  </sect2>
  <sect2 xml:id="install.windows.iis6.timeouts">
-  <title>Configuring FastCGI timeout settings</title>
+  <title>FastCGI のタイムアウト設定</title>
   <para>
-   Increase the timeout settings for FastCGI extension if there are applications that have long running PHP scripts. 
-   The two settings that control timeouts are <varname>ActivityTimeout</varname> and <varname>RequestTimeout</varname>. 
-   Refer to <link xlink:href="&url.iis.fastcgi.settings;">Configuring FastCGI Extension for IIS 6.0</link> for more 
-   information about those settings.
+   実行時間が長くなる PHP スクリプトがある場合は、FastCGI
+   エクステンションのタイムアウト設定を増やします。タイムアウトに関連する設定項目は
+   <varname>ActivityTimeout</varname> と <varname>RequestTimeout</varname> です。
+   これらの設定に関する詳細は
+   <link xlink:href="&url.iis.fastcgi.settings;">Configuring FastCGI Extension for IIS 6.0</link>
+   を参照ください。
    <example>
-    <title>Configuring FastCGI timeout settings</title>
+    <title>FastCGI のタイムアウト設定</title>
     <programlisting>
 <![CDATA[
 cscript %windir%\system32\inetsrv\fcgiconfig.js -set -section:"PHP" ^
@@ -202,17 +216,18 @@ cscript %windir%\system32\inetsrv\fcgiconfig.js -set -section:"PHP" ^
    </para>
  </sect2>
  <sect2 xml:id="install.windows.iis6.phpinilocation">
-  <title>Changing the Location of <filename>php.ini</filename> file</title>
+  <title><filename>php.ini</filename> ファイルの場所の変更</title>
   <para>
-   PHP searches for <filename>php.ini</filename> file in 
-   <link linkend="configuration.file">several locations</link> and it is 
-   possible to change the default locations of <filename>php.ini</filename> 
-   file by using <varname>PHPRC</varname> environment variable. To instruct PHP 
-   to load the configuration file from a custom location run the command shown below. 
-   The absolute path to the directory with <filename>php.ini</filename> file should be 
-   specified as a value of <varname>PHPRC</varname> environment variable.
+   PHP が <filename>php.ini</filename> ファイルを探す場所は
+   <link linkend="configuration.file">いくつかあり</link>、
+   <filename>php.ini</filename> ファイルのデフォルトの場所を
+   環境変数 <varname>PHPRC</varname> で変更することができます。
+   特定の場所においた設定ファイルを PHP に読み込ませたい場合は、
+   以下のコマンドを実行します。環境変数 <varname>PHPRC</varname>
+   には、<filename>php.ini</filename>
+   ファイルがあるディレクトリへの絶対パスを指定しなければなりません。
    <example>
-    <title>Changing the location of <filename>php.ini</filename> file</title>
+    <title><filename>php.ini</filename> ファイルの場所の変更</title>
     <programlisting>
 <![CDATA[
 cscript %windir%\system32\inetsrv\fcgiconfig.js -set -section:"PHP" ^
