@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 31c7bd07e1d8585f0c26ccb17169bb1951b42cb3 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 9197963209709266a51b220600f3a0dc4dd3519d Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: shimooka -->
 <refentry xmlns="http://docbook.org/ns/docbook" xml:id="function.flock">
  <refnamediv>
@@ -17,11 +17,12 @@
    <methodparam choice="opt"><type>int</type><parameter role="reference">wouldblock</parameter></methodparam>
   </methodsynopsis>
   <para>
-   <function>flock</function>により、(ほとんどの Unix や Windows さえ含む)
-   ほとんど全てのプラットフォームで使用可能な簡易な読み手/書き手モデルが実現されます。
+   <function>flock</function> を使うと、(ほとんどの Unix、そして Windows さえ含む)
+   事実上すべてのプラットフォームで使用可能な、簡易な読み手/書き手モデルを実現できます。
   </para>
   <para>
-   ロックの解放には <function>fclose</function> でを使用します
+   PHP 5.3.2 より前のバージョンでは、<function>fclose</function>
+   でロックの解放も行います
    (これは、スクリプトが終了した場合にも自動的にコールされます)。
   </para>
   <para>
@@ -41,9 +42,7 @@
     <varlistentry>
      <term><parameter>handle</parameter></term>
      <listitem>
-      <para>
-       オープンしたファイルへのポインタ。
-      </para>
+      &fs.file.pointer;
      </listitem>
     </varlistentry>
     <varlistentry>
@@ -191,8 +190,12 @@ fclose($fp);
   &reftitle.notes;
   <note>
    <para>
-    <function>flock</function> は、Windows 環境下では必ずロックを行います。
-    POSIX ベースの OS の中にも同様の動きをするものがあります。
+    <function>flock</function> は、Windows 上ではアドバイザリロックではなく
+    強制ロックを使います。強制ロックは Linux や System V 系の OS でもサポートされています。
+    これは、そのファイルに setgid パーミッションが設定されていて
+    グループの実行ビットがクリアされている場合に
+    fcntl() システムコールが通常サポートしている方式です。
+    Linux では、これを行うには mand オプションつきでファイルシステムをマウントしておく必要があります。
    </para>
   </note>
   <note>
@@ -203,10 +206,17 @@ fclose($fp);
     特別なロックファイルを使用する必要があるかもしれません。
    </para>
   </note>
+  <note>
+   <para>
+    <function>fopen</function> が返すローカルファイルへのポインタ、あるいは
+    <function>streamWrapper::stream_lock</function> メソッドを実装した
+    ユーザ空間のストリームを指すファイルポインタに対してのみ使うことができます。
+   </para>
+  </note>
   <warning>
    <para>
     一連のコードで別の値を <parameter>handle</parameter> 引数に代入すると、
-    ロックを解放します。
+    それ以降のコードでロックを解放します。
    </para>
   </warning>
   <warning>
