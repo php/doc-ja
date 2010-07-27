@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 58e026c0572f50bfcbb447e07423641cf8062d6a Maintainer: takagi Status: ready -->
+<!-- EN-Revision: fead28e4454f663d5ff601a5d3872728354ad0d3 Maintainer: takagi Status: ready -->
 
 <refentry xml:id="mongo.construct" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -22,7 +22,7 @@
    に接続します。
   </para>
   <para>
-   バージョン 1.0.2 以降、<parameter>server</parameter> には次のような形式も使えます。
+   バージョン 1.0.2 以降、<parameter>server</parameter> は次のような形式にしなければなりません。
    <programlisting>
 <![CDATA[
 mongodb://[username:password@]host1[:port1][,host2[:port2:],...]/db
@@ -30,8 +30,8 @@ mongodb://[username:password@]host1[:port1][,host2[:port2:],...]/db
    </programlisting>
   </para>
   <para>
-   <literal>mongodb://</literal> で始まる部分が、
-   この形式の接続文字列であることを示します。
+   接続文字列は常に <literal>mongodb://</literal> で始まります。
+   この部分が、接続文字列であることを表しています。
   </para>
   <para>
    <literal>username</literal> と <literal>password</literal>
@@ -146,6 +146,18 @@ $mongo->selectDB("foo")->command(array("distinct" => "bar", "key" => "age"));
           ドライバがデータベースへの接続を試みる時間の長さ (ミリ秒単位)。
          </para>
         </listitem>
+        <listitem>
+         <para>
+          <literal>"replicaSet"</literal>
+         </para>
+         <para>
+          指定したホストがレプリカセットのシードであるか否か。
+          シードである場合は、シードのデータベースコマンド
+          <literal>ismaster</literal> を使ってマスタを決定します。
+          ドライバは、リストに上がっていないサーバに接続することになるかもしれません。
+          詳細は、以下のレプリカセットの例を参照ください。
+         </para>
+        </listitem>
        </itemizedlist>
       </para>
      </listitem>
@@ -168,6 +180,9 @@ $mongo->selectDB("foo")->command(array("distinct" => "bar", "key" => "age"));
    <classname>MongoConnectionException</classname> をスローします。
    指定したユーザ名やパスワードが間違っている場合にも
    <classname>MongoConnnectionException</classname> をスローします。
+   一般的な例外とその原因については
+   <classname>MongoConnectionException</classname>
+   のドキュメントを参照ください。
   </para>
  </refsect1>
 
@@ -234,6 +249,12 @@ $mongo->selectDB("foo")->command(array("distinct" => "bar", "key" => "age"));
         </variablelist>
        </entry>
       </row>
+      <row>
+       <entry>1.0.9</entry>
+       <entry>
+        <literal>replicaSet</literal> オプションが追加されました。
+       </entry>
+      </row>
      </tbody>
     </tgroup>
    </informaltable>
@@ -243,27 +264,40 @@ $mongo->selectDB("foo")->command(array("distinct" => "bar", "key" => "age"));
  <refsect1 role="examples">
   &reftitle.examples;
   <example>
-   <title><function>Mongo::__construct</function> でのペア接続の例</title>
+   <title><function>Mongo::__construct</function> でのレプリカセットの例</title>
    <para>
-    この例は、Mongo サーバのレプリカペアに接続する方法を示します。
+    この例は、レプリカセットに接続する方法を示します。
+    このでは、次の三つのサーバ sf1.example.com、sf2.example.com および
+    ny1.example.com があるものと仮定します。
+    マスタは、これらのうちのいずれかひとつとなります。
    </para>
    <programlisting role="php">
 <![CDATA[
 <?php
 
 // カンマ区切りのサーバ名をコンストラクタに渡します
-$m1 = new Mongo("mongodb://www.example1.com,www.example2.com");
+$m1 = new Mongo("mongodb://sf2.example.com,ny1.example.com", array("replicaSet" => true));
 
-// データベースサーバがデフォルトポート (27017) 以外で動いている場合は
-// ポートも指定します
-$m2 = new Mongo("mongodb://www.example1.com:12345,www.example.com:54321");
-
-// ふたつだけではなく、それより多くのサーバに接続することもできます
-$m3 = new Mongo("mongodb://localhost:27017,localhost:27018,localhost:27019");
+// ひとつのシードを渡すだけで、ドライバがそこから完全なリストを取得して
+// シードからマスタを探します
+$m2 = new Mongo("mongodb://ny1.example.com", array("replicaSet" => true));
 
 ?>
 ]]>
    </programlisting>
+   <para>
+    現在のマスタで処理に失敗した場合、
+    セカンダリサーバのうちのどれを新しいマスタにするかをドライバが判断し、
+    自動的にその接続を開始させます。この自動フェイルオーバー機能は、
+    <literal>replicaSet</literal> を指定しなければ正しく動作しません。
+   </para>
+   <para>
+    シードリストの中の少なくともひとつのシードに接続できなければ、
+    ドライバからレプリカセットに接続することはできません。
+   </para>
+   <para>
+    二つの別のレプリカセットからのシードを指定した場合の挙動は未定義です。
+   </para>
   </example>
   <example>
    <title><function>Mongo::__construct</function> での持続的接続の例</title>
