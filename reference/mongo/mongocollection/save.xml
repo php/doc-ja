@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 13d9a87041ee11fbffc2846d5c643344c9bc5d58 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: d0935fe66ddfe90d94a8ed560bcaee8e9ffd8519 Maintainer: takagi Status: ready -->
 
 <refentry xml:id="mongocollection.save" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -48,7 +48,28 @@
           <literal>"safe"</literal>
          </para>
          <para>
-          保存に成功したかどうかをチェックします。
+          boolean あるいは整数値で、デフォルトは &false; です。&false;
+          の場合、データベースからの応答を待たずにプログラムを続行します。
+          &true; の場合、プログラムはデータベースからの応答を待ち、
+          追加に失敗したときには
+          <classname>MongoCursorException</classname> をスローします。
+         </para>
+         <para>
+          <literal>safe</literal> が整数値の場合は、
+          指定した数のマシンで追加が成功するまでは成功したと見なしません
+          (処理がタイムアウトした場合は例外をスローします。wtimeout を参照ください)。
+          これは、コレクションに設定された w 変数をオーバーライドします。
+         </para>
+        </listitem>
+        <listitem>
+         <para>
+          <literal>"fsync"</literal>
+         </para>
+         <para>
+          boolean で、デフォルトは &false; です。
+          追加操作がディスク上に同期されるまで成功とは見なさないようにさせます。
+          &true; の場合は "安全な" 追加操作が前提となり、
+          <literal>safe</literal> の設定を &false; にオーバーライドします。
          </para>
         </listitem>
        </itemizedlist>
@@ -62,7 +83,9 @@
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
-   オブジェクトが保存されたかどうかを返します。
+   <parameter>safe</parameter> が設定されている場合は、
+   保存結果を含む配列を返します。設定されていない場合は、
+   配列が空でなかったかどうかをあらわす boolean 値を返します (空の配列は追加されません)。
   </para>
  </refsect1>
 
@@ -71,6 +94,11 @@
   <para>
    "safe" オプションが設定されていて保存に失敗した場合に
    <classname>MongoCursorException</classname> をスローします。
+  </para>
+  <para>
+   "safe" オプションが 1 より大きい整数値に設定されているとき、
+   <literal>MongoCollection::$wtimeout</literal> ミリ秒以内に処理が終わらなかった場合に
+   <classname>MongoCursorTimeoutException</classname> をスローします。
   </para>
  </refsect1>
 
@@ -90,6 +118,13 @@
        <entry>1.0.5</entry>
        <entry>
         "options" パラメータが追加されました。
+       </entry>
+      </row>
+      <row>
+       <entry>1.0.9</entry>
+       <entry>
+        "safe" オプションに整数値がわたせるようになり (以前は booleans
+        のみでした)、さらに "fsync" オプションが追加されました。
        </entry>
       </row>
      </tbody>
