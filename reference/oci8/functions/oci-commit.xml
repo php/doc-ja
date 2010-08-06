@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 96c9d88bad9a7d7d44bfb7f26c226df7ee9ddf26 Maintainer: shimooka Status: working -->
+<!-- EN-Revision: 96c9d88bad9a7d7d44bfb7f26c226df7ee9ddf26 Maintainer: shimooka Status: ready -->
 <refentry xml:id="function.oci-commit" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>oci_commit</refname>
@@ -20,17 +20,19 @@
    また、保持しているロックをすべて解放します。
   </para>
   <para>
-   A transaction begins when the first SQL statement that changes data
-   is executed with <function>oci_execute</function> using
-   the <constant>OCI_NO_AUTO_COMMIT</constant> flag.  Further data
-   changes made by other statements become part of the same
-   transaction.  Data changes made in a transaction are temporary
-   until the transaction is committed or rolled back.  Other users of
-   the database will not see the changes until they are committed.
+   トランザクションが始まるのは、データを変更する最初の SQL 文が
+   <constant>OCI_NO_AUTO_COMMIT</constant> フラグつきで
+   <function>oci_execute</function> によって実行されたときです。
+   それ以降、他の文によるデータの変更も同じトランザクションの一部となります。
+   トランザクション内でのデータの変更は、
+   そのトランザクションがコミットあるいはロールバックされるまでは一時的なものとなります。
+   データベース上の他のユーザは、
+   トランザクションがコミットされるまでその変更内容を見ることができません。
   </para>
   <para>
-   When inserting or updating data, using transactions is recommended
-   for relational data consistency and for performance reasons.
+   データを追加したり更新したりする際には、
+   リレーショナルデータの一貫性やパフォーマンスなどを考慮して
+   トランザクションを使うことを推奨します。
   </para>
  </refsect1>
 
@@ -68,14 +70,14 @@
 <![CDATA[
 <?php
 
-// Insert into several tables, rolling back the changes if an error occurs
+// 複数のテーブルに挿入し、エラーが発生したときにはロールバックします
 
 $conn = oci_connect('hr', 'welcome', 'localhost/XE');
 
 $stid = oci_parse($conn, "INSERT INTO mysalary (id, name) VALUES (1, 'Chris')");
 
-// The OCI_NO_AUTO_COMMIT flag tells Oracle not to commit the INSERT immediately
-// Use OCI_DEFAULT as the flag for PHP <= 5.3.1.  The two flags are equivalent
+// OCI_NO_AUTO_COMMIT フラグは、INSERT の直後にコミットしないよう Oracle に指示します
+// PHP <= 5.3.1 では OCI_DEFAULT フラグを使いましょう。どちらのフラグも同じ意味です
 $r = oci_execute($stid, OCI_NO_AUTO_COMMIT);
 if (!$r) {    
     $e = oci_error($stid);
@@ -86,11 +88,11 @@ $stid = oci_parse($conn, 'INSERT INTO myschedule (startday) VALUES (12)');
 $r = oci_execute($stid, OCI_NO_AUTO_COMMIT);
 if (!$r) {    
     $e = oci_error($stid);
-    oci_rollback($conn);  // rollback changes to both tables
+    oci_rollback($conn);  // 両方のテーブルへの変更をロールバックします
     trigger_error(htmlentities($e['message']), E_USER_ERROR);
 }
 
-// Commit the changes to both tables
+// 両方のテーブルへの変更をコミットします
 $r = oci_commit($conn);
 if (!r) {
     $e = oci_error($conn);
@@ -115,21 +117,20 @@ if (!r) {
     <function>oci_commit</function> をコールする必要があります。
    </para>
    <para>
-    Any call to <function>oci_execute</function> that uses
-    <constant>OCI_COMMIT_ON_SUCCESS</constant> mode explicitly or by
-    default will commit any previous uncommitted transaction.
+    <constant>OCI_COMMIT_ON_SUCCESS</constant> モードを指定するか、
+    あるいはデフォルトの状態で <function>oci_execute</function> をコールすると、
+    それ以前の未コミットのトランザクションをコミットします。
    </para>
    <para>
-    Any Oracle DDL statement such as <literal>CREATE</literal>
-    or <literal>DROP</literal> will automatically commit any
-    uncommitted transaction.
+    <literal>CREATE</literal> や <literal>DROP</literal> といった
+    Oracle の DDL は、未コミットのトランザクションを自動的にコミットします。
    </para>
   </note>
   <note>
    <para>
-    In PHP versions before 5.0.0 you must
-    use <function>ocicommit</function>
-    instead. &oci.name.compat.note;
+    PHP 5.0.0 より前のバージョンでは、かわりに
+    <function>ocicommit</function> を使用します。
+    &oci.name.compat.note;
    </para>
   </note>
  </refsect1>

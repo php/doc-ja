@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- $Revision$ -->
-<!-- EN-Revision: f453f7036c74f5f8ce5e15d3d5abbaf8dfd599e2 Maintainer: shimooka Status: working -->
+<!-- EN-Revision: f453f7036c74f5f8ce5e15d3d5abbaf8dfd599e2 Maintainer: shimooka Status: ready -->
 <refentry xml:id="function.oci-bind-by-name" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>oci_bind_by_name</refname>
-  <refpurpose>Oracle プレースホルダーに PHP 変数をバインドする</refpurpose>
+  <refpurpose>Oracle プレースホルダに PHP 変数をバインドする</refpurpose>
  </refnamediv>
 
  <refsect1 role="description">
@@ -19,75 +19,73 @@
   </methodsynopsis>
   <para>
    PHP の変数
-   <parameter>variable</parameter> を Oracle プレースホルダー
-   <parameter>bv_name</parameter> にバインドします。Binding
-   is important for Oracle database performance and also as a way to
-   avoid SQL Injection security issues.
+   <parameter>variable</parameter> を Oracle プレースホルダ
+   <parameter>bv_name</parameter> にバインドします。
+   バインドは Oracle データベースのパフォーマンスに影響を及ぼす重要な仕組みで、
+   SQL インジェクション攻撃を防ぐための方法にもなります。
   </para>
 
   <para>
-    Binding allows the database to reuse the statement context and
-    caches from previous executions of the statement, even if another
-    user or process originally executed it.  Binding reduces SQL
-    Injection concerns because the data associated with a bind
-    variable is never treated as part of the SQL statement.  It does
-    not need quoting or escaping.
+    バインドを使うとデータベースでステートメントのコンテキストを
+    (たとえ別のユーザやプロセスが実行したものであっても)
+    再利用することができるようになります。
+    バインドによって SQL インジェクションの心配を軽減できる理由は、
+    バインド変数で代入したデータが決して SQL 文の一部と見なされることがないからです。
+    クォートやエスケープは不要です。
   </para>
 
   <para>
-    PHP variables that have been bound can be changed and the
-    statement re-executed without needing to re-parse the statement or
-    re-bind.
+    バインドする PHP 変数の中身を変更してステートメントを再実行するときにも、
+    ステートメントをパースしなおしたり変数をバインドしなおしたりする必要はありません。
   </para>
 
   <para>
-    In Oracle, bind variables are commonly divided
-    into <literal>IN</literal> binds for values that are passed into
-    the database, and <literal>OUT</literal> binds for values that are
-    returned to PHP.  A bind variable may be
-    both <literal>IN</literal> and <literal>OUT</literal>.  Whether a
-    bind variable will be used for input or output is determined at
-    run-time.
+    Oracle のバインド変数は、データベースに渡す値に使う
+    <literal>IN</literal> 変数と PHP に返される値に使う
+    <literal>OUT</literal> 変数のふたつに大別できます。
+    バインド変数は <literal>IN</literal> あるいは <literal>OUT</literal>
+    のどちらかの形式になります。バインド変数を入力用に使うか出力用に使うかは、
+    実行時に決まります。
   </para>
 
   <para>
-    You must specify <parameter>maxlength</parameter> when using
-    an <literal>OUT</literal> bind so that PHP allocates enough memory
-    to hold the returned value.
+    <literal>OUT</literal> 変数を使う場合は
+    <parameter>maxlength</parameter> を指定しなければなりません。
+    これを用いて、返される値を格納するのに必要なメモリを PHP が確保します。
   </para>
 
   <para>
-    For <literal>IN</literal> binds it is recommended to set
-    the <parameter>maxlength</parameter> length if the statement is
-    re-executed multiple times with different values for the PHP
-    variable.  Otherwise Oracle may truncate data to the length of the
-    initial PHP variable value.  If you don't know what the maximum
-    length will be, then re-call <function>oci_bind_by_name</function>
-    with the current data size prior to
-    each <function>oci_execute</function> call. Binding an
-    unnecessarily large length will have an impact on process memory
-    in the database.
+    <literal>IN</literal> 変数の場合も、もし PHP
+    の変数にさまざまな値を格納してステートメントを何度も実行するのであれば
+    <parameter>maxlength</parameter> を設定しておくことを推奨します。
+    そうしないと、最初に渡した PHP の変数の値にあわせて
+    Oracle がデータの長さを切り詰めてしまう可能性があります。
+    最大長がどの程度になるかわからない場合は現在のデータサイズで
+    <function>oci_bind_by_name</function>
+    を再コールしてから <function>oci_execute</function> を実行するようにしましょう。
+    不必要に大きなサイズでバインドすると、
+    データベースのプロセスのメモリ使用量に影響を及ぼします。
   </para>
 
   <para>
-    A bind call tells Oracle which memory address to read data from.
-    For <literal>IN</literal> binds that address needs to contain
-    valid data when <function>oci_execute</function> is called.  This
-    means that the variable bound must remain in scope until
-    execution.  If it doesn't, unexpected results or errors such as
+    バインドは、Oracle にデータをどのメモリアドレスから読み込むのかを指示します。
+    <literal>IN</literal> 変数の場合、<function>oci_execute</function>
+    がコールされたときにそのメモリアドレスに正しいデータがなければなりません。
+    つまり、バインドされる変数は実行時までスコープ内に残っていなければならないということです。
+    もしそうでなければ、
     "ORA-01460: unimplemented or unreasonable conversion requested"
-    may occur.  For <literal>OUT</literal> binds one symptom is no
-    value being set in the PHP variable.
+    のような予期せぬエラーが発生します。
+    <literal>OUT</literal> 変数の場合は、PHP の変数に何も値が格納されないといったことになるでしょう。
   </para>
 
   <para>
-    For a statement that is repeatedly executed, binding values that
-    never change may reduce the ability of the Oracle optimizer to
-    choose the best statement execution plan.  Long running statements
-    that are rarely re-executed may not benefit from binding.  However
-    in both cases, binding might be safer than joining strings into a
-    SQL statement, as this can be a security risk if unfiltered user
-    text is concatenated.
+    繰り返し実行されるステートメントで決して値が変わることのないバインド変数を使っていると、
+    Oracle のオプティマイザが最適な実行プランを選びにくくなる可能性があります。
+    実行に長い時間がかかり、再実行されることもめったにないようなステートメントは、
+    バインドの恩恵を受けられないでしょう。
+    しかし、どちらの場合であっても、文字列を連結して
+    SQL 文を作るよりはバインドを使ったほうが安全です。
+    ユーザの入力をフィルタリングせずに埋め込んでしまうというリスクをなくせるからです。
   </para>
  </refsect1>
 
@@ -107,10 +105,9 @@
      <term><parameter>bv_name</parameter></term>
      <listitem>
       <para>
-       The colon-prefixed bind variable placeholder used in the
-       statement.  The colon is optional
-       in <parameter>bv_name</parameter>. Oracle does not use question
-       marks for placeholders.
+       コロンを先頭につけたバインド変数プレースホルダをステートメント内で使います。
+       コロンは <parameter>bv_name</parameter> では必須ではありません。
+       Oracle はクエスチョンマークをプレースホルダとして使いません。
       </para>
      </listitem>
     </varlistentry>
@@ -128,9 +125,8 @@
       <para>
        バインド時の最大長。-1 に設定した場合、
        <parameter>variable</parameter> の現在の長さを最大長として設定します。
-       In this case the <parameter>variable</parameter> must
-       exist and contain data
-       when <function>oci_bind_by_name</function> is called.
+       この場合は、<function>oci_bind_by_name</function> がコールされたときに
+       <parameter>variable</parameter> が存在してデータが格納されている必要があります。
       </para>
      </listitem>
     </varlistentry>
@@ -138,11 +134,11 @@
      <term><parameter>type</parameter></term>
      <listitem>
       <para>
-       The datatype that Oracle will treat the data as.  The
-       default <parameter>type</parameter> used
-       is <constant>SQLT_CHR</constant>. Oracle will convert the data
-       between this type and the database column (or PL/SQL variable
-       type), when possible.
+       Oracle がデータを扱うときのデータ型。デフォルトの
+       <parameter>type</parameter> は
+       <constant>SQLT_CHR</constant> です。
+       Oracle は、可能な場合はこの型とデータベースのカラム
+       (あるいは PL/SQL の変数) の型の間で変換を行います。
       </para>
       <para>
        抽象データ型 (LOB/ROWID/BFILE) をバインドする必要がある場合、まず
@@ -247,7 +243,7 @@
 <![CDATA[
 <?php
 
-// Create the table with:
+// このようなテーブルを作ります
 //   CREATE TABLE mytab (id NUMBER, text VARCHAR2(40));
 
 $conn = oci_connect('hr', 'welcome', 'localhost/XE');
@@ -264,7 +260,7 @@ oci_bind_by_name($stid, ":id_bv", $id);
 oci_bind_by_name($stid, ":text_bv", $text);
 oci_execute($stid);
 
-// Table now contains: 1, 'Data to insert     '
+// テーブルに入る内容: 1, 'Data to insert     '
 
 ?>
 ]]>
@@ -274,12 +270,12 @@ oci_execute($stid);
 
   <para>
    <example>
-    <title>Binding once for multiple executions</title>
+    <title>一度組み立てたものを複数回実行</title>
     <programlisting role="php">
 <![CDATA[
 <?php
 
-// Create the table with:
+// このようなテーブルを作ります
 //   CREATE TABLE mytab (id NUMBER);
 
 $conn = oci_connect('hr', 'welcome', 'localhost/XE');
@@ -288,16 +284,16 @@ if (!$conn) {
     trigger_error(htmlentities($m['message']), E_USER_ERROR);
 }
 
-$a = array(1,3,5,7,11);  // data to insert
+$a = array(1,3,5,7,11);  // 挿入するデータ
 
 $stid = oci_parse($conn, 'INSERT INTO mytab (id) VALUES (:bv)');
 oci_bind_by_name($stid, ':bv', $v, 20);
 foreach ($a as $v) {
-    $r = oci_execute($stid, OCI_DEFAULT);  // don't auto commit
+    $r = oci_execute($stid, OCI_DEFAULT);  // 自動コミットはしません
 }
-oci_commit($conn); // commit everything at once
+oci_commit($conn); // すべてをここでコミットします
 
-// Table contains five rows: 1, 3, 5, 7, 11
+// テーブルには次の 5 行が含まれます: 1, 3, 5, 7, 11
 
 oci_free_statement($stid);
 oci_close($conn);
@@ -310,7 +306,7 @@ oci_close($conn);
 
   <para>
    <example>
-    <title>Binding with a <function>foreach</function> loop</title>
+    <title><function>foreach</function> ループでのバインド</title>
     <programlisting role="php">
 <![CDATA[
 <?php
@@ -328,9 +324,9 @@ $ba = array(':dname' => 'IT Support', ':loc' => 1700);
 
 foreach ($ba as $key => $val) {
 
-    // oci_bind_by_name($stid, $key, $val) does not work
-    // because it binds each placeholder to the same location: $val
-    // instead use the actual location of the data: $ba[$key]
+    // oci_bind_by_name($stid, $key, $val) ではうまくいきません。
+    // これは、すべてのプレースホルダを同じ内容にバインドしてしまうからです。
+    // $val ではなく、データの実際の位置を表す $ba[$key] を使いましょう。
     oci_bind_by_name($stid, $key, $ba[$key]);
 }
 
@@ -351,7 +347,7 @@ oci_close($conn);
 
   <para>
    <example>
-    <title>Binding in a WHERE clause</title>
+    <title>WHERE 句でのバインド</title>
     <programlisting role="php">
 <![CDATA[
 <?php
@@ -384,7 +380,7 @@ oci_close($conn);
 
   <para>
    <example>
-    <title>Binding with a LIKE clause</title>
+    <title>LIKE 句でのバインド</title>
     <programlisting role="php">
 <![CDATA[
 <?php
@@ -395,9 +391,9 @@ if (!$conn) {
     trigger_error(htmlentities($m['message']), E_USER_ERROR);
 }
 
-// Find all cities that begin with 'South'
+// 'South' からはじまるすべての都市を探します
 $stid = oci_parse($conn, "SELECT city FROM locations WHERE city LIKE :bv");
-$city = 'South%';  // '%' is a wildcard in SQL
+$city = 'South%';  // '%' は SQL でのワイルドカードです
 oci_bind_by_name($stid, ":bv", $city);
 oci_execute($stid);
 oci_fetch_all($stid, $res);
@@ -421,7 +417,7 @@ oci_close($conn);
 
   <para>
    <example>
-    <title>Binding with REGEXP_LIKE</title>
+    <title>REGEXP_LIKE でのバインド</title>
     <programlisting role="php">
 <![CDATA[
 <?php
@@ -432,7 +428,7 @@ if (!$conn) {
     trigger_error(htmlentities($m['message']), E_USER_ERROR);
 }
 
-// Find all cities that contain 'ing'
+// 'ing' を含むすべての都市を探します
 $stid = oci_parse($conn, "SELECT city FROM locations WHERE REGEXP_LIKE(city, :bv)");
 $city = '.*ing.*';
 oci_bind_by_name($stid, ":bv", $city);
@@ -456,15 +452,15 @@ oci_close($conn);
   </para>
 
   <para>
-    For a small, fixed number of IN clause conditions, use individual
-    bind variables. Values unknown at run time can be set to NULL.
-    This allows a single statement to be used by all application
-    users, maximizing Oracle DB cache efficiency.
+    IN 句の中の条件数が少なくて固定なのであれば、個々にバインド変数を割り当てればいいでしょう。
+    実行時に不明な値は NULL が設定されます。
+    こうすればひとつのステートメントをすべてのユーザで使い回すことができ、
+    Oracle の DB キャッシュの効率を最大化させることができます。
   </para>
 
   <para>
    <example>
-    <title>Binding Multiple Values in an IN Clause</title>
+    <title>IN 句での複数の値のバインド</title>
     <programlisting role="php">
 <![CDATA[
 <?php
@@ -504,12 +500,12 @@ oci_close($conn);
 
   <para>
    <example>
-    <title>Binding a ROWID returned by a query</title>
+    <title>クエリが返す ROWID のバインド</title>
     <programlisting role="php">
 <![CDATA[
 <?php
 
-// Create the table with:
+// このようなテーブルを作ります
 //   CREATE TABLE mytab (id NUMBER, salary NUMBER, name VARCHAR2(40));
 //   INSERT INTO mytab (id, salary, name) VALUES (1, 100, 'Chris');
 //   COMMIT;
@@ -528,14 +524,14 @@ $row = oci_fetch_array($stid, OCI_ASSOC+OCI_RETURN_NULLS);
 $rid = $row['ROWID'];
 $name = $row['NAME'];
 
-// Change name to upper case & save the changes
+// 名前を大文字に変換してそれを保存します
 $name = strtoupper($name);
 $stid = oci_parse($conn, 'UPDATE mytab SET name = :n_bv WHERE ROWID = :r_bv');
 oci_bind_by_name($stid, ':n_bv', $name);
 oci_bind_by_name($stid, ':r_bv', $rid, -1, OCI_B_ROWID);
 oci_execute($stid);
 
-// The table now contains 1, 100, CHRIS
+// テーブルに入る内容: 1, 100, CHRIS
 
 oci_free_statement($stid);
 oci_close($conn);
@@ -548,13 +544,13 @@ oci_close($conn);
 
   <para>
    <example>
-    <title>Binding a ROWID on INSERT</title>
+    <title>INSERT での ROWID のバインド</title>
     <programlisting role="php">
 <![CDATA[
 <?php
 
-// This example inserts an id & name, and then updates the salary
-// Create the table with:
+// この例では id と name を挿入し、それから salary を更新します
+// このようなテーブルを作ります
 //   CREATE TABLE mytab (id NUMBER, salary NUMBER, name VARCHAR2(40));
 //
 // Based on original ROWID example by thies at thieso dot net (980221)
@@ -580,15 +576,15 @@ $upd_stid = oci_parse($conn, $sql);
 oci_bind_by_name($upd_stid, ":rid", $rowid, -1, OCI_B_ROWID);
 oci_bind_by_name($upd_stid, ":salary", $salary,   32);
 
-// ids and names to insert
+// 挿入する id と name
 $data = array(1111 => "Larry",
               2222 => "Bill",
               3333 => "Jim");
 
-// Salary of each person
+// それぞれの salary
 $salary = 10000;
 
-// Insert and immediately update each row
+// 挿入し、その後すぐに各行を更新します
 foreach ($data as $id => $name) {
     oci_execute($ins_stid);
     oci_execute($upd_stid);
@@ -598,7 +594,7 @@ $rowid->free();
 oci_free_statement($upd_stid);
 oci_free_statement($ins_stid);
 
-// Show the new rows
+// 新しい行を表示します
 $stid = oci_parse($conn, "SELECT * FROM mytab");
 oci_execute($stid);
 while ($row = oci_fetch_array($stid, OCI_ASSOC+OCI_RETURN_NULLS)) {
@@ -616,13 +612,13 @@ oci_close($conn);
 
   <para>
    <example>
-    <title>Binding for a PL/SQL stored function</title>
+    <title>PL/SQL ストアドファンクションでのバインド</title>
     <programlisting role="php">
 <![CDATA[
 <?php
 
-//  Before running the PHP program, create a stored function in
-//  SQL*Plus or SQL Developer:
+//  PHP プログラムを実行する前に、ストアドファンクションを
+//  SQL*Plus あるいは SQL Developer で作ります
 //
 //  CREATE OR REPLACE FUNCTION myfunc(p IN NUMBER) RETURN NUMBER AS
 //  BEGIN
@@ -640,14 +636,13 @@ $p = 8;
 $stid = oci_parse($conn, 'begin :r := myfunc(:p); end;');
 oci_bind_by_name($stid, ':p', $p);
 
-// The return value is an OUT bind. The default type will be a string
-// type so binding a length 40 means that at most 40 digits will be
-// returned.
+// 返り値は OUT 変数に格納されます。デフォルトの型は文字列型なので、
+// length が 40 ということは最大で 40 まで返される可能性があるということです
 oci_bind_by_name($stid, ':r', $r, 40);
 
 oci_execute($stid);
 
-print "$r\n";   // prints 24
+print "$r\n";   // 24 と表示します
 
 oci_free_statement($stid);
 oci_close($conn);
@@ -660,13 +655,13 @@ oci_close($conn);
 
   <para>
   <example>
-   <title>Binding parameters for a PL/SQL stored procedure</title>
+   <title>PL/SQL ストアドプロシージャでのパラメータのバインド</title>
     <programlisting role="php">
 <![CDATA[
 <?php
 
-//  Before running the PHP program, create a stored procedure in
-//  SQL*Plus or SQL Developer:
+//  PHP プログラムを実行する前に、ストアドプロシージャを
+//  SQL*Plus あるいは SQL Developer で作ります
 //
 //  CREATE OR REPLACE PROCEDURE myproc(p1 IN NUMBER, p2 OUT NUMBER) AS
 //  BEGIN
@@ -684,14 +679,13 @@ $p1 = 8;
 $stid = oci_parse($conn, 'begin myproc(:p1, :p2); end;');
 oci_bind_by_name($stid, ':p1', $p1);
 
-// The second procedure parameter is an OUT bind. The default type
-// will be a string type so binding a length 40 means that at most 40
-// digits will be returned.
+// プロシージャの 2 番目のパラメータは OUT 変数です。デフォルトの型は文字列型なので、
+// length が 40 ということは最大で 40 まで返される可能性があるということです
 oci_bind_by_name($stid, ':p2', $p2, 40);
 
 oci_execute($stid);
 
-print "$p2\n";   // prints 16
+print "$p2\n";   // 16 と表示します
 
 oci_free_statement($stid);
 oci_close($conn);
@@ -704,7 +698,7 @@ oci_close($conn);
 
   <para>
   <example>
-   <title>Binding a CLOB column</title>
+   <title>CLOB 列のバインド</title>
     <programlisting role="php">
 <![CDATA[
 <?php
@@ -718,7 +712,7 @@ if (!$conn) {
     trigger_error(htmlentities($e['message']), E_USER_ERROR);
 }
 
-$mykey = 12343;  // arbitrary key for this example;
+$mykey = 12343;  // この例のための任意のキー
 
 $sql = "INSERT INTO mytab (mykey, myclob)
         VALUES (:mykey, EMPTY_CLOB())
@@ -733,7 +727,7 @@ $clob->save("A very long string");
 
 oci_commit($conn);
 
-// Fetching CLOB data
+// CLOB データを取得します
 
 $query = 'SELECT myclob FROM mytab WHERE mykey = :mykey';
 
@@ -767,30 +761,29 @@ print '</table>';
   &reftitle.notes;
   <warning>
    <para>
-    Do not use <link
-     linkend="ini.magic-quotes-gpc">magic_quotes_gpc</link> or
-    <function>addslashes</function>
-    and <function>oci_bind_by_name</function> simultaneously as no
-    quoting is needed. Any magically applied quotes will be written
-    into your database because <function>oci_bind_by_name</function>
-    inserts data verbatim and does not remove quotes or escape
-    characters.
+    クォートは不要なので、<link
+     linkend="ini.magic-quotes-gpc">magic_quotes_gpc</link> や
+    <function>addslashes</function> を
+    <function>oci_bind_by_name</function> と同時に使わないでください。
+    自動的に追加されたクォートはデータベースの中にそのまま書き込まれてしまいます。
+    <function>oci_bind_by_name</function>
+    はデータをそのままの形で追加し、クォートやエスケープ文字の除去は行わないからです。
    </para>
   </warning>
   <note>
    <para>
-    If you bind a string to a <literal>CHAR</literal> column in
-    a <literal>WHERE</literal> clause, remember that Oracle uses
-    blank-padded comparison semantics for <literal>CHAR</literal>
-    columns.  Your PHP variable should be blank padded to the same
-    width as the column for the <literal>WHERE</literal> clause to
-    succeed.
+    <literal>WHERE</literal> 句の中の
+    <literal>CHAR</literal> 型のカラムに文字列をバインドするときには、
+    Oracle における <literal>CHAR</literal> 型のカラムの比較が
+    スペースで埋めた (固定長形式で) 行われることを覚えておきましょう。
+    <literal>WHERE</literal> 句を期待通りに動作させるには、
+    PHP の変数側でもスペースを追加してカラムの幅と同じにしておく必要があります。
    </para>
   </note>
   <note>
    <para>
-     The PHP <parameter>variable</parameter> argument is a reference.  Some
-     forms of loops do not work as expected:
+     PHP の <parameter>variable</parameter> 引数は参照渡しです。
+     ループの形式によっては期待通りの動きをしないこともあります。
    </para>
    <informalexample>
      <programlisting role="php">
@@ -804,9 +797,10 @@ foreach ($myarray as $key => $value)  {
      </programlisting>
    </informalexample>
    <para>
-     This binds each key to the location of $value, so all bound
-     variables end up pointing to the last loop iteration's
-     value. Instead use the following:
+     これは、それぞれのキーに対して $value の指す場所をバインドします。
+     つまり、すべてのバインド変数の値は
+     ループの最後の処理で $value が指す値となります。
+     期待通りに動かすには、次のようにします。
    </para>
    <informalexample>
      <programlisting role="php">
@@ -822,9 +816,9 @@ foreach ($myarray as $key => $value) {
   </note>
   <note>
    <para>
-    In PHP versions before 5.0.0 you must
-    use <function>ocibindbyname</function>
-    instead. &oci.name.compat.note;
+    PHP 5.0.0 より前のバージョンでは、かわりに
+    <function>ocibindbyname</function> を使用します。
+    &oci.name.compat.note;
    </para>
   </note>
  </refsect1>
