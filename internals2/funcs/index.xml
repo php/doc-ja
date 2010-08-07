@@ -1,32 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 2fd3f0c96d9d221fe37109775af4df4cf949d5d8 Maintainer: takagi Status: working -->
+<!-- EN-Revision: 2fd3f0c96d9d221fe37109775af4df4cf949d5d8 Maintainer: takagi Status: ready -->
  <chapter xml:id="internals2.funcs" xmlns="http://docbook.org/ns/docbook">
   <title>関数の作成</title>
   <para>
-   One core element of an extension are functions which are exported to the
-   PHP userland. Even when you're planning to write object-oriented extensions
-   you are advised to read this chapter as most of the information is valid
-   for methods, too.
+   拡張モジュールの主要な要素のひとつが、
+   PHP のユーザ空間にエクスポートする関数です。
+   オブジェクト指向の拡張モジュールを書こうとしている場合でも、
+   この章を読んでおくことをおすすめします。
+   ここにある情報の大半はメソッドを書く場合にもあてはまるからです。
   </para>
 
   <para>
-   When adding a function to an extension, for instance after using the
-   <link linkend="internals2.buildsys.skeleton">ext_skel</link> script to
-   create the raw infrastructure, you can create a function by implementing it
-   as a C function and then providing an entry for the extension's function
-   table. The function entry can contain a pointer to an argument information
-   structure. Providing this information ins not strictly necessary, unless
-   you plan to accept parameters by reference or want to return a reference, but
-   provides information that can be accessed via PHP's <link
-   linkend="book.reflection">Reflection API</link>. As you will see below the 
-   parameters aren't passed as direct function parameters to the implementation
-   but passed on a stack, which is checked by the function's implementation
-   which can't directly serve as source for this information.
+   <link linkend="internals2.buildsys.skeleton">ext_skel</link>
+   で新しい基盤を作った後などに新しい関数を追加するには、
+   その内容を C の関数として実装して、
+   作った関数のエントリを拡張モジュールの関数テーブルに追加します。
+   関数のエントリには、引数情報の構造体へのポインタを含めることができます。
+   パラメータを参照で渡したり参照を返したりするのでない限り、
+   引数情報を渡すことは必須ではありません。しかし、情報を渡しておけば
+   PHP の <link linkend="book.reflection">Reflection API</link>
+   からアクセスできるようになります。以下の例でわかるとおり、
+   パラメータはそのまま実装へ渡されるわけではなく
+   スタックに積んで渡されます。
+   このスタックは関数の実装によってチェックされます。
+   関数の実装は直接の情報源とはなりません。
   </para>
 
   <example xml:id="internals2.funcs.index.minimalext">
-   <title>Minimal PHP extension with one function</title>
+   <title>関数をひとつ持つ最小限の PHP 拡張モジュール</title>
    <programlisting role="c">
 <![CDATA[
 /* {{{ proto void hello_world()
@@ -71,22 +73,23 @@ zend_module_entry demo_module_entry = {
   </example>
 
   <para>
-   In his example you can see the above discussed elements and the module
-   structure, if you don't remember his strucure go back to
-   <xref linkend="internals2.structure.modstruct"/>.
+   この例では、上で説明した要素やモジュールの構造を確認することができます。
+   この構造に見覚えがない場合は
+   <xref linkend="internals2.structure.modstruct"/> を見直してみましょう。
   </para>
 
   <para>
-   The first part of this extension is the actual implementation. As a
-   convention each exported function is preceded by a two line comment
-   describing the function's userland prototype and a short one line comment.
+   この拡張モジュールの最初の部分は、実際の実装です。
+   慣習として、エクスポートする関数の前には二行のコメントをつけることになっています。
+   コメントには、利用者向けの関数プロトタイプと
+   一行での短い説明を記述します。
   </para>
 
   <para>
-   For providing source code compatibility between different versions of PHP
-   the functions declaration is wrapped into the <code>PHP_FUNCTION</code>
-   macro. The compiler's preprocessor will, when using PHP 5.3 transform this
-   into a function like this:
+   PHP の異なるバージョン間でソースコードの互換性を保持するため、
+   関数の宣言を <code>PHP_FUNCTION</code> マクロでラップしています。
+   PHP 5.3 を使っている場合、コンパイラのプリプロセッサは
+   これを次のような関数に変換します。
   </para>
 
   <screen>
@@ -99,14 +102,14 @@ void zif_hello_world(int ht, zval *return_value, zval **return_value_ptr,
   </screen>
 
   <para>
-   For preventing a naming conflict between a function exported to userland
-   and another C function with the same name the C symbol of the exported
-   function is prefixed with the prefix <code>zif_</code>. You can also see
-   that this prototype doesn't reference the argument stack. Accessing
-   parameters passed from PHP is described below. The following table lists
-   the C level parameters which are also defined in the
-   <code>INTERNAL_FUNCTION_PARAMETERS</code> macro. Mind that these parameters 
-   might change between PHP versions and you should use the provide macros.
+   ユーザ空間にエクスポートする関数や C の別の関数との名前の衝突を避けるため、
+   エクスポートする関数の C のシンボルには先頭に <code>zif_</code> を付け加えます。
+   また、このプロトタイプでは引数スタックを参照していないことにもお気づきでしょう。
+   PHP から渡されたパラメータへのアクセス方法については後で説明します。
+   この表は、C レベルでのパラメータをまとめたものです。これらは
+   <code>INTERNAL_FUNCTION_PARAMETERS</code> マクロでも定義されています。
+   これらのパラメータは、PHP のバージョンが変われば変化する可能性があることに注意しましょう。
+   提供されているマクロ経由で使わなければなりません。
   </para>
 
   <table xml:id="internals2.funcs.index.internal_func_params">
@@ -114,40 +117,42 @@ void zif_hello_world(int ht, zval *return_value, zval **return_value_ptr,
    <tgroup cols="3">
     <thead>
      <row>
-      <entry>Name and type</entry>
-      <entry>Description</entry>
-      <entry>Access macros</entry>
+      <entry>名前と型</entry>
+      <entry>説明</entry>
+      <entry>アクセス用のマクロ</entry>
      </row>
     </thead>
     <tbody>
                                                     
      <row>
       <entry><code>int ht</code></entry>
-      <entry>Number of actual parameters passed by user</entry>
+      <entry>ユーザから渡された実際のパラメータの数</entry>
       <entry><code>ZEND_NUM_ARGS()</code></entry>
      </row>
 
      <row>
       <entry><code>zval *return_value</code></entry>
       <entry>
-       Pointer to a PHP variable that can be filled with the return value
-       passed to the user. The default type is <code>IS_NULL</code>.
+       PHP 変数へのポインタ。ユーザに返す値をここに格納します。
+       デフォルトの型は <code>IS_NULL</code> です。
       </entry>
       <entry><code>RETVAL_*</code>, <code>RETURN_*</code></entry>
      </row>
 
      <row>
       <entry><code>zval **return_value_ptr</code></entry>
-      <entry>When returning references to PHP set this to a pointer to
-       your variable. It is not suggested to return references.</entry>
+      <entry>
+       PHP に参照を返す場合は、ここに変数へのポインタを設定します。
+       参照を返すことは推奨しません。
+      </entry>
       <entry/>
      </row>
 
      <row>
       <entry><code>zval *this_ptr</code></entry>
       <entry>
-       In case this is a method call this points to the PHP variable
-       holding the <code>$this</code> object.
+       メソッドコールの場合に、これは
+       <code>$this</code> オブジェクトを保持する PHP の変数を指します。
       </entry>
       <entry><code>getThis()</code></entry>
      </row>
@@ -155,8 +160,7 @@ void zif_hello_world(int ht, zval *return_value, zval **return_value_ptr,
      <row>
       <entry><code>int return_value_used</code></entry>
       <entry>
-       Flag indicating whether the returned value will be used by the
-       caller.
+       返す値を呼び出し元で使うかどうかを示すフラグ。
       </entry>
       <entry/>
      </row>
@@ -166,46 +170,46 @@ void zif_hello_world(int ht, zval *return_value, zval **return_value_ptr,
   </table>
 
   <para>
-   As said the function shown above will simply return NULL to the user and do
-   nothing else. The function can be called, from the PHP userland, with an
-   arbitrary number of parameters. A more useful function consists of four
-   parts in general:
+   先ほども説明したように、上の関数は単に NULL を返すだけで他に何もしません。
+   PHP 側からこの関数をコールするときには任意の数のパラメータを指定することができます。
+   もう少し実用的な関数は、大きく四つの部分にわけることができます。
   </para>
 
   <orderedlist>
    <listitem>
     <para>
-     Declaration of local variables. In C we have to declare locale vars, so
-     we do this at the functions top.
+     ローカル変数の宣言。C ではローカル変数の宣言が必要です。
+     これは関数の先頭で行います。
     </para>
    </listitem>
    <listitem>
     <para>
-     Parameter parsing. PHP passes parameters on a special stack, we have to
-     read them from there, verify the types, cast them if needed and bail out
-     in case something goes wrong.
+     パラメータのパース。
+     PHP はパラメータを特別なスタックに積んで渡すので、
+     そこからパラメータを取り出して読み込み、型を検証し、
+     必要に応じてキャストし、何か問題があれば回避します。
     </para>
    </listitem>
    <listitem>
     <para>
-     Actual logic. Do whatever is needed.
+     実際のロジック。必要な処理を書きます。
     </para>
    </listitem>
    <listitem>
     <para>
-     Set the return value, cleanup, return.
+     返り値の設定、後始末。そして結果を返します。
     </para>
    </listitem>
   </orderedlist>
 
   <para>
-   In some cases the exact order of these steps may change. Especially the
-   last two steps are often mixed up, but it's a good idea to stay in that
-   order.
+   場合によってはこれらの順序は前後することもあります。
+   特に最後のふたつは一緒になってしまうことも多いでしょう。
+   しかし、この順序を守っておくほうがよいでしょう。
   </para>
 
   <example xml:id="internals2.funcs.index.simplefunc">
-   <title>A  simple function</title>
+   <title>単純な関数</title>
    <programlisting role="c">
 <![CDATA[
 /* {{{ proto void hello_world(string name)
@@ -229,99 +233,101 @@ PHP_FUNCTION(hello_world)
   </example>
 
   <para>
-   The function above shows these parts. Let's start the analysis with the
-   last lines: <code>php_printf</code> is - as one can guess easily - PHP's
-   version of standard C's <code>printf</code>. Unlike <code>printf</code> it
-   doesn't print to the process's <code>STDOUT</code> channel but to the
-   current output stream, which might be buffered by the user. It should be
-   noted that <code>php_printf</code>, unlike most parts of PHP's API is not
-   binary safe, so if <code>name</code> contains a NULL-byte the rest would be
-   ignored. For a binary safe output <code>PHPWRITE</code> should be used.
+   この関数は、先ほどの各部分を示したものです。
+   まずは最後の行から見ていきましょう。<code>php_printf</code>
+   は、容易に想像できるとは思いますが、標準 C の関数
+   <code>printf</code> の PHP 版です。<code>printf</code> とは異なり、
+   この関数はプロセスの <code>STDOUT</code> には出力せず
+   現在の出力ストリームに表示します。出力ストリームはユーザ側でバッファリングされることもあります。
+   PHP の API のほとんどはバイナリセーフではありません。<code>name</code>
+   に NULL バイトが含まれている場合、<code>php_printf</code>
+   はそれ以降を無視してしまうことに注意しましょう。
+   バイナリセーフな出力には <code>PHPWRITE</code> を使わなければなりません。
   </para>
 
   <note>
    <simpara>
-    In general it is considered to directly print data to the output stream,
-    it is suggested to return data as string to the user instead so the user
-    can decide what to do. Exceptions to this rule might be functions dealing
-    with binary data like images while your API should provide a way to access
-    the data even there.
+    一般に、データを直接出力ストリームに送るよりはユーザに文字列として返すことを推奨します。
+    そうすれば、ユーザ側で何処に出力するかを決めさせることができます。
+    この方針の例外は、画像のようなバイナリデータを扱うときです。
+    そのようなデータを扱うための方法を API で用意しておく必要があります。
    </simpara>
   </note>
 
   <para>
-   The <code>RETURN_TRUE</code> macro in the last line does three things: It
-   sets the type of the variable we got as <code>return_value</code> pointer to
-   <code>IS_BOOLEAN</code> and the value to a <code>true</code> value. Then it
-   returns from the C function. So when using this macro you're housekeeping
-   for memory and other resources has to be completed as further code of
-   this function won't be executed.
+   最後の行にあるマクロ <code>RETURN_TRUE</code> は三つのことを行います。
+   <code>return_value</code> ポインタで取得した変数の型を <code>IS_BOOLEAN</code>
+   に設定し、その値を <code>true</code> として、
+   C の関数から処理を返します。
+   つまり、このマクロを使うとメモリやその他のリソースの後始末も完了し、
+   関数内のそれ以降のコードは実行されません。
   </para>
 
   <para>
-   The <code>zend_parse_parameters()</code> function is responsible for reading
-   the parameters passed by the user from the argument stack and putting it
-   with proper casting in local C variables. If the user doesn't pass the wrong
-   number of parameters or types that can't be casted the function will emit a
-   verbose error and return <code>FAILURE</code>. In that case we simply return
-   from the function - by not changing the <code>return_value</code> the 
-   default return value of <code>NULL</code> will be returned to the user.
+   <code>zend_parse_parameters()</code> 関数の役割は、
+   ユーザが渡したパラメータを引数スタックから読み込んで
+   適切なキャストを施してローカルの C 変数に格納することです。
+   ユーザが渡すパラメータの数が間違っていたりキャストに失敗したりした場合は、
+   エラーを発生させて <code>FAILURE</code> を返します。
+   この場合は何もせずに関数から抜けます。<code>return_value</code>
+   は手を加えずそのままで、ユーザへの返り値はデフォルトの <code>NULL</code>
+   となります。
   </para>
 
   <note>
    <simpara>
-    Please mind that <code>FAILURE</code> is represented by a <code>-1</code> 
-    and <code>SUCCESS</code> by <code>0</code>. To make the code clear you 
-    should always use the named constants for comparing the value.
+    <code>FAILURE</code> は <code>-1</code>、そして
+    <code>SUCCESS</code> は <code>0</code> であることを覚えておきましょう。
+    コードの可読性を考慮して、値を比較するときは常にこの定数をつかうべきです。
    </simpara>
   </note>
 
   <para>
-   The first parameter to <code>zend_parse_parameters()</code> is the number of
-   parameters that have actually been passed to the function by the user. The
-   number is passed as <code>ht</code> parameter to our function but, as
-   discussed above, this should be considered as an implementation detail and
-   <code>ZEND_NUM_ARGS()</code> should be used.
+   <code>zend_parse_parameters()</code> の最初のパラメータは、
+   ユーザからその関数に渡された実際のパラメータの数です。
+   この数は <code>ht</code> パラメータで渡されていますが、
+   先に説明したように、今の実装ではそうなっているというだけに過ぎません。
+   ここでは <code>ZEND_NUM_ARGS()</code> を使わなければなりません。
   </para>
 
   <para>
-   For compatibility with PHP's thread-isolation, the thread-safe resource
-   manager, we also have to pass the thread context using
-   <code>TSRMLS_CC</code>. Unlike in other functions this can't be the last
-   parameter as <code>zend_parse_parameters</code> expects a variable number of
-   parameters - depending on the number of user-parameters to read.
+   PHP のスレッドセーフなリソースマネージャーとの互換性を考慮して、
+   <code>TSRMLS_CC</code> でスレッドコンテキストも渡す必要があります。
+   他の関数とは異なり、これは最後のパラメータとはなりません。
+   <code>zend_parse_parameters</code> は可変個数のパラメータを受け付け、
+   それは読み込むユーザパラメータの数に依存するからです。
   </para>
 
   <para>
-   Following the thread context the expected parameters are declared. Each
-   parameter is represented by a character in the string describing the type.
-   In our case we expect one parameter as a string so our type specification
-   is simply <code>"s"</code>.
+   スレッドコンテキストの後には、想定しているパラメータを宣言します。
+   各パラメータが文字列内の一文字として表され、それが型を示します。
+   この例では文字列のパラメータを想定しているので、型の指定は単純に
+   <code>"s"</code> となります。
   </para>
 
   <para>
-   Lastly one has to pass one or more pointers to C variables which should be
-   filled with the variable's value or provide more details. In the case of a
-   string we get the actual string, which will always be NULL-terminated, as a
-   <code>char*</code> and its length, excluding the NULL-byte, as
-   <code>int</code>.
+   最後に渡すのは一つあるいは複数の C 変数へのポインタで、
+   ここには変数の値やその他の情報が格納されます。
+   今回のような文字列の場合は、
+   NULL 終端の実際の文字列を表す <code>char*</code>
+   と NULL バイトを含む文字列の長さを表す <code>int</code>
+   になります。
   </para>
 
   <para>
-   A documentation of all type specifiers and the corresponding additional C
-   types can be found in the file <code>README.PARAMETER_PARSING_API</code>
-   which is part of the source distribution. The most important types can be 
-   found in the table below.
+   すべての型指定子とそれに対応する C の型については、ソース配布物の中にある
+   <code>README.PARAMETER_PARSING_API</code> に説明があります。
+   中でも重要な型について次の表にまとめました。
   </para>
 
   <table xml:id="internals2.funcs.index.zend_pars_params_types">
-   <title>zend_parse_parameters() type specifiers</title>
+   <title>zend_parse_parameters() の型指定子</title>
    <tgroup cols="3">
     <thead>
      <row>
-      <entry>Modifier</entry>
-      <entry>Additional parameter types</entry>
-      <entry>Description</entry>
+      <entry>修飾子</entry>
+      <entry>パラメータの型</entry>
+      <entry>説明</entry>
      </row>
     </thead>
     <tbody>
@@ -329,31 +335,31 @@ PHP_FUNCTION(hello_world)
      <row>
       <entry><code>b</code></entry>
       <entry><code>zend_bool</code></entry>
-      <entry>Boolean value</entry>
+      <entry>Boolean 値</entry>
      </row>
 
      <row>
       <entry><code>l</code></entry>
       <entry><code>long</code></entry>
-      <entry>A integer (long) value</entry>
+      <entry>integer (long) 値</entry>
      </row>
 
      <row>
       <entry><code>d</code></entry>
       <entry><code>double</code></entry>
-      <entry>A float (double) value</entry>
+      <entry>float (double) 値</entry>
      </row>
 
      <row>
       <entry><code>s</code></entry>
       <entry><code>char*, int</code></entry>
-      <entry>A binary safe string</entry>
+      <entry>バイナリセーフな文字列</entry>
      </row>
 
      <row>
       <entry><code>h</code></entry>
       <entry><code>HashTable*</code></entry>
-      <entry>An array's hash table</entry>
+      <entry>配列のハッシュテーブル</entry>
      </row>
     </tbody>
    </tgroup>
