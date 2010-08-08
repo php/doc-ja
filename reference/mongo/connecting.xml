@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision$ -->
+<!-- EN-Revision: c30d564338ae32a941e3838e97148aa6be117494 Maintainer: takagi Status: ready -->
+
+<section xml:id="mongo.connecting" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <title>接続</title>
+
+ <para>
+  MongoDB への接続は単に <literal>new Mongo</literal> とするだけの簡単なものですが、
+  オプションや設定項目が多数あります。
+  <function>Mongo::__construct</function> のページにすべての API
+  オプションをまとめましたが、ここではより実用的な使用例をとりあげます。
+ </para>
+
+ <section>
+  <title>接続時のログイン</title>
+  <para>
+   MongoDB を <literal>--auth</literal> オプションつきで起動すると、
+   接続時の認証が必須となります。データベース単位でこれを設定するには
+   <function>MongoDB::authenticate</function> を使います。
+  </para>
+  <programlisting role="php">
+<![CDATA[
+<?php
+
+$m = new Mongo();
+$db = $m->admin;
+
+$db->authenticate($username, $password);
+
+?>
+]]>
+  </programlisting>
+  <para>
+   この方法には大きな弱点があります。
+   データベースとの接続が切れてしまって自動再接続をしたときには、
+   認証されていない状態になってしまうということです。
+  </para>
+  <para>
+   <function>Mongo::__construct</function> で説明した接続文字列形式を使えば、
+   接続を再確立したときにも再び認証を行うことができます。
+  </para>
+  <para>
+   これは上のコードと同じ意味ですが、
+   再接続したときにも自動的に認証を行います。
+  </para>
+  <programlisting role="php">
+<![CDATA[
+<?php
+
+$m = new Mongo("mongodb://${username}:${password}@localhost");
+
+?>
+]]>
+  </programlisting>
+  <para>
+   デフォルトでは、ユーザの認証は admin データベースに対して行います。
+   別のデータベースへの認証を行うには、ホスト名のあとにデータベース名を指定します。
+   この例は、"blog" データベースにログインします。
+  </para>
+  <programlisting role="php">
+<![CDATA[
+<?php
+
+$m = new Mongo("mongodb://${username}:${password}@localhost/blog");
+
+?>
+]]>
+  </programlisting>
+ </section>
+
+ <section>
+  <title>レプリカペア</title>
+  <para>
+   レプリカペアに接続するには、ペアの両方を指定します。
+  </para>
+  <programlisting role="php">
+<![CDATA[
+<?php
+
+$m = new Mongo("mongodb://localhost:27017,localhost:27018");
+
+?>
+]]>
+  </programlisting>
+  <para>
+   順番を気にする必要はありません。PHP ドライバは、
+   どちらがマスタかをサーバに問い合わせて判断します。
+   どちらか一方が立ち上がっていてそれがマスタであれば、接続は成功します。
+   両方とも立ち上がっていなかったりマスタがなかったりした場合は
+   <classname>MongoConnectionException</classname> がスローされます。
+  </para>
+  <para>
+   マスタが使えなくなったときに、スレーブがマスタになるには数秒かかります。
+   その間は、ドライバからは一切のデータベース操作ができなくなります。
+   マスタデータベースがなく、使えるデータベースがスレーブだけだからです。
+   したがって、このときに何らかの問い合わせ ("安全な" 操作を含む)
+   をすると例外が発生します。
+  </para>
+  <para>
+   マスタが使えなくなったということをスレーブが認識すると、
+   自分自身をマスタに昇格させます。その後は、
+   ドライバがデータベース接続を切り替えて通常の操作を続行できるようになります。
+  </para>
+  <para>
+   レプリカペアについての詳細は、
+   <link xlink:href="&url.mongodb.replica;">コアドキュメント</link>
+   を参照ください。
+  </para>
+ </section>
+
+ <section>
+  <title>持続的接続</title>
+
+  <para>
+   データベースへの接続を新たに確立させるには、非常に時間がかかります。
+   データベースへ接続の作成回数を最小限にするには、持続的接続を使うことができます。
+   持続的接続は PHP が保持するので、同じ接続を使って複数のリクエストを送ることができます。
+  </para>
+
+  <para>
+   たとえば、この単純なプログラムはデータベースに 1000 回接続します。
+  </para>
+
+  <programlisting role="php">
+<![CDATA[
+<?php
+
+for ($i=0; $i<1000; $i++) {
+  $m = new Mongo();
+}
+
+?>
+]]>
+  </programlisting>
+
+  <para>
+   実行時間は約 18 秒です。これを、持続的接続を使うように変更してみましょう。
+  </para>
+
+  <programlisting role="php">
+<![CDATA[
+<?php
+
+for ($i=0; $i<1000; $i++) {
+  $m = new Mongo("localhost:27017", array("persist" => "x"));
+}
+
+?>
+]]>
+  </programlisting>
+
+  <para>
+   実行時間は .02 秒未満になりました。データベースへの接続は 1 回だけしか行わないからです。
+  </para>
+
+  <para>
+   持続的接続には識別用の文字列 (上の例では "x")
+   が必要で、これを使って接続を識別します。
+   持続的接続を使うには、ホスト名とポート、持続文字列、そしてユーザ名とパスワード(指定した場合)
+   が既存の持続的接続と一致しなければなりません。
+   一致しない場合は、この識別情報で新しい接続を作成します。
+  </para>
+ </section>
+
+ <section>
+  <title>ドメインソケット</title>
+
+  <para>
+   MongoDB をローカルで動かしていてバージョン 1.0.9
+   以降のドライバを使っている場合は、ファイル経由でデータベースに接続することができます。
+   MongoDB は、起動時に自動的にソケットファイル
+   /tmp/mongodb-&lt;port&gt;.sock
+   (Windows の場合は C:\tmp\mongodb-&lt;27017&gt;.sock) をオープンします。
+  </para>
+
+  <para>
+   ソケットファイルに接続するには、このパスを MongoDB 接続文字列に指定します。
+  </para>
+
+  <programlisting role="php">
+<![CDATA[
+<?php
+
+$m = new Mongo("mongodb:///tmp/mongo-27017.sock");
+
+?>
+]]>
+  </programlisting>
+
+  <para>
+   上で示したようなソケットファイルへの接続で認証を使いたい場合は、
+   ポート番号 0 を指定しなければなりません。
+   接続文字列のパーサは、これを接続文字列の終端と見なします。
+  </para>
+
+  <programlisting role="php">
+<![CDATA[
+<?php
+
+$m = new Mongo("mongodb://username:password@/tmp/mongo-27017.sock:0/foo");
+
+?>
+]]>
+  </programlisting>
+
+ </section>
+
+</section>
