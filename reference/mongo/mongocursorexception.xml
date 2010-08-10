@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: c65fc65d3b7b94b3bd94f66263e739dd66f81743 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 20f2a5ffddef64efafd88a55aeb06a04daf5d791 Maintainer: takagi Status: ready -->
 
 <phpdoc:classref xml:id="class.mongocursorexception" xmlns:phpdoc="http://php.net/ns/phpdoc" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xi="http://www.w3.org/2001/XInclude">
 
@@ -26,41 +26,68 @@
    <itemizedlist>
     <listitem>
      <para>
-      <literal>threw away response, please try again</literal>
+      <literal>cannot modify cursor after beginning iteration</literal>
+     </para>
+     <para>
+      Code: 0
+     </para>
+     <para>
+      クエリを実行した後で、クエリの設定を変えるメソッドをコールしました。
+      いったんカーソルをリセットしてからやりなおしてください。
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      さまざまな送信エラー
      </para>
      <para>
       Code: 1
      </para>
      <para>
-      シングルスレッドアプリケーションではまず発生しません。
-      データベースがあるスレッドに応答を送信しているときに、
-      別のスレッドがそれを捨ててしまった場合に発生します。
-      クエリを再発行する必要があります。
-      おそらくスレッドを減らすことになるでしょう。
+      クエリをデータベースに送信できませんでした。
+      データベースが立ち上がっていることとネットワークが正常であることを確認してください。
      </para>
     </listitem>
     <listitem>
      <para>
-      <emphasis>various</emphasis>
-     </para>
-     <para>
-      Code: 1
-     </para>
-     <para>
-      データベースとの接続が確立されていなかったために
-      データベースからの応答を受け取れませんでした。
-     </para>
-    </listitem>
-    <listitem>
-     <para>
-      <literal>various</literal>
+      <literal>cursor not found</literal>
      </para>
      <para>
       Code: 2
      </para>
      <para>
-      リクエストのタイムアウトで発生します。
-      この場合に返すエラーメッセージは、C のソケットライブラリが返すものとなります。
+      ドライバがデータベースから結果を取得しようとしましたが、
+      データベース側にクエリが残っていませんでした。
+      たいていは、カーソルがサーバ側でタイムアウトしたことを意味します。
+      やりとりがない状況が数秒続くと、データベースはカーソルを消します
+      (これを防ぐための方法は <function>MongoCursor::immortal</function>
+      を参照ください)。
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      さまざまなデータベースエラー
+     </para>
+     <para>
+      Code: 4
+     </para>
+     <para>
+      データベースへのクエリで問題が発生しました。
+      エラーメッセージを見れば何が悪かったかがわかりますが、
+      データベースのログで詳細を調べることもできます。
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      <literal>couldn't get response header</literal>
+     </para>
+     <para>
+      Code: 3
+     </para>
+     <para>
+      ドライバがデータベースからのリプライヘッダを取得できず、取得をあきらめました。
+      データベースが立ち上がっていることとネットワークがつながっていることを確認し、
+      もう一度クエリを実行してみましょう。
      </para>
     </listitem>
     <listitem>
@@ -68,7 +95,7 @@
       <literal>no db response</literal>
      </para>
      <para>
-      Code: 4
+      Code: 5
      </para>
      <para>
       これはエラーではないかもしれません。たとえば、データベースの
@@ -79,7 +106,20 @@
     </listitem>
     <listitem>
      <para>
+      <literal>no db response</literal>
+     </para>
+     <para>
+      Code: 5
+     </para>
+     <para>
+     </para>
+    </listitem>
+    <listitem>
+     <para>
       <literal>bad response length: %d, max: %d, did the db assert?</literal>
+     </para>
+     <para>
+      Code: 6
      </para>
      <para>
       これは、データベースの応答が 4MB を超えるかあるいは 0 未満であることを意味します。
@@ -90,11 +130,15 @@
     </listitem>
     <listitem>
      <para>
-      <literal>incomplete response</literal>
+      <literal>incomplete header/response</literal>
+     </para>
+     <para>
+      Code: 7
      </para>
      <para>
       めったにありませんが、
       データベースの応答が正常にはじまったけれど途中で終わってしまった場合に発生します。
+      おそらくネットワークの問題でしょう。
      </para>
     </listitem>
     <listitem>
@@ -107,6 +151,29 @@
      <para>
       "errstr" は、C のソケットから直接返ってきた入出力エラーです。
       Windows では、エラーメッセージの先頭に "WSA" がつきます。
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      <literal>error getting database response: &lt;various&gt;</literal>
+     </para>
+     <para>
+      Code: 8
+     </para>
+     <para>
+      ソケット層で何か問題が発生しました。
+      C のソケットライブラリからのエラーを返します。
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      <literal>couldn't find a response</literal>
+     </para>
+     <para>
+      Code: 9
+     </para>
+     <para>
+      レスポンスがキャッシュされましたが、その場所を特定できませんでした。
      </para>
     </listitem>
    </itemizedlist>
