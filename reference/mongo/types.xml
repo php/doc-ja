@@ -1,0 +1,365 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision$ -->
+<!-- EN-Revision: 58e026c0572f50bfcbb447e07423641cf8062d6a Maintainer: takagi Status: ready -->
+
+<part xml:id="mongo.types" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+
+ <title>型</title>
+
+ <partintro>
+
+  <section>
+   <para>
+    MongoDB では、PHP のすべての基本データ型や複合型 (配列、連想配列
+    そしてオブジェクト) を保存したり問い合わせたりすることができます。
+    それ以外にも、MongoDB PHP ドライバには (正規表現や
+    日付、その他さまざまな用途に特化した) クラスが用意されています。
+   </para>
+  </section>
+
+  <section>
+    <title>単純な型</title>
+    <para>
+     組み込みの型は次のとおりです。
+    </para>
+    <para>
+     <informaltable>
+      <tgroup cols="3">
+       <thead>
+        <row>
+         <entry>型</entry>
+         <entry>説明</entry>
+         <entry>MongoDB 内でのサイズ (バイト)</entry>
+        </row>
+       </thead>
+       <tbody>
+        <row>
+         <entry>&null;</entry>
+         <entry>その名のとおり</entry>
+         <entry>0</entry>
+        </row>
+        <row>
+         <entry>boolean</entry>
+         <entry>&true; および &false;</entry>
+         <entry>1</entry>
+        </row>
+        <row>
+         <entry>int</entry>
+         <entry>整数値</entry>
+         <entry>4</entry>
+        </row>
+        <row>
+         <entry>float</entry>
+         <entry>浮動小数点値</entry>
+         <entry>8</entry>
+        </row>
+        <row>
+         <entry>string</entry>
+         <entry>UTF-8 文字列</entry>
+         <entry>文字列の長さ + 1</entry>
+        </row>
+       </tbody>
+      </tgroup>
+     </informaltable>
+    </para>
+  </section>
+
+  <section>
+   <title>配列およびオブジェクト</title>
+
+   <para>
+    配列やオブジェクトもデータベースに格納することができます。
+    数値添字の配列は配列として、
+    それ以外のものはすべてオブジェクトとして格納されます。
+   </para>
+
+   <programlisting role="php">
+    <![CDATA[
+<?php
+
+// $scores は配列として格納されます
+$scores = array(98, 100, 73, 85);
+$collection->insert(array("scores" => $scores));
+
+// $scores はオブジェクトとして格納されます
+$scores = array("quiz1" => 98, "midterm" => 100, "quiz2" => 73, "final" => 85);
+$collection->insert(array("scores" => $scores));
+
+?>
+]]>
+   </programlisting>
+
+   <para>
+    データベースのシェルからこれらのオブジェクトを問い合わせると、このようになります。
+    <programlisting>
+     <![CDATA[
+> db.students.find()
+{ "_id" : ObjectId("4b06beada9ad6390dab17c43"), "scores" : [ 98, 100, 73, 85 ] }
+{ "_id" : ObjectId("4b06bebea9ad6390dab17c44"), "scores" : { "quiz1" : 98, "midterm" : 100, "quiz2" : 73, "final" : 85 } }
+]]>
+    </programlisting>
+   </para>
+
+   <para>
+    任意の PHP オブジェクトもデータベースに格納することができます
+    (返されるときは連想配列となります)。
+    フィールドは キー/値 のペアに使います。
+    たとえば、blogへの投稿を表す次のようなオブジェクトを考えましょう。
+    <programlisting role="php">
+     <![CDATA[
+<?php
+
+  // blog投稿クラス
+  class Post {
+
+  var $author;
+  var $content;
+  var $comments = array();
+  var $date;
+
+  public function __construct($author, $content) {
+  $this->author = $author;
+$this->content = $content;
+    $this->date = new MongoDate();
+  }
+
+  public function setTitle($title) {
+    $this->title = $title;
+  }
+}
+
+// 単純なblog投稿を作り、データベースに追加します
+$post1 = new Post("Adam", "This is a blog post");
+
+$blog->insert($post1);
+
+
+// "author" フィールドの型には何も制約がないので、
+// オブジェクトをネストさせることができます
+$author = array("name" => "Fred", "karma" => 42);
+$post2 = new Post($author, "This is another blog post.");
+
+// タイトルを設定して、別のフィールドを追加することができます
+$post2->setTitle("Second Post");
+
+$blog->insert($post2);
+
+?>
+]]>
+    </programlisting>
+   </para>
+
+   <para>
+    データベースのシェルからは、次のように見えます。
+    <programlisting>
+<![CDATA[
+> db.blog.find()
+{ "_id" : ObjectId("4b06c263edb87a281e09dad8"), "author" : "Adam", "content" : "This is a blog post", "comments" : [ ], "date" : "Fri Nov 20 2009 11:22:59 GMT-0500 (EST)" }
+{ "_id" : ObjectId("4b06c282edb87a281e09dad9"), "author" : { "name" : "Fred", "karma" : 42 }, "content" : "This is a blog post", "comments" : [ ], "date" : "Fri Nov 20 2009 11:23:30 GMT-0500 (EST)", "title" : "Second Post" }
+]]>
+    </programlisting>
+   </para>
+
+   <para>
+    このドライバは、配列やオブジェクトの循環参照を検出することができません。
+    たとえば、これは致命的なエラーとなります。
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+$collection->insert($GLOBALS);
+
+?>
+]]>
+    </programlisting>
+    <programlisting>
+<![CDATA[
+
+Fatal error: Nesting level too deep - recursive dependency?
+
+]]>
+    </programlisting>
+    再帰構造になる可能性のあるドキュメントを追加しなければならない場合は、
+    ドライバに渡す前に自分でチェックしておかなければなりません。
+   </para>
+  </section>
+
+  <section>
+   <title>MongoDB の型</title>
+
+   <para>
+    Mongo PHP ドライバでは、データベースで使える新しい型もいくつか用意しています。
+    詳細や仕様例は、各クラスのドキュメントを参照ください。
+   </para>
+   <para>
+    <informaltable>
+     <tgroup cols="3">
+      <thead>
+       <row>
+        <entry>型</entry>
+        <entry>説明</entry>
+        <entry>MongoDB 内でのサイズ (バイト)</entry>
+       </row>
+      </thead>
+      <tbody>
+       <row>
+        <entry><classname>MongoBinData</classname></entry>
+        <entry>バイナリデータ</entry>
+        <entry>バイナリデータのバイト数 + 5</entry>
+       </row>
+       <row>
+        <entry><classname>MongoCode</classname></entry>
+        <entry>JavaScript のコード</entry>
+        <entry>コードの文字列長 + スコープのオブジェクトサイズ</entry>
+       </row>
+       <row>
+        <entry><classname>MongoDate</classname></entry>
+        <entry>エポックからの経過ミリ秒数で表した日付・時刻</entry>
+        <entry>8</entry>
+       </row>
+       <row>
+        <entry><classname>MongoId</classname></entry>
+        <entry>一意なドキュメント id:
+         <itemizedlist>
+          <listitem>
+           <para>タイムスタンプ 4 バイト</para>
+           <para>
+            別の時刻に追加されたオブジェクトが同じ id になることはありません。
+            times.
+           </para>
+          </listitem>
+          <listitem>
+           <para>マシン id 3 バイト</para>
+           <para>
+            別のマシンから追加されたオブジェクトが同じ id になることはありません。
+           </para>
+          </listitem>
+          <listitem>
+           <para>スレッド id 2 バイト</para>
+           <para>
+            同じマシン上の別のスレッドから追加されたオブジェクトが同じ id になることはありません。
+           </para>
+          </listitem>
+          <listitem>
+           <para>増分 3 バイト</para>
+           <para>
+            id が新たに作られるたびにグローバルなカウンタがひとつ増加します。
+            次の id を作るときに、この値を使います。
+           </para>
+          </listitem>
+         </itemizedlist>
+         従って、同一マシン上の単一のプロセスで 1 秒間に 256^3 件 (1600万件以上)
+         のドキュメントを追加 (増分領域を使い切る) しようとしない限り、
+         同じ id になることはありません。
+        </entry>
+        <entry>12</entry>
+       </row>
+       <row>
+        <entry><classname>MongoMinKey</classname></entry>
+        <entry>他の何よりも小さい値</entry>
+        <entry></entry>
+       </row>
+       <row>
+        <entry><classname>MongoMaxKey</classname></entry>
+        <entry>他の何よりも大きい値</entry>
+        <entry></entry>
+       </row>
+       <row>
+        <entry><classname>MongoRegex</classname></entry>
+        <entry>正規表現</entry>
+        <entry>
+         正規表現内の文字数 + フラグの数
+        </entry>
+       </row>
+       <row>
+        <entry><classname>MongoTimestamp</classname></entry>
+        <entry>シャーディングのタイムスタンプ</entry>
+        <entry>8</entry>
+       </row>
+      </tbody>
+     </tgroup>
+    </informaltable>
+   </para>
+  </section>
+
+  <section>
+   <title>未対応の型</title>
+
+   <para>Mongo がサポートしている型のうち、PHP ドライバでは対応していないものです。</para>
+   <para>
+    <informaltable>
+     <tgroup cols="3">
+      <thead>
+       <row>
+        <entry>型</entry>
+        <entry>説明</entry>
+        <entry>MongoDB 内でのサイズ (バイト)</entry>
+       </row>
+      </thead>
+      <tbody>
+       <row>
+        <entry>long</entry>
+        <entry>
+         PHP は 8 バイトの整数をサポートしていないので、
+         データベースから取得した長整数型は浮動小数点型に変換されます。
+         整数をデータベースに保存するときは常に 4 バイト整数型
+         (たとえ 8 バイトの整数に対応しているマシンであっても)
+         となり、浮動小数点型は常に 8 バイトの浮動小数点型になります。
+         したがって、長整数型の値を PHP のドライバからデータベースに保存することはできません。
+        </entry>
+        <entry>8</entry>
+       </row>
+      </tbody>
+     </tgroup>
+    </informaltable>
+   </para>
+  </section>
+
+  <section>
+   <title>BSON</title>
+   <para>
+    MongoDB は "BSON" という格納フォーマットを使います。
+    これは Binary Serializable Object Notation の略で、
+    JSON と似ていますがよりコンパクトでさまざまな型を表現できます。
+    以下に、各型の正確なバイト数 (あるいは可変長の型の場合は
+    サイズを算出するために必要な情報) をまとめました。
+    このサイズにはフィールド名は含まれていないことに注意しましょう。
+    オブジェクトのサイズは手動で算出することもできますが、プログラマなら
+    <function>bson_encode</function> 関数の返す文字列の長さを調べるほうが簡単でしょう。
+    string.
+   </para>
+   <para>
+    array("x" => null, "y" => 40) を保存するオブジェクトの BSON サイズを手動で算出する例です。
+    <programlisting>
+     <![CDATA[
+4 バイト (オブジェクトのサイズ)
+
+1 バイト ("x" フィールドの型)
+2 バイト ("x" および "\0")
+0 バイト (null)
+
+1 バイト ("y" フィールドの型)
+2 バイト ("y" および "\0")
+4 バイト (整数値)
+
+1 バイト (オブジェクトの終端バイト)
+-----------------------
+15 バイト
+]]>
+    </programlisting>
+   </para>
+  </section>
+
+ </partintro>
+
+ &reference.mongo.mongoid;
+ &reference.mongo.mongocode;
+ &reference.mongo.mongodate;
+ &reference.mongo.mongoregex;
+ &reference.mongo.mongobindata;
+ &reference.mongo.mongodbref;
+ &reference.mongo.mongominkey;
+ &reference.mongo.mongomaxkey;
+ &reference.mongo.mongotimestamp;
+
+</part>
