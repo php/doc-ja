@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision$ -->
+<!-- EN-Revision: 3c82b5b1edd2e97afbe431323f2e9db3512817c4 Maintainer: takagi Status: ready -->
+
+<refentry xml:id="rarentry.getstream" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <refnamediv>
+  <refname>RarEntry::getStream</refname>
+  <refpurpose>このエントリのファイルハンドラを取得する</refpurpose>
+ </refnamediv>
+ 
+ <refsect1 role="description">
+  &reftitle.description;
+  <methodsynopsis>
+   <modifier>public</modifier> <type>resource</type><methodname>RarEntry::getStream</methodname>
+   <methodparam choice="opt"><type>string</type><parameter>password</parameter></methodparam>
+  </methodsynopsis>
+  <para>
+   読み込み操作をサポートするファイルハンドラを返します。
+   このハンドラを使って、このエントリをその場で展開します。
+  </para>
+  <para>
+    このハンドラは、<function>rar_close</function> をコールしても無効にはなりません。
+  </para>
+  <warning>
+   <para>返されるストリームでは、整合性の検証を行いません。
+   特に、ファイルの破損や間違ったキーによる復号は検出できません。
+   もし整合性を検証したいのなら、エントリの
+   CRC を確認するのはプログラマ側の役割となります。</para>
+  </warning>
+ </refsect1>
+ 
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <para>
+   <variablelist>
+    <varlistentry>
+     <term><parameter>password</parameter></term>
+     <listitem>
+      <para>
+       このエントリの暗号化に使うパスワード。
+       エントリが暗号化されていない場合は、この値は使われずに無視されます。
+       このパラメータが省略されていてエントリが暗号化されていた場合は、もし
+       <function>rar_open</function> でパスワードを指定していればそれを使います。
+       このパラメータや <function>rar_open</function> で指定したパスワードが間違っていたときは、
+       このメソッドの結果のストリームは間違った結果を出力します。
+       パスワードが要求されているときにパスワードを指定していなければ、
+       このメソッドは失敗して &false; を返します。
+       エントリが暗号化されているかどうかを知るには <methodname>RarEntry::isEncrypted</methodname>
+       を使います。
+      </para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
+  </para>
+ </refsect1>
+
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <para>
+   ファイルハンドラを返します。&return.falseforfailure;。
+  </para>
+ </refsect1>
+ 
+ <refsect1 role="changelog">
+  &reftitle.changelog;
+  <para>
+   <informaltable>
+    <tgroup cols="2">
+     <thead>
+      <row>
+       <entry>&Version;</entry>
+       <entry>&Description;</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry>3.0.0</entry>
+       <entry>
+        エントリ名が繰り返される RAR アーカイブも対応するようになりました。
+       </entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </informaltable>
+  </para>
+ </refsect1>
+ 
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title><methodname>RarEntry::getStream</methodname> の例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+$rar_file = rar_open('example.rar');
+if ($rar_file === false)
+    die("Rar アーカイブのオープンに失敗しました");
+
+$entry = rar_entry_get($rar_file, 'Dir/file.txt');
+if ($entry === false)
+    die("そのようなエントリは見つかりません");
+
+$stream = $entry->getStream();
+if ($stream === false)
+    die("ストリームの取得に失敗しました");
+
+rar_close($rar_file); // ストリームはファイルとは独立しています
+
+while (!feof($stream)) {
+    $buff = fread($stream, 8192);
+    if ($buff !== false)
+        echo $buff;
+    else
+        break; // fread のエラー
+}
+
+fclose($stream);
+
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+ </refsect1>
+ 
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <para>
+   <simplelist>
+    <member><methodname>RarEntry::extract</methodname></member>
+    <member><link linkend="wrappers.rar"><literal>rar://</literal> ラッパー</link></member>
+   </simplelist>
+  </para>
+ </refsect1>
+
+</refentry>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"~/.phpdoc/manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
