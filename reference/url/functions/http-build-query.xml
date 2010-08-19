@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 96c9d88bad9a7d7d44bfb7f26c226df7ee9ddf26 Maintainer: shimooka Status: ready -->
+<!-- EN-Revision: 7c26f3dfe516a6fe7496dedca8f1467ae6bc9011 Maintainer: shimooka Status: ready -->
 <refentry xml:id="function.http-build-query" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>http_build_query</refname>
@@ -11,7 +11,7 @@
   &reftitle.description;
   <methodsynopsis>
    <type>string</type><methodname>http_build_query</methodname>
-   <methodparam><type>array</type><parameter>formdata</parameter></methodparam>
+   <methodparam><type>mixed</type><parameter>query_data</parameter></methodparam>
    <methodparam choice="opt"><type>string</type><parameter>numeric_prefix</parameter></methodparam>
    <methodparam choice="opt"><type>string</type><parameter>arg_separator</parameter></methodparam>
   </methodsynopsis>
@@ -26,14 +26,19 @@
   <para>
    <variablelist>
     <varlistentry>
-     <term><parameter>formdata</parameter></term>
+     <term><parameter>query_data</parameter></term>
      <listitem>
       <para>
        プロパティを含む配列もしくはオブジェクト。
       </para>
       <para>
-       配列の形式は、単純な一次元構造、
-       もしくは配列の配列 (言い換えると、他の配列を含む配列) となります。
+       <parameter>query_data</parameter> が配列の場合の形式は、
+       単純な一次元構造か
+       あるいは配列の配列 (言い換えると、他の配列を含む配列) となります。
+      </para>
+      <para>
+       <parameter>query_data</parameter> がオブジェクトの場合、
+       public プロパティだけが結果に含められます。
       </para>
      </listitem>
     </varlistentry>
@@ -116,12 +121,19 @@ $data = array('foo'=>'bar',
               'cow'=>'milk',
               'php'=>'hypertext processor');
 
-echo http_build_query($data); // foo=bar&baz=boom&cow=milk&php=hypertext+processor
-echo http_build_query($data, '', '&amp;'); // foo=bar&amp;baz=boom&amp;cow=milk&amp;php=hypertext+processor
+echo http_build_query($data) . "\n";
+echo http_build_query($data, '', '&amp;');
 
 ?>
 ]]>
    </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+foo=bar&baz=boom&cow=milk&php=hypertext+processor
+foo=bar&amp;baz=boom&amp;cow=milk&amp;php=hypertext+processor
+]]>
+   </screen>
   </example>
 
   <example>
@@ -193,23 +205,39 @@ children%5Bsally%5D%5Bsex%5D=F&flags_0=CEO
    <programlisting role="php">
 <![CDATA[
 <?php
-class myClass {
-    var $foo;
-    var $baz;
+class parentClass {
+    public    $pub      = 'publicParent';
+    protected $prot     = 'protectedParent';
+    private   $priv     = 'privateParent';
+    public    $pub_bar  = Null;
+    protected $prot_bar = Null;
+    private   $priv_bar = Null;
 
-    function myClass() {
-        $this->foo = 'bar';
-        $this->baz = 'boom';
+    public function __construct(){
+        $this->pub_bar  = new childClass();
+        $this->prot_bar = new childClass();
+        $this->priv_bar = new childClass();
     }
 }
 
-$data = new myClass();
+class childClass {
+    public    $pub  = 'publicChild';
+    protected $prot = 'protectedChild';
+    private   $priv = 'privateChild';
+}
 
-echo http_build_query($data); // foo=bar&baz=boom
+$parent = new parentClass();
 
+echo http_build_query($parent);
 ?>
 ]]>
    </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+pub=publicParent&pub_bar%5Bpub%5D=publicChild
+]]>
+   </screen>
   </example>
  </refsect1>
 
