@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 20f2a5ffddef64efafd88a55aeb06a04daf5d791 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 11801d977439ebabdbd6113285d8db70399ee3b7 Maintainer: takagi Status: ready -->
 
 <section xml:id="mongo.connecting" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>接続</title>
@@ -33,7 +33,7 @@ $db->authenticate($username, $password);
   </programlisting>
   <para>
    この方法には大きな弱点があります。
-   データベースとの接続が切れてしまって自動再接続をしたときには、
+   データベースとの接続が切れてしまってから再接続をしたときには、
    認証されていない状態になってしまうということです。
   </para>
   <para>
@@ -70,42 +70,79 @@ $m = new Mongo("mongodb://${username}:${password}@localhost/blog");
  </section>
 
  <section>
-  <title>レプリカペア</title>
+  <title>レプリカセット</title>
   <para>
-   レプリカペアに接続するには、ペアの両方を指定します。
+   レプリカセットに接続するには、セットに属するサーバをひとつ以上指定して、
+   さらに <literal>replicaSet</literal> オプションを使います。
   </para>
   <programlisting role="php">
 <![CDATA[
 <?php
 
-$m = new Mongo("mongodb://localhost:27017,localhost:27018");
+$m = new Mongo("mongodb://localhost:27017", array("replicaSet" => true));
 
 ?>
 ]]>
   </programlisting>
   <para>
-   順番を気にする必要はありません。PHP ドライバは、
-   どちらがマスタかをサーバに問い合わせて判断します。
-   どちらか一方が立ち上がっていてそれがマスタであれば、接続は成功します。
-   両方とも立ち上がっていなかったりマスタがなかったりした場合は
+   バージョン 1.0.9 以降のドライバでは、レプリカセットへの接続が必須となります
+   (それより前のバージョンでは、マスタの自動検出や再接続が正しく動作しません)。
+  </para>
+  <para>
+   PHP ドライバは、指定したサーバ群に問い合わせてどれがマスタなのかを調べます。
+   リストにあげたサーバのうち少なくともひとつに接続でき、
+   マスタが見つかってさえいれば接続が成功したとみなされます。
+   どのサーバにも接続できない、あるいはマスタが見つからないといった場合は
    <classname>MongoConnectionException</classname> がスローされます。
   </para>
   <para>
    マスタが使えなくなったときに、スレーブがマスタになるには数秒かかります。
-   その間は、ドライバからは一切のデータベース操作ができなくなります。
-   マスタデータベースがなく、使えるデータベースがスレーブだけだからです。
-   したがって、このときに何らかの問い合わせ ("安全な" 操作を含む)
-   をすると例外が発生します。
+   その間は、この接続では一切のデータベース操作ができなくなります
+   (スレーブに接続して読み込みを行うことは可能です)。
+   したがって、このときに何らかの読み書き操作をすると例外が発生します。
   </para>
   <para>
-   マスタが使えなくなったということをスレーブが認識すると、
-   自分自身をマスタに昇格させます。その後は、
-   ドライバがデータベース接続を切り替えて通常の操作を続行できるようになります。
+   新しいマスタが選ばれると、読み込みや書き込みの操作時にドライバが新しいマスタを検出できるようになります。
+   そして、ドライバがデータベース接続を切り替えて通常の操作を続行できるようになります。
   </para>
   <para>
-   レプリカペアについての詳細は、
+   レプリカセットについての詳細は、
    <link xlink:href="&url.mongodb.replica;">コアドキュメント</link>
    を参照ください。
+  </para>
+ </section>
+
+ <section>
+  <title>分散読み込み</title>
+  <para>
+   レプリカセットの使いかたのひとつとして、
+   読み込みをスレーブから行うようにしてマスタの負荷を軽減させるという方法があります。
+   これはドライバが自動で行うものではないので、自分で設定することになります。
+  </para>
+  <para>
+   まず、<literal>replicaSet</literal> オプションを指定してレプリカセットに接続します。
+   これで、レプリカセットのマスタへの接続が得られます。
+   この接続で <literal>ismaster</literal> コマンドをコールすると、
+   レプリカセットのすべてのスレーブの一覧を取得できます。
+  </para>
+  <programlisting role="php">
+<![CDATA[
+<?php
+
+$m = new Mongo("mongodb://localhost:27017", array("replicaSet" => true));
+$result = $m->admin->command(array("ismaster" => 1));
+
+?>
+]]>
+  </programlisting>
+  <para>
+   次に、"hosts" フィールドおよび "passives" フィールドにあげられたホストへの接続を作成します
+   (passives とは、セットのメンバーの中で決してマスタになることがないものです)。
+   このときには <literal>replicaSet =&gt; true</literal> を指定しません。
+   (指定してしまうと、マスタを探して自動的にマスタへの接続に切り替えられてしまいます)。
+   これらの接続を使い分けると、読み込みを分散させることができます。
+   スレーブからの読み込みを行う前には
+   <literal>MongoCursor::slaveOkay</literal> を &true; に設定しておくことを忘れないようにしましょう。
   </para>
  </section>
 
@@ -160,6 +197,12 @@ for ($i=0; $i<1000; $i++) {
    持続的接続を使うには、ホスト名とポート、持続文字列、そしてユーザ名とパスワード(指定した場合)
    が既存の持続的接続と一致しなければなりません。
    一致しない場合は、この識別情報で新しい接続を作成します。
+  </para>
+  <para>
+   持続的接続を使うことを<emphasis>強く推奨します</emphasis>。
+   実運用環境では、やむを得ぬ理由がない限り常に持続的接続を使うべきです。
+   リレーショナルデータベースにおいて持続的接続を推奨しない理由はいくつかありますが、
+   その大半は MongoDB には無関係なものです。
   </para>
  </section>
 
