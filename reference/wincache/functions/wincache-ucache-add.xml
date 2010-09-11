@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision$ -->
+<!-- EN-Revision: 5a3b9ab96909934908466b568f71d2da6f44bd58 Maintainer: takagi Status: ready -->
+<refentry xml:id="function.wincache-ucache-add" xmlns="http://docbook.org/ns/docbook">
+ <refnamediv>
+  <refname>wincache_ucache_add</refname>
+  <refpurpose>
+   変数が既にキャッシュに存在しない場合にのみ変数をユーザキャッシュに追加する
+  </refpurpose>
+ </refnamediv>
+ <refsect1 role="description">
+  &reftitle.description;
+  <methodsynopsis>
+   <type>bool</type><methodname>wincache_ucache_add</methodname>
+   <methodparam><type>mixed</type><parameter>key</parameter></methodparam>
+   <methodparam><type>mixed</type><parameter>value</parameter></methodparam>
+   <methodparam choice="opt"><type>int</type><parameter>ttl</parameter><initializer>0</initializer></methodparam>
+  </methodsynopsis>
+  <para>
+   変数が既にキャッシュに存在しない場合にのみ変数をユーザキャッシュに追加します。
+   追加された変数は、有効期限に達するか、
+   <function>wincache_ucache_delete</function> あるいは <function>wincache_ucache_clear</function>
+   で削除されるまではキャッシュに残り続けます。
+  </para>
+ </refsect1>
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <para>
+   <variablelist>
+    <varlistentry>
+     <term><parameter>key</parameter></term>
+     <listitem>
+      <para>
+       変数を格納するときに、この名前のキーを使います。
+       同じキーで既に変数が格納されているときは、この関数は失敗して <literal>FALSE</literal> を返します。
+       <parameter>key</parameter> は大文字小文字を区別します。同じキーがあっても値を上書きしたい場合は
+       <function>wincache_ucache_set</function> 関数をかわりに使います。
+       <parameter>key</parameter> には name => value のペアの配列を渡すこともできます。
+       この場合は name がキーとなります。
+       この形式を使えば複数の値を一度の操作でキャッシュに格納できるので、競合状態になることを防げます。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>value</parameter></term>
+     <listitem>
+      <para>
+       格納したい変数の値。ファイルハンドルのようなリソース型以外のすべてのデータ型をサポートしています。
+       最初のパラメータが配列の場合は、このパラメータは無視されます。
+       一般的な指針として、<parameter>key</parameter> に配列を渡す場合は
+       <parameter>value</parameter> を <literal>NULL</literal> にしておきましょう。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>ttl</parameter></term>
+     <listitem>
+      <para>
+       変数のキャッシュ内での生存時間を秒単位で指定します。
+       <parameter>ttl</parameter> で指定した秒数が経過すると、
+       格納されている変数はキャッシュから削除されます。
+       このパラメータのデフォルト値は <literal>0</literal> で、これは
+       <function>wincache_ucache_delete</function>
+       あるいは <function>wincache_ucache_clear</function>
+       で明示的に削除するまでキャッシュに残り続けることを意味します。
+      </para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
+  </para>
+ </refsect1>
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <simpara>
+   <parameter>key</parameter> が文字列のときは、成功した場合に <literal>TRUE</literal>、失敗した場合に <literal>FALSE</literal> を返します。
+  </simpara>
+  <para>
+   <parameter>key</parameter> が配列のときの返り値は、次のようになります。
+   <itemizedlist spacing="compact">
+    <listitem>
+     <simpara>
+      配列内のすべての name => value ペアが設定できた場合は、空の配列を返します。
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      配列内の name => value ペアがひとつも設定できなかった場合は、<literal>FALSE</literal> を返します。
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      成功したペアと失敗したペアがある場合は、ユーザキャッシュへの追加に失敗した name=>value ペアを含む配列を返します。
+     </simpara>
+    </listitem>
+   </itemizedlist>
+  </para>
+ </refsect1>
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title><function>wincache_ucache_add</function> で <parameter>key</parameter> を文字列にする例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$bar = 'BAR';
+var_dump(wincache_ucache_add('foo', $bar));
+var_dump(wincache_ucache_add('foo', $bar));
+var_dump(wincache_ucache_get('foo'));
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+bool(true)
+bool(false)
+string(3) "BAR" 
+]]>
+    </screen>    
+   </example>
+  </para>
+  <para>
+   <example>
+    <title><function>wincache_ucache_add</function> で <parameter>key</parameter> を配列にする例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$colors_array = array('green' => '5', 'Blue' => '6', 'yellow' => '7', 'cyan' => '8');
+var_dump(wincache_ucache_add($colors_array));
+var_dump(wincache_ucache_add($colors_array));
+var_dump(wincache_ucache_get('Blue'));
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+array(0) { } 
+array(4) { 
+  ["green"]=> int(-1) 
+  ["Blue"]=> int(-1) 
+  ["yellow"]=> int(-1) 
+  ["cyan"]=> int(-1) 
+} 
+string(1) "6"
+]]>
+    </screen>    
+   </example>
+  </para>
+ </refsect1>
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <para>
+   <simplelist>
+    <member><function>wincache_ucache_set</function></member>
+    <member><function>wincache_ucache_get</function></member>
+    <member><function>wincache_ucache_delete</function></member>
+    <member><function>wincache_ucache_clear</function></member>
+    <member><function>wincache_ucache_exists</function></member>
+    <member><function>wincache_ucache_meminfo</function></member>
+    <member><function>wincache_ucache_info</function></member>
+   </simplelist>
+  </para>
+ </refsect1>
+
+</refentry>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"~/.phpdoc/manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
