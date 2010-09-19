@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 9c9dbceddd74aef5971ce9e5ce9e74ab3490628d Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 5aed1fa31d8f77222c60fdc82df7072653a77cfb Maintainer: takagi Status: ready -->
 
 <chapter xml:id="inclued.examples" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  &reftitle.examples;
@@ -12,7 +12,7 @@
   </para>
   <para>
    <example>
-    <title>inclued からのデータの取得</title>
+    <title>PHP アプリケーション自身 (関数) 内のデータの取得</title>
     <programlisting role="php">
 <![CDATA[
 <?php
@@ -54,6 +54,66 @@ $ php graphviz.php -i /tmp/wp.ser -o wp.dot
 $ dot -Tpng -o inclued.png wp.dot
 ]]>
     </programlisting>
+   </example>
+  </para>
+  <para>
+   <example>
+    <title>inclued のダンプデータの一覧</title>
+    <para>
+     <link linkend="ini.inclued.dumpdir">inclued.dumpdir</link>
+     を使うと、ファイル (include 情報) がリクエストのたびに出力されます。
+     それらの一覧を取得して <function>unserialize</function> する例です。
+    </para>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$path = ini_get('inclued.dumpdir');
+if ($path && is_dir($path)) {
+
+    echo "Path: $path", PHP_EOL;
+
+    $inclues = new GlobIterator($path . DIRECTORY_SEPARATOR . 'inclued*');
+
+    if ($inclues->count() === 0) {
+        echo 'No clues today', PHP_EOL;
+        exit;
+    }
+
+    foreach ($inclues as $inclue) {
+
+        echo 'Inclued file: ', $inclue->getFilename(), PHP_EOL;
+
+        $data = file_get_contents($inclue->getPathname());
+        if ($data) {
+            $inc = unserialize($data);
+            echo ' -- filename: ', $inc['request']['SCRIPT_FILENAME'], PHP_EOL;
+            echo ' -- number of includes: ', count($inc['includes']), PHP_EOL;
+        }
+        echo PHP_EOL;
+    }
+} else {
+    echo 'I am totally clueless today.', PHP_EOL;
+}
+?>
+]]>
+    </programlisting>
+    &example.outputs.similar;
+    <screen>
+<![CDATA[
+PATH: /tmp/inclued
+Inclued file: inclued.56521.1
+ -- filename: /Users/philip/test.php
+ -- number of includes: 1
+
+Inclued file: inclued.56563.1
+ -- filename: /tmp/none.php
+ -- number of includes: 0
+
+Inclued file: inclued.56636.1
+ -- filename: /tmp/three.php
+ -- number of includes: 3
+]]>
+    </screen>
    </example>
   </para>
  </section>
