@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 96c9d88bad9a7d7d44bfb7f26c226df7ee9ddf26 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 0c878e752fc5d604326641412f2244b2562990e1 Maintainer: takagi Status: ready -->
  <sect1 xml:id="language.oop5.late-static-bindings" xmlns="http://docbook.org/ns/docbook">
   <title>遅延静的束縛 (Late Static Bindings)</title>
   <para>
@@ -9,9 +9,23 @@
   </para>
 
   <para>
+   より正確に言うと、静的遅延束縛は直近の "非転送コール" のクラス名を保存します。
+   静的メソッドの場合、これは明示的に指定されたクラス (通常は
+   <link linkend="language.oop5.paamayim-nekudotayim"><literal>::</literal></link>
+   演算子の左側に書かれたもの) となります。静的メソッド以外の場合は、そのオブジェクトのクラスとなります。
+   "転送コール" とは、<literal>self::</literal> や
+   <literal>parent::</literal>、<literal>static::</literal> による静的なコール、
+   あるいはクラス階層の中での <function>forward_static_call</function> によるコールのことです。
+   <!-- technically, static:: may be non forwarding, but it's irrelevant -->
+   
+   <function>get_called_class</function> 関数を使うとコール元のクラス名を文字列で取得できます。
+   <literal>static::</literal> はこのクラスのスコープとなります。
+  </para>
+  
+  <para>
    この "遅延静的束縛" という機能名は、内部動作を考慮してつけられたものです。
    "遅延束縛 (Late binding)" の由来は、メソッドを定義しているクラス名を使用しても
-   <literal>static::</literal> の解決ができなくなったことによります。
+   <literal>static::</literal> の解決ができないことによります。
    その代わりに、実行時情報をもとに解決するようになります。
 
    "静的束縛 (static binding)" の由来は、
@@ -107,11 +121,10 @@ B
    </example>
    <note>
     <para>
-     <literal>static::</literal> の動作は、静的メソッドにおいては
-     <literal>$this</literal> と異なります!
-     <literal>$this-></literal> は継承規則に従いますが、
-     <literal>static::</literal> は従いません。
-     この違いについては、後ほど詳しく説明します。
+     静的でないコンテキストでは、呼び出されるクラスはそのオブジェクトのクラスと同じになることに注意しましょう。
+     <literal>$this-></literal> は private メソッドを同じスコープからコールしようとするので、
+     <literal>static::</literal> を使うと異なる結果となります。もうひとつの相違点は、
+     <literal>static::</literal> は静的なプロパティしか参照できないということです。
     </para>
    </note>
    <example>
@@ -119,40 +132,43 @@ B
     <programlisting role="php">
 <![CDATA[
 <?php
-class TestChild extends TestParent {
-    public function __construct() {
-        static::who();
+class A {
+    private function foo() {
+        echo "success!\n";
     }
-
     public function test() {
-        $o = new TestParent();
-    }
-
-    public static function who() {
-        echo __CLASS__."\n";
+        $this->foo();
+        static::foo();
     }
 }
 
-class TestParent {
-    public function __construct() {
-        static::who();
-    }
+class B extends A {
+   /* foo() が B にコピーされるので、メソッドのスコープは A のままとなり、
+    * コールは成功します */
+}
 
-    public static function who() {
-        echo __CLASS__."\n";
+class C extends A {
+    private function foo() {
+        /* もとのメソッドが置き換えられるので、新しいメソッドのスコープは C となります */
     }
 }
-$o = new TestChild;
-$o->test();
 
+$b = new B();
+$b->test();
+$c = new C();
+$c->test();   //fails
 ?>
 ]]>
     </programlisting>
     &example.outputs;
     <screen>
 <![CDATA[
-TestChild
-TestParent
+success!
+success!
+success!
+
+
+Fatal error:  Call to private method C::foo() from context 'A' in /tmp/test.php on line 9
 ]]>
     </screen>
    </example>
@@ -208,50 +224,6 @@ C
      </screen>
     </example>
    </note>
-  </sect2>
-  <sect2 xml:id="language.oop5.late-static-bindings.edge-cases">
-   <title>特殊な場合</title>
-   <para>
-    PHP でメソッドをコールするには、さまざまな方法があります。
-    たとえばコールバックやマジックメソッドなどもそのひとつです。
-    遅延静的束縛は実行時の情報にもとづいて解決を行うので、
-    このように特殊な場合には予期せぬ結果となる可能性があります。
-   </para>
-   <example>
-    <title>マジックメソッド内における遅延静的束縛</title>
-    <programlisting role="php">
-<![CDATA[
-<?php
-class A {
-
-   protected static function who() {
-        echo __CLASS__."\n";
-   }
-
-   public function __get($var) {
-       return static::who();
-   }
-}
-
-class B extends A {
-
-   protected static function who() {
-        echo __CLASS__."\n";
-   }
-}
-
-$b = new B;
-$b->foo;
-?>
-]]>
-    </programlisting>
-    &example.outputs;
-    <screen>
-<![CDATA[
-B
-]]>
-    </screen>
-   </example>
   </sect2>
  </sect1>
 <!-- Keep this comment at the end of the file
