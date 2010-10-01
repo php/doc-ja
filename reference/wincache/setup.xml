@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: f453f7036c74f5f8ce5e15d3d5abbaf8dfd599e2 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 5922896ca6a4410d7103e81692175cb973355617 Maintainer: takagi Status: ready -->
 
 <chapter xml:id="wincache.setup" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  &reftitle.setup;
@@ -212,6 +212,112 @@ $user_allowed = array('DOMAIN\user1', 'DOMAIN\user2', 'DOMAIN\user3');
 <![CDATA[
 session.save_handler = wincache
 session.save_path = C:\inetpub\temp\session\
+]]>
+    </programlisting>
+   </example>
+  </para>
+ </section>
+ <section xml:id="wincache.reroutes">
+  <title>WinCache 関数への切り替え</title>
+  <para>
+   WinCache の関数切り替え機能 (WinCache 1.2.0 以降で使用可能) を使うと、
+   その用途向けに最適化した同等の関数で組み込みの PHP 関数を置き換えることができます。
+   WinCache 拡張モジュールには、PHP のファイル操作関数を Windows
+   向けに最適化した実装が含まれています。PHP でネットワーク共有上のファイルにアクセスする必要がある場合などに、
+   これを使うとアプリケーションのパフォーマンスを向上させることができるでしょう。
+   最適化した実装が用意されている関数は、次のとおりです。
+  </para>
+  <itemizedlist spacing="compact">
+   <listitem>
+    <simpara>
+     <link linkend="function.file-exists">file_exists</link>
+    </simpara>
+   </listitem>
+   <listitem>
+    <simpara>
+     <link linkend="function.file-get-contents">file_get_contents</link>
+    </simpara>
+   </listitem>
+   <listitem>
+    <simpara>
+     <link linkend="function.readfile">readfile</link>
+    </simpara>
+   </listitem>
+   <listitem>
+    <simpara>
+     <link linkend="function.is-readable">is_readable</link>
+    </simpara>
+   </listitem>
+   <listitem>
+    <simpara>
+     <link linkend="function.is-writable">is_writable</link>
+    </simpara>
+   </listitem>
+   <listitem>
+    <simpara>
+     <link linkend="function.is-dir">is_dir</link>
+    </simpara>
+   </listitem>
+   <listitem>
+    <simpara>
+     <link linkend="function.realpath">realpath</link>
+    </simpara>
+   </listitem>
+      <listitem>
+    <simpara>
+     <link linkend="function.filesize">filesize</link>
+    </simpara>
+   </listitem>
+  </itemizedlist>
+  <para>
+   WinCache の関数切り替え機能を使えるよう設定するには、WinCache のインストールパッケージに含まれている
+   <filename>reroute.ini</filename> ファイルを使います。このファイルを
+   <filename>php.ini</filename> があるディレクトリにコピーしましょう。
+   それから <filename>php.ini</filename> に wincache.rerouteini
+   の設定を追加し、ここに <filename>reroute.ini</filename> ファイルへの絶対パスあるいは相対パスを指定します。
+   <example>
+    <title>WinCache の関数切り替えの有効化</title>
+    <programlisting role="php.ini">
+<![CDATA[
+wincache.rerouteini = C:\PHP\reroute.ini
+]]>
+    </programlisting>
+   </example>
+  </para>
+  <note>
+   <simpara>
+    WinCache の関数切り替え機能を使う場合は、ファイルキャッシュのサイズを増やすことを推奨します。
+    このサイズは <link linkend="ini.wincache.fcachesize">wincache.fcachesize</link> を使って設定します。
+   </simpara>
+  </note>
+  <para>
+   <filename>reroute.ini</filename> ファイルには、PHP の関数とそれに対応する
+   WinCache の関数のマッピングを記述します。
+   ファイルの各行に、次の構文で関数のマッピングを定義します。
+  </para>
+  <simpara>
+   <literal>&lt;PHP の関数名&gt;:[&lt;関数のパラメータの数&gt;]=&lt;wincache の関数名&gt;</literal>
+  </simpara>
+  <para>
+   ファイルの例を以下に示します。この例では、PHP の関数 <function>file_get_contents</function>
+   がコールされると、それが <function>wincache_file_get_contents</function> へのコールに置き換えられます。
+   ただし、関数に渡されたパラメータが 2 個以下の場合に限ります。パラメータ数の指定が役立つのは、
+   置き換え用の関数が元の関数のすべてのパラメータに対応しているわけではないという場合です。
+   <example>
+    <title>Reroute.ini ファイルの内容</title>
+    <programlisting role="php.ini">
+ <![CDATA[
+[FunctionRerouteList]
+file_exists=wincache_file_exists
+file_get_contents:2=wincache_file_get_contents
+readfile:2=wincache_readfile
+is_readable=wincache_is_readable
+is_writable=wincache_is_writable
+is_writeable=wincache_is_writable
+is_file=wincache_is_file
+is_dir=wincache_is_dir
+realpath=wincache_realpath
+filesize=wincache_filesize
 ]]>
     </programlisting>
    </example>
