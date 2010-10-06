@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: b71e8b802f19ebed1067898d628e8a03b0550a11 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 512ae805f645c59ad590a3cefc8b287db4f709d9 Maintainer: takagi Status: ready -->
 
 <refentry xml:id="reflectionfunction.construct" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -12,7 +12,7 @@
   &reftitle.description;
   <methodsynopsis>
    <methodname>ReflectionFunction::__construct</methodname>
-   <methodparam><type>string</type><parameter>name</parameter></methodparam>
+   <methodparam><type>mixed</type><parameter>name</parameter></methodparam>
   </methodsynopsis>
   <para>
    <classname>ReflectionFunction</classname> オブジェクトを作成します。
@@ -27,7 +27,7 @@
      <term><parameter>name</parameter></term>
      <listitem>
       <para>
-       調べたい関数の名前。
+       調べたい関数あるいは<link linkend="functions.anonymous">クロージャ</link>の名前。
       </para>
      </listitem>
     </varlistentry>
@@ -50,6 +50,31 @@
   </para>
  </refsect1>
 
+ <refsect1 role="changelog">
+  &reftitle.changelog;
+  <para>
+   <informaltable>
+    <tgroup cols="2">
+     <thead>
+      <row>
+       <entry>&Version;</entry>
+       <entry>&Description;</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry>5.3.0</entry>
+       <entry>
+        <parameter>name</parameter> に <link linkend="functions.anonymous">クロージャ</link>
+        を指定できるようになりました。
+       </entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </informaltable>
+  </para>
+ </refsect1>
+
  <refsect1 role="examples">
   &reftitle.examples;
   <para>
@@ -63,52 +88,82 @@
  *
  * @return    int
  */
-function counter()
+function counter1()
 {
     static $c = 0;
     return ++$c;
 }
 
-// ReflectionFunction クラスのインスタンスを生成する
-$func = new ReflectionFunction('counter');
-
-// 基本情報を表示する
-printf(
-    "===> The %s function '%s'\n".
-    "     declared in %s\n".
-    "     lines %d to %d\n",
-    $func->isInternal() ? 'internal' : 'user-defined',
-    $func->getName(),
-    $func->getFileName(),
-    $func->getStartLine(),
-    $func->getEndline()
-);
-
-// ドキュメントコメントを表示する
-printf("---> Documentation:\n %s\n", var_export($func->getDocComment(), 1));
-
-// static 変数があれば表示する
-if ($statics = $func->getStaticVariables())
+/**
+ * 別の簡単なカウンタ
+ *
+ * @return    int
+ */
+$counter2 = function()
 {
-    printf("---> Static variables: %s\n", var_export($statics, 1));
+    static $d = 0;
+    return ++$d;
+
+};
+
+function dumpReflectionFunction($func)
+{
+    // 基本情報を表示します
+    printf(
+        "\n\n===> The %s function '%s'\n".
+        "     declared in %s\n".
+        "     lines %d to %d\n",
+        $func->isInternal() ? 'internal' : 'user-defined',
+        $func->getName(),
+        $func->getFileName(),
+        $func->getStartLine(),
+        $func->getEndline()
+    );
+
+    // ドキュメントコメントを表示します
+    printf("---> Documentation:\n %s\n", var_export($func->getDocComment(), 1));
+
+    // 静的変数が存在すれば表示します
+    if ($statics = $func->getStaticVariables())
+    {
+        printf("---> Static variables: %s\n", var_export($statics, 1));
+    }
 }
+
+// ReflectionFunction クラスのインスタンスを作成します
+dumpReflectionFunction(new ReflectionFunction('counter1'));
+dumpReflectionFunction(new ReflectionFunction($counter2));
 ?>
 ]]>
     </programlisting>
     &example.outputs.similar;
     <screen>
 <![CDATA[
-===> The user-defined function 'counter'
-     declared in /Users/philip/test.php
+===> The user-defined function 'counter1'
+     declared in Z:\reflectcounter.php
      lines 7 to 11
 ---> Documentation:
  '/**
- * A simple counter
+ * 簡単なカウンタ
  *
  * @return    int
  */'
 ---> Static variables: array (
   'c' => 0,
+)
+
+
+===> The user-defined function '{closure}'
+     declared in Z:\reflectcounter.php
+     lines 18 to 23
+---> Documentation:
+ '/**
+ * 別の簡単なカウンタ
+ *
+ * @return    int
+ */'
+---> Static variables: array (
+  'd' => 0,
 )
 ]]>
     </screen>
