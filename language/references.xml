@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 22434db00e7486f5cecb9550904bbddce944ddcb Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 590845fd0e99d6d7e9d4b1111b3f1eebbb52dd5c Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi -->
  <chapter xml:id="language.references" xmlns="http://docbook.org/ns/docbook">
   <title>リファレンスの説明</title>
@@ -107,7 +107,13 @@ $foo =& find_var($bar);
      は自動的にリファレンスを返すようになりました。そのため、この場面で
      <literal>=&amp;</literal> を使用することは非推奨となりました。
      PHP 5.3 以降では <constant>E_DEPRECATED</constant>、それより前のバージョンでは
-     <constant>E_STRICT</constant> レベルのメッセージが表示されます。
+     <constant>E_STRICT</constant> レベルのメッセージが表示されます
+     (技術的な話をすると、PHP 5 以降では、リソース型のようなオブジェクト変数は
+     実際のデータへの単なるポインタとなりました。つまり、
+     オブジェクトのリファレンスはこれまでのような意味での "リファレンス"
+     つまりエイリアスとは異なります。
+     詳細な情報は <link linkend="language.oop5.references">
+     オブジェクトと参照</link> にあります)。
     </para>
     <warning>
      <para>
@@ -166,6 +172,55 @@ echo $ref; // 3 - 配列の最後の要素
       </example>
      </para>
     </note>
+    <para>
+     厳密にリファレンスでの代入をしなくても、
+     <link linkend="function.array"><literal>array()</literal></link>
+     で作成した式は、配列の要素の先頭に <literal>&amp;</literal>
+     を追加したのと同じような動作をします。たとえば、次のようになります。
+     <informalexample>
+      <programlisting role="php">
+<![CDATA[
+<?php
+$a = 1;
+$b = array(2, 3);
+$arr = array(&$a, &$b[0], &$b[1]);
+$arr[0]++; $arr[1]++; $arr[2]++;
+/* $a == 2, $b == array(3, 4); */
+?>
+]]>
+      </programlisting>
+     </informalexample>
+    </para>
+    <para>
+     しかし、配列の内部のリファレンスは危険もあるということに気をつけましょう。
+     通常の (リファレンスではない) 代入の右辺にリファレンスを使っても
+     左辺はリファレンスには変わらず、配列の内部のリファレンスも通常の代入のままとなります。
+     たとえば、次のようになります。
+     <informalexample>
+      <programlisting role="php">
+<![CDATA[
+<?php
+/* スカラー変数への代入 */
+$a = 1;
+$b =& $a;
+$c = $b;
+$c = 7; // $c はリファレンスではないので $a や $b の値は変わりません
+
+/* 配列変数への代入 */
+$a = 1;
+$arr = array(&$a);
+$arr2 = $arr; // これは、リファレンス代入ではありません!
+$arr2[0]++;
+/* $a == 2, $arr == array(2) */
+/* $arr の内容は、たとえリファレンスでなくても変わります! */
+?>
+]]>
+      </programlisting>
+     </informalexample>
+     言い換えると、配列内のリファレンスの挙動はその要素ごとに決まるということです。
+     個々の要素のリファレンスに関する動きは、
+     配列コンテナがリファレンスであるかどうかとは独立しています。
+    </para>
    </sect2>
    <sect2 xml:id="language.references.whatdo.pass">
     <title>リファレンス渡し</title>
