@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: b71e8b802f19ebed1067898d628e8a03b0550a11 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 22681d58f5cfac971f71ff0b4eeafd548752562d Maintainer: takagi Status: ready -->
 
 <refentry xml:id="reflectionfunction.invokeargs" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -30,7 +30,8 @@
      <term><parameter>args</parameter></term>
      <listitem>
       <para>
-       起動する引数。
+       関数に渡す引数を含む配列。
+       <function>call_user_func_array</function> と同じように動作します。
       </para>
      </listitem>
     </varlistentry>
@@ -41,8 +42,87 @@
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
-   
+   起動した関数の結果を返します。
   </para>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title><methodname>ReflectionFunction::invokeArgs</methodname> の例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+function title($title, $name)
+{
+	return sprintf("%s. %s\r\n", $title, $name);
+}
+
+$function = new ReflectionFunction('title');
+
+echo $function->invokeArgs(Array('Dr', 'Phil'));
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+Dr. Phil
+]]>
+    </screen>
+   </example>
+  </para>
+  <para>
+   <example>
+    <title><methodname>ReflectionFunction::invokeArgs</methodname> で参照を使う例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+function get_false_conditions(Array $conditions, Array &$false_conditions)
+{
+	foreach($conditions as $condition)
+	{
+		if(!$condition)
+		{
+			$false_conditions[] = $condition;
+		}
+	}
+}
+
+$function_ref 		= new ReflectionFunction('get_false_conditions');
+
+$conditions		= Array(true, false, -1, 0, 1);
+$false_conditions	= Array();
+
+$function_ref->invokeArgs(Array($conditions, &$false_conditions));
+
+var_dump($false_conditions);
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+array(2) {
+  [0]=>
+  bool(false)
+  [1]=>
+  int(0)
+}
+]]>
+    </screen>
+   </example>
+  </para>
+ </refsect1>
+
+ <refsect1 role="notes">
+  &reftitle.notes;
+  <note>
+   <para>
+    関数に参照渡しの引数がある場合は、引数リストにも参照で渡さなければなりません。
+   </para>
+  </note>
  </refsect1>
 
  <refsect1 role="seealso">
