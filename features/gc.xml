@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Revision:$ -->
+<!-- $Revision$ -->
 <!-- EN-Revision: a5c69fdd7097fe331da0f5d26edb4b48b9c48ae0 Maintainer: satoruyoshida Status: working -->
  <chapter xml:id="features.gc" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
   <title>ガベージコレクション</title>
@@ -52,7 +52,7 @@ $a = "new string";
     「refcount」が <literal>1</literal> ならば、is_ref が常に &false; である点に
     注意してください。
     もし <link xlink:href='&url.xdebug;'>Xdebug</link> をインストール済みなら、
-    <function>xdebug_debug_zval</function>を呼ぶとこの情報を表示できます。
+    <function>xdebug_debug_zval</function>を呼ぶと、この情報を表示できます。
    </para>
    <para>
     <example>
@@ -343,7 +343,7 @@ a: (refcount=2, is_ref=1)=array (
   </sect1>
 
   <sect1 xml:id="features.gc.collecting-cycles">
-   <title>収集サイクル</title>
+   <title>循環の収集</title>
    <para>
     伝統的に、PHP で以前使われていたような参照カウント法記憶機構では、
     循環参照メモリ・リークに対処できません。
@@ -373,80 +373,82 @@ a: (refcount=2, is_ref=1)=array (
    </para>
    <para>
     To avoid having to call the checking of garbage cycles with every possible
-    decrease of a refcount, the algorithm instead puts all possible roots
+    decrease of a refcount, the algorithm instead puts all 可能性があるルート
     (zvals) in the "root buffer" (marking them "purple"). It also makes sure
-    that each possible garbage root ends up in the buffer only once. Only when
-    the root buffer is full does the collection mechanism start for all the
-    different zvals inside. See step A in the figure above.
+    that each possible garbage root ends up in the buffer only once.
+    ルート・バッファが満杯の場合だけ、内部のそれぞれの zval 全てに対して収集機構が動き出します。
+    上図のステップ A をご覧ください。
    </para>
    <para>
-    In step B, the algorithm runs a depth-first search on all possible roots
+    ステップ B では、
+    the algorithm runs a depth-first search on all 可能性があるルート
     to decrease by one the refcounts of each zval it finds, making sure not to
     decrease a refcount on the same zval twice (by marking them as "grey"). In
     step C, the algorithm again runs a depth-first search from each root node,
-    to check the refcount of each zval again. If it finds that the refcount is
-    zero, the zval is marked "white" (blue in the figure). If it's larger than
+    to check the refcount of each zval again.
+    refcount がゼロと分かった場合、zval は「白」（図では青色です）とマークされます。
+    If it's larger than
     zero, it reverts the decreasing of the refcount by one with a depth-first
     search from that point on, and they are marked "black" again. In the last
     step (D), the algorithm walks over the root buffer removing the zval roots
     from there, and meanwhile, checks which zvals have been marked "white" in
-    the previous step. Every zval marked as "white" will be freed.
+    the previous step.
+    「白」としてマークされた zval が全て解放されます。
    </para>
    <para>
-    Now that you have a basic understanding of how the algorithm works, we
-    will look back at how this integrates with PHP. By default, PHP's garbage
-    collector is turned on. There is, however, a &php.ini;
-    setting that allows you to change this: <option>zend.enable_gc</option>.
+    アルゴリズムが動作する方法の基礎を理解したので、
+    これと PHP を統合する方法を振り返りましょう。
+    デフォルトで、PHP のガベージコレクタは有効です。
+    しかしながら、これを変更できる &php.ini; の設定があります。
+    （それは） <option>zend.enable_gc</option> です。
    </para>
    <para>
-    When the garbage collector is turned on, the cycle-finding algorithm as
-    described above is executed whenever the root buffer runs full. The root
-    buffer has a fixed size of 10,000 possible roots (although you can alter
-    this by changing the <literal>GC_ROOT_BUFFER_MAX_ENTRIES</literal> constant in
-    <literal>Zend/zend_gc.c</literal> in the PHP source code, and re-compiling
-    PHP). When the garbage collector is turned off, the cycle-finding
-    algorithm will never run. However, possible roots will always be recorded
-    in the root buffer, no matter whether the garbage collection mechanism has
-    been activated with this configuration setting.
+    ガベージコレクタがオンの場合、
+    ルート・バッファが満杯になるといつでも、先に述べたように循環検出法が実行されます。
+    ルート・バッファでは、可能性があるルートのサイズが一万件に固定されています。
+    （PHP のソースコードの <literal>Zend/zend_gc.c</literal> で
+    <literal>GC_ROOT_BUFFER_MAX_ENTRIES</literal> 定数を変更して、PHP を再コンパイルすると変更できます）
+    ガベージコレクタがオンの場合、循環検出法は実行されません。
+    しかしながら、可能性があるルートはルート・バッファに常に記録されます。
+    ガベージコレクション機構がこの構成設定値で起動したかどうかは問題ではありません。
    </para>
    <para>
-    If the root buffer becomes full with possible roots while the garbage
-    collection mechanism is turned off, further possible roots will simply not
-    be recorded. Those possible roots that are not recorded will never be
-    analyzed by the algorithm. If they were part of a circular reference
-    cycle, they would never be cleaned up and would create a memory leak. 
+    ガベージコレクション機構がオフの時に、可能性があるルートでルート・バッファが満杯になると、
+    可能性があるルートは単にそれ以上記録されません。
+    記録されないそれらの可能性があるルートは、アルゴリズムによって決して分析されません。
+    もしそれらが循環参照サイクルの要素ならば、
+    それらは決してクリーンアップされないで、メモリリークを生み出します。
    </para>
    <para>
-    The reason why possible roots are recorded even if the mechanism has been
-    disabled is because it's faster to record possible roots than to have to
-    check whether the mechanism is turned on every time a possible root could
-    be found. The garbage collection and analysis mechanism itself, however,
-    can take a considerable amount of time.
+    たとえ機構が無効だとしても、可能性があるルートが記録される理由は、
+    可能性があるルートが見つかるたびに機構がオンかどうかチェックしなければいけないよりも、
+    可能性があるルートを記録するほうが速いからです。
+    しかしながら、ガベージコレクションと分析機構そのものにかなりの時間がかかることがあります。
    </para>
    <para>
-    Besides changing the <option>zend.enable_gc</option> configuration
-    setting, it is also possible to turn the garbage collecting mechanism on
-    and off by calling <function>gc_enable</function> or
-    <function>gc_disable</function> respectively.  Calling those functions has
-    the same effect as turning on or off the mechanism with the configuration
-    setting. It is also possible to force the collection of cycles even if the
-    possible root buffer is not full yet. For this, you can use the
-    <function>gc_collect_cycles</function> function. This function will return
-    how many cycles were collected by the algorithm. 
+    <option>zend.enable_gc</option> 構成設定値を変える他に、
+    <function>gc_enable</function> や <function>gc_disable</function> をそれぞれ呼ぶことでも、
+    ガベージコレクション機構をオン／オフできます。
+    それらの機能を呼ぶことと、構成設定値で機構をオン／オフすることには同じ影響があります。
+    たとえ可能性があるルートのバッファがまだ満杯でなくても、
+    循環の収集を強制することもできます。
+    このために、<function>gc_collect_cycles</function> 関数を使用できます。
+    この関数は、アルゴリズムによって収集された循環の数を返します。
    </para>
    <para>
     The rationale behind the ability to turn the mechanism on and off, and to
     initiate cycle collection yourself, is that some parts of your application
-    could be highly time-sensitive. In those cases, you might not want the
-    garbage collection mechanism to kick in. Of course, by turning off the
+    could be highly time-sensitive.
+    それらの場合、ガベージコレクション機構が有効にならないほうが良いかもしれません。
+    Of course, by turning off the
     garbage collection for certain parts of your application, you do risk
-    creating memory leaks because some possible roots might not fit into the
-    limited root buffer. Therefore, it is probably wise to call
-    <function>gc_collect_cycles</function> just before you call
-    <function>gc_disable</function> to free up the memory that could be lost
-    through possible roots that are already recorded in the root buffer. This
-    then leaves an empty buffer so that there is more space for storing
-    possible roots while the cycle collecting mechanism is turned off.
+    creating memory leaks because some 可能性があるルート might not fit into the
+    limited root buffer. 
+    従って、ルート･バッファにすでに記録された、可能性があるルートを通じて失われる可能性のあるメモリを解放するために、
+    <function>gc_disable</function> を呼ぶ直前に <function>gc_collect_cycles</function>
+    を呼ぶことは多分賢いでしょう。
+    そうすると、循環収集機構がオフの間、
+    可能性があるルートを保管するためのより多くの空間のための空のバッファが残ります。
    </para>
   </sect1>
 
@@ -454,34 +456,33 @@ a: (refcount=2, is_ref=1)=array (
    <title>パフォーマンスの考慮点</title>
    <para>
     We have already mentioned in the previous section that simply collecting the
-    possible roots had a very tiny performance impact, but this is when you
-    compare PHP 5.2 against PHP 5.3. Although the recording of possible roots
+    可能性があるルート had a very tiny performance impact,
+    しかし、これは PHP 5.3 と PHP 5.2 を比較する場合です。
+    Although the recording of 可能性があるルート
     compared to not recording them at all, like in PHP 5.2, is slower, other
     changes to the PHP runtime in PHP 5.3 prevented this particular performance
     loss from even showing.
    </para>
    <para>
-    There are two major areas in which performance is affected. The first
-    area is reduced memory usage, and the second area is run-time delay when
-    the garbage collection mechanism performs its memory cleanups. We will
-    look at both of those issues.
+    パフォーマンスが影響を受ける主な分野は2つあります。
+    1つ目は、減少したメモリ使用量で、
+    2つ目はガベージコレクション機構がそのメモリ・クリーンアップを実行する際の実行遅延です。
+    それら両方の問題を見てみましょう。
    </para>
 
    <sect2 xml:id="features.gc.performance-considerations.reduced-mem">
-    <title>Reduced Memory Usage</title>
+    <title>減少したメモリ使用量</title>
     <para>
-     First of all, the whole reason for implementing the garbage collection
-     mechanism is to reduce memory usage by cleaning up circular-referenced
-     variables as soon as the prerequisites are fulfilled. In PHP's
-     implementation, this happens as soon as the root-buffer is full, or when
-     the function <function>gc_collect_cycles</function> is called. In
-     the graph below, we display the memory usage of the script below,
-     in both PHP 5.2 and PHP 5.3, excluding the base memory that PHP
-     itself uses when starting up.
+     まず第一に、ガベージコレクション機構を実装する理由は、
+     必要条件が満たされたらすぐに、循環参照された変数を整理してメモリ使用量を減らすことにあるのです。
+     PHP の実装では、ルート・バッファが満杯になるか、または、関数
+     <function>gc_collect_cycles</function> が呼ばれるとすぐにこれが起こります。
+     下図で、下記のスクリプトのメモリ使用量を PHP 5.2 及び PHP 5.3 の両方で示します。
+     (ただし)起動時に PHP 自身が使用する基底メモリを除きます。
     </para>
     <para>
      <example>
-      <title>Memory usage example</title>
+      <title>メモリ使用量の例</title>
       <programlisting role="php">
 <![CDATA[
 <?php
@@ -505,7 +506,7 @@ for ( $i = 0; $i <= 100000; $i++ )
 ]]>
       </programlisting>
       <mediaobject>
-       <alt>Comparison of memory usage between PHP 5.2 and PHP 5.3</alt>
+       <alt>PHP 5.2 と PHP 5.3 のメモリ使用量の比較</alt>
        <imageobject>
         <imagedata fileref="en/features/figures/gc-benchmark.png" format="PNG"/>
        </imageobject>
@@ -513,37 +514,36 @@ for ( $i = 0; $i <= 100000; $i++ )
      </example>
     </para>
     <para>
-     In this very academic example, we are creating an object in which a
-     property is set to point back to the object itself. When the <varname>$a</varname> variable
-     in the script is re-assigned in the next iteration of the loop, a memory
-     leak would typically occur. In this case, two zval-containers are leaked
-     (the object zval, and the property zval), but only one possible root is
-     found: the variable that was unset. When the root-buffer is full after
-     10,000 iterations (with a total of 10,000 possible roots), the garbage
-     collection mechanism kicks in and frees the memory associated with those
-     possible roots. This can very clearly be seen in the jagged memory-usage
-     graph for PHP 5.3. After each 10,000 iterations, the mechanism kicks in
-     and frees the memory associated with the circular referenced variables.
-     The mechanism itself does not have to do a whole lot of work in this
-     example, because the structure that is leaked is extremely simple. From
-     the diagram, you see that the maximum memory usage in PHP 5.3 is about 9
-     Mb, whereas in PHP 5.2 the memory usage keeps increasing.
+     このとても学術的な例では、
+     プロパティがオブジェクト自身を指すように設定されたオブジェクトを作成します。
+     スクリプト内の <varname>$a</varname> 変数がループの次の繰り返しで再設定されると、
+     一般的にメモリ・リークが発生します。
+     この場合、zval コンテナが２つリークします（オブジェクトの zval 及び プロパティの zval）。
+     しかし、可能性があるルートが一つだけ見つかります。
+     (それは)アンセットされた変数です。
+     一万回繰り返した後に（可能性があるルートを合計1万件伴って）ルート・バッファが満杯になると、
+     ガベージコレクション機構が有効になって、それらの可能性があるルートと関連するメモリを解放します。
+     これは PHP 5.3 での、のこぎりの歯のようなメモリ使用量グラフでとてもはっきりと分かります。
+     一万回繰り返す毎に機構が有効になって、循環参照された変数と関連するメモリを解放します。
+     この例ではリークした構造がとても単純なので、機構そのものが多くの仕事をする必要はありません。
+     図では、PHP 5.3 でのメモリ使用量の最大はおよそ 9MB と分かります。
+     ところが PHP 5.2 では、メモリ使用量は増加し続けます。
     </para>
    </sect2>
 
    <sect2 xml:id="features.gc.performance-considerations.slowdowns">
-    <title>Run-Time Slowdowns</title>
+    <title>実行時の減速</title>
     <para>
      The second area where the garbage collection mechanism influences
      performance is the time taken when the garbage collection mechanism
-     kicks in to free the "leaked" memory. In order to see how much this is,
+     kicks in to free the "leaked" memory. これがどの程度か見るためには、
      we slightly modify the previous script to allow for a larger number of
-     iterations and the removal of the intermediate memory usage figures. The
-     second script is here:
+     iterations and the removal of the intermediate memory usage figures.
+     2つ目のスクリプトはこれです。
     </para>
     <para>
      <example>
-      <title>GC performance influences</title>
+      <title>GC パフォーマンスの影響</title>
       <programlisting role="php">
 <![CDATA[
 <?php
@@ -565,13 +565,12 @@ echo memory_get_peak_usage(), "\n";
      </example>
     </para>
     <para>
-     We will run this script two times, once with the
-     <option>zend.enable_gc</option> setting turned on, and once with it
-     turned off:
+     このスクリプトを2回実行します。最初は <option>zend.enable_gc</option>
+     設定をオンにし、次はオフにします。
     </para>
     <para>
      <example>
-      <title>Running the above script</title>
+      <title>上記のスクリプトを実行</title>
       <programlisting role="shell">
 <![CDATA[
 time php -dzend.enable_gc=0 -dmemory_limit=-1 -n example2.php
@@ -582,15 +581,15 @@ time php -dzend.enable_gc=1 -dmemory_limit=-1 -n example2.php
      </example>
     </para>
     <para>
-     On my machine, the first command seems to take consistently about 10.7
-     seconds, whereas the second command takes about 11.4 seconds. This is a
-     slowdown of about 7%. However, the maximum amount of memory used by the
-     script is reduced by 98% from 931Mb to 10Mb. This benchmark is not very
-     scientific, or even representative of real-life applications, but it
-     does demonstrate the memory usage benefits that this garbage collection
-     mechanism provides. The good thing is that the slowdown is always the
+     私のマシンでは、最初の命令は一貫しておよそ10.7秒かかるようです。
+     ところが、第2の命令にはおよそ11.4秒かかります。
+     これは、およそ7%の減速です。
+     しかしながら、スクリプトで使用されるメモリの最大量は、931MB から 10MB まで 98% 減ります。
+     このベンチマークはあまり学術的でもなく、現実のアプリケーションの代表でもありません。
+     しかし、このガベージコレクション機構が提供するメモリ使用量の利点を示します。
+     The good thing is that the slowdown is always the
      same 7%, for this particular script, while the memory saving
-     capabilities save more and more memory as more circular references are
+     capabilities save more and more memory as more 循環参照 are
      found during script execution.
     </para>
    </sect2>
@@ -598,17 +597,17 @@ time php -dzend.enable_gc=1 -dmemory_limit=-1 -n example2.php
    <sect2 xml:id="features.gc.performance-considerations.internal-stats">
     <title>PHP 内部の GC 統計</title>
     <para>
-     It is possible to coax a little bit more information about how the
-     garbage collection mechanism is run from within PHP. But in order to do
-     so, you will have to re-compile PHP to enable the benchmark and
-     data-collecting code. You will have to set the <literal>CFLAGS</literal>
-     environment variable to <literal>-DGC_BENCH=1</literal> prior to running
-     <literal>./configure</literal> with your desired options. The following
-     sequence should do the trick:
+     ガベージコレクション機構がPHP 内部から実行される方法に関して、
+     情報をもう少し上手に扱うことができます。
+     しかし、そうするためには、ベンチマークとデータ収集コードを使用可能にするために、
+     PHP を再コンパイルしなければなりません。
+     希望するオプションで <literal>./configure</literal> を走らせる前に、
+     <literal>CFLAGS</literal> 環境変数を <literal>-DGC_BENCH=1</literal> に設定しなければなりません。
+     以下の順序で目的に達するでしょう。
     </para>
     <para>
      <example>
-      <title>Recompiling PHP to enable GC benchmarking</title>
+      <title>GC ベンチマーキングを使用可能にするために PHP を再コンパイル</title>
       <programlisting role="shell">
 <![CDATA[
 export CFLAGS=-DGC_BENCH=1
@@ -620,9 +619,8 @@ make
      </example>
     </para>
     <para>
-     When you run the above example code again with the newly built PHP
-     binary, you will see the following being shown after PHP has finished
-     execution:
+     新しくビルドした PHP バイナリで上記のコード例を前と同じように実行すると、
+     PHP の実行終了後に、下記が表示されているでしょう。
     </para>
     <para>
      <example>
@@ -646,8 +644,8 @@ ZOBJ  28506264   1527980     677581   1025731
      </example>
     </para>
     <para>
-     The most informative statistics are displayed in the first block. You
-     can see here that the garbage collection mechanism ran 110 times, and in
+     最も有益な統計は、最初のブロックで示されます。
+     You can see here that the garbage collection mechanism ran 110 times, and in
      total, more than 2 million memory allocations were freed during those
      110 runs. As soon as the garbage collection mechanism has run at least
      one time, the "Root buffer peak" is always 10000.
