@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- $Revision$ -->
-<!-- EN-Revision: e12a44b36935e90bf1074a51a6db52bc871912cf Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 55884886a155156bcb33fd04a554955f7cbdd146 Maintainer: takagi Status: ready -->
 <!-- CREDITS: shimooka -->
 <refentry xml:id="pdostatement.fetchall" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -14,7 +14,7 @@
   <methodsynopsis>
    <type>array</type><methodname>PDOStatement::fetchAll</methodname>
    <methodparam choice="opt"><type>int</type><parameter>fetch_style</parameter><initializer>PDO::FETCH_BOTH</initializer></methodparam>
-   <methodparam choice="opt"><type>int</type><parameter>fetch_argument</parameter><initializer>0</initializer></methodparam>
+   <methodparam choice="opt"><type>mixed</type><parameter>fetch_argument</parameter></methodparam>
    <methodparam choice="opt"><type>array</type><parameter>ctor_args</parameter><initializer>array()</initializer></methodparam>
   </methodsynopsis>
 
@@ -33,19 +33,19 @@
       </para>
       <para>
        結果セットから単一カラムの全ての値を含む配列を返す場合、
-       <literal>PDO::FETCH_COLUMN</literal> を指定します。
+       <constant>PDO::FETCH_COLUMN</constant> を指定します。
        <parameter>column-index</parameter> パラメータにどのカラムを返すかを
        指定することができます。
       </para>
       <para>
        結果セットから単一カラムの一意な値のみ取得する場合、
-       <literal>PDO::FETCH_UNIQUE</literal> をビット OR した
-       <literal>PDO::FETCH_COLUMN</literal> を指定します。
+       <constant>PDO::FETCH_UNIQUE</constant> をビット OR した
+       <constant>PDO::FETCH_COLUMN</constant> を指定します。
       </para>
       <para>
        指定したカラムの値によってグループ化した連想配列を返す場合、
-       <literal>PDO::FETCH_GROUP</literal> をビット OR した
-       <literal>PDO::FETCH_COLUMN</literal> を指定します。
+       <constant>PDO::FETCH_GROUP</constant> をビット OR した
+       <constant>PDO::FETCH_COLUMN</constant> を指定します。
       </para>
      </listitem>
     </varlistentry>
@@ -64,7 +64,13 @@
         <listitem>
          <para>
           <constant>PDO::FETCH_CLASS</constant>:
-           取得した結果を格納するクラス名を設定します。
+           ここで指定したクラスのインスタンスを返します。各行のカラムがクラスのプロパティ名にマッピングされます。
+         </para>
+        </listitem>
+        <listitem>
+         <para>
+          <constant>PDO::FETCH_FUNC</constant>:
+          ここで指定した関数をコールした結果を返します。各行のカラムを関数コール時のパラメータとします。
          </para>
         </listitem>
        </itemizedlist>
@@ -120,7 +126,7 @@ print_r($result);
 ?>
 ]]>
     </programlisting>
-    &example.outputs;
+    &example.outputs.similar;
     <screen>
 <![CDATA[
 Fetch all of the remaining rows in the result set:
@@ -165,7 +171,7 @@ var_dump($result);
 ?>
 ]]>
     </programlisting>
-    &example.outputs;
+    &example.outputs.similar;
     <screen>
 <![CDATA[
 Array(3)
@@ -205,7 +211,7 @@ var_dump($sth->fetchAll(PDO::FETCH_COLUMN|PDO::FETCH_GROUP));
 ?>
 ]]>
     </programlisting>
-    &example.outputs;
+    &example.outputs.similar;
     <screen>
 <![CDATA[
 array(3) {
@@ -230,6 +236,90 @@ array(3) {
   }
 }
 
+]]>
+    </screen>
+   </example>
+   <example><title>各結果用のクラスのインスタンス作成</title>
+    <para>
+     次の例は、
+     <constant>PDO::FETCH_CLASS</constant> の振る舞いを示すものです。
+    </para>
+    <programlisting role="php">
+<![CDATA[
+<?php
+class fruit {
+    public $name;
+    public $colour;
+}
+
+$sth = $dbh->prepare("SELECT name, colour FROM fruit");
+$sth->execute();
+
+$result = $sth->fetchAll(PDO::FETCH_CLASS, "fruit");
+var_dump($result);
+?>
+]]>
+    </programlisting>
+    &example.outputs.similar;
+    <screen>
+<![CDATA[
+array(3) {
+  [0]=>
+  object(fruit)#1 (2) {
+    ["name"]=>
+    string(5) "apple"
+    ["colour"]=>
+    string(5) "green"
+  }
+  [1]=>
+  object(fruit)#2 (2) {
+    ["name"]=>
+    string(4) "pear"
+    ["colour"]=>
+    string(6) "yellow"
+  }
+  [2]=>
+  object(fruit)#3 (2) {
+    ["name"]=>
+    string(10) "watermelon"
+    ["colour"]=>
+    string(4) "pink"
+  }
+}
+]]>
+    </screen>
+   </example>
+   <example><title>各結果に対する関数コール</title>
+    <para>
+     次の例は、
+     <constant>PDO::FETCH_FUNC</constant> の振る舞いを示すものです。
+    </para>
+    <programlisting role="php">
+<![CDATA[
+<?php
+function fruit($name, $colour) {
+    return "{$name}: {$colour}";
+}
+
+$sth = $dbh->prepare("SELECT name, colour FROM fruit");
+$sth->execute();
+
+$result = $sth->fetchAll(PDO::FETCH_FUNC, "fruit");
+var_dump($result);
+?>
+]]>
+    </programlisting>
+    &example.outputs.similar;
+    <screen>
+<![CDATA[
+array(3) {
+  [0]=>
+  string(12) "apple: green"
+  [1]=>
+  string(12) "pear: yellow"
+  [2]=>
+  string(16) "watermelon: pink"
+}
 ]]>
     </screen>
    </example>
