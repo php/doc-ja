@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: fd886889b78b41f4672747b15d3efbf1883fb4e0 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 7214d04a66fb2e93d8156f8995b01b858e12e3f8 Maintainer: takagi Status: working -->
 
 <phpdoc:classref xml:id="class.mongocursorexception" xmlns:phpdoc="http://php.net/ns/phpdoc" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xi="http://www.w3.org/2001/XInclude">
 
@@ -36,9 +36,10 @@
       いったんカーソルをリセットしてからやりなおしてください。
      </para>
     </listitem>
+
     <listitem>
      <para>
-      さまざまな送信エラー
+      Get next batch send errors
      </para>
      <para>
       Code: 1
@@ -48,6 +49,7 @@
       データベースが立ち上がっていることとネットワークが正常であることを確認してください。
      </para>
     </listitem>
+
     <listitem>
      <para>
       <literal>cursor not found</literal>
@@ -64,25 +66,35 @@
       を参照ください)。
      </para>
     </listitem>
+
     <listitem>
      <para>
-      さまざまなデータベースエラー
+      Couldn't get response header.
      </para>
      <para>
       Code: 4
      </para>
+    </listitem>
+
+    <listitem>
      <para>
-      データベースへのクエリで問題が発生しました。
-      エラーメッセージを見れば何が悪かったかがわかりますが、
-      データベースのログで詳細を調べることもできます。
+      <literal>cursor->buf.pos is null</literal>
+     </para>
+     <para>
+      Code: 3
+     </para>
+     <para>
+      This may indicate you are out of hard driver space or some other 
+      extraordinary circumstance.
      </para>
     </listitem>
+
     <listitem>
      <para>
       <literal>couldn't get response header</literal>
      </para>
      <para>
-      Code: 3
+      Code: 4
      </para>
      <para>
       ドライバがデータベースからのリプライヘッダを取得できず、取得をあきらめました。
@@ -90,6 +102,7 @@
       もう一度クエリを実行してみましょう。
      </para>
     </listitem>
+
     <listitem>
      <para>
       <literal>no db response</literal>
@@ -104,16 +117,7 @@
       データベースがその応答を返さなかったことを意味します。
      </para>
     </listitem>
-    <listitem>
-     <para>
-      <literal>no db response</literal>
-     </para>
-     <para>
-      Code: 5
-     </para>
-     <para>
-     </para>
-    </listitem>
+
     <listitem>
      <para>
       <literal>bad response length: %d, max: %d, did the db assert?</literal>
@@ -128,9 +132,10 @@
       0 未満の応答は、たいていデータベースのアサーションが発生したことを意味します。
      </para>
     </listitem>
+
     <listitem>
      <para>
-      <literal>incomplete header/response</literal>
+      <literal>incomplete header</literal>
      </para>
      <para>
       Code: 7
@@ -141,6 +146,59 @@
       おそらくネットワークの問題でしょう。
      </para>
     </listitem>
+
+    <listitem>
+     <para>
+      <literal>incomplete response</literal>
+     </para>
+     <para>
+      Code: 8
+     </para>
+     <para>
+      Highly unusual.  Occurs if the database response started out correctly, 
+      but broke off in the middle.  Probably indicates a network problem.
+     </para>
+    </listitem>
+
+    <listitem>
+     <para>
+      <literal>couldn't find a response</literal>
+     </para>
+     <para>
+      Code: 9
+     </para>
+     <para>
+      If the response was cached and now cannot be located.
+     </para>
+    </listitem>
+
+    <listitem>
+     <para>
+      <literal>error getting socket</literal>
+     </para>
+     <para>
+      Code: 10
+     </para>
+     <para>
+      The socket was closed or encountered an error.  The driver should 
+      automatically reconnect (if possible) on the next operation.
+     </para>
+    </listitem>
+
+    <listitem>
+     <para>
+      <literal>couldn't find reply, please try again</literal>
+     </para>
+     <para>
+      Code: 11
+     </para>
+     <para>
+      The driver saves any database responses it cannot immediately match with a 
+      request. This exception occurs if the driver has already passed your 
+      request's response and cannot find your response in its cache.
+     </para>
+    </listitem>
+
     <listitem>
      <para>
       <literal>error getting database response: errstr</literal>
@@ -153,40 +211,47 @@
       Windows では、エラーメッセージの先頭に "WSA" がつきます。
      </para>
     </listitem>
+
     <listitem>
      <para>
-      <literal>error getting database response: &lt;various&gt;</literal>
+      <literal>Timeout error</literal>
      </para>
      <para>
-      Code: 8
+      Code: 13
      </para>
      <para>
-      ソケット層で何か問題が発生しました。
-      C のソケットライブラリからのエラーを返します。
+      If there was an error while waiting for a query to complete.
      </para>
     </listitem>
+
     <listitem>
      <para>
-      <literal>couldn't find a response</literal>
+      <literal>couldn't send query: &lt;various&gt;</literal>
      </para>
      <para>
-      Code: 9
+      Code: 14
      </para>
      <para>
-      レスポンスがキャッシュされましたが、その場所を特定できませんでした。
+      C socket error on send.
      </para>
     </listitem>
-    <listitem>
-     <para>
-      さまざまなメッセージ
-     </para>
-     <para>
-      Code: 10
-     </para>
-     <para>
-      データベースからは何もコードが返されませんでした。
-     </para>
-    </listitem>
+   </itemizedlist>
+  </section>
+
+
+  <section>
+   <title>Errors passed through by the database</title>
+   <para>
+    Database errors should always trigger MongoCursorExceptions on queries. 
+    Error messages and codes are sent directly from the database and you should
+    be able to see matching errors in the database log.
+   </para>
+
+   <para>
+    A few common database errors are listed below:
+   </para>
+
+   <itemizedlist>
     <listitem>
      <para>
       <literal>E11000 duplicate key error index: foo.bar.$X  dup key: { /* ... */ }</literal>
@@ -195,7 +260,22 @@
       Code: 11000
      </para>
      <para>
-      キーの重複を表すデータベースエラー。
+      Database error for duplicate keys.
+     </para>
+    </listitem>
+
+    <listitem>
+     <para>
+      <literal>not master</literal>
+     </para>
+     <para>
+      Codes: 10107, 13435, and 10058
+     </para>
+     <para>
+      Not master errors, piped through by the database.  Each of these will 
+      cause the driver to disconnect and attempt to find a new master.  The
+      actual error you get on failover may not be a "not master" error, 
+      depending on when the change in master occurs.
      </para>
     </listitem>
    </itemizedlist>
