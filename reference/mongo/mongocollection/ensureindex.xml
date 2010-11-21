@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 83d670adaa1c2320bedfb0f5c47e0aa703ba5cce Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 7214d04a66fb2e93d8156f8995b01b858e12e3f8 Maintainer: takagi Status: ready -->
 
 <refentry xml:id="mongocollection.ensureindex" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -87,6 +87,18 @@
           このオプションを指定すると、インデックスの作成に失敗したときに
           MongoCursorException をスローします。
          </para>
+         <para>
+          レプリケーションを使っていてマスタを変更している場合、もし "safe"
+          を使っていればドライバはマスタとの接続を切断して例外をスローし、
+          次の操作時に新しいマスタを探そうとします
+          (新しいマスタに対して操作を再試行するかどうかは
+          アプリケーション側で判断しなければなりません)。
+         </para>
+         <para>
+          レプリカセットで "safe" を <emphasis>使わずに</emphasis>
+          マスタを変更する場合は、ドライバがその変更について知るすべがありません。
+          そのため、何もエラーを出さずに書き込みに失敗し続けます。
+         </para>
         </listitem>
         <listitem>
          <para>
@@ -133,10 +145,39 @@
         1.0.2 より前のバージョンでは二番目のパラメータはオプションの boolean
         値で、一意なインデックスを指定するものでした。
        </entry>
+       <entry>1.0.11</entry>
+       <entry>
+        "safe" は必要に応じてマスタのフェイルオーバーを行うようになりました。
+       </entry>
+       <entry>
+        インデックス名 (自動生成されたものあるいは設定したもののどちらでも)
+        の長さが 128 バイトを超えた場合に
+        <classname>MongoException</classname> をスローするようになりました。
+       </entry>
       </row>
      </tbody>
     </tgroup>
    </informaltable>
+  </para>
+ </refsect1>
+
+ <refsect1 role="errors">
+  &reftitle.errors;
+  <para>
+   インデックス名 (自動生成されたものあるいは設定したもののどちらでも)
+   の長さが 128 バイトを超えた場合に
+   <classname>MongoException</classname> をスローします
+   (バージョン 1.0.11 以降)。
+  </para>
+  <para>
+   "safe" オプションを設定しているときにインデックスの作成に失敗すると
+   <classname>MongoCursorException</classname> をスローします。
+  </para>
+  <para>
+   "safe" オプションを 1 より大きな値に設定しているときに
+   <literal>MongoCollection::$wtimeout</literal>
+   ミリ秒でデータベース操作をレプリケーションできなければ
+   <classname>MongoCursorTimeoutException</classname> をスローします。
   </para>
  </refsect1>
 

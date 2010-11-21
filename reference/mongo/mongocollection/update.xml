@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 1eb68ccad461defb2ed0594193653b9e91c003ff Maintainer: takagi Status: ready -->
+<!-- EN-Revision: e4d35a1e03d267d36168f7b93eb27cc5789372bb Maintainer: takagi Status: ready -->
 
 <refentry xml:id="mongocollection.update" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -89,6 +89,18 @@
           <classname>MongoCursorException</classname> をスローします。
          </para>
          <para>
+          レプリケーションを使っていてマスタを変更している場合、もし "safe"
+          を使っていればドライバはマスタとの接続を切断して例外をスローし、
+          次の操作時に新しいマスタを探そうとします
+          (新しいマスタに対して操作を再試行するかどうかは
+          アプリケーション側で判断しなければなりません)。
+         </para>
+         <para>
+          レプリカセットで "safe" を <emphasis>使わずに</emphasis>
+          マスタを変更する場合は、ドライバがその変更について知るすべがありません。
+          そのため、何もエラーを出さずに書き込みに失敗し続けます。
+         </para>
+         <para>
           <literal>safe</literal> が整数値の場合は、
           指定した数のマシンで更新が成功するまでは成功したと見なしません
           (処理がタイムアウトした場合は例外をスローします。wtimeout を参照ください)。
@@ -167,6 +179,12 @@
         のみでした)、さらに "fsync" オプションが追加されました。
        </entry>
       </row>
+      <row>
+       <entry>1.0.11</entry>
+       <entry>
+        "safe" が設定されている場合は、"not master" エラーで接続を切断するようになりました。
+       </entry>
+      </row>
      </tbody>
     </tgroup>
    </informaltable>
@@ -242,6 +260,36 @@ array(3) {
 }
 ]]>
    </screen>
+   <para>
+    <literal>newobj</literal> が $ 演算子を含まない場合、upsert
+    は新しいドキュメントを単体で作成します。これは、通常の update の挙動と同じです。
+    update で $ 演算子を使わなければ、ドキュメント全体が上書きされます。
+   </para>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+$c->update(array("name" => "joe"), array("username" => "joe312", "createdAt" => new MongoDate()), 
+    array("upsert" => true));
+
+?>
+]]>
+   </programlisting>
+   &example.outputs.similar;
+   <screen>
+<![CDATA[
+array(3) {
+  ["_id"]=>
+  object(MongoId)#10 (0) {
+  }
+  ["username"]=>
+  string(6) "joe312"
+  ["createdAt"]=>
+  object(MongoDate)#4 (0) {
+  }
+}
+]]>
+   </screen>
   </example>
   <example>
    <title><function>MongoCollection::update</function> での複数更新</title>
@@ -269,7 +317,8 @@ $people->update(array("birthday" => $today), array('$set' => array('gift' => $su
  <refsect1 role="seealso">
   &reftitle.seealso;
   <para>
-   MongoDB コアドキュメントの <link xlink:href="&url.mongodb.dochub.update;">update</link>
+   <link linkend="mongo.updates">更新に関するドキュメント</link> および
+   <link xlink:href="&url.mongodb.dochub.update;">MongoDB コアメント</link>
    を参照ください。
   </para>
  </refsect1>
