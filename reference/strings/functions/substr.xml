@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 7b4e2f074715911e58dbc6c2dee54d5316c66131 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 3ed5f72b6c23bcaac482f5cc8855b4535ef6d451 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: shimooka -->
 <refentry xmlns="http://docbook.org/ns/docbook" xml:id="function.substr">
  <refnamediv>
@@ -30,7 +30,7 @@
      <term><parameter>string</parameter></term>
      <listitem>
       <para>
-       入力文字列。
+       入力文字列。最低 1 文字以上を指定しなければなりません。
       </para>
      </listitem>
     </varlistentry>
@@ -82,10 +82,10 @@ $rest = substr("abcdef", -3, 1); // "d" を返す
       <para>
        <parameter>length</parameter> が指定され、かつ負である場合、
        <parameter>string</parameter> の終端から多くの文字が省略されます
-       (<parameter>start</parameter> が負の場合、
-       開始位置は文字列の終端を過ぎているので) 。
+       (<parameter>start</parameter> が負の場合は、
+       開始位置を算出したあとで)。
        もし <parameter>start</parameter> が切り出し位置を超える場合、
-       空文字が返されます。
+       false が返されます。
       </para>
       <para>
        <parameter>length</parameter> が指定され、かつ <literal>0</literal> である場合は、
@@ -102,7 +102,7 @@ $rest = substr("abcdef", -3, 1); // "d" を返す
 <?php
 $rest = substr("abcdef", 0, -1);  // "abcde" を返す
 $rest = substr("abcdef", 2, -1);  // "cde" を返す
-$rest = substr("abcdef", 4, -4);  // "" を返す
+$rest = substr("abcdef", 4, -4);  // false を返す
 $rest = substr("abcdef", -3, -1); // "de" を返す
 ?>
 ]]>
@@ -117,7 +117,33 @@ $rest = substr("abcdef", -3, -1); // "de" を返す
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
-   文字列の一部を返します。&return.falseforfailure;。
+   文字列の一部を返します。&return.falseforfailure;。あるいは空文字列を返します。
+  </para>
+ </refsect1>
+
+ <refsect1 role="changelog">
+  &reftitle.changelog;
+  <para>
+   <informaltable>
+    <tgroup cols="2">
+     <thead>
+      <row>
+       <entry>&Version;</entry>
+       <entry>&Description;</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry>5.2.2</entry>
+       <entry>
+        <parameter>start</parameter> が負の切り出しを意味したり
+        切り出し位置を超える値になった場合に false を返すようになりました。
+        これより前のバージョンでは、空文字列を返していました。
+       </entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </informaltable>
   </para>
  </refsect1>
 
@@ -145,7 +171,41 @@ echo $string[strlen($string)-1]; // f
 ?>
 ]]>
     </programlisting>
-   </example>   
+   </example> 
+   <example>
+    <title><function>substr</function> でのキャストの挙動</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+class apple {
+    public function __toString() {
+        return "green";
+    }
+}
+
+echo "1) ".var_export(substr("pear", 0, 2), true).PHP_EOL;
+echo "2) ".var_export(substr(54321, 0, 2), true).PHP_EOL;
+echo "3) ".var_export(substr(new apple(), 0, 2), true).PHP_EOL;
+echo "4) ".var_export(substr(true, 0, 1), true).PHP_EOL;
+echo "5) ".var_export(substr(false, 0, 1), true).PHP_EOL;
+echo "6) ".var_export(substr("", 0, 1), true).PHP_EOL;
+echo "7) ".var_export(substr(1.2e3, 0, 4), true).PHP_EOL;
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+1) 'pe'
+2) '54'
+3) 'gr'
+4) '1'
+5) false
+6) false
+7) '1200'
+]]>
+    </screen>
+   </example>
   </para>
  </refsect1>
 
