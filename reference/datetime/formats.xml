@@ -1,0 +1,944 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision$ -->
+<!-- EN-Revision: e1f7f5aecfbff94e0c39962e44f4581f46d6062b Maintainer: takagi Status: ready -->
+<!-- CREDITS: hnw -->
+<chapter xml:id="datetime.formats" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <title>日付と時刻の書式</title>
+
+ <para>
+  この章では
+  <function>strtotime</function>, <classname>DateTime</classname>
+  および <function>date_create</function> が解釈可能な全ての書式について説明します。
+  これらの書式はセクションごとにグループ分けされています。
+  たいていの場合、一つの日付・時刻文字列の中で異なるセクションの書式を併用することができます。
+  それぞれの書式について、説明と一緒に1個以上の例を示してあります。
+  シングルクォートで囲まれたフォーマットは大文字小文字を同一視します
+  (<literal>'t'</literal> は <literal>t</literal> とも
+  <literal>T</literal> とも書けます)。
+  ダブルクォートで囲まれたフォーマットは大文字小文字を同一視しません
+  (<literal>"T"</literal> は <literal>T</literal> としか書けません)。
+ </para>
+
+ <!--Time Formats: {{{-->
+ <section xml:id="datetime.formats.time">
+  <title>時刻の書式</title>
+  
+  <table>
+   <title>シンボル一覧</title>
+   <tgroup cols="3">
+    <thead>
+     <row>
+      <entry>シンボル</entry>
+      <entry>書式</entry>
+      <entry>例</entry>
+     </row>
+    </thead>
+    <tbody>
+     <row>
+      <entry><literal>frac</literal></entry>
+      <entry>. [0-9]+</entry>
+      <entry>".21342", ".85"</entry>
+     </row>
+     <row>
+      <entry><literal>hh</literal></entry>
+      <entry>"0"?[1-9] | "1"[0-2]</entry>
+      <entry>"04", "7", "12"</entry>
+     </row>
+     <row>
+      <entry><literal>HH</literal></entry>
+      <entry>[01][0-9] | "2"[0-4]</entry>
+      <entry>"04", "7", "19"</entry>
+     </row>
+     <row>
+      <entry><literal>meridian</literal></entry>
+      <entry>[AaPp] .? [Mm] .? [\0\t ]</entry>
+      <entry>"A.m.", "pM", "am."</entry>
+     </row>
+     <row>
+      <entry><literal>MM</literal></entry>
+      <entry>[0-5][0-9]</entry>
+      <entry>"00", "12", "59"</entry>
+     </row>
+     <row>
+      <entry><literal>II</literal></entry>
+      <entry>[0-5][0-9]</entry>
+      <entry>"00", "12", "59"</entry>
+     </row>
+     <row>
+      <entry><literal>space</literal></entry>
+      <entry>[ \t]</entry>
+      <entry></entry>
+     </row>
+     <row>
+      <entry><literal>tz</literal></entry>
+      <entry>"("? [A-Za-z]{1,6} ")"? | [A-Z][a-z]+([_/][A-Z][a-z]+)+</entry>
+      <entry>"CEST", "Europe/Amsterdam", "America/Indiana/Knox"</entry>
+     </row>
+     <row>
+      <entry><literal>tzcorrection</literal></entry>
+      <entry>"GMT"? [+-] <literal>hh</literal> ":"? <literal>MM</literal>?</entry>
+      <entry>"+0400", "GMT-07:00", "-07:00"</entry>
+     </row>
+    </tbody>
+   </tgroup>
+  </table>
+
+  <table>
+   <title>12時間制の表記</title>
+   <tgroup cols="3">
+    <thead>
+     <row>
+      <entry>説明</entry>
+      <entry>書式</entry>
+      <entry>例</entry>
+     </row>
+    </thead>
+    <tbody>
+     <row>
+      <entry>時、午前/午後</entry>
+      <entry><literal>hh</literal> <literal>space</literal>? <literal>meridian</literal></entry>
+      <entry>"4 am", "5PM"</entry>
+     </row>
+     <row>
+      <entry>時、分、午前/午後</entry>
+      <entry><literal>hh</literal> [.:] <literal>MM</literal> <literal>space</literal>? <literal>meridian</literal></entry>
+      <entry>"4:08 am", "7:19P.M."</entry>
+     </row>
+     <row>
+      <entry>時、分、秒、午前/午後</entry>
+      <entry><literal>hh</literal> [.:] <literal>MM</literal> [.:] <literal>II</literal> <literal>space</literal>? <literal>meridian</literal></entry>
+      <entry>"4:08:37 am", "7:19:19P.M."</entry>
+     </row>
+     <row>
+      <entry>MS SQL (時、分、秒、端数、午前/午後), PHP 5.3 以降で利用可能</entry>
+      <entry><literal>hh</literal> ":" <literal>MM</literal> ":" <literal>II</literal> [.:] [0-9]+ <literal>meridian</literal></entry>
+      <entry>"4:08:39:12313am"</entry>
+     </row>
+    </tbody>
+   </tgroup>
+  </table>
+
+  <table>
+   <title>24時間制の表記</title>
+   <tgroup cols="3">
+    <thead>
+     <row>
+      <entry>説明</entry>
+      <entry>書式</entry>
+      <entry>例</entry>
+     </row>
+    </thead>
+    <tbody>
+     <row>
+      <entry>時、分</entry>
+      <entry>'t'? <literal>HH</literal> [.:] <literal>MM</literal></entry>
+      <entry>"04:08", "19.19", "T23:43"</entry>
+     </row>
+     <row>
+      <entry>時、分（コロンなし）</entry>
+      <entry>'t'? <literal>HH</literal> <literal>MM</literal></entry>
+      <entry>"0408", "t1919", "T2343"</entry>
+     </row>
+     <row>
+      <entry>時、分、秒</entry>
+      <entry>'t'? <literal>HH</literal> [.:] <literal>MM</literal> [.:] <literal>II</literal></entry>
+      <entry>"04.08.37", "t19:19:19"</entry>
+     </row>
+     <row>
+      <entry>時、分、秒（コロンなし）</entry>
+      <entry>'t'? <literal>HH</literal> <literal>MM</literal> <literal>II</literal></entry>
+      <entry>"040837", "T191919"</entry>
+     </row>
+     <row>
+      <entry>時、分、秒、タイムゾーン</entry>
+      <entry>'t'? <literal>HH</literal> [.:] <literal>MM</literal> [.:] <literal>II</literal> <literal>space</literal>? ( <literal>tzcorrection</literal> | <literal>tz</literal> )</entry>
+      <entry>"040837CEST", "T191919-0700"</entry>
+     </row>
+     <row>
+      <entry>時、分、秒、端数</entry>
+      <entry>'t'? <literal>HH</literal> [.:] <literal>MM</literal> [.:] <literal>II</literal> <literal>frac</literal></entry>
+      <entry>"04.08.37.81412", "19:19:19.532453"</entry>
+     </row>
+     <row>
+      <entry>タイムゾーン</entry>
+      <entry><literal>tz</literal> | <literal>tzcorrection</literal></entry>
+      <entry>"CEST", "Europe/Amsterdam", "+0430", "GMT-06:00"</entry>
+     </row>
+    </tbody>
+   </tgroup>
+  </table>
+ </section>
+ <!--}}}-->
+
+ <!--Date Formats: {{{-->
+ <section xml:id="datetime.formats.date">
+  <title>日付の書式</title>
+  <table>
+   <title>シンボル一覧</title>
+   <tgroup cols="3">
+    <thead>
+     <row>
+      <entry>シンボル</entry>
+      <entry>書式</entry>
+      <entry>例</entry>
+     </row>
+    </thead>
+    <tbody>
+     <row>
+      <entry><literal>daysuf</literal></entry>
+      <entry>"st" | "nd" | "rd" | "th"</entry>
+      <entry></entry>
+     </row>
+     <row>
+      <entry><literal>dd</literal></entry>
+      <entry>([0-2]?[0-9] | "3"[01]) <literal>daysuf</literal>?</entry>
+      <entry>"7th", "22nd", "31"</entry>
+     </row>
+     <row>
+      <entry><literal>DD</literal></entry>
+      <entry>"0" [0-9] | [1-2][0-9] | "3" [01]</entry>
+      <entry>"07", "31"</entry>
+     </row>
+     <row>
+      <entry><literal>m</literal></entry>
+      <entry>'january' | 'february' | 'march' | 'april' | 'may' | 'june' |
+      'july' | 'august' | 'september' | 'october' | 'november' | 'december' |
+      'jan' | 'feb' | 'mar' | 'apr' | 'may' | 'jun' | 'jul' | 'aug' | 'sep' |
+      'sept' | 'oct' | 'nov' | 'dec' | "I" | "II" | "III" | "IV" | "V" | "VI"
+      | "VII" | "VIII" | "IX" | "X" | "XI" | "XII"</entry>
+      <entry></entry>
+     </row>
+     <row>
+      <entry><literal>M</literal></entry>
+      <entry>'jan' | 'feb' | 'mar' | 'apr' | 'may' | 'jun' | 'jul' | 'aug' |
+      'sep' | 'sept' | 'oct' | 'nov' | 'dec'</entry>
+      <entry></entry>
+     </row>
+     <row>
+      <entry><literal>mm</literal></entry>
+      <entry>"0"? [0-9] | "1"[0-2]</entry>
+      <entry>"0", "04", "7", "12"</entry>
+     </row>
+     <row>
+      <entry><literal>MM</literal></entry>
+      <entry>"0" [0-9] | "1"[0-2]</entry>
+      <entry>"00", "04", "07", "12"</entry>
+     </row>
+     <row>
+      <entry><literal>y</literal></entry>
+      <entry>[0-9]{1,4}</entry>
+      <entry>"00", "78", "08", "8", "2008"</entry>
+     </row>
+     <row>
+      <entry><literal>yy</literal></entry>
+      <entry>[0-9]{2}</entry>
+      <entry>"00", "08", "78"</entry>
+     </row>
+     <row>
+      <entry><literal>YY</literal></entry>
+      <entry>[0-9]{4}</entry>
+      <entry>"2000", "2008", "1978"</entry>
+     </row>
+    </tbody>
+   </tgroup>
+  </table>
+
+  <table>
+   <title>各国ごとの表記法</title>
+   <tgroup cols="3">
+    <thead>
+     <row>
+      <entry>説明</entry>
+      <entry>書式</entry>
+      <entry>例</entry>
+     </row>
+    </thead>
+    <tbody>
+     <row>
+      <entry>アメリカ式の月、日</entry>
+      <entry><literal>mm</literal> "/" <literal>dd</literal></entry>
+      <entry>"5/12", "10/27"</entry>
+     </row>
+     <row>
+      <entry>アメリカ式の月、日、年</entry>
+      <entry><literal>mm</literal> "/" <literal>dd</literal> "/" <literal>y</literal></entry>
+      <entry>"12/22/78", "1/17/2006", "1/17/6"</entry>
+     </row>
+     <row>
+      <entry>スラッシュで区切られた、4桁の年、月、日</entry>
+      <entry><literal>YY</literal> "/" <literal>mm</literal> "/" <literal>dd</literal></entry>
+      <entry>"2008/6/30", "1978/12/22"</entry>
+     </row>
+     <row>
+      <entry>4桁の年、月 (GNU)</entry>
+      <entry><literal>YY</literal> "-" <literal>mm</literal></entry>
+      <entry>"2008-6", "2008-06", "1978-12"</entry>
+     </row>
+     <row>
+      <entry>ハイフンで区切られた、年、月、日</entry>
+      <entry><literal>y</literal> "-" <literal>mm</literal> "-" <literal>dd</literal></entry>
+      <entry>"2008-6-30", "78-12-22", "8-6-21"</entry>
+     </row>
+     <row>
+      <entry>ドットかタブかハイフンで区切られた、日、月、4桁の年</entry>
+      <entry><literal>dd</literal> [.\t-] <literal>mm</literal> [.-] <literal>YY</literal></entry>
+      <entry>"30-6-2008", "22.12\t1978"</entry>
+     </row>
+     <row>
+      <entry>ドットかタブで区切られた、日、月、2桁の年</entry>
+      <entry><literal>dd</literal> [.\t] <literal>mm</literal> "." <literal>yy</literal></entry>
+      <entry>"30.6.08", "22\t12\t78"</entry>
+     </row>
+     <row>
+      <entry>日、月の文字表記、年</entry>
+      <entry><literal>dd</literal> ([ \t.-])* <literal>m</literal> ([ \t.-])* <literal>y</literal></entry>
+      <entry>"30-June 2008", "22DEC78", "14 III 1879"</entry>
+     </row>
+     <row>
+      <entry>月の文字表記、4桁の年 (日は1日にリセットされる)</entry>
+      <entry><literal>m</literal> ([ \t.-])* <literal>YY</literal></entry>
+      <entry>"June 2008", "DEC1978", "March 1879"</entry>
+     </row>
+     <row>
+      <entry>4桁の年、月の文字表記 (日は1日にリセットされる)</entry>
+      <entry><literal>YY</literal> ([ \t.-])* <literal>m</literal></entry>
+      <entry>"2008 June", "1978-XII", "1879.MArCH"</entry>
+     </row>
+     <row>
+      <entry>月の文字表記、日、年</entry>
+      <entry><literal>m</literal> ([ .\t-])* <literal>dd</literal> [,.stndrh\t ]+ <literal>y</literal></entry>
+      <entry>"July 1st, 2008", "April 17, 1790", "May.9,78"</entry>
+     </row>
+     <row>
+      <entry>月の文字表記、日</entry>
+      <entry><literal>m</literal> ([ .\t-])* <literal>dd</literal> [,.stndrh\t ]*</entry>
+      <entry>"July 1st,", "Apr 17", "May.9"</entry>
+     </row>
+     <row>
+      <entry>日、月の文字表記</entry>
+      <entry><literal>d</literal> ([ .\t-])* <literal>m</literal></entry>
+      <entry>"1 July", "17 Apr", "9.May"</entry>
+     </row>
+     <row>
+      <entry>月の省略形、日、年</entry>
+      <entry><literal>M</literal> "-" <literal>DD</literal> "-" <literal>y</literal></entry>
+      <entry>"May-09-78", "Apr-17-1790"</entry>
+     </row>
+     <row>
+      <entry>年、月の省略形、日</entry>
+      <entry><literal>y</literal> "-" <literal>M</literal> "-" <literal>DD</literal></entry>
+      <entry>"78-Dec-22", "1814-MAY-17"</entry>
+     </row>
+     <row>
+      <entry>年 (年だけの指定)</entry>
+      <entry><literal>YY</literal></entry>
+      <entry>"1978", "2008"</entry>
+     </row>
+     <row>
+      <entry>月の文字表記 (月だけの指定)</entry>
+      <entry><literal>m</literal></entry>
+      <entry>"March", "jun", "DEC"</entry>
+     </row>
+    </tbody>
+   </tgroup>
+  </table>
+  
+  <table>
+   <title>ISO 8601 に準拠した表記法</title>
+   <tgroup cols="3">
+    <thead>
+     <row>
+      <entry>説明</entry>
+      <entry>書式</entry>
+      <entry>例</entry>
+     </row>
+    </thead>
+    <tbody>
+     <row>
+      <entry>年、月、日の8桁</entry>
+      <entry><literal>YY</literal> <literal>MM</literal> <literal>DD</literal></entry>
+      <entry>"15810726", "19780417", "18140517"</entry>
+     </row>
+     <row>
+      <entry>スラッシュで区切られた、4桁の年、月、日</entry>
+      <entry><literal>YY</literal> "/" <literal>MM</literal> "/" <literal>DD</literal></entry>
+      <entry>"2008/06/30", "1978/12/22"</entry>
+     </row>
+     <row>
+      <entry>ハイフンで区切られた、2桁の年、月、日</entry>
+      <entry><literal>yy</literal> "-" <literal>MM</literal> "-" <literal>DD</literal></entry>
+      <entry>"08-06-30", "78-12-22"</entry>
+     </row>
+     <row>
+      <entry>符号つきまたは符号なしの4桁の年、月、日</entry>
+      <entry>[+-]? <literal>YY</literal> "-" <literal>MM</literal> "-" <literal>DD</literal></entry>
+      <entry>"-0002-07-26", "+1978-04-17", "1814-05-17"</entry>
+     </row>
+    </tbody>
+   </tgroup>
+  </table>
+
+  <note>
+   <para>
+    シンボル <literal>y</literal> または <literal>yy</literal> を含む書式について、
+    100未満の年は特別な扱いになります。年が0から69までの間だった場合、
+    2000を足した数になります。
+    また、年が70から99までの間だった場合、1900を足した数になります。
+    つまり、"00-01-01" は "2000-01-01"
+    と解釈されます。
+   </para>
+  </note>
+
+  <note>
+   <para>
+    書式「ドットかタブで区切られた、日、月、2桁の年」
+    (<literal>dd</literal> [.\t] <literal>mm</literal> "."
+    <literal>yy</literal>) は年が61から99の間のときだけ機能します。
+    この範囲外の年を与えた場合には <emphasis>時刻の書式</emphasis> の
+    "<literal>HH</literal> [.:] <literal>MM</literal> [.:] <literal>SS</literal>" が優先されます。
+   </para>
+  </note>
+
+  <note>
+   <para>
+    書式「年 (年だけの指定)」は、時刻の指定が先に出現している場合のみ機能します。
+    そうでない場合、指定された4桁は
+    <literal>HH</literal> <literal>MM</literal> とみなされます。
+   </para>
+  </note>
+
+  <note>
+   <para>
+    シンボル <literal>dd</literal> と <literal>DD</literal> について、
+    オーバーフローやアンダーフローすることができます。
+    つまり、 0 日は先月の最終日の意味になりますし、
+    オーバーフローすると翌月に繰り越しになります。
+    このルールにより、"2008-08-00" は "2008-07-31" と同一になり、
+    "2008-06-31" は "2008-07-01" と同一になります
+    ( 6 月は 30 日までしかないので)。
+   </para>
+   <para>
+    また、シンボル <literal>mm</literal> と <literal>MM</literal> についても
+    0 を用いてアンダーフローすることができます。
+    0 月は前年の 12 月を意味します。
+    たとえば "2008-00-22" は "2007-12-22" と同一です。
+   </para>
+   <para>
+    もしこれらを併用し、日も月もアンダーフローした場合は次のようになります。
+    "2008-00-00" は、まず "2007-12-00" へと変換され、
+    さらに "2007-11-30" へと変換されます。
+    文字列 "0000-00-00" についても同様に "-0001-11-30" へと変形されます。
+    (ISO 8601 における -1 年は、予測的グレゴリオ暦 (proleptic Gregorian calendar)
+    で言うところの紀元前 2 年になります。)
+   </para>
+  </note>
+ </section>
+ <!--}}}-->
+
+ <!--Compound Formats: {{{-->
+ <section xml:id="datetime.formats.compound">
+  <title>複合的な書式</title>
+
+  <table>
+   <title>シンボル一覧</title>
+   <tgroup cols="3">
+    <thead>
+     <row>
+      <entry>シンボル</entry>
+      <entry>書式</entry>
+      <entry>例</entry>
+     </row>
+    </thead>
+    <tbody>
+     <row>
+      <entry><literal>DD</literal></entry>
+      <entry>"0" [0-9] | [1-2][0-9] | "3" [01]</entry>
+      <entry>"02", "12", "31"</entry>
+     </row>
+     <row>
+      <entry><literal>doy</literal></entry>
+      <entry>"00"[1-9] | "0"[1-9][0-9] | [1-2][0-9][0-9] | "3"[0-5][0-9] | "36"[0-6]</entry>
+      <entry>"36"[0-6] "000", "012", "366"</entry>
+     </row>
+     <row>
+      <entry><literal>frac</literal></entry>
+      <entry>. [0-9]+</entry>
+      <entry>".21342", ".85"</entry>
+     </row>
+     <row>
+      <entry><literal>hh</literal></entry>
+      <entry>"0"?[1-9] | "1"[0-2]</entry>
+      <entry>"04", "7", "12"</entry>
+     </row>
+     <row>
+      <entry><literal>HH</literal></entry>
+      <entry>[01][0-9] | "2"[0-4]</entry>
+      <entry>"04", "7", "19"</entry>
+     </row>
+     <row>
+      <entry><literal>meridian</literal></entry>
+      <entry>[AaPp] .? [Mm] .? [\0\t ]</entry>
+      <entry>"A.m.", "pM", "am."</entry>
+     </row>
+     <row>
+      <entry><literal>ii</literal></entry>
+      <entry>[0-5][0-9]</entry>
+      <entry>"04", "8", "59"</entry>
+     </row>
+     <row>
+      <entry><literal>II</literal></entry>
+      <entry>[0-5][0-9]</entry>
+      <entry>"04", "08", "59"</entry>
+     </row>
+     <row>
+      <entry><literal>M</literal></entry>
+      <entry>'jan' | 'feb' | 'mar' | 'apr' | 'may' | 'jun' | 'jul' | 'aug' | 'sep' | 'sept' | 'oct' | 'nov' | 'dec'</entry>
+      <entry></entry>
+     </row>
+     <row>
+      <entry><literal>MM</literal></entry>
+      <entry>[0-5][0-9]</entry>
+      <entry>"00", "12", "59"</entry>
+     </row>
+     <row>
+      <entry><literal>space</literal></entry>
+      <entry>[ \t]</entry>
+      <entry></entry>
+     </row>
+     <row>
+      <entry><literal>ss</literal></entry>
+      <entry>[0-5][0-9]</entry>
+      <entry>"04", "8", "59"</entry>
+     </row>
+     <row>
+      <entry><literal>SS</literal></entry>
+      <entry>[0-5][0-9]</entry>
+      <entry>"04", "08", "59"</entry>
+     </row>
+     <row>
+      <entry><literal>W</literal></entry>
+      <entry>"0"[1-9] | [1-4][0-9] | "5"[0-3]</entry>
+      <entry>"05", "17", "53"</entry>
+     </row>
+     <row>
+      <entry><literal>tzcorrection</literal></entry>
+      <entry>"GMT"? [+-] <literal>hh</literal> ":"? <literal>MM</literal>?</entry>
+      <entry>"+0400", "GMT-07:00", "-07:00"</entry>
+     </row>
+     <row>
+      <entry><literal>YY</literal></entry>
+      <entry>[0-9]{4}</entry>
+      <entry>"2000", "2008", "1978"</entry>
+     </row>
+    </tbody>
+   </tgroup>
+  </table>
+
+  <table>
+   <title>標準仕様/アプリケーションごとの表記法</title>
+   <tgroup cols="3">
+    <thead>
+     <row>
+      <entry>説明</entry>
+      <entry>書式</entry>
+      <entry>例</entry>
+     </row>
+    </thead>
+    <tbody>
+     <row>
+      <entry>Common Log Format</entry>
+      <entry><literal>dd</literal> "/" <literal>M</literal> "/" <literal>YY</literal> : <literal>HH</literal> ":" <literal>II</literal> ":" <literal>SS</literal> <literal>space</literal> <literal>tzcorrection</literal></entry>
+      <entry>"10/Oct/2000:13:55:36 -0700"</entry>
+     </row>
+     <row>
+      <entry>EXIF</entry>
+      <entry><literal>YY</literal> ":" <literal>MM</literal> ":" <literal>DD</literal> " " <literal>HH</literal> ":" <literal>II</literal> ":" <literal>SS</literal></entry>
+      <entry>"2008:08:07 18:11:31"</entry>
+     </row>
+     <row>
+      <entry>ISO の年、 ISO の週番号</entry>
+      <entry><literal>YY</literal> "-"? "W" <literal>W</literal></entry>
+      <entry>"2008W27", "2008-W28"</entry>
+     </row>
+     <row>
+      <entry>ISO の年、 ISO の週番号、 ISO の曜日番号</entry>
+
+      <entry><literal>YY</literal> "-"? "W" <literal>W</literal> "-"? [0-7]</entry>
+      <entry>"2008W273", "2008-W28-3"</entry>
+     </row>
+     <row>
+      <entry>MySQL</entry>
+      <entry><literal>YY</literal> "-" <literal>MM</literal> "-" <literal>DD</literal> " " <literal>HH</literal> ":" <literal>II</literal> ":" <literal>SS</literal></entry>
+      <entry>"2008-08-07 18:11:31"</entry>
+     </row>
+     <row>
+      <entry>PostgreSQL: 年、日番号</entry>
+      <entry><literal>YY</literal> "."? <literal>doy</literal></entry>
+      <entry>"2008.197", "2008197"</entry>
+     </row>
+     <row>
+      <entry>SOAP</entry>
+      <entry><literal>YY</literal> "-" <literal>MM</literal> "-" <literal>DD</literal> "T" <literal>HH</literal> ":" <literal>II</literal> ":" <literal>SS</literal> <literal>frac</literal> <literal>tzcorrection</literal>?</entry>
+      <entry>"2008-07-01T22:35:17.02", "2008-07-01T22:35:17.03+08:00"</entry>
+     </row>
+     <row>
+      <entry>Unix タイムスタンプ</entry>
+      <entry>"@" "-"? [0-9]+</entry>
+      <entry>"@1215282385"</entry>
+     </row>
+     <row>
+      <entry>XMLRPC</entry>
+      <entry><literal>YY</literal> <literal>MM</literal> <literal>DD</literal> "T" <literal>hh</literal> ":" <literal>II</literal> ":" <literal>SS</literal></entry>
+      <entry>"20080701T22:38:07", "20080701T9:38:07"</entry>
+     </row>
+     <row>
+      <entry>XMLRPC (短縮形)</entry>
+      <entry><literal>YY</literal> <literal>MM</literal> <literal>DD</literal> 't' <literal>hh</literal> <literal>II</literal> <literal>SS</literal></entry>
+      <entry>"20080701t223807", "20080701T093807"</entry>
+     </row>
+     <row>
+      <entry>WDDX</entry>
+      <entry><literal>YY</literal> "-" <literal>mm</literal> "-" <literal>dd</literal> "T" <literal>hh</literal> ":" <literal>ii</literal> ":" <literal>ss</literal></entry>
+      <entry>"2008-7-1T9:3:37"</entry>
+     </row>
+    </tbody>
+   </tgroup>
+  </table>
+
+  <note>
+   <para>
+    書式「 ISO の年、 ISO の週番号」と
+    「 ISO の年、 ISO の週番号、 ISO の曜日番号」で使われている
+    "W" は大文字小文字を同一視しません。大文字の "W" だけが利用できます。
+   </para>
+   <para>
+    「 SOAP 」、「 XMRPC 」および「 WDDX 」の各書式中の
+    "T" は大文字小文字を同一視しません。大文字の "T" だけが利用できます。
+   </para>
+   <para>
+    （訳注）書式「 Common Log Format 」は、 Apache ログにおける時刻の書式です。
+   </para>
+   <para>
+    （訳注）書式「 ISO の年、 ISO の週番号」と
+    「 ISO の年、 ISO の週番号、 ISO の曜日番号」は、
+    ISO 8601で規定されている表記法です。
+    定義上、週が前年あるいは翌年に属すことがあるので注意してください。
+    たとえば、 ISO 8601 の定義では
+    2010 年の第 1 週は 1 月 3 日から 1 月 9 日までとなり、
+    2010 年の 1 月 1 日と 1 月 2 日は 2009 年の第 53 週に属します。
+   </para>
+  </note>
+ </section>
+ <!--}}}-->
+
+ <!--Relative Formats: {{{-->
+ <section xml:id="datetime.formats.relative">
+  <title>相対的な書式</title>
+
+  <table>
+   <title>シンボル一覧</title>
+   <tgroup cols="2">
+    <thead>
+     <row>
+      <entry>シンボル</entry>
+      <entry>書式</entry>
+     </row>
+    </thead>
+    <tbody>
+     <row>
+      <entry><literal>dayname</literal></entry>
+      <entry>'sunday' | 'monday' | 'tuesday' | 'wednesday' | 'thursday' |
+      'friday' | 'saturday' | 'sun' | 'mon' | 'tue' | 'wed' | 'thu' | 'fri' |
+      'sat' | 'sun'</entry>
+     </row>
+     <row>
+      <entry><literal>daytext</literal></entry>
+      <entry>'weekday' | 'weekdays'</entry>
+     </row>
+     <row>
+      <entry><literal>number</literal></entry>
+      <entry>[+-]?[0-9]+</entry>
+     </row>
+     <row>
+      <entry><literal>ordinal</literal></entry>
+      <entry>'first' | 'second' | 'third' | 'fourth' | 'fifth' | 'sixth' |
+      'seventh' | 'eight' | 'ninth' | 'tenth' | 'eleventh' | 'twelfth' |
+      'next' | 'last' | 'previous' | 'this'</entry>
+     </row>
+     <row>
+      <entry><literal>reltext</literal></entry>
+      <entry>'next' | 'last' | 'previous' | 'this'</entry>
+     </row>
+     <row>
+      <entry><literal>space</literal></entry>
+      <entry>[ \t]+</entry>
+     </row>
+     <row>
+      <entry><literal>unit</literal></entry>
+      <entry>(('sec' | 'second' | 'min' | 'minute' | 'hour' | 'day' |
+      'fortnight' | 'forthnight' | 'month' | 'year') 's'?) | 'weeks' |
+      <literal>daytext</literal></entry>
+     </row>
+    </tbody>
+   </tgroup>
+  </table>
+
+  <table>
+   <title>日付に基づいた表記</title>
+   <tgroup cols="3">
+    <thead>
+     <row>
+      <entry>書式</entry>
+      <entry>説明</entry>
+      <entry>例</entry>
+     </row>
+    </thead>
+    <tbody>
+     <row>
+      <entry>'yesterday'</entry>
+      <entry>昨日の00:00:00</entry>
+      <entry>"yesterday 14:00"</entry>
+     </row>
+     <row>
+      <entry>'midnight'</entry>
+      <entry>時刻を00:00:00にします</entry>
+      <entry></entry>
+     </row>
+     <row>
+      <entry>'today'</entry>
+      <entry>時刻を00:00:00にします</entry>
+      <entry></entry>
+     </row>
+     <row>
+      <entry>'now'</entry>
+      <entry>今 - 単に無視されます</entry>
+      <entry></entry>
+     </row>
+     <row>
+      <entry>'noon'</entry>
+      <entry>時刻を12:00:00にします</entry>
+      <entry>"yesterday noon"</entry>
+     </row>
+     <row>
+      <entry>'tomorrow'</entry>
+      <entry>明日の00:00:00</entry>
+      <entry></entry>
+     </row>
+     <row>
+      <entry>'back of' <literal>hour</literal></entry>
+      <entry>指定された時の15分前</entry>
+      <entry>"back of 7pm", "back of 15"</entry>
+     </row>
+     <row>
+      <entry>'front of' <literal>hour</literal></entry>
+      <entry>指定された時の15分後</entry>
+      <entry>"front of 5am", "front of 23"</entry>
+     </row>
+     <row>
+      <entry>'first day' ' of'?</entry>
+      <entry>現在月の最初の日にします。
+      この書式に続けて月名を指定する使いかたが最適です。</entry>
+      <entry>"first day of January 2008"</entry>
+     </row>
+     <row>
+      <entry>'last day' ' of'?</entry>
+      <entry>現在月の最後の日にします。
+      この書式に続いて月名を指定する使いかたが最適です。</entry>
+      <entry>"last day of next month"</entry>
+     </row>
+     <row>
+      <entry><literal>ordinal</literal> <literal>space</literal> <literal>dayname</literal> <literal>space</literal> 'of'</entry>
+      <entry>現在月の<literal>x</literal>番目の曜日を計算します。</entry>
+      <entry>"first sat of July 2008"</entry>
+     </row>
+     <row>
+      <entry>'last' <literal>space</literal> <literal>dayname</literal> <literal>space</literal> 'of'</entry>
+      <entry>現在月の <emphasis>最後の</emphasis> 曜日を計算します。</entry>
+      <entry>"last sat of July 2008"</entry>
+     </row>
+     <row>
+      <entry><literal>number</literal> <literal>space</literal>? (<literal>unit</literal> | 'week')</entry>
+      <entry>値を数値で指定するような、相対的な時間指定を処理します。</entry>
+      <entry>"+5 weeks", "12 day", "-7 weekdays"</entry>
+     </row>
+     <row>
+      <entry><literal>ordinal</literal> <literal>space</literal> <literal>unit</literal></entry>
+      <entry>値を英単語で指定するような、相対的な時間指定を処理します。</entry>
+      <entry>"fifth day", "second month"</entry>
+     </row>
+     <row>
+      <entry>'ago'</entry>
+      <entry>直前に指定された相対的な時間指定について、正負反転します。</entry>
+      <entry>"2 days ago", "8 days ago 14:00", "2 months 5 days ago", "2 months ago 5 days", "2 days ago ago"</entry>
+     </row>
+     <row>
+      <entry><literal>dayname</literal></entry>
+      <entry>現在からみて次にやってくる、指定された曜日にします。</entry>
+      <entry>"Monday"</entry>
+     </row>
+     <row>
+      <entry><literal>reltext</literal> <literal>space</literal> 'week'</entry>
+      <entry>特別な書式 "weekday + last/this/next week" を処理します。</entry>
+      <entry>"Monday next week"</entry>
+     </row>
+    </tbody>
+   </tgroup>
+  </table>
+
+  <note>
+   <para>
+    相対的な記述は、相対的でない記述の <emphasis>後で</emphasis> 処理されます。
+    このため、 "+1 week july 2008" と "july 2008 +1 week" とは同一になります。
+   </para>
+   <para>
+    ただし、 "yesterday"、 "midnight"、 "today"、 "noon" そして "tomorrow"
+    はこのルールの例外です。
+    つまり、 "tomorrow 11:00" と "11:00 tomorrow" は異なります。
+    たとえば、今日が2008年7月23日だとしましょう。
+    このときの1つ目の結果は "2008-07-24 11:00" ですが、
+    2つ目の方は "2008-07-24 00:00" となります。
+    このような結果になる理由は、
+    これら6つの記述（訳注:5つの間違いでしょう）が現在時刻に直接影響するためです。
+   </para>
+  </note>
+
+  <note>
+   <para>
+    日付/時刻文字列中の曜日指定が現在の曜日と同じ場合は、
+    以下の点に注意してください。
+    この場合、日付文字列中の曜日は、曜日を明示的に指定しなかった場合に
+    日付文字列の相対的でない部分から計算される曜日と同一ではありますが、
+    指定しなくても同じというわけではありません。
+   </para>
+   <orderedlist>
+    <listitem>
+     <simpara>
+      "<literal>dayname</literal>" は、 日付を進め <emphasis>ません</emphasis> 。
+      (例: "Wed July 23rd, 2008" は "2008-07-23" の意味です。)
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      "<literal>number</literal> <literal>dayname</literal>" は、
+      日付を進め<emphasis>ません</emphasis> 。
+      (例: "1 wednesday july 23rd, 2008" は "2008-07-23" の意味です。)
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      "<literal>number</literal> week <literal>dayname</literal>" は、
+      指定された週を加算しますが、
+      さらに日付を進めることは<emphasis>しません</emphasis>。
+      この場合、"<literal>number</literal> week" と
+      "<literal>dayname</literal>" は 2 つの別個のブロックとなります。
+      (例: "+1 week wednesday july 23rd, 2008" は "2008-07-30" の意味です。)
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      "<literal>ordinal</literal> <literal>dayname</literal>"
+      は、日付を別の日まで進め<emphasis>ます</emphasis>。
+      (例: "first wednesday july 23rd, 2008" は "2008-07-30" の意味です。)
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      "<literal>number</literal> week <literal>ordinal</literal>
+      <literal>dayname</literal>" は、まず指定された週を加算し、
+      それから日付を別の日まで<emphasis>進めます</emphasis>。
+      この場合、 "<literal>number</literal> week" と
+      "<literal>ordinal</literal> <literal>dayname</literal>"
+      は2つの別個のブロックとなります。
+      (例: "+1 week first wednesday july 23rd, 2008" は "2008-08-06" の意味です。)
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      （訳注：この項目は項番4と同一のようです。おそらく編集上のミスでしょう）
+      "<literal>ordinal</literal> <literal>dayname</literal>" は、
+      日付を別の日まで進め<emphasis>ます</emphasis>。
+      (例: "first wednesday july 23rd, 2008" は "2008-07-30" の意味です。)
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      "<literal>ordinal</literal> <literal>dayname</literal> 'of' "
+      は日付を進め <emphasis>ません</emphasis> 。
+      (例: "first wednesday of july 23rd, 2008" は "2008-07-02" の意味です。
+      なぜなら、'of'を含む一連の語群 'first wednesday of july' が
+      相対的な書式として処理されることで
+      日付を同月の '1' 日にリセットしてしまい、'23rd' は無視されてしまうのです。)
+     </simpara>
+    </listitem>
+   </orderedlist>
+   <para>
+    また、書式 "<literal>ordinal</literal>
+    <literal>space</literal> <literal>dayname</literal>
+    <literal>space</literal> 'of' " と "'last' <literal>space</literal>
+    <literal>dayname</literal> <literal>space</literal> 'of' "
+    に含まれる "of" は少々特別扱いなので、注意してください。
+   </para>
+   <orderedlist>
+    <listitem>
+     <simpara>
+      日付を指定月の1日にします。
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      "<literal>ordinal</literal> <literal>dayname</literal> 'of' "
+      は日付を進め <emphasis>ません</emphasis> 。
+      (例: "first tuesday of july 2008" は "2008-07-01" の意味です。)
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      "<literal>ordinal</literal> <literal>dayname</literal> "
+      は日付を進め <emphasis>ます</emphasis> 。
+      (例: "first tuesday july 2008" は "2008-07-08" の意味です。上記の項番4を参照。)
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      "'last' <literal>dayname</literal> 'of' " は、
+      指定された曜日（<literal>dayname</literal>）の同月最後の日を返します。
+      (例: "last wed of july 2008" は "2008-07-30" の意味です。)
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      "'last' <literal>dayname</literal>" は、
+      現在日付からみて直前の、指定された曜日（<literal>dayname</literal>）を返します。
+      (例: "last wed july 2008" は "2008-06-25" の意味です。
+      まず "july 2008" を処理して現在日付を "2008-07-01" とみなし、
+      次に "last wed" により直前の水曜日、つまり "2008-06-25" へと移動します。)
+     </simpara>
+    </listitem>
+   </orderedlist>
+  </note>
+ </section>
+ <!--}}}-->
+
+</chapter>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"~/.phpdoc/manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=marker fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
+
