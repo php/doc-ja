@@ -49,23 +49,23 @@ $cursor = $c->find();
   </para>
 
   <section>
-   <title>How slaves are chosen</title>
+   <title>スレーブはどのように選ばれるか</title>
 
    <para>
-    Each instance of <classname>Mongo</classname> gets its own slave, randomly 
-    chosen from the readable slaves.  This holds, even if you are using 
-    persistent connections.  So, if we do something like:
+    各 <classname>Mongo</classname> インスタンスはそれぞれ自身のスレーブを持ち、
+    それは読み込み可能なスレーブの中からランダムに選ばれます。
+    持続的接続を使っている場合でもこれは保持されます。つまり、次のようなコード
    </para>
    <programlisting role="php">
 <![CDATA[
 <?php
 
-// connects to a replica set with members ip0, ip1, and ip2
-// ip0 is the primary, ip1 and ip2 are secondaries
+// メンバー ip0、ip1 および ip2 からなるレプリカセットに接続します
+// ip0 がプライマリ、ip1 と ip2 がセカンダリです
 $m1 = new Mongo("mongodb://ip0", array("replicaSet" => true, "persist" => "x"));
 echo "m1's slave is ".$m1->getSlave()."\n";
 
-// uses the same connection as $m1
+// $m1 と同じ接続を使います
 $m2 = new Mongo("mongodb://ip0", array("replicaSet" => true, "persist" => "x"));
 echo "m2's slave is ".$m2->getSlave()."\n";
 
@@ -73,7 +73,7 @@ echo "m2's slave is ".$m2->getSlave()."\n";
 ]]>
    </programlisting>
    <para>
-    we'd probably end up with something like:
+    を試すと、おそらくこのような結果となります。
    </para>
    <screen>
 m1's slave is: ip2
@@ -81,26 +81,29 @@ m2's slave is: ip1
    </screen>
 
    <para>
-    If we continued to create new <classname>Mongo</classname>s, we should get a
-    fairly even distribution between ip1 and ip2.
+    新しい <classname>Mongo</classname> を作り続けると、
+    ip1 と ip2 が同程度に分散した結果を得られることになります。
    </para>
 
    <para>
-    Slaves are chosen on a per-instance basis and do no change (unless something 
-    bad happens to your set and they are forced to).  
+    スレーブはインスタンス単位で選ばれ、
+    (レプリカセットに何か問題が発生して強制的に変更される場合を除いて)
+    変わることはありません。
    </para>
 
    <para>
-    You can see what the driver thinks is the current status of the set members
-    by running <function>Mongo::getHosts</function>.
+    セットのメンバーの現在の状態がどうなっているかを知るには、
+    <function>Mongo::getHosts</function> を実行します。
    </para>
 
    <para>
-    If no non-primary server is readable, the driver will send 
-    reads to the primary (even if "slaveOkay" is set).  A server is considered 
-    readable if its state is 2 (SECONDARY) and its health is 1.  You can check 
-    this with <function>Mongo::getHosts</function> (some fields omitted for 
-    clarity):
+    読み込み可能な非プライマリサーバがない場合は、
+    (たとえ "slaveOkay" が設定されていても)
+    ドライバはプライマリから読み込みを行います。
+    あるサーバが読み込み可能であると判定される条件は、その state が
+    2 (SECONDARY) かつ health が 1 であることです。
+    これらをチェックするには <function>Mongo::getHosts</function>
+    を使います (いくつかのフィールドは省略しています)。
    </para>
    <programlisting>
 <![CDATA[
@@ -137,15 +140,16 @@ Array
 ]]>
    </programlisting>
    <para>
-    The set above has two readable servers, "ip1" and "ip2".  If both of 
-    these went down or became stale, reads would go to "ip0".
+    上のセットには、読み込み可能なサーバが "ip1" と "ip2" のふたつあります。
+    これらの両方がダウンしたり古くなったりすると、読み込みは "ip0" に向けられるようになります。
    </para>
 
    <para>
-    If you enjoy twiddling knobs that you probably shouldn't mess with, you can 
-    force the driver to use a different slave by calling 
-    <function>Mongo::switchSlave</function>.  This randomly chooses a new slave 
-    to use and shouldn't be used unless you know what you're doing.
+    あまり関わるべきではないところに首を突っ込んで楽しみたいのなら、
+    <function>Mongo::switchSlave</function>
+    をコールして別のスレーブを使わせることもできます。
+    これは、ランダムに新しいスレーブを選んでそれを使います。
+    自分が何をしているのかをしっかり把握しているのでない限り、これを使ってはいけません。
    </para>
 
   </section>
