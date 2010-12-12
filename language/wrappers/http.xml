@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 0cc3ec82158dbc3a74069483994f99dd640b9350 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 6ee7facd42a9462a74259d003110848c30251c9a Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa -->
 
 <refentry xml:id="wrappers.http" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink" role="noversion">
@@ -22,21 +22,15 @@
   <simpara>
    ストリームにより、リソースの <emphasis>body</emphasis> にアクセスすることが
    できます。ヘッダは、<varname>$http_response_header</varname> 変数に保存されます。
-   PHP 4.3.0 以降は、ヘッダは <function>stream_get_meta_data</function>
-   により取得できます。
   </simpara>
-  &warn.ssl-non-standard;
   <simpara>
-   PHP 4.0.5 以降、リダイレクトがサポートされています。これ以前のバージョンを
-   使用している場合、URL の末尾にスラッシュを付ける必要があります。
    (全てのリダイレクトが処理された後に)ドキュメント取得元のリソースの URL を知ることが
    重要な場合、ストリームから返された一連のレスポンスヘッダを処理する必要があります。
   </simpara>
   <simpara>
-   <link linkend="ini.from">from</link> ディレクティブを
-   &php.ini; で設定して <xref linkend="context" /> では <literal>From:</literal>
-   ヘッダを定義していない場合、この値が
-   HTTP リクエストの <literal>From:</literal> ヘッダとして送信されます。
+   <link linkend="ini.from">from</link> ディレクティブが設定されており、かつそれが
+   <xref linkend="context" /> で上書きされていない場合は、その値が
+   <literal>From:</literal> ヘッダとなります。
   </simpara>
  </refsect1><!-- }}} -->
 
@@ -124,9 +118,21 @@
      </thead>
      <tbody>
       <row>
+       <entry>4.3.7</entry>
+       <entry>
+        バグのある IIS サーバを検出し、<literal>"SSL: Fatal Protocol Error"</literal> エラーを回避するようになりました。
+       </entry>
+      </row>
+      <row>
        <entry>4.3.0</entry>
        <entry>
         <literal>https://</literal> が追加されました。
+       </entry>
+      </row>
+      <row>
+       <entry>4.0.5</entry>
+       <entry>
+        リダイレクトをサポートするようになりました。
        </entry>
       </row>
      </tbody>
@@ -138,6 +144,7 @@
  <refsect1 role="examples"><!-- {{{ -->
   &reftitle.examples;
   <example xml:id="wrappers.http.example.basic"><!-- {{{ -->
+   <title>リダイレクト後の URL の検出</title>
    <programlisting role="php">
 <![CDATA[
 <?php
@@ -145,16 +152,15 @@ $url = 'http://www.example.com/redirecting_page.php';
 
 $fp = fopen($url, 'r');
 
-/* PHP 4.3.0 より前のバージョンの場合、stream_get_meta_data() の代わりに
-   $http_response_header を使用してください */
 $meta_data = stream_get_meta_data($fp);
 foreach($meta_data['wrapper_data'] as $response) {
 
-  /* リダイレクトされているか? */
-  if (substr(strtolower($response), 0, 10) == 'location: ') {
-    /* $url をリダイレクト先に書き換える */
-    $url = substr($response, 18);
-  }
+    /* リダイレクトされているか? */
+    if (substr(strtolower($response), 0, 10) == 'location: ') {
+
+        /* $url をリダイレクト先に書き換える */
+        $url = substr($response, 18);
+    }
 
 }
 
@@ -209,6 +215,19 @@ X-MyCustomHeader: Foo
    HTTP 接続は読み込みのみ可で、HTTP リソースにデータを書き込んだり
    ファイルをコピーしたりすることはできません。
   </simpara>
+  <simpara>
+   たとえば <emphasis>POST</emphasis> および <emphasis>PUT</emphasis> リクエストを送信することも、
+   <link linkend="context.http">HTTP コンテキスト</link> を使えば可能です。
+  </simpara>
+ </refsect1><!-- }}} -->
+
+ <refsect1 role="seealso"><!-- {{{ -->
+  &reftitle.seealso;
+  <simplelist>
+   <member><xref linkend="context.http" /></member>
+   <member><varname>$http_response_header</varname></member>
+   <member><function>stream_get_meta_data</function></member>
+  </simplelist>
  </refsect1><!-- }}} -->
 
 </refentry>
