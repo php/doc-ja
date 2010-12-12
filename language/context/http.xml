@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 111a89d674cdaa8959078c8af5be40c062b442b3 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: f6895f959cc5442d9234e38932f6c7fb183016ae Maintainer: takagi Status: ready -->
 
 <refentry xml:id="context.http" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink" role="noversion">
  <refnamediv>
@@ -108,6 +108,20 @@
       </para>
      </listitem>
     </varlistentry>
+    <varlistentry xml:id="context.http.follow-location">
+     <term>
+      <parameter>follow_location</parameter>
+      <type>integer</type>
+     </term>
+     <listitem>
+      <para>
+       <literal>Location: ..</literal> のリダイレクトをたどります。
+      </para>
+      <para>
+       デフォルトは &true; です。
+      </para>
+     </listitem>
+    </varlistentry>
     <varlistentry xml:id="context.http.max-redirects">
      <term>
       <parameter>max_redirects</parameter>
@@ -191,6 +205,12 @@
       </row>
      </thead>
      <tbody>
+      <row>
+       <entry>5.3.4</entry>
+       <entry>
+        <parameter>follow_location</parameter> が追加されました。
+       </entry>
+      </row>
       <row>
        <entry>5.3.0</entry>
        <entry>
@@ -317,6 +337,34 @@ fclose($stream);
     のコンテキストオプションを参照ください。
     <literal>https://</literal> ストリームの場合は、<literal>ssl://</literal>
     のコンテキストオプションを参照ください。
+   </simpara>
+  </note>
+  <note>
+   <title>HTTP ステータスライン</title>
+   <simpara>
+    このストリームラッパーがリダイレクトをたどると、
+    <function>stream_get_meta_data</function> が返す
+    <literal>wrapper_data</literal> のインデックス <literal>0</literal>
+    の内容が必ずしもそのコンテンツの HTTP ステータスラインであるとは限らなくなります。
+   </simpara>
+   <screen>
+<![CDATA[
+array (
+  'wrapper_data' =>
+  array (
+    0 => 'HTTP/1.0 301 Moved Permantenly',
+    1 => 'Cache-Control: no-cache',
+    2 => 'Connection: close',
+    3 => 'Location: http://example.com/foo.jpg',
+    4 => 'HTTP/1.1 200 OK',
+    ...
+]]>
+   </screen>
+   <simpara>
+    最初のリクエストが <literal>301</literal> (permanent redirect)
+    を返したので、ストリームラッパーが自動的にリダイレクト先をたどり、レスポンス
+    <literal>200</literal> (インデックス = <literal>4</literal>)
+    を取得しました。
    </simpara>
   </note>
  </refsect1>

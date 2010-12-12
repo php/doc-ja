@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 61f453fe08c7bf71f921c5037891ca6aea9221f1 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 5fd9114f59eb16540cb5cfed3dcbc0b600414d9b Maintainer: takagi Status: ready -->
 
 <refentry xml:id="amqpqueue.consume" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -12,8 +12,7 @@
   &reftitle.description;
   <methodsynopsis>
    <modifier>public</modifier> <type>void</type><methodname>AMQPQueue::consume</methodname>
-   <methodparam><type>string</type><parameter>num_messages</parameter></methodparam>
-   <methodparam choice="opt"><type>string</type><parameter>flags</parameter><initializer>NULL</initializer></methodparam>
+   <methodparam><type>array</type><parameter>options</parameter></methodparam>
   </methodsynopsis>
   <para>
 
@@ -28,18 +27,15 @@
   <para>
    <variablelist>
     <varlistentry>
-     <term><parameter>num_messages</parameter></term>
+     <term><parameter>options</parameter></term>
      <listitem>
       <para>
-       
+       <parameter>options</parameter> はオプションの配列です。
+       この配列で使われるキーは min、max および ack で、
+       それ以外のキーは無視されます。
       </para>
-     </listitem>
-    </varlistentry>
-    <varlistentry>
-     <term><parameter>flags</parameter></term>
-     <listitem>
       <para>
-       
+       オプションが設定されていない場合は ini 設定を確認します。それもなければデフォルト値を使用します。
       </para>
      </listitem>
     </varlistentry>
@@ -50,9 +46,50 @@
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
-
+   取得したメッセージを含む配列を返します。返されるメッセージ数は、最低でも
+   <parameter>options</parameter> 配列の <parameter>min</parameter> で指定した数となります。
+   <parameter>max</parameter> で指定した数より多くなることはありません。
   </para>
  </refsect1>
+
+<refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title><function>AMQPQueue::consume</function> の例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+/* デフォルトの設定で接続を作成します */
+$connection = new AMQPConnection();
+
+/* キューオブジェクトを作成します */
+$queue = new AMQPQueue($connection);
+
+// キューを宣言します
+$queue->declare('myqueue');
+
+$options = array(
+	'min' => 1,
+	'max' => 10,
+	'ack' => true
+);
+
+// メッセージを取得します
+$messages = $queue->consume($options);
+
+foreach ($messages as $message) {
+ echo $message['message_body'];
+}
+
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+ </refsect1>
+
 
 </refentry>
 
