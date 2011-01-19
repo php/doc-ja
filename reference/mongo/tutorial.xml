@@ -1,9 +1,60 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 58e026c0572f50bfcbb447e07423641cf8062d6a Maintainer: takagi Status: ready -->
+<!-- EN-Revision: bb68ae3b245112cca18cdcd0dba4bcc8218ce389 Maintainer: takagi Status: working -->
 
 <section xml:id="mongo.tutorial" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>チュートリアル</title>
+ <section>
+  <title>Introduction</title>
+  <para>
+   This is the 10gen-supported PHP driver for MongoDB.  
+  </para>
+  <para>Here's a quick code sample that connects, inserts documents, queries for
+   documents, iterates through query results, and disconnects from MongoDB.  
+   There are more details on each step in the tutorial below.
+  </para>
+  <programlisting role="php">
+<![CDATA[
+<?php
+
+// connect
+$m = new Mongo();
+
+// select a database
+$db = $m->comedy;
+
+// select a collection (analogous to a relational database's table)
+$collection = $db->cartoons;
+
+// add a record
+$obj = array( "title" => "Calvin and Hobbes", "author" => "Bill Watterson" );
+$collection->insert($obj);
+
+// add another record, with a different "shape"
+$obj = array( "title" => "XKCD", "online" => true );
+$collection->insert($obj);
+
+// find everything in the collection
+$cursor = $collection->find();
+
+// iterate through the results
+foreach ($cursor as $obj) {
+    echo $obj["title"] . "\n";
+}
+
+?>
+]]>
+  </programlisting>
+  <para>
+   This would output:
+  </para>
+  <screen>
+<![CDATA[
+Calvin and Hobbes
+XKCD
+]]>
+  </screen>
+ </section>
  <section>
   <title>接続の作成</title>
   <para>
@@ -21,7 +72,20 @@ $connection = new Mongo( "example.com:65432" ); // リモートホストの指�
 ]]>
    </programlisting>
 
-   これで、$connection を使ってデータベースを取得できるようになります。
+   You do not have to explicitly disconnect from the database.  When 
+   <literal>$connection</literal> goes out of scope, the connection will be 
+   closed automatically and any database resources it was using will be freed.
+  </para>
+  <section>
+   <title>See Also</title>
+   <para>
+    The manual chapter on <link linkend="mongo.connecting">connecting</link> 
+    covers different types of connections.  
+   </para>
+   <para>
+    The API documentation on the <classname>Mongo</classname> class and 
+    <function>Mongo::__construct</function> give a comprehensive look at all 
+    possible options with a number of examples.
   </para>
  </section>
 
@@ -57,6 +121,13 @@ $db = $connection->mybiglongdbnme;
 ]]>
    </programlisting>
   </para>
+   <section>
+    <title>See Also</title>
+    <para>
+     The API documentation on the <classname>MongoDB</classname> class contains 
+     more information about database objects.
+    </para>
+   </section>
  </section>
 
  <section>
@@ -78,6 +149,13 @@ $collection = $connection->baz->foobar;
 ]]>
    </programlisting>
   </para>
+   <section>
+    <title>See Also</title>
+    <para>
+     The API documentation on the <classname>MongoCollection</classname> class 
+     contains more information about collection objects.
+    </para>
+   </section>
  </section>
 
  <section>
@@ -93,8 +171,7 @@ $collection = $connection->baz->foobar;
 $doc = array( "name" => "MongoDB",
    "type" => "database",
    "count" => 1,
-   "info" => (object)array( "x" => 203,
-       "y" => 102),
+   "info" => (object)array( "x" => 203, "y" => 102),
    "versions" => array("0.9.7", "0.9.8", "0.9.9")
 );
 
@@ -103,10 +180,6 @@ $doc = array( "name" => "MongoDB",
    </programlisting>
 
    配列やオブジェクトをネストできることに注目しましょう。
-   MongoDB において、オブジェクトとドキュメントはほぼ同じ意味になります。
-   $doc のことをドキュメントと言ってもかまいませんしオブジェクトと呼んでもかまいません。
-   しかし、"info" フィールドは常にオブジェクトでドキュメントではありません。
-   この決まりは、すべてのドキュメントについて適用されます。
   </para>
   <para>
    ドキュメントを追加するには <function>MongoCollection::insert</function> を使います。
@@ -115,14 +188,19 @@ $doc = array( "name" => "MongoDB",
 <![CDATA[
 <?php
 
-$m = new Mongo();
-$collection = $m->foo->bar;
 $collection->insert( $doc );
 
 ?>
 ]]>
    </programlisting>
   </para>
+   <section>
+    <title>See Also</title>
+    <para>
+     The API documentation on <function>MongoCollection::insert</function> 
+     contains more information about inserting data.
+    </para>
+   </section>
  </section>
 
  <section>
@@ -130,13 +208,10 @@ $collection->insert( $doc );
    <function>MongoCollection::findOne</function> によるドキュメントの検索
   </title>
   <para>
-   追加したドキュメントがそこにあることを表示して確かめるには、
-   findOne() を使ってコレクション内の最初のドキュメントを取得します。
-   このメソッドは単一のドキュメントを返します (一方、
-   <function>MongoCollection::find</function> は
-   <classname>MongoCursor</classname> を返します)。
-   クエリにマッチするドキュメントがひとつしかない場合や
-   ひとつの結果だけを知りたい場合に便利です。
+    To show that the document we inserted in the previous step is there, we can 
+    do a simple <function>MongoCollection::findOne</function> operation to get a 
+    single document from the collection. This method is useful when there only is
+    one document matching the query or you are only interested in one result.
 
    <programlisting role="php">
 <![CDATA[
@@ -184,10 +259,17 @@ array(5) {
    </programlisting>
   </para>
   <para>
-   _id フィールドが自動的にドキュメントに追加されたことに注目しましょう。
-   MongoDB は、_ と $ で始まる要素名を
-   内部的な動作のために予約しています。
+    Note the <literal>_id</literal> field has been added automatically to your 
+    document. <literal>_id</literal> is the "primary key" field that is 
+    automatically populate for almost all documents in MongoDB.
   </para>
+   <section>
+    <title>See Also</title>
+    <para>
+     The API documentation on <function>MongoCollection::findOne</function> 
+     contains more information about finding data.
+    </para>
+   </section>
  </section>
 
  <section>
@@ -232,7 +314,7 @@ for($i=0; $i<100; $i++) {
   <para>
    これで 101 件のドキュメントを追加したことになります
    (先ほどのループで 100 件、そして最初の 1 件)。
-   本当にそうなっているか、count() メソッドで確認してみましょう。
+   本当にそうなっているか、<function>MongoCollection::count</function> メソッドで確認してみましょう。
    <programlisting role="php">
 <![CDATA[
 <?php
@@ -243,12 +325,6 @@ echo $collection->count();
 ]]>
    </programlisting>
    結果は 101 と表示されます。
-  </para>
-  <para>
-   <function>MongoCollection::count</function>
-   には、クエリとフィールドを渡すこともできます。また、
-   <classname>MongoCursor</classname> (以下を参照) の数を数えることもできます。
-   この場合、クエリで指定したフィルタを考慮して数えます。
   </para>
  </section>
 
@@ -276,15 +352,22 @@ foreach ($cursor as $id => $value) {
    </programlisting>
 
    これは、コレクション内の全 101 ドキュメントを表示します。
-   $id はドキュメントの _id フィールドで、
-   $value はドキュメントそのものです。
+   <literal>$id</literal> はドキュメントの <literal>_id</literal> フィールドで、
+   <literal>$value</literal> はドキュメントそのものです。
   </para>
+   <section>
+    <title>See Also</title>
+    <para>
+     The API documentation on <function>MongoCollection::find</function> 
+     contains more information about finding data.
+    </para>
+   </section>
  </section>
 
  <section>
   <title>問い合わせの条件の設定</title>
   <para>
-   クエリを作って find() メソッドに渡せば、
+   クエリを作って <function>MongoCollection::find</function> メソッドに渡せば、
    コレクション内のドキュメントのサブセットを取得することができます。
    たとえば、"i" フィールドの値が 71 であるドキュメントを探したいときは、
    このようにします。
@@ -408,54 +491,6 @@ $coll->ensureIndex( array( "i" => -1, "j" => 1 ) );  // "i" の降順、"j" の�
 ]]>
    </programlisting>
   </para>
- </section>
- <section>
-  <title>簡単な例</title>
-  <para>
-   この例では、MongoDB への接続からオブジェクトの追加、
-   オブジェクトの問い合わせ、その結果の反復処理、そして接続の切断までを行っています。
-  </para>
-  <programlisting role="php">
-<![CDATA[
-<?php
-
-// 接続
-$m = new Mongo();
-
-// データベースの選択
-$db = $m->comedy;
-$collection = $db->cartoons;
-
-// 要素の追加
-$obj = array( "title" => "Calvin and Hobbes", "author" => "Bill Watterson" );
-$collection->insert($obj);
-
-// 構造が違う別の要素の追加
-$obj = array( "title" => "XKCD", "online" => true );
-$collection->insert($obj);
-
-// コレクション内のすべての内容の検索
-$cursor = $collection->find();
-
-// 結果の反復処理
-foreach ($cursor as $obj) {
-    echo $obj["title"] . "\n";
-}
-
-// 切断
-$m->close();
-
-?>
-]]>
-  </programlisting>
-  <para>
-   結果は次のようになります。
-  </para>
-  <screen>
-<![CDATA[
-Calvin and Hobbes
-XKCD
-]]>
-  </screen>
+  </section>
  </section>
 </section>
