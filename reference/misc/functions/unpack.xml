@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 96c9d88bad9a7d7d44bfb7f26c226df7ee9ddf26 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 11026bdc3a19976c74b489b6edcf2e65f7ce9c45 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi -->
 <refentry xml:id="function.unpack" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -19,10 +19,11 @@
    <parameter>format</parameter> に基づき、バイナリ文字列から配列に分解します。
   </para>
   <para>
-   <function>unpack</function> の動作は Perl とは微妙に異なります。
-   Perl のように結果が連想配列に保存されることはありません。
+   分解した結果は連想配列に格納されます。
    このようにするには、別のフォーマットコードを使用してそれらを
    スラッシュ / で区切る必要があります。
+   引数にリピータが含まれる場合の配列の要素名は、
+   指定した名前の後に順番に番号がついたものとなります。
   </para>
  </refsect1>
 
@@ -65,16 +66,34 @@
     <programlisting role="php">
 <![CDATA[
 <?php
-$array = unpack("c2chars/nint", $binarydata);
+$binarydata = "\0x04\0x00\0xa0\0x00";
+$array = unpack("cchar/nint", $binarydata);
 ?>
 ]]>
     </programlisting>
     <para>
-     結果の配列のエントリは "chars1"、"chars2" および "int" となります。
+     結果の配列の内容は、値が <literal>4</literal> であるエントリ "chars"
+     と値が <literal>160</literal> であるエントリ "int" となります。
     </para>
    </example>
   </para>
- </refsect1>
+
+  <para>
+   <example>
+    <title><function>unpack</function> でのリピータの例</title>
+    <programlisting role="php">
+ <![CDATA[
+ <?php
+ $array = unpack("c2chars/nint", $binarydata);
+ ?>
+ ]]>
+     </programlisting>
+     <para>
+      結果の配列のエントリは "chars1"、"chars2" および "int" となります。
+     </para>
+    </example>
+   </para>
+  </refsect1>
 
  <refsect1 role="notes">
   &reftitle.notes;
@@ -84,6 +103,33 @@ $array = unpack("c2chars/nint", $binarydata);
     大きな値の unsigned long を切り出した場合、PHP の内部で保持された値は、
     同じ大きさの符号付き整数となり、符号無しを指定して切出された場合でも
     結果は負の数となります。
+   </para>
+  </caution>
+  <caution>
+   <para>
+    要素に名前をつけなければ、空文字列の要素となることに注意しましょう。
+    つまり、名前をつけない要素が複数ある場合は、
+    それらのキーが同じになるためデータが上書きされてしまうということです。
+   </para>
+   <para>
+    <example>
+     <title><function>unpack</function> で名前のないキーを扱う例</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+$binarydata = "\x32\x42\x00\xa0";
+$array = unpack("c2/n", $binarydata);
+var_dump($array);
+?>
+]]>
+     </programlisting>
+     <para>
+      結果の配列の内容は、値が <literal>160</literal> であるエントリ "1"
+      と値が <literal>66</literal> であるエントリ "2" になります。
+      <literal>c</literal> で指定した最初の値が
+      <literal>n</literal> で指定した値で上書きされます。
+     </para>
+    </example>
    </para>
   </caution>
  </refsect1>
