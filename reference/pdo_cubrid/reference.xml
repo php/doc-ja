@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 46748935710a2cce48812733f1c275c83f77b82f Maintainer: takagi Status: ready -->
+<!-- EN-Revision: a563d18df5e4b70e0fa2d14137bd94ed1ea47e35 Maintainer: takagi Status: ready -->
 <!-- Purpose: database.vendors -->
 <!-- Membership: bundled, external, pecl -->
 
@@ -17,7 +17,7 @@
     </para>
     <note>
     <para>
-     現在のバージョンの PDO_CUBRID は、持続的接続や lob 型に対応していません。
+     現在のバージョンの PDO_CUBRID は、持続的接続に対応していません。
     </para>
    </note>
    </section>
@@ -25,26 +25,102 @@
    <!-- Information found in configure.xml -->
    &reference.pdo-cubrid.configure;
 
-   <section xml:id="ref.pdo-cubrid.features.cursors">
-    <title>スクロール可能なカーソル</title>
-    <para>
-     PDO_CUBRID はスクロール可能なカーソルをサポートしており、デフォルトの型は前進のみのカーソルです。
-     PDO::setAttribute を使えばカーソルの型を変えることができます。
-    </para>
-   </section>
-   <section xml:id="ref.pdo-cubrid.features.autocommit">
-    <title>Autocommit</title>
-    <para>
-     PDO_CUBRID は自動コミットをサポートしており、デフォルトでは無効になっています。
-     PDO::setAttribute を使えば有効にすることができます。 
-    </para>
-   </section>
-   <section xml:id="ref.pdo-cubrid.features.timeout">
-    <title>Timeout</title>
-    <para>
-     PDO_CUBRID は sql ステートメントの実行時のタイムアウトの設定をサポートしています。
-     PDO::setAttribute を使えばタイムアウトの値を設定できます。
-    </para>
+   <section xml:id="ref.pdo-cubrid.features">
+    <title>機能</title>
+    <table>
+     <title>PDO_CUBRID の機能</title>
+     <tgroup cols="2">
+      <thead>
+       <row>
+        <entry>機能</entry>
+        <entry>説明</entry>
+       </row>
+      </thead>
+      <tbody>
+       <row>
+        <entry>スクロール可能なカーソル</entry>
+        <entry>
+         PDO_CUBRID はスクロール可能なカーソルをサポートしており、デフォルトの型は前進のみのカーソルです。
+         <function>PDO::prepare</function> を使えばカーソルの型を変えることができます。
+        </entry>
+       </row>
+       <row>
+        <entry>タイムアウト</entry>
+        <entry> PDO_CUBRID は sql ステートメントの実行時のタイムアウトの設定をサポートしています。
+         <function>PDO::setAttribute</function> を使えばタイムアウトの値を設定できます。</entry>
+       </row>
+       <row>
+        <entry>Autocommit_mode およびトランザクション</entry>
+        <entry>
+         PDO_CUBRID は自動コミットとトランザクションをサポートしており、
+         自動コミットモードはデフォルトで有効になっています。
+         <function>PDO::setAttribute</function> を使えば状態を変更することができます。
+         
+         <para>
+         PDO::beginTransaction でトランザクションを開始すると
+         autocommit_mode は無効となり、PDO::commit あるいは
+         PDO::rollBack の後で元の状態に戻します。autocommit_mode
+         を無効にする前に、それまでの作業は自動的にコミットされることに注意しましょう。
+         </para>
+        </entry>
+       </row>
+       <row>
+        <entry>複数クエリ</entry>
+        <entry>PDO_CUBRID は複数クエリをサポートしています。</entry>
+       </row>
+       <row>
+        <entry>スキーマ情報</entry>
+        <entry>PDO_CUBRID は PDOStatement->getColumnMeta を実装していません。
+         そのかわりに PDO_CUBRID では
+         <function>PDO::cubrid_schema</function> 関数を用意しており、これでスキーマ情報を取得します。
+        </entry>
+       </row>
+       <row>
+        <entry>LOBs</entry>
+        <entry>PDO_CUBRID は BLOB/CLOB データ型をサポートしています。PDO における LOB
+         はストリームで表現されているので、LOB を追加するにはストリームをバインドし、
+         LOB を取得するには CUBRID PDO が返すストリームを読み込みます。
+
+         <para>
+          <example><title>CUBRID PDO での LOB の追加</title>
+           <programlisting role='php'>
+<![CDATA[
+<?php
+$fp = fopen('lob_test.png', 'rb');
+
+$sql_stmt = "INSERT INTO lob_test(name, content) VALUES('lob_test.png', ?)";
+
+$stmt = $dbh->prepare($sql_stmt);
+$ret = $stmt->bindParam(1, $fp, PDO::PARAM_LOB);
+$ret = $stmt->execute();
+?>
+]]>
+           </programlisting>
+          </example>
+         </para>
+         <para>
+          <example><title>CUBRID PDO での LOB の取得</title>
+           <programlisting role='php'>
+<![CDATA[
+<?php
+$sql_stmt = "SELECT content FROM lob_test WHERE name='lob_test.png'";
+
+$stmt = $dbh->prepare($sql_stmt);
+$stmt->execute();
+$result = $stmt->fetch(PDO::FETCH_NUM);
+
+header("Content-Type: image/png");
+fpassthru($result[0]);
+?>
+]]>
+           </programlisting>
+          </example>
+         </para>
+        </entry>
+       </row>
+      </tbody>
+     </tgroup>
+    </table>
    </section>
 
    <!-- Information found in constants.xml -->
