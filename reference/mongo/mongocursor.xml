@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 7214d04a66fb2e93d8156f8995b01b858e12e3f8 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: cc40e134d2ccc2269fd0e59f589037da99e4970b Maintainer: takagi Status: ready -->
 
 <phpdoc:classref xml:id="class.mongocursor" xmlns:phpdoc="http://php.net/ns/phpdoc" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xi="http://www.w3.org/2001/XInclude">
 
@@ -13,12 +13,67 @@
   <section xml:id="mongocursor.intro">
    &reftitle.intro;
    <para>
-    データベースクエリの結果を表すオブジェクトです。
+    カーソルは、データベースクエリの結果を反復処理するときに使います。
+    たとえば、データベースに問い合わせたすべての結果を見るには次のようにします。
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+$cursor = $collection->find();
+var_dump(iterator_to_array($cursor));
+
+?>
+]]>
+    </programlisting>
    </para>
    <para>
+    一般に、カーソルを作るときに
+    <classname>MongoCursor</classname> のコンストラクタを使うことはありません。
+    新しいカーソルを作るには、(上の例のように)
+    <function>MongoCollection::find</function> をコールします。
+   </para>
+   <para>
+    上の例で、仮に <literal>$collection</literal> が
+    50GB のコレクションだったとしましょう。そんなときに、
+    結果をすべて一度にメモリに読み込もうとは思わないでしょう。
+    そんなときのためにカーソルが存在します。
+    カーソルを使えば、クライアント側から少しずつコレクションにアクセスできるのです。
+   </para>
+   <para>
+    結果セットが大規模になっても、それを反復処理して
+    一度にメモリに取り込むデータ量を数メガバイト程度にすることができます。
+    たとえばこのようにします。
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+$cursor = $collection->find();
+
+foreach ($cursor as $doc) {
+    // ここで各ドキュメントについて何らかの処理をします
+}
+
+?>
+]]>
+    </programlisting>
+    これはコレクション内の各ドキュメントを順にたどり、
+    必要に応じてドキュメントの読み込みやガベージコレクションを行います。
+   </para>
+   <para>
+    カーソルにデータベースの結果が "含まれている" わけではないことに注意しましょう。
+    カーソルは単に結果を管理するだけのものです。つまり、
+    (<function>var_dump</function> や <function>print_r</function> で)
+    カーソルの内容を出力してもドキュメントは見えません。
+    単にカーソルオブジェクトが表示されるだけです。 
+    ドキュメント自身を取得するには、上のメソッドのいずれかを使います。
+   </para>
+  </section>
+
+  <section>
+   <title>カーソルのステージ</title>
+   <para>
     <classname>MongoCursor</classname> には二段階の「ライフステージ」があります。
-    クエリ前とクエリ後です。カーソルを作成するにはコンストラクタをコールすることもできますが、
-    たいていは <function>MongoCollection::find</function> をコールすることになります。
+    クエリ前とクエリ後です。
     カーソルを作った時点ではまだデータベースに接続していません。
     つまり、クエリ前の段階です。この段階では、クエリに何をしてほしいのかをさらに指定することができます。
     取得数の制限や読み飛ばし、ソートなどのオプションを指定できるのです。
