@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 4f1556e4e30db2647573ea21291795e945459860 Maintainer: takagi Status: working -->
+<!-- EN-Revision: 4f1556e4e30db2647573ea21291795e945459860 Maintainer: takagi Status: ready -->
 
 <part xml:id="mongo.types" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
 
@@ -17,18 +17,17 @@
   </section>
 
   <section>
-   <title>Booleans and &null;</title>
+   <title>Boolean および &null;</title>
    <para>
-    &true;, &false;, and &null; can be used as-is.
+    &true;、&false; および &null; はそのままの型で使えます。
    </para>
   </section>
 
   <section>
-   <title>Numbers</title>
+   <title>数値</title>
    <para>
-    Numbers are distinct from strings in MongoDB: "123" does not match 123.
-    Thus, if you want to make sure numbers are sorted and matched correctly, you
-    must make sure that they are actually saved as numbers.
+    MongoDB では数値と文字列は区別されます。"123" は 123 とマッチしません。
+    したがって、数値のソートやマッチングを正しく行うには、数値として保存しなければなりません。
    </para>
    <programlisting role="php">
 <![CDATA[
@@ -37,152 +36,145 @@
 $doc = array("a" => 123, "b" => "123");
 $collection->insert($doc);
 
-$doc->find(array("a" => 123));   // matches
-$doc->find(array("a" => "123")); // doesn't match
-$doc->find(array("a" => 123.0)); // matches
-$doc->find(array("b" => 123));   // doesn't match
-$doc->find(array("b" => "123")); // matches
+$doc->find(array("a" => 123));   // マッチします
+$doc->find(array("a" => "123")); // マッチしません
+$doc->find(array("a" => 123.0)); // マッチします
+$doc->find(array("b" => 123));   // マッチしません
+$doc->find(array("b" => "123")); // マッチします
 
 ?>
 ]]>
    </programlisting>
    <para>
-    As noted above, floating point numbers do compare with/match integer numbers
-    as one would expect.
+    上に示したように、浮動小数点数と整数の比較やマッチングは期待通りにできます。
    </para>
    <section>
-    <title>Large Numbers</title>
+    <title>大きな数値</title>
     <para>
-     By default, on a 32-bit system, numbers are sent to the database as 32-bit
-     integers. On a 64-bit system, they are sent as 64-bit integers.  For
-     backwards compatibility, all systems deserialize 64-bit integers as floating
-     point numbers.  Floating point numbers are not exact.  If you need exact
-     values, you must tweak your
-     <link xlink:href="mongo.configure;">php.ini settings</link>.
+     デフォルトでは、32 ビットシステム上では数値をデータベースに送信するときには 32 ビット整数型となります。
+     64 ビットシステム上では数値をデータベースに送信するときには 64 ビット整数型となります。
+     過去との互換性を保つため、64 ビット整数型をデシリアライズするとすべてのシステムで浮動小数点数となります。
+     浮動小数点数には誤差があります。正確な値が必要なら
+     <link xlink:href="mongo.configure;">php.ini の設定</link>をしましょう。
     </para>
     <para>
-     On a 32-bit system, if <literal>mongo.long_as_object</literal> is set,
-     64-bit integers will be returns as <classname>MongoInt64</classname>
-     objects.  The integer will be stored in the <literal>value</literal> field
-     with perfect precision (as a string). You can also use
-     <classname>MongoInt64</classname> to save 64-bit integers on 32-bit
-     machines.
+     32 ビットシステム上では、<literal>mongo.long_as_object</literal>
+     が設定されていると 64 ビット整数値が <classname>MongoInt64</classname> オブジェクトとして返されます。
+     整数値は、<literal>value</literal> フィールドに完全な精度で (文字列として) 格納されます。
+     <classname>MongoInt64</classname> を使えば、64 ビット整数値を 32 ビットマシン上に保存することもできます。
     </para>
     <para>
-     On 64-bit systems, you can either set <literal>mongo.long_as_object</literal>
-     or set <literal>mongo.native_long</literal>.
-     <literal>mongo.native_long</literal> will return 64-bit integers and
-     "normal" PHP integers.  You can use <classname>MongoInt32</classname> to
-     save 32-bit integers on 64-bit machines.
+     64 ビットシステム上では、<literal>mongo.long_as_object</literal>
+     あるいは <literal>mongo.native_long</literal> を設定することができます。
+     <literal>mongo.native_long</literal> は、64 ビット整数値を
+     "通常の" PHP の整数型で返します。<classname>MongoInt32</classname> を使えば、
+     32 ビット整数値を 64 ビットマシン上に保存することができます。
     </para>
     <para>
-     You should set the <literal>mongo.long_as_object</literal> and
-     <literal>mongo.native_long</literal> behavior that you plan to use, even if
-     it is the default behavior (to protect against future changes to the
-     defaults).
+     <literal>mongo.long_as_object</literal> や
+     <literal>mongo.native_long</literal> の挙動は、使おうとする内容にあわせて設定するべきです。
+     たとえデフォルトの挙動であっても、明示的に設定しておくことが大切です
+     (将来もしデフォルトの設定が変わっても、その影響を受けずにすみます)。
     </para>
     <para>
-     See also: <link xlink:href="mongo.configure;">php.ini Options</link>,
-     <classname>MongoInt32</classname>, <classname>MongoInt64</classname>.
+     <link xlink:href="mongo.configure;">php.ini のオプション</link>、
+     <classname>MongoInt32</classname>、そして <classname>MongoInt64</classname>
+     も参照ください。
     </para>
    </section>
   </section>
 
   <section>
-   <title>Strings</title>
+   <title>文字列</title>
    <para>
-    Strings must be UTF-8. Non-UTF-8 strings must either be converted to UTF-8
-    before being sent to the database or saved as binary data.
+    文字列は UTF-8 でなければなりません。非 UTF-8 文字列は、UTF-8
+    に変換してからデータベースに送信するか、あるいはバイナリデータとして保存しなければなりません。
    </para>
    <para>
-    Regular expressions can be used to match strings, and are expressed using the
-    <classname>MongoRegex</classname> class.
-   </para>
-  </section>
-
-  <section>
-   <title>Binary Data</title>
-   <para>
-    Non-UTF-8 strings, images, and any other binary data should be sent to the
-    database using the <classname>MongoBinData</classname> type.
+    正規表現を使った文字列のマッチングができます。正規表現には
+    <classname>MongoRegex</classname> クラスを使います。
    </para>
   </section>
 
   <section>
-   <title>Dates</title>
+   <title>バイナリデータ</title>
    <para>
-    Dates can be created using the <classname>MongoDate</classname> class.  They
-    are stored as milliseconds since the epoch.
-   </para>
-   <para>
-    <classname>MongoTimestamp</classname> is not for saving dates or timestamps,
-    it is used internally by MongoDB.  Unless you are creating a tool that
-    interacts with the internals of replication or sharding, you should use
-    <classname>MongoDate</classname>, <emphasis>not</emphasis>
-    <classname>MongoTimestamp</classname>.
+    非 UTF-8 文字列や画像その他のバイナリデータをデータベースに送信するときには
+    <classname>MongoBinData</classname> 型を使わなければなりません。
    </para>
   </section>
 
   <section>
-   <title>Unique Ids</title>
+   <title>日付</title>
    <para>
-    The driver will automatically create an <literal>_id</literal> field before
-    inserting a document (unless one is specified by the user).  This field is an
-    instance of <classname>MongoId</classname> (called "ObjectId" in most other
-    languages).
+    日付を作成するには <classname>MongoDate</classname> クラスを使います。
+    ここにはエポックからの経過ミリ秒数が格納されます。
    </para>
    <para>
-    These ids are 12 bytes long and composed of:
+    <classname>MongoTimestamp</classname> は日付やタイムスタンプを保存するためのものではなく、
+    MongoDB の内部で使うものです。レプリカやシャーディングの内部構造を扱うツールを書いているのでない限り、
+    <classname>MongoTimestamp</classname> <emphasis>ではなく</emphasis>
+    <classname>MongoDate</classname> を使うべきです。
+   </para>
+  </section>
+
+  <section>
+   <title>一意な Id</title>
+   <para>
+    ドライバは、ユーザが明示的に指定しない限り、自動的に <literal>_id</literal>
+    フィールドを作成してからドキュメントを追加します。このフィールドは
+    <classname>MongoId</classname> (いわゆる "オブジェクト ID")
+    のインスタンスです。
+   </para>
+   <para>
+    ID は 12 バイトで、このような構造です。
     <itemizedlist>
      <listitem>
-      <para>4 bytes of timestamp</para>
+      <para>タイムスタンプ 4 バイト</para>
       <para>
-       No two records can have the same id if they were inserted at different
-       times.
+       別の時刻に追加されたレコードが同じ id になることはありません。
       </para>
      </listitem>
      <listitem>
-      <para>3 bytes machine id</para>
+      <para>マシン id 3 バイト</para>
       <para>
-       No two records can have the same id if they were inserted on different
-       machines
+       別のマシンから追加されたレコードが同じ id になることはありません。
       </para>
      </listitem>
      <listitem>
-      <para>2 bytes thread id</para>
+      <para>スレッド id 2 バイト</para>
       <para>
-       No two records can have the same id if they were inserted by different
-       threads running on the same machine.
+       同じマシン上の別のスレッドから追加されたレコードが同じ id になることはありません。
       </para>
      </listitem>
      <listitem>
-      <para>3 bytes incrementing value</para>
+      <para>増分 3 バイト</para>
       <para>
-       Each time an id is created, a global counter is incremented and used
-       as the increment value of the next id.
+       id が新たに作られるたびにグローバルなカウンタがひとつ増加します。
+       次の id を作るときに、この値を使います。
       </para>
      </listitem>
     </itemizedlist>
-    Thus, no two records can have the same id unless a single process on a
-    single machine managed to insert 256^3 (over 16 million) documents in
-    one second, overflowing the increment field.
+    従って、同一マシン上の単一のプロセスで 1 秒間に 256^3 件 (1600万件以上)
+    のレコードを追加 (増分領域を使い切る) しようとしない限り、
+    同じ id になることはありません。
    </para>
   </section>
 
   <section>
    <title>JavaScript</title>
    <para>
-    MongoDB comes with a JavaScript engine, so you can embed JavaScript in
-    queries (using a $where clause), send it directly to the database to be
-    executed, and use it to perform aggregations.
+    MongoDB には JavaScript エンジンが組み込まれているので、JavaScript
+    をクエリに ($where 句で) 組み込んで直接データベースに送信して実行し、
+    集約することができます。
    </para>
    <para>
-    For security, use <classname>MongoCode</classname>'s <literal>scope</literal>
-    field to use PHP variables in JavaScript.  Code that does not require
-    external values can either use <classname>MongoCode</classname> or just be
-    a string.  See the
-    <link xlink:href="mongo.security;">section on security</link> for more
-    information about sending JavaScript to the database.
+    セキュリティ上、<classname>MongoCode</classname> の <literal>scope</literal>
+    フィールドを使って PHP の変数を JavaScript に渡します。外部の値を使わないコードの場合は
+    <classname>MongoCode</classname> を使っても単なる文字列を使ってもかまいません。
+    JavaScript をデータベースに送信することに関する詳細な情報は
+    <link xlink:href="mongo.security;">セキュリティの節</link>
+    を参照ください。
    </para>
   </section>
 
