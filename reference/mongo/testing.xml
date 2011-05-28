@@ -1,41 +1,97 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 74a3aaff8c722fc4a8f69bc85fa61642adaf60ce Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 7bd1f076cd5626e8faf5b820d46ea7756e5a6790 Maintainer: takagi Status: ready -->
 
 <section xml:id="mongo.testing" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>ドライバのテストの実行</title>
 
  <para>
-  PECL パッケージには PHP のテストが含まれていませんが、
+  PECL パッケージにはテストが含まれていませんが、
   <link xlink:href="&url.mongodb.github;">Github</link> で公開しています。
-  ドライバのソースをダウンロードすると、tests/ ディレクトリ内にテストがあります。
-  ドライバのテストには <link xlink:href="&url.phpunit.install;">PHPUnit</link>
-  を使っており、これは PEAR でインストールすることができます。
+  テストには二種類あります。PHPUnit のテストと C のテストです。
  </para>
- <para>
-  すべてのテストを成功させるには、php.ini の <literal>error_reporting</literal>
-  を <literal>E_STRICT | E_ALL</literal> に設定しなければなりません。
-  そうしないと、発生するはずの警告やエラーが出ないせいでいくつかのテストが失敗します。
- </para>
- <para>
-  テストを実行する際には、MongoDB サーバをローカルのポート 27017 で動かしておきましょう。
-  Github からダウンロードしたソースのメインディレクトリで、次のコマンドを実行します。
- </para>
- <programlisting>
+
+ <section>
+  <title>PHPUnit のテスト</title>
+  <para>
+   テストを実行するには、ドライバを Github からダウンロードしなければなりません
+   (テストは <literal>tests/</literal> ディレクトリにあります)。
+   さらに <link xlink:href="&url.phpunit.install;">PHPUnit</link> も必要です。
+   PHPUnit は PEAR でインストールできます (いくつか要件があるので、
+   インストール手順を確認しなければなりません)。
+  </para>
+  <para>
+   テストの中には、警告やエラーが発生することを想定しているものもあります。
+   すべてのテストを成功させるには、php.ini の <literal>error_reporting</literal>
+   を <literal>E_STRICT | E_ALL</literal> に設定しなければなりません。
+   そうしないと、発生するはずの警告やエラーが出ないせいでいくつかのテストが失敗します。
+  </para>
+  <para>
+   テストを実行する際には、MongoDB サーバをローカルのポート 27017 で動かしておきましょう。
+   バグ報告を出す前に、最新の開発版の MongoDB でテストを実行してみてください。
+   テストの中には、まだ安定版のリリースには含まれていない機能のテストが含まれていることがよくあります。
+  </para>
+  <para>
+   テストスイートで使っているデータベースは "phpunit" です。
+   もし自分のアプリケーションで "phpunit" という名前のデータベースを使っている場合は、
+   MongoDB が別のデータディレクトリを指すように設定してからテストを実行してください。
+  </para>
+  <para>
+   Github からダウンロードしたドライバのソースのメインディレクトリにいることを確認し、次のコマンドを実行します。
+  </para>
+  <programlisting>
 <![CDATA[
 
 $ phpunit tests/MongoSuite.php
 
 ]]>
  </programlisting>
- <para>
-  テストに失敗したりエラーが発生したりした場合は、
-  <link xlink:href="&url.mongodb.jira;">バグトラッカー</link>へのレポートをお願いします。
-  いくつかのテストがスキップされることがありますが、
-  これは通常の動作であり無視してもかまいません。
- </para>
- <para>
-  新しいテストの提供も歓迎します!
-  型のテスト、機能のテストなど、新しいテストの提供を楽しみにしています。
- </para>
+ </section>
+
+ <section>
+  <title>C のテスト</title>
+  <para>
+   C のテストのほとんどは、PHP 側に公開していない内部関数をチェックするためのものです。
+   これらのテストを実行したければ、PHP のコンパイル時に
+   <literal>--enable-embed</literal> フラグを指定しなければなりません。
+   それから、<filename>tests</filename> ディレクトリに移動して <literal>make</literal>
+   を実行します。これは、<literal>unit</literal> というバイナリを作ります。
+   この <literal>unit</literal> を実行すればテストが動きます。
+   このテストでは、データベースが稼働している必要はありません。
+  </para>
+
+  <para>
+   テストが通ると "." と表示します。テストが失敗すると、警告を表示してテストが止まります。
+   表示された内容をレポートしてください。
+  </para>
+
+  <para>
+   <literal>make</literal> コマンドが PHP の組み込みライブラリ (libphp5.so)
+   やヘッダファイルを見つけられない場合は、<literal>PHP_PATH</literal>
+   変数を指定します。
+  </para>
+
+  <para>
+   <literal>make clean</literal> を実行すると、すべてのテスト用オブジェクトを削除します。
+  </para>
+
+  <para>
+   <filename>valgrind</filename> とともにテストを実行すると、
+   無効なメモリアクセスエラーは決して発生せず、最後に
+   "no leaks are possible" と表示されるはずです。
+  </para>
+ </section>
+
+ <section>
+  <title>エラーのレポート</title>
+  <para>
+   テストに失敗したりエラーが発生したりした場合は、
+   <link xlink:href="&url.mongodb.jira;">バグトラッカー</link>へのレポートをお願いします。
+   いくつかのテストがスキップされることがありますが、
+   これは通常の動作であり無視してもかまいません。
+  </para>
+  <para>
+   新しいテストの提供も歓迎します! あらゆる形式の、あらゆる機能に対する新しいテストの提供を楽しみに待っています。
+  </para>
+ </section>
 </section>

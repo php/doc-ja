@@ -1,51 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 7214d04a66fb2e93d8156f8995b01b858e12e3f8 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 4f1556e4e30db2647573ea21291795e945459860 Maintainer: takagi Status: working -->
 
 <part xml:id="mongo.types" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
 
  <title>型</title>
 
  <partintro>
-
-  <section>
-   <title>数値の扱いに関する変更</title>
-   <para>
-    <emphasis>
-     数値に関するデフォルトの挙動が、バージョン 1.1.0 で変わりました。
-     ほとんどのプログラマは、この変更によって
-     ドライバの数値処理がよりスムーズかつ自然に行えるようになるでしょう。
-     しかし、動作させるためにはアプリケーションのコードに変更が必要になるかもしれません。
-    </emphasis>
-   </para>
-   <para>
-    整数値のシリアライズやデシリアライズに関して、
-    以前との互換性を損なう変更がありました。
-    この変更が自分のコードに影響を及ぼすかどうかを調べるには、.ini の設定を変更してみましょう。
-    mongo.native_int と
-    mongo.long_as_object のデフォルトが &true; になります。
-   </para>
-   <para>
-    シリアライズ: 1.1.0 より前のバージョンのデフォルトでは、
-    PHP の整数値はすべて 32 ビット整数値に変換されていました。
-    たとえ 64 ビットマシン上で動かしたとしてもです。
-    つまり、大きな数値は黙って切り詰められてしまうことになります。
-    1.1.0 からは、64 ビットマシン上ではデフォルトで 64 ビット整数値として扱うようになりました。
-    32 ビットマシンでは、これまでと同じように 32 ビット整数値となります
-    (<classname>MongoInt32</classname> クラスや
-    <classname>MongoInt64</classname> クラスを使えば、
-    64 ビットマシンで 32 ビット整数値を扱ったりその逆を行ったりすることができます)。
-   </para>
-   <para>
-    デシリアライズ: 1.1.0 より前のバージョンのデフォルトでは、
-    64 ビット整数値は double に復元されていました。
-    これは完全なマッピングではありません。この値を再度保存しようとすると間違った型になってしまいます
-    (64 ビット整数ではなく double として保存されてしまいます)。
-    1.1.0 では、64 ビット整数値は 32 ビットマシン上では
-    <classname>MongoInt64</classname> として返されます。
-   </para>
-  </section>
-
   <section>
    <para>
     MongoDB では、PHP のすべての基本データ型や複合型 (配列、連想配列
@@ -56,50 +17,173 @@
   </section>
 
   <section>
-    <title>単純な型</title>
+   <title>Booleans and &null;</title>
+   <para>
+    &true;, &false;, and &null; can be used as-is.
+   </para>
+  </section>
+
+  <section>
+   <title>Numbers</title>
+   <para>
+    Numbers are distinct from strings in MongoDB: "123" does not match 123.
+    Thus, if you want to make sure numbers are sorted and matched correctly, you
+    must make sure that they are actually saved as numbers.
+   </para>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+$doc = array("a" => 123, "b" => "123");
+$collection->insert($doc);
+
+$doc->find(array("a" => 123));   // matches
+$doc->find(array("a" => "123")); // doesn't match
+$doc->find(array("a" => 123.0)); // matches
+$doc->find(array("b" => 123));   // doesn't match
+$doc->find(array("b" => "123")); // matches
+
+?>
+]]>
+   </programlisting>
+   <para>
+    As noted above, floating point numbers do compare with/match integer numbers
+    as one would expect.
+   </para>
+   <section>
+    <title>Large Numbers</title>
     <para>
-     組み込みの型は次のとおりです。
+     By default, on a 32-bit system, numbers are sent to the database as 32-bit
+     integers. On a 64-bit system, they are sent as 64-bit integers.  For
+     backwards compatibility, all systems deserialize 64-bit integers as floating
+     point numbers.  Floating point numbers are not exact.  If you need exact
+     values, you must tweak your
+     <link xlink:href="mongo.configure;">php.ini settings</link>.
     </para>
     <para>
-     <informaltable>
-      <tgroup cols="3">
-       <thead>
-        <row>
-         <entry>型</entry>
-         <entry>説明</entry>
-         <entry>MongoDB 内でのサイズ (バイト)</entry>
-        </row>
-       </thead>
-       <tbody>
-        <row>
-         <entry>&null;</entry>
-         <entry>その名のとおり</entry>
-         <entry>0</entry>
-        </row>
-        <row>
-         <entry>boolean</entry>
-         <entry>&true; および &false;</entry>
-         <entry>1</entry>
-        </row>
-        <row>
-         <entry>int</entry>
-         <entry>整数値</entry>
-         <entry>4</entry>
-        </row>
-        <row>
-         <entry>float</entry>
-         <entry>浮動小数点値</entry>
-         <entry>8</entry>
-        </row>
-        <row>
-         <entry>string</entry>
-         <entry>UTF-8 文字列</entry>
-         <entry>文字列の長さ + 1</entry>
-        </row>
-       </tbody>
-      </tgroup>
-     </informaltable>
+     On a 32-bit system, if <literal>mongo.long_as_object</literal> is set,
+     64-bit integers will be returns as <classname>MongoInt64</classname>
+     objects.  The integer will be stored in the <literal>value</literal> field
+     with perfect precision (as a string). You can also use
+     <classname>MongoInt64</classname> to save 64-bit integers on 32-bit
+     machines.
     </para>
+    <para>
+     On 64-bit systems, you can either set <literal>mongo.long_as_object</literal>
+     or set <literal>mongo.native_long</literal>.
+     <literal>mongo.native_long</literal> will return 64-bit integers and
+     "normal" PHP integers.  You can use <classname>MongoInt32</classname> to
+     save 32-bit integers on 64-bit machines.
+    </para>
+    <para>
+     You should set the <literal>mongo.long_as_object</literal> and
+     <literal>mongo.native_long</literal> behavior that you plan to use, even if
+     it is the default behavior (to protect against future changes to the
+     defaults).
+    </para>
+    <para>
+     See also: <link xlink:href="mongo.configure;">php.ini Options</link>,
+     <classname>MongoInt32</classname>, <classname>MongoInt64</classname>.
+    </para>
+   </section>
+  </section>
+
+  <section>
+   <title>Strings</title>
+   <para>
+    Strings must be UTF-8. Non-UTF-8 strings must either be converted to UTF-8
+    before being sent to the database or saved as binary data.
+   </para>
+   <para>
+    Regular expressions can be used to match strings, and are expressed using the
+    <classname>MongoRegex</classname> class.
+   </para>
+  </section>
+
+  <section>
+   <title>Binary Data</title>
+   <para>
+    Non-UTF-8 strings, images, and any other binary data should be sent to the
+    database using the <classname>MongoBinData</classname> type.
+   </para>
+  </section>
+
+  <section>
+   <title>Dates</title>
+   <para>
+    Dates can be created using the <classname>MongoDate</classname> class.  They
+    are stored as milliseconds since the epoch.
+   </para>
+   <para>
+    <classname>MongoTimestamp</classname> is not for saving dates or timestamps,
+    it is used internally by MongoDB.  Unless you are creating a tool that
+    interacts with the internals of replication or sharding, you should use
+    <classname>MongoDate</classname>, <emphasis>not</emphasis>
+    <classname>MongoTimestamp</classname>.
+   </para>
+  </section>
+
+  <section>
+   <title>Unique Ids</title>
+   <para>
+    The driver will automatically create an <literal>_id</literal> field before
+    inserting a document (unless one is specified by the user).  This field is an
+    instance of <classname>MongoId</classname> (called "ObjectId" in most other
+    languages).
+   </para>
+   <para>
+    These ids are 12 bytes long and composed of:
+    <itemizedlist>
+     <listitem>
+      <para>4 bytes of timestamp</para>
+      <para>
+       No two records can have the same id if they were inserted at different
+       times.
+      </para>
+     </listitem>
+     <listitem>
+      <para>3 bytes machine id</para>
+      <para>
+       No two records can have the same id if they were inserted on different
+       machines
+      </para>
+     </listitem>
+     <listitem>
+      <para>2 bytes thread id</para>
+      <para>
+       No two records can have the same id if they were inserted by different
+       threads running on the same machine.
+      </para>
+     </listitem>
+     <listitem>
+      <para>3 bytes incrementing value</para>
+      <para>
+       Each time an id is created, a global counter is incremented and used
+       as the increment value of the next id.
+      </para>
+     </listitem>
+    </itemizedlist>
+    Thus, no two records can have the same id unless a single process on a
+    single machine managed to insert 256^3 (over 16 million) documents in
+    one second, overflowing the increment field.
+   </para>
+  </section>
+
+  <section>
+   <title>JavaScript</title>
+   <para>
+    MongoDB comes with a JavaScript engine, so you can embed JavaScript in
+    queries (using a $where clause), send it directly to the database to be
+    executed, and use it to perform aggregations.
+   </para>
+   <para>
+    For security, use <classname>MongoCode</classname>'s <literal>scope</literal>
+    field to use PHP variables in JavaScript.  Code that does not require
+    external values can either use <classname>MongoCode</classname> or just be
+    a string.  See the
+    <link xlink:href="mongo.security;">section on security</link> for more
+    information about sending JavaScript to the database.
+   </para>
   </section>
 
   <section>
@@ -112,7 +196,7 @@
    </para>
 
    <programlisting role="php">
-    <![CDATA[
+<![CDATA[
 <?php
 
 // $scores は配列として格納されます
@@ -130,7 +214,7 @@ $collection->insert(array("scores" => $scores));
    <para>
     データベースのシェルからこれらのオブジェクトを問い合わせると、このようになります。
     <programlisting>
-     <![CDATA[
+<![CDATA[
 > db.students.find()
 { "_id" : ObjectId("4b06beada9ad6390dab17c43"), "scores" : [ 98, 100, 73, 85 ] }
 { "_id" : ObjectId("4b06bebea9ad6390dab17c44"), "scores" : { "quiz1" : 98, "midterm" : 100, "quiz2" : 73, "final" : 85 } }
@@ -144,7 +228,7 @@ $collection->insert(array("scores" => $scores));
     フィールドは キー/値 のペアに使います。
     たとえば、blogへの投稿を表す次のようなオブジェクトを考えましょう。
     <programlisting role="php">
-     <![CDATA[
+<![CDATA[
 <?php
 
   // blog投稿クラス
@@ -221,149 +305,12 @@ Fatal error: Nesting level too deep - recursive dependency?
     ドライバに渡す前に自分でチェックしておかなければなりません。
    </para>
   </section>
-
-  <section>
-   <title>MongoDB の型</title>
-
-   <para>
-    Mongo PHP ドライバでは、データベースで使える新しい型もいくつか用意しています。
-    詳細や仕様例は、各クラスのドキュメントを参照ください。
-   </para>
-   <para>
-    <informaltable>
-     <tgroup cols="3">
-      <thead>
-       <row>
-        <entry>型</entry>
-        <entry>説明</entry>
-        <entry>MongoDB 内でのサイズ (バイト)</entry>
-       </row>
-      </thead>
-      <tbody>
-       <row>
-        <entry><classname>MongoBinData</classname></entry>
-        <entry>バイナリデータ</entry>
-        <entry>バイナリデータのバイト数 + 5</entry>
-       </row>
-       <row>
-        <entry><classname>MongoCode</classname></entry>
-        <entry>JavaScript のコード</entry>
-        <entry>コードの文字列長 + スコープのオブジェクトサイズ</entry>
-       </row>
-       <row>
-        <entry><classname>MongoDate</classname></entry>
-        <entry>エポックからの経過ミリ秒数で表した日付・時刻</entry>
-        <entry>8</entry>
-       </row>
-       <row>
-        <entry><classname>MongoId</classname></entry>
-        <entry>一意なドキュメント id:
-         <itemizedlist>
-          <listitem>
-           <para>タイムスタンプ 4 バイト</para>
-           <para>
-            別の時刻に追加されたオブジェクトが同じ id になることはありません。
-            times.
-           </para>
-          </listitem>
-          <listitem>
-           <para>マシン id 3 バイト</para>
-           <para>
-            別のマシンから追加されたオブジェクトが同じ id になることはありません。
-           </para>
-          </listitem>
-          <listitem>
-           <para>スレッド id 2 バイト</para>
-           <para>
-            同じマシン上の別のスレッドから追加されたオブジェクトが同じ id になることはありません。
-           </para>
-          </listitem>
-          <listitem>
-           <para>増分 3 バイト</para>
-           <para>
-            id が新たに作られるたびにグローバルなカウンタがひとつ増加します。
-            次の id を作るときに、この値を使います。
-           </para>
-          </listitem>
-         </itemizedlist>
-         従って、同一マシン上の単一のプロセスで 1 秒間に 256^3 件 (1600万件以上)
-         のドキュメントを追加 (増分領域を使い切る) しようとしない限り、
-         同じ id になることはありません。
-        </entry>
-        <entry>12</entry>
-       </row>
-       <row>
-        <entry><classname>MongoMinKey</classname></entry>
-        <entry>他の何よりも小さい値</entry>
-        <entry></entry>
-       </row>
-       <row>
-        <entry><classname>MongoMaxKey</classname></entry>
-        <entry>他の何よりも大きい値</entry>
-        <entry></entry>
-       </row>
-       <row>
-        <entry><classname>MongoRegex</classname></entry>
-        <entry>正規表現</entry>
-        <entry>
-         正規表現内の文字数 + フラグの数
-        </entry>
-       </row>
-       <row>
-        <entry><classname>MongoTimestamp</classname></entry>
-        <entry>レプリケーションのタイムスタンプ</entry>
-        <entry>8</entry>
-       </row>
-      </tbody>
-     </tgroup>
-    </informaltable>
-   </para>
-  </section>
-
-  <section>
-   <title>BSON</title>
-   <para>
-    MongoDB は "BSON" という格納フォーマットを使います。
-    これは Binary Serializable Object Notation の略で、
-    JSON と似ていますがよりコンパクトでさまざまな型を表現できます。
-    以下に、各型の正確なバイト数 (あるいは可変長の型の場合は
-    サイズを算出するために必要な情報) をまとめました。
-    このサイズにはフィールド名は含まれていないことに注意しましょう。
-    オブジェクトのサイズは手動で算出することもできますが、プログラマなら
-    <function>bson_encode</function> 関数の返す文字列の長さを調べるほうが簡単でしょう。
-    string.
-   </para>
-   <para>
-    array("x" => null, "y" => 40) を保存するオブジェクトの BSON サイズを手動で算出する例です。
-    <programlisting>
-     <![CDATA[
-4 バイト (オブジェクトのサイズ)
-
-1 バイト ("x" フィールドの型)
-2 バイト ("x" および "\0")
-0 バイト (null)
-
-1 バイト ("y" フィールドの型)
-2 バイト ("y" および "\0")
-4 バイト (整数値)
-
-1 バイト (オブジェクトの終端バイト)
------------------------
-15 バイト
-]]>
-    </programlisting>
-   </para>
-  </section>
-
  </partintro>
-
  &reference.mongo.mongoid;
  &reference.mongo.mongocode;
  &reference.mongo.mongodate;
  &reference.mongo.mongoregex;
  &reference.mongo.mongobindata;
- &reference.mongo.mongoint32;
- &reference.mongo.mongoint64;
  &reference.mongo.mongodbref;
  &reference.mongo.mongominkey;
  &reference.mongo.mongomaxkey;
