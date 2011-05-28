@@ -1,0 +1,656 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision$ -->
+<!-- EN-Revision: d9e565cad13e60489dbf625690d2468e0b4db7b1 Maintainer: satoruyoshida Status: ready -->
+<chapter xml:id="mysqlnd-qc.usage" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+ &reftitle.examples;
+
+ <section xml:id="mysqlnd-qc.basic_usage" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <title>基本的な使用法</title>
+  <para>
+      クエリ・キャッシュ・プラグインは、下記のユーザー API を呼び出して発行されるクエリのキャッシングをサポートします。
+  </para>
+
+  <para>
+   <itemizedlist>
+    <listitem>
+     <para>
+      <link linkend="ref.mysqli">mysqli</link>
+      <itemizedlist>
+       <listitem>
+        <para>
+         <function>mysqli_query</function>
+        </para>
+       </listitem>
+       <listitem>
+        <para>
+         <function>mysqli_real_query</function> +
+         <function>mysqli_store_result</function>
+        </para>
+       </listitem>
+      </itemizedlist>
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      <link linkend="ref.pdo-mysql">PDO_MYSQL</link>
+      <itemizedlist>
+       <listitem>
+        <para>
+         <literal>PDO::ATTR_EMULATE_PREPARES = 1</literal> の場合、
+         <function>PDO::query</function> (デフォルトの設定)
+        </para>
+       </listitem>
+      </itemizedlist>
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      <link linkend="ref.mysql">mysql</link>
+      <itemizedlist>
+       <listitem>
+        <para>
+         <function>mysql_query</function>
+        </para>
+       </listitem>
+      </itemizedlist>
+     </para>
+
+    </listitem>
+   </itemizedlist>
+  </para>
+
+  <para>
+   キャッシュすべきクエリは、SQL ヒント
+   <literal>/*qc=on*/</literal> から始めなければなりません。
+   文字列の値を使う代わりに、PHP 定数
+   <literal>
+    <link linkend="mysqlnd-qc.constants">MYSQLND_QC_ENABLE_SWITCH</link>
+   </literal> の使用が推奨されます。
+  </para>
+  <para>
+   <itemizedlist>
+    <listitem>
+     <para>
+      キャッシュされません:
+      <literal>SELECT id FROM test</literal>
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      キャッシュされます:
+      <literal>/*qc=on*/SELECT id FROM test</literal>
+     </para>
+    </listitem>
+   </itemizedlist>
+  </para>
+  <para>
+   <literal>
+    <link linkend="ref.mysqli">mysqli</link>
+   </literal>
+   という、最も進んだ PHP MySQL API を用いた例
+  </para>
+  <!-- TODO : to be translated end of 3rd comment -->
+  <para>
+   <example>
+    <programlisting role="php">
+<![CDATA[
+<?php
+/* クエリ･キャッシュの統計を収集できるようにします */
+ini_set("mysqlnd_qc.collect_statistics", 1);
+
+/* 接続し、テストテーブルを作成してデータを読み込みます */
+$mysqli = new mysqli("host", "user", "password", "schema", "port", "socket");
+$mysqli->query("DROP TABLE IF EXISTS test");
+$mysqli->query("CREATE TABLE test(id INT)");
+$mysqli->query("INSERT INTO test(id) VALUES (1), (2)");
+
+/* SQL ヒントによってキャッシュされます。: cache put and cache_miss */
+$res = $mysqli->query("/*" . MYSQLND_QC_ENABLE_SWITCH . "*/" . "SELECT id FROM test WHERE id = 1");
+var_dump($res->fetch_assoc());
+$res->free();
+
+/* キャッシュされず、キャッシュにヒットしません: SQL hint なし */
+$res = $mysqli->query("SELECT id FROM test WHERE id = 2");
+var_dump($res->fetch_assoc());
+$res->free();
+
+/* キャッシュの統計を表示します */
+$stats = mysqlnd_qc_get_core_stats();
+printf("Cache hit\t: %d\n",  $stats['cache_hit']);
+printf("Cache miss\t: %d\n", $stats['cache_miss']);
+printf("Cache put\t: %d\n",  $stats['cache_put']);
+
+?>
+]]>
+    </programlisting>
+   &examples.outputs;
+    <screen>
+<![CDATA[
+array(1) {
+  ["id"]=>
+  string(1) "1"
+}
+array(1) {
+  ["id"]=>
+  string(1) "2"
+}
+Cache hit       : 0
+Cache miss      : 1
+Cache put       : 1
+]]>
+    </screen>
+
+   </example>
+  </para>
+  <para>
+   キャッシュのデフォルトの失効方式は、生存期間
+   (Time-to-Live <literal>TTL</literal>) です。
+   キャッシュエントリは、一定の期間で有効です。
+   デフォルトの期間は、PHP の構成ディレクティブ
+   <literal>
+    <link linkend="mysqlnd-qc.configuration">mysqlnd_qc.tll</link>
+   </literal>
+   で設定されます。
+  </para>
+ </section>
+
+ <section xml:id="mysqlnd-qc.per_query_ttl" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <title>TTL の設定</title>
+  <para>
+   クエリ･キャッシュ・プラグインのデフォルトの失効方式は、生存期間
+   (Time-to-Live <literal>TTL</literal>) です。
+   クエリ文字列が別の <literal>TTL</literal> を設定する SQL ヒントを含まない限り、
+   PHP 構成ディレクティブ 
+   <literal>
+    <link linkend="mysqlnd-qc.configuration">mysqlnd_qc.ttl</link>
+   </literal> で定義されたデフォルトの
+   <literal>TTL</literal> が組み込みのストレージ･ハンドラで使用されます。
+   <literal>TTL</literal> は秒単位で指定されます。
+  </para>
+  <para>
+   <literal>TTL</literal> に基づくキャッシュは全て、データを陳腐化することが
+   あります。基礎をなすデータが変わっても、キャッシュエントリは自動的に失効しません。
+  </para>
+  <para>
+   この制約を変えるために、
+   ユーザー定義のキャッシュ･ストレージ・ハンドラは任意の失効戦略を実装できます。
+  </para>
+  <para>
+   <example>
+    <programlisting role="php">
+<![CDATA[
+<?php
+/* 接続し、テストテーブルを作成してデータを読み込みます */
+$mysqli = new mysqli("host", "user", "password", "schema", "port", "socket");
+$mysqli->query("DROP TABLE IF EXISTS test");
+$mysqli->query("CREATE TABLE test(id INT)");
+$mysqli->query("INSERT INTO test(id) VALUES (1), (2)");
+
+printf("Default TTL\t: %d seconds\n", ini_get("mysqlnd_qc.ttl"));
+
+/* SQL ヒントによってキャッシュされます */
+$res = $mysqli->query("/*" . MYSQLND_QC_ENABLE_SWITCH . "*/" . "SELECT id FROM test WHERE id = 1");
+var_dump($res->fetch_assoc());
+$res->free();
+
+$mysqli->query("DELETE FROM test WHERE id = 1");
+
+/* ヒットしたキャッシュ - 自動で失効しません！ */
+$res = $mysqli->query("/*" . MYSQLND_QC_ENABLE_SWITCH . "*/" . "SELECT id FROM test WHERE id = 1");
+var_dump($res->fetch_assoc());
+$res->free();
+
+sleep(ini_get("mysqlnd_qc.ttl"));
+
+/* 失敗したキャッシュ - キャッシュエントリの有効期限が切れました */
+$res = $mysqli->query("/*" . MYSQLND_QC_ENABLE_SWITCH . "*/" . "SELECT id FROM test WHERE id = 1");
+var_dump($res->fetch_assoc());
+$res->free();
+
+?>
+]]>
+    </programlisting>
+   &examples.outputs;
+    <screen>
+<![CDATA[
+Default TTL:    : 30 seconds
+array(1) {
+  ["id"]=>
+  string(1) "1"
+}
+array(1) {
+  ["id"]=>
+  string(1) "1"
+}
+NULL
+]]>
+    </screen>
+
+   </example>
+  </para>
+  <para>
+   SQL ヒント <literal>/*qc_tt=seconds*/</literal> を使用してデフォルトの
+   <literal>TTL</literal> を却下できます。その SQL ヒントは、
+   キャッシュを使用可能にする SQL ヒントの直後に書かれなければいけません。
+   文字列の値を使う代わりに、PHP 定数
+   <literal>
+    <link linkend="mysqlnd-qc.constants">MYSQLND_QC_TTL_SWITCH</link>
+   </literal> の使用が推奨されます。
+  </para>
+  <para>
+   <example>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$start = microtime(true);
+
+/* 接続し、テストテーブルを作成してデータを読み込みます */
+$mysqli = new mysqli("host", "user", "password", "schema", "port", "socket");
+$mysqli->query("DROP TABLE IF EXISTS test");
+$mysqli->query("CREATE TABLE test(id INT)");
+$mysqli->query("INSERT INTO test(id) VALUES (1), (2)");
+
+printf("Default TTL\t: %d seconds\n", ini_get("mysqlnd_qc.ttl"));
+
+/* ２秒間キャッシュされます */
+$sql = sprintf("/*%s*//*%s%d*/SELECT id FROM test WHERE id = 1",
+ MYSQLND_QC_ENABLE_SWITCH,
+ MYSQLND_QC_TTL_SWITCH,
+ 2);
+$res = $mysqli->query($sql);
+var_dump($res->fetch_assoc());
+$res->free();
+
+$mysqli->query("DELETE FROM test WHERE id = 1");
+sleep(1);
+
+/* ヒットしたキャッシュ - 自動で失効せず、まだ有効です！ */
+$res = $mysqli->query($sql);
+var_dump($res->fetch_assoc());
+$res->free();
+
+sleep(2);
+
+/* 失敗したキャッシュ - キャッシュエントリの有効期限が切れました */
+$res = $mysqli->query($sql);
+var_dump($res->fetch_assoc());
+$res->free();
+
+printf("Script runtime\t: %d seconds\n", microtime(true) - $start);
+
+?>
+]]>
+    </programlisting>
+   &examples.outputs;
+    <screen>
+<![CDATA[
+Default TTL     : 30 seconds
+array(1) {
+  ["id"]=>
+  string(1) "1"
+}
+array(1) {
+  ["id"]=>
+  string(1) "1"
+}
+NULL
+Script runtime  : 3 seconds
+
+]]>
+    </screen>
+
+   </example>
+  </para>
+
+ </section>
+
+ <section xml:id="mysqlnd-qc.cache_by_default" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <title>デフォルトでキャッシュ</title>
+  <para>
+   PHP 構成ディレクティブ
+   <literal>
+    <link linkend="mysqlnd-qc.configuration">mysqlnd_qc.cache_by_default</link>
+   </literal> が
+   <literal>1</literal> に設定されていると、クエリ文字列がキャッシングを使用可能にする
+   SQL ヒントで開始されていようといまいと、クエリ・キャッシュ・プラグインはおかまいなしに
+   クエリを全てキャッシュにいれます。
+   <literal>
+    <link linkend="mysqlnd-qc.configuration">mysqlnd_qc.cache_by_default</link>
+   </literal> 設定値は、クエリ・キャッシュ・プラグインのコアによって値ぶみされます。
+   組込みでもなくユーザー定義でもないストレージ・ハンドラーは、設定値を却下できます。
+  </para>
+  <para>
+   <literal>
+    <link linkend="mysqlnd-qc.configuration">mysqlnd_qc.cache_by_default = 1</link>
+   </literal>
+   の場合、個別のクエリをキャッシュしないようにするために
+   SQL ヒント <literal>/*qc=off*/</literal> が使用できます。
+   文字列の値を使う代わりに、PHP 定数
+   <literal>
+    <link linkend="mysqlnd-qc.constants">MYSQLND_QC_DISABLE_SWITCH</link>
+   </literal> の使用が推奨されます。
+  </para>
+  <para>
+   <example>
+    <programlisting role="php">
+<![CDATA[
+<?php
+/* ステートメントを全てデフォルトでキャッシュできるようにします */
+ini_set("mysqlnd_qc.cache_by_default", 1);
+
+/* 接続し、テストテーブルを作成してデータを読み込みます */
+$mysqli = new mysqli("host", "user", "password", "schema", "port", "socket");
+$mysqli->query("DROP TABLE IF EXISTS test");
+$mysqli->query("CREATE TABLE test(id INT)");
+$mysqli->query("INSERT INTO test(id) VALUES (1), (2)");
+
+
+/* mysqlnd_qc.cache_by_default = 1 のため、SQL ヒントが無くてもキャッシュされます */
+$res = $mysqli->query("SELECT id FROM test WHERE id = 1");
+var_dump($res->fetch_assoc());
+$res->free();
+
+$mysqli->query("DELETE FROM test WHERE id = 1");
+
+/* ヒットしたキャッシュ - 自動で失効せず、まだ有効です！ */
+$res = $mysqli->query("SELECT id FROM test WHERE id = 1");
+var_dump($res->fetch_assoc());
+$res->free();
+
+/* 失敗したキャッシュ - SQL ヒントのため、クエリはキャッシュされても、キャッシュから供給されてもいけません */
+$res = $mysqli->query("/*" . MYSQLND_QC_DISABLE_SWITCH . "*/SELECT id FROM test WHERE id = 1");
+var_dump($res->fetch_assoc());
+$res->free();
+
+?>
+]]>
+    </programlisting>
+   &examples.outputs;
+    <screen>
+<![CDATA[
+array(1) {
+  ["id"]=>
+  string(1) "1"
+}
+array(1) {
+  ["id"]=>
+  string(1) "1"
+}
+NULL
+]]>
+    </screen>
+
+   </example>
+  </para>
+ </section>
+
+
+ <section xml:id="mysqlnd-qc.set_user_handlers" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <title>手続き指向のユーザー定義のストレージハンドラ</title>
+  <para>
+   クエリ・キャッシュ・プラグインは、ユーザー定義のストレージハンドラの使用をサポートします。
+   ユーザー定義のストレージハンドラは、こみいった失効アルゴリズムを任意に使用したり、
+   任意の記憶媒体を使用できます。
+  </para>
+  <para>
+   ユーザー定義のストレージハンドラは全て一定のインタフェースを提供しなければなりません。
+   ユーザー定義のストレージハンドラの関数は、キャッシュプラグインのコアにより呼ばれます。
+   必要なインタフェースは、７つの public 関数から構成されます。
+   手続き指向およびオブジェクト指向両方のユーザー定義のストレージハンドラは、
+   同じ関数群を実装しなければなりません。
+  </para>
+  <para>
+   詳しくは例をご覧ください。
+  </para>
+  <para>
+   <example>
+    <programlisting role="php">
+<![CDATA[
+<?php
+/* ステートメントを全てデフォルトでキャッシュできるようにします */
+ini_set("mysqlnd_qc.cache_by_default", 1);
+
+/* 手続き指向のユーザー定義のストレージハンドラ関数 */
+
+$__cache = array();
+
+function get_hash($host_info, $port, $user, $db, $query) {
+  global $__cache;
+  printf("\t%s(%d)\n", __FUNCTION__, func_num_args());
+
+  return md5(sprintf("%s%s%s%s%s", $host_info, $port, $user, $db, $query));
+}
+
+function find_query_in_cache($key) {
+  global $__cache;
+  printf("\t%s(%d)\n", __FUNCTION__, func_num_args());
+
+  if (isset($__cache[$key])) {
+    $tmp = $__cache[$key];
+    if ($tmp["valid_until"] < time()) {
+      unset($__cache[$key]);
+      $ret = NULL;
+    } else {
+      $ret = $__cache[$key]["data"];
+    }
+  } else {
+    $ret = NULL;
+  }
+
+  return $ret;
+}
+
+function return_to_cache($key) {
+  /*
+     キャッシュされたデータが処理されたあと、ヒットしたキャッシュに関係して呼ばれます。
+     参照カウント法のために使われるかもしれません。
+  */
+  printf("\t%s(%d)\n", __FUNCTION__, func_num_args());
+}
+
+function add_query_to_cache_if_not_exists($key, $data, $ttl, $run_time, $store_time, $row_count) {
+  global $__cache;
+  printf("\t%s(%d)\n", __FUNCTION__, func_num_args());
+
+  $__cache[$key] = array(
+    "data"               => $data,
+    "row_count"          => $row_count,
+    "valid_until"        => time() + $ttl,
+    "hits"               => 0,
+    "run_time"           => $run_time,
+    "store_time"         => $store_time,
+    "cached_run_times"   => array(),
+    "cached_store_times" => array(),
+  );
+
+  return TRUE;
+}
+
+function query_is_select($query) {
+  printf("\t%s('%s'): ", __FUNCTION__, $query);
+
+  $ret = FALSE;
+  if (stristr($query, "SELECT") !== FALSE) {
+    /* cache for 5 seconds */
+    $ret = 5;
+  }
+
+  printf("%s\n", (FALSE === $ret) ? "FALSE" : $ret);
+  return $ret;
+}
+
+function update_query_run_time_stats($key, $run_time, $store_time) {
+  global $__cache;
+  printf("\t%s(%d)\n", __FUNCTION__, func_num_args());
+
+  if (isset($__cache[$key])) {
+    $__cache[$key]['hits']++;
+    $__cache[$key]["cached_run_times"][] = $run_time;
+    $__cache[$key]["cached_store_times"][] = $store_time;
+  }
+}
+
+function get_stats($key = NULL) {
+  global $__cache;
+  printf("\t%s(%d)\n", __FUNCTION__, func_num_args());
+
+  if ($key && isset($__cache[$key])) {
+    $stats = $__cache[$key];
+  } else {
+    $stats = array();
+    foreach ($__cache as $key => $details) {
+      $stats[$key] = array(
+        'hits'              => $details['hits'],
+        'bytes'             => strlen($details['data']),
+        'uncached_run_time' => $details['run_time'],
+        'cached_run_time'   => (count($details['cached_run_times']))
+                                  ? array_sum($details['cached_run_times']) / count($details['cached_run_times'])
+                                  : 0,
+      );
+    }
+  }
+
+  return $stats;
+}
+
+function clear_cache() {
+  global $__cache;
+  printf("\t%s(%d)\n", __FUNCTION__, func_num_args());
+
+  $__cache = array();
+  return TRUE;
+}
+
+/* 手続き指向のユーザー定義のストレージハンドラをインストール */
+if (!mysqlnd_qc_set_user_handlers("get_hash", "find_query_in_cache",
+      "return_to_cache", "add_query_to_cache_if_not_exists",
+      "query_is_select", "update_query_run_time_stats",
+       "get_stats", "clear_cache")) {
+  printf("Failed to install user-defined storage handler\n");
+}
+
+
+/* 接続し、テストテーブルを作成してデータを読み込みます */
+$mysqli = new mysqli("host", "user", "password", "schema", "port", "socket");
+$mysqli->query("DROP TABLE IF EXISTS test");
+$mysqli->query("CREATE TABLE test(id INT)");
+$mysqli->query("INSERT INTO test(id) VALUES (1), (2)");
+
+printf("\nCache put/cache miss\n");
+
+$res = $mysqli->query("SELECT id FROM test WHERE id = 1");
+var_dump($res->fetch_assoc());
+$res->free();
+
+/* キャッシュ由来のデータを得たか検証するためにレコードを削除 */
+$mysqli->query("DELETE FROM test WHERE id = 1");
+
+printf("\nCache hit\n");
+
+$res = $mysqli->query("SELECT id FROM test WHERE id = 1");
+var_dump($res->fetch_assoc());
+$res->free();
+
+printf("\nDisplay cache statistics\n");
+var_dump(mysqlnd_qc_get_cache_info());
+
+printf("\nFlushing cache, cache put/cache miss");
+var_dump(mysqlnd_qc_clear_cache());
+
+$res = $mysqli->query("SELECT id FROM test WHERE id = 1");
+var_dump($res->fetch_assoc());
+$res->free();
+?>
+]]>
+    </programlisting>
+   &examples.outputs;
+    <screen>
+<![CDATA[
+        query_is_select('DROP TABLE IF EXISTS test'): FALSE
+        query_is_select('CREATE TABLE test(id INT)'): FALSE
+        query_is_select('INSERT INTO test(id) VALUES (1), (2)'): FALSE
+
+Cache put/cache miss
+        query_is_select('SELECT id FROM test WHERE id = 1'): 5
+        get_hash(5)
+        find_query_in_cache(1)
+        add_query_to_cache_if_not_exists(6)
+array(1) {
+  ["id"]=>
+  string(1) "1"
+}
+        query_is_select('DELETE FROM test WHERE id = 1'): FALSE
+
+Cache hit
+        query_is_select('SELECT id FROM test WHERE id = 1'): 5
+        get_hash(5)
+        find_query_in_cache(1)
+        return_to_cache(1)
+        update_query_run_time_stats(3)
+array(1) {
+  ["id"]=>
+  string(1) "1"
+}
+
+Display cache statistics
+        get_stats(0)
+array(4) {
+  ["num_entries"]=>
+  int(1)
+  ["handler"]=>
+  string(4) "user"
+  ["handler_version"]=>
+  string(5) "1.0.0"
+  ["data"]=>
+  array(1) {
+    ["18683c177dc89bb352b29965d112fdaa"]=>
+    array(4) {
+      ["hits"]=>
+      int(1)
+      ["bytes"]=>
+      int(71)
+      ["uncached_run_time"]=>
+      int(398)
+      ["cached_run_time"]=>
+      int(4)
+    }
+  }
+}
+
+Flushing cache, cache put/cache miss    clear_cache(0)
+bool(true)
+        query_is_select('SELECT id FROM test WHERE id = 1'): 5
+        get_hash(5)
+        find_query_in_cache(1)
+        add_query_to_cache_if_not_exists(6)
+NULL
+
+]]>
+    </screen>
+
+   </example>
+  </para>
+ </section>
+
+</chapter>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"~/.phpdoc/manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
