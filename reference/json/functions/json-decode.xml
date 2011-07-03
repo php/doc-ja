@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 79422caf1a86d08a9ab1799c450c537e8a63646f Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 408baf15371b41dceadf8984a1ab121240594aa5 Maintainer: takagi Status: ready -->
 <refentry xml:id="function.json-decode" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>json_decode</refname>
@@ -61,9 +61,6 @@
        <constant>JSON_BIGINT_AS_STRING</constant> のみです
        (デフォルトでは、大きな整数値を float に変換します)。
       </para>
-      <para>
-       &version.trunk.after.53;
-      </para>
      </listitem>
     </varlistentry>
    </variablelist>
@@ -120,7 +117,12 @@ array(5) {
     </screen>
    </example>
    <example>
-    <title>もうひとつの例</title>
+    <title>無効なオブジェクトプロパティへのアクセス</title>
+    <simpara>
+     Accessing elements within an object that contain characters not
+     permitted under PHP's naming convention (e.g. the hyphen) can be
+     accomplished by encapsulating the element name within braces and the apostrophe.
+    </simpara>
     <programlisting role="php">
 <![CDATA[
 <?php
@@ -181,18 +183,19 @@ $json = json_encode(
 );
 
 // エラーを定義します
-$json_errors = array(
-    JSON_ERROR_NONE => 'No error has occurred',
-    JSON_ERROR_DEPTH => 'The maximum stack depth has been exceeded',
-    JSON_ERROR_CTRL_CHAR => 'Control character error, possibly incorrectly encoded',
-    JSON_ERROR_SYNTAX => 'Syntax error',
-);
+$constants = get_defined_constants(true);
+$json_errors = array();
+foreach ($constants["json"] as $name => $value) {
+	if (!strncmp($name, "JSON_ERROR_", 11)) {
+		$json_errors[$value] = $name;
+	}
+}
 
 // さまざまな深さのエラーを表示します
-foreach(range(4, 3, -1) as $depth) {
-    var_dump(json_decode($json, True, $depth));
-    echo 'Last error : ', $json_errors[json_last_error()], PHP_EOL, PHP_EOL;
-    }
+foreach (range(4, 3, -1) as $depth) {
+    var_dump(json_decode($json, true, $depth));
+    echo 'Last error: ', $json_errors[json_last_error()], PHP_EOL, PHP_EOL;
+}
 ?>
 ]]>
     </programlisting>
@@ -218,10 +221,10 @@ array(1) {
     }
   }
 }
-Last error : No error has occurred
+Last error: JSON_ERROR_NONE
 
 NULL
-Last error : The maximum stack depth has been exceeded
+Last error: JSON_ERROR_DEPTH
 ]]>
     </screen>
    </example>
@@ -277,7 +280,7 @@ string(20) "12345678901234567890"
      </thead>
      <tbody>
       <row>
-       <entry>&version.trunk.changelog;</entry>
+       <entry>5.4.0</entry>
        <entry>
         <parameter>options</parameter> パラメータが追加されました。
        </entry>
