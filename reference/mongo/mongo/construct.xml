@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 8836adc4976bdad0a2f94f7915189f034111b9dd Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 377da021f611e6ed70485f244fa3669a3c03580a Maintainer: takagi Status: ready -->
 
 <refentry xml:id="mongo.construct" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -87,20 +87,6 @@ mongodb://[username:password@]host1[:port1][,host2[:port2:],...]/db
         </listitem>
         <listitem>
          <para>
-          <literal>"persist"</literal>
-         </para>
-         <para>
-          持続的な接続を行うかどうか。これを設定すると、接続が持続的なものとなります。
-          文字列の値を接続 ID として使うので、
-          <literal>array("persist" => "foobar")</literal> で初期化した
-          <classname>Mongo</classname> のインスタンスがふたつあれば、
-          それは同じデータベース接続をあらわします。一方、
-          <literal>array("persist" => "barbaz")</literal>
-          で初期化したインスタンスは別のデータベース接続を使います。
-         </para>
-        </listitem>
-        <listitem>
-         <para>
           <literal>"timeout"</literal>
          </para>
          <para>
@@ -112,8 +98,7 @@ mongodb://[username:password@]host1[:port1][,host2[:port2:],...]/db
           <literal>"replicaSet"</literal>
          </para>
          <para>
-          指定したホストがレプリカセットのシードであるか否か。
-          シードである場合は、シードのデータベースコマンド
+          接続先のレプリカセットの名前。指定した場合は、シードのデータベースコマンド
           <literal>ismaster</literal> を使ってマスタを決定します。
           ドライバは、リストに上がっていないサーバに接続することになるかもしれません。
           詳細は、以下のレプリカセットの例を参照ください。
@@ -178,6 +163,35 @@ mongodb://[username:password@]host1[:port1][,host2[:port2:],...]/db
      </thead>
      <tbody>
       <row>
+       <entry>1.2.0</entry>
+       <entry>
+        <para>
+         persist オプションが削除されました。すべての接続は持続的な接続となります。
+         今でも使うことはできますが、何の影響も及ぼしません。
+         <variablelist>
+          <varlistentry>
+           <term>
+            <parameter>"persist"</parameter>
+           </term>
+           <listitem>
+            <para>
+             持続的な接続を行うかどうか。これを設定すると、接続が持続的なものとなります。
+             文字列の値を接続 ID として使うので、
+             <literal>array("persist" => "foobar")</literal> で初期化した
+             <classname>Mongo</classname> のインスタンスがふたつあれば、
+             それは同じデータベース接続をあらわします。一方、
+             <literal>array("persist" => "barbaz")</literal>
+             で初期化したインスタンスは別のデータベース接続を使います。
+            </para>
+           </listitem>
+          </varlistentry>
+         </variablelist>
+        </para>
+        <para>
+         "replicaSet" パラメータは、boolean ではなく文字列を受け取るようになりました
+         (しかし、今でも boolean で指定することはできます)。
+        </para>
+       </entry>
        <entry>1.0.2</entry>
        <entry>
         コンストラクタがオプションの配列を受け取るようになりました。
@@ -262,11 +276,11 @@ mongodb://[username:password@]host1[:port1][,host2[:port2:],...]/db
 <?php
 
 // カンマ区切りのサーバ名をコンストラクタに渡します
-$m1 = new Mongo("mongodb://sf2.example.com,ny1.example.com", array("replicaSet" => true));
+$m1 = new Mongo("mongodb://sf2.example.com,ny1.example.com", array("replicaSet" => "myReplSet"));
 
 // ひとつのシードを渡すだけで、ドライバがそこから完全なリストを取得して
 // シードからマスタを探します
-$m2 = new Mongo("mongodb://ny1.example.com", array("replicaSet" => true));
+$m2 = new Mongo("mongodb://ny1.example.com", array("replicaSet" => "myReplSet"));
 
 ?>
 ]]>
@@ -321,43 +335,6 @@ $m = new Mongo("mongodb:///tmp/mongodb-20000.sock");
 
 // まずドメインソケットに接続し、失敗したときにはローカルホストへの接続を使います
 $m = new MongoDB("mongodb:///tmp/mongodb-27017.sock,localhost:27017");
-
-?>
-]]>
-   </programlisting>
-  </example>
-  <example>
-   <title><function>Mongo::__construct</function> での持続的接続の例</title>
-   <para>
-    持続的な接続は、ひとつのリクエストだけでなく別のリクエストまでも持続します
-    (普通は…。どの程度続くかはサーバ次第です)。
-    接続の再利用ができ、おおきな時間の節約になります。
-    接続は、時間のかかる処理だからです。
-   </para>
-   <para>
-    持続的な接続の識別は、サーバ文字列と ID 文字列で行います。
-   </para>
-   <programlisting role="php">
-<![CDATA[
-<?php
-
-// 持続的な接続を作成します
-$m1 = new Mongo("mongodb://localhost", array("persist" => ""));
-
-// $m1 と同じ接続を使います
-$m2 = new Mongo("mongodb://localhost", array("persist" => ""));
-
-// 新しい接続を作ります
-$m3 = new Mongo("mongodb://127.0.0.1", array("persist" => ""));
-
-// 新しい接続を作ります
-$m4 = new Mongo("mongodb://127.0.0.1:27017", array("persist" => ""));
-
-// 新しい接続を作ります
-$m5 = new Mongo("mongodb://localhost", array("persist" => "foo"));
-
-// $m5 の接続を使います
-$m6 = new Mongo("mongodb://localhost", array("persist" => "foo"));
 
 ?>
 ]]>

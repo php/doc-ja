@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: bb68ae3b245112cca18cdcd0dba4bcc8218ce389 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 63c5351f883b8b5f9961590aca7944c0ee7afd09 Maintainer: takagi Status: ready -->
 
 <section xml:id="mongo.connecting" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>接続</title>
@@ -15,8 +15,25 @@
  <section>
   <title>接続時のログイン</title>
   <para>
-   MongoDB を <literal>--auth</literal> オプションつきで起動すると、
-   接続時の認証が必須となります。データベース単位でこれを設定するには
+   MongoDB を <literal>--auth</literal> あるいは
+   <literal>--keyFile</literal> オプションつきで起動すると、
+   まずログインしないとドライバを使った操作ができなくなります。
+   接続にログインするには、ユーザ名とパスワードを接続 URI に指定します。
+  </para>
+  <programlisting role="php">
+<![CDATA[
+<?php
+
+$m = new Mongo("mongodb://${username}:${password}@localhost");
+
+?>
+]]>
+  </programlisting>
+  <para>
+   接続が落ちると、ドライバが自動的に再接続と再認証を試みます。
+  </para>
+  <para>
+   データベースレベルでの認証には
    <function>MongoDB::authenticate</function> を使います。
   </para>
   <programlisting role="php">
@@ -32,31 +49,13 @@ $db->authenticate($username, $password);
 ]]>
   </programlisting>
   <para>
-   この方法には大きな弱点があります。
-   データベースとの接続が切れてしまってから再接続をしたときには、
-   認証されていない状態になってしまうということです。
+   この方式には大きな問題があります。データベース接続が落ちて再接続したときには、
+   認証されていない状態になるということです。
   </para>
   <para>
-   <function>Mongo::__construct</function> で説明した接続文字列形式を使えば、
-   接続を再確立したときにも再び認証を行うことができます。
-  </para>
-  <para>
-   これは上のコードと同じ意味ですが、
-   再接続したときにも自動的に認証を行います。
-  </para>
-  <programlisting role="php">
-<![CDATA[
-<?php
-
-$m = new Mongo("mongodb://${username}:${password}@localhost");
-
-?>
-]]>
-  </programlisting>
-  <para>
-   デフォルトでは、ユーザの認証は admin データベースに対して行います。
-   別のデータベースへの認証を行うには、ホスト名のあとにデータベース名を指定します。
-   この例は、"blog" データベースにログインします。
+   URI 形式を使えば、ドライバが admin データベースに対して認証を試みます。
+   別のデータベースに対して認証を試みるには、データベース名をホスト名の後に指定します。
+   この例では、"blog" データベースにログインしています。
   </para>
   <programlisting role="php">
 <![CDATA[
@@ -79,7 +78,7 @@ $m = new Mongo("mongodb://${username}:${password}@localhost/blog");
 <![CDATA[
 <?php
 
-$m = new Mongo("mongodb://localhost:27017", array("replicaSet" => true));
+$m = new Mongo("mongodb://localhost:27017", array("replicaSet" => "myReplSetName"));
 
 ?>
 ]]>
@@ -113,7 +112,69 @@ $m = new Mongo("mongodb://localhost:27017", array("replicaSet" => true));
  </section>
 
  <section>
+  <title>ドメインソケットのサポート</title>
+
+  <para>
+   MongoDB をローカルで動かしていてバージョン 1.0.9
+   以降のドライバを使っている場合は、ファイル経由でデータベースに接続することができます。
+   MongoDB は、起動時に自動的にソケットファイル
+   /tmp/mongodb-&lt;port&gt;.sock をオープンします。
+  </para>
+
+  <para>
+   ソケットファイルに接続するには、このパスを MongoDB 接続文字列に指定します。
+  </para>
+
+  <programlisting role="php">
+<![CDATA[
+<?php
+
+$m = new Mongo("mongodb:///tmp/mongo-27017.sock");
+
+?>
+]]>
+  </programlisting>
+
+  <para>
+   上で示したようなソケットファイルへの接続で認証を使いたい場合は、
+   ポート番号 0 を指定しなければなりません。
+   接続文字列のパーサは、これを接続文字列の終端と見なします。
+  </para>
+
+  <programlisting role="php">
+<![CDATA[
+<?php
+
+$m = new Mongo("mongodb://username:password@/tmp/mongo-27017.sock:0/foo");
+
+?>
+]]>
+  </programlisting>
+
+ </section>
+
+ <section>
+  <title>接続プーリング</title>
+  <para>
+   バージョン 1.2.0 以降では、ドライバが自動的に接続プールを管理します。
+  </para>
+  <para>
+   ユーザが新しい <classname>Mongo</classname> のインスタンスを作ると、
+   必要な接続はすべて接続プールから取り出します (レプリカセットへの接続には
+   複数の接続が必要となることもあります)。<classname>Mongo</classname>
+   のインスタンスがスコープ外に出ると、接続をプールに返します。
+  </para>
+ </section>
+
+ <section>
   <title>持続的接続</title>
+  <note>
+   <para>
+    この節は 1.2.0 以降のバージョンには関係ありません。
+    1.2.0 以降、接続は常に持続的なものとなり、
+    ドライバが自動管理するようになりました。
+   </para>
+  </note>
 
   <para>
    データベースへの接続を新たに確立させるには、非常に時間がかかります。
@@ -176,48 +237,6 @@ for ($i=0; $i<1000; $i++) {
    <literal>"persist" =&gt; false</literal> を
    <function>Mongo::__construct</function> に渡さなければなりません。
   </para>
- </section>
-
- <section>
-  <title>ドメインソケット</title>
-
-  <para>
-   MongoDB をローカルで動かしていてバージョン 1.0.9
-   以降のドライバを使っている場合は、ファイル経由でデータベースに接続することができます。
-   MongoDB は、起動時に自動的にソケットファイル
-   /tmp/mongodb-&lt;port&gt;.sock をオープンします。
-  </para>
-
-  <para>
-   ソケットファイルに接続するには、このパスを MongoDB 接続文字列に指定します。
-  </para>
-
-  <programlisting role="php">
-<![CDATA[
-<?php
-
-$m = new Mongo("mongodb:///tmp/mongo-27017.sock");
-
-?>
-]]>
-  </programlisting>
-
-  <para>
-   上で示したようなソケットファイルへの接続で認証を使いたい場合は、
-   ポート番号 0 を指定しなければなりません。
-   接続文字列のパーサは、これを接続文字列の終端と見なします。
-  </para>
-
-  <programlisting role="php">
-<![CDATA[
-<?php
-
-$m = new Mongo("mongodb://username:password@/tmp/mongo-27017.sock:0/foo");
-
-?>
-]]>
-  </programlisting>
-
  </section>
 
 </section>

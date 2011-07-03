@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: d0146aabde81aaa681bdbf5c37ed5563f31df448 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 63c5351f883b8b5f9961590aca7944c0ee7afd09 Maintainer: takagi Status: ready -->
 <section xml:id="mongo.queries" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>問い合わせ</title>
 
@@ -52,21 +52,24 @@ $cursor = $c->find();
    <title>スレーブはどのように選ばれるか</title>
 
    <para>
-    各 <classname>Mongo</classname> インスタンスはそれぞれ自身のスレーブを持ち、
-    それは読み込み可能なスレーブの中からランダムに選ばれます。
-    持続的接続を使っている場合でもこれは保持されます。つまり、次のようなコード
+    各 <classname>Mongo</classname> インスタンスは、
+    利用可能なスレーブの中から、ping の所要時間が最も短いものを自分のスレーブとして選択します。
+    つまり、PHP クライアントがヨーロッパとオーストラリアにあって
+    それぞれのデータセンターにひとつずつセカンダリがあるとすると、
+    このようにすることができます。
    </para>
    <programlisting role="php">
 <![CDATA[
 <?php
 
-// メンバー ip0、ip1 および ip2 からなるレプリカセットに接続します
-// ip0 がプライマリ、ip1 と ip2 がセカンダリです
-$m1 = new Mongo("mongodb://ip0", array("replicaSet" => true, "persist" => "x"));
+// P はプライマリです
+
+// オーストラリアのクライアント
+$m1 = new Mongo("mongodb://P", array("replicaSet" => true));
 echo "m1's slave is ".$m1->getSlave()."\n";
 
-// $m1 と同じ接続を使います
-$m2 = new Mongo("mongodb://ip0", array("replicaSet" => true, "persist" => "x"));
+// ヨーロッパのクライアント
+$m2 = new Mongo("mongodb://P", array("replicaSet" => true));
 echo "m2's slave is ".$m2->getSlave()."\n";
 
 ?>
@@ -76,25 +79,9 @@ echo "m2's slave is ".$m2->getSlave()."\n";
     を試すと、おそらくこのような結果となります。
    </para>
    <screen>
-m1's slave is: ip2
-m2's slave is: ip1
+m1's slave is: australianHost
+m2's slave is: europeanHost
    </screen>
-
-   <para>
-    新しい <classname>Mongo</classname> を作り続けると、
-    ip1 と ip2 が同程度に分散した結果を得られることになります。
-    コマンドが取り上げたすべてのセカンダリが
-    (たとえ優先度が 0 であったり slaveDelay が設定されていたりしたとしても)
-    読み込み可能なサーバとなることに注意しましょう。
-    読み込みしたくないサーバがある場合は、読み込みのルーティングを手動でするか、
-    サーバのレプリカセットの設定で hidden オプションを追加します。
-   </para>
-
-   <para>
-    スレーブはインスタンス単位で選ばれ、
-    (レプリカセットに何か問題が発生して強制的に変更される場合を除いて)
-    変わることはありません。
-   </para>
 
    <para>
     セットのメンバーの現在の状態がどうなっているかを知るには、
@@ -108,45 +95,7 @@ m2's slave is: ip1
     あるサーバが読み込み可能であると判定される条件は、その state が
     2 (SECONDARY) かつ health が 1 であることです。
     これらをチェックするには <function>Mongo::getHosts</function>
-    を使います (いくつかのフィールドは省略しています)。
-   </para>
-   <programlisting>
-<![CDATA[
-Array
-(
-    [ubuntu:27017] => Array
-        (
-            [_id] => 0
-            [name] => ip0
-            [health] => 1
-            [state] => 1
-            [stateStr] => PRIMARY
-        )
-
-    [ubuntu:27019] => Array
-        (
-            [_id] => 2
-            [name] => ip1
-            [health] => 1
-            [state] => 2
-            [stateStr] => SECONDARY
-        )
-
-    [ubuntu:27018] => Array
-        (
-            [_id] => 1
-            [name] => ip2
-            [health] => 1
-            [state] => 2
-            [stateStr] => SECONDARY
-        )
-
-)
-]]>
-   </programlisting>
-   <para>
-    上のセットには、読み込み可能なサーバが "ip1" と "ip2" のふたつあります。
-    これらの両方がダウンしたり古くなったりすると、読み込みは "ip0" に向けられるようになります。
+    を使います。
    </para>
 
    <para>
@@ -170,8 +119,6 @@ Array
     スレーブの health と state は、5 秒おき
     あるいは次の操作の 5 秒前にチェックされます。
     ドライバがサーバに到達できずに何か問題が発生したときは、同時に設定の再チェックも行います。
-    これらの情報の更新を手動で強制的に行うには 
-    <function>Mongo::getHosts</function> をコールします。
    </para>
    
    <para>
