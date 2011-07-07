@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 5dc9ad2fb79b9b5a28cd9f75ad9144810b20299a Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: ee8b22bed4ec196ecded1155f2d7829b49a61934 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: shimooka,takagi -->
 <chapter xml:id="features.commandline" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>PHP をコマンドラインから使用する</title>
@@ -1623,57 +1623,102 @@ php >
    実運用に使ってはいけません。
   </para>
 
+  <para>
+    URI リクエストの処理は、PHP を開始した時点の作業ディレクトリから行われます。
+    -t オプションを使えば、ドキュメントルートを明示的に指定することができます。
+  </para>
+
+  <para>
+    URI リクエストにファイルが含まれない場合は、指定したディレクトリにある index.html
+    あるいは index.php を返します。どちらも存在しない場合はレスポンスコード
+    404 を返します。
+  </para>
+
+  <para>
+    ウェブサーバーの開始時にコマンドラインで PHP ファイルを指定すると、
+    そのファイルをウェブサーバーの "ルーター" スクリプトとして使います。
+    このスクリプトは、各 HTTP リクエストの開始時に動きます。このスクリプトが
+    &false; を返すと、リクエストされたリソースをそのままの形式で返します。
+    それ以外の場合はスクリプトの出力をブラウザに返します。
+  </para>
+
   <example>
-   <title>ファイルの読み込み</title> 
+   <title>ウェブサーバーの起動</title> 
    <programlisting role="shell">
 <![CDATA[
-$ php -S localhost:8000 test.php
+$ php -S localhost:8000
 ]]>
    </programlisting>
-   &example.outputs;
+   <para>
+     ターミナルには次のように表示されます。
+   </para>
    <screen>
 <![CDATA[
-PHP Development Server is listening on localhost:8000 in . ... Press Ctrl-C to quit.
+PHP Development Server is listening on localhost:8000 in /home/mydir ... Press Ctrl-C to quit.
+]]>
+   </screen>
+   <para>
+     http://localhost:8000/ と
+     http://localhost:8000/myscript.html をリクエストした後のターミナルの表示は、
+     このようになります。
+   </para>
+   <screen>
+<![CDATA[
+PHP Development Server is listening on localhost:8000 in /home/mydir ... Press Ctrl-C to quit.
+[Fri Jul  1 06:29:04 2011] ::1:63530: /
+[Fri Jul  1 06:29:10 2011] ::1:63532: /index.php
+[Fri Jul  1 06:29:11 2011] ::1:63533: /myscript.html
 ]]>
    </screen>
   </example>
 
   <example>
-   <title>ディレクトリの読み込み</title> 
+   <title>ドキュメントルートディレクトリを指定した起動</title> 
    <programlisting role="shell">
 <![CDATA[
 $ php -S localhost:8000 -t foo/
 ]]>
    </programlisting>
-   &example.outputs;
+   <para>
+     ターミナルには次のように表示されます。
+   </para>
    <screen>
 <![CDATA[
-PHP Development Server is listening on localhost:8000 in foo/ ... Press Ctrl-C to quit.
+PHP Development Server is listening on localhost:8000 in /home/mydir/foo ... Press Ctrl-C to quit.
 ]]>
    </screen>
   </example>
 
   <example>
-   <title>HTTP リクエストを送ったときの出力例</title> 
+   <title>ルータースクリプトの使用</title> 
+<para>
+  画像ファイルへのリクエストはそのまま通し、HTML ファイルがリクエストされると "Welcome to PHP" と表示します。
+</para>
    <programlisting role="php">
 <![CDATA[
 <?php
-// hello.php
-echo htmlspecialchars($_GET['hello'], ENT_QUOTES, 'UTF-8');
-?>
-]]>
+// router.php
+if (preg_match('/\.(?:png|jpg|jpeg|gif)$/', $_SERVER["REQUEST_URI"]))
+    return false;    // serve the requested resource as-is.
+else { 
+    echo "<p>Welcome to PHP</p>";
+}
+?>]]>
    </programlisting>
    <programlisting role="shell">
 <![CDATA[
-$ php -S localhost:8000 hello.php
+$ php -S localhost:8000 router.php
 ]]>
    </programlisting>
-   &example.outputs.similar;
+   <para>
+     いくつかの URI へのリクエスト後のターミナルの表示は、このようになります。
+   </para>
    <screen>
 <![CDATA[
+PHP Development Server is listening on localhost:8000 in /home/mydir ... Press Ctrl-C to quit.
 [Fri Jul  1 06:29:04 2011] ::1:63530: /
-[Fri Jul  1 06:29:10 2011] ::1:63532: /?hello=world
-[Fri Jul  1 06:29:11 2011] ::1:63533: /?hello=you
+[Fri Jul  1 06:29:10 2011] ::1:63532: /mylogo.jpg
+[Fri Jul  1 06:29:11 2011] ::1:63533: /abc.html
 ]]>
    </screen>
   </example>
