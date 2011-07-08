@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 4ad81a88ea29c069b183797c13800eb4dcb75ed6 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 4ce64bd3cac4a97a800b8f0b8d774929f621c1f9 Maintainer: takagi Status: ready -->
 
 <refentry xml:id="reflectionproperty.getvalue" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -14,12 +14,13 @@
    <modifier>public</modifier> <type>mixed</type><methodname>ReflectionProperty::getValue</methodname>
    <methodparam><type>object</type><parameter>object</parameter></methodparam>
   </methodsynopsis>
+  <methodsynopsis>
+   <modifier>public</modifier> <type>mixed</type><methodname>ReflectionProperty::getValue</methodname>
+   <void />
+  </methodsynopsis>
   <para>
    プロパティの値を取得します。
   </para>
-
-  &warn.undocumented.func;
-
  </refsect1>
 
  <refsect1 role="parameters">
@@ -30,7 +31,10 @@
      <term><parameter>object</parameter></term>
      <listitem>
       <para>
-       調べたいオブジェクト。
+       静的でないプロパティの場合は、プロパティを取得したいオブジェクトを指定しなければなりません。
+       オブジェクトを指定せずにデフォルトのプロパティを取得したい場合は、かわりに
+       <methodname>ReflectionClass::getDefaultProperties</methodname>
+       を使います。
       </para>
      </listitem>
     </varlistentry>
@@ -45,12 +49,61 @@
   </para>
  </refsect1>
 
+ <refsect1 role="errors">
+  &reftitle.errors;
+  <para>
+   プロパティにアクセスできない場合に <classname>ReflectionException</classname> をスローします。
+   protected や private なプロパティにアクセスするには、
+   <methodname>ReflectionProperty::setAccessible</methodname> を使います。
+  </para>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title><methodname>ReflectionProperty::getValue</methodname> の例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+class Foo {
+    public static $staticProperty = 'foobar';
+    
+    public $property = 'barfoo';
+    protected $privateProperty = 'foofoo';
+}
+
+$reflectionClass = new ReflectionClass('Foo');
+
+var_dump($reflectionClass->getProperty('staticProperty')->getValue());
+var_dump($reflectionClass->getProperty('property')->getValue(new Foo));
+
+$reflectionProperty = $reflectionClass->getProperty('privateProperty');
+$reflectionProperty->setAccessible(true);
+var_dump($reflectionProperty->getValue(new Foo));
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+string(6) "foobar"
+string(6) "barfoo"
+string(6) "foofoo"
+]]>
+    </screen>
+   </example>
+  </para>
+ </refsect1>
+
  <refsect1 role="seealso">
   &reftitle.seealso;
   <para>
    <simplelist>
-    <member><methodname>ReflectionProperty::getName</methodname></member>
     <member><methodname>ReflectionProperty::setValue</methodname></member>
+    <member><methodname>ReflectionProperty::setAccessible</methodname></member>
+    <member><methodname>ReflectionClass::getDefaultProperties</methodname></member>
+    <member><methodname>ReflectionClass::getStaticPropertyValue</methodname></member>
    </simplelist>
   </para>
  </refsect1>
