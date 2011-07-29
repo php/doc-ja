@@ -1,33 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 01a52259d9a5b46e3916390066c5bccbbe076aef Maintainer: takagi Status: ready -->
+<!-- EN-Revision: c47a493278b919120a765ee01c79bd5088c9d339 Maintainer: takagi Status: ready -->
 
 <refentry xml:id="mongocursor.doquery" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
   <refname>MongoCursor::doQuery</refname>
   <refpurpose>クエリを実行する</refpurpose>
  </refnamediv>
-
+ 
  <refsect1 role="description">
   &reftitle.description;
   <methodsynopsis>
    <modifier>protected</modifier> <type>void</type><methodname>MongoCursor::doQuery</methodname>
    <void/>
   </methodsynopsis>
+  <para>
+   この関数はデータベースへのクエリを実行します。すべてのクエリやコマンドは、この関数を通して実行します。
+   従って、この関数をオーバーライドすれば独自のクエリ処理機能を提供することができます。
+  </para>
+  <para>
+   この関数では、クエリのシリアライズとデータベースへの送信、
+   結果の受け取り、そして受け取った結果のデシリアライズを担当します。
+   オーバーライドしようとうするときは、おそらくは元の関数をコールして既存の機能を使うことになるでしょう
+   (以下の例を参照ください)。
+  </para>
  </refsect1>
-
+ 
  <refsect1 role="parameters">
   &reftitle.parameters;    
   &no.function.parameters;
  </refsect1>
-
+ 
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
    &null; を返します。
   </para>
  </refsect1>
-
+ 
  <refsect1 role="errors">
   &reftitle.errors;
   <para>
@@ -35,6 +45,42 @@
    をスローします。
   </para>
  </refsect1>
+ 
+ <refsect1 role="examples"><!-- {{{ -->
+  &reftitle.examples;
+  <para>
+   <example xml:id="mongocursor.doquery.example.basic"><!-- {{{ -->
+    <title><function>MongoCursor::doQuery</function> の例</title>
+    <para>
+     この関数をオーバーライドすると、スレーブに対してクエリを発行して
+     失敗した場合はマスタに向けて再発行することができます。
+    </para>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+class MyCursor extends MongoCursor {
+
+    protected function doQuery() {
+
+        $this->slaveOkay();
+
+        try {
+            MongoCursor::doQuery();
+        }
+        catch(MongoCursorException $e) {
+            $this->slaveOkay(false);
+            MongoCursor::doQuery();
+        }
+    }
+}
+
+?>
+]]>
+    </programlisting>
+   </example><!-- }}} -->
+  </para>
+ </refsect1><!-- }}} --> 
 </refentry>
 <!-- Keep this comment at the end of the file
 Local variables:
