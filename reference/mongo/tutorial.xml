@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 1e46ca946428a63404e5f9ed32f59cc81c1fc694 Maintainer: takagi Status: working -->
+<!-- EN-Revision: 1e46ca946428a63404e5f9ed32f59cc81c1fc694 Maintainer: takagi Status: ready -->
 
 <section xml:id="mongo.tutorial" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>チュートリアル</title>
@@ -75,20 +75,20 @@ $connection = new Mongo( "example.com:65432" ); // リモートホストの指�
 ]]>
   </programlisting>
   <para>
-   You do not have to explicitly disconnect from the database.  When
-   <literal>$connection</literal> goes out of scope, the connection will be
-   closed automatically and any database resources it was using will be freed.
+   明示的にデータベースとの接続を切断する必要はありません。
+   <literal>$connection</literal> がスコープ外に抜けた時点で接続は自動的に閉じられ、
+   使っていたデータベースリソースもすべて開放されます。
   </para>
   <section>
-   <title>See Also</title>
+   <title>参考</title>
    <para>
-    The chapter on <link linkend="mongo.connecting">connecting</link>
-    covers different types of connections.
+    <link linkend="mongo.connecting">接続</link>のページで、
+    さまざまな形式の接続を扱っています。
    </para>
    <para>
-    The API documentation on the <classname>Mongo</classname> class and
-    <function>Mongo::__construct</function> give a comprehensive look at all
-    possible options with a number of examples.
+    <classname>Mongo</classname> クラスや
+    <function>Mongo::__construct</function> の API ドキュメントには、
+    利用可能なすべてのオプションや多くのサンプルがあります。
    </para>
   </section>
 
@@ -128,10 +128,10 @@ $db = $connection->mybiglongdbanme;
     </programlisting>
    </para>
    <section>
-    <title>See Also</title>
+    <title>参考</title>
     <para>
-     The API documentation on the <classname>MongoDB</classname> class contains
-     more information about database objects.
+     <classname>MongoDB</classname> クラスの API ドキュメントに、
+     データベースオブジェクトに関する詳細な情報があります。
     </para>
    </section>
   </section>
@@ -155,14 +155,14 @@ $collection = $connection->baz->foobar;
 ]]>
    </programlisting>
    <para>
-    A collection is analogous to a table (if you are familiar with relational
-    databases).
+    リレーショナルデータベースになじみのある人にとっては、
+    コレクションとはテーブルに似たものだと考えればわかりやすいでしょう。
    </para>
    <section>
-    <title>See Also</title>
+    <title>参考</title>
     <para>
-     The API documentation on the <classname>MongoCollection</classname> class
-     contains more information about collection objects.
+     <classname>MongoCollection</classname> クラスの API ドキュメントに、
+     コレクションオブジェクトに関する詳細な情報があります。
     </para>
    </section>
   </section>
@@ -203,10 +203,10 @@ $collection->insert( $doc );
 ]]>
    </programlisting>
    <section>
-    <title>See Also</title>
+    <title>参考</title>
     <para>
-     The API documentation on <function>MongoCollection::insert</function>
-     contains more information about inserting data.
+     <function>MongoCollection::insert</function> の API ドキュメントに、
+     データの追加に関する詳細な情報があります。
     </para>
    </section>
   </section>
@@ -216,10 +216,11 @@ $collection->insert( $doc );
     <function>MongoCollection::findOne</function> によるドキュメントの検索
    </title>
    <para>
-    To show that the document we inserted in the previous step is there, we can
-    do a simple <function>MongoCollection::findOne</function> operation to get a
-    single document from the collection. This method is useful when there only is
-    one document matching the query or you are only interested in one result.
+    先ほどの例で追加したドキュメントを表示するには、
+    シンプルに <function>MongoCollection::findOne</function>
+    を実行してコレクションからドキュメントをひとつ取得します。
+    このメソッドは、クエリにマッチするドキュメントがひとつだけしかないときや
+    一件の結果にだけしか興味がない場合に便利です。
    </para>
    <programlisting role="php">
 <![CDATA[
@@ -268,54 +269,56 @@ array(6) {
 ]]>
    </programlisting>
    <para>
-    Note that there is an <literal>_id</literal> field that has been added
-    automatically to your document. <literal>_id</literal> is the "primary key"
-    field.  If your document does not specify one, the driver will add one
-    automatically.
+    <literal>_id</literal> フィールドが
+    自動的にドキュメントに追加されていることに注目しましょう。
+    <literal>_id</literal> は、いわゆる「主キー」フィールドです。
+    ドキュメントにキーがなければ、ドライバが自動的に追加します。
    </para>
    <para>
-    If you specify your own <literal>_id</literal> field, it must be unique to
-    the collection.  See the example here:
+    自前で <literal>_id</literal> フィールドを指定する場合は、
+    コレクション内で一意になるようにしなければなりません。
+    例をごらんください。
    </para>
    <programlisting role="php">
 <![CDATA[
 <?php
 
 $db->foo->insert(array("_id" => 1), array("safe" => true));
-// this will throw an exception
+// これは例外が発生します
 $db->foo->insert(array("_id" => 1), array("safe" => true));
 
-// this is fine, as it is a different collection
+// こちらは別のコレクションなので大丈夫です
 $db->bar->insert(array("_id" => 1), array("safe" => true));
 
 ?>
 ]]>
    </programlisting>
    <para>
-    Note that these inserts pass a second array:
-    <literal>array("safe" => true)</literal>.  This second field specifies
-    options for the insert.  By default, the driver does not wait for a database
-    response for writes, so the driver would not catch the the
-    <literal>_id</literal>.  As we specify that this is a "safe" write, the
-    driver will wait for a database response and see that the write did not go
-    through.  In general, all writes should use the "safe" option (it is omitted
-    in previous examples for simplicity).
+    これらの追加処理では、二番目の引数で配列
+    <literal>array("safe" => true)</literal> を渡していることに注目しましょう。
+    これは、追加時のオプションです。デフォルトでは、
+    ドライバは書き込み処理の応答を待ちません。そのため、ドライバが
+    <literal>_id</literal> を取得できなくなります。
+    この操作が "安全な" 書き込みであると指定することで、
+    ドライバは書き込み操作の完了を待って書き込みが消えてしまわないようにします。
+    一般に、すべての書き込みには "safe" オプションを指定しておくべきです
+    (先ほどの例で省略していたのは、コードをシンプルにするためです)。
    </para>
    <section>
-    <title>See Also</title>
+    <title>参考</title>
     <para>
-     <function>MongoCollection::findOne</function> for more information about
-     finding data.
+     <function>MongoCollection::findOne</function> に、
+     データの検索に関する詳細な情報があります。
     </para>
     <para>
-     <classname>MongoId</classname> goes into more detail on unique ids.
+     <classname>MongoId</classname> には、一意な ID に関する詳細な説明があります。
     </para>
     <para>
-     The <link linkend="mongo.writes">writes</link> section covers safe
-     writes in more depth, as do the writing functions such as
-     <function>MongoCollection::insert</function>,
-     <function>MongoCollection::update</function>, and
-     <function>MongoCollection::remove</function>.
+     <link linkend="mongo.writes">書き込み</link>のページでは、
+     安全な書き込みについてより詳しく扱っています。
+     <function>MongoCollection::insert</function>、
+     <function>MongoCollection::update</function> そして
+     <function>MongoCollection::remove</function> といった書き込み関数の使いかたもあります。
     </para>
    </section>
   </section>
@@ -324,9 +327,9 @@ $db->bar->insert(array("_id" => 1), array("safe" => true));
    <title>複数のドキュメントの追加</title>
    <para>
     もう少し意味のある問い合わせをするために、複数のシンプルなドキュメントをコレクションに追加しましょう。
-    These documents will just be of the form
-    <literal>array( "i" => <replaceable>value</replaceable> );</literal> and we
-    can do this fairly efficiently in a loop:
+    ドキュメントは
+    <literal>array( "i" => <replaceable>value</replaceable> );</literal>
+    形式で、これをループ内で処理します。
    </para>
    <programlisting role="php">
 <![CDATA[
@@ -393,10 +396,10 @@ foreach ($cursor as $id => $value) {
     <literal>$value</literal> はドキュメントそのものです。
    </para>
    <section>
-    <title>See Also</title>
+    <title>参考</title>
     <para>
-     The API documentation on <function>MongoCollection::find</function>
-     contains more information about finding data.
+     <function>MongoCollection::find</function> の API ドキュメントに、
+     データの検索に関する詳細な情報があります。
     </para>
    </section>
   </section>
@@ -480,8 +483,8 @@ while( $cursor->hasNext() ) {
 ]]>
    </programlisting>
    <para>
-    Remember to always escape the $-symbol or use single quotes.  Otherwise PHP
-    will interpret it to be the variable <varname>$gt</varname>.
+    常に $ 記号をエスケープするか、あるいはシングルクォートを使うことを覚えておきましょう。
+    そうしないと、PHP はこれを変数 <varname>$gt</varname> と解釈してしまいます。
    </para>
   </section>
 
@@ -504,10 +507,11 @@ $coll->ensureIndex( array( "i" => -1, "j" => 1 ) );  // "i" の降順、"j" の�
 ]]>
    </programlisting>
    <para>
-    Indexing is critical for good read performance as your data grows.  If you
-    are not familiar with indexing, check out the
-    <function>MongoCollection::ensureIndex</function> documentation and the core
-    <link xlink:href="&url.mongodb.dochub.indexes;">MongoDB indexing documentation</link>.
+    データが増えてもよいパフォーマンスを維持するためには、インデックスが不可欠です。
+    インデックスについてよくわからない場合は、<function>MongoCollection::ensureIndex</function>
+    のドキュメントと、本家の
+    <link xlink:href="&url.mongodb.dochub.indexes;">インデックスに関するドキュメント</link>
+    を参照ください。
    </para>
   </section>
  </section>
