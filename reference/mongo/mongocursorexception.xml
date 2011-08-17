@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 7214d04a66fb2e93d8156f8995b01b858e12e3f8 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 172e7cec9a3dff032e1e53529ba3f17e7fb30735 Maintainer: takagi Status: ready -->
 
 <phpdoc:classref xml:id="class.mongocursorexception" xmlns:phpdoc="http://php.net/ns/phpdoc" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xi="http://www.w3.org/2001/XInclude">
 
@@ -14,13 +14,51 @@
    &reftitle.intro;
    <para>
     カーソルへの不正なアクセスや応答を受け取る際のエラーが原因です。
+    このエラーが発生するのは、単なるクエリではなく結果を受け取るリクエストであることに注意しましょう。
+    書き込みやコマンド、あるいはその他何らかの情報をデータベースに送って結果を待つ操作では
+    <classname>MongoCursorException</classname> をスローすることがあります。
+    唯一の例外は <literal>new Mongo()</literal> (新しい接続の作成)
+    で、これは <classname>MongoConnectionException</classname>
+    しかスローしません。
    </para>
 
    <para>
-    応答を受け取る際にエラーがあった場合は、より詳細なエラーメッセージが得られます。
-    問題の原因を調べるために役立つでしょう。
-    エラーメッセージをプログラム上で読み取るのは少し面倒なので、
-    例外の個々の要因に対してエラーコードも割り当てられています。
+    このクラスはエラーメッセージを返します。
+    このメッセージを見れば、問題の調査の助けになり、
+    エラーコードに関連付けられた原因もわかります。
+   </para>
+
+   <para>
+    たとえば、次のように同じ _id のドキュメントを 2 件追加してみましょう。
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+try {
+    $collection->insert(array("_id" => 1), array("safe" => true));
+    $collection->insert(array("_id" => 1), array("safe" => true));
+}
+catch (MongoCursorException $e) {
+    echo "error message: ".$e->getMessage()."\n";
+    echo "error code: ".$e->getCode()."\n";
+}
+
+?>
+]]>
+    </programlisting>
+    結果はこのようになります。
+    <programlisting>
+<![CDATA[
+error message: E11000 duplicate key error index: foo.bar.$_id_  dup key: { : 1 }
+error code: 11000
+]]>
+    </programlisting>
+    MongoDB のエラーコード (11000) が PHP のエラーコードとして使われていることに注目しましょう。
+    PHP のドライバは、可能な限り「ネイティブの」エラーコードを使います。
+   </para>
+
+   <para>
+    よくあるエラーとそのコード、そして原因をまとめました。
    </para>
 
    <itemizedlist>
@@ -34,6 +72,33 @@
      <para>
       クエリを実行した後で、クエリの設定を変えるメソッドをコールしました。
       いったんカーソルをリセットしてからやりなおしてください。
+     </para>
+     <para>
+      An example:
+      <programlisting role="php">
+<![CDATA[
+<?php
+
+try {
+    $cursor = $collection->find();
+    var_dump($cursor->getNext());
+
+    // getNext() でクエリを実行しているので、ここでリミットを指定しても遅すぎます
+    $cursor->limit(1);
+}
+catch (MongoCursorException $e) {
+    echo "error message: ".$e->getMessage()."\n";
+    echo "error code: ".$e->getCode()."\n";
+}
+
+// こうすれば、正しく動作します
+$cursor->getNext();
+$cursor->reset();
+$cursor->limit(1);
+
+?>
+]]>
+      </programlisting>
      </para>
     </listitem>
 
@@ -65,14 +130,31 @@
       (これを防ぐための方法は <function>MongoCursor::immortal</function>
       を参照ください)。
      </para>
-    </listitem>
+     <para>
+      例を示します。
+      <programlisting role="php">
+<![CDATA[
+<?php
 
-    <listitem>
-     <para>
-      Couldn't get response header.
-     </para>
-     <para>
-      コード: 4
+try {
+    $cursor = $collection->find();
+    $cursor->getNext();
+
+    // 15 分間スリープします
+    sleep(60*15);
+
+    while ($cursor->hasNext()) {
+        $cursor->getNext();
+    }
+}
+catch (MongoCursorException $e) {
+    echo "error message: ".$e->getMessage()."\n";
+    echo "error code: ".$e->getCode()."\n";
+}
+
+?>
+]]>
+      </programlisting>
      </para>
     </listitem>
 
@@ -84,7 +166,7 @@
       コード: 3
      </para>
      <para>
-      これは、ドライバの空間から外れてしまったか、
+      これは、RAM から外れてしまったか、
       その他の異常な状況になったことを意味します。
      </para>
     </listitem>
@@ -97,9 +179,8 @@
       コード: 4
      </para>
      <para>
-      ドライバがデータベースからのリプライヘッダを取得できず、取得をあきらめました。
-      データベースが立ち上がっていることとネットワークがつながっていることを確認し、
-      もう一度クエリを実行してみましょう。
+      データベースあるいはネットワークがダウンしているときによく出るエラーです。
+      ドライバが接続からの応答を受け取れなかったことを意味します。
      </para>
     </listitem>
 
@@ -120,16 +201,14 @@
 
     <listitem>
      <para>
-      <literal>bad response length: %d, max: %d, did the db assert?</literal>
+      <literal>bad response length: %d, did the db assert?</literal>
      </para>
      <para>
       コード: 6
      </para>
      <para>
-      これは、データベースの応答が 4MB を超えるかあるいは 0 未満であることを意味します。
-      5MB を超えるような値が返ってくるようなら、データベースのバグである可能性があります
-      (応答の最大長は 4MB です)。開発者に報告しましょう。
-      0 未満の応答は、たいていデータベースのアサーションが発生したことを意味します。
+      これは、データベースの応答が 0 未満であることを意味します。
+      このエラーの原因は、おそらくネットワーク障害かデータベースの破損です。
      </para>
     </listitem>
 
@@ -236,6 +315,30 @@
       送信時に C のソケットエラーが発生しました。
      </para>
     </listitem>
+
+    <listitem>
+     <para>
+      <literal>max number of retries exhausted, couldn't send query</literal>
+     </para>
+     <para>
+      Code: 19
+     </para>
+     <para>
+      最初の実行が何らかの原因で失敗したときに、ドライバは自動的に
+      「プレーンな」クエリ (コマンドではないもの) を何度か再送します。
+      これは、レプリカセットのフェイルオーバー時の例外の発生を減らし
+      (それでも少しは発生しますが)、
+      一時的なネットワーク障害を取り繕うためです。
+     </para>
+     <para>
+      これは、何度実行しても結局データベースに再接続できなかったとき
+      (たとえば、データベースにつながらないときなど)
+      に発生します。
+     </para>
+     <para>
+      バージョン 1.2.2 で追加されました。
+     </para>
+    </listitem>
    </itemizedlist>
   </section>
 
@@ -243,7 +346,8 @@
   <section>
    <title>データベースから渡されたエラー</title>
    <para>
-    クエリの実行時に発生したデータベースのエラーは、常に MongoCursorExceptions を発生させなければなりません。
+    クエリの実行時に発生したデータベースのエラーは、常に
+    <classname>MongoCursorExceptions</classname> を発生させなければなりません。
     エラーメッセージとエラーコードはデータベースから直接送られるので、
     対応するエラーをデータベースのログから見つけることができます。
    </para>
@@ -300,7 +404,7 @@
      </ooclass>
     </classsynopsisinfo>
     <!-- }}} -->
-    
+
    </classsynopsis>
    <!-- }}} -->
 
