@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 5b4bd92b042b75f536056056e4116d30770630a0 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: fa1ad00f0059f3a33252a6921079eb40319f16e2 Maintainer: takagi Status: ready -->
 
 <refentry xml:id="amqpqueue.ack" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -49,6 +49,75 @@
   &reftitle.returnvalues;
   <para>
    &return.success;
+  </para>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title><methodname>AMQPQueue::ack</methodname> と <methodname>AMQPQueue::get</methodname> の例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+/* デフォルトの設定で接続を作成します */
+$connection = new AMQPConnection();
+$connection->connect();
+
+/* キューオブジェクトを作成します */
+$queue = new AMQPQueue($connection);
+
+// キューを宣言します
+$queue->declare('myqueue');
+
+// 次のメッセージを取得しますが、配送済みにはしません
+$message = $queue->get(AMQP_NOACK);
+
+echo $message['msg'];
+
+// メッセージを受信したことを知らせます
+$queue->ack($message['delivery_tag']);
+
+?>
+]]>
+    </programlisting>
+   </example>
+   <example>
+    <title><methodname>AMQPQueue::ack</methodname> と <methodname>AMQPQueue::consume</methodname> の例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+/* デフォルトの設定で接続を作成します */
+$connection = new AMQPConnection();
+$connection->connect();
+
+/* キューオブジェクトを作成します */
+$queue = new AMQPQueue($connection);
+
+// キューを宣言します
+$queue->declare('myqueue');
+
+$options = array(
+    'min' => 1,
+    'max' => 10,
+    'ack' => false
+);
+
+// メッセージを取得しますが、配送済みにはしません
+$messages = $queue->consume($options);
+
+foreach ($messages as $message) {
+    echo $message['message_body'];
+    // メッセージを受信したことを知らせます
+    $queue->ack($message['delivery_tag']);
+}
+
+?>
+]]>
+    </programlisting>
+   </example>
   </para>
  </refsect1>
 </refentry>
