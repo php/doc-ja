@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 63c5351f883b8b5f9961590aca7944c0ee7afd09 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 06c28576dfb94c76e1a0b18b686207bab70b6978 Maintainer: takagi Status: working -->
 
 <section xml:id="mongo.connecting" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>接続</title>
@@ -50,10 +50,10 @@ $db->authenticate($username, $password);
   </programlisting>
   <para>
    この方式には大きな問題があります。データベース接続が落ちて再接続したときには、
-   認証されていない状態になるということです。
+   新しい接続はまだ認証されていない状態になるということです。
+   URI 形式を使えば、新しい接続が立ち上がったときに PHP ドライバが自動的に認証を試みます。
   </para>
   <para>
-   URI 形式を使えば、ドライバが admin データベースに対して認証を試みます。
    別のデータベースに対して認証を試みるには、データベース名をホスト名の後に指定します。
    この例では、"blog" データベースにログインしています。
   </para>
@@ -154,16 +154,106 @@ $m = new Mongo("mongodb://username:password@/tmp/mongo-27017.sock:0/foo");
  </section>
 
  <section>
-  <title>接続プーリング</title>
+  <title>接続プーリング (バージョン 1.2.0 以降)</title>
   <para>
-   バージョン 1.2.0 以降では、ドライバが自動的に接続プールを管理します。
+   接続の作成は、ドライバが行う作業の中でも最も重量級の作業です。
+   接続を正しく確立するには、どんなに高速なネットワークであっても数百ミリ秒はかかることがあります。
+   そこで、ドライバが新たな接続を作る回数をできるだけ減らすために、
+   プールにある接続を再利用することを考えます。
   </para>
   <para>
    ユーザが新しい <classname>Mongo</classname> のインスタンスを作ると、
    必要な接続はすべて接続プールから取り出します (レプリカセットへの接続には
-   複数の接続が必要となることもあります)。<classname>Mongo</classname>
-   のインスタンスがスコープ外に出ると、接続をプールに返します。
+   複数の接続が必要となることもあります。それぞれが、セット内の個々のメンバーへの接続となります)。
+   <classname>Mongo</classname> のインスタンスがスコープ外に出ると、接続をプールに返します。
+   PHP のプロセスが終了すると、プール内のすべての接続が閉じられます。
   </para>
+  <section>
+   <title>"Why do I have so many open connections?"</title>
+   <para>
+    Connection pools can generate a large number of connections. This is expected
+    and, using a little arithmetic, you can figure out how many connections to
+    expect.  There are three factors in the total number of connections:
+   </para>
+   <itemizedlist>
+    <listitem>
+     <para>
+      <literal>
+       connections_per_pool
+      </literal>
+     </para>
+     <para>
+      Each connection pool will create, by default, an unlimited number of
+      connections. One might assume that this is a problem: if it can create an
+      unlimited number of connections, couldn't it create thousands and the
+      server would run out of file descriptors? In practice, this is unlikely,
+      as unused connections are returned to the pool to be used later, so future
+      connections will use the same connection instead of creating a new one.
+      Unless you create thousands of connections at once without letting any go
+      out of scope, the number of connections open should stay at a reasonable
+      number.
+     </para>
+     <para>
+      You can see how many connections you have in a pool using the
+      <function>MongoPool::info</function> function.  Add up the "in use" and
+      "in pool" fields for a given server.  That is the total number of
+      connections for that pool.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      <literal>
+       pools_per_process
+      </literal>
+     </para>
+     <para>
+      Each MongoDB server address you're connecting to gets its own connection
+      pool.  For example, if your local hostname is "example.net", connecting
+      to "example.net:27017", "localhost:27017", and "/tmp/mongodb-27017.sock"
+      will create three connection pools.  You can see how many connection pools
+      you have open using <function>MongoPool::info</function>.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      <literal>
+       processes
+      </literal>
+     </para>
+     <para>
+      Each PHP process has a separate set of pools.  PHP-FPM and Apache
+      generally create between 6 and a couple dozen PHP worker children. Check
+      your settings to see what the max number of PHP processes is that can be
+      spawned.
+     </para>
+     <para>
+      If you are using PHP-FPM, estimating the number of connections can be
+      tricky because it will spawn more PHP-FPM workers under heavy load. To be
+      on the safe side, look at the max_children parameter or add up
+      spare_servers+start_servers (choose whichever number is higher).  That's
+      how many PHP processes (and, thus sets of pools) you should plan for.
+     </para>
+    </listitem>
+   </itemizedlist>
+   <para>
+    The three variables above can be multiplied together to give the max
+    number of connections expected:
+    <literal>connections_per_pool*pools_per_process*processes</literal>.  Note
+    that <literal>connections_per_pool</literal> can be different for different
+    pools, so <literal>connections_per_pool</literal> should be the max.
+   </para>
+   <para>
+    For example, suppose we're getting 30 connections per pool, 10 pools per PHP
+    process, and 128 PHP processes.  Then we can expect 38400 connections from
+    this machine.  Thus, we should set this machine's file descriptor limit to
+    be high enough to handle all of these connections or it may run out of file
+    descriptors.
+   </para>
+   <para>
+    See <classname>MongoPool</classname> for more information on connection
+    pooling.
+   </para>
+  </section>
  </section>
 
  <section>
@@ -173,6 +263,7 @@ $m = new Mongo("mongodb://username:password@/tmp/mongo-27017.sock:0/foo");
     この節は 1.2.0 以降のバージョンには関係ありません。
     1.2.0 以降、接続は常に持続的なものとなり、
     ドライバが自動管理するようになりました。
+    プーリングに関する詳細な情報は <classname>MongoPool</classname> を参照ください。
    </para>
   </note>
 
@@ -230,12 +321,6 @@ for ($i=0; $i<1000; $i++) {
    実運用環境では、やむを得ぬ理由がない限り常に持続的接続を使うべきです。
    リレーショナルデータベースにおいて持続的接続を推奨しない理由はいくつかありますが、
    その大半は MongoDB には無関係なものです。
-  </para>
-  <para>
-   持続的接続は、1.0.12 でデフォルトの接続方式になりました。
-   持続的でない接続を作成するには、
-   <literal>"persist" =&gt; false</literal> を
-   <function>Mongo::__construct</function> に渡さなければなりません。
   </para>
  </section>
 
