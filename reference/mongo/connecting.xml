@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 06c28576dfb94c76e1a0b18b686207bab70b6978 Maintainer: takagi Status: working -->
+<!-- EN-Revision: 06c28576dfb94c76e1a0b18b686207bab70b6978 Maintainer: takagi Status: ready -->
 
 <section xml:id="mongo.connecting" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>接続</title>
@@ -169,11 +169,11 @@ $m = new Mongo("mongodb://username:password@/tmp/mongo-27017.sock:0/foo");
    PHP のプロセスが終了すると、プール内のすべての接続が閉じられます。
   </para>
   <section>
-   <title>"Why do I have so many open connections?"</title>
+   <title>"なぜこんなに接続をオープンしてしまっているの?"</title>
    <para>
-    Connection pools can generate a large number of connections. This is expected
-    and, using a little arithmetic, you can figure out how many connections to
-    expect.  There are three factors in the total number of connections:
+    接続プールが作成する接続の数が大量になることがあります。
+    これは意外なことではなく、ちょっとした計算をすればどれだけの接続が必要になるかがわかります。
+    接続の総数に影響するのは、次の三要素です。
    </para>
    <itemizedlist>
     <listitem>
@@ -183,21 +183,20 @@ $m = new Mongo("mongodb://username:password@/tmp/mongo-27017.sock:0/foo");
       </literal>
      </para>
      <para>
-      Each connection pool will create, by default, an unlimited number of
-      connections. One might assume that this is a problem: if it can create an
-      unlimited number of connections, couldn't it create thousands and the
-      server would run out of file descriptors? In practice, this is unlikely,
-      as unused connections are returned to the pool to be used later, so future
-      connections will use the same connection instead of creating a new one.
-      Unless you create thousands of connections at once without letting any go
-      out of scope, the number of connections open should stay at a reasonable
-      number.
+      各接続プールが作成する接続の数は、デフォルトでは無制限です。
+      これは問題だと感じる人もいるでしょう。無制限に作れるとしても、
+      ファイルディスクリプタの制限があるから何千も作るのは無理じゃないか? と。
+      実際のところ、そこまで達することはあり得ません。
+      未使用の接続はプールに返されてその後再利用されるので、
+      後から接続を利用するときには新しく作るのではなく既存の接続を使います。
+      何千もの接続を一気に作ってどれもスコープから外れないようにでもしない限り、
+      接続の数は常識的な範囲に収まります。
      </para>
      <para>
-      You can see how many connections you have in a pool using the
-      <function>MongoPool::info</function> function.  Add up the "in use" and
-      "in pool" fields for a given server.  That is the total number of
-      connections for that pool.
+      プール内の接続数を知るには
+      <function>MongoPool::info</function> を使います。
+      指定したサーバーの "in use" フィールドと "in pool" フィールドの値を足した結果が、
+      そのプールの接続の総数となります。
      </para>
     </listitem>
     <listitem>
@@ -207,11 +206,12 @@ $m = new Mongo("mongodb://username:password@/tmp/mongo-27017.sock:0/foo");
       </literal>
      </para>
      <para>
-      Each MongoDB server address you're connecting to gets its own connection
-      pool.  For example, if your local hostname is "example.net", connecting
-      to "example.net:27017", "localhost:27017", and "/tmp/mongodb-27017.sock"
-      will create three connection pools.  You can see how many connection pools
-      you have open using <function>MongoPool::info</function>.
+      接続先の MongoDB サーバーごとに、自前の接続プールを持っています。
+      たとえばローカルのホスト名が "example.net" のときに
+      "example.net:27017"、"localhost:27017"、そして "/tmp/mongodb-27017.sock"
+      に接続すると、全部で 3 つの接続プールができることになります。
+      開いている接続プールの総数は <function>MongoPool::info</function>
+      で取得できます。
      </para>
     </listitem>
     <listitem>
@@ -221,37 +221,36 @@ $m = new Mongo("mongodb://username:password@/tmp/mongo-27017.sock:0/foo");
       </literal>
      </para>
      <para>
-      Each PHP process has a separate set of pools.  PHP-FPM and Apache
-      generally create between 6 and a couple dozen PHP worker children. Check
-      your settings to see what the max number of PHP processes is that can be
-      spawned.
+      PHP のプロセスごとに、プール群は分かれています。
+      PHP-FPM や Apache は、一般的に 6 から数十の間の
+      PHP ワーカープロセスを作ります。最大でどれだけの PHP
+      プロセスが立ち上がる設定になっているか、確認しましょう。
      </para>
      <para>
-      If you are using PHP-FPM, estimating the number of connections can be
-      tricky because it will spawn more PHP-FPM workers under heavy load. To be
-      on the safe side, look at the max_children parameter or add up
-      spare_servers+start_servers (choose whichever number is higher).  That's
-      how many PHP processes (and, thus sets of pools) you should plan for.
+      PHP-FPM を使っている場合は、接続数の見積もりは多少面倒です。
+      というのも、負荷が高くなると PHP-FPM ワーカーをより多く立ち上げるようになるからです。
+      安全側に倒すなら、max_children パラメータあるいは
+      spare_servers+start_servers (のどちらか大きいほう)
+      を確認しましょう。これが、想定すべき PHP プロセス数 (そして、プール数) となります。
      </para>
     </listitem>
    </itemizedlist>
    <para>
-    The three variables above can be multiplied together to give the max
-    number of connections expected:
-    <literal>connections_per_pool*pools_per_process*processes</literal>.  Note
-    that <literal>connections_per_pool</literal> can be different for different
-    pools, so <literal>connections_per_pool</literal> should be the max.
+    これら 3 つの変数を掛け合わせた
+    <literal>connections_per_pool*pools_per_process*processes</literal>
+    で、接続の総数が得られます。<literal>connections_per_pool</literal>
+    はプールによって異なることに注意しましょう。つまり、この計算をするときには
+    <literal>connections_per_pool</literal> は最大値を使わなければなりません。
    </para>
    <para>
-    For example, suppose we're getting 30 connections per pool, 10 pools per PHP
-    process, and 128 PHP processes.  Then we can expect 38400 connections from
-    this machine.  Thus, we should set this machine's file descriptor limit to
-    be high enough to handle all of these connections or it may run out of file
-    descriptors.
+    たとえば、プールごとに 30 の接続があって PHP のプロセスあたり 10 のプールを用意し、
+    さらに PHP が 128 プロセスあるものとします。この場合、マシン上での接続数は
+    38400 になります。したがって、これだけの数をさばける程度にファイルディスクリプタの制限を増やしておく必要があります。
+    ファイルディスクリプタの上限に達してしまうと、それ以上の接続は処理できなくなります。
    </para>
    <para>
-    See <classname>MongoPool</classname> for more information on connection
-    pooling.
+    接続プーリングに関する詳細な情報は
+    <classname>MongoPool</classname> を参照ください。
    </para>
   </section>
  </section>
