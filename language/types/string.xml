@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 9fa2d6307cf18d533584eea85d204ddf3a383160 Maintainer: takagi Status: working -->
+<!-- EN-Revision: 9fa2d6307cf18d533584eea85d204ddf3a383160 Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa,shimooka -->
 <sect1 xml:id="language.types.string">
  <title>文字列</title>
@@ -992,104 +992,109 @@ echo "\$foo==$foo; type is " . gettype ($foo) . "<br />\n";
   <title>文字列型の詳細</title>
   
   <para>
-   The <type>string</type> in PHP is implemented as an array of bytes and an
-   integer indicating the length of the buffer. It has no information about how
-   those bytes translate to characters, leaving that task to the programmer.
-   There are no limitations on the values the string can be composed of; in
-   particular, bytes with value <literal>0</literal> (“NUL bytes”) are allowed
-   anywhere in the string (however, a few functions, said in this manual not to
-   be “binary safe”, may hand off the strings to libraries that ignore data
-   after a NUL byte.)
+   PHP における文字列型は、バイトの配列と整数値 (バッファ長) で実装されています。
+   バイト列を文字列に変換する方法については何の情報も持っておらず、完全にプログラマ任せとなっています。
+   文字列を構成する値には何の制限もありません。特に気をつけるべきなのは、
+   値 <literal>0</literal> のバイト (いわゆる “NUL バイト”) を文字列内のどの部分にでも使えるという点です
+   (しかし、このマニュアル上で「バイナリセーフではない」とされている一部の関数では、
+   受け取った文字列をライブラリに渡すときに NUL バイト以降を無視することがあります)。
   </para>
   <para>
-   This nature of the string type explains why there is no separate “byte” type
-   in PHP – strings take this role. Functions that return no textual data – for
-   instance, arbitrary data read from a network socket – will still return
-   strings.
+   PHP の文字列型の正体を知ってしまえば、なぜ PHP には「バイト型」が存在しないのかもわかります。
+   つまり、文字列型がその役割を受け持っているのです。テキスト以外のデータ、
+   たとえばネットワークソケットから読み込んだ任意のデータを返す関数も、
+   文字列で値を返します。
   </para>
   <para>
-   Given that PHP does not dictate a specific encoding for strings, one might
-   wonder how string literals are encoded. For instance, is the string
-   <literal>"á"</literal> equivalent to <literal>"\xE1"</literal> (ISO-8859-1),
-   <literal>"\xC3\xA1"</literal> (UTF-8, C form),
-   <literal>"\x61\xCC\x81"</literal> (UTF-8, D form) or any other possible
-   representation? The answer is that string will be encoded in whatever fashion
-   it is encoded in the script file. Thus, if the script is written in
-   ISO-8859-1, the string will be encoded in ISO-8859-1 and so on. However,
-   this does not apply if Zend Multibyte is enabled; in that case, the script
-   may be written in an arbitrary encoding (which is explicity declared or is
-   detected) and then converted to a certain internal encoding, which is then
-   the encoding that will be used for the string literals.
-   Note that there are some constraints on the encoding of the script (or on the
-   internal encoding, should Zend Multibyte be enabled) – this almost always
-   means that this encoding should be a compatible superset of ASCII, such as
-   UTF-8 or ISO-8859-1. Note, however, that state-dependent encodings where
-   the same byte values can be used in initial and non-initial shift states
-   may be problematic.
+   PHP が文字列に対して特定のエンコーディングを強制しないのなら、
+   いったいどのようにして文字列リテラルをエンコードしているのでしょう?
+   たとえば、文字列 <literal>"á"</literal> と同等なのは <literal>"\xE1"</literal> (ISO-8859-1)、
+   <literal>"\xC3\xA1"</literal> (UTF-8, C form)、
+   <literal>"\x61\xCC\x81"</literal> (UTF-8, D form) のどれでしょう?
+   あるいはそれ以外の何かなのでしょうか?
+   実は、文字列のエンコードはスクリプトファイルのエンコード方式に従って行われるというのが正解です。
+   したがって、もしスクリプトが ISO-8859-1 で書かれているのなら、文字列も ISO-8859-1
+   でエンコードされます。その他のエンコードの場合も同様です。
+   しかし、Zend Multibyte が有効になっている場合は話が別です。
+   この場合は、スクリプトはどんなエンコーディングで書いてもかまいません
+   (明示的に宣言することもできるし、自動検出させることもできます)。
+   スクリプトはその後で内部エンコーディングに変換されるので、
+   文字列リテラルも内部エンコーディングと同じ方式で符号化されます。
+   スクリプトのエンコーディング (あるいは、Zend Multibyte
+   を有効にした場合の内部エンコーディング) には、一部制限があることに注意しましょう。
+   ひとことで言うと、ASCII の上位互換 でなければならないということです。
+   UTF-8 や ISO-8859-1 などがこれにあたります。
+   しかし、状態に依存する
+   (たとえば、同じバイト値が、先頭にあるときとシフト状態にあるときで違う意味になる)
+   エンコーディングは、問題になる可能性があります。
   </para>
   <para>
-   Of course, in order to useful, functions that operate on text may have to
-   make some assumptions about how the string is encoded. Unfortunately, there
-   is much variation on this matter throughout PHP’s functions:
+   もちろん、利便性を考慮すれば、テキストを操作する関数が文字列のエンコードを扱う際に
+   何らかの前提に基づかざるを得ないこともあります。
+   残念ながら、PHP の各関数が文字列のエンコーディングを判断する方法はまったく統一されていません。
   </para>
   <itemizedlist>
    <listitem>
     <simpara>
-     Some functions assume that the string is encoded in some (any) single-byte
-     encoding, but they do not need to interpret those bytes as specific
-     characters. This is case of, for instance, <function>substr</function>, 
-     <function>strpos</function>, <function>strlen</function> or
-     <function>strcmp</function>. Another way to think of these functions is
-     that operate on memory buffers, i.e., they work with bytes and byte
-     offsets.
+     いくつかの関数は、文字列が何らかのシングルバイトエンコーディングで符号化されているものと見なします。
+     しかし、文字列内の各バイトが必ずしも特定の文字に変換できなくてもかまいません。
+     このタイプの関数は、<function>substr</function> や
+     <function>strpos</function>、<function>strlen</function>、
+     <function>strcmp</function> などです。
+     これらの関数については、文字列を扱うというよりメモリ上のバッファを扱うものととらえてもよいでしょう。
+     つまり、バイト列とバイトオフセットで考えるということです。
     </simpara>
    </listitem>
    <listitem>
     <simpara>
-     Other functions are passed the encoding of the string, possibly they also
-     assume a default if no such information is given. This is the case of
-     <function>htmlentities</function> and the majority of the
-     functions in the <link linkend="book.mbstring">mbstring</link> extension.
+     文字列のエンコーディングを受け取る関数もあります。
+     エンコーディング情報を省略したときにはデフォルトを用意していることもあるでしょう。
+     このタイプの関数の例は、<function>htmlentities</function> や
+     大半の <link linkend="book.mbstring">mbstring</link> 関数です。
     </simpara>
    </listitem>
    <listitem>
     <simpara>
-     Others use the current locale (see <function>setlocale</function>), but
-     operate byte-by-byte. This is the case of <function>strcasecmp</function>,
-     <function>strtoupper</function> and <function>ucfirst</function>.
-     This means they can be used only with single-byte encodings, as long as
-     the encoding is matched by the locale. For instance
-     <literal>strtoupper("á")</literal> may return <literal>"Á"</literal> if the
-     locale is correctly set and <literal>á</literal> is encoded with a single
-     byte. If it is encoded in UTF-8, the correct result will not be returned
-     and the resulting string may or may not be returned corrupted, depending
-     on the current locale.
+     現在のロケール (<function>setlocale</function> を参照ください) を使うけれども、
+     処理はバイト単位で行う関数もあります。
+     このタイプの関数は <function>strcasecmp</function> や
+     <function>strtoupper</function> そして <function>ucfirst</function> です。
+     つまり、これらの関数はシングルバイトエンコーディングでしか使えず、
+     さらにエンコーディングとロケールがマッチしていなければならないということです。
+     たとえば、<literal>strtoupper("á")</literal> が正しく <literal>"Á"</literal>
+     を返すには、ロケールを正しく設定したうえで <literal>á</literal>
+     をシングルバイトで符号化しておかなければなりません。仮に UTF-8 を使っていたとすると、
+     正しい結果は返されないでしょう。さらに、現在のロケール設定によっては
+     返される文字列が壊れてしまう可能性もあります。
     </simpara>
    </listitem>
    <listitem>
     <simpara>
-     Finally, they may just assume the string is using a specific encoding,
-     usually UTF-8. This is the case of most functions in the
-     <link linkend="book.intl">intl</link> extension and in the
-     <link linkend="book.pcre">PCRE</link> extension
-     (in the last case, only when the <literal>u</literal> modifier is used).
-     Although this is due to their special purpose, the function
-     <function>utf8_decode</function> assumes a UTF-8 encoding and the
-     function <function>utf8_encode</function> assumes an ISO-8859-1 encoding.
+     最後に、文字列が特定のエンコーディング (たいていは UTF-8)
+     であることを前提としている関数があります。
+     <link linkend="book.intl">intl</link> の関数や
+     <link linkend="book.pcre">PCRE</link> の関数
+     (<literal>u</literal> 修飾子を使う場合のみ)
+     の多くがこのタイプになります。また、その関数の目的上、
+     <function>utf8_decode</function> 関数は入力が UTF-8 であることを前提とし、
+     <function>utf8_encode</function> 関数は入力が ISO-8859-1 であることを前提としています。
     </simpara>
    </listitem>
   </itemizedlist>
 
   <para>
-   Ultimately, this means writing correct programs using Unicode depends on
-   carefully avoiding functions that will not work and that most likely will
-   corrupt the data and using instead the functions that do behave correctly,
-   generally from the <link linkend="book.intl">intl</link> and
-   <link linkend="book.mbstring">mbstring</link> extensions.
-   However, using functions that can handle Unicode encodings is just the
-   beginning. No matter the functions the language provides, it is essential to
-   know the Unicode specification. For instance, a program that assumes there is
-   only uppercase and lowercase is making a wrong assumption.
+   結局、Unicode を使うプログラムをきちんと書くには、
+   うまく動かない関数の使わないよう注意するしかないということです。
+   特にデータを破壊してしまう可能性のある関数の使用は避け、
+   きちんと動作する関数を使うようにしましょう。
+   <link linkend="book.intl">intl</link> や
+   <link linkend="book.mbstring">mbstring</link>
+   の関数を選択するとよいでしょう。
+   しかし、Unicode をまともに扱える関数を使うというのは単なる始まりに過ぎません。
+   たとえ関数側で Unicode を扱う機能があったとしても、
+   Unicode の仕様に関する知識は不可欠です。
+   たとえば、世の中には大文字と小文字しか存在しないという思い込みで作ったプログラムは、
+   うまく動かない可能性があります。
   </para>
  </sect2>
 </sect1><!-- end string -->
