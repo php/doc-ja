@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision$ -->
+<!-- EN-Revision: d500623e394ee3ff12914aaff4049f9cb903ac26 Maintainer: takagi Status: ready -->
+
+<refentry xml:id="closure.bindto" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <refnamediv>
+  <refname>Closure::bindTo</refname>
+  <refpurpose>
+   新しくバインドしたオブジェクトとクラスのスコープで、クロージャを複製する
+  </refpurpose>
+ </refnamediv>
+
+ <refsect1 role="description">
+  &reftitle.description;
+  <methodsynopsis>
+   <modifier>public</modifier> <type>Closure</type><methodname>Closure::bindTo</methodname>
+   <methodparam><type>object</type><parameter>newthis</parameter></methodparam>
+   <methodparam choice="opt"><type>mixed</type><parameter>newscope</parameter>
+   <initializer>'static'</initializer></methodparam>
+  </methodsynopsis>
+  <para>
+   自身と同じ本体とバインド変数を持つ新しい <link linkend="functions.anonymous">無名関数</link>
+   を作って返します。しかし、バインドするオブジェクトは変わって新しいクラスのスコープとなります。
+  </para>
+
+  <para>
+   “バインドするオブジェクト” によって、<literal>$this</literal>
+   が関数本体で持つ値が決まり、“クラスのスコープ”
+   は、無名関数からどのクラスの private メンバーや protected メンバーにアクセスできるのかが決まります。
+   すなわち、無名関数から見えるメンバーは、
+   その無名関数が <parameter>newscope</parameter>
+   暮らすのメソッドであった場合と同じものになります。
+  </para>
+
+  <para>
+   静的なクロージャは何もオブジェクトをバインドできません
+   (<parameter>newthis</parameter> の値は &null; でなければなりません) が、
+   それでもこの関数を使ってクラスのスコープを変えることができます。
+  </para>
+
+  <para>
+   この関数が静的でないクロージャに関して保証するのは、
+   バインドされたインスタンスを持っていればスコープ内にあるということです。
+   また、その逆も成り立ちます。そのため、静的でないクロージャにスコープとして
+   &null; インスタンスを渡すとそれは静的となり、静的でなくスコープにもないクロージャに
+   &null; でないインスタンスを渡すと、特定されていない何らかのクラスのスコープに入ります。
+  </para>
+
+  <note>
+   <para>
+    単に無名関数を複製したいだけの場合は、
+    <link linkend="language.oop5.cloning">cloning</link> を使うこともできます。
+   </para>
+  </note>
+
+ </refsect1>
+
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <variablelist>
+   <varlistentry>
+    <term><parameter>newthis</parameter></term>
+    <listitem>
+     <para>
+      指定した無名関数をバインドするオブジェクト。クロージャのバインドを解除するには
+      &null; を指定します。
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term><parameter>newscope</parameter></term>
+    <listitem>
+     <para>
+      クロージャを関連づけるクラススコープ、あるいは 'static' で現在のスコープを維持します。
+      オブジェクトを渡した場合は、そのオブジェクトの型をその代わりに使います。
+      これは、バインドしたオブジェクトの protected メソッドや private
+      メソッドの可視性を決めます。
+     </para>
+    </listitem>
+   </varlistentry>
+  </variablelist>
+ </refsect1>
+
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <para>
+   新しい <classname>Closure</classname> オブジェクトを返します。
+   &return.falseforfailure;
+  </para>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <example>
+   <title><function>Closure::bindTo</function> の例</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+class A {
+    function __construct($val) {
+        $this->val = $val;
+    }
+    function getClosure() {
+        // このオブジェクトとスコープにバインドしたクロージャを返します。
+        return function() { return $this->val; };
+    }
+}
+
+$ob1 = new A(1);
+$ob2 = new A(2);
+
+$cl = $ob1->getClosure();
+echo $cl(), "\n";
+$cl = $cl->bindTo($ob2);
+echo $cl(), "\n";
+]]>
+   </programlisting>
+   &example.outputs.similar;
+   <screen>
+<![CDATA[
+1
+2
+]]>
+   </screen>
+  </example>
+ </refsect1>
+
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <simplelist>
+   <member><link linkend="functions.anonymous">無名関数</link></member>
+   <member><methodname>Closure::bind</methodname></member>
+  </simplelist>
+ </refsect1>
+
+</refentry>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"~/.phpdoc/manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
