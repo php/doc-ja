@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 96c9d88bad9a7d7d44bfb7f26c226df7ee9ddf26 Maintainer: hirokawa Status: ready -->
-<!-- CREDITS: takagi -->
+<!-- EN-Revision: 88addd0b686f91344e03255e7513b4de15cadaeb Maintainer: takagi Status: ready -->
+<!-- CREDITS: hirokawa -->
 <refentry xml:id="function.register-shutdown-function" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>register_shutdown_function</refname>
@@ -12,14 +12,13 @@
   &reftitle.description;
   <methodsynopsis>
    <type>void</type><methodname>register_shutdown_function</methodname>
-   <methodparam><type>callback</type><parameter>function</parameter></methodparam>
+   <methodparam><type>callback</type><parameter>callback</parameter></methodparam>
    <methodparam choice="opt"><type>mixed</type><parameter>parameter</parameter></methodparam>
    <methodparam choice="opt"><type>mixed</type><parameter>...</parameter></methodparam>
   </methodsynopsis>
   <para>
    スクリプト処理が完了したとき、あるいは <function>exit</function>
-   がコールされたときに実行する <parameter>func</parameter> 
-   という名前の関数を登録します。
+   がコールされたときに実行するコールバック関数を登録します。
   </para>
   <para>
    <function>register_shutdown_function</function> は複数回コールする
@@ -34,21 +33,14 @@
   <para>
    <variablelist>
     <varlistentry>
-     <term><parameter>function</parameter></term>
+     <term><parameter>callback</parameter></term>
      <listitem>
       <para>
-       登録するシャットダウン関数。
+       登録するコールバック。
       </para>
       <para>
-       シャットダウン関数はリクエストの一部としてコールされるので、
-       そこから何かを出力することもできます。
-       現在のところ、シャットダウン関数から出力バッファリング関数にデータを送ることはできません。
-      </para>
-      <para>
-       シャットダウン関数がコールされるのは、すべての出力バッファを閉じたあとのことです。
-       したがって、たとえば <link
-       linkend="ini.zlib.output-compression">zlib.output_compression</link>
-       を有効にしていたとしてもその出力は圧縮されません。
+       シャットダウン時のコールバックは、リクエストの一部として実行されます。
+       したがって、コールバック関数からも出力を送信できるし、出力バッファにもアクセスできます。
       </para>
      </listitem>
     </varlistentry>
@@ -75,6 +67,14 @@
   &reftitle.returnvalues;
   <para>
    &return.void;
+  </para>
+ </refsect1>
+ 
+ <refsect1 role="errors">
+  &reftitle.errors;
+  <para>
+   指定したコールバックがコールできない場合は、<constant>E_WARNING</constant>
+   レベルのエラーが発生します。
   </para>
  </refsect1>
 
@@ -136,16 +136,6 @@ register_shutdown_function('shutdown');
 
  <refsect1 role="notes">
   &reftitle.notes;
-  <note>
-   <para>
-    一般に、PHP では未定義の関数は致命的なエラーを引き起こします。
-    しかし <function>register_shutdown_function</function> で指定された
-    <parameter>function</parameter> が未定義の場合はそのかわりに
-    <constant>E_WARNING</constant> レベルのエラーが発生します。
-    また、PHP の内部的な理由により、このエラーは
-    <literal>Unknown</literal> の 0 行目で発生したとみなされます。
-   </para>
-  </note>
   <note>
    <para>
     Apache などいくつかの Web サーバでは、スクリプトの実行時ディレクトリを
