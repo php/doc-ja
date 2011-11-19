@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: bb07a3195b898ce2b47c2dfc072b5d92c7e499ee Maintainer: takagi Status: ready -->
+<!-- EN-Revision: b410ecb36793290f9ade670844381c3ff769e112 Maintainer: takagi Status: ready -->
 
 <refentry xml:id="transliterator.transliterate" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -13,34 +13,41 @@
   &reftitle.description;
   <para>&style.oop;</para>
   <methodsynopsis>
-   <modifier>public</modifier> <type>void</type><methodname>Transliterator::transliterate</methodname>
+   <modifier>public</modifier> <type>string</type><methodname>Transliterator::transliterate</methodname>
    <methodparam><type>string</type><parameter>subject</parameter></methodparam>
-   <methodparam choice="opt"><type>string</type><parameter>start</parameter></methodparam>
-   <methodparam choice="opt"><type>string</type><parameter>end</parameter></methodparam>
+   <methodparam choice="opt"><type>int</type><parameter>start</parameter></methodparam>
+   <methodparam choice="opt"><type>int</type><parameter>end</parameter></methodparam>
   </methodsynopsis>
   <para>&style.procedural;</para>
   <methodsynopsis>
    <methodname>transliterator_transliterate</methodname>
+   <methodparam><type>mixed</type><parameter>transliterator</parameter></methodparam>
    <methodparam><type>string</type><parameter>subject</parameter></methodparam>
-   <methodparam choice="opt"><type>string</type><parameter>start</parameter></methodparam>
-   <methodparam choice="opt"><type>string</type><parameter>end</parameter></methodparam>
+   <methodparam choice="opt"><type>int</type><parameter>start</parameter></methodparam>
+   <methodparam choice="opt"><type>int</type><parameter>end</parameter></methodparam>
   </methodsynopsis>
   <para>
-   文字列を音訳します。
+   文字列あるいはその一部をICU の音訳器を使って変換します。
   </para>
-
-  &warn.undocumented.func;
-
  </refsect1>
 
  <refsect1 role="parameters">
   &reftitle.parameters;
   <variablelist>
    <varlistentry>
+    <term><parameter>transliterator</parameter></term>
+    <listitem>
+     <para>
+      手続き型の場合に、<classname>Transliterator</classname>
+      あるいは <classname>Transliterator</classname> を作成できる文字列を指定します。
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
     <term><parameter>subject</parameter></term>
     <listitem>
      <para>
-      音訳する文字列。
+      変換する文字列。
      </para>
     </listitem>
    </varlistentry>
@@ -48,7 +55,8 @@
     <term><parameter>start</parameter></term>
     <listitem>
      <para>
-      
+      文字列の変換の開始位置を表すインデックス (UTF-16 コード単位) を指定します。指定した位置も、変換範囲に含まれます。
+      インデックスは 0 から始まります。この位置より前にあるテキストは、そのまま残ります。
      </para>
     </listitem>
    </varlistentry>
@@ -56,7 +64,8 @@
     <term><parameter>end</parameter></term>
     <listitem>
      <para>
-      
+      文字列の変換の終了位置を表すインデックス (UTF-16 コード単位) を指定します。指定した位置は、変換範囲に含まれません。
+      インデックスは 0 から始まります。この位置も含めてそれ以降にあるテキストは、そのまま残ります。
      </para>
     </listitem>
    </varlistentry>
@@ -66,8 +75,43 @@
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
-   成功した場合に音訳された文字列を返します。
-   &return.falseforfailure;.
+   成功した場合に変換後の文字列を返します。
+   &return.falseforfailure;。
+  </para>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title>エスケープされた UTF-16 コード単位の変換</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$s = "\u304A\u65E9\u3046\u3054\u3056\u3044\u307E\u3059";
+echo transliterator_transliterate("Hex-Any/Java", $s), "\n";
+
+//now the reverse operation with a supplementary character
+$supplChar = html_entity_decode('&#x1D11E;');
+echo mb_strlen($supplChar, "UTF-8"), "\n";
+$encSupplChar = transliterator_transliterate("Any-Hex/Java", $supplChar);
+//echoes two encoded UTF-16 code units
+echo $encSupplChar, "\n";
+//and back
+echo transliterator_transliterate("Hex-Any/Java", $encSupplChar), "\n";
+]]>
+     </programlisting>
+     &example.outputs.similar;
+     <screen>
+<![CDATA[
+お早うございます
+1
+\uD834\uDD1E
+𝄞
+
+]]>
+    </screen>
+   </example>
   </para>
  </refsect1>
 
