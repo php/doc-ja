@@ -1,29 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- splitted from ./ja/functions/pgsql.xml, last change in rev 1.31 -->
-<!-- EN-Revision: 5203515e70fa823a33c74b3f8a25a8c913db7ca8 Maintainer: takagi Status: ready -->
-<!-- CREDITS: hirokawa -->
-<refentry xml:id='function.pg-escape-string' xmlns="http://docbook.org/ns/docbook">
+<!-- EN-Revision: a8090711fb980a0b7b04e3fab7c828d270ab67bb Maintainer: takagi Status: ready -->
+<refentry xml:id='function.pg-escape-literal' xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
-  <refname>pg_escape_string</refname>
+  <refname>pg_escape_literal</refname>
   <refpurpose>
-   クエリに使う文字列をエスケープする
+   テキスト型フィールドに挿入するために、リテラルをエスケープする
   </refpurpose>
  </refnamediv>
 
  <refsect1 role="description">
   &reftitle.description;
   <methodsynopsis>
-   <type>string</type><methodname>pg_escape_string</methodname>
+   <type>string</type><methodname>pg_escape_literal</methodname>
    <methodparam choice="opt"><type>resource</type><parameter>connection</parameter></methodparam>
    <methodparam><type>string</type><parameter>data</parameter></methodparam>
   </methodsynopsis>
   <para>
-   <function>pg_escape_string</function> は、データベースへの問い合わせに使う文字列をエスケープします。
-   PostgreSQL フォーマットにエスケープされた文字列を、クォートなしの形式で返します。
-   PostgreSQL に使う SQL パラメータをエスケープするときには
-   <function>pg_escape_literal</function> を使うほうがよいでしょう。
-   <function>addslashes</function> を PostgreSQL で使ってはいけません。
+   <function>pg_escape_literal</function> は、
+   PostgreSQL データベースへの問い合わせに使うリテラルをエスケープします。
+   PostgreSQL フォーマットでエスケープされたリテラルを返します。
+   <function>pg_escape_literal</function> は、データの前後にクォートを追加します。
+   ユーザーが自分で追加してはいけません。
+   <function>pg_escape_string</function> ではなくこの関数を使うことを推奨します。
    カラム型が bytea の場合は、代わりに
    <function>pg_escape_bytea</function> を使わなければなりません。
    識別子 (テーブル名やフィールド名など) のエスケープには
@@ -31,7 +30,7 @@
   </para>
   <note>
    <para>
-    この関数は、PostgreSQL 7.2 以降が必要です。
+    この関数は内部的なエスケープコードを使い、PostgreSQL 8.4 より前のバージョンでも使えます。
     </para>
   </note>
  </refsect1>
@@ -71,6 +70,7 @@
   </para>
  </refsect1>
 
+<!--
  <refsect1 role="changelog">
   &reftitle.changelog;
   <para>
@@ -84,34 +84,35 @@
      </thead>
      <tbody>
       <row>
-       <entry>5.2.0</entry>
-       <entry><parameter>connection</parameter> が追加されました。</entry>
+       <entry>5.5.0</entry>
+       <entry>added function</entry>
       </row>
      </tbody>
     </tgroup>
    </informaltable>
   </para>
  </refsect1>
+-->
 
  <refsect1 role="examples">
   &reftitle.examples;
   <para>
    <example>
-    <title><function>pg_escape_string</function> の例</title>
+    <title><function>pg_escape_literal</function> の例</title>
     <programlisting role="php">
 <![CDATA[
 <?php 
-  // データベースに接続する
+  // データベースに接続します
   $dbconn = pg_connect('dbname=foo');
   
-  // テキストファイルを読み込む（アポストロフィやスラッシュが含まれている）
+  // (アポストロフィやバックスラッシュが含まれている) テキストファイルを読み込みます
   $data = file_get_contents('letter.txt');
   
-  // テキストデータをエスケープする
-  $escaped = pg_escape_string($data);
+  // テキストデータをエスケープします
+  $escaped = pg_escape_literal($data);
   
-  // それをデータベースに挿入する
-  pg_query("INSERT INTO correspondence (name, data) VALUES ('My letter', '{$escaped}')");
+  // それをデータベースに挿入します。{$escaped} の前後にクォートがないことに注目
+  pg_query("INSERT INTO correspondence (name, data) VALUES ('My letter', {$escaped})");
 ?>
 ]]>
     </programlisting>
@@ -123,7 +124,9 @@
   &reftitle.seealso;
   <para>
    <simplelist>
+    <member><function>pg_escape_identifier</function></member>
     <member><function>pg_escape_bytea</function></member>
+    <member><function>pg_escape_string</function></member>
    </simplelist>
   </para>
  </refsect1>

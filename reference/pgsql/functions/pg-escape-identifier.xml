@@ -1,37 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- splitted from ./ja/functions/pgsql.xml, last change in rev 1.31 -->
-<!-- EN-Revision: 5203515e70fa823a33c74b3f8a25a8c913db7ca8 Maintainer: takagi Status: ready -->
-<!-- CREDITS: hirokawa -->
-<refentry xml:id='function.pg-escape-string' xmlns="http://docbook.org/ns/docbook">
+<!-- EN-Revision: a8090711fb980a0b7b04e3fab7c828d270ab67bb Maintainer: takagi Status: ready -->
+<refentry xml:id='function.pg-escape-identifier' xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
-  <refname>pg_escape_string</refname>
+  <refname>pg_escape_identifier</refname>
   <refpurpose>
-   クエリに使う文字列をエスケープする
+   テキスト型フィールドに挿入するために、識別子をエスケープする
   </refpurpose>
  </refnamediv>
 
  <refsect1 role="description">
   &reftitle.description;
   <methodsynopsis>
-   <type>string</type><methodname>pg_escape_string</methodname>
+   <type>string</type><methodname>pg_escape_identifier</methodname>
    <methodparam choice="opt"><type>resource</type><parameter>connection</parameter></methodparam>
    <methodparam><type>string</type><parameter>data</parameter></methodparam>
   </methodsynopsis>
   <para>
-   <function>pg_escape_string</function> は、データベースへの問い合わせに使う文字列をエスケープします。
-   PostgreSQL フォーマットにエスケープされた文字列を、クォートなしの形式で返します。
-   PostgreSQL に使う SQL パラメータをエスケープするときには
-   <function>pg_escape_literal</function> を使うほうがよいでしょう。
-   <function>addslashes</function> を PostgreSQL で使ってはいけません。
-   カラム型が bytea の場合は、代わりに
-   <function>pg_escape_bytea</function> を使わなければなりません。
-   識別子 (テーブル名やフィールド名など) のエスケープには
-   <function>pg_escape_identifier</function> を使わなければなりません。
+   <function>pg_escape_identifier</function> は、データベースへの問い合わせに使う識別子
+   (テーブル名やフィールド名など) をエスケープします。
+   PostgreSQL サーバ用にエスケープされた識別子を返します。
+   <function>pg_escape_identifier</function> は、データの前後にダブルクォートを追加します。
+   ユーザーが自分で追加してはいけません。
+   この関数は、クエリ内で使う識別子のパラメータに有用です。SQL リテラル
+   (bytea 以外のパラメータ) には、<function>pg_escape_literal</function>
+   あるいは <function>pg_escape_string</function> を使わなければなりません。
+   bytea 型のフィールドには、<function>pg_escape_bytea</function>
+   を使わなければなりません。
   </para>
   <note>
    <para>
-    この関数は、PostgreSQL 7.2 以降が必要です。
+    この関数は内部的なエスケープコードを使い、PostgreSQL 8.4 より前のバージョンでも使えます。
     </para>
   </note>
  </refsect1>
@@ -71,6 +70,7 @@
   </para>
  </refsect1>
 
+<!--
  <refsect1 role="changelog">
   &reftitle.changelog;
   <para>
@@ -84,34 +84,32 @@
      </thead>
      <tbody>
       <row>
-       <entry>5.2.0</entry>
-       <entry><parameter>connection</parameter> が追加されました。</entry>
+       <entry>5.5.0</entry>
+       <entry>added function</entry>
       </row>
      </tbody>
     </tgroup>
    </informaltable>
   </para>
  </refsect1>
+-->
 
  <refsect1 role="examples">
   &reftitle.examples;
   <para>
    <example>
-    <title><function>pg_escape_string</function> の例</title>
+    <title><function>pg_escape_identifier</function> の例</title>
     <programlisting role="php">
 <![CDATA[
 <?php 
-  // データベースに接続する
+  // データベースに接続します
   $dbconn = pg_connect('dbname=foo');
   
-  // テキストファイルを読み込む（アポストロフィやスラッシュが含まれている）
-  $data = file_get_contents('letter.txt');
+  // テーブル名をエスケープします
+  $escaped = pg_escape_identifier($table_name);
   
-  // テキストデータをエスケープする
-  $escaped = pg_escape_string($data);
-  
-  // それをデータベースに挿入する
-  pg_query("INSERT INTO correspondence (name, data) VALUES ('My letter', '{$escaped}')");
+  // $table_name から行を取得します
+  pg_query("SELECT * FROM {$escaped};");
 ?>
 ]]>
     </programlisting>
@@ -123,7 +121,9 @@
   &reftitle.seealso;
   <para>
    <simplelist>
+    <member><function>pg_escape_literal</function></member>
     <member><function>pg_escape_bytea</function></member>
+    <member><function>pg_escape_string</function></member>
    </simplelist>
   </para>
  </refsect1>
