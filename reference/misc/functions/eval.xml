@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: bfd02201266e5e3a15c8d648d463f17d136175f1 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 0d66a6cf2c0cad946dd8b766ac6ea09b96989114 Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa -->
 <refentry xml:id="function.eval" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -12,26 +12,22 @@
   &reftitle.description;
   <methodsynopsis>
    <type>mixed</type><methodname>eval</methodname>
-   <methodparam><type>string</type><parameter>code_str</parameter></methodparam>
+   <methodparam><type>string</type><parameter>code</parameter></methodparam>
   </methodsynopsis>
   <para>
-   <parameter>code_str</parameter> 
-   で与えられた文字列を PHP コードとして評価します。
+   指定した <parameter>code</parameter>
+   を PHP コードとして評価します。
   </para>
-  <para>
-   <function>eval</function> を使用する際、注意するべき点がいくつかあります。
-   パーサが <function>eval</function> の処理中に落ちないように、
-   渡す文字列はセミコロンで文が終了するといった有効な PHP コード
-   である必要があります。また、<parameter>code_str</parameter> の
-   中の文字を適切にエスケープする必要があります。
-   HTML 出力と PHP コードを一緒に使用するために、
-   PHP 終了タグを使用して PHP モードを抜けることが可能です。
-  </para>
-  <para>
-   <function>eval</function> の中で値を与えた変数は、
-   この後、メインスクリプトの中でもこれらの値を維持することも
-   覚えておいてください。
-  </para>
+  <caution>
+   <para>
+    <function>eval</function> は<emphasis>非常に危険な</emphasis>言語構造です。
+    というのも、任意の PHP コードを実行できてしまうからです。
+    <emphasis>これを使うことはおすすめしません。</emphasis>
+    いろいろ検討した結果どうしても使わざるを得なくなった場合は、細心の注意を払って使いましょう。
+    <emphasis>ユーザから受け取ったデータをそのまま渡してはいけません。</emphasis>
+    渡す前に、適切な検証が必要です。
+   </para>
+  </caution>
  </refsect1>
 
  <refsect1 role="parameters">
@@ -39,16 +35,33 @@
   <para>
    <variablelist>
     <varlistentry>
-     <term><parameter>code_str</parameter></term>
+     <term><parameter>code</parameter></term>
      <listitem>
       <para>
-       評価するコード文字列。
-       <parameter>code_str</parameter> には
-       <link linkend="language.basic-syntax.phpmode">PHP
-       開始タグ</link>を含める必要はありません。
+       有効な PHP コード。これを評価します。
       </para>
       <para>
-       <literal>return</literal> 文は、文字列の評価をただちに終了します。
+       <link linkend="language.basic-syntax.phpmode">PHP
+       開始タグ</link>を含めてはいけません。つまり、
+       <literal>'&lt;? echo "Hi!"; &gt;'</literal> ではなく
+       <literal>'echo "Hi!";'</literal> を渡さなければならないということです。
+       適切に PHP タグを使えば、PHP モードからいったん抜けてもう一度 PHP モードに戻るということも可能です。
+       たとえば、このようになります。
+       <literal>'echo "PHP モード!"; ?&gt;HTML モード!&lt;? echo "ふたたび PHP モード!";'</literal>
+      </para>
+      <para>
+       それはさておき、渡すコードは PHP として有効な形式でなければなりません。
+       つまり、すべての文はセミコロンで終了する必要があるということです。
+       たとえば <literal>'echo "やあ!"'</literal> はパースエラーになりますが、
+       <literal>'echo "やあ!";'</literal> は動作します。
+      </para>
+      <para>
+       <literal>return</literal> 文は、コードの評価をただちに終了します。
+      </para>
+      <para>
+       コードの実行は、<function>eval</function> を呼び出したスコープ内で行われます。
+       したがって、<function>eval</function> の中で定義したり変更したりした変数は
+       <function>eval</function> を抜けた後でも参照可能です。
       </para>
      </listitem>
     </varlistentry>
