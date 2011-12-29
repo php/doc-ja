@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 3b6540c7b92660d5889b584c6356923e65c863da Maintainer: takagi Status: ready -->
+<!-- EN-Revision: e1dd919618d95aee6c379b435f235f4a45fdebed Maintainer: takagi Status: ready -->
 
 <refentry xml:id="mongocollection.ensureindex" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -14,14 +14,13 @@
   &reftitle.description;
   <methodsynopsis>
    <modifier>public</modifier> <type>bool</type><methodname>MongoCollection::ensureIndex</methodname>
-   <methodparam><type>array</type><parameter>keys</parameter></methodparam>
+   <methodparam><type>string|array</type><parameter>key|keys</parameter></methodparam>
    <methodparam choice="opt"><type>array</type><parameter>options</parameter><initializer>array()</initializer></methodparam>
   </methodsynopsis>
   <para>
-   そのフィールドを持たないドキュメントが複数ある場合は、
-   そこに一意なインデックスを作成することはできません。
-   フィールドが存在しないときは事実上そのフィールドは
-   &null; ということになり、それが複数存在すると既に一意ではなくなっているからです。
+   このメソッドは、コレクション上の指定されたフィールドにインデックスを作成します。
+   キーの指定方法は、単一のフィールド名を文字列で指定するか
+   あるいはフィールド名とソート方向を対応させた配列でも指定できます。
   </para>
  </refsect1>
 
@@ -56,6 +55,14 @@
          <para>
           一意なインデックスを作ります。
          </para>
+         <warning>
+          <para>
+           そのフィールドを持たないドキュメントが複数ある場合は、
+           そこに一意なインデックスを作成することはできません。
+           フィールドが存在しないときは事実上そのフィールドは
+           &null; ということになり、それが複数存在すると既に一意ではなくなっているからです。
+          </para>
+         </warning>
         </listitem>
         <listitem>
          <para>
@@ -105,10 +112,9 @@
           <literal>"name"</literal>
          </para>
          <para>
-          ドライバの 1.0.4 より後のバージョン (1.0.4 は含みません)
-          では、インデックスの名前を指定できます。
-          これは、多くのキーを作ろうとして Mongo
-          にインデックス名が長くなりすぎると言われた場合などに有用です。
+          ドライバのバージョン 1.0.5 以降ではインデックス名を指定できます。
+          これは、多くのキーにインデックスをつけるときに「インデックス名が長すぎる」
+          と Mongo に言われた場合などに有用です。
          </para>
         </listitem>
         <listitem>
@@ -151,9 +157,11 @@
      </thead>
      <tbody>
       <row>
-       <entry>1.2.0</entry>
+       <entry>1.0.2</entry>
        <entry>
-        timeout オプションが追加されました。
+        "options" パラメータが boolean から配列に変わりました。
+        1.0.2 より前のバージョンでは二番目のパラメータはオプションの boolean
+        値で、一意なインデックスを指定するものでした。
        </entry>
       </row>
       <row>
@@ -171,11 +179,18 @@
        </entry>
       </row>
       <row>
-       <entry>1.0.2</entry>
+       <entry>1.2.0</entry>
        <entry>
-        "options" パラメータが boolean から配列に変わりました。
-        1.0.2 より前のバージョンでは二番目のパラメータはオプションの boolean
-        値で、一意なインデックスを指定するものでした。
+        timeout オプションが追加されました。
+       </entry>
+      </row>
+      <row>
+       <entry>1.3.0</entry>
+       <entry>
+        <parameter>options</parameter> パラメータで、boolean
+        だけを渡してユニークインデックスを指定することができなくなりました。
+        同じことをするには <literal>array('unique' => true)</literal>
+        としなければなりません。
        </entry>
       </row>
      </tbody>
@@ -216,7 +231,10 @@
 $c = new MongoCollection($db, 'foo');
 
 // 'x' の昇順にインデックスを作成します
-$c->ensureIndex(array('x' => 1));
+$c->ensureIndex('x');
+
+// 'y' の昇順にインデックスを作成します
+$c->ensureIndex(array('y' => 1));
 
 // 'z' の昇順、'zz' の降順にインデックスを作成します
 $c->ensureIndex(array('z' => 1, 'zz' => -1));

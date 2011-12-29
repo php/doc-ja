@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 1a7e588d98431c4a53ac74c18162024bdf7f5c20 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 61bc4ac8feaebab96ed9abcd0c26ad3d21961e5f Maintainer: takagi Status: ready -->
 
 <refentry xml:id="mongocollection.update" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -13,7 +13,7 @@
   <methodsynopsis>
    <modifier>public</modifier> <type>bool|array</type><methodname>MongoCollection::update</methodname>
    <methodparam><type>array</type><parameter>criteria</parameter></methodparam>
-   <methodparam><type>array</type><parameter>newobj</parameter></methodparam>
+   <methodparam><type>array</type><parameter>new_object</parameter></methodparam>
    <methodparam choice="opt"><type>array</type><parameter>options</parameter><initializer>array()</initializer></methodparam>
   </methodsynopsis>
  </refsect1>
@@ -34,7 +34,7 @@
     </varlistentry>
     <varlistentry>
      <term>
-      <parameter>newobj</parameter>
+      <parameter>new_object</parameter>
      </term>
      <listitem>
       <para>
@@ -57,8 +57,8 @@
           <literal>"upsert"</literal>
          </para>
          <para>
-          $criteria にマッチするレコードが見つからない場合に
-          $criteria と $newobj から新しいオブジェクトを作ります
+          <parameter>$criteria</parameter> にマッチするレコードが見つからない場合に
+          <parameter>$criteria</parameter> と <parameter>$newobj</parameter> から新しいオブジェクトを作ります
           (以下の upsert の例を参照ください)。
          </para>
         </listitem>
@@ -214,6 +214,15 @@
         timeout オプションが追加されました。
        </entry>
       </row>
+      <row>
+       <entry>1.3.0</entry>
+       <entry>
+        <parameter>options</parameter> パラメータで、boolean
+        だけを渡して upsert を指定することができなくなりました。
+        同じことをするには <literal>array('upsert'' => true)</literal>
+        としなければなりません。
+       </entry>
+      </row>
      </tbody>
     </tgroup>
    </informaltable>
@@ -290,16 +299,21 @@ array(3) {
 ]]>
    </screen>
    <para>
-    <literal>newobj</literal> が $ 演算子を含まない場合、upsert
-    は新しいドキュメントを単体で作成します。これは、通常の update の挙動と同じです。
+    <parameter>$new_object</parameter> が $ 演算子を含まない場合、upsert
+    は渡されたフィールドだけの新しいドキュメントを作成します。これは、通常の update の挙動と同じです。
     update で $ 演算子を使わなければ、ドキュメント全体が上書きされます。
    </para>
    <programlisting role="php">
 <![CDATA[
 <?php
 
-$c->update(array("name" => "joe"), array("username" => "joe312", "createdAt" => new MongoDate()), 
-    array("upsert" => true));
+$c->drop();
+$c->update(
+    array("name" => "joe"),
+    array("username" => "joe312", "createdAt" => new MongoDate()), 
+    array("upsert" => true)
+);
+var_dump($c->findOne());
 
 ?>
 ]]>
@@ -324,7 +338,7 @@ array(3) {
    <title><function>MongoCollection::update</function> での複数更新</title>
    <para>
     デフォルトでは <function>MongoCollection::update</function> は、
-    $criteria にマッチするドキュメントが複数見つかっても最初のものだけを更新します。
+    <parameter>$criteria</parameter> にマッチするドキュメントが複数見つかっても最初のものだけを更新します。
     必要なら、"multiple" オプションでその挙動を変えることができます。
    </para>
    <para>
@@ -335,7 +349,11 @@ array(3) {
 <?php
 
 $today = array('$gt' => new MongoDate(), '$lt' => new MongoDate(strtotime("+1 day")));
-$people->update(array("birthday" => $today), array('$set' => array('gift' => $surprise)), array("multiple" => true));
+$people->update(
+    array("birthday" => $today),
+    array('$set' => array('gift' => $surprise)),
+    array("multiple" => true)
+);
 
 ?>
 ]]>
