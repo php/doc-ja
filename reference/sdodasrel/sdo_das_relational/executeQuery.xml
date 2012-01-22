@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- $Revision$ -->
+<!-- EN-Revision: 36a6e2aa5dbcf33088f34981ef3a5083fe02dd1a Maintainer: takagi Status: ready -->
+<refentry xml:id="sdo-das-relational.executequery" xmlns="http://docbook.org/ns/docbook">
+ <refnamediv>
+  <refname>SDO_DAS_Relational::executeQuery</refname>
+  <refpurpose>
+   SQL クエリをリレーショナルデータベースに対して実行し、
+   結果を正規化されたデータグラフ形式で返す
+  </refpurpose>
+ </refnamediv>
+
+ <refsect1 role="description">
+  &reftitle.description;
+  <methodsynopsis>
+   <type>SDODataObject</type>
+   <methodname>SDO_DAS_Relational::executeQuery</methodname>
+   <methodparam>
+    <type>PDO</type>
+    <parameter>database_handle</parameter>
+   </methodparam>
+   <methodparam>
+    <type>string</type>
+    <parameter>SQL_statement</parameter>
+   </methodparam>
+   <methodparam choice="opt">
+    <type>array</type>
+    <parameter>column_specifier</parameter>
+   </methodparam>
+  </methodsynopsis>
+
+  &warn.experimental.func;
+
+  <para>
+   クエリをリレーショナルデータベースに対して実行します。
+   実行には、渡された PDO データベースハンドルを使用します。
+   メタデータから作成されたモデルを使用し、結果セットを取得します。
+   結果をデータグラフとして返します。
+  </para>
+ </refsect1>
+
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <para>
+   <variablelist>
+    <varlistentry>
+     <term>PDO_database_handle</term>
+     <listitem>
+      <para>
+       PDO 拡張モジュールを使用して作成します。
+       PDO データベースハンドルを作成する典型的な方法は、このようになります。
+       <programlisting role="php" xml:id="sdodasrel.eq.examples.pdo">
+<![CDATA[
+$dbh = new PDO("mysql:dbname=COMPANYDB;host=localhost",DATABASE_USER,DATABASE_PASSWORD);
+]]>
+       </programlisting>
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term>SQL_statement</term>
+     <listitem>
+      <para>
+       データベースに対して実行する SQL 文。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term>column_specifier</term>
+     <listitem>
+      <para>
+       リレーショナル DAS では、結果セットの各カラムを調べ、
+       それがどのテーブルのどのカラムからきたものなのかを知る必要があります。
+       データ自身からそれらの情報を取得できる場合もありますが、
+       そうでない場合もあります。取得できない場合にはカラム指定子が必要となります。
+       これは、カラムを識別するための配列です。
+       配列の各項目は、単純な
+       <varname>テーブル名.カラム名</varname>
+       形式の文字列となります。
+      </para>
+          
+
+      <para>
+       カラム指定子が必要となるのは、
+       データベースのメタデータ内に同じ名前のカラムが複数ある場合です。
+       例で使用しているデータベースでは、すべてのテーブルに
+       <varname>id</varname> および <varname>name</varname>
+       のふたつのカラムがあります。
+       リレーショナル DAS が PDO から結果セットを読み込む際には、
+       属性 PDO_FETCH_ASSOC を使用できます。これは、
+       結果セットのカラム名をリレーショナル DAS のカラム名に対応させますが、
+       同じ名前の重複を識別できません。そのため、
+       これは、結果セットでカラム名が重複する可能性がない場合にのみ動作します。
+      </para>
+          
+      <para>
+       まとめます。そのカラムがどのテーブルのものかが判別できなくなる
+       可能性が少しでもある場合には、カラム指定子の配列を設定します。
+       省略できるのは、データベースのメタデータ内にあるすべてのカラム名が
+       一意な場合のみです。
+      </para>
+          
+      <para>
+       <link linkend="sdodasrel.examples">例</link>
+       で示したサンプルでは、すべてカラム指定子を設定しています。
+       インストール先の <filename>Scenarios</filename>
+       ディレクトリ内に、カラム指定子を使用しない例がひとつあります。
+       これは employee テーブルだけを使用するものです。
+       ひとつのテーブルしか使用していないので、
+       カラム名が重複することがないわけです。
+      </para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
+  </para>
+ </refsect1>
+
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <para>
+   データグラフを返します。具体的には、特別な型のルートオブジェクトを返します。
+   このルートオブジェクトの下に、結果セットからのデータが格納されています。
+   ルートオブジェクトは複数の値を持つプロパティを持っており、
+   そのプロパティは、コンストラクタで指定した
+   アプリケーションのルート型と同じ名前になります。
+   また、そのプロパティの内容は、
+   アプリケーションのルート型のオブジェクトとなります。
+  </para>
+  <para>
+   クエリがデータを返さなかった場合にも特別なルート型のオブジェクトが返されますが、
+   その中にあるアプリケーションルート型のプロパティの内容は空となります。
+  </para>
+ </refsect1>
+
+ <refsect1 role="errors">
+  &reftitle.errors;
+  <para>
+   <function>SDO_DAS_Relational::executeQuery</function>
+   は、データグラフを正常に作成できなかった場合に
+   <classname>SDO_DAS_Relational_Exception</classname> をスローします。
+   これが起こる原因は、いろいろ考えられます。例えば、
+   すべてのオブジェクトの結果セットで主キーがなかった場合などです。
+   また、何らかの PDO 例外が発生した場合には、
+   それをキャッチして PDO の診断情報を
+   <classname>SDO_DAS_Relational_Exception</classname> に格納し、それをスローします。
+  </para>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   このメソッドをコールする例については、リレーショナル DAS
+   の全般的な情報の中にある
+   <link linkend="sdodasrel.examples">例</link>
+   の節を参照ください。
+  </para>
+ </refsect1>
+</refentry>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"~/.phpdoc/manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
