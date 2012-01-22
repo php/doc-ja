@@ -1,28 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 96c9d88bad9a7d7d44bfb7f26c226df7ee9ddf26 Maintainer: takagi Status: ready -->
-<refentry xml:id="function.swishresults-seekresult" xmlns="http://docbook.org/ns/docbook">
+<!-- EN-Revision: 5c20ff9960166638320c32da9004e1b30ec6e9f0 Maintainer: takagi Status: ready -->
+<refentry xml:id="swishresult.stem" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
-  <refname>SwishResults-&gt;seekResult</refname>
-  <refpurpose>現在のシークポインタを指定した位置に設定する</refpurpose>
+  <refname>SwishResult::stem</refname>
+  <refpurpose>指定した単語の語幹を取得する</refpurpose>
  </refnamediv>
  <refsect1 role="description">
   &reftitle.description;
   <methodsynopsis>
-   <type>int</type><methodname>SwishResults-&gt;seekResult</methodname>
-   <methodparam><type>int</type><parameter>position</parameter></methodparam>
+   <type>array</type><methodname>SwishResult::stem</methodname>
+   <methodparam><type>string</type><parameter>word</parameter></methodparam>
   </methodsynopsis>
   &warn.experimental.func;
+  <para>
+   インデックス化の際に使用したファジーモードにもとづいて、
+   単語の語幹を取得します。各結果オブジェクトはインデックスにリンクされるので、
+   結果はこのインデックスに基づくものとなります。
+  </para>
  </refsect1>
  <refsect1 role="parameters">
   &reftitle.parameters;
   <para>
    <variablelist>
     <varlistentry>
-     <term><parameter>position</parameter></term>
+     <term><parameter>word</parameter></term>
      <listitem>
       <para>
-       ゼロから始まる位置番号。ゼロより小さくすることはできません。
+       取り除く単語。
       </para>
      </listitem>
     </varlistentry>
@@ -32,7 +37,7 @@
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
-   成功した場合に新しい位置を返します。
+   単語の活用形を取り除いた配列を返します (通常はひとつだけです)。
   </para>
  </refsect1>
  <refsect1 role="errors">
@@ -45,20 +50,20 @@
   &reftitle.examples;
   <para>
    <example>
-    <title>基本的な <function>SwishResults-&gt;seekResult</function> の例</title>
+    <title>基本的な <function>SwishResult::stem</function> の例</title>
     <programlisting role="php">
 <![CDATA[
 <?php
 
 try {
 
-    $swish = new Swish("index.swish-e");
-    $search = $swish->prepare();
+    $swish = new Swish("ext/swish/tests/index.swish-e");
+    $results = $swish->query("testing OR others");
 
-    $results = $search->execute("lost");
-
-    var_dump($results->seekResult(0)); // これは成功します
-    var_dump($results->seekResult(100)); // これは失敗します
+    if ($result = $results->nextResult()) {
+        var_dump($result->stem("testing")); // この結果は、インデックスで使用している stemmer に依存します
+        var_dump($result->stem("others"));
+    }
 
 } catch (SwishException $e) {
     echo "Error: ", $e->getMessage(), "\n";
@@ -70,8 +75,14 @@ try {
     &example.outputs.similar;
     <screen>
 <![CDATA[
-int(0)
-Error: No more results
+array(1) {
+  [0]=>
+  string(4) "test"
+}
+array(1) {
+  [0]=>
+  string(5) "other"
+}
 ]]>
     </screen>
    </example>
