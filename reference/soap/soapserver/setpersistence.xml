@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: d3c871ae1e218ab417e15731c9dee930149baad0 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: fcddfb2551140fba9a14a4c44dc9fa60004440c8 Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa,shimooka -->
 
 <refentry xml:id="soapserver.setpersistence" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
@@ -16,11 +16,10 @@
    <methodparam><type>int</type><parameter>mode</parameter></methodparam>
   </methodsynopsis>
   <para>
-   この関数により、ある PHP
-   セッションにおいて複数のリクエスト間でデータを保持することが可能になります。
-   この関数は、サーバが <methodname>SoapServer::setClass</methodname>
-   や <methodname>SoapServer::setObject</methodname>
-   によりクラスから関数をエクスポートした場合のみ使用可能です。
+   この関数により、SoapServer オブジェクトの永続状態をリクエスト間で変更できるようになります。
+   この関数は、リクエスト間でのデータの保存に PHP のセッションを使います。
+   このメソッドが SoapServer に影響を及ぼすのは、<methodname>SoapServer::setClass</methodname>
+   を使って関数をエクスポートした後となります。
   </para>
    <note>
     <para>
@@ -28,9 +27,18 @@
      <constant>SOAP_PERSISTENCE_SESSION</constant>
      は、そのクラスのオブジェクトについてのみ持続させます。
      クラスのスタティックなデータについては対象となりません。
-     self::$bar ではなく $this->bar を使用しましょう。
+     self::$bar ではなく <varname>$this->bar</varname> を使用しましょう。
     </para>
    </note>
+   <note>
+    <para>
+     <constant>SOAP_PERSISTENCE_SESSION</constant>
+     は、クラスのオブジェクト上のデータもリクエスト間でシリアライズします。
+     リソース (<classname>PDO</classname> など) を適切に扱うには、マジックメソッド
+     <link linkend="object.wakeup">__wakeup()</link> および <link linkend="object.sleep">__sleep()</link>
+     を使う必要があります。
+    </para>  
+  </note>
  </refsect1>
 
  <refsect1 role="parameters">
@@ -44,10 +52,15 @@
        <literal>SOAP_PERSISTENCE_XXX</literal> 定数のうちの一つ
       </para>
       <para>
-       <literal>SOAP_PERSISTENCE_REQUEST</literal> - リクエスト単位でオブジェクトを持続させる
+       <constant>SOAP_PERSISTENCE_REQUEST</constant> - SoapServer のデータはリクエスト間で持続しません。
+       これは、SoapServer オブジェクトで setClass をコールした直後のデフォルトの挙動です。
       </para>
       <para>
-       <literal>SOAP_PERSISTENCE_SESSION</literal> - セッション単位でオブジェクトを持続させる
+       <constant>SOAP_PERSISTENCE_SESSION</constant> - SoapServer のデータをリクエスト間で持続させます。
+       これを実現するために、SoapServer クラスのデータをシリアライズして
+       <varname>$_SESSION['_bogus_session_name']</varname> に格納します。
+       そのため、このモードを設定する前に
+       <function>session_start</function> をコールしておく必要があります。
       </para>
      </listitem>
     </varlistentry>
@@ -61,13 +74,59 @@
    &return.void;
   </para>
  </refsect1>
+ 
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title><function>SoapServer::setPersistence</function> の例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+ class MyFirstPersistentSoapServer {
+     private $resource; // (Such as PDO, mysqli, etc..)
+     public $myvar1;
+     public $myvar2;
 
+     public function __construct() {
+         $this->__wakeup(); // We're calling our wakeup to handle starting our resource
+     }
+
+     public function __wakeup() {
+         $this->resource = CodeToStartOurResourceUp();
+     }
+
+     public function __sleep() {
+         // We make sure to leave out $resource here, so our session data remains persistent
+         // Failure to do so will result in the failure during the unserialization of data
+         // on the next request; thus, our SoapObject would not be persistent across requests.
+         return array('myvar1','myvar2');
+     }
+ }
+
+ try {
+     session_start();
+     $server = new SoapServer(null, array('uri' => $_SERVER['REQUEST_URI']));
+     $server->setClass('MyFirstPersistentSoapServer');
+     // setPersistence MUST be called after setClass, because setClass's
+     // behavior sets SESSION_PERSISTENCE_REQUEST upon enacting the method.
+     $server->setPersistence(SOAP_PERSISTENCE_SESSION);
+     $server->handle();
+ } catch(SoapFault $e) {
+     error_log("SOAP ERROR: ". $e->getMessage());
+ }
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+ </refsect1>
+ 
  <refsect1 role="seealso">
   &reftitle.seealso;
   <para>
    <simplelist>
     <member><methodname>SoapServer::setClass</methodname></member>
-    <member><methodname>SoapServer::setObject</methodname></member>
    </simplelist>
   </para>
  </refsect1>
