@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 96f001d90681732d9c92a8088df34e0fb8e45cc9 Maintainer: hirokawa Status: ready -->
-<!-- CREDITS: shimooka -->
+<!-- EN-Revision: 07dcc54607439731ce543c225bc1c9cb7ef61da6 Maintainer: takagi Status: ready -->
+<!-- CREDITS: hirokawa,shimooka -->
 <refentry xmlns="http://docbook.org/ns/docbook" xml:id="function.get-html-translation-table">
  <refnamediv>
   <refname>get_html_translation_table</refname>
@@ -13,14 +13,14 @@
   <methodsynopsis>
    <type>array</type><methodname>get_html_translation_table</methodname>
    <methodparam choice="opt"><type>int</type><parameter>table</parameter><initializer>HTML_SPECIALCHARS</initializer></methodparam>
-   <methodparam choice="opt"><type>int</type><parameter>quote_style</parameter><initializer>ENT_COMPAT</initializer></methodparam>
-   <methodparam choice="opt"><type>string</type><parameter>charset_hint</parameter></methodparam>
+   <methodparam choice="opt"><type>int</type><parameter>flags</parameter><initializer>ENT_COMPAT | ENT_HTML401</initializer></methodparam>
+   <methodparam choice="opt"><type>string</type><parameter>charset</parameter><initializer>'UTF-8'</initializer></methodparam>
   </methodsynopsis>
   <para>
    <function>get_html_translation_table</function> は、
    <function>htmlspecialchars</function> および
    <function>htmlentities</function>
-   において、デフォルトの文字セットで内部的に使用される変換テーブルを返します。
+   において内部的に使用される変換テーブルを返します。
   </para>
   <note>
    <para>
@@ -43,31 +43,69 @@
      <term><parameter>table</parameter></term>
      <listitem>
       <para>
-       テーブルを指定できるように新規に定義が2つ
-       (<parameter>HTML_ENTITIES</parameter>,
-       <parameter>HTML_SPECIALCHARS</parameter>)追加されました。
+       どちらのテーブルを返すか。<constant>HTML_ENTITIES</constant> あるいは
+       <constant>HTML_SPECIALCHARS</constant>。
       </para>
      </listitem>
     </varlistentry>
     <varlistentry>
-     <term><parameter>quote_style</parameter></term>
+     <term><parameter>flags</parameter></term>
      <listitem>
       <para>
-       <function>htmlspecialchars</function> および
-       <function>htmlentities</function> 関数と同様にオプションで
-       処理する <parameter>quote_style</parameter> を指定することが可能です。
-       これらのモードに関する説明は、
-       <function>htmlspecialchars</function>を参照ください。
+       以下のフラグのビットマスクによる組み合わせで、
+       どのクォートをテーブルに含めるのか、そしてどのドキュメント形式用のテーブルにするのかを指定します。
+       デフォルトは <literal>ENT_COMPAT | ENT_HTML401</literal> です。
+       <table>
+        <title>使用可能な <parameter>flags</parameter> 定数</title>
+        <tgroup cols="2">
+         <thead>
+          <row>
+           <entry>定数名</entry>
+           <entry>説明</entry>
+          </row>
+         </thead>
+         <tbody>
+          <row>
+           <entry><constant>ENT_COMPAT</constant></entry>
+           <entry>テーブルにダブルクォート用のエンティティを含めますが、シングルクォート用は含めません。</entry>
+          </row>
+          <row>
+           <entry><constant>ENT_QUOTES</constant></entry>
+           <entry>テーブルにダブルクォート用、シングルクォート用の両方のエンティティを含めます。</entry>
+          </row>
+          <row>
+           <entry><constant>ENT_NOQUOTES</constant></entry>
+           <entry>テーブルにダブルクォート用、シングルクォート用のどちらのエンティティも含めません。</entry>
+          </row>
+          <row>
+           <entry><constant>ENT_HTML401</constant></entry>
+           <entry>HTML 4.01 用のテーブル。</entry>
+          </row>
+          <row>
+           <entry><constant>ENT_XML1</constant></entry>
+           <entry>XML 1 用のテーブル。</entry>
+          </row>
+          <row>
+           <entry><constant>ENT_XHTML</constant></entry>
+           <entry>XHTML 用のテーブル。</entry>
+          </row>
+          <row>
+           <entry><constant>ENT_HTML5</constant></entry>
+           <entry>HTML 5 用のテーブル。</entry>
+          </row>
+         </tbody>
+        </tgroup>
+       </table>
       </para>
      </listitem>
     </varlistentry>
     <varlistentry>
-     <term><parameter>charset_hint</parameter></term>
+     <term><parameter>charset</parameter></term>
      <listitem>
       <para>
-       <function>htmlentities</function> と同様に、オプションの三番目の引数
-       <parameter>charset</parameter> で変換用の文字セットを定義することができます。
-       現在は、ISO-8859-1 文字セットがデフォルトとして使われています。
+       使用する文字セット。省略した場合のデフォルト値は、
+       PHP 5.4.0 より前のバージョンでは ISO-8859-1、そして
+       PHP 5.4.0 以降では UTF-8 となります。
       </para>
       &reference.strings.charsets;
      </listitem>
@@ -79,7 +117,7 @@
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
-   変換テーブルを配列で返します。
+   変換テーブルを配列で返します。元の文字がキー、そしてエンティティが値となります。
   </para>
  </refsect1>
 
@@ -96,9 +134,22 @@
      </thead>
      <tbody>
       <row>
+       <entry>5.4.0</entry>
+       <entry>
+        <parameter>charset</parameter> パラメータのデフォルトが UTF-8 に変わりました。
+       </entry>
+      </row>
+      <row>
+       <entry>5.4.0</entry>
+       <entry>
+        定数 <constant>ENT_HTML401</constant>、<constant>ENT_XML1</constant>、
+        <constant>ENT_XHTML</constant> および <constant>ENT_HTML5</constant> が追加されました。
+       </entry>
+      </row>
+      <row>
        <entry>5.3.4</entry>
        <entry>
-        <parameter>charset_hint</parameter> パラメータが追加されました。
+        <parameter>charset</parameter> パラメータが追加されました。
        </entry>
       </row>
      </tbody>
@@ -115,18 +166,35 @@
     <programlisting role="php">
 <![CDATA[
 <?php
-$trans = get_html_translation_table(HTML_ENTITIES);
-$str = "Hallo & <Frau> & Krämer";
-$encoded = strtr($str, $trans);
-
-echo $encoded;
+var_dump(get_html_translation_table(HTML_ENTITIES, ENT_QUOTES | ENT_HTML5));
 ?>
 ]]>
     </programlisting>
-    &example.outputs;
+    &example.outputs.similar;
     <screen>
 <![CDATA[
-Hallo &amp; &lt;Frau&gt; &amp; Kr&auml;mer
+array(1510) {
+  ["	"]=>
+  string(5) "&Tab;"
+  ["
+"]=>
+  string(9) "&NewLine;"
+  ["!"]=>
+  string(6) "&excl;"
+  ["""]=>
+  string(6) "&quot;"
+  ["#"]=>
+  string(5) "&num;"
+  ["$"]=>
+  string(8) "&dollar;"
+  ["%"]=>
+  string(8) "&percnt;"
+  ["&"]=>
+  string(5) "&amp;"
+  ["'"]=>
+  string(6) "&apos;"
+  // ...
+}
 ]]>
     </screen>
    </example>
