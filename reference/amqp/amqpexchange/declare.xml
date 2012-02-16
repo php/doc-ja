@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: e90268fb155ae35c1b1f2439a631b4b22d141fb9 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: dc1dcfb27b0a3dcbaa771035ce891c3ce31a03c7 Maintainer: takagi Status: ready -->
 
 <refentry xml:id="amqpexchange.declare" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -11,55 +11,17 @@
  <refsect1 role="description">
   &reftitle.description;
   <methodsynopsis>
-   <modifier>public</modifier> <type>bool</type><methodname>AMQPExchange::declare</methodname>
-   <methodparam choice="opt"><type>string</type><parameter>exchange_name</parameter><initializer>""</initializer></methodparam>
-   <methodparam choice="opt"><type>string</type><parameter>exchange_type</parameter><initializer><constant>AMQP_EX_TYPE_DIRECT</constant></initializer></methodparam>
-   <methodparam choice="opt"><type>int</type><parameter>flags</parameter><initializer>0</initializer></methodparam>
+   <modifier>public</modifier> <type>int</type><methodname>AMQPExchange::declare</methodname>
+   <void />
   </methodsynopsis>
   <para>
-   指定した情報をもとに、新しい exchange をブローカ上で宣言します。
-   同じ名前の exchange がすでに存在し、かつ
-   <parameter>exchange_type</parameter> あるいは <parameter>flags</parameter>
-   が指定されている場合は、その exchange の設定を更新します。
+   新しい exchange をブローカ上で宣言します。
   </para>
-  <para>
-   <parameter>exchange_type</parameter> を指定せず、かつ exchange が存在しない場合は、
-   exchange の型はデフォルトの "direct" となります。
-  </para>
-  
  </refsect1>
 
  <refsect1 role="parameters">
   &reftitle.parameters;
   <para>
-   <variablelist>
-    <varlistentry>
-     <term><parameter>exchange_name</parameter></term>
-     <listitem>
-      <para>
-        exchange の名前。
-      </para>
-     </listitem>
-    </varlistentry>
-    <varlistentry>
-     <term><parameter>exchange_type</parameter></term>
-     <listitem>
-      <para>
-        exchange の型。<constant>AMQP_EX_TYPE_DIRECT</constant>、<constant>AMQP_EX_TYPE_FANOUT</constant>、
-        <constant>AMQP_EX_TYPE_TOPIC</constant> あるいは <constant>AMQP_EX_TYPE_HEADER</constant> のいずれか。
-      </para>
-     </listitem>
-    </varlistentry>
-    <varlistentry>
-     <term><parameter>flags</parameter></term>
-     <listitem>
-      <para>
-       フラグ <constant>AMQP_PASSIVE</constant>、<constant>AMQP_DURABLE</constant>、<constant>AMQP_AUTODELETE</constant>
-       のビットマスク。
-      </para>
-     </listitem>
-    </varlistentry>
-   </variablelist>
   </para>
  </refsect1>
 
@@ -74,6 +36,12 @@
   &reftitle.errors;
   <para>
    失敗した場合に <classname>AMQPExchangeException</classname> をスローします。
+  </para>
+  <para>
+   チャネルが開いていない場合に <classname>AMQPChannelException</classname> をスローします。
+  </para>
+  <para>
+   ブローカへの接続が途切れた場合に <classname>AMQPConnectionException</classname> をスローします。
   </para>
  </refsect1>
 
@@ -90,8 +58,13 @@
 $cnn = new AMQPConnection();
 $cnn->connect();
 
-$ex = new AMQPExchange($cnn);
-$ex->declare('new_topic_exchange', AMQP_EX_TYPE_DIRECT, AMQP_DURABLE | AMQP_AUTODELETE);
+$ch = new AMQPChannel($cnn);
+
+$ex = new AMQPExchange($ch);
+$ex->setName('new_topic_exchange');
+$ex->setType(AMQP_EX_TYPE_DIRECT);
+$ex->setFlags(AMQP_DURABLE | AMQP_AUTODELETE);
+$ex->declare();
 
 ?>
 ]]>

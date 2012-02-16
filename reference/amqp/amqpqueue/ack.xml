@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 8b6d169424ff189bb563ef4c3f35f8adff3f42c5 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: dc1dcfb27b0a3dcbaa771035ce891c3ce31a03c7 Maintainer: takagi Status: ready -->
 
 <refentry xml:id="amqpqueue.ack" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -13,11 +13,11 @@
   <methodsynopsis>
    <modifier>public</modifier> <type>bool</type><methodname>AMQPQueue::ack</methodname>
    <methodparam><type>int</type><parameter>delivery_tag</parameter></methodparam>
-   <methodparam choice="opt"><type>int</type><parameter>flags</parameter><initializer>NULL</initializer></methodparam>
+   <methodparam choice="opt"><type>int</type><parameter>flags</parameter><initializer><constant>AMQP_NOPARAM</constant></initializer></methodparam>
   </methodsynopsis>
   <para>
-    <methodname>AMQPQueue::get</methodname> あるいは <methodname>AMQPQueue::consume</methodname> で
-    <constant>AMQP_NOACK</constant> フラグつきで取得したメッセージの受信を認めます。
+    <methodname>AMQPQueue::get</methodname> あるいは <methodname>AMQPQueue::consume</methodname> が
+    <constant>AMQP_AUTOACK</constant> フラグなしで取得したメッセージの受信を認めます。
   </para>
  </refsect1>
 
@@ -44,7 +44,17 @@
    </variablelist>
   </para>
  </refsect1>
-
+ 
+ <refsect1 role="errors">
+  &reftitle.errors;
+  <para>
+   チャネルが開いていない場合に <classname>AMQPChannelException</classname> をスローします。
+  </para>
+  <para>
+   ブローカへの接続が途切れた場合に <classname>AMQPConnectionException</classname> をスローします。
+  </para>
+ </refsect1>
+ 
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
@@ -65,14 +75,16 @@
 $connection = new AMQPConnection();
 $connection->connect();
 
+$channel = new AMQPChannel($connection);
+
 /* キューオブジェクトを作成します */
-$queue = new AMQPQueue($connection);
+$queue = new AMQPQueue($channel);
 
 // キューを宣言します
 $queue->declare('myqueue');
 
 // 次のメッセージを取得しますが、配送済みにはしません
-$message = $queue->get(AMQP_NOACK);
+$message = $queue->get(AMQP_NOPARAM);
 
 echo $message['msg'];
 

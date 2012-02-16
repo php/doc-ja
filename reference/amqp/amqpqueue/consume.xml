@@ -1,90 +1,108 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: e90268fb155ae35c1b1f2439a631b4b22d141fb9 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: dc1dcfb27b0a3dcbaa771035ce891c3ce31a03c7 Maintainer: takagi Status: ready -->
 
 <refentry xml:id="amqpqueue.consume" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
   <refname>AMQPQueue::consume</refname>
-  <refpurpose>consume メソッド</refpurpose>
+  <refpurpose>メッセージをキューから取得する</refpurpose>
  </refnamediv>
- 
+
  <refsect1 role="description">
   &reftitle.description;
   <methodsynopsis>
-   <modifier>public</modifier> <type>array</type><methodname>AMQPQueue::consume</methodname>
-   <methodparam choice="opt"><type>array</type><parameter>options</parameter><initializer>array()</initializer></methodparam>
+   <modifier>public</modifier> <type>void</type><methodname>AMQPQueue::consume</methodname>
+   <methodparam><type>callback</type><parameter>callback</parameter></methodparam>
+   <methodparam choice="opt"><type>int</type><parameter>flags</parameter><initializer><constant>AMQP_NOPARAM</constant></initializer></methodparam>
   </methodsynopsis>
   <para>
-    これはブロック関数です。つまり、<parameter>min</parameter>
-    で指定しただけのメッセージを読み終えるまでは結果を返しません。
-    非ブロック関数を使う場合は <methodname>AMQPQueue::get</methodname> を参照ください。
+    ブロック関数です。キューからの次のメッセージが取得できるようになったら読み込み、
+    そしてそれをコールバックに渡します。
   </para>
  </refsect1>
- 
+
  <refsect1 role="parameters">
   &reftitle.parameters;
   <para>
    <variablelist>
+     <varlistentry>
+      <term><parameter>callback</parameter></term>
+      <listitem>
+       <para>
+        取得したメッセージを渡すコールバック関数。
+        パラメータとして <classname>AMQPEnvelope</classname> を受け取ることが必須で、
+        オプションの二番目のパラメータとしてメッセージの取得元の
+        <classname>AMQPQueue</classname> を受け取ることもできます。
+       </para>
+       <para>
+         <methodname>AMQPQueue::consume</methodname> は、
+         コールバック関数が &false; を返すまで PHP スクリプトに処理スレッドを戻しません。
+       </para>
+      </listitem>
+     </varlistentry>
     <varlistentry>
-     <term><parameter>options</parameter></term>
+     <term><parameter>flags</parameter></term>
      <listitem>
       <para>
-       <parameter>options</parameter> はオプションの配列です。
-       この配列で使われるキーは min、max および ack で、
-       それ以外のキーは無視されます。
-      </para>
-      <para>
-       オプションが設定されていない場合は ini 設定を確認します。それもなければデフォルト値を使用します。
+       フラグ <constant>AMQP_NOACK</constant> のビットマスク。
       </para>
      </listitem>
     </varlistentry>
    </variablelist>
   </para>
  </refsect1>
- 
- <refsect1 role="returnvalues">
-  &reftitle.returnvalues;
+
+ <refsect1 role="errors">
+  &reftitle.errors;
   <para>
-   取得したメッセージを含む配列を返します。返されるメッセージ数は、最低でも
-   <parameter>options</parameter> 配列の <parameter>min</parameter> で指定した数となります。
-   <parameter>max</parameter> で指定した数より多くなることはありません。
+   チャネルが開いていない場合に <classname>AMQPChannelException</classname> をスローします。
+  </para>
+  <para>
+   ブローカへの接続が途切れた場合に <classname>AMQPConnectionException</classname> をスローします。
   </para>
  </refsect1>
- 
+
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+ </refsect1>
+
  <refsect1 role="examples">
   &reftitle.examples;
   <para>
    <example>
     <title><methodname>AMQPQueue::consume</methodname> の例</title>
     <programlisting role="php">
-<![CDATA[
-<?php
+     <![CDATA[
+     <?php
 
-/* デフォルトの設定で接続を作成します */
-$connection = new AMQPConnection();
-$connection->connect();
+     /* デフォルトの設定で接続を作成します */
+     $connection = new AMQPConnection();
+     $connection->connect();
 
-/* キューオブジェクトを作成します */
-$queue = new AMQPQueue($connection);
+     $channel = new AMQPChannel($connection);
 
-// キューを宣言します
-$queue->declare('myqueue');
+     /* キューオブジェクトを作成します */
+     $queue = new AMQPQueue($channel);
 
-$options = array(
-    'min' => 1,
-    'max' => 10,
-    'ack' => true
-);
+     // キューを宣言します
+     $queue->declare('myqueue');
 
-// メッセージを取得します
-$messages = $queue->consume($options);
+     $i = 0;
+     function processMessage($envelope, $queue) {
+        global $i;
+        echo "Message $i: " . $envelope->getBody() . "\n";
+        $i++;
+        if ($i > 10) {
+            // 10 件ごとに解放します
+            return false;
+        }
+     }
 
-foreach ($messages as $message) {
-    echo $message['message_body'];
-}
+     // メッセージをキューから取得します
+     $queue->consume("processMessage");
 
-?>
-]]>
+     ?>
+     ]]>
     </programlisting>
    </example>
   </para>
