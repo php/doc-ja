@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 827c4bb5be72c63554d6aaf371ccb434a2c5f20e Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 00f8e96bac6b7027aa37183a07da06abfaa73bba Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa,shimooka -->
 <refentry xmlns="http://docbook.org/ns/docbook" xml:id="function.session-set-save-handler">
  <refnamediv>
   <refname>session_set_save_handler</refname>
   <refpurpose>ユーザ定義のセッション保存関数を設定する</refpurpose>
  </refnamediv>
- 
+
  <refsect1 role="description">
   &reftitle.description;
   <methodsynopsis>
@@ -19,6 +19,9 @@
    <methodparam><type>callback</type><parameter>destroy</parameter></methodparam>
    <methodparam><type>callback</type><parameter>gc</parameter></methodparam>
   </methodsynopsis>
+  <para>
+   PHP 5.4 以降は次のプロトタイプでも登録できます。
+  </para>
   <methodsynopsis>
    <type>bool</type><methodname>session_set_save_handler</methodname>
    <methodparam><type>SessionHandlerInterface</type><parameter>sessionhandler</parameter></methodparam>
@@ -44,7 +47,7 @@
       <para>
        <interfacename>SessionHandlerInterface</interfacename> を実装したクラス、たとえば
        <classname>SessionHandler</classname> のインスタンスで、
-       これをセッションハンドラとして登録する。
+       これをセッションハンドラとして登録する。PHP 5.4 以降限定。
       </para>
      </listitem>
     </varlistentry>
@@ -63,43 +66,67 @@
 
    <variablelist>
     <varlistentry>
-     <term><parameter>open</parameter></term>
+     <term><parameter>open(string $savePath, string $sessionName)</parameter></term>
      <listitem>
       <para>
-       open 関数。これはクラスのコンストラクタのようなもので、
-       セッションがオープンした際に実行されます。
-       オープン関数が受け取るパラメータはふたつで、
-       最初が保存パス、次がセッション名です。
+       open コールバックはクラスのコンストラクタのようなもので、セッションを開くときに実行されます。
+       セッションが自動で開始したり、あるいは手動で <function>session_start</function>
+       で開始させたりするときに、最初に実行されるコールバック関数がこれです。
+       成功した場合は &true;、失敗した場合は &false; を返します。
       </para>
      </listitem>
     </varlistentry>
     <varlistentry>
-     <term><parameter>close</parameter></term>
+     <term><parameter>close()</parameter></term>
      <listitem>
       <para>
-       close 関数。これはクラスのデストラクタのようなもので、
-       セッションの操作が終了した際に実行されます。
+       close コールバックはクラスのデストラクタのようなもので、write コールバックがコールされた後で実行されます。
+       また、<function>session_write_close</function> がコールされたときにも実行されます。
+       成功した場合は &true;、失敗した場合は &false; を返します。
       </para>
      </listitem>
     </varlistentry>
     <varlistentry>
-     <term><parameter>read</parameter></term>
+     <term><parameter>read(string $sessionId)</parameter></term>
      <listitem>
       <para>
-       save ハンドラが期待通りに動作するように read 関数は常に文字列を返す
-       必要があります。データがない場合には、空の文字列を返してください。
-       他のハンドラからの返り値は、論理式、すなわち成功した場合に &true;、
-       失敗した場合に &false; を返します。
+       <parameter>read</parameter> コールバックは、常にセッションエンコード (シリアライズ)
+       された文字列を返さなければなりません。何もデータを読み込まなかった場合は空文字列を返します。
+      </para>
+      <para>
+       このコールバックは、セッションが開始したときや
+       <function>session_start</function> がコールされたときに PHP が内部的に実行します。
+       このコールバックを実行する前に、PHP は
+       <parameter>open</parameter> コールバックを実行します。
+      </para>
+      <para>
+       このコールバックが返す値は、
+       <parameter>write</parameter> コールバックがストレージに渡した形式とまったく同じシリアライズ形式でなければなりません。
+       返された値を PHP が自動的にアンシリアライズして、スーパーグローバル <varname>$_SESSION</varname>
+       に格納します。データの形式は <function>serialize</function> したものと似ていますが、実際は違う形式であることに注意しましょう。
+       シリアライズの方法は ini 設定 <link linkend="ini.session.serialize-handler">session.serialize_handler</link> で指定します。
       </para>
      </listitem>
     </varlistentry>
     <varlistentry>
-     <term><parameter>write</parameter></term>
+     <term><parameter>write(string $sessionId, string $data)</parameter></term>
      <listitem>
       <para>
-       write 関数は、セッションデータを保存する際にコールされます。
-       この関数はふたつのパラメータを受け取ります。
-       ID と、それに対応するデータです。
+       <parameter>write</parameter> コールバックは、セッションの保存や終了が必要となったときにコールされます。
+       このコールバックが受け取るのは、現在のセッション ID とシリアライズ後のスーパーグローバル <varname>$_SESSION</varname> です。
+       PHP が内部で利用するシリアライズ方法は、ini 設定
+       <link linkend="ini.session.serialize-handler">session.serialize_handler</link> で指定します。
+      </para>
+      <para>
+       このコールバックに渡されたシリアライズ後のセッションデータを、
+       渡されたセッション ID に対応させて格納しなければなりません。
+       このデータを取得した <parameter>read</parameter> コールバックは、
+       <parameter>write</parameter> コールバックに最初に渡されたのとまったく同じ値を返さなければなりません。
+      </para>
+      <para>
+       このコールバックが実行されるのは、PHP のスクリプトが終了するときか、あるいは明示的に <function>session_write_close</function>
+       がコールされたときです。この関数の実行後には、PHP が内部的に <parameter>close</parameter>
+       コールバックを実行することに注意しましょう。
        <note>
         <para>
          "write" ハンドラは、出力ストリームが閉じてから実行されます。
@@ -112,22 +139,27 @@
      </listitem>
     </varlistentry>
     <varlistentry>
-     <term><parameter>destroy</parameter></term>
+     <term><parameter>destroy($sessionId)</parameter></term>
      <listitem>
       <para>
-       destroy ハンドラ。これは、セッションが
-       <function>session_destroy</function>
-       で破棄された際に実行されます。唯一のパラメータとしてセッション ID を受け取ります。
+       このコールバックが実行されるのは、
+       <function>session_destroy</function> あるいは
+       <function>session_regenerate_id</function> (destroy パラメータを &true; にした場合)
+       を実行し、セッションを破棄した場合です。
+       成功した場合は &true;、失敗した場合は &false; を返します。
       </para>
      </listitem>
     </varlistentry>
     <varlistentry>
-     <term><parameter>gc</parameter></term>
+     <term><parameter>gc($lifetime)</parameter></term>
      <listitem>
       <para>
-       ガベージコレクタ。これは、
-       セッションのガベージコレクタが実行されたときに実行され、
-       唯一のパラメータとしてセッションの最大有効期間を受け取ります。
+       ガベージコレクタコールバックは PHP が内部で定期的に実行し、古いセッションデータを破棄します。
+       実行頻度は <link linkend="ini.session.gc-probability">session.gc_probability</link>
+       および <link linkend="ini.session.gc-divisor">session.gc_divisor</link> で設定します。
+       この関数に渡される有効期限の値は <link linkend="ini.session.gc-maxlifetime">session.gc_maxlifetime</link>
+       で設定できます。
+       成功した場合は &true;、失敗した場合は &false; を返します。
       </para>
      </listitem>
     </varlistentry>
@@ -351,7 +383,7 @@ session_start();
    </simplelist>
   </para>
  </refsect1>
- 
+
 </refentry>
 
 <!-- Keep this comment at the end of the file

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 4eec43e52c0b7b5a08909acf5d07536a928e80d4 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 00f8e96bac6b7027aa37183a07da06abfaa73bba Maintainer: takagi Status: ready -->
 
 <refentry xml:id="sessionhandlerinterface.read" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -12,11 +12,29 @@
   &reftitle.description;
   <methodsynopsis>
    <modifier>abstract</modifier> <modifier>public</modifier> <type>string</type><methodname>SessionHandlerInterface::read</methodname>
-   <methodparam><type>string</type><parameter>sessionid</parameter></methodparam>
+   <methodparam><type>string</type><parameter>session_id</parameter></methodparam>
   </methodsynopsis>
   <para>
    セッションのデータをセッションストレージから読み込み、その結果を返します。
-   <function>session_start</function> の直後にコールされます。
+   セッションを開始した直後、あるいは <function>session_start</function> を実行したときにコールされます。
+   このメソッドがコールされる直前に <function>SessionHandlerInterface::open</function>
+   が実行されることに注意しましょう。
+  </para>
+  <para>
+   このメソッドは、セッションが開始するときに PHP 自身がコールします。
+   このメソッドは、指定したセッション ID のセッションデータをストレージから取得しなければなりません。
+   返す文字列の書式は、<function>SessionHandlerInterface::write</function>
+   に渡されたものと同様にシリアライズされたものでなければなりません。
+   データが見つからない場合は空文字列を返します。
+  </para>
+  <para>
+   このメソッドが返すデータは、PHP が内部的にデコードします。デコードに使うメソッドは
+   <link linkend="ini.session.serialize-handler">session.serialize_handler</link>
+   で指定します。デコードした結果をスーパーグローバル <varname>$_SESSION</varname> に格納します。
+  </para>
+  <para>
+   シリアライズ方式は <function>unserialize</function> とは異なっており、アクセスするためには
+   <function>session_decode</function> を使うことに注意しましょう。
   </para>
  </refsect1>
 
@@ -24,10 +42,10 @@
   &reftitle.parameters;
   <variablelist>
    <varlistentry>
-    <term><parameter>sessionid</parameter></term>
+    <term><parameter>session_id</parameter></term>
     <listitem>
      <para>
-      データを読み込むセッションの id。
+      セッション id。
      </para>
     </listitem>
    </varlistentry>
@@ -37,7 +55,8 @@
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
-   読み込んだデータ、あるいは空文字列を返します。
+   読み込んだデータをエンコードした文字列を返します。
+   何も読まなかった場合は空文字列を返さなければなりません。
   </para>
  </refsect1>
 

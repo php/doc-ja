@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: a56106f69198dfe88c6084593c78a71c26b24353 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 4df90a72c5fdc14108a0ee5629711ab9b7af0a50 Maintainer: takagi Status: ready -->
 <!-- CREDITS: shimooka,hirokawa -->
 
 <appendix xml:id="session.examples" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
@@ -149,7 +149,7 @@ unset($_SESSION['count']);
    のエントリには反映されません。PHP 4.3.0 では修正されています。
   </para>
  </section>
-  
+
  <section xml:id="session.idpassing">
   <title>セッションIDの受渡し</title>
   <para>
@@ -189,7 +189,7 @@ unset($_SESSION['count']);
     ことができます。XHTMLに完全準拠するためには、ここに
     &amp;amp; を指定してください。
     </para>
-   </note> 
+   </note>
   </para>
   <para>
    もしくは、セッションが開始している場合に定義されている定数 <constant>
@@ -247,7 +247,7 @@ if (empty($_SESSION['count'])) {
    </para>
   </note>
  </section>
- 
+
  <section xml:id="session.customhandler">
   <title>カスタムセッションハンドラ</title>
   <para>
@@ -256,6 +256,46 @@ if (empty($_SESSION['count'])) {
    <function>session_set_save_handler</function>を使用する必要があり
    ます。
   </para>
+  <para>
+   <function>session_set_save_handler</function> で指定したコールバックメソッドが、
+   セッションのライフサイクル内で PHP からコールされます。
+   セッションの <parameter>open</parameter>、<parameter>read</parameter>、<parameter>write</parameter>、
+   <parameter>close</parameter>、そして格納したセッションの整理や定期的なガベージコレクションなどのときです。
+  </para>
+  <para>
+   したがって、PHP では常にセッション保存ハンドラが必要となります。デフォルトは、通常はファイルベースの保存ハンドラ
+   (PHP 5.4 からは SessionHandler クラス) です。
+   自作の保存ハンドラは <function>session_set_save_handler</function> で設定できます。
+   内部的な保存ハンドラとして、デフォルト以外のものも PHP の拡張モジュールとして用意されています。
+   <parameter>sqlite</parameter> や <parameter>memcache</parameter> そして
+   <parameter>memcached</parameter> などで、これらは <link linkend="ini.session.save-handler">session.save_handler</link>
+   で設定できます。
+  </para>
+  <para>
+   セッションが開始するときに、PHP は内部的に <parameter>open</parameter> ハンドラをコールします。
+   それに続けて <parameter>read</parameter> コールバックを実行し、
+   このコールバックがエンコードされた文字列を返します。これは最初にセッションストレージに渡されたものと同じ形式になります。
+   <parameter>read</parameter> コールバックがエンコードした文字列を返したら、
+   PHP がそれをデコードしてデコード後の配列をスーパーグローバル
+   <varname>$_SESSION</varname> に格納します。
+  </para>
+  <para>
+   PHP のスクリプトが終了するとき (あるいは <function>session_write_close</function> がコールされたとき) には、
+   PHP が内部的にスーパーグローバル <varname>$_SESSION</varname> をエンコードします。
+   そして、それをセッション ID とともに <parameter>write</parameter> コールバックに渡します。
+   <parameter>write</parameter> コールバックが終了すると、PHP は内部的に
+   <parameter>close</parameter> コールバックハンドラを実行します。
+  </para>
+  <para>
+   セッションが明確に破棄されたときには、PHP は
+   destroy() ハンドラをセッション ID つきでコールします。
+  </para>
+ <para>
+   PHP はときどき <parameter>gc</parameter> コールバックを実行し、
+   設定されているセッション有効期限にもとづいて期限切れのセッションレコードを無効化します。
+   この処理では、最後にアクセスされてからの時間が <parameter>$lifetime</parameter>
+   を超えているすべてのレコードを永続ストレージから削除しなければなりません。
+ </para>
  </section>
 </appendix>
 
