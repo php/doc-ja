@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 5a4cbc3780783bec6d82128892d8b50dc271c9e1 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 635d78b604a746824695a458c03f8aec04a7fcec Maintainer: takagi Status: ready -->
 
 <phpdoc:classref xml:id="class.sessionhandler" xmlns:phpdoc="http://php.net/ns/phpdoc" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xi="http://www.w3.org/2001/XInclude">
 
@@ -13,22 +13,29 @@
   <section xml:id="sessionhandler.intro">
    &reftitle.intro;
    <para>
-    <classname>SessionHandler</classname> はファイルベースのセッション保存ハンドラクラスで、
-    PHP のデフォルト実装です。
+    <classname>SessionHandler</classname> は特殊なクラスで、
+    これを継承したクラスを作れば PHP が内部的に使っているセッション保存ハンドラを拡張できます。
+    このクラスには六つのメソッドがあり、それぞれが六つのセッション保存ハンドラコールバックに対応しています。
+    デフォルトで PHP が使う保存ハンドラは <parameter>files</parameter>
+    で、これは <link linkend="ini.session.save-handler">session.save_handler</link> で定義されています。
+    それ以外には、PHP の拡張モジュールとして提供されている SQLite (<parameter>sqlite</parameter>) や
+    Memcache (<parameter>memcache</parameter>) そして <parameter>Memcached</parameter> が使えます。
    </para>
    <para>
-    このクラスを継承して、メソッドをオーバーライドできます。
-    そのインターフェイスである
-    <classname>SessionHandlerInterface</classname>
-    を実装したクラスを自作することもでき、
-    そうすればデフォルトのセッションハンドラの挙動を完全にバイパスさせることもできます。
+    このクラスを継承してメソッドをオーバーライドすることができ、
+    そのときに親クラスのメソッドをコールすることもできます
+    これを利用すれば、たとえば
+    <parameter>read</parameter> メソッドと <parameter>write</parameter>
+    メソッドだけを書き換えて、セッションデータの暗号化や復号をしてから親クラスにデータを渡すこともできます。
    </para>
    <para>
-    このクラスのインスタンス、あるいはその派生クラスのインスタンス、
-    あるいは <classname>SessionHandlerInterface</classname>
-    を実装したカスタムクラスのいずれかを
-    <function>session_set_save_handler</function>
-    に渡すと、現在設定されているセッションハンドラを置き換えることができます。
+    <classname>SessionHandler</classname> は現在の内部保存ハンドラのメソッドをラップしているので、
+    先述の暗号化の例は任意の保存ハンドラに適用することができます。その際に、ハンドラの内部的な動きを知っておく必要はありません。
+   </para>
+   <para>
+    このクラスを使うには、このクラスあるいはその派生クラスのインスタンスを
+    <function>session_set_save_handler</function> に渡します。
+    そうすれば、本来使っていた (内部の) セッションハンドラがそのインスタンスで置き換えられます。
    </para>
   </section>
 <!-- }}} -->
@@ -57,6 +64,51 @@
    </classsynopsis>
 <!-- }}} -->
 
+  </section>
+  <section xml:id="sessionhandler.examples">
+   <example>
+    <title>
+     <classname>SessionHandler</classname> を使って PHP の保存ハンドラに暗号化機能を追加する例
+    </title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+class EncryptedSessionHandler implements SessionHandler
+{
+    private $key;
+
+    public function __construct($key)
+    {
+        $this->key = $key
+    }
+
+    public function read($id)
+    {
+        $data = parent::read($id);
+
+        return mycrypt_decrypt(MCRYPT_3DES, $this->key, $data, MCRYPT_MODE_ECB);
+    }
+
+    public function write($id, $data)
+    {
+        $data = mcrypt_encrypt(MCRYPT_3DES, $this->key, $data, MCRYPT_MODE_ECB);
+
+        return parent::write($id, $data);
+    }
+}
+
+// この例では標準の 'files' ハンドラを横取りしていますが、他のネイティブハンドラである
+// PHP 拡張モジュール 'sqlite'、'memcache'、'memcached'
+// の場合でもまったく同じように使えます。
+ini_set('session.save_handler', 'files');
+$handler = new EncryptedSessionHandler('mykey');
+session_set_save_handler($handler, true);
+session_start();
+
+// $_SESSION への値の設定や格納されている値の取得を進めます
+]]>
+    </programlisting>
+   </example>
   </section>
 
  </partintro>
