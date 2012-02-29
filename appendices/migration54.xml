@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 527b18d15f5301dc2b018a6c681294ec0c45f008 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 9c27040f090acd30375517c6c6b9fa8ac334fb8c Maintainer: takagi Status: ready -->
 <appendix xml:id="migration54" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>PHP 5.3.x から PHP 5.4.x への移行</title>
  <simpara>
@@ -69,13 +69,6 @@
   <itemizedlist>
    <listitem>
     <simpara>
-     <link linkend="control-structures.break"><literal>break</literal></link>
-     と <link linkend="control-structures.continue"><literal>continue</literal></link>
-     への引数として、変数は使えなくなりました。静的な定数を渡すようにしましょう。
-    </simpara>
-   </listitem>
-   <listitem>
-    <simpara>
      <link linkend="features.safe-mode"><literal>セーフモード</literal></link>
      をサポートしなくなりました。セーフモードでの動作を前提とするアプリケーションは、
      セキュリティに関する調整が必要となります。
@@ -83,21 +76,44 @@
    </listitem>
    <listitem>
     <simpara>
-     ハッシュアルゴリズム Salsa10 および Salsa20 が削除されました。
+     <link linkend="security.magicquotes">マジッククォート</link> が削除されました。
+     この機能に依存するアプリケーションは、依存しないように修正しないとセキュリティの問題が発生します。
     </simpara>
-   </listitem>
-   <listitem>
-    <simpara>
-     Date 拡張モジュールにおいて、TZ 環境変数によるタイムゾーンの設定をサポートしなくなりました。
-     デフォルトのタイムゾーンが設定されていない場合に推測することがなくなり、
-     未設定の場合は常に "UTC" とみなすようになりました。
-    </simpara>
-   </listitem>
-   <listitem>
     <simpara>
      <function>get_magic_quotes_gpc</function> と <function>get_magic_quotes_runtime</function>
      は常に false を返すようになりました。<function>set_magic_quotes_runtime</function> を実行すると
      <constant>E_CORE_ERROR</constant> が発生します。
+    </simpara>
+   </listitem>
+   <listitem>
+    <simpara>
+     ini 設定
+     <link linkend="ini.register-globals">register_globals</link> と
+     <link linkend="ini.register-long-arrays">register_long_arrays</link>
+     が削除されました。
+    </simpara>
+   </listitem>
+   <listitem>
+    <simpara>
+     <link linkend="language.references.pass">呼び出し時の参照渡し</link>をサポートしなくなりました。
+    </simpara>
+   </listitem>
+   <listitem>
+    <simpara>
+     <link linkend="control-structures.break"><literal>break</literal></link>
+     と <link linkend="control-structures.continue"><literal>continue</literal></link>
+     への引数として、変数は使えなくなりました。つまり、
+     <literal>break 1 + foo() * $bar;</literal> などとは書けなくなったということです。
+     静的な引数を使うのはもちろん可能で、<literal>break 2;</literal> などは使えます。
+    </simpara>
+   </listitem>
+   <listitem>
+    <simpara>
+     <link linkend="book.datetime">Date 拡張モジュール</link>において、TZ 環境変数によるタイムゾーンの設定をサポートしなくなりました。
+     ini 設定 <link linkend="ini.date.timezone">date.timezone</link> あるいは <function>date_default_timezone_set</function>
+     関数でタイムゾーンを指定しなければなりません。
+     デフォルトのタイムゾーンが設定されていない場合に推測することがなくなり、
+     未設定の場合は常に "UTC" とみなすようになりました。
     </simpara>
    </listitem>
    <listitem>
@@ -107,36 +123,38 @@
      そして <function>empty</function> の返り値は true となりました。
      そして同時に warning が発生します。オフセットに double や bool そして null
      を指定した場合は notice が発生します。数値とみなせる文字列を渡した場合
-     ($a['2'] など) の挙動はこれまでと変わりません。
-     '12.3' や '5 and a half' のようなオフセットは非数値とみなされて warning
+     (<literal>$a['2']</literal> など) の挙動はこれまでと変わりません。
+     <literal>'12.3'</literal> や <literal>'5 foobar'</literal> のようなオフセットは非数値とみなされて warning
      が発生しますが、過去との互換性のためにそれぞれ 12 および 5 に変換されることに注意しましょう。
     </simpara>
    </listitem>
    <listitem>
     <simpara>
-     null、false あるいは空文字列にプロパティを追加してオブジェクトに変換しようとすると、
+     配列を文字列に変換しようとすると <constant>E_NOTICE</constant> が発生するようになりました。
+     キャストの結果は <literal>"Array"</literal> で、以前と変わりません。
+    </simpara>
+   </listitem>
+   <listitem>
+    <simpara>
+     &null;、&false; あるいは空文字列にプロパティを追加してオブジェクトに変換しようとすると、
      これまでのような <constant>E_STRICT</constant> エラーではなく warning が発生するようになりました。
     </simpara>
    </listitem>
    <listitem>
     <simpara>
-     配列を文字列に変換しようとすると <constant>E_NOTICE</constant> が発生するようになりました。
+     スーパーグローバルをパラメータ名として使うと fatal error となります。つまり
+     <literal>function foo($_GET, $_POST) {}</literal> などのコードは使えなくなります。
     </simpara>
    </listitem>
    <listitem>
     <simpara>
-     Shadowing names of superglobals for parameter names now causes a fatal error.
+     <link linkend="book.hash">ハッシュアルゴリズム</link> Salsa10 および Salsa20 が削除されました。
     </simpara>
    </listitem>
    <listitem>
     <simpara>
      <function>array_combine</function> のパラメータとして空の配列を二つ指定したときの返り値が
-     <literal>FALSE</literal> ではなく <literal>array()</literal> となりました。
-    </simpara>
-   </listitem>
-   <listitem>
-    <simpara>
-     <function>call_user_func_array</function> が呼び出し時の参照渡しをサポートしなくなりました。
+     &false; ではなく <literal>array()</literal> となりました。
     </simpara>
    </listitem>
    <listitem>
@@ -174,23 +192,27 @@
   <itemizedlist>
    <listitem>
     <simpara>
-     define_syslog_variables()
+     <function>define_syslog_variables</function>
     </simpara>
    </listitem>
    <listitem>
     <simpara>
-     import_request_variables()
+     <function>import_request_variables</function>
     </simpara>
    </listitem>
    <listitem>
     <simpara>
-     session_is_registered(), session_register() および session_unregister()
+     <function>session_is_registered</function>, <function>session_register</function>
+     および <function>session_unregister</function>
     </simpara>
    </listitem>
    <listitem>
     <simpara>
-     mysqli_bind_param(), mysqli_bind_result(), mysqli_client_encoding(),  mysqli_fetch(), mysqli_param_count(),
-     mysqli_get_metadata(), mysqli_send_long_data(), mysqli::client_encoding() および mysqli_stmt::stmt()
+     エイリアス
+     <function>mysqli_bind_param</function>, <function>mysqli_bind_result</function>,
+     <function>mysqli_client_encoding</function>, <function>mysqli_fetch</function>,
+     <function>mysqli_param_count</function>, <function>mysqli_get_metadata</function>,
+     <function>mysqli_send_long_data</function>, mysqli::client_encoding() および mysqli_stmt::stmt()
     </simpara>
    </listitem>
   </itemizedlist>
