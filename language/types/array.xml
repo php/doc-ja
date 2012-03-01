@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 88723b48e9d5f812144a12d490f3dd3461a024b4 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: c272030e25fbfb19ad35f1a62cf148374fa1d7ee Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa,shimooka -->
 <sect1 xml:id="language.types.array">
  <title>配列</title>
@@ -38,44 +38,270 @@
    </para>
 
    <synopsis>
-array( <optional> <replaceable>キー</replaceable> =&gt; </optional> <replaceable>値</replaceable>
-   , ...
-   )
-// <replaceable>キー</replaceable> は、<type>文字列</type>または
-// 非負の<type>整数</type>です。
-// <replaceable>値</replaceable> に制約はありません.
-   </synopsis>
+array(
+    <optional><replaceable>key</replaceable>  =&gt; </optional><replaceable>value</replaceable>,
+    <optional><replaceable>key2</replaceable> =&gt; </optional><replaceable>value2</replaceable>,
+    <optional><replaceable>key3</replaceable> =&gt; </optional><replaceable>value3</replaceable>,
+    ...
+)</synopsis>
+   <!-- Do not fix the whitespace for the synopsis end element. A limitation of PhD prevents proper trimming -->
 
-   <informalexample>
+   <para>
+    PHP 5.4 以降では配列の短縮構文が追加され、
+    <literal>array()</literal> の代わりに <literal>[]</literal> を使えるようになりました。
+   </para>
+   
+   <example>
+    <title>シンプルな配列定義</title>
     <programlisting role="php">
 <![CDATA[
 <?php
-$arr = array("foo" => "bar", 12 => true);
+$array = array(
+    "foo" => "bar",
+    "bar" => "foo"
+);
 
-echo $arr["foo"]; // bar
-echo $arr[12];    // 1
+// PHP 5.4 ではこのようにも書けます
+$array = [
+    "foo" => "bar",
+    "bar" => "foo"
+];
 ?>
 ]]>
     </programlisting>
-   </informalexample>
-
+   </example>
+   
    <para>
     <varname>key</varname> は、<type>整数</type> または
     <type>文字列</type>です。
-    あるキーが、<type>整数</type>の標準的な表現形式である場合、
-    そのように解釈されます (つまり、<literal>"8"</literal> は
-    <literal>8</literal> として解釈されます。一方、
-    <literal>"08"</literal> は <literal>"08"</literal> として解釈されます)。
-    <varname>key</varname> に浮動小数点数値を指定すると、
-    その値は <type>integer</type> に切り詰められます。
-    PHP においては添字配列と連想配列の間に違いはなく、配列型は 1 つだけで、
-    整数または文字列のインデックスを使用することができます。
+    <replaceable>value</replaceable> には任意の型を指定できます。
    </para>
 
    <para>
-    値には、PHP の全ての型を使用することができます。
+    さらに、次のような <replaceable>key</replaceable> のキャストが発生します。
+    <itemizedlist>
+     <listitem>
+      <simpara>
+       <type>integer</type> として妥当な形式の文字列は <type>integer</type> 型にキャストされます。
+       つまり、キーに <literal>"8"</literal> を指定すると、実際には
+       <literal>8</literal> として格納されるということです。一方 <literal>"08"</literal>
+       はキャストされません。これは十進数として妥当な形式ではないからです。
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       <type>float</type>s もまた <type>integer</type> にキャストされます。つまり、
+       少数部分は切り捨てられるということです。たとえばキーに <literal>8.7</literal> を指定すると、実際には
+       <literal>8</literal> として格納されます。
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       <type>bool</type> も <type>integer</type> にキャストされます。つまり、
+       キーに <literal>true</literal> を指定すると実際には <literal>1</literal> に格納され、
+       同様にキーを <literal>false</literal> とすると実際には <literal>0</literal> となります。
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       <type>Null</type> は空文字列にキャストされます。つまり、キーに
+       <literal>null</literal> を指定すると、実際には <literal>""</literal> として格納されます。
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       <type>array</type> や <type>object</type> は、キーとして<emphasis>使えません</emphasis>。
+       キーとして使おうとすると <literal>Illegal offset type</literal> という警告が発生します。
+      </simpara>
+     </listitem>
+    </itemizedlist>
    </para>
+   
+   <para>
+    配列の宣言時に同じキーで複数の要素を指定すると、
+    最後に指定したものがそれまでの値を上書きします。
+   </para>
+   
+   <example>
+    <title>型のキャストと値の上書きの例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$array = array(
+    1    => "a",
+    "1"  => "b",
+    1.5  => "c",
+    true => "d",
+);
+var_dump($array);
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+array(1) {
+  [1]=>
+  string(1) "d"
+}
+]]>
+    </screen>
+    <para>
+     上の例では、すべてのキーが <literal>1</literal> にキャストされます。
+     そして後から指定した値がどんどん前の値を上安芸市定期、最終的には最後に代入された
+     <literal>"d"</literal> だけが残ります。
+    </para>
+   </example>  
+   
+   <para>
+    PHP においては添字配列と連想配列の間に違いはなく、配列型は 1 つだけで、
+    同じ配列で整数のインデックスと文字列のインデックスを同時に使えます。
+   </para>
+   
+   <example>
+    <title>整数と文字列のキーの混在例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$array = array(
+    "foo" => "bar",
+    "bar" => "foo",
+    100   => -100,
+    -100  => 100,
+);
+var_dump($array);
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+array(4) {
+  ["foo"]=>
+  string(3) "bar"
+  ["bar"]=>
+  string(3) "foo"
+  [100]=>
+  int(-100)
+  [-100]=>
+  int(100)
+}
+]]>
+    </screen>
+   </example>
+   
+   <para>
+    <replaceable>key</replaceable> はオプションです。省略した場合、PHP
+    はこれまでに使われた整数のキーの中で最大のものに 1 を加えた値を使います。
+   </para>
+   
+   <example>
+    <title>数値添字配列でキーを省略する例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$array = array("foo", "bar", "hallo", "world");
+var_dump($array);
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+array(4) {
+  [0]=>
+  string(3) "foo"
+  [1]=>
+  string(3) "bar"
+  [2]=>
+  string(5) "hallo"
+  [3]=>
+  string(5) "world"
+}
+]]>
+    </screen>
+   </example>
+   
+   <para>
+    一部の要素にだけキーを指定することもできます。
+   </para>
+   
+   <example>
+    <title>一部の要素にだけキーを指定する例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$array = array(
+         "a",
+         "b",
+    6 => "c",
+         "d",
+);
+var_dump($array);
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+array(4) {
+  [0]=>
+  string(1) "a"
+  [1]=>
+  string(1) "b"
+  [6]=>
+  string(1) "c"
+  [7]=>
+  string(1) "d"
+}
+]]>
+    </screen>
+    <para>
+     ごらんの通り、最後の値である <literal>"d"</literal> のキーは
+     <literal>7</literal> となります。それまでにキーとして使われた最大の整数が
+     <literal>6</literal> だからです。
+    </para>
+   </example>
+  </sect3>
+  
+  <sect3 xml:id="language.types.array.syntax.accessing">
+   <title>角括弧構文による配列要素へのアクセス</title>
+   
+   <para>
+    配列の要素へのアクセスには <literal>array[key]</literal> 構文を使います。
+   </para>
+   
+   <example>
+    <title>配列の要素へのアクセス</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$array = array(
+    "foo" => "bar",
+    42    => 24,
+    "multi" => array(
+         "dimensional" => array(
+             "array" => "foo"
+         )
+    )
+);
 
+var_dump($array["foo"]);
+var_dump($array[42]);
+var_dump($array["multi"]["dimensional"]["array"]);
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+string(3) "bar"
+int(24)
+string(3) "foo"
+]]>
+    </screen>
+   </example>
+   
    <note>
     <para>
       配列に定義されていないキーへアクセスしたときの挙動は、
@@ -84,71 +310,6 @@ echo $arr[12];    // 1
       返される結果は &null; となります。
     </para>
    </note>
-
-   <informalexample>
-    <programlisting role="php">
-<![CDATA[
-<?php
-$arr = array("somearray" => array(6 => 5, 13 => 9, "a" => 42));
-
-echo $arr["somearray"][6];    // 5
-echo $arr["somearray"][13];   // 9
-echo $arr["somearray"]["a"];  // 42
-?>
-]]>
-    </programlisting>
-   </informalexample>
-
-   <para>
-    キーを省略した場合、整数添字の最大値が使用され、
-    新しいキーはその最大値 +1 となります。整数値は負の数とすることができ、
-    負の添字についても同様となります。例えば、最高時の添字が <literal>-6</literal>
-    の場合、次のキーは <literal>-5</literal> となります。
-    整数添字がまだ存在しない場合、キーは <literal>0</literal> (ゼロ) となります。
-    値が既に代入されているキーを指定した場合、元の値は上書きされます。
-   </para>
-   
-   <informalexample>
-    <programlisting role="php">
-<![CDATA[
-<?php
-// この配列は以下の配列と同じです ...
-array(5 => 43, 32, 56, "b" => 12);
-
-// この配列は上の配列と同じです
-array(5 => 43, 6 => 32, 7 => 56, "b" => 12);
-?>
-]]>
-    </programlisting>
-   </informalexample>
-
-   <warning>
-    <simpara>
-     PHP 4.3.0 以降、上記のような添字生成動作は変更されました。
-     現在では、配列に追加する際に、その配列の最大添字が負である場合は
-     次の添字はゼロ (<literal>0</literal>) となります。
-     以前は、正の添字の場合と同様に新しい添字は最大添字に +1
-     したものにセットされていました。
-    </simpara>
-   </warning>
-
-   <para>
-    キーとして &true; を使用した場合、
-    <type>整数</type>型の <literal>1</literal> がキーとして解釈されます。
-    キーとして &false; を使用した場合、
-    <type>整数</type>型の <literal>0</literal> がキーとして解釈されます。
-    キーとして <literal>NULL</literal> を使用した場合、
-    空の文字列として評価されます。キーとして空の文字列を使用すると、
-    空の文字列のキーとその値を作成 (または上書き) します。
-    空の括弧を用いた場合と同じではありません。
-   </para>
-
-   <para>
-    配列またはオブジェクトをキーとして使用することはできません。
-    これを行なうと、warning: <literal>Illegal offset type</literal>
-    が発生します。
-   </para>
-
   </sect3>
   
   <sect3 xml:id="language.types.array.syntax.modifying">
