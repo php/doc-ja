@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: a63190d9c474f19bcc54c643fdd7424623e48c38 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: cc47cb2ff9974788392b8f78c580496ea202230a Maintainer: takagi Status: ready -->
 
 <phpdoc:classref xml:id="class.sessionhandler" xmlns:phpdoc="http://php.net/ns/phpdoc" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xi="http://www.w3.org/2001/XInclude">
 
@@ -15,27 +15,45 @@
    <para>
     <classname>SessionHandler</classname> は特殊なクラスで、
     これを継承したクラスを作れば PHP が内部的に使っているセッション保存ハンドラを拡張できます。
-    このクラスには六つのメソッドがあり、それぞれが六つのセッション保存ハンドラコールバックに対応しています。
-    デフォルトで PHP が使う保存ハンドラは <parameter>files</parameter>
-    で、これは <link linkend="ini.session.save-handler">session.save_handler</link> で定義されています。
+    このクラスには六つのメソッドがあり、それぞれが六つのセッション保存ハンドラコールバック
+    (<parameter>open</parameter>, <parameter>close</parameter>,
+    <parameter>read</parameter>, <parameter>write</parameter>, <parameter>destroy</parameter> および <parameter>gc</parameter>)
+    に対応しています。デフォルトでは、このクラスは
+    <link linkend="ini.session.save-handler">session.save_handler</link> で定義された内部セッションハンドラをラップします。
+    通常は <parameter>files</parameter> がデフォルトになっています。
     それ以外には、PHP の拡張モジュールとして提供されている SQLite (<parameter>sqlite</parameter>) や
-    Memcache (<parameter>memcache</parameter>) そして Memcached (<parameter>Memcached</parameter>) が使えます。
+    Memcache (<parameter>memcache</parameter>) そして Memcached (<parameter>memcached</parameter>) が使えます。
    </para>
    <para>
-    このクラスを継承してメソッドをオーバーライドすることができ、
-    そのときに親クラスのメソッドをコールすることもできます
-    これを利用すれば、たとえば
-    <parameter>read</parameter> メソッドと <parameter>write</parameter>
-    メソッドだけを書き換えて、セッションデータの暗号化や復号をしてから親クラスにデータを渡すこともできます。
+    <classname>SessionHandler</classname> のインスタンスを
+    <function>session_set_save_handler</function> でハンドラとして指定すると、
+    そのインスタンスが現在の保存ハンドラをラップします。
+    <classname>SessionHandler</classname> を継承したクラスを作ると、
+    親クラスのメソッド、つまり PHP の内部セッションハンドラのメソッドをラップして
+    オーバーライドしたり処理を割り込ませたりフィルタをかけたりできるようになります。
+   </para>
+   <para>
+    これを利用すると、たとえば <parameter>read</parameter> と <parameter>write</parameter>
+    メソッドに処理を割り込ませ、セッションデータの暗号化/復号の処理を追加することができます。
+    あるいは、ガベージコレクションコールバック <parameter>gc</parameter>
+    を完全に自前の処理で置き換えてしまうこともできます。
    </para>
    <para>
     <classname>SessionHandler</classname> は現在の内部保存ハンドラのメソッドをラップしているので、
     先述の暗号化の例は任意の保存ハンドラに適用することができます。その際に、ハンドラの内部的な動きを知っておく必要はありません。
    </para>
    <para>
-    このクラスを使うには、このクラスあるいはその派生クラスのインスタンスを
+    このクラスを使うには、まず最初に公開したいハンドラを
+    <link linkend="ini.session.save-handler">session.save_handler</link> で設定してから、
+    <classname>SessionHandler</classname> あるいはそれを継承したクラスのインスタンスを
     <function>session_set_save_handler</function> に渡します。
-    そうすれば、本来使っていた (内部の) セッションハンドラがそのインスタンスで置き換えられます。
+   </para>
+   <para>
+    このクラスのコールバックメソッドは PHP が内部的にコールするものであり、
+    ユーザーのコードから呼ばれることは想定していないことに注意しましょう。
+    コールバックの返り値も、PHP が内部的に利用するだけです。
+    セッションの処理の流れについての詳しい情報は
+    <function>session_set_save_handler</function> を参照ください。
    </para>
   </section>
 <!-- }}} -->
@@ -65,6 +83,18 @@
 <!-- }}} -->
 
   </section>
+
+  <section xml:id="session.notes">
+   <warning>
+    <para>
+     このクラスは現在の PHP 内部セッション保存ハンドラを公開するように作られています。
+     自作の保存ハンドラを用意したい場合は、<classname>SessionHandler</classname>
+     を継承するのではなく <classname>SessionHandlerInterface</classname>
+     を実装したクラスを作るようにしましょう。
+    </para>
+   </warning>
+  </section>
+
   <section xml:id="sessionhandler.examples">
    <example>
     <title>
@@ -73,7 +103,7 @@
     <programlisting role="php">
 <![CDATA[
 <?php
-class EncryptedSessionHandler implements SessionHandler
+class EncryptedSessionHandler extends SessionHandler
 {
     private $key;
 
