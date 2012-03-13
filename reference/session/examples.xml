@@ -1,57 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 55f644c156f21a22428e7b3ca12d78db4a437ed1 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: a7b98eb2dbfe34958382535b90bba40784d1180d Maintainer: takagi Status: ready -->
 <!-- CREDITS: shimooka,hirokawa -->
 
 <appendix xml:id="session.examples" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  &reftitle.examples;
  <section xml:id="session.examples.basic">
   <title>基本的な使用法</title>
-  <note>
    <para>
-    PHP 4.1.0以降、<varname>$_SESSION</varname>は、
-    <varname>$_POST</varname>, <varname>$_GET</varname>,
-    <varname>$_REQUEST</varname>等のようにグローバル変数として利用可
-    能です。<varname>$HTTP_SESSION_VARS</varname>と異なり、
-    <varname>$_SESSION</varname>は常にグローバルです。そこで、
-    <link
-    linkend="language.variables.scope"><command>global</command></link>
-    は<varname>$_SESSION</varname>の場合は不要です。
-    このドキュメントでは、<varname>$_SESSION</varname> をあらゆる場
-    所で使用していることに注意してください。もし前者を使用したい場合に
-    は、<varname>$_SESSION</varname>を
-    <varname>$HTTP_SESSION_VARS</varname>で置き換えることができます。
-    また、<varname>$_SESSION</varname>を使用する前に
-    <function>session_start</function> を用いてセッションを開始して
-    おく必要があることに注意してください。
+    セッションは、シンプルな方法で個々のユーザーのデータを格納する仕組みで、
+    個々のユーザーに対して一意なセッション ID を用意します。
+    これを用いて、複数ページにまたがるリクエストの間で状態の情報を永続させることができます。
+    セッション ID をブラウザに送信するときには、通常はセッションクッキーを利用します。
+    また、その ID を使って既存のセッションデータを取得します。
+    その ID やセッションクッキーが存在しなければ PHP に対して新たなセッションを作るよう伝え、
+    新たなセッション ID を生成します。
    </para>
    <para>
-    連想配列<varname>$_SESSION</varname>のキーは、PHPの通常の変数名
-    と同じ制限があります。すなわち、数字で始まることはできず、文字ま
-    たはアンダースコアで始まる必要があります。
-    詳細については、本マニュアルの
-    <link linkend="language.variables">変数</link>の節を参照して下さ
-    い。
+    セッションの処理の流れは単純です。セッションを開始すると、
+    PHP はまず、(通常はセッションクッキーから受け取る) ID を使って既存のセッションを取得しようとします。
+    ID を受け取らなかった場合は新しいセッションを作成します。
+    セッションを開始すると、PHP はスーパーグローバル <varname>$_SESSION</varname>
+    にすべてのセッションデータを格納します。PHP スクリプトの処理が終了するときには、
+    スーパーグローバル <varname>$_SESSION</varname> の中身を自動的に受け取ってシリアライズし、
+    ストレージに送信します。この一連の操作にはセッション保存ハンドラを使います。
    </para>
-  </note>
-
+   <para>
+    デフォルトでは、PHP が使う保存ハンドラは <parameter>files</parameter> です。これは
+    <link linkend="ini.session.save-handler">session.save_handler</link> で設定します。
+    このハンドラは、サーバー上の
+    <link linkend="ini.session.save-path">session.save_path</link> で指定した場所にセッションデータを保存します。
+   </para>
+   <para>
+    セッションを手動で開始するには <function>session_start</function> 関数を使います。
+    <link linkend="ini.session.auto-start">session.auto_start</link> に
+    <parameter>1</parameter> を設定している場合は、
+    PHP が出力バッファに何かを出力するときに自動的にセッションを開始します。
+   </para>
+   <para>
+    通常は、PHP がスクリプトの処理を終了するときに、セッションは自動的に終了します。
+    手動でセッションを終了させるには <function>session_write_close</function> 関数を使います。
+   </para>
   <para>
-   <link
-   linkend="ini.register-globals"><literal>register_globals</literal></link>
-   が無効の場合、グローバル連想配列<varname>$_SESSION</varname>のメ
-   ンバーのみがセッション変数として登録されます。
-   回復されたセッション変数は、配列<varname>$_SESSION</varname>での
-   み利用可能です。
-  </para>
-  <para>
-   セキュリティとコードの可読性のために<varname>$_SESSION</varname>
-   (またはPHP 4.0.6以前は<varname>$HTTP_SESSION_VARS</varname>)の使用
-   が推奨されます。<varname>$_SESSION</varname>の場合、
-   <function>session_register</function>,
-   <function>session_unregister</function>,
-   <function>session_is_registered</function>は不要です。ユーザーは、
-   通常の変数と同様にセッション変数にアクセス可能
-   です。
    <example>
     <title>
      <varname>$_SESSION</varname>で変数を登録
@@ -60,7 +50,6 @@
 <![CDATA[
 <?php
 session_start();
-// PHP 4.0.6以前の場合は$HTTP_SESSION_VARSを使用してください
 if (!isset($_SESSION['count'])) {
   $_SESSION['count'] = 0;
 } else {
@@ -72,16 +61,12 @@ if (!isset($_SESSION['count'])) {
    </example>
    <example>
     <title>
-     <link
-      linkend="ini.register-globals"><literal>register_globals</literal></link>
-     が無効な場合に、<varname>$_SESSION</varname>に登録されている変
-     数の登録を解除する
+     変数を <varname>$_SESSION</varname> から削除する
     </title>
     <programlisting role="php">
 <![CDATA[
 <?php
 session_start();
-// PHP 4.0.6とそれ以前では$HTTP_SESSION_VARSを使用してください
 unset($_SESSION['count']);
 ?>
 ]]>
@@ -101,53 +86,9 @@ unset($_SESSION['count']);
   <warning>
    <para>
     セッション変数において参照を使用することはできません。
-    他の変数への参照の再現する方法がないからです。
+    他の変数への参照を復元する方法がないからです。
    </para>
   </warning>
-  <para>
-   <link
-    linkend="ini.register-globals">register_globals</link>
-   が有効な場合、全てのグローバル変数はセッション変数として登録するこ
-   とが可能で、セッション変数は対応するグローバル変数として回復されま
-   す。PHPは、どのグローバル変数がセッション変数として登録されるのか
-   を知る必要があるため、ユーザーは、変数を
-   <function>session_register</function>関数で登録する必要がありま
-   す。しかし、<varname>$_SESSION</varname>の場合は、エントリを設定
-   するだけでこれを行う必要はありません。
-   <caution>
-    <para>
-     PHP 4.3.0 より前のバージョンでは、
-     <varname>$_SESSION</varname>を使用し、<link
-      linkend="ini.register-globals">register_globals</link>
-     を無効とする場合、
-     <function>session_register</function>,
-     <function>session_is_registered</function>,
-　   <function>session_unregister</function>を使用しないでください。
-     セキュリティ面と性能面の双方より<link
-      linkend="ini.register-globals">register_globals</link>
-     を無効とすることが推奨されています。
-    </para>
-   </caution>
-  </para>
-  <para>
-   <link
-    linkend="ini.register-globals">register_globals</link>
-   が有効な場合、グローバル変数と<varname>$_SESSION</varname>の
-   エントリは、前のセッションインスタンスで登録されたセッション変数
-   の同じ値を参照することになります。
-   しかし、変数が <varname>$_SESSION</varname> で登録された場合、
-   グローバル変数が使用可能となるのは次のリクエスト以降です。
-  </para>
-  <para>
-   PHP 4.2.3とそれ以前のバージョンのみに関係する問題があります。
-   <function>session_register</function>により新しいセッショ
-   ン変数を登録する場合、グローバルスコープのエントリと
-   <varname>$_SESSION</varname>のエントリは、次の
-   <function>session_start</function>まで同じ値へのリファレンスとは
-   なりません。
-   すなわち、グローバル変数への修正は、<varname>$_SESSION</varname>
-   のエントリには反映されません。PHP 4.3.0 では修正されています。
-  </para>
  </section>
 
  <section xml:id="session.idpassing">
@@ -211,9 +152,9 @@ unset($_SESSION['count']);
 session_start();
 
 if (empty($_SESSION['count'])) {
- $_SESSION['count'] = 1;
+   $_SESSION['count'] = 1;
 } else {
- $_SESSION['count']++;
+   $_SESSION['count']++;
 }
 ?>
 
