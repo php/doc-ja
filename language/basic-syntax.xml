@@ -1,47 +1,57 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 62d27014053411b67ff2c87de7e12d6a40c99dad Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 15f58d7196fc4d9b0e80880c9ed344b711b266ff Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi, shimooka -->
 
  <chapter xml:id="language.basic-syntax" xmlns="http://docbook.org/ns/docbook">
   <title>基本的な構文</title>
-  <sect1 xml:id="language.basic-syntax.phpmode">
-   <title>HTML からの脱出</title>
+  <sect1 xml:id="language.basic-syntax.phptags">
    <para>
-    PHP はファイルを解析して開始タグと終了タグを探します。タグが
-    見つかると、PHP はコードの実行を開始したり終了したりします。
+    PHP はファイルを解析して開始タグと終了タグ
+    (<literal>&lt;?php</literal> と <literal>?&gt;</literal>) を探します。
+    タグが見つかると、PHP はコードの実行を開始したり終了したりします。
     このような仕組みにより、PHP を他のあらゆる形式のドキュメント中に
     埋め込むことができるのです。つまり、開始タグと終了タグで囲まれている
     箇所以外のすべての部分は、PHP パーサに無視されます。
-    たいていの場合、PHP は HTML ドキュメントの中に埋め込まれます。
-    たとえば以下のようにです。
+   </para>
+   <para>
+    PHP では、短い形式のタグ <literal>&lt;?</literal> および <literal>?&gt;</literal> も使えます
+    (しかしこれはおすすめしません。というのも、この形式のタグは &php.ini; で
+    <link linkend="ini.short-open-tag">short_open_tag</link> を有効にするか
+    <option>--enable-short-tags</option> オプションつきで PHP を configure した場合でないと使えないからです)。
+   </para>
+   <para>
+    ファイル全体が純粋な PHP コードである場合は、ファイルの最後の終了タグは省略するのがおすすめです。
+    終了タグの後に余分な空白や改行があると、予期せぬ挙動を引き起こす場合があるからです。
+    余分な空白や改行のせいで PHP が出力バッファリングを開始し、その時点の内容を意図せず出力してしまうことになります。
     <informalexample>
      <programlisting role="php">
 <![CDATA[
-<p>この部分は無視されます。</p>
-<?php echo '一方、この部分はパースされます。'; ?>
-<p>この部分も無視されます。</p>
+<?php
+echo "みなさん、こんにちは";
+
+// ... いろんなコードたち
+
+echo "最後のごあいさつ";
+
+// 終了タグ ?> を書かずに、ここでスクリプトを終わります。
 ]]>
      </programlisting>
     </informalexample>
    </para>
+  </sect1>
+  <sect1 xml:id="language.basic-syntax.phpmode">
+   <title>HTML からの脱出</title>
    <para>
-    もっと複雑な構造を用いることもできます:
+    PHP のパーサは、開始タグと終了タグに囲まれていない部分をすべて無視します。
+    そのおかげで、PHP のファイルにそれ以外のコンテンツを混在させることができるのです。
+    たとえば PHP を HTML ドキュメントに組み込んで、テンプレートを作ったりすることもできます。
     <example>
-     <title>高度なエスケープ処理</title>
      <programlisting role="php">
 <![CDATA[
-<?php
-if ($expression) {
-    ?>
-    <strong>真です。</strong>
-    <?php
-} else {
-    ?>
-    <strong>偽です。</strong>
-    <?php
-}
-?>
+<p>この部分は PHP から無視され、そのままブラウザには表示されます。</p>
+<?php echo '一方、この部分はパースされます。'; ?>
+<p>この部分も PHP から無視され、そのままブラウザには表示されます。</p>
 ]]>
      </programlisting>
     </example>
@@ -50,6 +60,27 @@ if ($expression) {
     (終了タグの直後の改行は別です。
     <link linkend="language.basic-syntax.instruction-separation">命令の分離</link>
     を参照ください)。
+    しかし、PHP が条件文の中にいる場合は話が別です。次の例を参照ください。
+   </para>
+   <para>
+    条件文を使って、より複雑な構造を使うこともできます。
+    <example>
+     <title>条件文を使った高度な脱出</title>
+     <programlisting role="php">
+<![CDATA[
+<?php if( $expression == true ): ?>
+  条件式が真の場合にこれが表示されます。
+<?php else: ?>
+  それ以外の場合にこちらが表示されます。
+<?php endif; ?>
+]]>
+     </programlisting>
+    </example>
+    この例では、PHP は条件を満たさないブロックを処理しません。たとえそれが
+    PHP の開始タグと終了タグに囲まれた部分でなくても、条件文にしたがってそこを読み飛ばします。
+    というのも、PHP のインタプリタは条件を満たさない箇所をブロックごと読み飛ばすからです。
+    </para>
+    <para>
     確かにこの例には少し無理があります。しかし、大量のテキストを出力する際に
     <function>echo</function> や <function>print</function> を用いることを
     考えると、このように一度 PHP のパースモードを抜けるほうが効率的です。
