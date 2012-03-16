@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision$ -->
+<!-- EN-Revision: ba5706cbb51f82381941b1b7cae0fc37e2953d75 Maintainer: takagi Status: ready -->
+<sect1 xml:id="language.types.callable">
+ <title>コールバック</title>
+ 
+ <para>
+  コールバックは、PHP 5.4 以降では <type>callable</type> タイプヒントで表されます。
+  このページでは、<type>callback</type> 型情報を同じ目的で使っています。
+  purpose.
+ </para>
+
+ <para>
+  <function>call_user_func</function> や <function>usort</function>
+  等の関数は、ユーザーが定義するコールバック関数を引数として受け入れます。
+  コールバック関数は、単純な関数だけでなく、オブジェクトのメソッド
+  あるいはクラスの静的メソッドであってもかまいません。
+ </para>
+
+ <sect2 xml:id="language.types.callable.passing">
+  <title>受け渡し</title>
+
+  <para>
+   PHP 関数はその名前を単に文字列として渡します。
+   どのようなビルトインまたはユーザー定義の関数も渡すことができます。
+   ただし、
+   <function>array</function>, <function>echo</function>,
+   <function>empty</function>, <function>eval</function>, 
+   <function>exit</function>, <function>isset</function>, 
+   <function>list</function>, <function>print</function> あるいは
+   <function>unset</function>.
+   といった言語構造はコールバックとしては使えないことに注意しましょう。
+  </para>
+
+  <para>
+   オブジェクトのインスタンスを渡すには配列を使います。
+   配列の 0 番目の要素にオブジェクトを、
+   そして 1 番目の要素にメソッド名を指定します。
+  </para>
+
+  <para>
+   静的なクラスメソッドの場合、オブジェクトのインスタンスは不要です。
+   0 番目の要素として、オブジェクトのかわりにクラス名を指定します。
+   PHP 5.2.3 以降では、
+   <literal>'ClassName::methodName'</literal> 形式で指定することもできます。
+  </para>
+
+  <para>
+   一般的なユーザー定義関数とは異なり、<function>create_function</function>
+   では無名コールバック関数も作成できます。PHP 5.3.0 以降は、
+   <link linkend="functions.anonymous">クロージャ</link>
+   をパラメータとして渡せるようになりました。
+  </para>
+
+  <para>
+   <example>
+    <title>
+     コールバック関数の例
+    </title>
+    <programlisting role="php">
+<![CDATA[
+<?php 
+
+// コールバック関数の例
+function my_callback_function() {
+    echo 'hello world!';
+}
+
+// コールバックメソッドの例
+class MyClass {
+    static function myCallbackMethod() {
+        echo 'Hello World!';
+    }
+}
+
+// タイプ 1: 単純なコールバック
+call_user_func('my_callback_function'); 
+
+// タイプ 2: 静的クラスメソッドのコール
+call_user_func(array('MyClass', 'myCallbackMethod')); 
+
+// タイプ 3: オブジェクトメソッドのコール
+$obj = new MyClass();
+call_user_func(array($obj, 'myCallbackMethod'));
+
+// タイプ 4: 静的クラスメソッドのコール (PHP 5.2.3 以降)
+call_user_func('MyClass::myCallbackMethod');
+
+// タイプ 5: 相対指定による静的クラスメソッドのコール (PHP 5.3.0 以降)
+class A {
+    public static function who() {
+        echo "A\n";
+    }
+}
+
+class B extends A {
+    public static function who() {
+        echo "B\n";
+    }
+}
+
+call_user_func(array('B', 'parent::who')); // A
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+  <para>
+   <example>
+    <title>
+     クロージャを使ったコールバックの例
+    </title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+// クロージャ
+$double = function($a) {
+    return $a * 2;
+};
+
+// 数値の範囲
+$numbers = range(1, 5);
+
+// ここでクロージャをコールバックとして使用し、
+// 指定した範囲の各要素の二倍の値を計算します
+$new_numbers = array_map($double, $numbers);
+
+print implode(' ', $new_numbers);
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+2 4 6 8 10
+]]>
+    </screen>
+   </example>
+  </para>
+
+  <note>
+   <simpara>
+    PHP 4 では、実際のオブジェクトを指すコールバックを作成するには、
+    コピーではなく参照を使わなければなりませんでした。
+    詳細は <link linkend="language.references">参照についての説明</link>
+    を参照ください。
+   </simpara>
+  </note>
+
+  &note.func-callback-exceptions;
+ </sect2>
+
+</sect1>
+ 
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"~/.phpdoc/manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
