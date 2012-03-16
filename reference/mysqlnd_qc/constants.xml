@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 4de5cce5d886bf7ea08db8583141ff9715b47073 Maintainer: satoruyoshida Status: ready -->
+<!-- EN-Revision: f246bdbf5f450a3aa7bb6cf5dfa3637b134c5887 Maintainer: satoruyoshida Status: working -->
 <appendix xml:id="mysqlnd-qc.constants" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  &reftitle.constants;
  &extension.constants;
@@ -92,9 +92,92 @@ MYSQLND_QC_TTL_SWITCH: qc_ttl=
      </simpara>
     </listitem>
    </varlistentry>
+   <varlistentry xml:id="constant.mysqlnd-qc-server-id">
+    <term>
+     <constant>MYSQLND_QC_SERVER_ID_SWITCH</constant>
+     (
+     <type>string</type>)
+    </term>
+    <listitem>
+     <simpara>
+      This SQL hint should not be used in general.
+     </simpara>
+     <simpara>
+      It is needed by <link linkend="book.mysqlnd-ms">PECL/mysqlnd_ms</link>
+      to group cache entries for one statement
+      but originating from different physical connections. If the
+      hint is used connection settings such as user, hostname and charset
+      are not considered for generating a cache key of a query.
+      Instead the given value and the query string are used as input
+      to the hashing function that generates the key.
+     </simpara>
+     <simpara>
+      PECL/mysqlnd_ms may, if instructed, cache results from
+      MySQL Replication slaves. Because it can hold many connections
+      to the slave the cache key shall not be formed from the user,
+      hostname or other settings that may vary for the various slave
+      connections. Instead, PECL/mysqlnd_ms provides an identifier
+      which refers to the group of slave connections that shall be enabled
+      to share cache entries no matter which physical slave connection was
+      to generate the cache entry.
+     </simpara>
+     <simpara>
+      Use of this feature outside of PECL/mysqlnd_ms is not recommended.
+     </simpara>
+    </listitem>
+   </varlistentry>
   </variablelist>
  </para>
 
+ <para>
+  <emphasis role="bold"><function>mysqlnd_qc_set_cache_condition</function> related</emphasis>
+ </para>
+ <para>
+  <example>
+   <para>
+    The function <function>mysqlnd_qc_set_cache_condition</function> allows setting conditions
+    for automatic caching of statements which don't begin with the SQL hints
+    necessary to manually enable caching.
+   </para>
+   <programlisting role="php">
+<![CDATA[
+<?php
+/* Cache all accesses to tables with the name "new%" in schema/database "db_example" for 1 second */
+if (!mysqlnd_qc_set_cache_condition(MYSQLND_QC_CONDITION_META_SCHEMA_PATTERN, "db_example.new%", 1)) {
+  die("Failed to set cache condition!");
+}
+
+$mysqli = new mysqli("host", "user", "password", "db_example", "port");
+/* cached although no SQL hint given  */
+$mysqli->query("SELECT id, title FROM news");
+
+$pdo_mysql = new PDO("mysql:host=host;dbname=db_example;port=port", "user", "password");
+/* not cached: no SQL hint, no pattern match */
+$pdo_mysql->query("SELECT id, title FROM latest_news");
+/* cached: TTL 1 second, pattern match */
+$pdo_mysql->query("SELECT id, title FROM news");
+?>
+]]>
+   </programlisting>
+  </example>
+ </para>
+ <para>
+  <variablelist>
+   <varlistentry xml:id="constant.mysqlnd-qc-condition-meta-schema-pattern">
+    <term>
+     <constant>MYSQLND_QC_CONDITION_META_SCHEMA_PATTERN</constant>
+     (
+     <type>int</type>)
+    </term>
+    <listitem>
+     <simpara>
+       Used as a parameter of <function>mysqlnd_qc_set_cache_condition</function>
+       to set conditions for schema based automatic caching.
+     </simpara>
+    </listitem>
+   </varlistentry>
+  </variablelist>
+ </para>
 </appendix>
 
 
