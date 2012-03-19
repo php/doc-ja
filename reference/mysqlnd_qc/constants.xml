@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: f246bdbf5f450a3aa7bb6cf5dfa3637b134c5887 Maintainer: satoruyoshida Status: working -->
+<!-- EN-Revision: f246bdbf5f450a3aa7bb6cf5dfa3637b134c5887 Maintainer: satoruyoshida Status: ready -->
+<!-- CREDITS: takagi -->
 <appendix xml:id="mysqlnd-qc.constants" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  &reftitle.constants;
  &extension.constants;
@@ -100,29 +101,28 @@ MYSQLND_QC_TTL_SWITCH: qc_ttl=
     </term>
     <listitem>
      <simpara>
-      This SQL hint should not be used in general.
+      この SQL ヒントは、通常は使うべきではありません。
      </simpara>
      <simpara>
-      It is needed by <link linkend="book.mysqlnd-ms">PECL/mysqlnd_ms</link>
-      to group cache entries for one statement
-      but originating from different physical connections. If the
-      hint is used connection settings such as user, hostname and charset
-      are not considered for generating a cache key of a query.
-      Instead the given value and the query string are used as input
-      to the hashing function that generates the key.
+      これは、<link linkend="book.mysqlnd-ms">PECL/mysqlnd_ms</link>
+      でひとつのステートメントのキャッシュエントリをグループ化するけれども
+      個々のキャッシュエントリの元となる物理的な接続が異なる場合に必要となるものです。
+      このヒントを使うと、クエリキャッシュのキーを生成するときに
+      ユーザーやホスト名そして文字セットといった接続時の設定を考慮しません。
+      接続時の設定のかわりに、指定した値やクエリ文字列をハッシュ関数への入力として渡してキーを生成します。
      </simpara>
      <simpara>
-      PECL/mysqlnd_ms may, if instructed, cache results from
-      MySQL Replication slaves. Because it can hold many connections
-      to the slave the cache key shall not be formed from the user,
-      hostname or other settings that may vary for the various slave
-      connections. Instead, PECL/mysqlnd_ms provides an identifier
-      which refers to the group of slave connections that shall be enabled
-      to share cache entries no matter which physical slave connection was
-      to generate the cache entry.
+      PECL/mysqlnd_ms may は、指示された場合にキャッシュの結果を
+      MySQL レプリケーションのスレーブから取得します。
+      スレーブへの接続は多数保持できるので、キャッシュのキーはユーザーやホスト名などの設定から作成するべきではありません。
+      これらはスレーブ接続によっていろいろ変化するからです。
+      そのかわりに PECL/mysqlnd_ms が提供する識別子は、
+      スレーブへの接続をグループ化したものを参照します。
+      これで、どの物理的なスレーブ接続がキャッシュエントリを生成したかにかかわらず、
+      キャッシュエントリを共有できるようになります。
      </simpara>
      <simpara>
-      Use of this feature outside of PECL/mysqlnd_ms is not recommended.
+      この機能を PECL/mysqlnd_ms 以外で使うことはおすすめしません。
      </simpara>
     </listitem>
    </varlistentry>
@@ -130,31 +130,31 @@ MYSQLND_QC_TTL_SWITCH: qc_ttl=
  </para>
 
  <para>
-  <emphasis role="bold"><function>mysqlnd_qc_set_cache_condition</function> related</emphasis>
+  <emphasis role="bold"><function>mysqlnd_qc_set_cache_condition</function> 関係</emphasis>
  </para>
  <para>
   <example>
    <para>
-    The function <function>mysqlnd_qc_set_cache_condition</function> allows setting conditions
-    for automatic caching of statements which don't begin with the SQL hints
-    necessary to manually enable caching.
+    <function>mysqlnd_qc_set_cache_condition</function>
+    関数を使うと、ステートメントの自動キャッシュを行うための条件を設定できます。
+    SQL ヒントがついていないために手動でのキャッシュが必要となるステートメントであっても、条件を満たせば自動でキャッシュされます。
    </para>
    <programlisting role="php">
 <![CDATA[
 <?php
-/* Cache all accesses to tables with the name "new%" in schema/database "db_example" for 1 second */
+/* "db_example" スキーマ(データベース) にある "new%" という名前のテーブルへのアクセスをすべて 1 秒間キャッシュします */
 if (!mysqlnd_qc_set_cache_condition(MYSQLND_QC_CONDITION_META_SCHEMA_PATTERN, "db_example.new%", 1)) {
   die("Failed to set cache condition!");
 }
 
 $mysqli = new mysqli("host", "user", "password", "db_example", "port");
-/* cached although no SQL hint given  */
+/* SQL ヒントはありませんが、これはキャッシュされます */
 $mysqli->query("SELECT id, title FROM news");
 
 $pdo_mysql = new PDO("mysql:host=host;dbname=db_example;port=port", "user", "password");
-/* not cached: no SQL hint, no pattern match */
+/* SQL ヒントもないし、パターンにもマッチしないのでキャッシュされません */
 $pdo_mysql->query("SELECT id, title FROM latest_news");
-/* cached: TTL 1 second, pattern match */
+/* パターンにマッチするので、TTL 1 秒でキャッシュされます */
 $pdo_mysql->query("SELECT id, title FROM news");
 ?>
 ]]>
@@ -171,8 +171,8 @@ $pdo_mysql->query("SELECT id, title FROM news");
     </term>
     <listitem>
      <simpara>
-       Used as a parameter of <function>mysqlnd_qc_set_cache_condition</function>
-       to set conditions for schema based automatic caching.
+       <function>mysqlnd_qc_set_cache_condition</function> のパラメータとして使い、
+       スキーマベースの自動キャッシュの条件を設定します。
      </simpara>
     </listitem>
    </varlistentry>
