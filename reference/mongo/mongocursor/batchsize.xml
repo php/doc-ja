@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!-- $Revision$ -->
-<!-- EN-Revision: b2cfbc95b579db63e043fb19dedac65026f04b29 Maintainer: takagi Status: working -->
+<!-- EN-Revision: b2cfbc95b579db63e043fb19dedac65026f04b29 Maintainer: takagi Status: ready -->
 <refentry xml:id="mongocursor.batchsize" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
   <refname>MongoCursor::batchSize</refname>
@@ -15,11 +15,10 @@
    <methodparam><type>int</type><parameter>batchSize</parameter></methodparam>
   </methodsynopsis>
   <para>
-   A cursor typically fetches a batch of result objects and store them
-   locally. This method sets the batchSize value to configure the amount of
-   documents retrieved from the server in one data packet. However, it will
-   never return more documents than fit in the max batch size limit (usually
-   4MB).  
+   カーソルは一般的に、結果オブジェクトをバッチで取得してローカルに格納します。
+   このメソッドはバッチのサイズを決めるもので、
+   ひとつのデータパケットでサーバーから取得するドキュメントの数を設定できます。
+   しかし、バッチサイズの最大値 (通常は 4MB) に収まらないドキュメントは返せません。
   </para>
  </refsect1>
 
@@ -36,46 +35,47 @@
        バッチで返す結果の数。バッチごとにサーバーとのやりとりが発生します。
       </para>
       <para>
-       If <parameter>batchSize</parameter> is <emphasis>2 or
-       more</emphasis>, it represents the size of each batch of objects retrieved.
-       It can be adjusted to optimize performance and limit data transfer.
+       <parameter>batchSize</parameter> が <emphasis>2 以上</emphasis>
+       の場合は、取得するオブジェクトの各バッチのサイズを表します。
+       これをうまく調整すれば、パフォーマンスとデータ転送量を最適化できます。
       </para>
       <para>
-       If <parameter>batchSize</parameter> is <literal>1</literal> or negative, it
-       will limit of number returned documents to the absolute value of batchSize,
-       and the cursor will be closed. For example if
-       batchSize is <literal>-10</literal>, then the server will return a maximum
-       of 10 documents and as many as can fit in 4MB, then close the cursor.
+       <parameter>batchSize</parameter> が <literal>1</literal> あるいは負の数の場合は、
+       返すドキュメントの最大数を batchSize の絶対値までに抑え、
+       結果を返した後にカーソルを閉じます。
+       たとえば batchSize を <literal>-10</literal>
+       にすると、サーバーは 4MB に収まる範囲で最大 10 件までのドキュメントを返して
+       カーソルを閉じます。
       </para>
       <warning>
        <para>
-        A <parameter>batchSize</parameter> of <literal>1</literal> is special, and
-        means the same as <literal>-1</literal>, i.e. a value of
-        <literal>1</literal> makes the cursor only capable of returning
-        <emphasis>one</emphasis> document.
+        <parameter>batchSize</parameter> が <literal>1</literal>
+        あるいは <literal>-1</literal> の場合は特別で、
+        このカーソルからは 1 件のドキュメントしか返せなくなります。
        </para>
       </warning>
       <para>
-       Note that this feature is different from
-       <function>MongoCursor::limit</function> in that documents must fit within a
-       maximum size, and it removes the need to send a request to close the cursor
-       server-side. The batch size can be changed even after a cursor is iterated,
-       in which case the setting will apply on the next batch retrieval. 
+       この機能が <function>MongoCursor::limit</function> と違うところは、
+       ドキュメントが最大サイズに収まらなければいけないという点と、
+       カーソルを閉じるリクエストをサーバーに送らなくてもよいという点です。
+       カーソルをループしている間にもバッチサイズを変更でき、
+       その次にバッチを取得するときから新しい設定が反映されます。
       </para>
       <para>
-       This cannot override MongoDB's limit on the amount of data it will return to 
-       the client (i.e., if you set batch size to 1,000,000,000, MongoDB will still 
-       only return 4-16MB of results per batch). 
+       これは、MongoDB がクライアントに返すデータ量の制限を上書きすることはできません。
+       つまり、たとえバッチサイズを 1,000,000,000 にしても、
+       MongoDB がバッチあたりで返す結果は 4-16MB にしかならないということです。
       </para>
       <para>
-       To ensure consistent behavior, the rules of
-       <function>MongoCursor::batchSize</function> and
-       <function>MongoCursor::limit</function> behave a 
-       little complex but work "as expected".  The rules are: hard limits override 
-       soft limits with preference given to <function>MongoCursor::limit</function>
-       over <function>MongoCursor::batchSize</function>.  After that, whichever is 
-       set and lower than the other will take precedence. See below.
-       section for some examples.
+       一貫性を維持するため、
+       <function>MongoCursor::batchSize</function> と
+       <function>MongoCursor::limit</function> のルールは多少込み入ったものになっていますが、
+       「期待通りに」動作します。そのルールとは、
+       ハードリミットがソフトリミットを上書きし、
+       <function>MongoCursor::limit</function> のほうが
+       <function>MongoCursor::batchSize</function> より優先順位が高くなるということです。
+       その結果、どちらであってももう一方より小さく設定されているほうが優先されます。
+       以下の例を参照ください。
       </para>
      </listitem>
     </varlistentry>   
