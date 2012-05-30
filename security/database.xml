@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 1821ec72a025e9fe9caec423ae0bc9f6f733c0b1 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 6bfcf7d9af614b4155c72e84814a61607be21229 Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa,shimooka -->
 
   <chapter xml:id="security.database" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
@@ -114,21 +114,27 @@
      <title>ハッシュされたパスワードフィールドを使う</title>
      <programlisting role="php">
 <![CDATA[
+<?php
+
 // ハッシュされたパスワードを格納する
+// $random_chars retrieved e.g. using /dev/random
 $query  = sprintf("INSERT INTO users(name,pwd) VALUES('%s','%s');",
-            pg_escape_string($username), crypt($password, '$2a$07$usesomesillystringforsalt$'));
+            pg_escape_string($username),
+            pg_escape_string(crypt($password, '$2a$07$' . $random_chars . '$')));
 $result = pg_query($connection, $query);
 
 // パスワードが正しいかどうか問い合わせる
-$query = sprintf("SELECT 1 FROM users WHERE name='%s' AND pwd='%s';",
-            pg_escape_string($username), crypt($password, '$2a$07$usesomesillystringforsalt$'));
-$result = pg_query($connection, $query);
+$query = sprintf("SELECT pwd FROM users WHERE name='%s';",
+            pg_escape_string($username));
+$row = pg_fetch_assoc(pg_query($connection, $query));
 
-if (pg_num_rows($result) > 0) {
-    echo 'Welcome, $username!';
+if ($row && crypt($password, $row['pwd']) == $row['pwd']) {
+    echo 'Welcome, ' . htmlspecialchars($username) . '!';
 } else {
-    echo "$username の認証が失敗しました。";
+    echo htmlspecialchars($username) . 'の認証が失敗しました。';
 }
+
+?>
 ]]>
      </programlisting>
     </example>
@@ -216,8 +222,7 @@ insert into pg_shadow(usename,usesysid,usesuper,usecatupd,passwd)
       <programlisting role="php">
 <![CDATA[
 $query  = "SELECT id, name, inserted, size FROM products
-                  WHERE size = '$size'
-                  ORDER BY $order LIMIT $limit, $offset;";
+           WHERE size = '$size'";
 $result = odbc_exec($conn, $query);
 ]]>
       </programlisting>
@@ -257,20 +262,25 @@ $query = "UPDATE usertable SET pwd='$pwd' WHERE uid='$uid';";
       </programlisting>
      </example>
      しかし、悪意のあるユーザーは、管理者のパスワードを変更するために
-     値 <literal>' or uid like'%admin%'; --</literal> を
+     値 <literal>' or uid like'%admin%</literal> を
      <varname>$uid</varname> に代入するか、または、より多くの権限を得
-     るために、単純に<varname>$pwd</varname> に(後ろに空白を付けて)
-     <literal>"hehehe', admin='yes', trusted=100 "</literal>と設定する
+     るために、単純に<varname>$pwd</varname> に
+     <literal>hehehe', trusted=100, admin='yes</literal>と設定する
      可能性があります。この場合、このクエリは以下のように改謬されてし
      まいます。
      <informalexample>
       <programlisting role="php">
 <![CDATA[
-// $uid == ' or uid like'%admin%'; --
-$query = "UPDATE usertable SET pwd='...' WHERE uid='' or uid like '%admin%'; --";
+<?php
 
-// $pwd == "hehehe', admin='yes', trusted=100 "
-$query = "UPDATE usertable SET pwd='hehehe', admin='yes', trusted=100 WHERE ...;"
+// $uid: ' or uid like '%admin%
+$query = "UPDATE usertable SET pwd='...' WHERE uid='' or uid like '%admin%';";
+
+// $pwd: hehehe', trusted=100, admin='yes
+$query = "UPDATE usertable SET pwd='hehehe', trusted=100, admin='yes' WHERE
+...;";
+
+?>
 ]]>
       </programlisting>
      </informalexample>
@@ -296,8 +306,8 @@ $result = mssql_query($query);
       <programlisting role="php">
 <![CDATA[
 $query  = "SELECT * FROM products
-                    WHERE id LIKE '%a%'
-                    exec master..xp_cmdshell 'net user test testpass /ADD'--";
+           WHERE id LIKE '%a%'
+           exec master..xp_cmdshell 'net user test testpass /ADD' --%'";
 $result = mssql_query($query);
 ]]>
       </programlisting>
@@ -359,6 +369,15 @@ $result = mssql_query($query);
       </listitem>
       <listitem>
        <simpara>
+<!-- TODO: -->
+        Use prepared statements with bound variables. They are provided 
+        <link linkend="pdo.prepared-statements">by PDO</link>,
+        <link linkend="mysqli.quickstart.prepared-statements">by MySQLi</link>
+        and by other libraries.
+       </simpara>
+      </listitem>
+      <listitem>
+       <simpara>
        指定された入力が期待するデータ型であることを確認してください。
        <acronym>PHP</acronym>は、多くの種類の入力検証用関数を有しており、
         <link linkend="ref.var">変数関連の関数</link>や
@@ -393,19 +412,16 @@ $query = sprintf("SELECT id, name FROM products ORDER BY name LIMIT 20 OFFSET %d
       </listitem>
       <listitem>
        <simpara>
+       データベースがバインド変数をサポートしていない場合は、
        データベースに渡される数値以外のユーザー入力を
        データベース固有の文字列エスケープ関数
        (<function>mysql_real_escape_string</function>,
         <function>sqlite_escape_string</function> など)
        でクオートしてください。
-       データベース固有の文字列エスケープ機能が利用できない場合、
-       <function>addslashes</function> および
-       <function>str_replace</function>関数が利用できるでしょう。
-       (データベースの型に依存)
-       <link linkend="security.database.storage">最初の例</link>を参照
-       してください。前期の例が示すように、クエリの静的な部分をクオート
-       するだけでは充分ではなく、簡単にクラックされてしまう可能性があ
-       ります。
+        <function>addslashes</function> のような汎用関数が使える場面は非常に限られています
+        (MySQL をシングルバイト文字セットで使っていて、かつ
+        <varname>NO_BACKSLASH_ESCAPES</varname> を無効にしている場合など)。
+        なので、<function>addslashes</function> などの関数を使ってはいけません。
       </simpara>
      </listitem>
      <listitem>
