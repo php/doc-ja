@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
 <!-- splitted from ./ja/functions/pcre.xml, last change in rev 1.1 -->
-<!-- EN-Revision: 67921109e7460111f4e538e745b7d8a8b8dfca4f Maintainer: takagi Status: ready -->
+<!-- EN-Revision: cca4900cad4991211c0508abbeda88ca532cee14 Maintainer: takagi Status: ready -->
 <!-- Credits: hirokawa,haruki -->
 <article xml:id="reference.pcre.pattern.modifiers" xmlns="http://docbook.org/ns/docbook">
  <title>パターン修飾子</title>
@@ -90,12 +90,12 @@
          </simpara>
        <caution>
         <para>
-         The <function>addslashes</function> function is run on each matched backreference before
-         the substitution takes place. As such, when the backreference
-         is used as a quoted string, escaped characters will be converted
-         to literals. However, characters which are escaped, which would
-         normally not be converted, will retain their slashes. This makes
-         use of this modifier very complicated.
+         マッチした後方参照ごとに <function>addslashes</function> が実行されてから、
+         置換を行います。つまり、クォートした文字列として後方参照を利用した場合、
+         エスケープした文字がリテラルに変換されます。
+         しかし、エスケープされた文字については、通常は変換されず、
+         スラッシュが残ったままになります。
+         そのため、この修飾子はとても複雑なものになってしまいます。
         </para>
        </caution>
        <caution>
@@ -104,6 +104,55 @@
          そうでない場合は、
          <function>preg_replace</function> を含む行で PHP のパースエラーが発生します。
         </para>
+       </caution>
+       <caution>
+        <para>
+         この修飾子を使うことは<emphasis>おすすめしません</emphasis>。
+         セキュリティに関する脆弱性を作ってしまいがちだからです。
+        </para>
+        <informalexample>
+         <programlisting role="php">
+<![CDATA[
+<?php
+$html = $_POST['html'];
+
+// 見出しを大文字にします
+$html = preg_replace(
+    '(<h([1-6])>(.*?)</h\1>)e',
+    '"<h$1>" . strtoupper("$2") . "</h$1>"',
+    $html
+);
+]]>
+         </programlisting>
+        </informalexample>
+        <para>
+         このサンプルを攻撃するのは簡単で、
+         <literal>&lt;h1&gt;{${eval($_GET[php_code])}}&lt;/h1&gt;</literal>
+         のような文字列を渡すだけで攻略できます。
+         攻撃者は任意の PHP コードを実行でき、
+         サーバーに対するほぼ完全なアクセス権を与えることになってしまいます。
+        </para>
+        <para>
+         この種のリモートコード実行脆弱性を回避するには、
+         <function>preg_replace_callback</function> 関数を使うようにしなければなりません。
+        </para>
+        <informalexample>
+         <programlisting role="php">
+<![CDATA[
+<?php
+$html = $_POST['html'];
+
+// 見出しを大文字にします
+$html = preg_replace_callback(
+    '(<h([1-6])>(.*?)</h\1>)',
+    function ($m) {
+        return "<h$m[1]>" . strtoupper($m[2]) . "</h$m[1]>";
+    },
+    $html
+);
+]]>
+         </programlisting>
+        </informalexample>
        </caution>
        <note>
         <para>
