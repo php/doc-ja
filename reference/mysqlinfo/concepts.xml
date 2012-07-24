@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision$ -->
+<!-- EN-Revision: 41f14ef421ced23b42a1d792228c47f0ecb825df Maintainer: takagi Status: ready -->
+<chapter xml:id="mysqlinfo.concepts" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <title>コンセプト</title>
+ <para>
+  ここで説明する内容は、PHP 用の MySQL ドライバに固有の内容です。
+ </para>
+
+ <section xml:id="mysqlinfo.concepts.buffering">
+  <title>バッファクエリと非バッファクエリ</title>
+  
+  <para>
+   クエリは、デフォルトではバッファモードで実行されます。
+   つまり、クエリの結果がすぐに MySQL サーバーから PHP に転送され、
+   PHP プロセスのメモリ内に結果を保持し続けるということです。
+   これで、その後で行数を数えたり結果ポインタを移動 (シーク)
+   したりといった操作ができるようになります。
+   また、同じ接続上でさらに別のクエリを発行しつつ、
+   現在の結果セットを使った作業をすることもできます。
+   バッファモードの弱点は、結果セットが大きくなると大量にメモリを消費するということです。
+   結果セットへの参照がなくなるか、結果セットを明示的に解放する
+   (リクエストを終了すると、自動的に解放されます) まではメモリ上に残り続けます。
+   バッファモードは「結果を格納する」クエリとも呼ばれます。
+   ここでは、結果セット全体が一度に格納されます。
+  </para>
+
+  <note>
+   <para>
+    ライブラリとして libmysql を使っている場合は、結果セットのデータを
+    PHP の変数に代入するまで結果セットのメモリ利用量が PHP のメモリ制限にカウントされません。
+    mysqlnd の場合は、結果セットのメモリがすべて PHP のメモリ制限にもカウントされます。
+   </para>
+  </note>
+  
+  <para>
+   非バッファクエリは、クエリを実行してリソースを返しますが、
+   その時点ではまだデータが MySQL サーバー上にあって取得待ちになっています。
+   PHP 側でのメモリ消費が少なくなりますが、サーバーへの負荷は高くなります。
+   サーバー上の結果セットからすべての結果を取得するまで、
+   同じ接続上で別のクエリを実行することはできません。
+   非バッファクエリは「結果を使う」クエリとも呼ばれます。
+  </para>
+
+  <para>
+   こういった特性を考慮すると、バッファクエリを使うのは、
+   結果セットの量が限られている場合や事前に結果の行数を知りたい場合だけにとどめるべきでしょう。
+   結果が大量に返ってくることが想定できる場合は、非バッファモードを使わないといけません。
+  </para>
+  
+  <!-- @TODO
+    - Add list of issues people run into with unbuffered queries
+    - Add list of specific use cases for when unbuffered queries are useful
+    - Question: Unbuffered queries still require all rows to be returned or resource free before executing another? Applies to all extensions?
+    - Show "free_result" functions / unset usage with buffered queries 8double-check with Andrey on mysqlnd optimizations
+   -->
+  
+  <para>
+   デフォルトはバッファモードなので、以下の例では
+   それぞれの API で非バッファクエリを実行する方法を示します。
+  </para>
+
+  <example>
+   <title>非バッファクエリの例: mysqli</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+$mysqli  = new mysqli("localhost", "my_user", "my_password", "world");
+$uresult = $mysqli->query("SELECT Name FROM City", MYSQLI_USE_RESULT);
+
+if ($uresult) {
+   while ($row = $uresult->fetch_assoc()) {
+       echo $row['Name'] . PHP_EOL;
+   }
+}
+$uresult->close();
+?>
+]]>
+   </programlisting>
+  </example>
+
+  <example>
+   <title>非バッファクエリの例: pdo_mysql</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+$pdo = new PDO("mysql:host=localhost;dbname=world", 'my_user', 'my_pass');
+$pdo->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, TRUE);
+
+$uresult = $pdo->query("SELECT Name FROM City");
+if ($uresult) {
+   while ($row = $uresult->fetch(PDO::FETCH_ASSOC)) {
+       echo $row['Name'] . PHP_EOL;
+   }
+}
+?>
+]]>
+   </programlisting>
+  </example>
+
+  <example>
+   <title>非バッファクエリの例: mysql</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+$conn = mysql_connect("localhost", "my_user", "my_pass");
+$db   = mysql_select_db("world");
+
+$uresult = mysql_unbuffered_query("SELECT Name FROM City");
+if ($uresult) {
+   while ($row = mysql_fetch_assoc($uresult)) {
+       echo $row['Name'] . PHP_EOL;
+   }
+}
+?>
+]]>
+   </programlisting>
+  </example>
+ </section>
+
+ <section xml:id="mysqlinfo.concepts.charset">
+  <title>文字セット</title>
+
+  <para>
+   適切な文字セットをサーバーレベルで設定しておくのが理想だし、MySQL のマニュアルの
+   <link xlink:href="&url.mysql.charsets.config;">Character Set Configuration</link>
+   にもそうするよう書かれています。
+   しかしそれ以外にも、各 MySQL API には実行時に文字セットを指定する方法が用意されています。
+  </para>
+
+  <caution>
+   <title>文字セットと文字のエスケープ</title>
+   <para>
+    文字セットはきちんと理解して設定しておかないといけません。
+    すべての操作に影響が及ぶし、セキュリティの問題を引き起こす可能性があるからです。
+    たとえば、文字列のエスケープ
+    (mysqli なら <function>mysqli_real_escape_string</function>、
+    mysql なら <function>mysql_real_escape_string</function>、
+    そして PDO_MySQL なら <methodname>PDO::quote</methodname>)
+    は文字セットの設定に従った動きをします。
+    これらの関数は、クエリで設定した文字セットは使わないことを知っておくことが大切です。
+    たとえば次の例のような設定をしても、エスケープ機能は正しく動きません。
+   </para>
+  </caution>
+
+  <example>
+   <title>文字セットを SQL で指定することによる問題</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+$mysqli = new mysqli("localhost", "my_user", "my_password", "world");
+
+// これは $mysqli->real_escape_string(); に影響を及ぼしません
+$mysqli->query("SET NAMES utf8");
+
+// これも $mysqli->real_escape_string(); に影響を及ぼしません
+$mysqli->query("SET CHARACTER SET utf8");
+
+// しかしこの方法なら $mysqli->real_escape_string(); にもきちんと影響します
+$mysqli->set_charset('utf8')) {
+
+?>
+]]>
+   </programlisting>
+  </example>
+
+  <para>
+   実行時に文字セットを変更する適切な方法を、各 API について示します。
+  </para>
+
+  <example>
+   <title>文字セットの設定: mysqli</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+$mysqli = new mysqli("localhost", "my_user", "my_password", "world");
+
+if (!$mysqli->set_charset('utf8')) {
+    printf("Error loading character set utf8: %s\n", $mysqli->error);
+} else {
+    printf("Current character set: %s\n", $mysqli->character_set_name());
+}
+
+print_r( $mysqli->get_charset() );
+
+?>
+]]>
+   </programlisting>
+  </example>
+
+  <example>
+   <title>文字セットの設定: <link linkend="ref.pdo-mysql.connection">pdo_mysql</link></title>
+   <para>
+    注意: これは PHP 5.3.6 以降でしか動作しません。
+   </para>
+   <programlisting role="php">
+<![CDATA[
+<?php
+$pdo = new PDO("mysql:host=localhost;dbname=world;charset=utf8", 'my_user', 'my_pass');
+?>
+]]>
+   </programlisting>
+  </example>
+
+  <example>
+   <title>文字セットの設定: mysql</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+$conn = mysql_connect("localhost", "my_user", "my_pass");
+$db   = mysql_select_db("world");
+
+if (!mysql_set_charset('utf8', $conn)) {
+    echo "Error: Unable to set the character set.\n";
+    exit;
+}
+
+echo 'Your current character set is: ' .  mysql_client_encoding($conn);
+
+?>
+]]>
+   </programlisting>
+  </example>  
+ </section>
+
+</chapter>
