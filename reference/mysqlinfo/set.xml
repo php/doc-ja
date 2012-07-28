@@ -1,0 +1,500 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision$ -->
+<!-- EN-Revision: 54f424385c806db46fbf3efa1b4eda486b51a421 Maintainer: takagi Status: ready -->
+
+<set xml:id="set.mysqlinfo">
+ <title>MySQL ドライバおよびプラグイン</title>
+ <titleabbrev>MySQL</titleabbrev>
+
+ <info xml:id="mysqlinfo.info">
+  <abstract>
+   <para>
+    PHP で MySQL を扱うためのドライバやプラグインには、いくつかの種類があります。
+   </para>
+   <para>
+    それらの違いや MySQL 用拡張モジュールの機能について、ここで簡単に説明します。
+   </para>
+  </abstract>
+ </info>
+
+ <book xml:id="mysql">
+  <title>MySQL 用 PHP ドライバの概要</title>
+
+  <info xml:id="mysqlinfo.intro">
+   <title>はじめに</title>
+   <abstract>
+    <para>
+     PHP から MySQL データベースにアクセスするための API は、三種類あります。
+     このページでは、それらの API についての説明に登場する
+     <link linkend="mysqlinfo.terminology">用語</link>
+     について解説したり、
+     <link linkend="mysqlinfo.api.choosing">いったいどの API を使えばいいのか</link>
+     を説明したり、選んだ API と組み合わせる MySQL の
+     <link linkend="mysqlinfo.library.choosing">ライブラリ</link>
+     について説明したりします。
+    </para>
+   </abstract>
+  </info>
+
+  <chapter xml:id="mysqlinfo.terminology" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+   <title>用語説明</title>
+   <para>
+    このセクションでは、PHP アプリケーションの開発で MySQL データベースを扱う
+    ときの選択肢について説明します。
+   </para>
+
+   <para>
+    <emphasis role="bold">API って何?</emphasis>
+   </para>
+
+   <para>
+    API は Application Programming Interface の略で、
+    何らかのタスクを実行するためにアプリケーションから呼び出す必要のある
+    クラスやメソッド、関数、変数などを定義したものです。
+    データベースとの通信を必要とする PHP アプリケーションが使うための
+    API は、通常は PHP の拡張モジュールとして公開されています。
+   </para>
+
+   <para>
+    API は手続き型にすることもできるし、オブジェクト指向型にすることもできます。
+    手続き型の API の場合は何かの処理を実行するための関数を呼ぶことになり、
+    オブジェクト指向型の API の場合はクラスのインスタンスを作ってそのメソッドを呼ぶことになります。
+    通常は、後者の方法をおすすめします。後者のほうがよりモダンであり、
+    きっちりとしたコードを書けるからです。
+   </para>
+
+   <para>
+    MySQL サーバーとの接続が必要な PHP アプリケーションを書く場合に
+    使える API はいくつかあって、その中から選べます。
+    このドキュメントでは、どんな API が使えてどれを選ぶのが最適なのかを解説します。
+   </para>
+
+   <para>
+    <emphasis role="bold">コネクタとは</emphasis>
+   </para>
+
+   <para>
+    MySQL のドキュメントで使われている <emphasis>コネクタ</emphasis> という用語は、
+    何かのアプリケーションから MySQL データベースサーバーに接続するためのソフトウェアのことを指します。
+    MySQL はさまざまな言語用のコネクタを提供しており、PHP もその中に含まれます。
+   </para>
+
+   <para>
+    PHP のアプリケーションでデータベースサーバーとの通信が必要になったときには、
+    データベースサーバーへの接続やデータベースへの問い合わせなどの関数を呼ぶ
+    PHP コードを書くことになるでしょう。つまり、PHP アプリケーションから使える
+    API を提供するソフトウェアが必要になるということです。
+    そのソフトウェアは、アプリケーションとデータベースサーバーの間の通信も処理しないといけません。
+    おそらくは中間ライブラリも利用することになるでしょう。
+    このソフトウェアのことを一般的にコネクタと呼びます。というのも、このソフトウェアのおかげで
+    アプリケーションがデータベースサーバーに
+    <emphasis>接続 (connect)</emphasis> できるようになるからです。
+   </para>
+
+   <para>
+    <emphasis role="bold">ドライバとは</emphasis>
+   </para>
+
+   <para>
+    ドライバとは、特定のデータベースサーバーとの通信をするために作られたソフトウェアのことです。
+    ドライバはライブラリと呼ばれることもあり、
+    MySQL Client Library や MySQL Native Driver というように使われます。
+    これらのライブラリが実装するのは低レベルのプロトコルで、
+    これを使って MySQL データベースサーバーと通信します。
+   </para>
+
+   <para>
+    例を挙げると、データベース抽象化レイヤーの <link linkend="mysqli.overview.pdo">PHP
+    Data Objects (PDO)</link> は各データベース専用のドライバの中からひとつを選んで使います。
+    数あるドライバの中のひとつに PDO MYSQL ドライバがあり、これが
+    MySQL サーバーとのインターフェイスとなります。
+   </para>
+
+   <para>
+    人によっては、コネクタとドライバを混同して使うこともあって、混乱の元となります。
+    MySQL 関連のドキュメントでは、
+    <quote>コネクタ</quote> という用語はデータベース固有の機能を提供するソフトウェアという意味で
+    予約されています。
+   </para>
+
+   <para>
+    <emphasis role="bold">拡張モジュールとは</emphasis>
+   </para>
+
+   <para>
+    PHP のドキュメントを読んでいると、
+    <emphasis>拡張モジュール</emphasis> という用語がよく出てきます。
+    PHP のコードには、コア機能とは別に
+    オプションの拡張モジュールが用意されています。
+    PHP で使える MySQL 関連の拡張モジュールには <literal>mysqli</literal>
+    や <literal>mysql</literal> があり、
+    これらは PHP の拡張モジュール用フレームワークを使って実装されています。
+   </para>
+
+   <para>
+    拡張モジュールは一般的に PHP プログラマー向けの API を公開しており、
+    その機能をプログラムから使えるようになっています。
+    しかし、PHP 拡張モジュールフレームワークを使って書かれた拡張モジュールの中には、
+    PHP プログラマー向けの API を公開していないものもあります。
+   </para>
+
+   <para>
+    たとえば PDO MySQL ドライバは PHP の拡張モジュールですが、
+    それ自体は PHP プログラマー向けの API を公開していません。
+    さらに上位にある PDO レイヤーへのインターフェイスを提供しているだけです。
+   </para>
+
+   <para>
+    API と拡張モジュールとは同じ意味ではありません。
+    拡張モジュールが必ずしもプログラマー向けの API を公開しているとは限らないからです。
+   </para>
+  </chapter>
+
+  <chapter xml:id="mysqlinfo.api.choosing" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+   <title>どの API を使うか</title>
+   <para>
+    PHP には、MySQL への接続用の API が三種類あります。
+    以下に、mysql と mysqli そして PDO が提供する API を示します。
+    それぞれのコードは、"example.com" 上で稼働する MySQL サーバーに
+    ユーザー名 "user"、パスワード "password" で接続するものです。
+    そして、クエリを実行してユーザーにあいさつします。
+   </para>
+   <para>
+    <example>
+     <title>三種類の MySQL 用 API の比較</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+// mysqli
+$mysqli = new mysqli("example.com", "user", "password", "database");
+$result = $mysqli->query("SELECT 'Hello, dear MySQL user!' AS _message FROM DUAL");
+$row = $result->fetch_assoc();
+echo htmlentities($row['_message']);
+
+// PDO
+$pdo = new PDO('mysql:host=example.com;dbname=database', 'user', 'password');
+$statement = $pdo->query("SELECT 'Hello, dear MySQL user!' AS _message FROM DUAL");
+$row = $statement->fetch(PDO::FETCH_ASSOC);
+echo htmlentities($row['_message']);
+
+// mysql
+$c = mysql_connect("example.com", "user", "password");
+mysql_select_db("database");
+$result = mysql_query("SELECT 'Hello, dear MySQL user!' AS _message FROM DUAL");
+$row = mysql_fetch_assoc($result);
+echo htmlentities($row['_message']);
+?>
+]]>
+     </programlisting>
+    </example>
+   </para>
+   <para>
+    <emphasis role="bold">おすすめの API</emphasis>
+   </para>
+   <para>
+    <link linkend="book.mysqli">mysqli</link>
+    か <link linkend="ref.pdo-mysql">PDO_MySQL</link> のどちらかを使うことをおすすめします。
+    古い <link linkend="ref.mysql">mysql</link> 拡張モジュールを新規開発で使うのはおすすめしません。
+    詳しい機能比較を以下に示します。全体的なパフォーマンスは、どれもほぼ同じです。
+    拡張モジュール自体のパフォーマンスが PHP のウェブリクエストの実行時間に及ぼす影響はごくわずかで、
+    たいていは 0.1% 程度に過ぎません。
+   </para>
+   <para>
+    <emphasis role="bold">機能比較</emphasis>
+   </para>
+   <informaltable>
+    <tgroup cols="4">
+     <thead>
+      <row>
+       <entry></entry>
+       <entry>ext/mysqli</entry>
+       <entry>PDO_MySQL</entry>
+       <entry>ext/mysql</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry>どのバージョンの PHP から使えるか</entry>
+       <entry>5.0</entry>
+       <entry>5.1</entry>
+       <entry>2.0</entry>
+      </row>
+      <row>
+       <entry>PHP 5.x に同梱されているか</entry>
+       <entry>Yes</entry>
+       <entry>Yes</entry>
+       <entry>Yes</entry>
+      </row>
+      <row>
+       <entry>開発状況</entry>
+       <entry>進行中</entry>
+       <entry>進行中</entry>
+       <entry>保守対応のみ</entry>
+      </row>
+      <row>
+       <entry>ライフサイクル</entry>
+       <entry>活動中</entry>
+       <entry>活動中</entry>
+       <entry>将来的に廃止予定</entry>
+      </row>
+      <row>
+       <entry>新規開発でおすすめできるか</entry>
+       <entry>Yes</entry>
+       <entry>Yes</entry>
+       <entry>No</entry>
+      </row>
+      <row>
+       <entry>オブジェクト指向のインターフェイス</entry>
+       <entry>Yes</entry>
+       <entry>Yes</entry>
+       <entry>No</entry>
+      </row>
+      <row>
+       <entry>手続き型のインターフェイス</entry>
+       <entry>Yes</entry>
+       <entry>No</entry>
+       <entry>Yes</entry>
+      </row>
+      <row>
+       <entry>mysqlnd によるノンブロッキングな非同期クエリ</entry>
+       <entry>Yes</entry>
+       <entry>No</entry>
+       <entry>No</entry>
+      </row>
+      <row>
+       <entry>持続的接続</entry>
+       <entry>Yes</entry>
+       <entry>Yes</entry>
+       <entry>Yes</entry>
+      </row>
+      <row>
+       <entry>文字セット</entry>
+       <entry>Yes</entry>
+       <entry>Yes</entry>
+       <entry>Yes</entry>
+      </row>
+      <row>
+       <entry>サーバーサイドのプリペアドステートメント</entry>
+       <entry>Yes</entry>
+       <entry>Yes</entry>
+       <entry>No</entry>
+      </row>
+      <row>
+       <entry>クライアントサイドのプリペアドステートメント</entry>
+       <entry>No</entry>
+       <entry>Yes</entry>
+       <entry>No</entry>
+      </row>
+      <row>
+       <entry>ストアドプロシージャ</entry>
+       <entry>Yes</entry>
+       <entry>Yes</entry>
+       <entry>No</entry>
+      </row>
+      <row>
+       <entry>複数ステートメント</entry>
+       <entry>Yes</entry>
+       <entry>Most</entry>
+       <entry>No</entry>
+      </row>
+      <row>
+       <entry>トランザクション</entry>
+       <entry>Yes</entry>
+       <entry>Yes</entry>
+       <entry>No</entry>
+      </row>
+      <row>
+       <entry>SQL によるトランザクション制御</entry>
+       <entry>Yes</entry>
+       <entry>Yes</entry>
+       <entry>Yes</entry>
+      </row>
+      <row>
+       <entry>MySQL 5.1+ の全機能への対応</entry>
+       <entry>Yes</entry>
+       <entry>Most</entry>
+       <entry>No</entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </informaltable>
+  </chapter>
+
+  <chapter xml:id="mysqlinfo.library.choosing" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+   <title>どのライブラリを選ぶか</title>
+   <para>
+    mysqli、PDO_MySQL、そして mysql といった PHP 拡張モジュールは、
+    どれも C クライアントライブラリの軽量なラッパーです。これらの拡張モジュールは、
+    <link linkend="book.mysqlnd">mysqlnd</link> ライブラリあるいは <literal>libmysql</literal>
+    ライブラリのいずれかを使えます。どちらを使うのかを決めるのは、コンパイル時です。
+   </para>
+   <para>
+    mysqlnd ライブラリは、PHP 5.3.0 以降に組み込まれています。
+    遅延接続やクエリのキャッシュなど、libmysql にはない機能も搭載されているので、
+    この mysqlnd ライブラリを使うことを強くおすすめします。
+    <link linkend="book.mysqlnd">mysqlnd のドキュメント</link>
+    には、さらなる詳細情報や機能一覧があります。
+   </para>
+   <para>
+    <example>
+     <title>mysqlnd あるいは libmysql を使う場合の configure コマンド</title>
+     <programlisting role="shell">
+<![CDATA[
+// おすすめの方法。mysqlnd を使ってコンパイルします。
+$ ./configure --with-mysqli=mysqlnd --with-pdo-mysql=mysqlnd --with-mysql=mysqlnd
+
+// おすすめしない方法。libmysql を使ってコンパイルします。
+$ ./configure --with-mysqli=/path/to/mysql_config --with-pdo-mysql=/path/to/mysql_config --with-mysql=/path/to/mysql_config
+]]>
+     </programlisting>
+    </example>
+   </para>
+   <para>
+    <emphasis role="bold">ライブラリの機能比較</emphasis>
+   </para>
+   <para>
+    <link linkend="book.mysqlnd">mysqlnd</link> を使うほうが、
+    MySQL Client Server library (libmysql) よりもおすすめです。
+    どちらのライブラリも、開発が続いています。
+   </para>
+   <informaltable>
+    <tgroup cols="3">
+     <thead>
+      <row>
+       <entry></entry>
+       <entry>MySQL ネイティブドライバ (<link linkend="book.mysqlnd">mysqlnd</link>)</entry>
+       <entry>MySQL クライアントサーバーライブラリ (<literal>libmysql</literal>)</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry>PHP の配布物に同梱</entry>
+       <entry>Yes</entry>
+       <entry>No</entry>
+      </row>
+      <row>
+       <entry>どのバージョンの PHP から使えるか</entry>
+       <entry>5.3.0</entry>
+       <entry>N/A</entry>
+      </row>
+      <row>
+       <entry>ライセンス</entry>
+       <entry>PHP License 3.01</entry>
+       <entry>デュアルライセンス</entry>
+      </row>
+      <row>
+       <entry>開発状況</entry>
+       <entry>進行中</entry>
+       <entry>進行中</entry>
+      </row>
+      <row>
+       <entry>ライフサイクル</entry>
+       <entry>終了予定なし</entry>
+       <entry>終了予定なし</entry>
+      </row>
+      <row>
+       <entry>PHP 5.4 でのコンパイルのデフォルト (すべての MySQL 拡張モジュール)</entry>
+       <entry>Yes</entry>
+       <entry>No</entry>
+      </row>
+      <row>
+       <entry>PHP 5.3 でのコンパイルのデフォルト (すべての MySQL 拡張モジュール)</entry>
+       <entry>No</entry>
+       <entry>Yes</entry>
+      </row>
+      <row>
+       <entry>圧縮プロトコルへの対応</entry>
+       <entry>Yes (5.3.1+)</entry>
+       <entry>yes</entry>
+      </row>
+      <row>
+       <entry>SSL への対応</entry>
+       <entry>Yes (5.3.3+)</entry>
+       <entry>Yes</entry>
+      </row>
+      <row>
+       <entry>名前付きパイプへの対応</entry>
+       <entry>Yes (5.3.4+)</entry>
+       <entry>Yes</entry>
+      </row>
+      <row>
+       <entry>ノンブロッキングの非同期クエリ</entry>
+       <entry>Yes</entry>
+       <entry>No</entry>
+      </row>
+      <row>
+       <entry>パフォーマンス統計</entry>
+       <entry>Yes</entry>
+       <entry>No</entry>
+      </row>
+      <row>
+       <entry>LOAD LOCAL INFILE での <link linkend="ini.open-basedir">open_basedir</link> の反映</entry>
+       <entry>Yes</entry>
+       <entry>No</entry>
+      </row>
+      <row>
+       <entry>PHP ネイティブのメモリ管理システムを使う (PHP のメモリ制限などに従う)</entry>
+       <entry>Yes</entry>
+       <entry>No</entry>
+      </row>
+      <row>
+       <entry>数値型のカラムを double 型で返す (COM_QUERY)</entry>
+       <entry>Yes</entry>
+       <entry>No</entry>
+      </row>
+      <row>
+       <entry>数値型のカラムを string 型で返す (COM_QUERY)</entry>
+       <entry>Yes</entry>
+       <entry>Yes</entry>
+      </row>
+      <row>
+       <entry>プラグイン API</entry>
+       <entry>Yes</entry>
+       <entry>Limited</entry>
+      </row>
+      <row>
+       <entry>MySQL Replication での読み書きの分離</entry>
+       <entry>Yes, with plugin</entry>
+       <entry>No</entry>
+      </row>
+      <row>
+       <entry>ロードバランシング</entry>
+       <entry>Yes, with plugin</entry>
+       <entry>No</entry>
+      </row>
+      <row>
+       <entry>フェイルオーバー</entry>
+       <entry>Yes, with plugin</entry>
+       <entry>No</entry>
+      </row>
+      <row>
+       <entry>遅延接続</entry>
+       <entry>Yes, with plugin</entry>
+       <entry>No</entry>
+      </row>
+      <row>
+       <entry>クエリキャッシュ</entry>
+       <entry>Yes, with plugin</entry>
+       <entry>No</entry>
+      </row>
+      <row>
+       <entry>透過的なクエリ操作 (自動 EXPLAIN あるいはモニタリングなど)</entry>
+       <entry>Yes, with plugin</entry>
+       <entry>No</entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </informaltable>
+  </chapter>
+  
+  &reference.mysqlinfo.concepts;
+  
+ </book>
+
+ &reference.mysql.book;
+ &reference.mysqli.book;
+ &reference.mysqlnd.book;
+ &reference.mysqlnd-ms.book;
+ &reference.mysqlnd-qc.book;
+ &reference.mysqlnd-uh.book;
+</set>
