@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 96c9d88bad9a7d7d44bfb7f26c226df7ee9ddf26 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: dd9fa0aed7377da913904e3d26d59a22bec69015 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi -->
 <refentry xml:id="function.assert" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -13,6 +13,7 @@
   <methodsynopsis>
    <type>bool</type><methodname>assert</methodname>
    <methodparam><type>mixed</type><parameter>assertion</parameter></methodparam>
+   <methodparam choice="opt"><type>string</type><parameter>description</parameter></methodparam>
   </methodsynopsis>
   <para>
    <function>assert</function> は、指定した
@@ -51,7 +52,7 @@
   </para>
   <para>
    関数 <function>assert_options</function> や
-   ASSERT_CALLBACK 設定ディレクティブにより失敗した assertion
+   <constant>ASSERT_CALLBACK</constant> 設定ディレクティブにより失敗した assertion
    を処理するコールバック関数を設定することが可能です。
   </para>
   <para>
@@ -68,6 +69,9 @@
    assertionが失敗した行が含まれ、3番目の引数には失敗した式が含まれます
    (もしある場合のみ。1 または "two" のようなリテラルの値は、
    この引数に渡されません)。
+   PHP 5.4.8 以降では、オプションの4番目の引数を指定できます。これを設定すると、
+   <parameter>description</parameter> を <function>assert</function>
+   に渡せるようになります。
   </para>
  </refsect1>
 
@@ -79,7 +83,16 @@
      <term><parameter>assertion</parameter></term>
      <listitem>
       <para>
-       assertion。
+       アサーション。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>description</parameter></term>
+     <listitem>
+      <para>
+       オプションの説明で、
+       <parameter>assertion</parameter> が失敗したときのメッセージにこれを含めます。
       </para>
      </listitem>
     </varlistentry>
@@ -91,6 +104,32 @@
   &reftitle.returnvalues;
   <para>
    アサーションが false となった場合に &false;、それ以外の場合に &true; を返します。
+  </para>
+ </refsect1>
+
+ <refsect1 role="changelog">
+  &reftitle.changelog;
+  <para>
+   <informaltable>
+    <tgroup cols="2">
+     <thead>
+      <row>
+       <entry>&Version;</entry>
+       <entry>&Description;</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry>5.4.8</entry>
+       <entry>
+        <parameter>description</parameter> パラメータが追加されました。
+        <parameter>description</parameter> はまた、
+        <constant>ASSERT_CALLBACK</constant> モードのコールバック関数の4番目の引数にも指定できるようになりました。
+       </entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </informaltable>
   </para>
  </refsect1>
 
@@ -124,6 +163,45 @@ assert('mysql_query("")');
 ?>
 ]]>
     </programlisting>
+   </example>
+  </para>
+  <para>
+   <example>
+    <title>カスタムハンドラを使った説明の表示</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+// assertを有効にし、出力を抑制する
+assert_options(ASSERT_ACTIVE, 1);
+assert_options(ASSERT_WARNING, 0);
+assert_options(ASSERT_QUIET_EVAL, 1);
+
+// ハンドラ関数を作成する
+function my_assert_handler($file, $line, $code, $desc = null)
+{
+    echo "Assertion failed at $file:$line: $code";
+    if ($desc) {
+        echo ": $desc";
+    }
+    echo "\n";
+}
+
+// コールバックを設定する
+assert_options(ASSERT_CALLBACK, 'my_assert_handler');
+
+// 失敗するassertionを作成
+assert('2 < 1');
+assert('2 < 1', 'Two is less than one');
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+Assertion failed at test.php:21: 2 < 1
+Assertion failed at test.php:22: 2 < 1: Two is less than one
+]]>
+    </screen>
    </example>
   </para>
  </refsect1>
