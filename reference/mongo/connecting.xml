@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 8b6d169424ff189bb563ef4c3f35f8adff3f42c5 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: d4bd7ce34c95e480dbe63f12ee93fd42ae095a1f Maintainer: takagi Status: ready -->
 
 <section xml:id="mongo.connecting" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>接続</title>
@@ -13,18 +13,45 @@
  </para>
 
  <section>
-  <title>接続時のログイン</title>
+  <title>認証</title>
   <para>
    MongoDB を <literal>--auth</literal> あるいは
    <literal>--keyFile</literal> オプションつきで起動すると、
    まずログインしないとドライバを使った操作ができなくなります。
-   接続にログインするには、ユーザー名とパスワードを接続 URI に指定します。
+   接続時の認証をするには、ユーザー名とパスワードを接続 URI に指定するか、あるいは
+   <function>Mongo::__construct</function> でオプション
+   <literal>"username"</literal> および <literal>"password"</literal> を指定します。
   </para>
   <programlisting role="php">
 <![CDATA[
 <?php
 
+// ユーザー名とパスワードを接続 URI で指定する方法
 $m = new Mongo("mongodb://${username}:${password}@localhost");
+
+// ユーザー名とパスワードをオプションの配列で指定する方法
+$m = new Mongo("mongodb://localhost", array("username" => $username, "password" => $password));
+
+?>
+]]>
+  </programlisting>
+  <para>
+   デフォルトでは、ドライバは <literal>admin</literal>
+   データベースに対する認証を試みます。別のデータベースに対する認証をするには、
+   データベースを接続 URI に指定するか、あるいは
+   <function>Mongo::__construct</function> でオプション
+   <literal>"db"</literal> を指定します。
+  </para>
+  <programlisting role="php">
+<![CDATA[
+<?php
+
+// 認証データベースを接続 URI で指定する方法
+$m = new Mongo("mongodb://${username}:${password}@localhost/myDatabase");
+
+// 認証データベースをオプションの配列で指定する方法
+
+$m = new Mongo("mongodb://${username}:${password}@localhost", array("db" => "myDatabase"));
 
 ?>
 ]]>
@@ -32,40 +59,6 @@ $m = new Mongo("mongodb://${username}:${password}@localhost");
   <para>
    接続が落ちると、ドライバが自動的に再接続と再認証を試みます。
   </para>
-  <para>
-   データベースレベルでの認証には
-   <function>MongoDB::authenticate</function> を使います。
-  </para>
-  <programlisting role="php">
-<![CDATA[
-<?php
-
-$m = new Mongo();
-$db = $m->admin;
-
-$db->authenticate($username, $password);
-
-?>
-]]>
-  </programlisting>
-  <para>
-   この方式には大きな問題があります。データベース接続が落ちて再接続したときには、
-   新しい接続はまだ認証されていない状態になるということです。
-   URI 形式を使えば、新しい接続が立ち上がったときに PHP ドライバが自動的に認証を試みます。
-  </para>
-  <para>
-   別のデータベースに対して認証を試みるには、データベース名をホスト名の後に指定します。
-   この例では、"blog" データベースにログインしています。
-  </para>
-  <programlisting role="php">
-<![CDATA[
-<?php
-
-$m = new Mongo("mongodb://${username}:${password}@localhost/blog");
-
-?>
-]]>
-  </programlisting>
  </section>
 
  <section>
@@ -73,12 +66,17 @@ $m = new Mongo("mongodb://${username}:${password}@localhost/blog");
   <para>
    レプリカセットに接続するには、セットに属するサーバーをひとつ以上指定して、
    さらに <literal>replicaSet</literal> オプションを使います。
+   複数のサーバーを指定するときには、カンマで区切ります。
   </para>
   <programlisting role="php">
 <![CDATA[
 <?php
 
-$m = new Mongo("mongodb://localhost:27017", array("replicaSet" => "myReplSetName"));
+// 単一のサーバーをシードリストとして使います
+$m = new Mongo("mongodb://rs1.example.com:27017", array("replicaSet" => "myReplSetName"));
+
+// 複数のサーバーをシードリストとして使います
+$m = new Mongo("mongodb://rs1.example.com:27017,rs2.example.com:27017", array("replicaSet" => "myReplSetName"));
 
 ?>
 ]]>
@@ -112,13 +110,45 @@ $m = new Mongo("mongodb://localhost:27017", array("replicaSet" => "myReplSetName
  </section>
 
  <section>
+  <title>シャーディング</title>
+  <para>
+   シャードクラスタに接続するには、一つあるいは複数の
+   <literal>mongos</literal> インスタンスの場所を接続文字列で指定します。
+   複数のサーバーを指定する場合はカンマで区切ります。
+  </para>
+  <programlisting role="php">
+<![CDATA[
+<?php
+
+// 単一のサーバーをシードリストとして使います
+$m = new Mongo("mongodb://mongos1.example.com:27017");
+
+// 複数のサーバーをシードリストとして使います
+$m = new Mongo("mongodb://mongos1.example.com:27017,mongos2.example.com:27017"));
+
+?>
+]]>
+  </programlisting>
+  <para>
+   各サーバーがスタンドアロンの <literal>mongod</literal>
+   であるか完全なレプリカセットであるかにかかわらず、ドライバの接続手順は同じです。
+   データベースとの通信は、すべて <literal>mongos</literal> を通して行います。
+  </para>
+  <para>
+   MongoDB におけるシャーディングの詳細な情報は
+   <link xlink:href="&url.mongodb.docs.sharding;">シャーディングのドキュメント</link>
+   を参照ください。
+  </para>
+ </section>
+
+ <section>
   <title>ドメインソケットのサポート</title>
 
   <para>
    MongoDB をローカルで動かしていてバージョン 1.0.9
    以降のドライバを使っている場合は、ファイル経由でデータベースに接続することができます。
    MongoDB は、起動時に自動的にソケットファイル
-   /tmp/mongodb-&lt;port&gt;.sock をオープンします。
+   <literal>/tmp/mongodb-&lt;port&gt;.sock.</literal> をオープンします。
   </para>
 
   <para>

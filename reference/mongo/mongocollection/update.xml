@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: c90424bc60a933348a29381c53116ec6ca607f4a Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 83e9d2196e1fbb39c216843fa0f0c31df1c2ab34 Maintainer: takagi Status: ready -->
 
 <refentry xml:id="mongocollection.update" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -58,8 +58,16 @@
          </para>
          <para>
           <parameter>$criteria</parameter> にマッチするレコードが見つからない場合に
-          <parameter>$criteria</parameter> と <parameter>$newobj</parameter> から新しいオブジェクトを作ります
-          (以下の upsert の例を参照ください)。
+          新しいドキュメントを追加します。
+         </para>
+         <para>
+          新しいドキュメントを追加するときに
+          <parameter>$new_object</parameter> にアトミックな修正子
+          (<literal>$</literal> 演算子) が含まれていれば、この操作を
+          <parameter>$criteria</parameter> パラメータに適用して新しいドキュメントを作ります。
+          <parameter>$new_object</parameter> がアトミックな修正子を含まない場合は、
+          そのままの形式で新しいドキュメントに使います。
+          詳細は、以下の upsert の例を参照ください。
          </para>
         </listitem>
         <listitem>
@@ -174,59 +182,56 @@
      </thead>
      <tbody>
       <row>
-       <entry>1.0.1</entry>
-       <entry>
-        "options" パラメータが boolean から配列に変わりました。
-        1.0.1 より前のバージョンでは二番目のパラメータはオプションの boolean
-        値で、upsert を指定するものでした。
-       </entry>
-      </row>
-      <row>
-       <entry>1.0.5</entry>
-       <entry>
-        "safe" オプションが追加されました。
-       </entry>
-      </row>
-      <row>
-       <entry>1.0.9</entry>
-       <entry>
-        "safe" オプションに整数値がわたせるようになり (以前は booleans
-        のみでした)、さらに "fsync" オプションが追加されました。
-       </entry>
-      </row>
-      <row>
-       <entry>1.0.9</entry>
-       <entry>
-        "safe" オプションを使っている場合の返り値の型が配列に変わりました。
-        配列にはエラー情報が含まれています。"safe" オプションを使わない場合は、今までどおり
-        boolean のままです。
-       </entry>
-      </row>
-      <row>
-       <entry>1.0.11</entry>
-       <entry>
-        "safe" が設定されている場合は、"not master" エラーで接続を切断するようになりました。
-       </entry>
-      </row>
-      <row>
-       <entry>1.2.0</entry>
-       <entry>
-        timeout オプションが追加されました。
-       </entry>
-      </row>
-      <row>
-       <entry>1.2.11</entry>
-       <entry>
-       <parameter>options</parameter> が <type>scalar</type> のときに <constant>E_DEPRECATED</constant> を発行するようになりました。
-       </entry>
-      </row>
-      <row>
        <entry>1.3.0</entry>
        <entry>
         <parameter>options</parameter> パラメータで、boolean
         だけを渡して upsert を指定することができなくなりました。
         同じことをするには <literal>array('upsert'' => true)</literal>
         としなければなりません。
+       </entry>
+      </row>
+      <row>
+       <entry>1.2.11</entry>
+       <entry>
+        <parameter>options</parameter> が <type>scalar</type> のときに <constant>E_DEPRECATED</constant> を発行するようになりました。
+       </entry>
+      </row>
+      <row>
+       <entry>1.2.0</entry>
+       <entry><literal>"timeout"</literal> オプションが追加されました。</entry>
+      </row>
+      <row>
+       <entry>1.0.11</entry>
+       <entry>
+        <literal>"safe"</literal> が設定されている場合は、"not master" エラーで接続を切断するようになりました。
+       </entry>
+      </row>
+      <row>
+       <entry>1.0.9</entry>
+       <entry>
+        <para>
+         <literal>"safe"</literal> オプションに整数値がわたせるようになりました (以前は boolean のみでした)。
+        </para>
+        <para>
+         <literal>"fsync"</literal> オプションが追加されました。
+        </para>
+        <para>
+         <literal>"safe"</literal> オプションを使っている場合の返り値の型が配列に変わりました。
+         配列にはエラー情報が含まれています。"safe" オプションを使わない場合は、今までどおり
+         boolean のままです。
+        </para>
+       </entry>
+      </row>
+      <row>
+       <entry>1.0.5</entry>
+       <entry><literal>"safe"</literal> オプションが追加されました。</entry>
+      </row>
+      <row>
+       <entry>1.0.1</entry>
+       <entry>
+        <parameter>options</parameter> パラメータが boolean から配列に変わりました。
+        1.0.1 より前のバージョンでは二番目のパラメータはオプションの boolean
+        値で、upsert を指定するものでした。
        </entry>
       </row>
      </tbody>
@@ -276,15 +281,25 @@ array(4) {
    <title><function>MongoCollection::update</function> での upsert</title>
    <para>
     upsert を使うとコードを簡潔にすることができます。
-    オブジェクトが存在しない場合は新たに作成し、
+    オブジェクトが存在しない (<parameter>$criteria</parameter> に基づく) 場合は新たに作成し、
     存在する場合はそれを更新するという操作を一行で書けるからです。
+   </para>
+   <para>
+    次の例では、<parameter>$new_object</parameter> にアトミックな修正子が含まれています。
+    コレクションは空なので upsert は新たなドキュメントを追加することになり、
+    これらの操作を
+    <parameter>$criteria</parameter> パラメータに適用してドキュメントを作ります。
    </para>
    <programlisting role="php">
 <![CDATA[
 <?php
 
 $c->drop();
-$c->update(array("uri" => "/summer_pics"), array('$inc' => array("page hits" => 1)), array("upsert" => true));
+$c->update(
+    array("uri" => "/summer_pics"),
+    array('$inc' => array("page hits" => 1)),
+    array("upsert" => true)
+);
 var_dump($c->findOne());
 
 ?>
@@ -305,9 +320,11 @@ array(3) {
 ]]>
    </screen>
    <para>
-    <parameter>$new_object</parameter> が $ 演算子を含まない場合、upsert
-    は渡されたフィールドだけの新しいドキュメントを作成します。これは、通常の update の挙動と同じです。
-    update で $ 演算子を使わなければ、ドキュメント全体が上書きされます。
+    <parameter>$new_object</parameter> がアトミックな修正子
+    (<literal>$</literal> 演算子) を含まない場合、upsert は
+    <parameter>$new_object</parameter> をそのままの形式で新しいドキュメントに使います。
+    これは通常の update の挙動と同じです。
+    アトミックな修正子を使わなければ、ドキュメント全体が上書きされます。
    </para>
    <programlisting role="php">
 <![CDATA[
