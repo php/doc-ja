@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 96c9d88bad9a7d7d44bfb7f26c226df7ee9ddf26 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: b7bf542dba0011c79dbe2824695e5ac776931c0a Maintainer: takagi Status: ready -->
 <refentry xml:id="function.mqseries-connx" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>mqseries_connx</refname>
@@ -102,6 +102,44 @@
     );
 
     mqseries_connx('MQNX9420', $mqcno, $conn, $comp_code,$reason);
+    if ($comp_code !== MQSERIES_MQCC_OK) {
+        printf("Connx CompCode:%d Reason:%d Text:%s<br>\n", $comp_code, $reason, mqseries_strerror($reason));
+        exit;
+    }
+ 
+?>
+]]>
+    </programlisting>
+   </example>
+   <example>
+    <title>
+     <function>mqseries_connx</function>
+     で SSL 接続と OCSP Responder URL を使う例 
+    </title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+    $mqcno = array(
+        'Version' => 4, //MQCNO_VERSION_4
+        'Options' => MQSERIES_MQCNO_STANDARD_BINDING,
+        'MQCD' => array(
+            'Version' => 7, //MQCD_VERSION_7
+            'ConnectionName' => 'localhost', 
+            'TransportType' => MQSERIES_MQXPT_TCP, 
+            'ChannelName' => 'CONNECTIONCHANNEL', 
+            'SSLCipherSpec' => 'NULL_SHA'
+        ), 
+        'MQSCO' => array(
+            'KeyRepository' => '/var/mqm/qmgrs/QUEUEMGR/ssl/key', //Local path where the SSL key repository can be found
+            'MQAIR' => array(
+                'Version' => 2, //MQAIR_VERSION_2
+			    'AuthInfoType' => 2, //MQAIT_OCSP 
+			    'OCSPResponderURL' => 'http://dummy.OCSP.responder'
+            )
+        )
+    );
+
+    mqseries_connx('QUEUEMGR', $mqcno, $conn, $comp_code,$reason);
     if ($comp_code !== MQSERIES_MQCC_OK) {
         printf("Connx CompCode:%d Reason:%d Text:%s<br>\n", $comp_code, $reason, mqseries_strerror($reason));
         exit;
