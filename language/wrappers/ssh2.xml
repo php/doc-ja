@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 8b6d169424ff189bb563ef4c3f35f8adff3f42c5 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: f49c307f13f1ec78ff0e441906d6d3d066b69f82 Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa -->
 
 <refentry xml:id="wrappers.ssh2" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink" role="noversion">
@@ -247,6 +247,33 @@ $stream = fopen("ssh2.tunnel://$session/remote.example.com:1234", 'r');
 ?>
 ]]>
    </programlisting>
+  </example>
+  <example>
+   <title><varname>$session</varname> を有効にしておかないといけない!</title>
+   <simpara>
+    <filename>ssh2.*://$session</filename> ラッパーを使うには、
+    リソース変数 <varname>$session</varname> をキープしておかないといけません。
+    次のコードは、期待通りには動きません。
+   </simpara>
+	  <programlisting role="php">
+<![CDATA[
+<?php
+$session = ssh2_connect('example.com', 22);
+ssh2_auth_pubkey_file($session, 'username', '/home/username/.ssh/id_rsa.pub',
+                                            '/home/username/.ssh/id_rsa', 'secret');
+$connection_string = "ssh2.sftp://$session/";
+unset($session);
+$stream = fopen($connection_string . "path/to/file", 'r');
+?>
+]]>
+   </programlisting>
+   <simpara>
+    この例では、unset() のところでセッションを閉じてしまいます。
+    なぜなら、<varname>$connection_string</varname> が持つのが <varname>$session</varname>
+    への参照ではなく、単にそれを文字列にキャストしたものだからです。
+    これは、<function>unset</function> が暗黙のうちに呼ばれた場合にも起こりえます
+    (関数などの) スコープを抜けるときに発生する可能性があります。
+   </simpara>
   </example>
 
  </refsect1><!-- }}} -->
