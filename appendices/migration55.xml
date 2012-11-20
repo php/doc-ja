@@ -1,0 +1,1031 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision$ -->
+<!-- EN-Revision: d096079ebb3e48ffbf2e211e3258a831dd7e9296 Maintainer: takagi Status: working -->
+
+<appendix xml:id="migration55" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <title>PHP 5.4.x から PHP 5.5.x への移行</title>
+ <simpara>
+  &manual.migration.seealso;
+  <link linkend="migration5">5.0.x</link>、
+  <link linkend="migration51">5.1.x</link>、
+  <link linkend="migration52">5.2.x</link>、
+  <link linkend="migration53">5.3.x</link> および
+  <link linkend="migration53">5.4.x</link>。
+ </simpara>
+
+ <sect1 xml:id="migration55.changes">
+  <title>PHP 5.5.x における変更点</title>
+  <simpara>
+   PHP 5.5.x で改良された点のほどんどは、既存のコードに影響を及ぼしません。ただ、
+   <link linkend="migration55.incompatible">互換性がない変更</link> や 考慮すべき
+   <link linkend="migration55.new-features">新機能</link> があります。よって、
+   実運用環境の PHP をこのバージョンにあげる前に、あらゆるコードをテストすべきです。
+  </simpara>
+  <simpara>
+   5.4.x より古いバージョンの PHP からのアップグレードの場合は、
+   以下の関連ドキュメントも参照ください。
+  </simpara>
+  <itemizedlist>
+   <listitem>
+    <simpara>
+     <link linkend="migration54">PHP 5.4.x への移行</link>
+    </simpara>
+   </listitem>
+   <listitem>
+    <simpara>
+     <link linkend="migration53">PHP 5.3.x への移行</link>
+    </simpara>
+   </listitem>
+   <listitem>
+    <simpara>
+     <link linkend="migration52">PHP 5.2.x への移行</link>
+    </simpara>
+   </listitem>
+   <listitem>
+    <simpara>
+     <link linkend="migration51">PHP 5.1.x への移行</link>
+    </simpara>
+   </listitem>
+   <listitem>
+    <simpara>
+     <link linkend="migration5">PHP 4 から PHP 5 への移行</link>
+    </simpara>
+   </listitem>
+  </itemizedlist>
+ </sect1>
+
+ <sect1 xml:id="migration55.incompatible">
+  <title>下位互換性のない変更点</title>
+  <simpara>
+   既存の PHP5 のコードのほとんどは変更なしで動作するはずですが、
+   以下の下位互換性のない変更点については注意しましょう。
+  </simpara>
+  
+  <sect2 xml:id="migration55.incompatible.windows">
+   <title>Windows XP および 2003 のサポートの終了</title>
+   
+   <para>
+    Windows XP および 2003 はサポートされなくなります。
+    Windows 版の PHP は、Windows Vista 以降でしか動かなくなります。
+   </para>
+  </sect2>
+
+  <sect2 xml:id="migration55.incompatible.case">
+   <title>大文字小文字を区別しない比較がロケールごとに変わる</title>
+   
+   <para>
+    関数名やクラス名そして定数名は大文字小文字を区別しませんでしたが、
+    このマッチ方法が ASCII のルールに基づいてロケールを考慮した動きに変わります。
+    ラテンアルファベットを通常とは異なる照合規則で使っている言語
+    (トルコ語やアゼルバイジャン語など) にきちんと対応するようになりました。
+   </para>
+   <para>
+    これは、マルチバイト文字セット (UTF-8 も含む) で非 ASCII
+    文字に対して大文字小文字を区別しないマッチングをしているコードで問題になるかもしれません。
+    ヨーロッパ諸国語のアクセント記号などがこれにあてはまります。
+    英語以外の非 ASCII コードベースを使っている場合は、
+    無意識のうちにこの振る舞いに依存してしまっていないかどうかを確かめてから
+    PHP 5.5 を実運用環境に投入するようにしましょう。
+   </para>
+  </sect2>
+
+  <sect2 xml:id="migration55.incompatible.guid">
+   <title>PHP ロゴの GUID の削除</title>
+
+   <para>
+    PHP でいろいろなロゴを出すために使われていた GUID が削除されました。
+    それに伴って、GUID を返す関数も削除されました。削除された関数は次のとおりです。
+   </para>
+
+   <itemizedlist>
+    <listitem>
+     <simpara>
+      <function>php_logo_guid</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>php_egg_logo_guid</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>php_real_logo_guid</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>zend_logo_guid</function>
+     </simpara>
+    </listitem>
+   </itemizedlist>
+  </sect2>
+ </sect1>
+
+ <sect1 xml:id="migration55.new-features">
+  <title>新機能</title>
+
+  <sect2 xml:id="migration55.new-features.generators">
+   <title><link linkend="language.generators">ジェネレータ</link>の追加</title>
+
+   <para>
+    <link linkend="language.generators">ジェネレータ</link>が追加されました。
+    <command>yield</command> キーワードで利用します。
+    ジェネレータを使えば、シンプルなイテレータを簡単に実装できます。
+    <classname>Iterator</classname> インターフェイスを実装したクラスを用意する
+    オーバーヘッドや複雑さを心配する必要はありません。
+   </para>
+
+   <para>
+    <function>range</function> 関数をジェネレータで実装しなおす例を示します
+    (<literal>step</literal> には正の値しか使えません)。
+   </para>
+
+   <informalexample>
+    <programlisting role="php">
+<![CDATA[
+<?php
+function xrange($start, $limit, $step = 1) {
+    for ($i = $start; $i <= $limit; $i += $step) {
+        yield $i;
+    }
+}
+
+echo 'Single digit odd numbers: ';
+
+/* 配列を作ったり配列を返したりしていないことに注目しましょう。
+ * そのぶんメモリの節約になります。 */ 
+foreach (xrange(1, 9, 2) as $number) {
+    echo "$number ";
+}
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+Single digit odd numbers: 1 3 5 7 9 
+]]>
+    </screen>
+   </informalexample>
+  </sect2>
+
+  <sect2 xml:id="migration55.new-features.finally">
+   <title><link linkend="language.exceptions"><literal>finally</literal></link> キーワードの追加</title>
+
+   <para>
+    <literal>try</literal>-<literal>catch</literal> ブロックで
+    <link linkend="language.exceptions"><literal>finally</literal></link>
+    が使えるようになりました。例外が発生したかどうかに関わらず
+    必ず実行しないといけないコードをここに書きます。
+   </para>
+  </sect2>
+
+  <sect2 xml:id="migration55.new-features.foreach-list">
+   <title><link linkend="control-structures.foreach"><literal>foreach</literal></link> が <function>list</function> に対応</title>
+
+   <para>
+    <link linkend="control-structures.foreach">foreach</link>
+    で <function>list</function> を使って、
+    ネストした配列を個別の変数に展開できるようになりました。たとえば次のようになります。
+   </para>
+
+   <informalexample>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$array = [
+    [1, 2],
+    [3, 4],
+];
+
+foreach ($array as list($a, $b)) {
+    echo "A: $a; B: $b\n";
+}
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+A: 1; B: 2
+A: 3; B: 4
+]]>
+    </screen>
+   </informalexample>
+
+   <para>
+    詳細な情報は
+    <link linkend="control-structures.foreach.list">foreach</link>
+    のマニュアルを参照ください。
+   </para>
+  </sect2>
+
+  <sect2 xml:id="migration55.new-features.empty">
+   <title><function>empty</function> が任意の式に対応</title>
+
+   <para>
+    変数だけでなく、任意の式を
+    <function>empty</function> に渡せるようになりました。たとえば次のようになります。
+   </para>
+
+   <informalexample>
+    <programlisting role="php">
+<![CDATA[
+<?php
+function always_false() {
+    return false;
+}
+
+if (empty(always_false())) {
+    echo 'This will be printed.';
+}
+
+if (empty(true)) {
+    echo 'This will not be printed.';
+}
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+This will be printed.
+]]>
+    </screen>
+   </informalexample>
+  </sect2>
+
+  <sect2 xml:id="migration55.new-features.const-dereferencing">
+   <title><type>array</type> リテラルと <type>string</type> リテラルのデリファレンス</title>
+
+   <para>
+    <type>Array</type> と <type>string</type> をデリファレンスして、
+    個々の要素や文字に直接アクセスできるようになりました。
+
+    <informalexample>
+     <programlisting role="php">
+<![CDATA[
+<?php
+echo 'Array dereferencing: ';
+echo [1, 2, 3][0];
+echo "\n";
+
+echo 'String dereferencing: ';
+echo 'PHP'[0];
+echo "\n";
+?>
+]]>
+     </programlisting>
+     &example.outputs;
+     <screen>
+<![CDATA[
+Array dereferencing: 1
+String dereferencing: P
+]]>
+     </screen>
+    </informalexample>
+   </para>
+  </sect2>
+
+  <sect2 xml:id="migration55.new-features.windows-apache">
+   <title>Apache 2.4 ハンドラが Windows に対応</title>
+
+   <para>
+    Apache 2.4 ハンドラ SAPI が Windows に対応するようになりました。
+   </para>
+  </sect2>
+ </sect1>
+
+ <sect1 xml:id="migration55.deprecated">
+  <title>PHP 5.5.x で推奨されなくなる機能</title>
+
+  <sect2 xml:id="migration55.deprecated.preg-replace-e">
+   <title><function>preg_replace</function> の <literal>/e</literal> 修飾子</title>
+
+   <para>
+    <function>preg_replace</function> の <literal>/e</literal>
+    修飾子が非推奨になりました。かわりに
+    <function>preg_replace_callback</function> 関数を使いましょう。
+   </para>
+  </sect2>
+
+  <sect2 xml:id="migration55.deprecated.intl">
+   <title><link linkend="book.intl">intl</link> での非推奨</title>
+
+   <para>
+    <methodname>IntlDateFormatter::setTimeZoneID</methodname> と
+    <function>datefmt_set_timezone_id</function> が非推奨になりました。かわりに、
+    <methodname>IntlDateFormatter::setTimeZone</methodname> メソッドと
+    <function>datefmt_set_timezone</function> 関数を使いましょう。
+   </para>
+  </sect2>
+
+  <sect2 xml:id="migration55.deprecated.mcrypt">
+   <title><link linkend="book.mcrypt">mcrypt</link> での非推奨</title>
+
+   <simpara>
+    次の関数が非推奨になりました。
+   </simpara>
+
+   <itemizedlist>
+    <listitem>
+     <simpara>
+      <function>mcrypt_cbc</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>mcrypt_cfb</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>mcrypt_ecb</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>mcrypt_ofb</function>
+     </simpara>
+    </listitem>
+   </itemizedlist>
+  </sect2>
+ </sect1>
+
+ <sect1 xml:id="migration55.changed-functions">
+  <title>変更された関数</title>
+
+  <sect2 xml:id="migration55.changed-functions.core">
+   <title>PHP コア</title>
+
+   <itemizedlist>
+    <listitem>
+     <simpara>
+      <function>set_error_handler</function> can now be called with &null; as
+      an argument to reset the error handler.
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      When called with &null;, <function>set_error_handler</function> and
+      <function>set_exception_handler</function> now return the previous error
+      or exception handler, respectively.
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>pack</function> and <function>unpack</function> now support the
+      <literal>Z</literal> format character for null-padded strings.
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>unpack</function>'s <literal>a</literal> format no longer
+      strips trailing null bytes, bringing it into line with Perl's behaviour.
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>unpack</function>'s <literal>A</literal> format now strips all
+      trailing ASCII whitespace, bringing it into line with Perl's behaviour.
+     </simpara>
+    </listitem>
+   </itemizedlist>
+  </sect2>
+
+  <sect2 xml:id="migration55.changed-functions.intl">
+   <title><link linkend="book.intl">intl</link></title>
+
+   <itemizedlist>
+    <listitem>
+     <simpara>
+      <methodname>MessageFormatter::format</methodname> and related functions
+      now accept named arguments and mixed numeric and named arguments when PHP
+      is linked to ICU 4.8 or later.
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <methodname>MessageFormatter::format</methodname> and related functions
+      no longer error when an insufficient number of arguments have been
+      provided. Instead, the placeholders will not be substituted.
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <methodname>MessageFormatter::format</methodname> and
+      <methodname>MessageFormatter::parse</methodname> are no longer limited to
+      second precision when dealing with times.
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <methodname>IntlDateFormatter::__construct</methodname> and
+      <function>datefmt_create</function> now accept
+      <classname>IntlTimeZone</classname> and
+      <classname>DateTimeZone</classname> objects for the
+      <parameter>timezone</parameter> argument, and
+      <classname>IntlCalendar</classname> objects for the
+      <parameter>calendar</parameter> argument. Furthermore, if the time zone
+      is omitted and the <parameter>calendar</parameter> doesn't specify a time
+      zone, PHP's default time zone from
+      <function>date_default_timezone_get</function> is now used instead of the
+      default ICU time zone.
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <methodname>IntlDateFormatter::getCalendar</methodname> and
+      <function>datefmt_get_calendar</function> return false if the
+      <classname>IntlDateFormatter</classname> object was created with an
+      <classname>IntlCalendar</classname> instance instead of one of the
+      <classname>IntlDateFormatter</classname> constants.
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <methodname>IntlDateFormatter::setCalendar</methodname> and
+      <function>datefmt_set_calendar</function> now accept
+      <classname>IntlCalendar</classname> objects in addition to the
+      <classname>IntlDateFormatter</classname> constants.
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <methodname>IntlDateFormatter::format</methodname> and
+      <function>datefmt_format</function> now accept
+      <classname>IntlCalendar</classname> objects.
+     </simpara>
+    </listitem>
+   </itemizedlist>
+  </sect2>
+ </sect1>
+
+ <sect1 xml:id="migration55.new-functions">
+  <title>新しい関数</title>
+
+  <sect2 xml:id="migration55.new-functions.core">
+   <title>PHP コア</title>
+
+   <itemizedlist>
+    <listitem>
+     <simpara>
+      <function>boolval</function>
+     </simpara>
+    </listitem>
+   </itemizedlist>
+  </sect2>
+
+  <sect2 xml:id="migration55.new-functions.hash">
+   <title><link linkend="book.hash">Hash</link></title>
+
+   <itemizedlist>
+    <listitem>
+     <simpara>
+      <function>hash_pbkdf2</function>
+     </simpara>
+    </listitem>
+   </itemizedlist>
+  </sect2>
+  
+  <sect2 xml:id="migration55.new-functions.intl">
+   <title><link linkend="book.intl">Intl</link></title>
+
+   <itemizedlist>
+    <listitem>
+     <simpara>
+      <function>datefmt_format_object</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>datefmt_get_calendar_object</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>datefmt_get_timezone</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>datefmt_set_timezone</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>datefmt_get_calendar_object</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlcal_create_instance</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlcal_get_keyword_values_for_locale</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlcal_get_now</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlcal_get_available_locales</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlcal_get</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlcal_get_time</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlcal_set_time</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlcal_add</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlcal_set_time_zone</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlcal_after</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlcal_before</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlcal_set</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlcal_roll</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlcal_clear</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlcal_field_difference</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlcal_get_actual_maximum</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlcal_get_actual_minimum</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlcal_get_day_of_week_type</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlcal_get_first_day_of_week</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlcal_get_greatest_minimum</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlcal_get_least_maximum</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlcal_get_locale</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlcal_get_maximum</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlcal_get_minimal_days_in_first_week</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlcal_get_minimum</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlcal_get_time_zone</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlcal_get_type</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlcal_get_weekend_transition</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlcal_in_daylight_time</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlcal_is_equivalent_to</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlcal_is_lenient</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlcal_is_set</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlcal_is_weekend</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlcal_set_first_day_of_week</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlcal_set_lenient</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlcal_equals</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlcal_get_repeated_wall_time_option</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlcal_get_skipped_wall_time_option</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlcal_set_repeated_wall_time_option</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlcal_set_skipped_wall_time_option</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlcal_from_date_time</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlcal_to_date_time</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlcal_get_error_code</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlcal_get_error_message</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlgregcal_create_instance</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlgregcal_set_gregorian_change</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlgregcal_get_gregorian_change</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intlgregcal_is_leap_year</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intltz_create_time_zone</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intltz_create_default</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intltz_get_id</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intltz_get_gmt</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intltz_get_unknown</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intltz_create_enumeration</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intltz_count_equivalent_ids</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intltz_create_time_zone_id_enumeration</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intltz_get_canonical_id</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intltz_get_region</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intltz_get_tz_data_version</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intltz_get_equivalent_id</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intltz_use_daylight_time</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intltz_get_offset</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intltz_get_raw_offset</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intltz_has_same_rules</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intltz_get_display_name</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intltz_get_dst_savings</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intltz_from_date_time_zone</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intltz_to_date_time_zone</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intltz_get_error_code</function>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>intltz_get_error_message</function>
+     </simpara>
+    </listitem>
+   </itemizedlist>
+  </sect2>
+
+  <sect2 xml:id="migration55.new-features.spl">
+   <title><link linkend="book.spl">SPL</link></title>
+
+   <itemizedlist>
+    <listitem>
+     <simpara>
+      <methodname>SplFixedArray::__wakeup</methodname>
+     </simpara>
+    </listitem>
+   </itemizedlist>
+  </sect2>
+ </sect1>
+
+ <sect1 xml:id="migration55.classes">
+  <title>新しいクラスやインターフェイス</title>
+
+  <sect2 xml:id="migration55.classes.intl">
+   <title><link linkend="book.intl">Intl</link></title>
+
+   <itemizedlist>
+    <listitem>
+     <simpara>
+      <classname>IntlCalendar</classname>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <classname>IntlGregorianCalendar</classname>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <classname>IntlTimeZone</classname>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <classname>IntlBreakIterator</classname>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <classname>IntlRuleBasedBreakIterator</classname>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <classname>IntlCodePointBreakIterator</classname>
+     </simpara>
+    </listitem>
+   </itemizedlist>
+  </sect2>
+ </sect1>
+
+ <sect1 xml:id="migration55.new-methods">
+  <title>新しいメソッド</title>
+
+  <sect2 xml:id="migration55.new-methods.intl">
+   <title><link linkend="book.intl">Intl</link></title>
+
+   <itemizedlist>
+    <listitem>
+     <simpara>
+      <methodname>IntlDateFormatter::formatObject</methodname>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <methodname>IntlDateFormatter::getCalendarObject</methodname>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <methodname>IntlDateFormatter::getTimeZone</methodname>
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <methodname>IntlDateFormatter::setTimeZone</methodname>
+     </simpara>
+    </listitem>
+   </itemizedlist>
+  </sect2>
+ </sect1>
+
+ <sect1 xml:id="migration55.extensions-other">
+  <title>その他の拡張モジュールに対する変更</title>
+
+  <sect2 xml:id="migration55.extensions-other.intl">
+   <title><link linkend="book.intl">Intl</link></title>
+
+   <para>
+    The <link linkend="book.intl">intl</link> extension now requires ICU 4.0
+    or later.
+   </para>
+  </sect2>
+ </sect1>
+
+ <sect1 xml:id="migration55.global-constants">
+  <title>新しいグローバル定数</title>
+
+  <sect2 xml:id="migration55.global-constants.mysqli">
+   <title><link linkend="book.mysqli">MySQLi</link></title>
+
+   <para>
+    The <constant>MYSQLI_SERVER_PUBLIC_KEY</constant> option has been added
+    for use with <function>mysqli_options</function>.
+   </para>
+  </sect2>
+ </sect1>
+
+ <sect1 xml:id="migration55.ini">
+  <title>INI ファイルの扱いに関する変更</title>
+
+  <sect2 xml:id="migrations55.ini.intl">
+   <title><link linkend="book.intl">Intl</link></title>
+
+   <para>
+    The <literal>intl.use_exceptions</literal> configuration directive has
+    been added, which controls the behaviour of intl when global errors occur
+    in conjunction with the already extant <literal>intl.error_level</literal>
+    configuration directive.
+   </para>
+  </sect2>
+
+  <sect2 xml:id="migration55.ini.mysqlnd">
+   <title><link linkend="book.mysqlnd">MySQLnd</link></title>
+
+   <para>
+    The <literal>mysqlnd.sha256_server_public_key</literal> configuration
+    directive has been added to allow
+    <link linkend="book.mysqli">mysqli</link> to use the new MySQL
+    authentication protocol.
+   </para>
+  </sect2>
+ </sect1>
+</appendix>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"~/.phpdoc/manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
