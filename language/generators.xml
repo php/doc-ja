@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: d096079ebb3e48ffbf2e211e3258a831dd7e9296 Maintainer: takagi Status: working -->
+<!-- EN-Revision: d096079ebb3e48ffbf2e211e3258a831dd7e9296 Maintainer: takagi Status: ready -->
 <chapter xml:id="language.generators" xmlns="http://docbook.org/ns/docbook">
  <title>ジェネレータ</title>
 
@@ -204,31 +204,30 @@ foreach ($generator as $value) {
    </caution>
 
    <sect3 xml:id="language.generators.syntax.yield.associative">
-    <title>Yielding values with keys</title>
+    <title>値とキーの yield</title>
 
     <para>
-     PHP also supports associative arrays, and generators are no different. In
-     addition to yielding simple values, as shown above, you can also yield a
-     key at the same time.
+     PHP は、数値添字の配列だけでなく連想配列にも対応しています。ジェネレータも例外ではありません。
+     先ほどの例のように単なる値を yield するだけでなく、
+     値と同時にキーも yield することができます。
     </para>
 
     <para>
-     The syntax for yielding a key/value pair is very similar to that used to
-     define an associative array, as shown below.
+     キーと値のペアを yield する構文は連想配列の定義とよく似ており、次のようになります。
     </para>
 
     <example>
-     <title>Yielding a key/value pair</title>
+     <title>キー/値 のペアの yield</title>
      <programlisting role="php">
 <![CDATA[
 <?php
-/* The input is semi-colon separated fields, with the first
- * field being an ID to use as a key. */
+/* 入力は各フィールドをセミコロンで区切ったものです
+ * 最初のフィールドが ID となり、これをキーとして使います */
 
 $input = <<<'EOF'
-1;PHP;Likes dollar signs
-2;Python;Likes whitespace
-3;Ruby;Likes blocks
+1;PHP;$が大好き
+2;Python;インデントが大好き
+3;Ruby;ブロックが大好き
 EOF;
 
 function input_parser($input) {
@@ -253,22 +252,22 @@ foreach (input_parser($input) as $id => $fields) {
 <![CDATA[
 1:
     PHP
-    Likes dollar signs
+    $が大好き
 2:
     Python
-    Likes whitespace
+    インデントが大好き
 3:
     Ruby
-    Likes blocks
+    ブロックが大好き
 ]]>
      </screen>
     </example>
 
     <caution>
      <para>
-      As with the simple value yields shown earlier, yielding a key/value pair
-      in an expression context requires the yield statement to be
-      parenthesised:
+      先ほどの例のように値だけを yield するときと同様に、
+      キー/値 のペアを式のコンテキストで yield するときにも
+      yield 文を括弧で囲む必要があります。
      </para>
 
      <informalexample>
@@ -282,15 +281,14 @@ foreach (input_parser($input) as $id => $fields) {
    </sect3>
 
    <sect3 xml:id="language.generators.syntax.yield.null">
-    <title>Yielding null values</title>
+    <title>null 値の yield</title>
 
     <para>
-     Yield can be called without an argument to yield a &null; value with an
-     automatic key.
+     何も引数を渡さずに yield を呼ぶと、&null; 値と yield します。キーは自動的に割り振られます。
     </para>
 
     <example>
-     <title>Yielding &null;s</title>
+     <title>&null; の yield</title>
      <programlisting role="php">
 <![CDATA[
 <?php
@@ -321,17 +319,16 @@ array(3) {
    </sect3>
 
    <sect3 xml:id="language.generators.syntax.yield.references">
-    <title>Yielding by reference</title>
+    <title>参照による yield</title>
 
     <para>
-     Generator functions are able to yield values by reference as well as by
-     value. This is done in the same way as
-     <link linkend="functions.returning-values">returning references from functions</link>: 
-     by prepending an ampersand to the function name.
+     ジェネレータ関数は、値を参照として yield することもできます。
+     <link linkend="functions.returning-values">関数の結果を参照で返す</link>
+     ときと同じように、関数名の前にアンパサンドを付けます。
     </para>
 
     <example>
-     <title>Yielding values by reference</title>
+     <title>参照による値の yield</title>
      <programlisting role="php">
 <![CDATA[
 <?php
@@ -343,9 +340,9 @@ function &gen_reference() {
     }
 }
 
-/* Note that we can change $number within the loop, and
- * because the generator is yielding references, $value
- * within gen_reference() changes. */
+/* $number をループ内で変更していることに注目しましょう。
+ * このジェネレータは参照を yield するので、
+ * gen_reference() 内の $value が変わります。*/
 foreach (gen_reference() as &$number) {
     echo (--$number).'... ';
 }
@@ -367,23 +364,24 @@ foreach (gen_reference() as &$number) {
   <title><classname>Generator</classname> オブジェクト</title>
 
   <para>
-   When a generator function is called for the first time, an object of the
-   internal <classname>Generator</classname> class is returned. This object
-   implements the <classname>Iterator</classname> interface in much the same
-   way as a forward-only iterator object would.
+   ジェネレータ関数を最初に呼んだときに、
+   <classname>Generator</classname> クラスのオブジェクトが返されます。
+   このオブジェクトは <classname>Iterator</classname>
+   インターフェイスを実装しており、前進しかできないイテレータとほぼ同じようになっています。
   </para>
 
   <para>
-   Most methods in the <classname>Generator</classname> class have the same
-   semantics as the methods in the <classname>Iterator</classname> interface,
-   but generator objects also have one additional method:
-   <command>send()</command>.
+   <classname>Generator</classname> クラスのメソッドのほとんどは
+   <classname>Iterator</classname> インターフェイスのメソッドと同じ構文です。
+   しかし Generator オブジェクトには、もうひとつ
+   <command>send()</command> メソッドが追加されています。
   </para>
 
   <caution>
    <para>
-    <classname>Generator</classname> objects cannot be instantiated via
-    <link linkend="language.oop5.basic.new">new</link>.
+    <classname>Generator</classname> オブジェクトのインスタンスを
+    <link linkend="language.oop5.basic.new">new</link>
+    で作ることはできません。
    </para>
   </caution>
 
@@ -393,31 +391,28 @@ foreach (gen_reference() as &$number) {
    -->
 
   <example>
-   <title>The <classname>Generator</classname> class</title>
+   <title><classname>Generator</classname> クラス</title>
    <programlisting role="php">
 <![CDATA[
 <?php
 class Generator implements Iterator {
-    public function rewind();          // Rewinds the iterator. If
-                                       // iteration has already begun,
-                                       // this will throw an exception.
+    public function rewind();          // イテレータを巻き戻します。
+                                       // すでに反復処理が始まっている場合は
+                                       // 例外をスローします。
 
-    public function valid();           // Returns false if the
-                                       // iterator has been closed.
-                                       // Otherwise returns true.
+    public function valid();           // イテレータが閉じた後は
+                                       // false を返し、それ以外の場合は
+                                       // true を返します。
 
-    public function current();         // Returns the yielded value.
+    public function current();         // yield した値を返します。
 
-    public function key();             // Returns the yielded key.
+    public function key();             // yield したキーを返します。
 
-    public function next();            // Resumes execution of the
-                                       // generator.
-    
-    public function send($value);      // Sends the given value to the
-                                       // generator as the result of
-                                       // the yield expression and
-                                       // resumes execution of the
-                                       // generator.
+    public function next();            // ジェネレータの実行を続けます。
+
+    public function send($value);      // 指定した値を
+                                       // yield の結果としてジェネレータに送信し、
+                                       // ジェネレータの実行を続けます。
 }
 ]]>
    </programlisting>
@@ -427,14 +422,14 @@ class Generator implements Iterator {
    <title><methodname>Generator::send</methodname></title>
 
    <para>
-    <methodname>Generator::send</methodname> allows values to be injected into
-    generator functions while iterating over them. The injected value will be
-    returned from the &yield; statement and can then be used like any other
-    variable within the generator function.
+    <methodname>Generator::send</methodname> は、
+    値をジェネレータ関数に注入して反復処理を進めます。
+    注入された値を返すには &yield; 文を使います。
+    これを、ジェネレータ関数の中で他の変数と同じように使えます。
    </para>
 
    <example>
-    <title>Using <methodname>Generator::send</methodname> to inject values</title>
+    <title><methodname>Generator::send</methodname> による値の注入</title>
     <programlisting role="php">
 <![CDATA[
 <?php
