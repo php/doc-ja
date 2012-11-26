@@ -1,25 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: e49b53d06f3862247534f648a1756637f27f346f Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 8a4640c71cd1b8b6ad42f5c58ba0daacfea739c4 Maintainer: takagi Status: ready -->
 <section xml:id="mongo.queries" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>問い合わせ</title>
 
  <section>
-  <title>問い合わせのスレーブへの分散</title>
+  <title>問い合わせのセカンダリへの分散</title>
 
   <note>
    <title>1.1.0+</title>
    <para>
     <link xlink:href="&url.mongodb.replica;">レプリカセット</link>
     とバージョン 1.1.0 以降のドライバを使っている場合、
-    ドライバは読み込みを自動的にスレーブにまわします。
+    ドライバは読み込みを自動的にセカンダリにまわします。
     これは以前のバージョンのドライバにはなかった挙動で、"通常の"
     マスタ-スレーブでは <emphasis>使えません</emphasis>。
    </para>
   </note>
 
   <para>
-   デフォルトでは、ドライバはすべての問い合わせをマスタに送信します。
+   デフォルトでは、ドライバはすべての問い合わせをプライマリに送信します。
    "slaveOkay" オプションを設定すると、ドライバはすべての問い合わせを
    (もし可能なら) プライマリ以外のサーバーに送信します。
    "slaveOkay" オプションは、
@@ -44,16 +44,16 @@ $cursor = $c->find();
   </programlisting>
 
   <para>
-   のようにすると、この問い合わせはスレーブに対して実行されます (コレクションがデータベースから
+   のようにすると、この問い合わせはセカンダリに対して実行されます (コレクションがデータベースから
    "slaveOkay" の設定を継承し、カーソルはコレクションからその設定を継承します)。
   </para>
 
   <section>
-   <title>スレーブはどのように選ばれるか</title>
+   <title>セカンダリはどのように選ばれるか</title>
 
    <para>
     各 <classname>Mongo</classname> インスタンスは、
-    利用可能なスレーブの中から、ping の所要時間が最も短いものを自分のスレーブとして選択します。
+    利用可能なセカンダリの中から、ping の所要時間が最も短いものを自分のセカンダリとして選択します。
     つまり、PHP クライアントがヨーロッパとオーストラリアにあって
     それぞれのデータセンターにひとつずつセカンダリがあるとすると、
     このようにすることができます。
@@ -65,14 +65,14 @@ $cursor = $c->find();
 // P はプライマリです
 
 // オーストラリアのクライアント
-$m1 = new Mongo("mongodb://P", array("replicaSet" => 'setName'));
+$m1 = new MongoClient("mongodb://P", array("replicaSet" => 'setName'));
 $m1->foo->bar->find()->slaveOkay()->getNext();
-echo "m1 のスレーブは ".$m1->getSlave()."\n";
+echo "m1 のセカンダリは ".$m1->getSlave()."\n";
 
 // ヨーロッパのクライアント
-$m2 = new Mongo("mongodb://P", array("replicaSet" => 'setName'));
+$m2 = new MongoClient("mongodb://P", array("replicaSet" => 'setName'));
 $m2->foo->bar->find()->slaveOkay()->getNext();
-echo "m2 のスレーブは ".$m2->getSlave()."\n";
+echo "m2 のセカンダリは ".$m2->getSlave()."\n";
 
 ?>
 ]]>
@@ -81,20 +81,20 @@ echo "m2 のスレーブは ".$m2->getSlave()."\n";
     を試すと、おそらくこのような結果となります。
    </para>
    <screen>
-m1 のスレーブは australianHost
-m2 のスレーブは europeanHost
+m1 のセカンダリは australianHost
+m2 のセカンダリは europeanHost
    </screen>
 
    <para>
-    クエリを実行してからでないとスレーブの選択が行われないことに注意しましょう。
-    スレーブの選択は、必要になった時点でドライバが行います。
-    まだスレーブを使っていない場合、<function>Mongo::getSlave</function>
+    クエリを実行してからでないとセカンダリの選択が行われないことに注意しましょう。
+    セカンダリの選択は、必要になった時点でドライバが行います。
+    まだセカンダリを使っていない場合、<function>Mongo::getSlave</function>
     は &null; を返します。
    </para>
 
    <para>
     セットのメンバーの現在の状態がどうなっているかを知るには、
-    <function>Mongo::getHosts</function> を実行します。
+    <function>MongoClient::getHosts</function> を実行します。
    </para>
 
    <para>
@@ -103,15 +103,15 @@ m2 のスレーブは europeanHost
     ドライバはプライマリから読み込みを行います。
     あるサーバーが読み込み可能であると判定される条件は、その state が
     2 (SECONDARY) かつ health が 1 であることです。
-    これらをチェックするには <function>Mongo::getHosts</function>
+    これらをチェックするには <function>MongoClient::getHosts</function>
     を使います。
    </para>
 
    <para>
     あまり関わるべきではないところに首を突っ込んで楽しみたいのなら、
     <function>Mongo::switchSlave</function>
-    をコールして別のスレーブを使わせることもできます。
-    これは、ランダムに新しいスレーブを選んでそれを使います。
+    をコールして別のセカンダリを使わせることもできます。
+    これは、ランダムに新しいセカンダリを選んでそれを使います。
     自分が何をしているのかをしっかり把握しているのでない限り、これを使ってはいけません。
    </para>
 
@@ -125,7 +125,7 @@ m2 のスレーブは europeanHost
    </para>
 
    <para>
-    スレーブの health と state は、5 秒おき
+    セカンダリの health と state は、5 秒おき
     あるいは次の操作の 5 秒前にチェックされます。
     ドライバがサーバーに到達できずに何か問題が発生したときは、同時に設定の再チェックも行います。
    </para>

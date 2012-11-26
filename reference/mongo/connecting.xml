@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 28e9d06d537a6bfeca7a543f008eff0684cc6cd8 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 8a4640c71cd1b8b6ad42f5c58ba0daacfea739c4 Maintainer: takagi Status: ready -->
 
 <section xml:id="mongo.connecting" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>接続</title>
@@ -8,7 +8,7 @@
  <para>
   MongoDB への接続は単に <literal>new Mongo</literal> とするだけの簡単なものですが、
   オプションや設定項目が多数あります。
-  <function>Mongo::__construct</function> のページにすべての API
+  <function>MongoClient::__construct</function> のページにすべての API
   オプションをまとめましたが、ここではより実用的な使用例とアドバイスをとりあげます。
  </para>
 
@@ -19,17 +19,17 @@
    <literal>--keyFile</literal> オプションつきで起動すると、
    まずログインしないとドライバを使った操作ができなくなります。
    接続時の認証をするには、ユーザー名とパスワードを接続 URI に指定するか、あるいは
-   <function>Mongo::__construct</function> でオプション
+   <function>MongoClient::__construct</function> でオプション
    <literal>"username"</literal> および <literal>"password"</literal> を指定します。
   </para>
   <programlisting role="php">
 <![CDATA[
 <?php
 // ユーザー名とパスワードを接続 URI で指定する方法 (推奨)
-$m = new Mongo("mongodb://${username}:${password}@localhost");
+$m = new MongoClient("mongodb://${username}:${password}@localhost");
 
 // ユーザー名とパスワードをオプションの配列で指定する方法 (別の方法)
-$m = new Mongo("mongodb://localhost", array("username" => $username, "password" => $password));
+$m = new MongoClient("mongodb://localhost", array("username" => $username, "password" => $password));
 ?>
 ]]>
   </programlisting>
@@ -37,17 +37,17 @@ $m = new Mongo("mongodb://localhost", array("username" => $username, "password" 
    デフォルトでは、ドライバは <literal>admin</literal>
    データベースに対する認証を試みます。別のデータベースに対する認証をするには、
    データベースを接続 URI に指定するか、あるいは
-   <function>Mongo::__construct</function> でオプション
+   <function>MongoClient::__construct</function> でオプション
    <literal>"db"</literal> を指定します。
   </para>
   <programlisting role="php">
 <![CDATA[
 <?php
 // 認証データベースを接続 URI で指定する方法 (推奨)
-$m = new Mongo("mongodb://${username}:${password}@localhost/myDatabase");
+$m = new MongoClient("mongodb://${username}:${password}@localhost/myDatabase");
 
 // 認証データベースをオプションの配列で指定する方法 (別の方法)
-$m = new Mongo("mongodb://${username}:${password}@localhost", array("db" => "myDatabase"));
+$m = new MongoClient("mongodb://${username}:${password}@localhost", array("db" => "myDatabase"));
 ?>
 ]]>
   </programlisting>
@@ -67,35 +67,35 @@ $m = new Mongo("mongodb://${username}:${password}@localhost", array("db" => "myD
 <![CDATA[
 <?php
 // 複数のサーバーをシードリストとして使います (推奨)
-$m = new Mongo("mongodb://rs1.example.com:27017,rs2.example.com:27017/?replicaSet=myReplSetName"));
+$m = new MongoClient("mongodb://rs1.example.com:27017,rs2.example.com:27017/?replicaSet=myReplSetName"));
 
 // 単一のサーバーをシードリストとして使います
-$m = new Mongo("mongodb://rs1.example.com:27017", array("replicaSet" => "myReplSetName"));
+$m = new MongoClient("mongodb://rs1.example.com:27017", array("replicaSet" => "myReplSetName"));
 
 // 複数のサーバーをシードリストとして使います
-$m = new Mongo("mongodb://rs1.example.com:27017,rs2.example.com:27017", array("replicaSet" => "myReplSetName"));
+$m = new MongoClient("mongodb://rs1.example.com:27017,rs2.example.com:27017", array("replicaSet" => "myReplSetName"));
 ?>
 ]]>
   </programlisting>
   <para>
    バージョン 1.0.9 以降のドライバでは、レプリカセットへの接続が必須となります
-   (それより前のバージョンでは、マスタの自動検出や再接続が正しく動作しません)。
+   (それより前のバージョンでは、プライマリの自動検出や再接続が正しく動作しません)。
   </para>
   <para>
-   PHP ドライバは、指定したサーバー群に問い合わせてどれがマスタなのかを調べます。
+   PHP ドライバは、指定したサーバー群に問い合わせてどれがプライマリなのかを調べます。
    リストにあげたサーバーのうち少なくともひとつに接続でき、
-   マスタが見つかってさえいれば接続が成功したとみなされます。
-   どのサーバーにも接続できない、あるいはマスタが見つからないといった場合は
+   プライマリが見つかってさえいれば接続が成功したとみなされます。
+   どのサーバーにも接続できない、あるいはプライマリが見つからないといった場合は
    <classname>MongoConnectionException</classname> がスローされます。
   </para>
   <para>
-   マスタが使えなくなったときに、スレーブがマスタになるには数秒かかります。
+   プライマリが使えなくなったときに、セカンダリがプライマリになるには数秒かかります。
    その間は、この接続では一切のデータベース操作ができなくなります
-   (スレーブに接続して読み込みを行うことは可能です)。
+   (セカンダリに接続して読み込みを行うことは可能です)。
    したがって、このときに何らかの読み書き操作をすると例外が発生します。
   </para>
   <para>
-   新しいマスタが選ばれると、読み込みや書き込みの操作時にドライバが新しいマスタを検出できるようになります。
+   新しいプライマリが選ばれると、読み込みや書き込みの操作時にドライバが新しいプライマリを検出できるようになります。
    そして、ドライバがデータベース接続を切り替えて通常の操作を続行できるようになります。
   </para>
   <para>
@@ -117,10 +117,10 @@ $m = new Mongo("mongodb://rs1.example.com:27017,rs2.example.com:27017", array("r
 <?php
 
 // 単一のサーバーをシードリストとして使います
-$m = new Mongo("mongodb://mongos1.example.com:27017");
+$m = new MongoClient("mongodb://mongos1.example.com:27017");
 
 // 複数のサーバーをシードリストとして使います
-$m = new Mongo("mongodb://mongos1.example.com:27017,mongos2.example.com:27017"));
+$m = new MongoClient("mongodb://mongos1.example.com:27017,mongos2.example.com:27017"));
 
 ?>
 ]]>
@@ -154,7 +154,7 @@ $m = new Mongo("mongodb://mongos1.example.com:27017,mongos2.example.com:27017"))
   <programlisting role="php">
 <![CDATA[
 <?php
-$m = new Mongo("mongodb:///tmp/mongo-27017.sock");
+$m = new MongoClient("mongodb:///tmp/mongo-27017.sock");
 ?>
 ]]>
   </programlisting>
@@ -168,7 +168,7 @@ $m = new Mongo("mongodb:///tmp/mongo-27017.sock");
   <programlisting role="php">
 <![CDATA[
 <?php
-$m = new Mongo("mongodb://username:password@/tmp/mongo-27017.sock:0/foo");
+$m = new MongoClient("mongodb://username:password@/tmp/mongo-27017.sock:0/foo");
 ?>
 ]]>
   </programlisting>
@@ -259,7 +259,9 @@ $m = new Mongo("mongodb://username:password@/tmp/mongo-27017.sock:0/foo");
    </itemizedlist>
    <para>
     これら 3 つの変数を掛け合わせた
-    <literal>connections_per_pool*pools_per_process*processes</literal>
+    <literal>connections_per_pool</literal> *
+    <literal>pools_per_process</literal> *
+    <literal>processes</literal>
     で、接続の総数が得られます。<literal>connections_per_pool</literal>
     はプールによって異なることに注意しましょう。つまり、この計算をするときには
     <literal>connections_per_pool</literal> は最大値を使わなければなりません。
@@ -304,7 +306,7 @@ $m = new Mongo("mongodb://username:password@/tmp/mongo-27017.sock:0/foo");
 <?php
 
 for ($i=0; $i<1000; $i++) {
-  $m = new Mongo();
+  $m = new MongoClient();
 }
 
 ?>
@@ -320,7 +322,7 @@ for ($i=0; $i<1000; $i++) {
 <?php
 
 for ($i=0; $i<1000; $i++) {
-  $m = new Mongo("localhost:27017", array("persist" => "x"));
+  $m = new MongoClient("localhost:27017", array("persist" => "x"));
 }
 
 ?>
