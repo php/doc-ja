@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 28f95269868f3200ff8f36ac7c67956be71c33c6 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: f8f64b7216ce7edd0056c3ee3ccd06db3aef6e61 Maintainer: hirokawa Status: ready -->
 <refentry xml:id="function.easter-date" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>easter_date</refname>
@@ -103,6 +103,54 @@ echo date("M-d-Y", easter_date(2001));        // Apr-15-2001
     </programlisting>
    </example>
   </para>
+ </refsect1>
+
+ <refsect1 role="notes">
+  &reftitle.notes;
+  <note>
+   <para>
+    <function>easter_date</function> は、システムの C ライブラリの関数を利用します。
+    PHP 組み込みの日付・時刻関数を使うわけではなりません。
+    つまり、<function>easter_date</function> が利用するタイムゾーンは環境変数
+    <literal>TZ</literal> の値であり、PHP の
+    <link linkend="ini.date.timezone">デフォルトのタイムゾーン</link>は考慮しません。
+    その結果、PHP の他の日付関数と組み合わせて使ったときに予期せぬ結果になる可能性があります。
+   </para>
+   <para>
+    回避策として、<function>easter_days</function> を
+    <classname>DateTime</classname> や <classname>DateInterval</classname>
+    と組み合わせて使えば、PHP で設定したタイムゾーンにおける復活祭の開始時刻を算出できます。
+   </para>
+   <informalexample>
+    <programlisting role="php">
+<![CDATA[
+<?php
+function get_easter_datetime($year) {
+    $base = new DateTime("$year-03-21");
+    $days = easter_days($year);
+
+    return $base->add(new DateInterval("P{$days}D"));
+}
+
+foreach (range(2012, 2015) as $year) {
+    printf("Easter in %d is on %s\n",
+           $year,
+           get_easter_datetime($year)->format('F j'));
+}
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+Easter in 2012 is on April 8
+Easter in 2013 is on March 31
+Easter in 2014 is on April 20
+Easter in 2015 is on April 5
+]]>
+    </screen>
+   </informalexample>
+  </note>
  </refsect1>
 
  <refsect1 role="seealso">
