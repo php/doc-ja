@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 8f42f2024dc429e222bb191a6f90f56a10a16432 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: d2b97807ae2c5f8800664f36817413959230f7d2 Maintainer: takagi Status: ready -->
 <refentry xml:id="phar.webphar" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
   <refname>Phar::webPhar</refname>
@@ -15,7 +15,7 @@
    <methodparam choice="opt"><type>string</type><parameter>index</parameter><initializer>"index.php"</initializer></methodparam>
    <methodparam choice="opt"><type>string</type><parameter>f404</parameter></methodparam>
    <methodparam choice="opt"><type>array</type><parameter>mimetypes</parameter></methodparam>
-   <methodparam choice="opt"><type>array</type><parameter>rewrites</parameter></methodparam>
+   <methodparam choice="opt"><type>callable</type><parameter>rewrites</parameter></methodparam>
   </methodsynopsis>
   <para>
    <function>Phar::mapPhar</function> は、ウェブベースの phar で使用します。
@@ -131,23 +131,18 @@ $mimes = array(
      <term><parameter>rewrites</parameter></term>
      <listitem>
       <para>
-       URI と内部のファイルを関連付けた配列。apache の mod_rewrite をシミュレートしたものです。
-       たとえば、次のような配列を定義すると、
-       <programlisting role="php">
-        <![CDATA[
-<?php
-array(
-    'myinfo' => 'myinfo.php'
-);
-?>
-        ]]>
-       </programlisting>
-       <literal>http://&lt;host&gt;/myphar.phar/myinfo</literal>
-       がコールされた際に <literal>phar:///path/to/myphar.phar/myinfo.php</literal>
-       に転送します。その際に GET/POST の内容はそのまま維持します。
-       これは mod_rewrite とまったく同じ挙動になるわけではありません。たとえば
-       <literal>http://&lt;host&gt;/myphar.phar/myinfo/another</literal>
-       にはマッチしません。
+       書き換え関数は、唯一のパラメータとして文字列を受け取り、<type>string</type> あるいは <type>bool</type>
+       を返さないといけません。
+      </para>
+      <para>
+       fast-cgi あるいは cgi を使っている場合、この関数に渡されるパラメータは
+       <varname>$_SERVER['PATH_INFO']</varname> の値になります。
+       それ以外の場合、この関数に渡されるパラメータは
+       <varname>$_SERVER['REQUEST_URI']</varname> の値になります。
+      </para>
+      <para>
+       文字列を返した場合は、内部的なファイルパスとして扱います。bool を返した場合は、
+       webPhar() が HTTP 403 を返します。
       </para>
      </listitem>
     </varlistentry>
@@ -168,9 +163,8 @@ array(
    出力したい内部ファイルのオープンに失敗した場合、
    あるいはスタブ以外からコールした場合には
    <classname>PharException</classname> をスローします。
-   無効な配列が
-   <parameter>mimetypes</parameter> あるいは <parameter>rewrites</parameter>
-   に渡された場合は
+   無効な配列を <parameter>mimetypes</parameter> に渡したり、
+   無効なコールバックを <parameter>rewrites</parameter> に渡したりした場合は
    <classname>UnexpectedValueException</classname> をスローします。
   </para>
  </refsect1>
