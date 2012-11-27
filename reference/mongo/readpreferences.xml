@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 8a4640c71cd1b8b6ad42f5c58ba0daacfea739c4 Maintainer: takagi Status: working -->
+<!-- EN-Revision: 8a4640c71cd1b8b6ad42f5c58ba0daacfea739c4 Maintainer: takagi Status: ready -->
 
 <section xml:id="mongo.readpreferences" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>優先読み込み</title>
@@ -25,10 +25,11 @@
   <title>優先読み込みのモード</title>
   <warning>
    <para>
-    All read preference modes except <literal>MongoClient::RP_PRIMARY</literal>
-    may return stale data as secondaries replicate operations from the primary
-    with some delay. Ensure that your application can tolerate stale data if you
-    choose to use a mode other than <literal>MongoClient::RP_PRIMARY</literal>.
+    <literal>MongoClient::RP_PRIMARY</literal> 以外のすべての優先読み込みモードは、
+    古いデータを返す可能性があります。
+    セカンダリがプライマリの操作を受け取るにはある程度時間がかかるからです。
+    <literal>MongoClient::RP_PRIMARY</literal> 以外のモードを選ぶ場合は、
+    最新のデータではなくてもアプリケーションがうまく動くように作っておかないといけません。
    </para>
   </warning>
   <itemizedlist>
@@ -37,13 +38,13 @@
      <literal>MongoClient::RP_PRIMARY</literal>
     </para>
     <para>
-     All read operations use only the current replica set primary. This is the
-     default. If the primary is unavailable, read operations will produce an
-     exception.
+     すべての読み込み操作で、現在のレプリカセットのプライマリだけを使います。
+     これがデフォルト設定です。プライマリが使えないときは、読み込み操作で例外が発生します。
     </para>
     <para>
-     This mode is incompatible with use of tag sets. Specifying a tag set with
-     <literal>MongoClient::RP_PRIMARY</literal> will result in an error.
+     このモードを選ぶとタグセットは使えません。
+     <literal>MongoClient::RP_PRIMARY</literal>
+     のときにタグセットを指定すると、エラーになります。
     </para>
    </listitem>
    <listitem>
@@ -51,22 +52,22 @@
      <literal>MongoClient::RP_PRIMARY_PREFERRED</literal>
     </para>
     <para>
-     In most situations, operations read from the primary member of the set.
-     However, if the primary is unavailable, as is the case during failover
-     situations, operations read from secondary members.
+     大半の場合は、読み込み操作をレプリカセットのプライマリから行います。
+     しかし、もしプライマリが使えない場合 (たとえばフェイルオーバー中の場合など)
+     は、セカンダリのメンバーから読み込みます。
     </para>
     <para>
-     When the read preference includes a tag set, the client reads first from
-     the primary, if available, and then from secondaries that match the
-     specified tags. If no secondaries have matching tags, the read operation
-     will produce an exception.
+     優先読み込みにタグセットが含まれる場合、
+     クライアントはまずはプライマリから読み込みます。
+     そして、指定したタグにマッチするセカンダリから読み込みます。
+     タグにマッチするセカンダリがない場合は、読み込み操作で例外が発生します。
     </para>
     <warning>
      <para>
-      Version 2.2 of mongos added full support for read preferences. When
-      connecting to older mongos instances,
-      <literal>MongoClient::RP_PRIMARY_PREFERRED</literal> will send queries to
-      secondaries.
+      mongos のバージョン 2.2 で、優先読み込みを完全にサポートするようになりました。
+      それより古いバージョンの mongos インスタンスに接続するときは、
+      <literal>MongoClient::RP_PRIMARY_PREFERRED</literal>
+      はクエリをセカンダリに送信します。
      </para>
     </warning>
    </listitem>
@@ -75,20 +76,20 @@
      <literal>MongoClient::RP_SECONDARY</literal>
     </para>
     <para>
-     Operations read only from the secondary members of the set. If no
-     secondaries are available, read operations will produce an exception.
+     読み込み操作で、レプリカセットのセカンダリだけを使います。
+     もし使えるセカンダリがない場合は、読み込み操作で例外が発生します。
     </para>
     <para>
-     Most sets have at least one secondary, but there are situations where
-     there may be no available secondary. For example, a set with a primary, a
-     secondary, and an arbiter may not have any secondaries if a member is in
-     recovering state or unavailable.
+     ほとんどのレプリカセットには少なくとも一つのセカンダリがありますが、
+     場合によっては、使えるセカンダリが一つもないこともあります。
+     たとえばプライマリとセカンダリがそれぞれ一つずつで、
+     どちらかがリカバリ状態や使えない場合のセカンダリをアービターが持っていない場合です。
     </para>
     <para>
-     When the read preference includes a tag set, the client attempts to find
-     secondary members that match the specified tag set and directs reads to a
-     random secondary from among the nearest group. If no secondaries have
-     matching tags, the read operation will produce an exception.
+     優先読み込みにタグセットが含まれる場合、
+     クライアントは指定したタグにマッチするセカンダリを探します。
+     そして、一番近いグループのセカンダリの中からランダムに直接読み込みを行います。
+     タグにマッチするセカンダリがない場合は、読み込み操作で例外が発生します。
     </para>
    </listitem>
    <listitem>
@@ -96,15 +97,15 @@
      <literal>MongoClient::RP_SECONDARY_PREFERRED</literal>
     </para>
     <para>
-     In most situations, operations read from secondary members, but in
-     situations where the set consists of a single primary with no other
-     members, the read operation will use the set's primary.
+     大半の場合は、読み込み操作をレプリカセットのセカンダリから行います。
+     しかし、もしプライマリだけしかメンバーが存在しない場合は、
+     プライマリから読み込みます。
     </para>
     <para>
-     When the read preference includes a tag set, the client attempts to find a
-     secondary member that matches the specified tag set and directs reads to a
-     random secondary from among the nearest group. If no secondaries have
-     matching tags, the read operation will produce an exception.
+     優先読み込みにタグセットが含まれる場合、
+     クライアントは指定したタグにマッチするセカンダリを探します。
+     そして、一番近いグループのセカンダリの中からランダムに直接読み込みを行います。
+     タグにマッチするセカンダリがない場合は、読み込み操作で例外が発生します。
     </para>
    </listitem>
    <listitem>
@@ -112,26 +113,25 @@
      <literal>MongoClient::RP_NEAREST</literal>
     </para>
     <para>
-     The driver reads from the nearest member of the set according to the member
-     selection process. Reads in the <literal>MongoClient::RP_NEAREST</literal>
-     mode do not consider the member's type and may read from both primaries and
-     secondaries.
+     ドライバは、メンバーの選択プロセスに従って一番近いところにあるメンバーから読み込みます。
+     <literal>MongoClient::RP_NEAREST</literal> モードでの読み込みは
+     メンバーの型を意識しないので、プライマリから読まれることもあればセカンダリから読まれることもあります。
     </para>
     <para>
-     Set this mode to minimize the effect of network latency on read operations
-     without preference for current or stale data.
+     このモードにしておくと、読み込み操作のネットワークレイテンシーを最小化できます。
+     現在のデータと古いデータのどちらを優先するかは設定しません。
     </para>
     <para>
-     If you specify a tag set, the client attempts to find a secondary member
-     that matches the specified tag set and directs reads to a random secondary
-     from among the nearest group.
+     タグセットを指定した場合、
+     クライアントは指定したタグにマッチするセカンダリを探します。
+     そして、一番近いグループのセカンダリの中からランダムに直接読み込みを行います。
     </para>
     <note>
      <para>
-      All operations read from the nearest member of the replica set that
-      matches the specified read preference mode. The
-      <literal>MongoClient::RP_NEAREST</literal> mode prefers low latency reads
-      over a member's primary or secondary status.
+      すべての読み込み操作は、指定した優先読み込みモードにマッチするレプリカセットの
+      一番近いメンバーから行います。
+      <literal>MongoClient::RP_NEAREST</literal> モードは、
+      メンバーがプライマリであるかセカンダリであるかは無視してレイテンシーの低い読み込みを行います。
      </para>
     </note>
    </listitem>
@@ -140,15 +140,13 @@
  <section>
   <title>タグセット</title>
   <para>
-   <link xlink:href="&url.mongodb.docs.tagsets;">Tag sets</link> allow you to
-   specify criteria so that your application can target read operations to
-   specific members, based on custom parameters. Tag sets make it possible to
-   ensure that read operations target members in a particular data center or
-   target mongod instances designated for a particular class of operations, such
-   as reporting or analytics.
+   <link xlink:href="&url.mongodb.docs.tagsets;">タグセット</link>
+   を使うと、カスタムパラメータに基づいて読み込み操作の対象を特定のメンバーに絞り込めます。
+   タグセットでは、読み込み操作の対象となるメンバーを特定のデータセンターに絞り込んだり、
+   レポーティングや分析など操作種別ごとにその対象の mongod インスタンスを絞り込んだりできます。
   </para>
   <para>
-   You can specify tag sets with the following read preference modes:
+   タグセットを指定できるのは、優先読み込みが次のモードの場合です。
   </para>
   <itemizedlist>
    <listitem>
@@ -173,66 +171,69 @@
    </listitem>
   </itemizedlist>
   <para>
-   You cannot specify tag sets with the
-   <literal>MongoClient::RP_PRIMARY</literal> read preference mode. Tags apply
-   only when selecting a secondary member of a set, except for the when in the
-   nearest mode.
+   優先読み込みモードが
+   <literal>MongoClient::RP_PRIMARY</literal>
+   の場合はタグセットを指定できません。
+   タグを適用できるのはセカンダリメンバーを選ぶときだけ
+   (ただし、NEAREST モードのときは例外) です。
   </para>
  </section>
  <section>
   <title>優先読み込みの指定</title>
   <para>
-   Read preferences may be specified in either the connection URI provided to
-   <function>MongoClient::__construct</function>, which uses a query string
-   syntax, or via setter methods on the core classes, which use an array syntax
-   for tag sets.
+   優先読み込みの設定方法は二通りあります。一つは
+   <function>MongoClient::__construct</function> に渡す接続 URI で指定する方法で、
+   このときはクエリ文字列の構文を使います。もうひとつはコアクラスのセッターメソッド群を使う方法で、
+   このときはタグセット用の配列構文を使います。
   </para>
   <para>
-   When specifying read preference modes in a query string, the names
-   <literal>primary</literal>, <literal>primaryPreferred</literal>,
-   <literal>secondary</literal>, <literal>secondaryPreferred</literal>, and
-   <literal>nearest</literal> should be used instead of the constants for the
-   <literal>readPreference</literal> value. Tag sets for the
-   <literal>readPreferenceTags</literal> value should be a comma-delimited
-   sequence of colon-delimited key/value pairs.
+   優先読み込みモードをクエリ文字列で指定するときには、
+   <literal>readPreference</literal> の値用の定数の代わりに
+   <literal>primary</literal>、<literal>primaryPreferred</literal>、
+   <literal>secondary</literal>、<literal>secondaryPreferred</literal> および
+   <literal>nearest</literal> を使わないといけません。
+   <literal>readPreferenceTags</literal> の値用のタグセットは、
+   コロンで区切ったキー/値のペアをカンマでつなげた形式になります。
   </para>
   <note>
    <para>
-    Each tag set defined in the query string will use the
-    <literal>readPreferenceTags</literal> name. Unlike how PHP might handle URL
-    query strings, successive values for <literal>readPreferenceTags</literal>
-    will not overwrite each other. The driver will collect tag sets in the order
-    they appear in the query string.
+    クエリ文字列内で定義するタグセットには
+    <literal>readPreferenceTags</literal> という名前を使います。
+    PHP が URL のクエリ文字列を処理するときとは違って、
+    <literal>readPreferenceTags</literal>
+    を複数回指定したとしても上書きされることはありません。
+    クエリ文字列の中で登場した順に、ドライバがすべてのタグセットをとりまとめます。
    </para>
   </note>
   <para>
    <example>
-    <title>Connection URI read preferences with query string syntax</title>
+    <title>接続 URI でのクエリ文字列構文による優先読み込みの設定</title>
     <programlisting role="php">
 <![CDATA[
 <?php
 
-// Prefer the nearest server with no tag preference
+// 一番近いサーバーを優先し、タグは設定しません
 $uri  = 'mongodb://rs1.example.com,rs2.example.com/';
 $uri .= '?readPreference=nearest';
 $m = new MongoClient($uri, array('replicaSet' => 'rs'));
 
-// Prefer the nearest server in the "east" data center
+// "east" データセンターの一番近いサーバーを優先します
 $uri  = 'mongodb://rs1.example.com,rs2.example.com/';
 $uri .= '?readPreference=nearest';
 $uri .= '&readPreferenceTags=dc:east';
 $m = new MongoClient($uri, array('replicaSet' => 'rs'));
 
-// Prefer the nearest server in the "east" data center also used for reporting,
-// but fall back to a server in the "west" data center
+// "east" データセンターの一番近いサーバーを優先し、レポーティング用に使います
+// 代替サーバーとして、"west" データセンターのサーバーを使います
 $uri  = 'mongodb://rs1.example.com,rs2.example.com/';
 $uri .= '?readPreference=nearest';
 $uri .= '&readPreferenceTags=dc:east,use:reporting';
 $uri .= '&readPreferenceTags=dc:west';
 $m = new MongoClient($uri, array('replicaSet' => 'rs'));
 
-// Prefer the nearest server in the "east" data center, then a server in the
-// "west" data center, and finally fall back to no tag set preference
+// "east" データセンターの一番近いサーバーを優先し、
+// 代替サーバーとして、"west" データセンターのサーバーを使います。
+// それもだめな場合は、タグセットの設定をせずに接続します。
 $uri  = 'mongodb://rs1.example.com,rs2.example.com/';
 $uri .= '?readPreference=nearest';
 $uri .= '&readPreferenceTags=dc:east';
@@ -245,7 +246,7 @@ $m = new MongoClient($uri, array('replicaSet' => 'rs'));
   </para>
   <para>
    <example>
-    <title>Setting read preferences with array syntax for tag sets</title>
+    <title>タグセット用の配列構文による優先読み込みの設定</title>
     <programlisting role="php">
 <![CDATA[
 <?php
@@ -254,23 +255,24 @@ $m = new MongoClient('mongodb://rs1.example.com,rs2.example.com', array(
     'replicaSet' => 'rs',
 ));
 
-// Prefer the nearest server with no tag preference
+// 一番近いサーバーを優先し、タグは設定しません
 $m->setReadPreference(MongoClient::RP_NEAREST, array());
 
-// Prefer the nearest server in the "east" data center
+// "east" データセンターの一番近いサーバーを優先します
 $m->setReadPreference(MongoClient::RP_NEAREST, array(
     array('dc' => 'east'),
 ));
 
-// Prefer the nearest server in the "east" data center also used for reporting,
-// but fall back to a server in the "west" data center
+// "east" データセンターの一番近いサーバーを優先し、レポーティング用に使います
+// 代替サーバーとして、"west" データセンターのサーバーを使います
 $m->setReadPreference(MongoClient::RP_NEAREST, array(
     array('dc' => 'east', 'use' => 'reporting'),
     array('dc' => 'west'),
 ));
 
-// Prefer the nearest server in the "east" data center, then a server in the
-// "west" data center, and finally fall back to no tag set preference
+// "east" データセンターの一番近いサーバーを優先し、
+// 代替サーバーとして、"west" データセンターのサーバーを使います。
+// それもだめな場合は、タグセットの設定をせずに接続します。
 $m->setReadPreference(MongoClient::RP_NEAREST, array(
     array('dc' => 'east'),
     array('dc' => 'west'),
