@@ -1,15 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 7d96d2a7f7195a6b1114e723d4520714f0fa16b2 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 95613c06978f494ad0356f4c8b0944fe352fad15 Maintainer: takagi Status: ready -->
 
 <chapter xml:id="mongo.readpreferences" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>優先読み込み</title>
  <para>
   MongoDB 2.2 およびドライバのバージョン 1.3.0 以降では
   <link xlink:href="&url.mongodb.docs.readpreferences;">優先読み込み</link>
-  をサポートします。これを使えば、クエリをどの mongod インスタンスに向けるかを制御できます。
+  をサポートします。これを使えば、レプリカセット環境内でクエリを
+  mongod インスタンスに振り分ける方法を制御できます。
   優先読み込みは接続ごとに指定することもできるし、
-  データベース単位やコレクション単位あるいはカーソル単位でも指定できます。
+  データベース単位やコレクション単位でも指定できます。
   上位で設定された優先順位がデフォルトで引き継がれます
   (たとえば、<classname>MongoCollection</classname>
   の優先読み込み設定は、それに対応する
@@ -44,7 +45,7 @@
     <para>
      このモードを選ぶとタグセットは使えません。
      <literal>MongoClient::RP_PRIMARY</literal>
-     のときにタグセットを指定すると、エラーになります。
+     のときにタグセットを指定すると、例外が発生します。
     </para>
    </listitem>
    <listitem>
@@ -123,8 +124,8 @@
     </para>
     <para>
      タグセットを指定した場合、
-     クライアントは指定したタグにマッチするセカンダリを探します。
-     そして、一番近いグループのセカンダリの中からランダムに直接読み込みを行います。
+     クライアントは指定したタグにマッチするメンバーを探します。
+     そして、一番近いグループのノードの中からランダムに直接読み込みを行います。
     </para>
     <note>
      <para>
@@ -205,7 +206,7 @@
    <para>
     マッチするタグセットをドライバが見つけられない場合は、読み込みが失敗します!
     適切な代替策を用意しておくのはプログラマの役割です。たとえば
-    <literal>readPreferenceTags</literal> の値が空なら "no TagSet
+    <literal>readPreferenceTags</literal> の値が空なら "no tag set
     preference" を使うなどです。
    </para>
   </warning>
@@ -215,19 +216,18 @@
     <programlisting role="php">
 <![CDATA[
 <?php
-
 // 一番近いサーバーを優先し、タグは設定しません
 $uri  = 'mongodb://rs1.example.com,rs2.example.com/';
 $uri .= '?readPreference=nearest';
 $m = new MongoClient($uri, array('replicaSet' => 'rs'));
 
-// "east" データセンターの一番近いサーバーを優先します
+// "east" データセンターの一番近いサーバーを選びます
 $uri  = 'mongodb://rs1.example.com,rs2.example.com/';
 $uri .= '?readPreference=nearest';
 $uri .= '&readPreferenceTags=dc:east';
 $m = new MongoClient($uri, array('replicaSet' => 'rs'));
 
-// "east" データセンターの一番近いサーバーを優先し、レポーティング用に使います
+// "east" データセンターの一番近いサーバーを選び、レポーティング用に使います
 // 代替サーバーとして、"west" データセンターのサーバーを使います
 $uri  = 'mongodb://rs1.example.com,rs2.example.com/';
 $uri .= '?readPreference=nearest';
