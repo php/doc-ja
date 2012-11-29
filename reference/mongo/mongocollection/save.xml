@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 8a4640c71cd1b8b6ad42f5c58ba0daacfea739c4 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 48e1717a75a72c11438caeac29bb0fd0b0c02107 Maintainer: takagi Status: ready -->
 
 <refentry xml:id="mongocollection.save" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -43,59 +43,10 @@
       <para>
        保存時のオプション。
        <itemizedlist>
-        <listitem>
-         <para>
-          <literal>"safe"</literal>
-         </para>
-         <para>
-          boolean あるいは整数値で、デフォルトは &false; です。&false;
-          の場合、データベースからの応答を待たずにプログラムを続行します。
-          &true; の場合、プログラムはデータベースからの応答を待ち、
-          追加に失敗したときには
-          <classname>MongoCursorException</classname> をスローします。
-         </para>
-         <para>
-          レプリケーションを使っていてプライマリを変更している場合、もし "safe"
-          を使っていればドライバはプライマリとの接続を切断して例外をスローし、
-          次の操作時に新しいプライマリを探そうとします
-          (新しいプライマリに対して操作を再試行するかどうかは
-          アプリケーション側で判断しなければなりません)。
-         </para>
-         <para>
-          レプリカセットで "safe" を <emphasis>使わずに</emphasis>
-          プライマリを変更する場合は、ドライバがその変更について知るすべがありません。
-          そのため、何もエラーを出さずに書き込みに失敗し続けます。
-         </para>
-         <para>
-          <literal>safe</literal> が整数値の場合は、
-          指定した数のマシンで追加が成功するまでは成功したと見なしません
-          (処理がタイムアウトした場合は例外をスローします。wtimeout を参照ください)。
-          これは、コレクションに設定された w 変数をオーバーライドします。
-         </para>
-        </listitem>
-        <listitem>
-         <para>
-          <literal>"fsync"</literal>
-         </para>
-         <para>
-          boolean で、デフォルトは &false; です。
-          追加操作がディスク上に同期されるまで成功とは見なさないようにさせます。
-          &true; の場合は "安全な" 追加操作が前提となり、
-          <literal>safe</literal> の設定を &false; にオーバーライドします。
-         </para>
-        </listitem>
-        <listitem>
-         <para>
-          <literal>"timeout"</literal>
-         </para>
-         <para>
-          整数値。デフォルトは <literal>MongoCursor::$timeout</literal> です。
-          "safe" が設定されている場合に、クライアントがデータベースからの応答をどれだけ待つかを
-          (ミリ秒単位で) 指定します。ここで指定した時間内にデータベースからの応答がない場合は
-          <classname>MongoCursorTimeoutException</classname>
-          がスローされます。
-         </para>
-        </listitem>
+        &mongo.writes.parameters.writeconcern;
+        &mongo.writes.parameters.fsync;
+        &mongo.writes.parameters.timeout;
+        &mongo.writes.parameters.safe;
        </itemizedlist>
       </para>
      </listitem>
@@ -107,7 +58,7 @@
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
-   <parameter>safe</parameter> が設定されている場合は、
+   <parameter>w</parameter> が設定されている場合は、
    保存結果を含む配列を返します。設定されていない場合は、
    配列が空でなかったかどうかをあらわす boolean 値を返します (空の配列は追加されません)。
   </para>
@@ -115,16 +66,7 @@
 
  <refsect1 role="errors">
   &reftitle.errors;
-  <para>
-   "safe" オプションが設定されていて保存に失敗した場合に
-   <classname>MongoCursorException</classname> をスローします。
-  </para>
-  <para>
-   "safe" オプションが設定されているときに
-   <literal>MongoCollection::$wtimeout</literal> ミリ秒以内に処理が終わらなければ
-   <classname>MongoCursorTimeoutException</classname> をスローします。
-   これはサーバー上の操作を終了させるわけではなく、あくまでもクライアント側のタイムアウトです。
-  </para>
+  &mongo.errors.exceptions.writeconcern;
  </refsect1>
 
  <refsect1 role="changelog">
@@ -182,6 +124,7 @@ $obj = array('x' => 1);
 
 // $obj を db に追加します
 $collection->save($obj);
+var_dump($obj);
 
 // 別のフィールドを追加します
 $obj['foo'] = 'bar';
@@ -195,8 +138,33 @@ $collection->save($obj);
 ?>
 ]]>
    </programlisting>
+   &example.outputs.similar;
+   <screen>
+<![CDATA[
+array(2) {
+  ["x"]=>
+  int(1)
+  ["_id"]=>
+  object(MongoId)#4 (1) {
+    ["$id"]=>
+    string(24) "50b6afe544415ed606000000"
+  }
+}
+]]>
+   </screen>
   </example>
  </refsect1>
+
+ <refsect1 role="notes"><!-- {{{ -->
+  &reftitle.notes;
+  <note>
+   <para>
+    もし <literal>_id</literal> が存在しない場合は、
+    <parameter>a</parameter> 配列に <literal>_id</literal>
+    フィールドを作って生成済みの ID を設定します。ただし、引数を参照で渡した場合は別です。
+   </para>
+  </note>
+ </refsect1><!-- }}} -->
 
 </refentry>
 <!-- Keep this comment at the end of the file
