@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: e7dbde68a1ab13d08c81251818131fe8affef90e Maintainer: takagi Status: ready -->
+<!-- EN-Revision: df8a0aceefb60b5b66da4a6ffa030419767ec339 Maintainer: takagi Status: ready -->
 
 <chapter xml:id="mongo.tutorial" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>チュートリアル</title>
@@ -28,19 +28,19 @@ $db = $m->comedy;
 $collection = $db->cartoons;
 
 // レコードの追加
-$obj = array( "title" => "Calvin and Hobbes", "author" => "Bill Watterson" );
-$collection->insert($obj);
+$document = array( "title" => "Calvin and Hobbes", "author" => "Bill Watterson" );
+$collection->insert($document);
 
 // 構造が異なる別のレコードの追加
-$obj = array( "title" => "XKCD", "online" => true );
-$collection->insert($obj);
+$document = array( "title" => "XKCD", "online" => true );
+$collection->insert($document);
 
 // コレクション内の全件の検索
 $cursor = $collection->find();
 
 // 結果の反復処理
-foreach ($cursor as $obj) {
-    echo $obj["title"] . "\n";
+foreach ($cursor as $document) {
+    echo $document["title"] . "\n";
 }
 
 ?>
@@ -66,19 +66,16 @@ XKCD
    <programlisting role="php">
 <![CDATA[
 <?php
-
 $connection = new MongoClient(); // localhost:27017 に接続します
-$connection = new MongoClient( "example.com" ); // リモートホスト (デフォルトのポート: 27017) に接続します
-$connection = new MongoClient( "example.com:65432" ); // リモートホストの指定したポートに接続します
-
+$connection = new MongoClient( "mongodb://example.com" ); // リモートホスト (デフォルトのポート: 27017) に接続します
+$connection = new MongoClient( "mongodb://example.com:65432" ); // リモートホストの指定したポートに接続します
 ?>
 ]]>
    </programlisting>
   </example>
   <para>
    明示的にデータベースとの接続を切断する必要はありません。
-   <literal>$connection</literal> がスコープ外に抜けた時点で接続は自動的に閉じられ、
-   使っていたデータベースリソースもすべて開放されます。
+   ドライバは持続的接続を利用し、確立済みの接続を再利用します。
   </para>
   <section xml:id="mongo.tutorial.connecting.seealso">
    <title>参考</title>
@@ -103,9 +100,8 @@ $connection = new MongoClient( "example.com:65432" ); // リモートホスト�
     <programlisting role="php">
 <![CDATA[
 <?php
-
+$connection = new MongoClient();
 $db = $connection->dbname;
-
 ?>
 ]]>
     </programlisting>
@@ -116,18 +112,21 @@ $db = $connection->dbname;
    </para>
    <para>
     Typo には注意しましょう! 意図せずに新しいデータベースを作ってしまい、
-    エラーで悩まされる原因になります。
+    エラーで悩まされる原因になります (この例では、二番目の選択のところで
+    <literal>name</literal> を
+    <literal>anme</literal> と書き間違えています)。
 
     <example xml:id="mongo.tutorial.selectdb.typo">
      <programlisting role="php">
 <![CDATA[
 <?php
+$connection = new MongoClient();
 
 $db = $connection->mybiglongdbname;
 // 何かをします
+
 $db = $connection->mybiglongdbanme;
 // これは別のデータベースに接続してしまいます!
-
 ?>
 ]]>
      </programlisting>
@@ -151,13 +150,14 @@ $db = $connection->mybiglongdbanme;
     <programlisting role="php">
 <![CDATA[
 <?php
-
+$connection = new MongoClient();
 $db = $connection->baz;
+
+// コレクションの選択
 $collection = $db->foobar;
 
-// あるいは、もうすこし簡潔に
+// あるいは、データベースとコレクションを直接選択
 $collection = $connection->baz->foobar;
-
 ?>
 ]]>
     </programlisting>
@@ -185,20 +185,23 @@ $collection = $connection->baz->foobar;
     <programlisting role="php">
 <![CDATA[
 <?php
-
-$doc = array( "name" => "MongoDB",
-   "type" => "database",
-   "count" => 1,
-   "info" => (object)array( "x" => 203, "y" => 102),
-   "versions" => array("0.9.7", "0.9.8", "0.9.9")
+$doc = array(
+    "name" => "MongoDB",
+    "type" => "database",
+    "count" => 1,
+    "info" => (object)array( "x" => 203, "y" => 102),
+    "versions" => array("0.9.7", "0.9.8", "0.9.9")
 );
-
 ?>
 ]]>
     </programlisting>
    </example>
    <para>
     配列やオブジェクトをネストできることに注目しましょう。
+    ドライバは、連想配列を常にオブジェクトとしてデータベースに格納します。
+    数値添字の配列は、もし配列のキーは 0 から始まる連番の場合は配列として格納します。
+    0 から始まらない場合や途中に添字の抜けがある場合 (<literal>0, 1, 4, 5</literal> など)
+    は、オブジェクトとして格納します。
    </para>
    <para>
     ドキュメントを追加するには <function>MongoCollection::insert</function> を使います。
@@ -207,9 +210,10 @@ $doc = array( "name" => "MongoDB",
     <programlisting role="php">
 <![CDATA[
 <?php
+$connection = new MongoClient();
+$collection = $connection->database->collectionName;
 
 $collection->insert( $doc );
-
 ?>
 ]]>
     </programlisting>
@@ -238,10 +242,11 @@ $collection->insert( $doc );
     <programlisting role="php">
 <![CDATA[
 <?php
+$connection = new MongoClient();
+$collection = $connection->database->collectionName;
 
-$obj = $collection->findOne();
-var_dump( $obj );
-
+$document = $collection->findOne();
+var_dump( $document );
 ?>
 ]]>
     </programlisting>
@@ -295,6 +300,8 @@ array(6) {
     <programlisting role="php">
 <![CDATA[
 <?php
+$connection = new MongoClient();
+$db = $connection->database;
 
 $db->foo->insert(array("_id" => 1));
 // これは例外が発生します
@@ -302,7 +309,6 @@ $db->foo->insert(array("_id" => 1));
 
 // こちらは別のコレクションなので大丈夫です
 $db->bar->insert(array("_id" => 1));
-
 ?>
 ]]>
     </programlisting>
@@ -344,11 +350,13 @@ $db->bar->insert(array("_id" => 1));
     <programlisting role="php">
 <![CDATA[
 <?php
+$connection = new MongoClient();
+$collection = $connection->database->collectionName;
 
-for($i=0; $i<100; $i++) {
-    $collection->insert( array( "i" => $i ) );
+for ( $i = 0; $i < 100; $i++ )
+{
+    $collection->insert( array( 'i' => $i, "field{$i}" => $i * 2 ) );
 }
-
 ?>
 ]]>
     </programlisting>
@@ -357,6 +365,9 @@ for($i=0; $i<100; $i++) {
    <para>
     先ほどと同じコレクションに、別のキーを持つ配列を追加していることに注目しましょう。
     MongoDB が「スキーマフリー」であると言われるのは、こういう側面があるからです。
+    上の例では、どのドキュメントにも
+    <literal>i</literal> フィールドが存在します。ただそれだけではなく、
+    <literal>field</literal> + <literal>$i</literal> という名前のフィールドもあります。
    </para>
   </section>
 
@@ -370,9 +381,10 @@ for($i=0; $i<100; $i++) {
      <programlisting role="php">
 <![CDATA[
 <?php
+$connection = new MongoClient();
+$collection = $connection->database->collectionName;
 
 echo $collection->count();
-
 ?>
 ]]>
      </programlisting>
@@ -394,13 +406,15 @@ echo $collection->count();
      <programlisting role="php">
 <![CDATA[
 <?php
+$connection = new MongoClient();
+$collection = $connection->database->collectionName;
 
 $cursor = $collection->find();
-foreach ($cursor as $id => $value) {
+foreach ( $cursor as $id => $value )
+{
     echo "$id: ";
     var_dump( $value );
 }
-
 ?>
 ]]>
      </programlisting>
@@ -424,21 +438,23 @@ foreach ($cursor as $id => $value) {
    <para>
     クエリを作って <function>MongoCollection::find</function> メソッドに渡せば、
     コレクション内のドキュメントのサブセットを取得することができます。
-    たとえば、"i" フィールドの値が 71 であるドキュメントを探したいときは、
+    たとえば、<literal>"i"</literal> フィールドの値が <literal>71</literal> であるドキュメントを探したいときは、
     このようにします。
    </para>
    <example xml:id="mongo.tutorial.criteria-example">
     <programlisting role="php">
 <![CDATA[
 <?php
+$connection = new MongoClient();
+$collection = $connection->database->collectionName;
 
-$query = array( "i" => 71 );
+$query = array( 'i' => 71 );
 $cursor = $collection->find( $query );
 
-while( $cursor->hasNext() ) {
+while ( $cursor->hasNext() )
+{
     var_dump( $cursor->getNext() );
 }
-
 ?>
 ]]>
     </programlisting>
@@ -463,38 +479,44 @@ array(2) {
    <title>クエリによる複数ドキュメントの取得</title>
    <para>
     クエリを使って、コレクションからドキュメントのセットを取得することができます。
-    たとえば、"i" &gt; 50 であるすべてのドキュメントを取得したい場合は次のようにします。
+    たとえば、<literal>"i"</literal> &gt; <literal>50</literal>
+    であるすべてのドキュメントを取得したい場合は次のようにします。
    </para>
    <example xml:id="mongo.tutorial.multi.query-example">
     <programlisting role="php">
 <![CDATA[
 <?php
+$connection = new MongoClient();
+$collection = $connection->database->collectionName;
 
 $query = array( "i" => array( '$gt' => 50 ) ); // '$gt' と、シングルクォートで囲んでいることに注意しましょう
 $cursor = $coll->find( $query );
 
-while( $cursor->hasNext() ) {
+while ( $cursor->hasNext() )
+{
     var_dump( $cursor->getNext() );
 }
-
 ?>
 ]]>
     </programlisting>
     <para>
-     これは、i &gt; 50 であるドキュメントをすべて表示します。
-     また、20 &lt; i &lt;= 30 のような範囲を指定することもできます。
+     これは、<literal>"i"</literal> &gt; <literal>50</literal>
+     であるドキュメントをすべて表示します。また、
+     <literal>20 &lt; i &lt;= 30</literal> のような範囲を指定することもできます。
     </para>
     <screen>
 <![CDATA[
 <?php
+$connection = new MongoClient();
+$collection = $connection->database->collectionName;
 
-$query = array( "i" => array( "\$gt" => 20, "\$lte" => 30 ) );
+$query = array( 'i' => array( '$gt' => 20, "\$lte" => 30 ) );
 $cursor = $coll->find( $query );
 
-while( $cursor->hasNext() ) {
+while ( $cursor->hasNext() )
+{
     var_dump( $cursor->getNext() );
 }
-
 ?>
 ]]>
     </screen>
@@ -517,10 +539,11 @@ while( $cursor->hasNext() ) {
     <programlisting role="php">
 <![CDATA[
 <?php
+$connection = new MongoClient();
+$collection = $connection->database->collectionName;
 
 $coll->ensureIndex( array( "i" => 1 ) );  // "i" にインデックスを作ります
 $coll->ensureIndex( array( "i" => -1, "j" => 1 ) );  // "i" の降順、"j" の昇順でインデックスを作ります
-
 ?>
 ]]>
     </programlisting>
