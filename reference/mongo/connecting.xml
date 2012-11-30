@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 95613c06978f494ad0356f4c8b0944fe352fad15 Maintainer: takagi Status: working -->
+<!-- EN-Revision: 95613c06978f494ad0356f4c8b0944fe352fad15 Maintainer: takagi Status: ready -->
 
 <chapter xml:id="mongo.connecting" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>接続</title>
@@ -110,16 +110,14 @@ $m = new MongoClient("mongodb://rs1.example.com:27017,rs2.example.com:27017", ar
   </para>
   <note>
    <para>
-    The default <link linkend="mongo.readpreferences">Read Preference</link>
-    is to only read from the primary. During the election process there is no
-    primary, and all read will therefore fail.
+    デフォルトの <link linkend="mongo.readpreferences">優先読み込み</link>
+    では、プライマリからだけ読み込みます。サーバーを選択するときにプライマリが見つからなければ、
+    その読み込みは失敗します。
    </para>
    <para>
-    It is recommended to use
-    <constant>MongoClient::RP_PRIMARY_PREFERRED</constant> Read Preference for
-    applications that require high availability for reads, as reads will only
-    be executed on the secondaries when there simply isn't a primary
-    available.
+    読み込みについて高可用性が要求されるアプリケーションでは、優先読み込み設定を
+    <constant>MongoClient::RP_PRIMARY_PREFERRED</constant> にしておくことをおすすめします。
+    これは、プライマリが使えない場合にだけセカンダリからの読み込みを実行する設定です。
    </para>
   </note>
   <para>
@@ -127,23 +125,22 @@ $m = new MongoClient("mongodb://rs1.example.com:27017,rs2.example.com:27017", ar
    そして、ドライバがデータベース接続を切り替えて通常の操作を続行できるようになります。
   </para>
   <para>
-   The health and state of a secondary is checked every 5 seconds
-   (configurable with
-   <link linkend="ini.mongo.ping-interval">mongo.ping_interval</link>)
-   or when the next operation occurs after 5 seconds.  It will also recheck
-   the configuration when the driver has a problem reaching a server.
+   セカンダリの health や state のチェックは 5 秒おきに行うか
+   (<link linkend="ini.mongo.ping-interval">mongo.ping_interval</link>
+   で変更可能)、あるいは 5 秒以上経過した後の次の操作のときに行います。
+   ドライバからサーバーに到達できない問題が発生したときにも設定を再チェックします。
   </para>
   <para>
-   Replica set failovers are checked every 60 seconds (configurable with
-   <link linkend="ini.mongo.is-master-interval">mongo.is_master_interval</link>),
-   and whenever a write operation fails when using acknowledged writes.
+   レプリカセットのフェイルオーバーは 60 秒おきにチェックします
+   (<link linkend="ini.mongo.is-master-interval">mongo.is_master_interval</link>
+   で変更可能)。また、確認付き書き込みを利用している際に書き込みに失敗したときにもフェイルオーバーします。
   </para>
 
   <caution>
    <para>
-    Secondaries may be behind the primary in operations, so
-    your application must be able to handle out-of-date data when using
-    Read Preferences other then <constant>MongoClient::RP_PRIMARY</constant>.
+    セカンダリのデータはプライマリに比べて古くなっている可能性があります。
+    <constant>MongoClient::RP_PRIMARY</constant> 以外の優先読み込みを選ぶ場合は、
+    最新ではないデータでもアプリケーション側で対応できるようにしておかないといけません。
    </para>
   </caution>
 
@@ -175,7 +172,7 @@ $m = new MongoClient("mongodb://rs1.example.com:27017,rs2.example.com:27017", ar
       <row>
        <entry>1.0.9</entry>
        <entry>
-        Added support for connecting to ReplicaSet and automatic failover.
+        レプリカセットへの接続と自動フェイルオーバーに対応しました。
        </entry>
       </row>
      </tbody>
@@ -270,7 +267,7 @@ $m = new MongoClient("mongodb://username:password@/tmp/mongo-27017.sock:0/foo");
       <row>
        <entry>1.0.9</entry>
        <entry>
-        Added support for Unix Domain Sockets.
+        Unix ドメインソケットに対応しました。
        </entry>
       </row>
      </tbody>
@@ -284,14 +281,12 @@ $m = new MongoClient("mongodb://username:password@/tmp/mongo-27017.sock:0/foo");
   <title>接続プーリング (バージョン 1.2.0-1.2.12 限定)</title>
   <note>
    <para>
-    This section is no longer relevant as of the 1.3.0 release of the driver
-    and only serves as a historical information on how the pooling used to
-    work.
+    この節の内容は、1.3.0 以降のドライバには無関係です。
+    歴史的な情報として、かつてプーリングをどのように使っていたかを残しておきます。
    </para>
    <para>
-    The latest versions of the driver have no concept of pooling anymore and
-    will maintain only one connection per process, for each connection type
-    (ReplicaSet/standalone/mongos), for each credentials combination.
+    最新版のドライバにはプーリングという概念がなく、プロセスごとに一つの接続を保持します。
+    接続形式 (ReplicaSet/standalone/mongos) と条件の組み合わせごとにプロセスがわかれます。
     </para>
    </note>
   <para>
