@@ -25,43 +25,43 @@
 
  <warning>
   <para>
-   Even though a <literal>getLastError</literal> command times out the data
-   will most likely have been written to the primary server and will be
-   replicated to all the secondaries once they have cought up.
+   <literal>getLastError</literal> コマンドがタイムアウトしたとしても、
+   ほとんどの場合はデータはプライマリサーバーに書き込まれており、
+   そのうちにすべてのセカンダリにレプリケートされるでしょう。
   </para>
   <para>
-   The typical reasons for a timeout to happen is if you specify a Write
-   Concern which requires confirmation from more servers then you currently
-   have available.
+   タイムアウトの発生要因として一番ありがちなのは、
+   書き込み確認を指定するときに現在使えるサーバー数よりも大きなサーバー数を指定したというものです。
   </para>
  </warning>
 
  <para>
-  When using acknowledged writes and the replica set has failed over, the driver
-  will automatically disconnect from the primary, throw an exception, and
-  attempt to find a new primary on the next operation (your application must
-  decide whether or not to retry the operation on the new primary).
+  書き込み確認を使っているときにレプリカセットのフェイルオーバーが発生すると、
+  ドライバは自動的にプライマリとの接続を切断して例外をスローし、
+  次の操作のときに新しいプライマリを探そうとします
+  (新しいプライマリでもう一度操作をやり直すかそうしないかは、
+  アプリケーション側で決めないといけません)。
  </para>
  <para>
-  When using unacknowledged writes (w=0) and the replica set has failed over,
-  there will be no way for the driver to know about the change so it will
-  continue and silently fail to write.
+  書き込み確認をしない (w=0) の場合にレプリカセットのフェイルオーバーが発生すると、
+  ドライバ側でそれを知る手段がありません。そのため、何も気づかずに操作を続け、
+  結果的に書き込みは失敗してしまいます。
  </para>
  <para>
-  The default Write Concern for the <classname>MongoClient</classname> is
-  <literal>1</literal>: acknowledge write operations.
+  <classname>MongoClient</classname> でのデフォルトの書き込み確認は
+  <literal>1</literal> になっており、書き込み完了を確認するようになっています。
  </para>
 
 
  <para>
   <table xml:id="mongo.writeconcerns.options">
-   <title>Available Write Concerns</title>
+   <title>利用可能な書き込み確認オプション</title>
    <tgroup cols="3">
     <thead>
      <row>
-      <entry>Write Concern</entry>
-      <entry>Meaning</entry>
-      <entry>Description</entry>
+      <entry>書き込み確認</entry>
+      <entry>意味</entry>
+      <entry>説明</entry>
      </row>
     </thead>
     <tbody>
@@ -74,34 +74,33 @@
 -->
      <row>
       <entry>w=0</entry>
-      <entry>Unacknowledged</entry>
-      <entry>A write will not be followed up with a <acronym>GLE</acronym> call, and therefore not checked ("fire and forget")</entry>
+      <entry>確認しない</entry>
+      <entry>書き込みの後に <acronym>GLE</acronym> を呼びません。つまり、何もチェックしません ("投げっぱなし/fire and forget")</entry>
      </row>
      <row>
       <entry>w=1</entry>
-      <entry>Acknowledged</entry>
-      <entry>The write will be acknowledged by the server (the primary on replica set configuration)</entry>
+      <entry>確認する</entry>
+      <entry>サーバー (レプリカセット構成の場合はプライマリ) に書き込まれたことを確認します。</entry>
      </row>
      <row>
       <entry>w=N</entry>
-      <entry>Replica Set Acknowledged</entry>
-      <entry>The write will be acknowledged by the primary server, and
-      replicated to <literal>N-1</literal> secondaries.</entry>
+      <entry>レプリカセットで確認する</entry>
+      <entry>プライマリに書き込まれ、そしてそれが <literal>N-1</literal> のセカンダリにレプリケートされたことを確認します。</entry>
      </row>
      <row>
       <entry>w=majority</entry>
-      <entry>Majority Acknowledged</entry>
-      <entry>The write will be acknowledged by the majority of the replica set (including the primary). This is a special reserved string.</entry>
+      <entry>過半数で確認する</entry>
+      <entry>レプリカセットの過半数 (プライマリを含む) に書き込まれたことを確認します。この文字列は予約語になっています。</entry>
      </row>
      <row>
       <entry>w=&lt;tag set&gt;</entry>
-      <entry>Replica Set Tag Set Acknowledged</entry>
-      <entry>The write will be acknowledged by members of the entire tag set</entry>
+      <entry>レプリカセットのタグセットで確認する</entry>
+      <entry>タグセットで指定されたメンバーに書き込まれたことを確認します。</entry>
      </row>
      <row>
       <entry>j=true</entry>
-      <entry>Journaled</entry>
-      <entry>The write will be acknowledged by primary and the journal flushed to disk</entry>
+      <entry>ジャーナルする</entry>
+      <entry>プライマリに書き込まれ、そしてその記録がディスクに書き出されたことを確認します。</entry>
      </row>
     </tbody>
    </tgroup>
@@ -110,30 +109,31 @@
 
 
  <simplesect xml:id="mongo.writeconcerns.unacknowledged">
-  <title>Unacknowledged Writes</title>
+  <title>確認なしの書き込み</title>
   <para>
-   By not requiring the server to acknowledge writes the writes can be performed
-   extremely quickly, but you don't know whether or not they actually succeeded.
-   Writes can fail for a number of reasons: if there are network problems, if a 
-   database server goes down, or if the write was simply invalid (e.g., writing 
-   to a system collection; or duplicate key errors).
+   サーバー側で書き込み確認をしないようにすると、書き込み操作が極めて高速になります。
+   ただし、書き込みが本当に成功したのかどうかは確認できません。
+   いろんな理由で書き込みが失敗する可能性があります。
+   ネットワーク障害、データベースサーバーがダウンしている、
+   書き込み操作自体が無効 (system コレクションに書き込もうとしたり、
+   キーの重複エラーになったり) などが考えられます。
   </para>
   <para>
-   While developing, you should always use acknowledged writes (to protect against 
-   inadvertent mistakes, such as syntax errors, invalid operators, duplicate key errors and so on).  In 
-   production, unacknowledged writes can be used for "unimportant" data.  Unimportant
-   data varies on application, but it's generally automatically (instead of user
-   generated) data, such as click tracking or GPS locations, where you can get
-   thousands of records per second.
+   開発時には常に、確認付き書き込みを使うべきです
+   (構文エラーや不正な操作、キーの重複などのうっかりミスを防ぐためです)。
+   実運用のときには、「あまり重要ではない」データについては確認なしで書き込んでもいいでしょう。
+   何が重要で何が重要でないかはアプリケーションによって異なりますが、一般的に
+   「重要でない」とみなされるのは、ユーザーが生成したのではない自動生成されるデータ
+   (クリックトラッキング情報や GPS の位置情報など) です。
+   これらは秒間何千件ものレコードを受け取ることになります。
   </para>
   <para>
-   It is strongly recommended that you do an acknowledged write at the end of
-   series of unacknowledged writes. Doing so will not incur in a too large
-   performance penalty, but still allow you to catch any errors that may have
-   occurred.
+   一連の確認なし書き込みの最期は、必ず確認付き書き込みで終えることを強く推奨します。
+   そのせいでパフォーマンスが大きく落ちることはないし、
+   何かエラーがあればそれを捕捉できるようになります。
   </para>
   <example xml:id="mongo.writeconcerns.unacknowledged-example">
-   <title>Unacknowledged WriteConcern, followed with Acknowledged Write</title>
+   <title>確認なしの書き込みの後に確認付き書き込みを続ける例</title>
    <programlisting role="php">
 <![CDATA[
 <?php
@@ -143,23 +143,23 @@ $collection->insert($somethingElse, array("w" => 0));
 try {
     $collection->remove($something, array("w" => 1));
 } catch(MongoCursorException $e) {
-    /* Handle the exception.. */
-    /* Here we should issue find() queries on the IDs generated for
-    $somethingElse and $someDoc to verify they got written to the database and
-    attempt to figureout where in the chain something happened. */
+    /* 例外処理 */
+    /* ここでは、find() クエリを使って
+    $somethingElse や $someDoc で生成された ID を調べ、
+    実際にデータベースに書き込まれているかどうかを確認しないといけません。
+    これで、一連の処理でいったい何が起こったのかがわかります。 */
 }
 ?>
 ]]>
    </programlisting>
    <para>
-    If the last write throws an exception, you know that there's a problem
-    with your database.
+    最後の書き込みで例外が発生すれば、データベースに何か問題が発生したことがわかります。
    </para>
   </example>
  </simplesect>
 
  <simplesect xml:id="mongo.writeconcerns.acknowledged">
-  <title>Acknowledged Writes</title>
+  <title>確認付き書き込み</title>
   <para>
    These type of write operations will make sure that the database has
    accepted the write operation before returning success. If the write failed,
@@ -209,7 +209,7 @@ $collection->insert($doc, array("w" => 7));
  </simplesect>
 
  <simplesect xml:id="mongo.writeconcerns.majority.acknowledged">
-  <title>Majority Acknowledged Writes</title>
+  <title>過半数の書き込み確認</title>
   <para>
    Using the special <literal>majority</literal> Write Concern option is the
    recommended way for writes that are required to survive the apocalypse, as
@@ -235,7 +235,7 @@ $collection->insert($someDoc, array("w" => "majority"));
  -->
 
  <simplesect xml:id="mongo.writeconcerns.journal">
-  <title>Journaled Writes</title>
+  <title>ジャーナル書き込み</title>
   <para>
    When connecting to a replica set the default Write Concern is only to have
    the primary server acknowledge the write. There is however a 100ms window
@@ -267,7 +267,7 @@ try {
   &reftitle.seealso;
   <simplelist>
    <member>
-    <link xlink:href="&url.mongodb.docs;applications/replication/#replica-set-write-concern">MongoDB WriteConcern docs</link>
+    <link xlink:href="&url.mongodb.docs;applications/replication/#replica-set-write-concern">MongoDB の WriteConcern に関するドキュメント</link>
    </member>
   </simplelist>
  </simplesect>
@@ -286,18 +286,19 @@ try {
      <row>
       <entry>1.3.0</entry>
       <entry>
-       <classname>MongoClient</classname> was introduced and defaults to
-       <link linkend="mongo.writeconcerns.acknowledged">acknowledged</link> writes.
-       The deprecated <classname>Mongo</classname> defaults to unacknowledged
+       <classname>MongoClient</classname> が導入され、デフォルトで
+       <link linkend="mongo.writeconcerns.acknowledged">確認付き</link>
+       書き込みをするようになりました。デフォルトで確認なしの書き込みをする
+       <classname>Mongo</classname> は非推奨となりました。
        writes.
       </entry>
      </row>
      <row>
       <entry>1.3.0</entry>
       <entry>
-       The <literal>"safe"</literal> write option has been deprecated and is
-       not available with the new <classname>MongoClient</classname> class.
-       Use the <literal>"w"</literal> option instead.
+       書き込みオプション <literal>"safe"</literal> が非推奨になりました。
+       新しい <classname>MongoClient</classname> クラスでは使えません。
+       かわりに <literal>"w"</literal> オプションを使います。
       </entry>
      </row>
     </tbody>
