@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 13ecf5d94fe0b4a1b7e3ca19d3a33da487f3d367 Maintainer: takagi Status: working -->
+<!-- EN-Revision: 13ecf5d94fe0b4a1b7e3ca19d3a33da487f3d367 Maintainer: takagi Status: ready -->
 
 <appendix xml:id="migration55" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>PHP 5.4.x から PHP 5.5.x への移行</title>
@@ -122,19 +122,20 @@
   </sect2>
 
   <sect2 xml:id="migration55.incompatible.execution">
-   <title>Internal execution changes</title>
+   <title>内部的な実行方法の変更</title>
 
    <para>
-    Extension authors should note that the <command>zend_execute()</command>
-    function can no longer be overridden, and that numerous changes have been
-    made to the <literal>execute_data</literal> struct and related function
-    and method handling opcodes.
+    拡張モジュールの作者が注意すべきなのは、<command>zend_execute()</command>
+    関数がオーバーライドできなくなったということです。さらに、
+    <literal>execute_data</literal> 構造体やそれに関連する関数、
+    そしてオペコードを扱うメソッドにもさまざまな変更がありました。
    </para>
 
    <para>
-    Most extension authors are unlikely to be affected, but those writing
-    extensions that hook deeply into the Zend Engine should read
-    <link linkend="migration55.internals">the notes on these changes</link>.
+    この変更の影響を受ける拡張モジュールはほとんどないでしょう。
+    しかし、Zend Engine の内部に深く食い込んだ拡張モジュールを書いている人は、
+    <link linkend="migration55.internals">変更点に関するメモ</link>
+    をしっかり読んでおきましょう。
    </para>
   </sect2>
  </sect1>
@@ -1056,106 +1057,110 @@ String dereferencing: P
  </sect1>
 
  <sect1 xml:id="migration55.internals">
-  <title>Changes to PHP Internals</title>
+  <title>PHP の内部的な変更</title>
 
   <itemizedlist>
    <listitem>
     <simpara>
-     Extensions cannot override <command>zend_execute()</command> any more and
-     should override <command>zend_execute_ex()</command> instead.
-     <literal>EG(current_execute_data)</literal> is already initialized in
-     <command>zend_execute_ex()</command>, so for compatibility extensions may
-     need to use
-     <literal>EG(current_execute_data)-&gt;prev_execute_data</literal> instead.
+     拡張モジュールで <command>zend_execute()</command> をオーバーライドできなくなりました。
+     かわりに <command>zend_execute_ex()</command> をオーバーライドしないといけません。
+     <literal>EG(current_execute_data)</literal> は既に
+     <command>zend_execute_ex()</command> で初期化されるようになっているので、
+     互換性を保つために拡張モジュール側で
+     <literal>EG(current_execute_data)-&gt;prev_execute_data</literal> を使わないといけないかもしれません。
     </simpara>
    </listitem>
    <listitem>
     <simpara>
-     Removed <literal>EG(arg_types_stack)</literal>,
-     <literal>EX(fbc)</literal>, <literal>EX(called_scope)</literal> and
-     <literal>EX(current_object)</literal>.
+     <literal>EG(arg_types_stack)</literal> や
+     <literal>EX(fbc)</literal>、<literal>EX(called_scope)</literal>、そして
+     <literal>EX(current_object)</literal> が削除されました。
     </simpara>
    </listitem>
    <listitem>
     <simpara>
-     Added <literal>op_array-&gt;nested_calls</literal>, which is calculated
-     at compile time.
+     <literal>op_array-&gt;nested_calls</literal> が追加されました。
+     これはコンパイル時に計算されます。
     </simpara>
    </listitem>
    <listitem>
     <simpara>
-     Added <literal>EX(call_slots)</literal>, which is an array to store
-     information about syntaticaly nested calls (e.g.
-     <literal>foo(bar())</literal>) and is preallocated together with
-     <literal>execute_data</literal>.
+     <literal>EX(call_slots)</literal> が追加されました。これは、構文的にネストした呼び出し
+     (<literal>foo(bar())</literal> など) に関する情報を格納する配列で、
+     <literal>execute_data</literal> とともに事前に割り当てられます。
     </simpara>
    </listitem>
    <listitem>
     <simpara>
-     Added <literal>EX(call)</literal>, which is a pointer to a current
-     calling function, and is an element of <literal>EX(call_slots)</literal>.
+     <literal>EX(call)</literal> が追加されました。これは現在呼び出し中の関数へのポインタで、
+     <literal>EX(call_slots)</literal> の要素になります。
     </simpara>
    </listitem>
    <listitem>
     <simpara>
-     Opcodes
-     <link linkend="internals2.opcodes.init-method-call">INIT_METHOD_CALL</link>,
-     <link linkend="internals2.opcodes.init-static-method-call">ZEND_INIT_STATIC_METHOD_CALL</link>,
+     オペコード
+     <link linkend="internals2.opcodes.init-method-call">INIT_METHOD_CALL</link>、
+     <link linkend="internals2.opcodes.init-static-method-call">ZEND_INIT_STATIC_METHOD_CALL</link>、
      <link linkend="internals2.opcodes.init-fcall-by-name">ZEND_INIT_FCALL_BY_NAME</link>
-     and
+     そして
      <link linkend="internals2.opcodes.init-ns-fcall-by-name">ZEND_INIT_NS_FCALL_BY_NAME</link>
-     use <literal>result.num</literal> as an index in
-     <literal>EX(call_slots)</literal>.
+     が、
+     <literal>EX(call_slots)</literal> でのインデックスとして
+     <literal>result.num</literal> を使うようになりました。
     </simpara>
    </listitem>
    <listitem>
     <simpara>
-     Opcode <link linkend="internals2.opcodes.new">ZEND_NEW</link> uses
-     <literal>extended_value</literal> as an index in
-     <literal>EX(call_slots)</literal>.
+     オペコード <link linkend="internals2.opcodes.new">ZEND_NEW</link>
+     が、
+     <literal>EX(call_slots)</literal> でのインデックスとして
+     <literal>extended_value</literal> を使うようになりました。
     </simpara>
    </listitem>
    <listitem>
     <simpara>
-     Opcodes <link linkend="internals2.opcodes.do-fcall">ZEND_DO_FCALL</link>
-     and
+     オペコード <link linkend="internals2.opcodes.do-fcall">ZEND_DO_FCALL</link>
+     および
      <link linkend="internals2.opcodes.do-fcall-by-name">ZEND_DO_FCALL_BY_NAME</link>
-     use <literal>op2.num</literal> as an index in
-     <literal>EX(call_slots)</literal>.
+     が、
+     <literal>EX(call_slots)</literal> でのインデックスとして
+     <literal>op2.num</literal> を使うようになりました。
     </simpara>
    </listitem>
    <listitem>
     <simpara>
-     Added <literal>op_array-&gt;used_stack</literal>, which is calculated at
-     compile time; the corresponding stack space is preallocated together with
-     <literal>execute_data</literal>. As a result, the ZEND_SEND* and
-     ZEND_DO_FCALL* opcodes no longer need to check for stack overflow.
+     <literal>op_array-&gt;used_stack</literal> が追加されました。
+     これはコンパイル時に計算されます。対応するスタック領域は
+     <literal>execute_data</literal> とともに事前に割り当てられます。
+     その結果、オペコード ZEND_SEND* および ZEND_DO_FCALL*
+     でスタックオーバーフローのチェックが不要になりました。
     </simpara>
    </listitem>
    <listitem>
     <simpara>
-     Removed <literal>execute_data-&gt;Ts</literal> field. The VM temporary
-     variables are always allocated immediately before the
-     <literal>execute_data</literal> structure, and are now accessed by their
-     offset from the <literal>execute_data</literal> base pointer instead of
-     via <literal>execute_data-&gt;Ts</literal>.  The compiler stores new
-     offsets in <literal>op_array-&gt;opcodes[*].op?.num</literal>.  The
-     <command>EX_TMP_VAR()</command> and <command>EX_TMP_VAR_NUM()</command>
-     macros can be used to access temporary variables by offset or number. You
-     can convert the number to an offset using <command>EX_TMP_VAR_NUM(0,
-     num)</command> or offset to number using
-     <command>(EX_TMP_VAR_NUM(0,0)-EX_TMP_VAR(0,offset))</command>.
+     <literal>execute_data-&gt;Ts</literal> フィールドが削除されました。
+     VM のテンポラリ変数は常に
+     <literal>execute_data</literal> 構造体の直前に配置され、
+     <literal>execute_data-&gt;Ts</literal> を使わなくても
+     基底ポインタ <literal>execute_data</literal> からのオフセットでアクセスできるようになりました。
+     コンパイラは、この新たなオフセットを <literal>op_array-&gt;opcodes[*].op?.num</literal>
+     に格納します。マクロ
+     <command>EX_TMP_VAR()</command> および <command>EX_TMP_VAR_NUM()</command>
+     を使うと、テンポラリ変数に対してオフセットあるいは数値を使ってアクセスできます。
+     数字をオフセットに変換するには <command>EX_TMP_VAR_NUM(0,
+     num)</command> を、そしてオフセットを数字に変換するには
+     <command>(EX_TMP_VAR_NUM(0,0)-EX_TMP_VAR(0,offset))</command>
+     が使えます。
     </simpara>
    </listitem>
    <listitem>
     <simpara>
-     Removed the <literal>execute_data-&gt;CVs</literal> field. The VM
-     compiled variables are always allocated immediately after the
-     <literal>execute_data</literal> structure, and are now accessed by the
-     offset from the <literal>execute_data</literal> base pointer instead of
-     via <literal>execute_data-&gt;CVs</literal>. You can use the
-     <command>EX_CV_NUM()</command> macro to access compiled variables by
-     number.
+     <literal>execute_data-&gt;CVs</literal> フィールドが削除されました。
+     VM がコンパイルした変数は常に
+     <literal>execute_data</literal> 構造体の直後に配置され、
+     <literal>execute_data-&gt;CVs</literal> を使わなくても
+     基底ポインタ <literal>execute_data</literal> からのオフセットでアクセスできるようになりました。
+     マクロ <command>EX_CV_NUM()</command> を使えば、コンパイルされた変数に対して数字を使ってアクセスできます。
     </simpara>
    </listitem>
   </itemizedlist>
