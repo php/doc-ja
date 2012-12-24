@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 86fe1b6af3972827827c20e6c5e27919073275b8 Maintainer: takagi Status: working -->
+<!-- EN-Revision: 86fe1b6af3972827827c20e6c5e27919073275b8 Maintainer: takagi Status: ready -->
 <chapter xml:id="mysqlnd-memcache.quickstart" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>クイックスタートとサンプル集</title>
  <para>
@@ -20,21 +20,24 @@
  <section xml:id="mysqlnd-memcache.quickstart.configuration">
   <title>セットアップ</title>
   <para>
-   The plugin is implemented as a PHP extension. See also the
-   <link linkend="mysqlnd-memcache.installation">installation instructions</link> to
-   install this extension.
+   このプラグインは、PHP の拡張モジュールとして実装されています。この拡張モジュールを
+   <link linkend="mysqlnd-memcache.installation">インストールする方法</link>
+   も参照ください。
   </para>
   <para>
-   Compile or configure the PHP MySQL extension (API) (<link linkend="ref.mysqli">mysqli</link>,
-   <link linkend="ref.pdo-mysql">PDO_MYSQL</link>, <link linkend="ref.mysql">mysql</link>). 
-   That extension must use the <link linkend="book.mysqlnd">mysqlnd</link> library as
-   because mysqlnd_memcache is a plugin for the mysqlnd library.  For additional information,
-   refer to the <link linkend="memcached.installation">mysqlnd_memcache installation instructions</link>.
+   PHP の MySQL 用拡張モジュール (<link linkend="ref.mysqli">mysqli</link>、
+   <link linkend="ref.pdo-mysql">PDO_MYSQL</link> あるいは <link linkend="ref.mysql">mysql</link>)
+   をコンパイルします。このとき、<link linkend="book.mysqlnd">mysqlnd</link>
+   ライブラリを使うように指定しないといけません。というのも、mysqlnd_memcache は mysqlnd
+   用のプラグインだからです。さらなる情報は、
+   <link linkend="memcached.installation">mysqlnd_memcache のインストール方法</link>
+   を参照ください。
   </para>
   <para>
-   Then, load this extension into PHP and activate the plugin in the PHP configuration
-   file using the PHP configuration directive named
-   <link linkend="ini.mysqlnd-memcache.enable">mysqlnd_memcache.enable</link>.
+   それから、この拡張モジュールを PHP に読み込んでプラグインを有効化させましょう。
+   PHP の設定ファイルで、
+   <link linkend="ini.mysqlnd-memcache.enable">mysqlnd_memcache.enable</link>
+   という項目を使います。
   </para>
   <para>
    <example>
@@ -51,13 +54,14 @@ mysqlnd_memcache.enable=1
     </example>
   </para>
   <para>
-   Follow the instructions given in the <link xlink:href="&url.mysql.docs.memcached;">MySQL
-   Reference Manual on installing the Memcache plugins</link> for the MySQL server. Activate
-   the plugins and configure Memcache access for SQL tables.
+   <link xlink:href="&url.mysql.docs.memcached;">MySQL
+   Reference Manual の、Memcache プラグインのインストールページ</link>
+   の指示に従って MySQL サーバーを準備します。
+   プラグインを有効化して、Memcache で SQL テーブルにアクセスできるよう設定しましょう。
   </para>
   <para>
-   The examples in this quickguide assume that the following table exists, and that
-   Memcache is configured with access to it.
+   このクイックスタートのサンプルでは、次のようなテーブルがあって
+   Memcache でそこにアクセスできるようになっていることを前提とします。
   </para>
   <para>
    <example>
@@ -92,20 +96,22 @@ VALUES (
  <section xml:id="mysqlnd-memcache.quickstart.usage">
   <title>使いかた</title>
   <para>
-   After associating a MySQL connection with a Memcache connection using 
-   <function>mysqnd_memcache_set</function> the plugin attempts to transparently
-   replace SQL <literal>SELECT</literal>
-   statements by a memcache access. For that purpose the plugin monitors
-   all SQL statements executed and tries to match the statement string
-   against <constant>MYSQLND_MEMCACHE_DEFAULT_REGEXP</constant>.
-   In case of a match, the mysqlnd memcache plugin checks whether the
-   <literal>SELECT</literal> is accessing only columns of a mapped table and
-   the <literal>WHERE</literal> clause is limited to a single key lookup.
+   MySQL の接続と Memcache の接続の関連づけを
+   <function>mysqnd_memcache_set</function> で設定したら、
+   プラグインは透過的に、
+   SQL の <literal>SELECT</literal> 文を memcache へのアクセスに変換します。
+   そのため、このプラグインは実行されるすべての SQL 文を監視しており、
+   <constant>MYSQLND_MEMCACHE_DEFAULT_REGEXP</constant> にマッチする文がないかどうかを探します。
+   マッチする文が見つかれば、mysqlnd memcache プラグインはその内容をチェックします。
+   <literal>SELECT</literal> がアクセスするカラムが
+   マップされているテーブルのものだけであること、
+   そして <literal>WHERE</literal> 句が単一キーのルックアップに限定されていることを確かめます。
   </para>
   <para>
-   In case of the example SQL table, the plugin will use the Memcache interface
-   of the MySQL server to fetch results for a SQL query like
-   <literal>SELECT f1, f2, f3 WHERE id = n</literal>.
+   この例の SQL テーブルの場合、プラグインは、
+   MySQL サーバーの Memcache インターフェイスを使って
+   <literal>SELECT f1, f2, f3 WHERE id = n</literal>
+   のような SQL クエリーの結果を取得します。
   </para>
   <para>
    <example>
@@ -121,9 +127,9 @@ $memc->addServer("host", 11211);
 mysqlnd_memcache_set($mysqli, $memc);
 
 /*
-   This is a query which queries table test using id as key in the WHERE part
-   and is accessing fields f1, f2 and f3. Therefore, mysqlnd_memcache
-   will intercept it and route it via memcache.
+   これは test テーブルへの問い合わせです。WHERE 句のキーとして
+   id を使い、フィールド f1、f2 そして f3 にアクセスします。
+   そこで、mysqlnd_memcache はこれを横取りして memcache 経由で処理します。
 */
 $result = $mysqli->query("SELECT f1, f2, f3 FROM test WHERE id = 1");
 while ($row = $result->fetch_row()) {
@@ -131,9 +137,9 @@ while ($row = $result->fetch_row()) {
 }
 
 /*
-   This is a query which queries table test but using f1 in the WHERE clause.
-   Therefore, mysqlnd_memcache can't intercept it. This will be executed
-   using the MySQL protocol
+   これは test テーブルへの問い合わせですが、WHERE 句に f1 を使っています。
+   そのため、mysqlnd_memcache はこれを横取りしません。
+   MySQL プロトコルを使って処理します。
 */
 $mysqli->query("SELECT id FROM test WHERE f1 = 'Lady'");
 while ($row = $result->fetch_row()) {
