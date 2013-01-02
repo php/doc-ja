@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision$ -->
+<!-- EN-Revision: ef70e0157ec424cef602224097e99818b9858616 Maintainer: takagi Status: ready -->
+<chapter  xml:id="ev.periodic-modes" xmlns:phpdoc="http://php.net/ns/phpdoc" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <title>Periodic ウォッチャーの操作モード</title>
+ <para>
+  <classname>EvPeriodic</classname>
+  ウォッチャーは、パラメータ
+  <parameter>offset</parameter>、<parameter>interval</parameter>
+  および <parameter>reschedule_cb</parameter>
+  の設定によってさまざまなモードで動作します。
+ </para>
+ <orderedlist>
+  <listitem>
+   <para>
+    <emphasis>絶対時刻のタイマー</emphasis>。
+    このモードでは、<parameter>interval</parameter> = <constant>0</constant>
+    そして <parameter>reschedule_cb</parameter> = &null; となります。
+    このときは、単純に <parameter>offset</parameter> で指定した時刻に実行してその後は繰り返しません。
+    時刻の飛びがあっても調整はしません。つまり、
+    <emphasis>January 1st 2014</emphasis> に実行するように設定した場合は、
+    システム時刻がこの時刻に達するかこの時刻を過ぎたときに実行されます。
+   </para>
+  </listitem>
+  <listitem>
+   <para>
+    <emphasis>繰り返しタイマー</emphasis>。
+    このモードでは、<parameter>interval</parameter> &gt; <constant>0</constant>
+    そして <parameter>reschedule_cb</parameter> = &null;
+    となります。ウォッチャーは常に、
+    <parameter>offset</parameter> + <constant>N</constant> * <parameter>interval</parameter>
+    (<constant>N</constant> は何らかの整数) 経過後にタイムアウトするようにスケジュールされ、
+    その後繰り返します。時刻の飛びは気にしません。
+   </para>
+   <para>
+    これを使うと、システムの時刻に流されないタイマーを作れます。
+    <programlisting role="php">
+<![CDATA[
+<?php
+$hourly = EvPeriodic(0, 3600, NULL, function () {
+  echo "once per hour\n";
+};
+?>
+]]>
+    </programlisting>
+    これは、必ずしも <constant>3600</constant> 秒おきにイベントが発生することを意味するものではありません。
+    システムの時刻が一時間経過するごとにコールバックが呼ばれるというものです。
+   </para>
+   <para>
+    <classname>EvPeriodic</classname> は、
+    <varname>time</varname> = <parameter>offset</parameter>
+    (<literal>mod</literal> <parameter>interval</parameter>)
+    となる次の時刻にコールバックをこのモードで実行しようと試みます。
+    時刻の飛びは気にしません。
+   </para>
+  </listitem>
+  <listitem>
+   <para>
+    <emphasis>手動再スケジュールモード</emphasis>。
+    このモードでは、<parameter>reschedule_cb</parameter>
+    が <type>callable</type> になります。
+   </para>
+   <para>
+    <parameter>interval</parameter> と <parameter>offset</parameter>
+    はどちらも無視します。毎回定期ウォッチャーがスケジュールされ、再スケジュールコールバック
+    (<parameter>reschedule_cb</parameter>) が呼び出されます。
+    コールバックの最初の引数がウォッチャー、そして二番目の引数が現在時刻となります。
+   </para>
+   <para>
+    このコールバックは、自分自身あるいは他の定期ウォッチャーを停止したり破棄したり
+    <emphasis>してはいけません</emphasis>。また、
+    イベントループ関数やメソッドも
+    <emphasis>呼んではいけません</emphasis>。
+    ウォッチャーを止めるには、<constant>1e30</constant>
+    を返した後で停止します。
+    このタスクには、<classname>EvPrepare</classname> ウォッチャーが使えます。
+   </para>
+   <para>
+    コールバックは、次の実行時刻を返す必要があります。次の実行時刻は、
+    コールバックに渡された時刻をベースにしたものです
+    (つまり、二番目の引数で受け取った時刻と同じかそれよりも大きな値を返します)。
+    コールバックが呼ばれるのは、通常はイベントが発生する直前ですが、それ以外の場合にも呼ばれる可能性があります。
+   </para>
+   <example>
+    <title>再スケジュールコールバックの利用</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+// 10.5 秒おきに繰り返します
+
+function reschedule_cb ($watcher, $now) {
+   return $now + (10.5. - fmod($now, 10.5));
+}
+
+$w = new EvPeriodic(0., 0., "reschedule_cb", function ($w, $revents) {
+   echo time(), PHP_EOL;
+});
+
+Ev::run();
+?>
+]]>
+    </programlisting>
+   </example>
+  </listitem>
+ </orderedlist>
+</chapter>
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"~/.phpdoc/manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
