@@ -155,7 +155,7 @@
   <itemizedlist>
    <listitem>
     <para>
-     MySQL Proxy は新たにマスターし、デプロイしなければならないコンポーネント、技術です
+     MySQL Proxy のコンポーネントと技術について新たにマスターし、デプロイしなければなりません。
     </para>
    </listitem>
    <listitem>
@@ -261,45 +261,42 @@
   </para>
  </section>
  <section xml:id="mysqlnd.plugin.architecture">
-  <title>MySQL Native Driver Plugin Architecture</title>
+  <title>MySQL Native Driverプラグイン のアーキテクチャ</title>
   <para>
-   This section provides an overview of the <literal>mysqlnd</literal>
-   plugin architecture.
+   このセクションでは、<literal>mysqlnd</literal>プラグイン のアーキテクチャについての概要を示します。
   </para>
   <para>
-   <emphasis role="bold"> MySQL Native Driver Overview </emphasis>
+   <emphasis role="bold"> MySQL Native Driver の概要</emphasis>
   </para>
   <para>
-   Before developing <literal>mysqlnd</literal> plugins, it is useful to
-   know a little of how <literal>mysqlnd</literal> itself is organized.
-   <literal>Mysqlnd</literal> consists of the following modules:
+   <literal>mysqlnd</literal>プラグイン を開発する前に、<literal>mysqlnd</literal> そのものがどのように成り立っているのかを少し知っておくことは役に立ちます。<literal>mysqlnd</literal> は次に示すモジュールからなります:
   </para>
   <table>
-   <title>The mysqlnd organization chart, per module</title>
+   <title>mysqlnd のモジュール毎のソースコードの組み合わせを示した表</title>
    <tgroup cols="2">
     <tbody>
      <row>
-      <entry>Modules Statistics</entry>
+      <entry>モジュールの統計情報</entry>
       <entry>mysqlnd_statistics.c</entry>
      </row>
      <row>
-      <entry>Connection</entry>
+      <entry>データベース接続</entry>
       <entry>mysqlnd.c</entry>
      </row>
      <row>
-      <entry>Resultset</entry>
+      <entry>結果セット</entry>
       <entry>mysqlnd_result.c</entry>
      </row>
      <row>
-      <entry>Resultset Metadata</entry>
+      <entry>結果セットのメタデータ</entry>
       <entry>mysqlnd_result_meta.c</entry>
      </row>
      <row>
-      <entry>Statement</entry>
+      <entry>プリペアドステートメント</entry>
       <entry>mysqlnd_ps.c</entry>
      </row>
      <row>
-      <entry>Network</entry>
+      <entry>ネットワーク</entry>
       <entry>mysqlnd_net.c</entry>
      </row>
      <row>
@@ -310,72 +307,49 @@
    </tgroup>
   </table>
   <para>
-   <emphasis role="bold">C Object Oriented Paradigm</emphasis>
+   <emphasis role="bold">C言語のオブジェクト指向パラダイム</emphasis>
   </para>
   <para>
-   At the code level, <literal>mysqlnd</literal> uses a C pattern for
-   implementing object orientation.
+   ソースコードレベルで、<literal>mysqlnd</literal> は オブジェクト指向を実装するためのパターンを使用しています。
   </para>
   <para>
-   In C you use a <literal>struct</literal> to represent an object.
-   Members of the struct represent object properties. Struct members
-   pointing to functions represent methods.
+   C言語では、オブジェクトを表現するために <literal>struct</literal>(構造体) を使います。struct のメンバがオブジェクトのプロパティを表現します。関数を指している struct のメンバがメソッドを表現します。
   </para>
   <para>
-   Unlike with other languages such as C++ or Java, there are no fixed
-   rules on inheritance in the C object oriented paradigm. However,
-   there are some conventions that need to be followed that will be
-   discussed later.
+   C++ や Java のような言語と異なり、C言語におけるオブジェクト指向のパラダイムでは決まった継承のルールがありませんが、従う必要があるルールはいくつかあります。このルールについては後に述べます。
   </para>
   <para>
-   <emphasis role="bold">The PHP Life Cycle</emphasis>
+   <emphasis role="bold">PHP のライフサイクル</emphasis>
   </para>
   <para>
-   When considering the PHP life cycle there are two basic cycles:
+   PHP のライフサイクルを考えるとき、ふたつの基本的なサイクルが存在します。
   </para>
   <itemizedlist>
    <listitem>
     <para>
-     PHP engine startup and shutdown cycle
+     PHPエンジンの起動と終了までのサイクル
     </para>
    </listitem>
    <listitem>
     <para>
-     Request cycle
+     リクエストサイクル
     </para>
    </listitem>
   </itemizedlist>
   <para>
-   When the PHP engine starts up it will call the module initialization
-   (MINIT) function of each registered extension. This allows each
-   module to setup variables and allocate resources that will exist for
-   the lifetime of the PHP engine process. When the PHP engine shuts
-   down it will call the module shutdown (MSHUTDOWN) function of each
-   extension.
+   PHPエンジンが起動するとき、PHP はモジュールを初期化する (MINIT) 関数を登録されたエクステンションごとに呼び出します。これによって、各々のモジュールが PHPエンジンが処理を行うライフサイクルの間存在するリソースを割り当てたり、変数を定義することができます。PHPエンジンが終了するときには、 エンジンが終了(MSHUTDOWN)関数をエクステンション毎に呼び出します。
   </para>
   <para>
-   During the lifetime of the PHP engine it will receive a number of
-   requests. Each request constitutes another life cycle. On each
-   request the PHP engine will call the request initialization function
-   of each extension. The extension can perform any variable setup and
-   resource allocation required for request processing. As the request
-   cycle ends the engine calls the request shutdown (RSHUTDOWN) function
-   of each extension so the extension can perform any cleanup required.
+   PHPエンジンが起動している間、エンジンはたくさんのリクエストを受けとります。それぞれのリクエストは別のライフサイクルを構成します。リクエスト毎にPHPエンジンはリクエストの初期化関数をエクステンション毎に呼び出します。エクステンション側では、リクエストの処理に必要な変数の定義やリソースの割り当てを行うことが出来ます。リクエストのサイクルが終了するときは、PHPエンジンがリクエストの終了(RSHUTDOWN)関数をエクステンション毎に呼び出します。これによって、エクステンションは必要となるあらゆるクリーンアップ処理を行うことができます。
   </para>
   <para>
-   <emphasis role="bold">How a plugin works</emphasis>
+   <emphasis role="bold">プラグインはどうやって動くか</emphasis>
   </para>
   <para>
-   A <literal>mysqlnd</literal> plugin works by intercepting calls made
-   to <literal>mysqlnd</literal> by extensions that use
-   <literal>mysqlnd</literal>. This is achieved by obtaining the
-   <literal>mysqlnd</literal> function table, backing it up, and
-   replacing it by a custom function table, which calls the functions of
-   the plugin as required.
+   <literal>mysqlnd</literal>プラグイン は <literal>mysqlnd</literal> を使うエクステンションが <literal>mysqlnd</literal> を呼び出すときの制御を奪うことによって動作します。これは <literal>mysqlnd</literal> の関数テーブルを取得し、バックアップし、カスタムの関数テーブルと置き換えることによって実現されます。この関数テーブルが、プラグインが必要とする関数を呼び出すのです。
   </para>
   <para>
-   The following code shows how the <literal>mysqlnd</literal> function
-   table is replaced:
+   次のコードは、<literal>mysqlnd</literal> の関数テーブルを置き換える方法を示しています:
   </para>
 <programlisting>
 <![CDATA[
@@ -397,32 +371,21 @@ void minit_register_hooks(TSRMLS_D) {
 ]]>
 </programlisting>
   <para>
-   Connection function table manipulations must be done during Module
-   Initialization (MINIT). The function table is a global shared
-   resource. In an multi-threaded environment, with a TSRM build, the
-   manipulation of a global shared resource during the request
-   processing will almost certainly result in conflicts.
+   接続関数テーブルの管理は、モジュールを初期化(MINIT)している間に行わなければなりません。関数テーブルはグローバルに共有されるリソースです。マルチスレッド環境で、TSRMを友好にしてPHPをビルドした環境では、グローバルに共有されたリソースをリクエストを処理している間に操作すると、ほぼ確実に衝突が起こります。
   </para>
   <note>
    <para>
-    Do not use any fixed-size logic when manipulating the
-    <literal>mysqlnd</literal> function table: new methods may be added
-    at the end of the function table. The function table may change at
-    any time in the future.
+    <literal>mysqlnd</literal> の関数テーブルを管理するときに、固定サイズを割り当てるロジックは絶対に使わないでください。新しいメソッドが関数テーブルの最後に追加される可能性があるからです。関数テーブルは将来どんな場合でも変更される可能性があります。
    </para>
   </note>
   <para>
-   <emphasis role="bold">Calling parent methods</emphasis>
+   <emphasis role="bold">親クラスのメソッドを呼び出す</emphasis>
   </para>
   <para>
-   If the original function table entries are backed up, it is still
-   possible to call the original function table entries - the parent
-   methods.
+   オリジナルの関数テーブルをバックアップしている場合、オリジナルの関数テーブルのエントリに含まれる関数を呼び出すことができます - これが親メソッドです。
   </para>
   <para>
-   In some cases, such as for
-   <literal>Connection::stmt_init()</literal>, it is vital to call the
-   parent method prior to any other activity in the derived method.
+   場合によっては、<literal>Connection::stmt_init()</literal> のように、派生メソッドで他のあらゆる処理より先に親メソッドを呼び出すことが決定的に重要な場合があります。
   </para>
 <programlisting>
 <![CDATA[
@@ -439,57 +402,45 @@ MYSQLND_METHOD(my_conn_class, query)(MYSQLND *conn,
 ]]>
 </programlisting>
   <para>
-   <emphasis role="bold"> Extending properties </emphasis>
+   <emphasis role="bold">プロパティを拡張する</emphasis>
   </para>
   <para>
-   A <literal>mysqlnd</literal> object is represented by a C struct. It
-   is not possible to add a member to a C struct at run time. Users of
-   <literal>mysqlnd</literal> objects cannot simply add properties to
-   the objects.
+   <literal>mysqlnd</literal>オブジェクトは C言語の構造体で表現されます。実行時に、C言語の構造体に新たにメンバを追加することは不可能です。<literal>mysqlnd</literal>オブジェクト のユーザーは、プロパティを単純にオブジェクトに追加することはできません。
   </para>
   <para>
-   Arbitrary data (properties) can be added to a
-   <literal>mysqlnd</literal> objects using an appropriate function of
-   the
-   <literal>mysqlnd_plugin_get_plugin_&lt;object&gt;_data()</literal>
-   family. When allocating an object <literal>mysqlnd</literal> reserves
-   space at the end of the object to hold a <literal>void *</literal>
-   pointer to arbitrary data. <literal>mysqlnd</literal> reserves space
-   for one <literal>void *</literal> pointer per plugin.
+   <literal>mysqlnd_plugin_get_plugin_&lt;object&gt;_data()</literal>ファミリーの適切な関数を使って、任意のデータ (プロパティ) を <literal>mysqlnd</literal> オブジェクトに追加することができます。オブジェクトをメモリに割り付ける際に、<literal>mysqlnd</literal> はオブジェクトの最後に 任意のデータ向けの <literal>void *</literal> ポインタを保持するためのメモリ空間を予約しておきます。 <literal>mysqlnd</literal> は プラグインひとつにつき、ひとつの <literal>void *</literal>ポインタ を保持する空間を予約しています。
   </para>
   <para>
-   The following table shows how to calculate the position of the
-   pointer for a specific plugin:
+   次の表で、特定のプラグインでポインタの位置を計算する方法を示します:
   </para>
   <table>
-   <title>Pointer calculations for mysqlnd</title>
+   <title>mysqlnd のポインタの位置を計算する方法</title>
    <tgroup cols="2">
     <tbody>
      <row>
-      <entry>Memory address</entry>
-      <entry>Contents</entry>
+      <entry>メモリアドレス</entry>
+      <entry>メモリの内容</entry>
      </row>
      <row>
       <entry>0</entry>
-      <entry>Beginning of the mysqlnd object C struct</entry>
+      <entry>mysqlndオブジェクト を表現する構造体の開始</entry>
      </row>
      <row>
       <entry>n</entry>
-      <entry>End of the mysqlnd object C struct</entry>
+      <entry>mysqlndオブジェクト を表現する構造体の終了</entry>
      </row>
      <row>
       <entry>n + (m x sizeof(void*))</entry>
-      <entry>void* to object data of the m-th plugin</entry>
+      <entry>m 番目のプラグインのオブジェクトデータを表現する void* ポインタ</entry>
      </row>
     </tbody>
    </tgroup>
   </table>
   <para>
-   If you plan to subclass any of the <literal>mysqlnd</literal> object
-   constructors, which is allowed, you must keep this in mind!
+   <literal>mysqlnd</literal>オブジェクト のコンストラクタをサブクラス化する計画がある場合、それが許可されていることを必ず頭にいれておいてください！
   </para>
   <para>
-   The following code shows extending properties:
+   次のコードはプロパティを拡張する方法を示しています:
   </para>
 <programlisting>
 <![CDATA[
@@ -520,25 +471,20 @@ static MY_CONN_PROPERTIES** get_conn_properties(const MYSQLND *conn TSRMLS_DC) {
 ]]>
 </programlisting>
   <para>
-   The plugin developer is responsible for the management of plugin data
-   memory.
+   プラグインの開発者には、プラグイン用のデータに使われるメモリを管理する責任があります。
   </para>
   <para>
-   Use of the <literal>mysqlnd</literal> memory allocator is recommended
-   for plugin data. These functions are named using the convention:
-   <literal>mnd_*loc()</literal>. The <literal>mysqlnd</literal>
-   allocator has some useful features, such as the ability to use a
-   debug allocator in a non-debug build.
+   <literal>mysqlnd</literal> のメモリアロケータを使うことを推奨します。これらのメモリアロケータ関数は次のような規約に従って命名されています: <literal>mnd_*loc()</literal> <literal>mysqlnd</literal> のメモリアロケーターには役に立つ機能がいくつかあります。たとえばデバッグビルドでない環境でデバッグ用のアロケータを使う機能などです。
   </para>
   <table>
-   <title>When and how to subclass</title>
+   <title>いつ、どのようにサブクラス化するか</title>
    <tgroup cols="4">
     <tbody>
      <row>
       <entry></entry>
-      <entry>When to subclass?</entry>
-      <entry>Each instance has its own private function table?</entry>
-      <entry>How to subclass?</entry>
+      <entry>いつサブクラス化するか?</entry>
+      <entry>各々のインスタンスが自分のプライベートな関数テーブルを持っているか?</entry>
+      <entry>どのようにサブクラス化するか?</entry>
      </row>
      <row>
       <entry>Connection (MYSQLND)</entry>
@@ -548,70 +494,58 @@ static MY_CONN_PROPERTIES** get_conn_properties(const MYSQLND *conn TSRMLS_DC) {
      </row>
      <row>
       <entry>Resultset (MYSQLND_RES)</entry>
-      <entry>MINIT or later</entry>
+      <entry>MINIT (モジュール初期化) 時 またはその後</entry>
       <entry>Yes</entry>
-      <entry>mysqlnd_result_get_methods() or object method function table
-       manipulation</entry>
+      <entry>mysqlnd_result_get_methods() または、オブジェクトのメソッド関数テーブルを変更する</entry>
      </row>
      <row>
       <entry>Resultset Meta (MYSQLND_RES_METADATA)</entry>
-      <entry>MINIT</entry>
+      <entry>MINIT (モジュール初期化) 時</entry>
       <entry>No</entry>
       <entry>mysqlnd_result_metadata_get_methods()</entry>
      </row>
      <row>
       <entry>Statement (MYSQLND_STMT)</entry>
-      <entry>MINIT</entry>
+      <entry>MINIT (モジュール初期化) 時</entry>
       <entry>No</entry>
       <entry>mysqlnd_stmt_get_methods()</entry>
      </row>
      <row>
       <entry>Network (MYSQLND_NET)</entry>
-      <entry>MINIT or later</entry>
+      <entry>MINIT (モジュール初期化) 時 またはその後</entry>
       <entry>Yes</entry>
-      <entry>mysqlnd_net_get_methods() or object method function table manipulation</entry>
+      <entry>mysqlnd_net_get_methods() または、オブジェクトのメソッド関数テーブルを変更する</entry>
      </row>
      <row>
       <entry>Wire protocol (MYSQLND_PROTOCOL)</entry>
-      <entry>MINIT or later</entry>
+      <entry>MINIT (モジュール初期化) 時 またはその後</entry>
       <entry>Yes</entry>
-      <entry>mysqlnd_protocol_get_methods() or object method function table
-       manipulation</entry>
+      <entry>mysqlnd_protocol_get_methods() または、オブジェクトのメソッド関数テーブルを変更する</entry>
      </row>
     </tbody>
    </tgroup>
   </table>
   <para>
-   You must not manipulate function tables at any time later than MINIT
-   if it is not allowed according to the above table.
+   上記の表で許可されていない場合は、モジュールを初期化した(MINIT)後のいかなる場合であっても関数テーブルを変更してはいけません。
   </para>
   <para>
-   Some classes contain a pointer to the method function table. All
-   instances of such a class will share the same function table. To
-   avoid chaos, in particular in threaded environments, such function
-   tables must only be manipulated during MINIT.
+   クラスによっては、メソッドの関数テーブルへのポインタが含まれている場合があります。このようなクラスのインスタンスはすべて、同じ関数テーブルを共有しています。混乱を避けるため、特にマルチスレッドの環境下では、このような関数テーブルは MINIT (モジュール初期化) 時にだけ変更するようにしてください。
   </para>
   <para>
-   Other classes use copies of a globally shared function table. The
-   class function table copy is created together with the object. Each
-   object uses its own function table. This gives you two options: you
-   can manipulate the default function table of an object at MINIT, and
-   you can additionally refine methods of an object without impacting
-   other instances of the same class.
+   そうでないクラスでは、グローバルに共有された関数テーブルのコピーを使っています。クラスの関数テーブルのコピーがオブジェクトとともに作成されます。それぞれのオブジェクトは自分の関数テーブルを使います。これによって開発者は二つの選択肢が得られます: MINIT(モジュール初期化) 時にオブジェクトのデフォルトの関数テーブルを変更するか、同じクラスの他のインスタンスに影響を与えることなくオブジェクトのメソッドを追加で変更することができます。
   </para>
   <para>
-   The advantage of the shared function table approach is performance.
-   There is no need to copy a function table for each and every object.
+   関数テーブルを共有することによる利点は、パフォーマンスの向上です。関数テーブルをそれぞれの、すべてのオブジェクトにコピーする必要がないからです。
   </para>
   <table>
-   <title>Constructor status</title>
+   <title>コンストラクタの状態</title>
    <tgroup cols="4">
     <tbody>
      <row>
       <entry></entry>
-      <entry>Allocation, construction, reset</entry>
-      <entry>Can be modified?</entry>
-      <entry>Caller</entry>
+      <entry>メモリ割り当て、オブジェクトの生成、リセット</entry>
+      <entry>変更可能か?</entry>
+      <entry>呼び出し元</entry>
      </row>
      <row>
       <entry>Connection (MYSQLND)</entry>
@@ -622,7 +556,7 @@ static MY_CONN_PROPERTIES** get_conn_properties(const MYSQLND *conn TSRMLS_DC) {
      <row>
       <entry>Resultset(MYSQLND_RES)</entry>
       <entry><para>
-        Allocation:
+        メモリ割り当て:
        </para>
        <itemizedlist>
         <listitem>
@@ -632,7 +566,7 @@ static MY_CONN_PROPERTIES** get_conn_properties(const MYSQLND *conn TSRMLS_DC) {
         </listitem>
        </itemizedlist>
        <para>
-        Reset and re-initialized during:
+        リセットし、再初期化されるタイミング:
        </para>
        <itemizedlist>
         <listitem>
@@ -646,7 +580,7 @@ static MY_CONN_PROPERTIES** get_conn_properties(const MYSQLND *conn TSRMLS_DC) {
          </para>
         </listitem>
        </itemizedlist></entry>
-      <entry>Yes, but call parent!</entry>
+      <entry>Yes, ただし親メソッドを呼び出すこと！</entry>
       <entry><itemizedlist>
         <listitem>
          <para>
@@ -660,7 +594,7 @@ static MY_CONN_PROPERTIES** get_conn_properties(const MYSQLND *conn TSRMLS_DC) {
         </listitem>
         <listitem>
          <para>
-          Statement::prepare() (Metadata only)
+          Statement::prepare() (メタデータのみ)
          </para>
         </listitem>
         <listitem>
@@ -673,13 +607,13 @@ static MY_CONN_PROPERTIES** get_conn_properties(const MYSQLND *conn TSRMLS_DC) {
      <row>
       <entry>Resultset Meta (MYSQLND_RES_METADATA)</entry>
       <entry>Connection::result_meta_init()</entry>
-      <entry>Yes, but call parent!</entry>
+      <entry>Yes, ただし親メソッドを呼び出すこと！</entry>
       <entry>Result::read_result_metadata()</entry>
      </row>
      <row>
       <entry>Statement (MYSQLND_STMT)</entry>
       <entry>Connection::stmt_init()</entry>
-      <entry>Yes, but call parent!</entry>
+      <entry>Yes, ただし親メソッドを呼び出すこと！</entry>
       <entry>Connection::stmt_init()</entry>
      </row>
      <row>
@@ -785,7 +719,7 @@ static MY_CONN_PROPERTIES** get_conn_properties(const MYSQLND *conn TSRMLS_DC) {
   </caution>
  </section>
  <section xml:id="mysqlnd.plugin.api">
-  <title>The mysqlnd plugin API</title>
+  <title>mysqlnd のプラグインAPI</title>
   <para>
    The following is a list of functions provided in the
    <literal>mysqlnd</literal> plugin API:
@@ -1045,7 +979,7 @@ static MY_CONN_PROPERTIES** get_conn_properties(const MYSQLND *conn TSRMLS_DC) {
   </itemizedlist>
  </section>
  <section xml:id="mysqlnd.plugin.developing">
-  <title>mysqlndプラグインのビルドをはじめる</title>
+  <title>mysqlndプラグインの開発をはじめよう</title>
   <para>
    <literal>mysqlnd</literal>プラグイン それ自体が PHPエクステンション であることを覚えておくことが重要です。
   </para>
