@@ -78,7 +78,7 @@
   MySQL Native Driver は PHPの内部的な値である Zval のキャッシュからも統計情報を収集します。これらの統計は <function>mysqli_get_cache_stats</function> 関数を使ってアクセスできます。
  </para>
  <para>
-  Zval のキャッシュに関する統計情報を収集する際は、<filename>php.ini</filename> の Zval cache に関連する設定を調整するすることで、パフォーマンスを向上させることができます。
+  Zval のキャッシュに関する統計情報を収集する際は、<filename>php.ini</filename> の Zval cache に関連する設定を調整することで、パフォーマンスを向上させることができます。
  </para>
  <para>
   <emphasis role="bold">結果セットをバッファリングさせるか否か</emphasis>
@@ -87,10 +87,10 @@
   結果セットはバッファリングさせることもできますし、しないこともできます。デフォルトの設定では、<literal>ext/mysql</literal> と <literal>ext/mysqli</literal> は通常の (プリペアドステートメントでない) クエリの場合結果セットをバッファリングします。バッファリングされた結果セットはクライアント側でキャッシュされます。クエリが実行された後、すべての結果がMySQLサーバから取得され、クライアント側でキャッシュに保存されます。結果セットをバッファリングすることの大きな利点は、一度クライアントが結果を取得すると、サーバがすべての結果セットに割り当てられたリソースを開放できることです。
  </para>
  <para>
-  一方、結果セットをバッファリングしない場合、結果セットはサーバ側にバッファリングするよりも長く残ります。仮にクライアント側でのメモリ使用量を削減したいが、サーバ側の負荷が高くなっても構わない場合、結果セットをバッファリングしないようにします。仮にサーバの負荷が高く、バッファリングしていない結果セットの量がサーバ側で多いことが分かっている場合、その負荷をクライアント側に移すことを検討すべきです。クライアントは通常の場合サーバよりも分散しやすいからです。ここでいう <quote>負荷</quote> という言葉はメモリバッファに対するものだけでなく、サーバが結果セットを開放する前に他のリソース、たとえばファイルハンドルやスレッドを開きっぱなしにする必要があることも指しています。
+  一方、結果セットをバッファリングしない場合、結果セットはサーバ側にバッファリングするよりも長く残ります。仮にクライアント側でのメモリ使用量を削減したいが、サーバ側の負荷が高くなっても構わない場合、結果セットをバッファリングしないようにします。仮にサーバの負荷が高く、バッファリングしていない結果セットの量がサーバ側で多いことが分かっている場合、その負荷をクライアント側に移すことを検討すべきです。クライアントは通常の場合サーバよりも分散しやすいからです。ここでいう <quote>負荷</quote> とはメモリバッファに対するものだけでなく、サーバが結果セットを開放する前に他のリソース、たとえばファイルハンドルやスレッドを開きっぱなしにする必要があることも指しています。
  </para>
  <para>
-  プリペアドステートメントはデフォルトでは欠カセットをバッファリングしません。しかし、<function>mysqli_stmt_store_result</function> 関数を使えば、結果セットのバッファリングを有効にすることができます。
+  プリペアドステートメントはデフォルトでは結果セットをバッファリングしません。しかし、<function>mysqli_stmt_store_result</function> 関数を使えば、結果セットのバッファリングを有効にすることができます。
  </para>
  <para>
   <emphasis role="bold">MySQL Native Driver が返す統計情報</emphasis>
@@ -170,7 +170,7 @@
     <row>
      <entry><literal>bytes_received_eof_packet</literal></entry>
      <entry>Connection</entry>
-     <entry>MySQL のクライアントサーバプロトコルにおけるEOFパケットを受信量の合計をバイト単位で示します。EOFパケットはサーバのバージョンによってサイズが変わります。また、EOFパケットはエラーメッセージも伝えることが出来ます。</entry>
+     <entry>MySQL のクライアントサーバプロトコルにおけるEOFパケットを受信量の合計をバイト単位で示します。EOFパケットはサーバのバージョンによってサイズが変わります。また、EOFパケットはエラーメッセージも伝えることができます。</entry>
      <entry>同上</entry>
     </row>
     <row>
@@ -370,31 +370,24 @@ $res->close();
     <row>
      <entry><literal>flushed_normal_sets</literal></entry>
      <entry>Connection</entry>
-     <entry>Number of result sets from normal (non prepared statement) queries with
-      unread data which have been flushed silently for you. Flushing
-      happens only with unbuffered result sets.</entry>
-     <entry>Unbuffered result sets must be fetched completely before a new query can
-      be run on the connection otherwise MySQL will throw an error. If
-      the application does not fetch all rows from an unbuffered result
-      set, mysqlnd does implicitly fetch the result set to clear the
-      line. See also <literal>rows_skipped_normal</literal>,
-      <literal>rows_skipped_ps</literal>. Some possible causes for an
-      implicit flush:
+     <entry>
+      通常の(プリペアドステートメントではない) クエリから返された、クライアントが読み取っていないため黙ってフラッシュされたデータが残っている結果セットの数。フラッシュはバッファリングされていない結果セットの場合だけ起こります。</entry>
+     <entry>
+      バッファリングされていない結果セットは、新しいクエリが実行される前に完全に取得されなければなりません。そうでない場合、MySQL はエラーを生成します。アプリケーションがバッファリングされていない結果セットからすべての行を取得していない場合、mysqlnd は行をクリアするため暗黙のうちに結果セットをフラッシュします。<literal>rows_skipped_normal</literal> や、<literal>rows_skipped_ps</literal> も参照してください。暗黙のフラッシュが起こりうる原因を以下に示します:
       <itemizedlist>
        <listitem>
         <para>
-         Faulty client application
+         クライアントアプリケーションが不完全な場合
         </para>
        </listitem>
        <listitem>
         <para>
-         Client stopped reading after it found what it was looking for
-         but has made MySQL calculate more records than needed
+         クライアントは探していた情報を見つけたあと終了しますが、MySQL に必要以上のレコードを計算させてしまっている場合
         </para>
        </listitem>
        <listitem>
         <para>
-         Client application has stopped unexpectedly
+         クライアントアプリケーションが予期せず終了する場合
         </para>
        </listitem>
       </itemizedlist></entry>
@@ -402,84 +395,38 @@ $res->close();
     <row>
      <entry><literal>flushed_ps_sets</literal></entry>
      <entry>Connection</entry>
-     <entry>Number of result sets from prepared statements with unread data which
-      have been flushed silently for you. Flushing happens only with
-      unbuffered result sets.</entry>
-     <entry>Unbuffered result sets must be fetched completely before a new query can
-      be run on the connection otherwise MySQL will throw an error. If
-      the application does not fetch all rows from an unbuffered result
-      set, mysqlnd does implicitly fetch the result set to clear the
-      line. See also <literal>rows_skipped_normal</literal>,
-      <literal>rows_skipped_ps</literal>. Some possible causes for an
-      implicit flush:
-      <itemizedlist>
-       <listitem>
-        <para>
-         Faulty client application
-        </para>
-       </listitem>
-       <listitem>
-        <para>
-         Client stopped reading after it found what it was looking for
-         but has made MySQL calculate more records than needed
-        </para>
-       </listitem>
-       <listitem>
-        <para>
-         Client application has stopped unexpectedly
-        </para>
-       </listitem>
-      </itemizedlist></entry>
+     <entry>プリペアドステートメントのクエリから返された、クライアントが読み取っていないため黙ってフラッシュされたデータが残っている結果セットの数。フラッシュはバッファリングされていない結果セットの場合だけ起こります。</entry>
+     <entry>同上</entry>
     </row>
     <row>
      <entry><literal>ps_prepared_never_executed</literal></entry>
      <entry>Connection</entry>
-     <entry>Number of statements prepared but never executed.</entry>
-     <entry>Prepared statements occupy server resources. You should not prepare a
-      statement if you do not plan to execute it.</entry>
+     <entry>準備(prepare)されたが、決して実行されないステートメントの数</entry>
+     <entry>プリペアドステートメントはサーバのリソースを占有します。実行する予定がない場合、ステートメントを準備すべきではありません。</entry>
     </row>
     <row>
      <entry><literal>ps_prepared_once_executed</literal></entry>
      <entry>Connection</entry>
-     <entry>Number of prepared statements executed only one.</entry>
-     <entry>One of the ideas behind prepared statements is that the same query gets
-      executed over and over again (with different parameters) and some
-      parsing and other preparation work can be saved, if statement
-      execution is split up in separate prepare and execute stages. The
-      idea is to prepare once and <quote>cache</quote> results, for
-      example, the parse tree to be reused during multiple statement
-      executions. If you execute a prepared statement only once the two
-      stage processing can be inefficient compared to
-      <quote>normal</quote> queries because all the caching means extra
-      work and it takes (limited) server resources to hold the cached
-      information. Consequently, prepared statements that are executed
-      only once may cause performance hurts.</entry>
+     <entry>一度だけ実行されたプリペアドステートメントの数</entry>
+     <entry>
+      プリペアドステートメントの背後にあるアイディアのうちのひとつは、同じクエリは繰り返し繰り返し(異なるパラメーターで)実行されるんだから、ステートメントの実行が準備と実行に分かれていれば、クエリのパースやほかの準備処理はキャッシュできる、というものです。 このアイディアは準備を一度行い、その結果を <quote>キャッシュ</quote> します。たとえば解析ツリーを複数のステートメントの実行時に再利用するのです。プリペアドステートメントが一度だけしか実行されない場合、二段階に処理が分かれていることは <quote>通常の</quote>クエリに比べて非効率かもしれません。なぜなら、すべてのキャッシュは余計なものであり、その情報を保持するためにサーバは(限られた)リソースを消費しているからです。結果的に、一度しか実行されていないプリペアドステートメントはパフォーマンスを害する原因になる可能性があります。
+     </entry>
     </row>
     <row>
      <entry><literal>rows_fetched_from_server_normal</literal>,
       <literal>rows_fetched_from_server_ps</literal></entry>
      <entry>Connection</entry>
-     <entry>Total number of result set rows successfully fetched from MySQL
-      regardless if the client application has consumed them or not.
-      Some of the rows may not have been fetched by the client
-      application but have been flushed implicitly.</entry>
-     <entry>See also <literal>packets_received_rset_row</literal></entry>
+     <entry>
+      クライアントが消費していたかいないかに関わらず、MySQLから取得に成功した結果セット行の合計数。行によっては、クライアントアプリケーションは取得しないため暗黙のうちにフラッシュされている場合があります。</entry>
+     <entry><literal>packets_received_rset_row</literal> も参照してください</entry>
     </row>
     <row>
      <entry><literal>rows_buffered_from_client_normal</literal>,
       <literal>rows_buffered_from_client_ps</literal></entry>
      <entry>Connection</entry>
-     <entry>Total number of successfully buffered rows originating from a "normal"
-      query or a prepared statement. This is the number of rows that
-      have been fetched from MySQL and buffered on client. Note that
-      there are two distinct statistics on rows that have been buffered
-      (MySQL to mysqlnd internal buffer) and buffered rows that have
-      been fetched by the client application (mysqlnd internal buffer to
-      client application). If the number of buffered rows is higher than
-      the number of fetched buffered rows it can mean that the client
-      application runs queries that cause larger result sets than needed
-      resulting in rows not read by the client.</entry>
-     <entry>Examples of queries that will buffer results:
+     <entry>
+      通常のクエリ、またはプリペアドステートメントから生成された、バッファリングに成功した行の合計数。これは MySQL から取得され、クライアントにバッファリングされた行の数です。バッファリングに成功した行については、ふたつの全く別な統計値があることに注意してください。(MySQL から mysqlnd の内部バッファに)バッファリングされた行の数と、(mysqlnd の内部バッファからクライアントアプリケーションへ)取得され、バッファリングされた行の数です。バッファリングされた行数が、取得されてバッファリングされた行より多い場合、クライアントアプリケーションが必要以上に大きな結果セットを生成しているため、クライアントが読み取らない行ができてしまっている可能性があります。</entry>
+     <entry>結果をバッファリングするクエリの例:
       <function>mysqli_query</function>,
       <function>mysqli_store_result</function></entry>
     </row>
@@ -487,57 +434,43 @@ $res->close();
      <entry><literal>rows_fetched_from_client_normal_buffered</literal>,
       <literal>rows_fetched_from_client_ps_buffered</literal></entry>
      <entry>Connection</entry>
-     <entry>Total number of rows fetched by the client from a buffered result set
-      created by a normal query or a prepared statement.</entry>
+     <entry>バッファリングされた結果セットからクライアントによって取得された行の合計数。この結果セットは通常のクエリとプリペアドステートメントの両方から生成されたものです。</entry>
      <entry></entry>
     </row>
     <row>
      <entry><literal>rows_fetched_from_client_normal_unbuffered</literal>,
       <literal>rows_fetched_from_client_ps_unbuffered</literal></entry>
      <entry>Connection</entry>
-     <entry>Total number of rows fetched by the client from a unbuffered result set
-      created by a "normal" query or a prepared statement.</entry>
+     <entry>バッファリングされて「いない」結果セットからクライアントによって取得された行の合計数。この結果セットは通常のクエリとプリペアドステートメントの両方から生成されたものです。</entry>
      <entry></entry>
     </row>
     <row>
      <entry><literal>rows_fetched_from_client_ps_cursor</literal></entry>
      <entry>Connection</entry>
-     <entry>Total number of rows fetch by the client from a cursor created by a
-      prepared statement.</entry>
+     <entry>プリペアドステートメントによって生成されたカーソルから、クライアントが取得した行の合計数</entry>
      <entry></entry>
     </row>
     <row>
      <entry><literal>rows_skipped_normal</literal>,
       <literal>rows_skipped_ps</literal></entry>
      <entry>Connection</entry>
-     <entry>Reserved for future use (currently not supported)</entry>
+     <entry>将来のために予約されています(今のところサポートされていません)</entry>
      <entry></entry>
     </row>
     <row>
      <entry><literal>copy_on_write_saved</literal>,
       <literal>copy_on_write_performed</literal></entry>
      <entry>Process</entry>
-     <entry>With mysqlnd, variables returned by the extensions point into mysqlnd
-      internal network result buffers. If you do not change the
-      variables, fetched data will be kept only once in memory. If you
-      change the variables, mysqlnd has to perform a copy-on-write to
-      protect the internal network result buffers from being changed.
-      With the MySQL Client Library you always hold fetched data twice
-      in memory. Once in the internal MySQL Client Library buffers and
-      once in the variables returned by the extensions. In theory
-      mysqlnd can save up to 40% memory. However, note that the memory
-      saving cannot be measured using
-      <function>memory_get_usage</function>.</entry>
+     <entry>
+      mysqlnd では、エクステンションから返された値は mysqlnd 内部にある通信結果のバッファを指しています。開発者が値を変更しなければ、取得されたデータは一度だけメモリに保持されます。値を変更した場合、mysqlnd は 内部にある通信結果のバッファを変更から保護するために コピーオンライト を実行しなければなりません。MySQL Client Library を使うと、取得したデータを二度メモリに保持します。MySQL Client Library の内部バッファと変数の値がエクステンションによって返されるのです。理論上、mysqlnd は40%のメモリを節約できます。しかし、メモリに保持されている量は <function>memory_get_usage</function>関数では計測できないことに注意してください。</entry>
      <entry></entry>
     </row>
     <row>
      <entry><literal>explicit_free_result</literal>,
       <literal>implicit_free_result</literal></entry>
-     <entry>Connection, Process (only during prepared statement cleanup)</entry>
-     <entry>Total number of freed result sets.</entry>
-     <entry>The free is always considered explicit but for result sets created by an
-      init command, for example,
-      <literal>mysqli_options(MYSQLI_INIT_COMMAND , ...)</literal></entry>
+     <entry>Connection, Process (プリペアドステートメントのクリーンアップ時のみ)</entry>
+     <entry>解放された結果セットの合計数</entry>
+     <entry>ここでいう「解放」とは明示的なもので、初期化コマンドで生成された結果セットを除きます。たとえば <literal>mysqli_options(MYSQLI_INIT_COMMAND , ...)</literal> 関数の呼び出しがそれにあたります。</entry>
     </row>
     <row>
      <entry><literal>proto_text_fetched_null</literal>,
@@ -562,9 +495,8 @@ $res->close();
       <literal>proto_text_fetched_geometry</literal>,
       <literal>proto_text_fetched_other</literal></entry>
      <entry>Connection</entry>
-     <entry>Total number of columns of a certain type fetched from a normal query
-      (MySQL text protocol).</entry>
-     <entry>Mapping from C API / MySQL meta data type to statistics name:
+     <entry>通常のクエリ(MySQL テキストプロトコル) から取得したあるタイプのカラムの合計数</entry>
+     <entry>C API/ MySQL のメタデータと 統計の名前の対応:
       <itemizedlist>
        <listitem>
         <para>
@@ -682,14 +614,12 @@ $res->close();
        </listitem>
        <listitem>
         <para>
-         Any <literal>MYSQL_TYPE_*</literal> not listed before (there
-         should be none) - proto_text_fetched_other
+         上記にない <literal>MYSQL_TYPE_*</literal> (ないはずですが) - proto_text_fetched_other
         </para>
        </listitem>
       </itemizedlist>
       <para>
-       Note that the MYSQL_*-type constants may not be associated with
-       the very same SQL column types in every version of MySQL.
+       MYSQL_*-type 定数は、 MySQL の各バージョンの同じSQLカラムタイプと結びついているとは限らないことに注意してください。
       </para></entry>
     </row>
     <row>
@@ -715,10 +645,8 @@ $res->close();
       <literal>proto_binary_fetched_geometry</literal>,
       <literal>proto_binary_fetched_other</literal></entry>
      <entry>Connection</entry>
-     <entry>Total number of columns of a certain type fetched from a prepared
-      statement (MySQL binary protocol).</entry>
-     <entry>For type mapping see <literal>proto_text_*</literal> described in the
-      preceding text.</entry>
+     <entry>プリペアドステートメント(MySQL バイナリプロトコル) から取得したあるタイプのカラムの合計数</entry>
+     <entry>カラムタイプと統計の名前の対応は、上の <literal>proto_text_*</literal> を参照してください</entry>
     </row>
    </tbody>
   </tgroup>
@@ -976,7 +904,7 @@ $link = new mysqli(...); $link->connect(...)
       </para>
 
       <para>
-       PHP 5.3.0 では、デフォルトのバッファサイズが 2K バイトでした。将来のバージョンでは、この値は 4K バイト以上になる見込みです。このデフォルトの値は <filename>php.ini</filename> の <literal>mysqlnd.net_cmd_buffer_size</literal> を設定するか、<literal>mysqli_options(MYSQLI_OPT_NET_CMD_BUFFER_SIZE, int size)</literal> 関数を使うことで変更することが出来ます。
+       PHP 5.3.0 では、デフォルトのバッファサイズが 2K バイトでした。将来のバージョンでは、この値は 4K バイト以上になる見込みです。このデフォルトの値は <filename>php.ini</filename> の <literal>mysqlnd.net_cmd_buffer_size</literal> を設定するか、<literal>mysqli_options(MYSQLI_OPT_NET_CMD_BUFFER_SIZE, int size)</literal> 関数を使うことで変更することができます。
       </para>
 
       <para>
