@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: ec6cb30f0e84618fb4a79d2d58d14126a8a071ba Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 6f59b9c6a9307d5cef36f06d73258c75d2976bc2 Maintainer: takagi Status: ready -->
 
 <refentry xml:id="mongocollection.insert" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
   <refname>MongoCollection::insert</refname>
-  <refpurpose>配列をコレクションに追加する</refpurpose>
+  <refpurpose>ドキュメントをコレクションに追加する</refpurpose>
  </refnamediv>
 
  <refsect1 role="description">
   &reftitle.description;
   <methodsynopsis>
    <modifier>public</modifier> <type>bool|array</type><methodname>MongoCollection::insert</methodname>
-   <methodparam><type>array</type><parameter>a</parameter></methodparam>
+   <methodparam><type>array|object</type><parameter>a</parameter></methodparam>
    <methodparam choice="opt"><type>array</type><parameter>options</parameter><initializer>array()</initializer></methodparam>
   </methodsynopsis>
   <para>
@@ -33,8 +33,16 @@
      </term>
      <listitem>
       <para>
-       配列。
+       配列あるいはオブジェクト。オブジェクトを使う場合は、
+       protected や private のプロパティは保持できません。
       </para>
+      <note>
+       <para>
+        <literal>_id</literal> のキーあるいはプロパティを持たない場合は、
+        新しい <classname>MongoId</classname> インスタンスを作ってそれを代入します。
+        ただし、パラメータを参照で渡した場合は別です。
+       </para>
+      </note>
      </listitem>
     </varlistentry>
     <varlistentry>
@@ -120,8 +128,8 @@
      </term>
      <listitem>
       <para>
-       直近の操作が insert、update あるいは remove だった場合に、影響を受けた行の数を返します。
-       of objects affected will be returned. 
+       直近の操作が insert、update あるいは remove だった場合に、影響を受けたドキュメントの数を返します。
+       追加操作の場合は、この値は常に <literal>0</literal> です。
       </para>
      </listitem>
     </varlistentry>
@@ -187,7 +195,10 @@
  <refsect1 role="errors">
   &reftitle.errors;
   <para>
-   追加された配列が空の場合に <classname>MongoException</classname> をスローします。
+   追加したドキュメントが空だったり長さがゼロのキーが含まれていたりした場合に
+   <classname>MongoException</classname> をスローします。
+   protected や private なプロパティを持つオブジェクトを追加しようとすると、
+   キーの長さがゼロのエラーを引き起こします。
   </para>
   &mongo.errors.exceptions.writeconcern;
  </refsect1>
@@ -263,26 +274,53 @@
  <refsect1 role="examples">
   &reftitle.examples;
   <example>
-   <title><function>MongoCollection::insert</function> の _id の例</title>
+   <title><function>MongoCollection::insert</function> の <literal>_id</literal> の例</title>
    <para>
-    オブジェクトを挿入すると、参照渡しでない限りはそこに _id フィールドを追加します。
+    すでに存在しない場合は、<literal>_id</literal> フィールドを追加します。
+    パラメータの渡しかたによって、生成された
+    <literal>_id</literal> に呼び出し元のコードからアクセスできるかどうかが変わります。
    </para>
    <programlisting role="php">
 <![CDATA[
 <?php
 
 $m = new MongoClient();
-$db = $m->selectDB('test');
-$collection = new MongoCollection($db, 'phpmanual');
+$collection = $m->selectCollection('test', 'phpmanual');
 
-$a = array('x' => 12);
+// 配列リテラルを使った場合は、生成された _id にはアクセスできません
+$collection->insert(array('x' => 1));
+
+// 値渡しした配列には _id が追加されています
+$a = array('x' => 2);
 $collection->insert($a);
 var_dump($a);
 
-$b = array('x' => 12);
+// 参照渡しした配列からは _id は見えません
+$b = array('x' => 3);
 $ref = &$b;
 $collection->insert($ref);
 var_dump($ref);
+
+// ラップする関数がコピーオンライトを引き起こさない場合は _id にアクセスできます
+function insert_no_cow($collection, $document)
+{
+    $collection->insert($document);
+}
+
+$c = array('x' => 4);
+insert_no_cow($collection, $c);
+var_dump($c);
+
+// ラップする関数がコピーオンライトを引き起こす場合は _id にアクセスできません
+function insert_cow($collection, $document)
+{
+    $document['y'] = 1;
+    $collection->insert($document);
+}
+
+$d = array('x' => 5);
+insert_cow($collection, $d);
+var_dump($d);
 
 ?>
 ]]>
@@ -292,14 +330,25 @@ var_dump($ref);
 <![CDATA[
 array(2) {
   ["x"]=>
-  int(12)
+  int(2)
   ["_id"]=>
   object(MongoId)#4 (0) {
   }
 }
-array(12) {
+array(1) {
   ["x"]=>
-  int(1)
+  int(3)
+}
+array(2) {
+  ["x"]=>
+  int(4)
+  ["_id"]=>
+  object(MongoId)#5 (0) {
+  }
+}
+array(1) {
+  ["x"]=>
+  int(5)
 }
 ]]>
    </screen>
