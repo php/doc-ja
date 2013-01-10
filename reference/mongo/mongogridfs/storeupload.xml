@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 2983ed9c5015b3bda27e2dafff947c8532093164 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 65c7a68e87baefbe2cacc0b48b7288017afe13a3 Maintainer: takagi Status: ready -->
 
 <refentry xml:id="mongogridfs.storeupload" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -15,33 +15,6 @@
    <methodparam><type>string</type><parameter>name</parameter></methodparam>
    <methodparam choice="opt"><type>array</type><parameter>metadata</parameter></methodparam>
   </methodsynopsis>
-  <para>
-   POST されたファイルを直接データベースに格納します。
-   たとえば、このような HTML フォームがあるものとしましょう。
-  </para>
-  <programlisting role="php">
-<![CDATA[
-<form method="POST" enctype="multipart/form-data">
-     プロファイル画像をアップロードしてください: <input type="file" name="pic"/>
-     <input type="submit"/>
-</form>
-]]>
-  </programlisting>
-  <para>
-   アップロードされたファイルを MongoDB に格納するには、このようにします。
-  </para>
-  <programlisting role="php">
-<![CDATA[
-<?php
-
-$grid->storeUpload("pic", array("username" => "joe"));
-
-?>
-]]>
-  </programlisting>
-  <para>
-   HTML の "name" 属性が、name パラメータに対応することに注意しましょう。
-  </para>
  </refsect1>
 
  <refsect1 role="parameters">
@@ -55,6 +28,8 @@ $grid->storeUpload("pic", array("username" => "joe"));
      <listitem>
       <para>
        アップロードされたファイルの name フィールド。
+       これは、HTML フォームの file フィールドの <literal>name</literal>
+       属性と同じでなければいけません。
       </para>
      </listitem>
     </varlistentry>
@@ -64,8 +39,9 @@ $grid->storeUpload("pic", array("username" => "joe"));
      </term>
      <listitem>
       <para>
-       アップロードされたファイル用の追加フィールドの配列。
+       格納するファイルに含めるその他のメタデータフィールド。
       </para>
+      &mongo.gridfs.store.metadata.note;
      </listitem>
     </varlistentry>
    </variablelist>
@@ -74,9 +50,7 @@ $grid->storeUpload("pic", array("username" => "joe"));
 
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
-  <para>
-   アップロードされたファイルの _id を返します。
-  </para>
+  &mongo.gridfs.store.return;
  </refsect1>
 
  <refsect1 role="changelog">
@@ -102,6 +76,52 @@ $grid->storeUpload("pic", array("username" => "joe"));
     </tgroup>
    </informaltable>
   </para>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <example>
+   <title><function>MongoGridFS::storeUpload</function> を使った HTML フォームの例</title>
+   <para>
+    こんな HTML フォームがあるものとします。
+   </para>
+   <programlisting role="html">
+<![CDATA[
+<form method="POST" enctype="multipart/form-data">
+    <label for="username">ユーザー名</label>
+    <input type="text" name="username" id="username" />
+
+    <label for="pic">プロフィール画像をアップロードしてください</label>
+    <input type="file" name="pic" id="pic" />
+
+    <input type="submit" />
+</form>
+]]>
+   </programlisting>
+   <para>
+    アップロードされたファイルを MongoDB に格納するには、フォームの投稿を処理するスクリプト側でこのようにします。
+   </para>
+   <programlisting role="php">
+<![CDATA[
+<?php
+$m = new MongoClient();
+$gridfs = $m->selectDB('test')->getGridFS();
+
+$gridfs->storeUpload('pic', array('username' => $_POST['username']));
+?>
+]]>
+   </programlisting>
+  </example>
+ </refsect1>
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <simplelist>
+   <member><function>MongoGridFS::put</function></member>
+   <member><function>MongoGridFS::storeBytes</function></member>
+   <member><function>MongoGridFS::storeFile</function></member>
+   <member>MongoDB コアドキュメントの <link xlink:href="&url.mongodb.docs.gridfs;">GridFS</link></member>
+  </simplelist>
  </refsect1>
 
 </refentry>
