@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 42f33e8dd8102b6cb023a2e8234684af69dc6f1b Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 7916455ba0cdb65c1590977df92ad2dd99f4c79f Maintainer: takagi Status: ready -->
 
 <refentry xml:id="memcached.increment" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -14,12 +14,15 @@
    <modifier>public</modifier> <type>int</type><methodname>Memcached::increment</methodname>
    <methodparam><type>string</type><parameter>key</parameter></methodparam>
    <methodparam choice="opt"><type>int</type><parameter>offset</parameter><initializer>1</initializer></methodparam>
+   <methodparam choice="opt"><type>int</type><parameter>initial_value</parameter><initializer>0</initializer></methodparam>
+   <methodparam choice="opt"><type>int</type><parameter>expiry</parameter><initializer>0</initializer></methodparam>
   </methodsynopsis>
   <para>
    <function>Memcached::increment</function> は、数値アイテムの値を
    <parameter>offset</parameter> で指定しただけ増やします。
-   アイテムの値が数値でない場合は、値が 0 であるものとして処理します。
-   <function>Memcached::increment</function> は、アイテムが存在しない場合は失敗します。
+   アイテムの値が数値でない場合はエラーとなります。
+   アイテムが存在しない場合、<function>Memcached::increment</function> は値を
+   <parameter>initial_value</parameter> に設定します。
   </para>
  </refsect1>
 
@@ -43,6 +46,22 @@
       </para>
      </listitem>
     </varlistentry>
+    <varlistentry>
+     <term><parameter>initial_value</parameter></term>
+     <listitem>
+      <para>
+       そのアイテムが存在しない場合に設定する値。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>expiry</parameter></term>
+     <listitem>
+      <para>
+       そのアイテムに設定する有効期限。
+      </para>
+     </listitem>
+    </varlistentry>
    </variablelist>
   </para>
  </refsect1>
@@ -51,9 +70,6 @@
   &reftitle.returnvalues;
   <para>
    成功した場合にアイテムの新しい値、&return.falseforfailure;。
-   キーが存在しない場合、
-   <methodname>Memcached::getResultCode</methodname> は
-   <constant>Memcached::RES_NOTFOUND</constant> を返します。
   </para>
  </refsect1>
 
@@ -70,11 +86,13 @@ $m->addServer('localhost', 11211);
 
 $m->set('counter', 0);
 $m->increment('counter');
-$m->increment('counter', 10);
-var_dump($m->get('counter'));
+$n = $m->increment('counter', 10);
+var_dump($n);
 
 $m->set('counter', 'abc');
-$m->increment('counter');
+$n = $m->increment('counter');
+// アイテムの値が数値でないので、これは失敗します
+var_dump($n);
 ?>
 ]]>
     </programlisting>
@@ -82,7 +100,7 @@ $m->increment('counter');
     <screen>
 <![CDATA[
 int(11)
-string(1) "1"
+bool(false)
 ]]>
     </screen>
    </example>
@@ -94,6 +112,8 @@ string(1) "1"
   <para>
    <simplelist>
     <member><methodname>Memcached::decrement</methodname></member>
+    <member><methodname>Memcached::decrementByKey</methodname></member>
+    <member><methodname>Memcached::incrementByKey</methodname></member>
    </simplelist>
   </para>
  </refsect1>
