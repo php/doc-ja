@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 65e697ff671608989432a6e6bf8ae8128b2be2c7 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 55929e29ac7535345c9f38ad3f703c6f3cd2cc59 Maintainer: takagi Status: ready -->
 
 <appendix xml:id="migration55" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>PHP 5.4.x から PHP 5.5.x への移行</title>
@@ -87,6 +87,69 @@
     無意識のうちにこの振る舞いに依存してしまっていないかどうかを確かめてから
     PHP 5.5 を実運用環境に投入するようにしましょう。
    </para>
+  </sect2>
+
+  <sect2 xml:id="migration55.incompatible.pack">
+   <title><function>pack</function> と <function>unpack</function> の変更</title>
+
+   <para>
+    <function>pack</function> と
+    <function>unpack</function> が、より Perl との互換性を高めるように変更されました。
+   </para>
+
+   <itemizedlist>
+    <listitem>
+     <simpara>
+      <function>pack</function> が書式文字 "Z" に対応しました。この文字の挙動は
+      "a" とまったく同じです。
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>unpack</function> も書式文字 "Z" に対応しました。これは
+      NULL 埋めの文字列に使うもので、以前のバージョンの "a" と同じ挙動です。
+      最後の NULL バイトは切り捨てます。
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>unpack</function> で書式文字 "a" を使ったときに、
+      最後の NULL バイトを維持するようになりました。
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <function>unpack</function> で書式文字 "A" を使ったときに、
+      最後の ASCII 空白文字をすべて切り捨てるようになりました。
+     </simpara>
+    </listitem>
+   </itemizedlist>
+
+   <para>
+    <function>unpack</function> で "a" を使っているコードで過去のバージョンとの互換性を保つには、
+    <function>version_compare</function> を使う必要があります。
+    過去との互換性が崩れてしまったからです。
+   </para>
+   <para>
+    たとえば、このようにします。
+   </para>
+   <informalexample>
+    <programlisting role="php">
+<![CDATA[
+<?php
+// 古いコード
+$data = unpack('a5', $packed);
+
+// 新しいコード
+if (version_compare(PHP_VERSION, '5.5.0-dev', '>=')) {
+  $data = unpack('Z5', $packed);
+} else {
+  $data = unpack('a5', $packed);
+}
+?>
+]]>
+    </programlisting>
+   </informalexample>
   </sect2>
 
   <sect2 xml:id="migration55.incompatible.guid">
@@ -417,20 +480,9 @@ String dereferencing: P
     </listitem>
     <listitem>
      <simpara>
-      <function>pack</function> と <function>unpack</function> が書式文字
-      <literal>Z</literal> に対応しました。これは null 埋めの文字列に使います。
-     </simpara>
-    </listitem>
-    <listitem>
-     <simpara>
-      <function>unpack</function> の <literal>a</literal> 書式は
-      最後の null バイトを切り捨てなくなりました。Perl と同じ挙動になります。
-     </simpara>
-    </listitem>
-    <listitem>
-     <simpara>
-      <function>unpack</function> の <literal>A</literal> 書式は
-      最後の ASCII 空白文字をすべて切り捨てるようになりました。Perl と同じ挙動になります。
+      <function>pack</function> と
+      <function>unpack</function> で "a" や "A" を使ったときの挙動が変わりました。
+      <link linkend="migration55.incompatible.pack">詳細はこちらを参照ください</link>。
      </simpara>
     </listitem>
    </itemizedlist>
