@@ -1,15 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 94f2f851f015535e58fd84bc2accac402f21a48e Maintainer: takagi Status: ready -->
+<!-- EN-Revision: a26e007c8fca6c643a02446d7f048d198df2aa6b Maintainer: takagi Status: ready -->
 
 <refentry xml:id="yaf-controller-abstract.forward" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
   <refname>Yaf_Controller_Abstract::forward</refname>
-  <refpurpose>The forward purpose</refpurpose>
+  <refpurpose>別のアクションに転送する</refpurpose>
  </refnamediv>
 
  <refsect1 role="description">
   &reftitle.description;
+  <methodsynopsis>
+   <modifier>public</modifier> <type>void</type><methodname>Yaf_Controller_Abstract::forward</methodname>
+   <methodparam><type>string</type><parameter>action</parameter></methodparam>
+   <methodparam choice="opt"><type>array</type><parameter>paramters</parameter></methodparam>
+  </methodsynopsis>
+  <methodsynopsis>
+   <modifier>public</modifier> <type>void</type><methodname>Yaf_Controller_Abstract::forward</methodname>
+   <methodparam><type>string</type><parameter>controller</parameter></methodparam>
+   <methodparam choice="opt"><type>string</type><parameter>action</parameter></methodparam>
+   <methodparam choice="opt"><type>array</type><parameter>paramters</parameter></methodparam>
+  </methodsynopsis>
   <methodsynopsis>
    <modifier>public</modifier> <type>void</type><methodname>Yaf_Controller_Abstract::forward</methodname>
    <methodparam><type>string</type><parameter>module</parameter></methodparam>
@@ -18,7 +29,13 @@
    <methodparam choice="opt"><type>array</type><parameter>paramters</parameter></methodparam>
   </methodsynopsis>
   <para>
-
+   現在の実行プロセスを別のアクションに転送します。
+   <note>
+    <para>
+      その場ですぐにアクションを切り替えるわけではなく、
+      現在の実行フローが終わってから次のアクションに転送します。
+    </para>
+   </note>
   </para>
  </refsect1>
 
@@ -29,7 +46,7 @@
     <term><parameter>module</parameter></term>
     <listitem>
      <para>
-      
+       移動先のモジュール名。NULL を渡した場合はデフォルトのモジュール名と見なします。
      </para>
     </listitem>
    </varlistentry>
@@ -37,7 +54,7 @@
     <term><parameter>controller</parameter></term>
     <listitem>
      <para>
-      
+       移動先のコントローラ名。
      </para>
     </listitem>
    </varlistentry>
@@ -45,7 +62,7 @@
     <term><parameter>action</parameter></term>
     <listitem>
      <para>
-      
+       移動先のアクション名。
      </para>
     </listitem>
    </varlistentry>
@@ -53,20 +70,63 @@
     <term><parameter>paramters</parameter></term>
     <listitem>
      <para>
-      
+      呼び出しの引数。
      </para>
     </listitem>
    </varlistentry>
   </variablelist>
  </refsect1>
 
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <example>
+   <title><function>Yaf_Controller_Abstract::forward</function> の例</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+class IndexController extends Yaf_Controller_Abstract
+{
+    public function indexAction(){   
+         $logined = $_SESSION["login"];
+         if (!$logined) {
+             $this->forward("login", array("from" => "Index")); // login アクションに転送します
+             return FALSE;  // これが重要です。ここで現在の作業フローが終了し、
+                            // Yaf に対して自動レンダリングをしないよう指示します。
+         }
+
+         // 別の処理
+    }
+
+    public function loginAction() {
+        echo "login, redirected from ", $this->getInvokeArg("from") , " action";
+    }
+}
+?>
+]]>
+   </programlisting>
+   &example.outputs.similar;
+   <screen>
+<![CDATA[
+   login, redirected from Index action
+]]>
+   </screen>
+  </example>
+ </refsect1>
+
+
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
-
+    失敗した場合は FALSE を返します。
   </para>
  </refsect1>
 
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <simplelist>
+   <member><methodname>Yaf_Controller_Abstract::getInvokeArg</methodname></member>
+  </simplelist>
+ </refsect1>
 
 </refentry>
 
