@@ -1,158 +1,91 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 065dd47a92e160002f184d194e8fad1fe0f0822c Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 223cc5235a1cde6b20fa9c5c2ff36eab981d9608 Maintainer: takagi Status: working -->
  <chapter xml:id="internals2.funcs" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
   <title>関数の作成</title>
   <para>
-   拡張モジュールの主要な要素のひとつが、
-   PHP のユーザー空間にエクスポートする関数です。
-   オブジェクト指向の拡張モジュールを書こうとしている場合でも、
-   この章を読んでおくことをおすすめします。
-   ここにある情報の大半はメソッドを書く場合にもあてはまるからです。
+   Functions and Methods in PHP take much the same form, a method is simply a function with a specific scope; the scope of their class entry.
+   The <code>Hacker</code> will read about class entries in other sections of the <code>Hacker's</code> guide.
+   The purpose of this section is to introduce the <code>Hacker</code> to the anatomy of a function or method; 
+   the <code>Hacker</code> will learn how to define functions, how to accept variables and how to return variables to the programmer of PHP.
   </para>
 
   <para>
-   <link linkend="internals2.buildsys.skeleton">ext_skel</link>
-   で新しい基盤を作った後などに新しい関数を追加するには、
-   その内容を C の関数として実装して、
-   作った関数のエントリを拡張モジュールの関数テーブルに追加します。
-   関数のエントリには、引数情報の構造体へのポインタを含めることができます。
-   パラメータを参照で渡したり参照を返したりするのでない限り、
-   引数情報を渡すことは必須ではありません。しかし、情報を渡しておけば
-   PHP の <link linkend="book.reflection">Reflection API</link>
-   からアクセスできるようになります。以下の例でわかるとおり、
-   パラメータはそのまま実装へ渡されるわけではなく
-   スタックに積んで渡されます。
-   このスタックは関数の実装によってチェックされます。
-   関数の実装は直接の情報源とはなりません。
+   The anatomy of a function could not be simpler:
   </para>
-
-  <example xml:id="internals2.funcs.index.minimalext">
-   <title>関数をひとつ持つ最小限の PHP 拡張モジュール</title>
-   <programlisting role="c">
-<![CDATA[
-/* {{{ proto void hello_world()
-       Do nothing */
-PHP_FUNCTION(hello_world)
-{
-}
-/* }}} */
-
-/* {{{ arginfo_hello_world */
-ZEND_BEGIN_ARG_INFO(arginfo_hello_world, 0)
-ZEND_END_ARG_INFO()
-/* }}} */
-
-/* {{{ demo_functions */
-function_entry demo_functions[] = {
-    PHP_FE(hello_world, arginfo_hello_world)
-    {NULL, NULL, NULL}
-}
-/* }}} */
-
-/* {{{ demo_module_enry */
-zend_module_entry demo_module_entry = {
-#if ZEND_MODULE_API_NO >= 20010901
-    STANDARD_MODULE_HEADER,
-#endif
-    "demo",
-    demo_functions,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-#if ZEND_MODULE_API_NO >= 20010901
-    "1.0.0",
-#en
-    STANDARD_MODULE_PROPERTIES
-}
-/* }}} */
-]]>
-   </programlisting>
-  </example>
-
-  <para>
-   この例では、上で説明した要素やモジュールの構造を確認することができます。
-   この構造に見覚えがない場合は
-   <xref linkend="internals2.structure.modstruct"/> を見直してみましょう。
-  </para>
-
-  <para>
-   この拡張モジュールの最初の部分は、実際の実装です。
-   慣習として、エクスポートする関数の前には二行のコメントをつけることになっています。
-   コメントには、利用者向けの関数プロトタイプと
-   一行での短い説明を記述します。
-  </para>
-
-  <para>
-   PHP の異なるバージョン間でソースコードの互換性を保持するため、
-   関数の宣言を <code>PHP_FUNCTION</code> マクロでラップしています。
-   PHP 5.3 を使っている場合、コンパイラのプリプロセッサは
-   これを次のような関数に変換します。
-  </para>
-
+  
   <screen>
 <![CDATA[
-void zif_hello_world(int ht, zval *return_value, zval **return_value_ptr,
-                     zval *this_ptr, int return_value_used TSRMLS_DC)
-{
-}
+PHP_FUNCTION(hackers_function) {
+  /* your accepted arguments here */
+  long number;
+  
+  /* accepting arguments */
+  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &number) != SUCCESS) {
+      return;
+  }
+  
+  /* do some work on the input */
+  number *= 2;
+  
+  /* set return value */
+  RETURN_LONG(number);
+}]]>
+  </screen>
+  
+  <para>
+   The <code>PHP_FUNCTION(hackers_function)</code> preprocessor instruction will result in the following declaration:
+  </para>
+  
+  <screen>
+<![CDATA[
+void zif_hackers_function(INTERNAL_FUNCTION_PARAMETERS)
 ]]>
   </screen>
-
+  
   <para>
-   ユーザー空間にエクスポートする関数や C の別の関数との名前の衝突を避けるため、
-   エクスポートする関数の C のシンボルには先頭に <code>zif_</code> を付け加えます。
-   また、このプロトタイプでは引数スタックを参照していないことにもお気づきでしょう。
-   PHP から渡されたパラメータへのアクセス方法については後で説明します。
-   この表は、C レベルでのパラメータをまとめたものです。これらは
-   <code>INTERNAL_FUNCTION_PARAMETERS</code> マクロでも定義されています。
-   これらのパラメータは、PHP のバージョンが変われば変化する可能性があることに注意しましょう。
-   提供されているマクロ経由で使わなければなりません。
+   <code>INTERNAL_FUNCTION_PARAMETERS</code> is defined as a macro and explained in the following table:
   </para>
-
+  
   <table xml:id="internals2.funcs.index.internal-func-params">
    <title>INTERNAL_FUNCTION_PARAMETERS</title>
    <tgroup cols="3">
     <thead>
      <row>
-      <entry>名前と型</entry>
-      <entry>説明</entry>
-      <entry>アクセス用のマクロ</entry>
+      <entry>Name and type</entry>
+      <entry>Description</entry>
+      <entry>Access macros</entry>
      </row>
     </thead>
     <tbody>
                                                     
      <row>
       <entry><code>int ht</code></entry>
-      <entry>ユーザーから渡された実際のパラメータの数</entry>
+      <entry>Number of actual parameters passed by user</entry>
       <entry><code>ZEND_NUM_ARGS()</code></entry>
      </row>
 
      <row>
       <entry><code>zval *return_value</code></entry>
       <entry>
-       PHP 変数へのポインタ。ユーザーに返す値をここに格納します。
-       デフォルトの型は <code>IS_NULL</code> です。
+       Pointer to a PHP variable that can be filled with the return value
+       passed to the user. The default type is <code>IS_NULL</code>.
       </entry>
       <entry><code>RETVAL_*</code>, <code>RETURN_*</code></entry>
      </row>
 
      <row>
       <entry><code>zval **return_value_ptr</code></entry>
-      <entry>
-       PHP に参照を返す場合は、ここに変数へのポインタを設定します。
-       参照を返すことは推奨しません。
-      </entry>
+      <entry>When returning references to PHP set this to a pointer to
+       your variable. It is not suggested to return references.</entry>
       <entry/>
      </row>
 
      <row>
       <entry><code>zval *this_ptr</code></entry>
       <entry>
-       メソッドコールの場合に、これは
-       <code>$this</code> オブジェクトを保持する PHP の変数を指します。
+       If this is a method call, points to the PHP variable
+       holding the <code>$this</code> object.
       </entry>
       <entry><code>getThis()</code></entry>
      </row>
@@ -160,7 +93,8 @@ void zif_hello_world(int ht, zval *return_value, zval **return_value_ptr,
      <row>
       <entry><code>int return_value_used</code></entry>
       <entry>
-       返す値を呼び出し元で使うかどうかを示すフラグ。
+       Flag indicating whether the returned value will be used by the
+       caller.
       </entry>
       <entry/>
      </row>
@@ -168,205 +102,240 @@ void zif_hello_world(int ht, zval *return_value, zval **return_value_ptr,
     </tbody>
    </tgroup>
   </table>
-
+  
   <para>
-   先ほども説明したように、上の関数は単に NULL を返すだけで他に何もしません。
-   PHP 側からこの関数をコールするときには任意の数のパラメータを指定することができます。
-   もう少し実用的な関数は、大きく四つの部分にわけることができます。
+   For clarity, the fully expanded declaration for <code>PHP_FUNCTION(hackers_function)</code> looks like:
   </para>
-
-  <orderedlist>
-   <listitem>
-    <para>
-     ローカル変数の宣言。C ではローカル変数の宣言が必要です。
-     これは関数の先頭で行います。
-    </para>
-   </listitem>
-   <listitem>
-    <para>
-     パラメータのパース。
-     PHP はパラメータを特別なスタックに積んで渡すので、
-     そこからパラメータを取り出して読み込み、型を検証し、
-     必要に応じてキャストし、何か問題があれば回避します。
-    </para>
-   </listitem>
-   <listitem>
-    <para>
-     実際のロジック。必要な処理を書きます。
-    </para>
-   </listitem>
-   <listitem>
-    <para>
-     返り値の設定、後始末。そして結果を返します。
-    </para>
-   </listitem>
-  </orderedlist>
-
-  <para>
-   場合によってはこれらの順序は前後することもあります。
-   特に最後のふたつは一緒になってしまうことも多いでしょう。
-   しかし、この順序を守っておくほうがよいでしょう。
-  </para>
-
-  <example xml:id="internals2.funcs.index.simplefunc">
-   <title>単純な関数</title>
-   <programlisting role="c">
+  
+  <screen>
 <![CDATA[
-/* {{{ proto void hello_world(string name)
-   Greets a user */
-PHP_FUNCTION(hello_world)
-{
-    char *name;
-    int name_len;
-
-    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &name, &name_len) == FAILURE) {
-        return;
-    }
-
-    php_printf("Hello %s!", name);
-
-    RETURN_TRUE;
-}
-/* }}} */
+void zif_hackers_function(int ht, zval* return_value, zval** return_value_ptr, zval* this_ptr, int return_value_used)
 ]]>
-   </programlisting>
-  </example>
-
+  </screen>
+  
   <para>
-   この関数は、先ほどの各部分を示したものです。
-   まずは最後の行から見ていきましょう。<code>php_printf</code>
-   は、容易に想像できるとは思いますが、標準 C の関数
-   <code>printf</code> の PHP 版です。<code>printf</code> とは異なり、
-   この関数はプロセスの <code>STDOUT</code> には出力せず
-   現在の出力ストリームに表示します。出力ストリームはユーザー側でバッファリングされることもあります。
-   PHP の API のほとんどはバイナリセーフではありません。<code>name</code>
-   に NULL バイトが含まれている場合、<code>php_printf</code>
-   はそれ以降を無視してしまうことに注意しましょう。
-   バイナリセーフな出力には <code>PHPWRITE</code> を使わなければなりません。
+    The precense of <code>this_ptr</code> may be confusing, classes are covered in detail in later sections, 
+    suffice to say that <code>PHP_METHOD(MyClass, hackersFunction)</code> would result in the following declaration:
   </para>
-
+  
+  <screen>
+<![CDATA[
+void zim_MyClass_hackersFunction(INTERNAL_FUNCTION_PARAMETERS)
+]]>
+  </screen>
+  
+  <para>
+   <code>hackers_function</code> doesn't do anything useful, it accepts a number using the <code>zend_parse_parameters</code> API, doubles it, and returns it to the engine.
+   It is obvious that a normal function would have to do something more complex than double the input, for the purposes of education we are keeping it simple. 
+   On entry to the function <code>return_value</code> is allocated and initialized to <code>null</code>, making <code>null</code> the default return value of any function in PHP.
+  </para>
+  
+  <para>
+   If <code>zend_parse_parameters</code> does not recieve what is specified by the <code>Hacker</code> as the correct arguments, and the arguments recieved cannot be converted
+   to conform with <code>type_spec</code> an error will be raised, and by convention, the <code>Hacker</code> should <code>return</code> immediately.
+  </para>
+  
   <note>
-   <simpara>
-    一般に、データを直接出力ストリームに送るよりはユーザーに文字列として返すことを推奨します。
-    そうすれば、ユーザー側で何処に出力するかを決めさせることができます。
-    この方針の例外は、画像のようなバイナリデータを扱うときです。
-    そのようなデータを扱うための方法を API で用意しておく必要があります。
-   </simpara>
+   <para><code>Arrays</code>, <code>Objects</code>, and <code>Resources</code> cannot be converted.</para>
   </note>
-
-  <para>
-   最後の行にあるマクロ <code>RETURN_TRUE</code> は三つのことを行います。
-   <code>return_value</code> ポインタで取得した変数の型を <code>IS_BOOLEAN</code>
-   に設定し、その値を <code>true</code> として、
-   C の関数から処理を返します。
-   つまり、このマクロを使うとメモリやその他のリソースの後始末も完了し、
-   関数内のそれ以降のコードは実行されません。
-  </para>
-
-  <para>
-   <code>zend_parse_parameters()</code> 関数の役割は、
-   ユーザーが渡したパラメータを引数スタックから読み込んで
-   適切なキャストを施してローカルの C 変数に格納することです。
-   ユーザーが渡すパラメータの数が間違っていたりキャストに失敗したりした場合は、
-   エラーを発生させて <code>FAILURE</code> を返します。
-   この場合は何もせずに関数から抜けます。<code>return_value</code>
-   は手を加えずそのままで、ユーザーへの返り値はデフォルトの <code>NULL</code>
-   となります。
-  </para>
-
-  <note>
-   <simpara>
-    <code>FAILURE</code> は <code>-1</code>、そして
-    <code>SUCCESS</code> は <code>0</code> であることを覚えておきましょう。
-    コードの可読性を考慮して、値を比較するときは常にこの定数をつかうべきです。
-   </simpara>
-  </note>
-
-  <para>
-   <code>zend_parse_parameters()</code> の最初のパラメータは、
-   ユーザーからその関数に渡された実際のパラメータの数です。
-   この数は <code>ht</code> パラメータで渡されていますが、
-   先に説明したように、今の実装ではそうなっているというだけに過ぎません。
-   ここでは <code>ZEND_NUM_ARGS()</code> を使わなければなりません。
-  </para>
-
-  <para>
-   PHP のスレッドセーフなリソースマネージャーとの互換性を考慮して、
-   <code>TSRMLS_CC</code> でスレッドコンテキストも渡す必要があります。
-   他の関数とは異なり、これは最後のパラメータとはなりません。
-   <code>zend_parse_parameters</code> は可変個数のパラメータを受け付け、
-   それは読み込むユーザーパラメータの数に依存するからです。
-  </para>
-
-  <para>
-   スレッドコンテキストの後には、想定しているパラメータを宣言します。
-   各パラメータが文字列内の一文字として表され、それが型を示します。
-   この例では文字列のパラメータを想定しているので、型の指定は単純に
-   <code>"s"</code> となります。
-  </para>
-
-  <para>
-   最後に渡すのは一つあるいは複数の C 変数へのポインタで、
-   ここには変数の値やその他の情報が格納されます。
-   今回のような文字列の場合は、
-   NULL 終端の実際の文字列を表す <code>char*</code>
-   と NULL バイトを含む文字列の長さを表す <code>int</code>
-   になります。
-  </para>
-
-  <para>
-   すべての型指定子とそれに対応する C の型については、ソース配布物の中にある
-   <link xlink:href="&url.php.src.parameters.readme;">README.PARAMETER_PARSING_API</link>
-   に説明があります。
-   中でも重要な型について次の表にまとめました。
-  </para>
-
-  <table xml:id="internals2.funcs.index.zend-pars-params-types">
-   <title>zend_parse_parameters() の型指定子</title>
-   <tgroup cols="3">
-    <thead>
-     <row>
-      <entry>修飾子</entry>
-      <entry>パラメータの型</entry>
-      <entry>説明</entry>
-     </row>
-    </thead>
+  
+  <table xml:id="internals2.funcs.parameters.api">
+   <title>Parsing Parameters Prototypes</title>
+   <tgroup cols="1">
     <tbody>
-
      <row>
-      <entry><code>b</code></entry>
-      <entry><code>zend_bool</code></entry>
-      <entry>Boolean 値</entry>
+      <entry><code>int zend_parse_parameters(int num_args TSRMLS_DC, char *type_spec, ...)</code></entry>
      </row>
-
      <row>
-      <entry><code>l</code></entry>
-      <entry><code>long</code></entry>
-      <entry>integer (long) 値</entry>
+      <entry><code>int zend_parse_parameters_ex(int flags, int num_args TSRMLS_DC, char *type_spec, ...)</code></entry>
      </row>
-
      <row>
-      <entry><code>d</code></entry>
-      <entry><code>double</code></entry>
-      <entry>float (double) 値</entry>
-     </row>
-
-     <row>
-      <entry><code>s</code></entry>
-      <entry><code>char*, int</code></entry>
-      <entry>バイナリセーフな文字列</entry>
-     </row>
-
-     <row>
-      <entry><code>h</code></entry>
-      <entry><code>HashTable*</code></entry>
-      <entry>配列のハッシュテーブル</entry>
+      <entry><code>int zend_parse_parameter(int flags, int arg_num TSRMLS_DC, zval **arg, const char *spec, ...)</code></entry>
      </row>
     </tbody>
    </tgroup>
   </table>
+  
+  <note>
+   <para>
+    <code>zend_parse_parameter</code> is available from version 5.5, it behaves like <code>zend_parse_parameters_ex</code> 
+    except that instead of reading the arguments from the stack, it receives a single zval to convert, which may be changed in place.
+   </para>
+  </note>
+  
+  <note>
+   <para>
+    <code>flags</code> is intended to be a mask, currently only <code>ZEND_PARSE_PARAMS_QUIET</code> will have any impact (supress warnings)
+   </para>
+  </note>
+  
+  <para>
+   The variable arguments recieved by these API functions are expected to be the address of C variables, and should be considered the output of the <code>zend_parse_parameters</code> API functions.
+  </para>
 
- </chapter>
+  <table xml:id="internals2.funcs.parameters.types">
+   <title>Type Specifiers</title>
+   <tgroup cols="3">
+     <thead>
+     <row>
+      <entry>Spec</entry>
+      <entry>Type</entry>
+      <entry>Locals</entry>
+     </row>
+    </thead>
+    <tbody>
+     <row>
+      <entry>a</entry>
+      <entry><code>array</code></entry>
+      <entry><code>zval*</code></entry>
+     </row>
+     <row>
+      <entry>A</entry>
+      <entry><code>array</code> or <code>object</code></entry>
+      <entry><code>zval*</code></entry>
+     </row>
+     <row>
+      <entry>b</entry>
+      <entry><code>boolean</code></entry>
+      <entry><code>zend_bool</code></entry>
+     </row>
+     <row>
+      <entry>C</entry>
+      <entry><code>class</code></entry>
+      <entry><code>zend_class_entry*</code></entry>
+     </row>
+     <row>
+      <entry>d</entry>
+      <entry><code>double</code></entry>
+      <entry><code>double</code></entry>
+     </row>
+     <row>
+      <entry>f</entry>
+      <entry><code>function</code></entry>
+      <entry><code>zend_fcall_info*</code>, <code>zend_fcall_info_cache*</code></entry>
+     </row>
+     <row>
+      <entry>h</entry>
+      <entry><code>array</code></entry>
+      <entry><code>HashTable*</code></entry>
+     </row>
+     <row>
+      <entry>H</entry>
+      <entry><code>array</code> or <code>object</code></entry>
+      <entry><code>HashTable*</code></entry>
+     </row>
+     <row>
+      <entry>l</entry>
+      <entry><code>long</code></entry>
+      <entry><code>long</code></entry>
+     </row>
+     <row>
+      <entry>L</entry>
+      <entry><code>long</code> (limits out-of-range LONG_MAX/LONG_MIN)</entry>
+      <entry><code>long</code></entry>
+     </row>
+     <row>
+      <entry>o</entry>
+      <entry><code>object</code></entry>
+      <entry><code>zval*</code></entry>
+     </row>
+     <row>
+      <entry>O</entry>
+      <entry><code>object</code> (of specified <code>zend_class_entry</code>)</entry>
+      <entry><code>zval*</code>, <code>zend_class_entry*</code></entry>
+     </row>
+     <row>
+      <entry>p</entry>
+      <entry><code>string</code> (a valid path)</entry>
+      <entry><code>char*</code>, <code>int</code></entry>
+     </row>
+     <row>
+      <entry>r</entry>
+      <entry><code>resource</code></entry>
+      <entry><code>char*</code></entry>
+     </row>
+     <row>
+      <entry>s</entry>
+      <entry><code>string</code></entry>
+      <entry><code>char*</code>, <code>uint</code></entry>
+     </row>
+     <row>
+      <entry>z</entry>
+      <entry><code>mixed</code></entry>
+      <entry><code>zval*</code></entry>
+     </row>
+     <row>
+      <entry>Z</entry>
+      <entry><code>mixed</code></entry>
+      <entry><code>zval**</code></entry>
+     </row>
+    </tbody>
+   </tgroup>
+  </table>
+  
+  <note>
+   <para>
+    Where the type specifier is <code>O</code>, the local <code>zend_class_entry*</code> is to be 
+    considered input (part of the type spec) to <code>zend_parse_parameter</code>
+   </para>
+  </note>
+  
+  <table xml:id="internals2.funcs.parameters.advanced">
+   <title>Advanced Type Specifiers</title>
+   <tgroup cols="3">
+     <thead>
+     <row>
+      <entry>Spec</entry>
+      <entry>Description</entry>
+     </row>
+    </thead>
+    <tbody>
+     <row>
+      <entry>*</entry>
+      <entry>a variable number of argument of the preceeding type, 0 or more</entry>
+     </row>
+     <row>
+      <entry>+</entry>
+      <entry>a variable number of argument of the preceeding type, 1 or more</entry>
+     </row>
+     <row>
+      <entry>|</entry>
+      <entry>indicates that the remaining parameters are optional</entry>
+     </row>
+     <row>
+      <entry>/</entry>
+      <entry><code>SEPARATE_ZVAL_IF_NOT_REF</code> on the parameter it follows</entry>
+     </row>
+     <row>
+      <entry>!</entry>
+      <entry>
+       the preceeding parameter can be of the specified type or <code>null</code>
+       For 'b', 'l' and 'd', an extra argument of type zend_bool* must be passed after 
+       the corresponding <code>bool*</code>, <code>long*</code> or <code>double*</code> 
+       addresses which will be set <code>true</code> if <code>null</code> is recieved.
+      </entry>
+     </row>
+    </tbody>
+   </tgroup>
+  </table>
+  <note>
+   <para>Consult <code>README.PARAMETER_PARSING_API</code> included in source distributions for more information on parsing parameters</para>
+  </note>
+  
+  <para>
+   Once the <code>Hacker's</code> function has executed whatever it was implemented to execute, it is time to set the <code>return_value</code> for the engine. 
+   The <code>RETURN_</code> and <code>RETVAL_</code> macros are just wrappers around <code>Z_*_P</code> macros that work with <code>return_value</code>. 
+  </para>
+  
+  <note>
+   <para><code>RETURN_</code> macros cause execution to leave the function immediately (ie: <code>return;</code>), while <code>RETVAL_</code> macros allow execution to continue after <code>return_value</code> has been set.</para>
+  </note>
+  
+  <para>
+   The <code>Hacker</code> should now have a reasonable understanding of the anatomy of a function, and to some degree, the anatomy of a method.
+  </para>
+
+</chapter>
 
 <!-- Keep this comment at the end of the file
 Local variables:
