@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 26b9276e07d1be8fd39c0c1ce26c90d75b4193d7 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: a174aaabf47530d7907b5b05691f01d98bb34877 Maintainer: takagi Status: ready -->
 
 <refentry xml:id="mongodb.command" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -95,9 +95,15 @@ public function command($data) {
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;  
   <para>
-   データベースの応答を返します。
+   データベースの応答を返します。データベースの応答はすべて、
+   最大で 1 件のドキュメントになります。つまり、データベースへのコマンドの結果は決して
+   16MB を超えないということです。結果のドキュメントの構造はコマンドによって異なりますが、
+   大半の結果には <literal>ok</literal> フィールドがあって、これが成功したか失敗したかを表します。
+   また、同じく大半の結果には <literal>results</literal> フィールドもあって、
+   ここにドキュメントの配列が含まれます。
   </para>
  </refsect1>
+
  <refsect1 role="examples">
   &reftitle.examples;
   <example>
@@ -169,6 +175,7 @@ foreach ($ages['values'] as $age) {
 87
    </screen>
   </example>
+
   <example>
    <title><function>MongoDB::command</function> での MapReduce の例</title>
    <para>
@@ -248,10 +255,121 @@ User 4af467e4fd543cce7b0ea8e2 had 1 sale(s).
     を参照ください。
    </para>
   </example>
+
+  <example>
+   <title><function>MongoDB::command</function> での "textSearch" の例</title>
+   <para>
+    MongoDB 2.4 以降では、"text search" 機能を使った全文検索ができます。
+   </para>
+   <programlisting role="php">
+<![CDATA[
+<?php
+$m = new MongoClient();
+$d = $m->demo;
+$c = $d->planets;
+
+$c->insert(array("name" => "Mercury", "desc" => "Mercury is the smallest and closest to the Sun"));
+$c->insert(array("name" => "Venus", "desc" => "Venus is the second planet from the Sun, orbiting it every 224.7 Earth days."));
+$c->insert(array("name" => "Earth", "desc" => "Earth is the the densest of the eight planets in the Solar System."));
+$c->insert(array("name" => "Mars", "desc" => "Mars is named after the Roman god of war."));
+
+$c->ensureIndex(array('desc' => 'text'));
+
+$r = $d->command(array("text" => "planets", 'search' => "sun" ));
+print_r($r);
+?>
+]]>
+   </programlisting>
+   &example.outputs.similar;
+   <screen>
+Array
+(
+    [queryDebugString] => sun||||||
+    [language] => english
+    [results] => Array
+        (
+            [0] => Array
+                (
+                    [score] => 0.625
+                    [obj] => Array
+                        (
+                            [_id] => MongoId Object
+                                (
+                                    [$id] => 517549d944670a4a5cb3059a
+                                )
+
+                            [name] => Mercury
+                            [desc] => Mercury is the smallest and closest to the Sun
+                        )
+
+                )
+
+            [1] => Array
+                (
+                    [score] => 0.55
+                    [obj] => Array
+                        (
+                            [_id] => MongoId Object
+                                (
+                                    [$id] => 517549d944670a4a5cb3059b
+                                )
+
+                            [name] => Venus
+                            [desc] => Venus is the second planet from the Sun, orbiting it every 224.7 Earth days.
+                        )
+
+                )
+
+        )
+
+    [stats] => Array
+        (
+            [nscanned] => 2
+            [nscannedObjects] => 0
+            [n] => 2
+            [nfound] => 2
+            [timeMicros] => 95
+        )
+
+    [ok] => 1
+)
+   </screen>
+  </example>
+
+  <example>
+   <title><function>MongoDB::command</function> での "geoNear" の例</title>
+   <para>
+    この例は、geoNear コマンドの使い方を示すものです。
+   </para>
+   <programlisting role="php">
+<![CDATA[
+<?php
+$m = new MongoClient();
+$d = $m->demo;
+$c = $d->poiConcat;
+
+$r = $d->command(array(
+    'geoNear' => "poiConcat",      // poiConcat コレクション内を検索します
+    'near' => array(-0.08, 51.48), // 北緯 51.48°、東経 0.08° 近辺を検索します
+    'spherical' => true,           // 球状検索を有効にします
+    'num' => 5,                    // 最大 5 件までの結果を返します
+));
+print_r($r);
+?>
+]]>
+   </programlisting>
+  </example>
  </refsect1>
 
  <refsect1 role="seealso">
   &reftitle.seealso;
+  <para>
+   <simplelist>
+    <member><methodname>MongoCollection::aggregate</methodname></member>
+    <member><methodname>MongoCollection::findAndModify</methodname></member>
+    <member><methodname>MongoCollection::group</methodname></member>
+   </simplelist>
+  </para>
   <para>
    MongoDB コアドキュメントの <link xlink:href="&url.mongodb.dochub.commands;">database commands</link>
    そして各コマンドのドキュメント
