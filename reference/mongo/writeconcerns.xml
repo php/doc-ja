@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 1e5c571e6a3fed394fcb6e8910ac5edb8eb79e08 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 8915e3eac5b5d0b968bce6241891018dd41648bd Maintainer: takagi Status: ready -->
 
 <chapter xml:id="mongo.writeconcerns" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>書き込み確認</title>
@@ -106,7 +106,87 @@
    </tgroup>
   </table>
  </para>
+ 
+ <simplesect xml:id="mongo.writeconcerns.setting">
+  <title>書き込み確認の使いかた</title>
+  <para>
+   書き込みを行うメソッド
+   (<methodname>MongoCollection::insert</methodname>、
+   <methodname>MongoCollection::update</methodname>、
+   <methodname>MongoCollection::remove</methodname> そして
+   <methodname>MongoCollection::batchInsert</methodname>)
+   はどれも、オプションの引数で MongoDB サーバーに送るオプションを設定できます。
+   このオプション配列を使って、次の例のように書き込み確認を指定できます。
+  </para>
+  <example>
+   <title>書き込み操作での書き込み確認の指定</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+// w=0 を登録用に設定します
+$collection->insert($someDoc, array("w" => 0));
 
+// w=majority を更新用に設定します
+$collection->update($someDoc, $someUpdates, array("w" => "majority"));
+
+// w=5 と j=true を削除用に設定します
+$collection->update($someDoc, array("w" => 5, "j" => true));
+
+// w="AllDCs" を一括登録用に設定します
+$collection->update(array($someDoc1, $someDoc2), array("w" => "AllDCs"));
+?>
+]]>
+   </programlisting>
+  </example>
+  <para>
+   書き込み確認を操作ごとに option 引数で設定するだけでなく、
+   デフォルトの書き込み確認方法を設定することもできます。
+  </para>
+  <para>
+   最初の方法は、<link
+   linkend="mongo.mongoclient.construct.parameters">接続文字列</link>
+   を使うものです。接続文字列には
+   <literal>journal</literal> や <literal>w</literal> そして
+   <literal>wTimeoutMS</literal> というオプションを指定できます。
+  </para>
+  <example>
+   <title>接続文字列での書き込み確認の指定</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+$m = new MongoClient("mongodb://localhost/?journal=true&w=majority&wTimeoutMS=20000");
+?>
+]]>
+   </programlisting>
+  </example>
+
+  <para>
+   ドライバのバージョン 1.5 以降では、
+   <methodname>MongoDB::setWriteConcern</methodname> や
+   <methodname>MongoCollection::setWriteConcern</methodname>
+   を呼んでデフォルトの書き込み確認方法を設定できるようになりました。その
+   <classname>MongoDB</classname> や <classname>MongoCollection</classname>
+   から作るすべての操作のデフォルトを設定できます。
+  </para>
+  <example>
+   <title>MongoDB::setWriteConcern および MongoCollection::setWriteConcern</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+$m = new MongoClient("mongodb://localhost/");
+$d = $m->demoDb;
+$c = $d->demoCollection;
+
+// データベースオブジェクトで w=3 として、タイムアウトを 25000ms にします
+$d->setWriteConcern(3, 25000);
+
+// コレクションオブジェクトで w=majority として、タイムアウトは変更しません
+$c->setWriteConcern("majority");
+?>
+]]>
+   </programlisting>
+  </example>
+ </simplesect>
 
  <simplesect xml:id="mongo.writeconcerns.unacknowledged">
   <title>確認なしの書き込み</title>

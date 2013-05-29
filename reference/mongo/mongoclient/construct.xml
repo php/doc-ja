@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: a7deeda9990fcddf8139f6035b9a519d01186358
- Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 8915e3eac5b5d0b968bce6241891018dd41648bd Maintainer: takagi Status: ready -->
 
 <refentry xml:id="mongoclient.construct" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -60,6 +59,9 @@ mongodb://[username:password@]host1[:port1][,host2[:port2:],...]/db
    オプションのクエリ文字列を使って、追加オプションを指定できます。
    同じオプションを <parameter>options</parameter> 配列でもサポートしているので、
    そちらでももう一度説明します。
+   オプションの使いかたについては <link
+   linkend="mongo.mongoclient.construct.examples">下のサンプル</link>
+   を参照ください。
   </para>
   <para>
    オプションの設定によっては、レプリカセット環境でセカンダリノードから読み込むときの方法に影響するものもあります。
@@ -68,7 +70,7 @@ mongodb://[username:password@]host1[:port1][,host2[:port2:],...]/db
   </para>
  </refsect1>
 
- <refsect1 role="parameters">
+ <refsect1 role="parameters" xml:id="mongo.mongoclient.construct.parameters">
   &reftitle.parameters;
   <para>
    <variablelist>
@@ -307,6 +309,188 @@ mongodb://[username:password@]host1[:port1][,host2[:port2:],...]/db
   </para>
  </refsect1>
 
+ <refsect1 role="examples" xml:id="mongo.mongoclient.construct.examples">
+  &reftitle.examples;
+  <example>
+   <title><function>MongoClient::__construct</function> でのレプリカセットの例</title>
+   <para>
+    この例は、レプリカセットに接続する方法を示します。
+    このでは、次の三つのサーバー sf1.example.com、sf2.example.com および
+    ny1.example.com があるものと仮定します。
+    プライマリは、これらのうちのいずれかひとつとなります。
+   </para>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+// カンマ区切りのサーバー名をコンストラクタに渡します
+// レプリカセットの全メンバーを渡す必要はないことに注意しましょう。
+// ドライバが完全なリストを取得します
+$m1 = new MongoClient("mongodb://sf2.example.com,ny1.example.com", array("replicaSet" => "myReplSet"));
+
+?>
+]]>
+   </programlisting>
+   <para>
+    現在のプライマリで処理に失敗した場合、
+    セカンダリサーバーのうちのどれを新しいプライマリにするかをドライバが判断し、
+    自動的にその接続を開始させます。この自動フェイルオーバー機能は、
+    <literal>replicaSet</literal> を指定しなければ正しく動作しません。
+   </para>
+   <para>
+    シードリストの中の少なくともひとつのシードに接続できなければ、
+    ドライバからレプリカセットに接続することはできません。
+   </para>
+   <para>
+    二つの別のレプリカセットからのシードを指定した場合の挙動は未定義です。
+   </para>
+   <para>
+    レプリカセットに関する詳細な情報は
+    <link xlink:href="&url.mongodb.dochub.rs;">コアドキュメント</link>
+    を参照ください。
+   </para>
+  </example>
+  <example>
+   <title>ドメインソケットへの接続</title>
+   <para>
+    バージョン 1.0.9 以降では、ローカルで実行している MongoDB への接続に
+    UNIX ドメインソケットを使えるようになりました。これは、
+    ネットワーク経由で接続するよりもわずかに高速です。
+   </para>
+   <para>
+    バージョン 1.5.0 では、MongoDB サーバーは自動的に
+    /tmp/mongodb-&lt;port&gt;.sock でソケットをオープンします。
+    ここに接続するには、接続文字列でこのパスを指定します。
+   </para>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+// MongoDB サーバーが、ローカルのポート 20000 で起動しています
+$m = new MongoClient("mongodb:///tmp/mongodb-20000.sock");
+
+?>
+]]>
+   </programlisting>
+   <para>
+    これは、その他の接続とも組み合わせることができます。
+   </para>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+// まずドメインソケットに接続し、失敗したときにはローカルホストへの接続を使います
+$m = new MongoClient("mongodb:///tmp/mongodb-27017.sock,localhost:27017");
+
+?>
+]]>
+   </programlisting>
+  </example>
+  <example>
+   <title><function>MongoClient::__construct</function> での認証の例</title>
+   <para>
+    認証を使うには、admin データベースにユーザーが存在しなければなりません。
+    Mongo シェルでユーザーを作るには、次のようにします。
+   </para>
+   <programlisting>
+<![CDATA[
+> use admin
+switched to db admin
+> db.addUser("testUser", "testPass");
+{
+        "_id" : ObjectId("4b21272fd9ab21611d19095c"),
+        "user" : "testUser",
+        "pwd" : "03b9b27e0abf1865e2f6fcbd9845dd59"
+}
+>
+]]>
+   </programlisting>
+   <para>
+    ユーザーを作ったら、このユーザー名 "testUser" とパスワード
+    "testPass" で次のようにして認証させることができます。
+   </para>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+$m = new MongoClient("mongodb://testUser:testPass@localhost");
+
+?>
+]]>
+   </programlisting>
+  </example>
+  <example>
+   <title><function>MongoClient::__construct</function> での優先読み込みの例</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+// "east" データセンターにある最も近いサーバーを優先します
+$uri  = 'mongodb://rs1.example.com,rs2.example.com/';
+$uri .= '?readPreference=nearest';
+$uri .= '&readPreferenceTags=dc:east';
+$m = new MongoClient($uri, array('replicaSet' => 'rs'));
+]]>
+   </programlisting>
+   <para>
+    詳細な情報は、このマニュアルの <link linkend="mongo.readpreferences">優先読み込み</link>
+    のページを参照ください。
+   </para>
+  </example>
+
+  <example>
+   <title><function>MongoClient::__construct</function> でのオプションの例</title>
+   <para>
+    オプションは、接続文字列のクエリ文字列で渡すだけでなく、
+    コンストラクタの二番目の引数で渡すこともできます。
+   </para>
+   <para>
+    この例では、journal オプションを true、そして readPreference を secondary
+    にする設定を、すべての書き込み操作のデフォルトとします。
+   </para>
+   <programlisting>
+<![CDATA[
+<?php
+$m = new MongoClient("mongodb://localhost/?journal=true&readPreference=secondary");
+?>
+]]>
+   </programlisting>
+   <para>
+    同じ設定を、このようにすることもできます。
+   </para>
+   <programlisting>
+<![CDATA[
+<?php
+$options = array(
+    'journal' => true,
+    'readPreference' => 'secondary',
+);
+$m = new MongoClient("mongodb://localhost/", $options);
+?>
+]]>
+   </programlisting>
+  </example>
+
+  <example>
+   <title><function>MongoClient::__construct</function> での優先読み込みの例</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+// "east" データセンターにある最も近いサーバーを優先します
+$uri  = 'mongodb://rs1.example.com,rs2.example.com/';
+$uri .= '?readPreference=nearest';
+$uri .= '&readPreferenceTags=dc:east';
+$m = new MongoClient($uri, array('replicaSet' => 'rs'));
+]]>
+   </programlisting>
+   <para>
+    詳細な情報は、このマニュアルの <link linkend="mongo.readpreferences">優先読み込み</link>
+    のページを参照ください。
+   </para>
+  </example>
+ </refsect1>
+
  <refsect1 role="changelog">
   &reftitle.changelog;
   <para>
@@ -442,136 +626,6 @@ mongodb://[username:password@]host1[:port1][,host2[:port2:],...]/db
     </tgroup>
    </informaltable>
   </para>
- </refsect1>
-
- <refsect1 role="examples">
-  &reftitle.examples;
-  <example>
-   <title><function>Mongo::__construct</function> でのレプリカセットの例</title>
-   <para>
-    この例は、レプリカセットに接続する方法を示します。
-    このでは、次の三つのサーバー sf1.example.com、sf2.example.com および
-    ny1.example.com があるものと仮定します。
-    プライマリは、これらのうちのいずれかひとつとなります。
-   </para>
-   <programlisting role="php">
-<![CDATA[
-<?php
-
-// カンマ区切りのサーバー名をコンストラクタに渡します
-// レプリカセットの全メンバーを渡す必要はないことに注意しましょう。
-// ドライバが完全なリストを取得します
-$m1 = new MongoClient("mongodb://sf2.example.com,ny1.example.com", array("replicaSet" => "myReplSet"));
-
-?>
-]]>
-   </programlisting>
-   <para>
-    現在のプライマリで処理に失敗した場合、
-    セカンダリサーバーのうちのどれを新しいプライマリにするかをドライバが判断し、
-    自動的にその接続を開始させます。この自動フェイルオーバー機能は、
-    <literal>replicaSet</literal> を指定しなければ正しく動作しません。
-   </para>
-   <para>
-    シードリストの中の少なくともひとつのシードに接続できなければ、
-    ドライバからレプリカセットに接続することはできません。
-   </para>
-   <para>
-    二つの別のレプリカセットからのシードを指定した場合の挙動は未定義です。
-   </para>
-   <para>
-    レプリカセットに関する詳細な情報は
-    <link xlink:href="&url.mongodb.dochub.rs;">コアドキュメント</link>
-    を参照ください。
-   </para>
-  </example>
-  <example>
-   <title>ドメインソケットへの接続</title>
-   <para>
-    バージョン 1.0.9 以降では、ローカルで実行している MongoDB への接続に
-    UNIX ドメインソケットを使えるようになりました。これは、
-    ネットワーク経由で接続するよりもわずかに高速です。
-   </para>
-   <para>
-    バージョン 1.5.0 では、MongoDB サーバーは自動的に
-    /tmp/mongodb-&lt;port&gt;.sock でソケットをオープンします。
-    ここに接続するには、接続文字列でこのパスを指定します。
-   </para>
-   <programlisting role="php">
-<![CDATA[
-<?php
-
-// MongoDB サーバーが、ローカルのポート 20000 で起動しています
-$m = new Mongo("mongodb:///tmp/mongodb-20000.sock");
-
-?>
-]]>
-   </programlisting>
-   <para>
-    これは、その他の接続とも組み合わせることができます。
-   </para>
-   <programlisting role="php">
-<![CDATA[
-<?php
-
-// まずドメインソケットに接続し、失敗したときにはローカルホストへの接続を使います
-$m = new MongoDB("mongodb:///tmp/mongodb-27017.sock,localhost:27017");
-
-?>
-]]>
-   </programlisting>
-  </example>
-  <example>
-   <title><function>Mongo::__construct</function> での認証の例</title>
-   <para>
-    認証を使うには、admin データベースにユーザーが存在しなければなりません。
-    Mongo シェルでユーザーを作るには、次のようにします。
-   </para>
-   <programlisting>
-<![CDATA[
-> use admin
-switched to db admin
-> db.addUser("testUser", "testPass");
-{
-        "_id" : ObjectId("4b21272fd9ab21611d19095c"),
-        "user" : "testUser",
-        "pwd" : "03b9b27e0abf1865e2f6fcbd9845dd59"
-}
->
-]]>
-   </programlisting>
-   <para>
-    ユーザーを作ったら、このユーザー名 "testUser" とパスワード
-    "testPass" で次のようにして認証させることができます。
-   </para>
-   <programlisting role="php">
-<![CDATA[
-<?php
-
-$m = new Mongo("mongodb://testUser:testPass@localhost");
-
-?>
-]]>
-   </programlisting>
-  </example>
-  <example>
-   <title><function>Mongo::__construct</function> での優先読み込みの例</title>
-   <programlisting role="php">
-<![CDATA[
-<?php
-
-// "east" データセンターにある最も近いサーバーを優先します
-$uri  = 'mongodb://rs1.example.com,rs2.example.com/';
-$uri .= '?readPreference=nearest';
-$uri .= '&readPreferenceTags=dc:east';
-$m = new Mongo($uri, array('replicaSet' => 'rs'));
-]]>
-   </programlisting>
-   <para>
-    詳細な情報は、このマニュアルの <link linkend="mongo.readpreferences">優先読み込み</link>
-    のページを参照ください。
-   </para>
-  </example>
  </refsect1>
 
 </refentry>
