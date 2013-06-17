@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: c672ec208a81a60850823b9e46318485c30bec6f Maintainer: takagi Status: ready -->
+<!-- EN-Revision: e5868a071fcd0db735dde2e50bd84ae7e8763602 Maintainer: takagi Status: ready -->
 
 <refentry xml:id="function.curl-share-setopt" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
   <refname>curl_share_setopt</refname>
-  <refpurpose>cURL 転送のオプションを設定する</refpurpose>
+  <refpurpose>cURL 共有ハンドルのオプションを設定する</refpurpose>
  </refnamediv>
 
  <refsect1 role="description">
@@ -17,10 +17,8 @@
    <methodparam><type>string</type><parameter>value</parameter></methodparam>
   </methodsynopsis>
   <para>
-
+   指定した cURL 共有ハンドルに、オプションを設定します。
   </para>
-
-  &warn.undocumented.func;
 
  </refsect1>
 
@@ -31,7 +29,7 @@
     <term><parameter>sh</parameter></term>
     <listitem>
      <para>
-      
+      <function>curl_share_init</function> が返す cURL 共有ハンドル。
      </para>
     </listitem>
    </varlistentry>
@@ -39,7 +37,30 @@
     <term><parameter>option</parameter></term>
     <listitem>
      <para>
-      
+      <informaltable>
+        <tgroup cols="3">
+         <thead>
+          <row>
+           <entry valign="top">オプション</entry>
+           <entry valign="top">説明</entry>
+          </row>
+         </thead>
+         <tbody>
+          <row>
+           <entry valign="top"><constant>CURLSHOPT_SHARE</constant></entry>
+           <entry valign="top">
+               共有させるデータの種類を指定します。
+           </entry>
+          </row>
+          <row>
+           <entry valign="top"><constant>CURLSHOPT_UNSHARE</constant></entry>
+           <entry valign="top">
+               共有させないデータの種類を指定します。
+           </entry>
+          </row>
+         </tbody>
+        </tgroup>
+       </informaltable>
      </para>
     </listitem>
    </varlistentry>
@@ -47,7 +68,38 @@
     <term><parameter>value</parameter></term>
     <listitem>
      <para>
-      
+      <informaltable>
+        <tgroup cols="3">
+         <thead>
+          <row>
+           <entry valign="top">値</entry>
+           <entry valign="top">説明</entry>
+          </row>
+         </thead>
+         <tbody>
+          <row>
+           <entry valign="top"><constant>CURL_LOCK_DATA_COOKIE</constant></entry>
+           <entry valign="top">
+               クッキーのデータを共有する。
+           </entry>
+          </row>
+          <row>
+           <entry valign="top"><constant>CURL_LOCK_DATA_DNS</constant></entry>
+           <entry valign="top">
+               DNS キャッシュを共有する。cURL マルチハンドルを使うときには、
+               同じマルチハンドルに追加されたすべてのハンドルがデフォルトで DNS キャッシュを共有することに注意しましょう。
+           </entry>
+          </row>
+          <row>
+           <entry valign="top"><constant>CURL_LOCK_DATA_SSL_SESSION</constant></entry>
+           <entry valign="top">
+               SSL セッション ID を共有し、同一サーバーへの再接続時の SSL ハンドシェイクの所要時間を削減する。
+               同じハンドル内では、デフォルトで SSL セッション ID が再利用されることに注意しましょう。
+           </entry>
+          </row>
+         </tbody>
+        </tgroup>
+       </informaltable>
      </para>
     </listitem>
    </varlistentry>
@@ -58,6 +110,50 @@
   &reftitle.returnvalues;
   <para>
    &return.success;
+  </para>
+ </refsect1>
+ 
+<refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title><function>curl_share_setopt</function> の例</title>
+    <para>
+     この例は、cURL 共有ハンドルを作って二つの cURL ハンドルを追加し、
+     それぞれを実行してクッキーのデータを共有します。
+    </para>
+    <programlisting role="php">
+<![CDATA[
+<?php
+// cURL 共有ハンドルを作り、クッキーのデータを共有させます
+$sh = curl_share_init();
+curl_share_setopt($sh, CURLSHOPT_SHARE, CURL_LOCK_DATA_COOKIE);
+
+// 最初の cURL ハンドルを作り、共有ハンドルを割り当てます
+$ch1 = curl_init("http://example.com/");
+curl_setopt($ch1, CURLOPT_SHARE, $sh);
+
+// 最初の cURL ハンドルを実行します
+curl_exec($ch1);
+
+// 二番目の cURL ハンドルを作り、共有ハンドルを割り当てます
+$ch2 = curl_init("http://php.net/");
+curl_setopt($ch2, CURLOPT_SHARE, $sh);
+
+// 二番目の cURL ハンドルを実行します
+//  $ch1 ハンドルのすべてのクッキーを、$ch2 ハンドルと共有します
+curl_exec($ch2);
+
+// cURL 共有ハンドルを閉じます
+curl_share_close($sh);
+
+// cURL ハンドルを閉じます
+curl_close($ch1);
+curl_close($ch2);
+?>
+]]>
+    </programlisting>
+   </example>
   </para>
  </refsect1>
 
@@ -83,3 +179,4 @@ vim600: syn=xml fen fdm=syntax fdl=2 si
 vim: et tw=78 syn=sgml
 vi: ts=1 sw=1
 -->
+
