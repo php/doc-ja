@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: b406ef56aefd6920118933834d2e3e3a71c89e81 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 9050044070af1625c2cd5627ae18f426200a0450 Maintainer: takagi Status: ready -->
 <refentry xml:id="intldateformatter.setcalendar" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
   <refname>IntlDateFormatter::setCalendar</refname>
   <refname>datefmt_set_calendar</refname>
-  <refpurpose>Formatter が使うカレンダーを設定する</refpurpose>
+  <refpurpose>Formatter が使うカレンダー型を設定する</refpurpose>
  </refnamediv>
  <refsect1 role="description">
   &reftitle.description;
@@ -14,7 +14,7 @@
   </para>
    <methodsynopsis>
    <type>bool</type><methodname>IntlDateFormatter::setCalendar</methodname>
-   <methodparam><type>int</type><parameter>which</parameter></methodparam>
+   <methodparam><type>mixed</type><parameter>which</parameter></methodparam>
    </methodsynopsis>
   <para>
    &style.procedural;
@@ -22,10 +22,10 @@
   <methodsynopsis>
    <type>bool</type><methodname>datefmt_set_calendar</methodname>
   <methodparam><type>IntlDateFormatter</type><parameter>fmt</parameter></methodparam>
-  <methodparam><type>int</type><parameter>which</parameter></methodparam>
+  <methodparam><type>mixed</type><parameter>which</parameter></methodparam>
   </methodsynopsis>
   <para>
-   Formatter が使用するカレンダーを設定します。
+   このフォーマッターが使用するカレンダーあるいはカレンダー型を設定します。
   </para> 
   </refsect1>
 
@@ -37,7 +37,7 @@
      <term><parameter>fmt</parameter></term>
      <listitem>
       <para>
-       Formatter リソース。
+       フォーマッターリソース。
       </para>
      </listitem>
     </varlistentry>
@@ -45,8 +45,20 @@
      <term><parameter>which</parameter></term>
      <listitem>
       <para>
-       使用する <link linkend="intl.intldateformatter-constants.calendartypes">カレンダー</link>。
-       デフォルトは <constant>IntlDateFormatter::GREGORIAN</constant> です。
+       使用する <link
+       linkend="intl.intldateformatter-constants.calendartypes">カレンダー型</link>
+       (デフォルトは <constant>IntlDateFormatter::GREGORIAN</constant> で、
+       &null; を指定した場合にもこれを使います)、あるいは
+       <classname>IntlCalendar</classname> オブジェクト。
+     </para>
+     <para>
+      <classname>IntlCalendar</classname> オブジェクトが渡された場合は、それをクローンします。
+      引数として渡したオブジェクトは、何も変更されません。
+     </para>
+     <para>
+      フォーマッターのタイムゾーンを残すのは
+      <classname>IntlCalendar</classname> オブジェクトが渡されなかった場合だけで、
+      このオブジェクトが渡された場合は新しいタイムゾーンを利用します。
      </para>
      </listitem>
     </varlistentry>
@@ -62,6 +74,30 @@
   </para>
  </refsect1>
  
+ <refsect1 role="changelog">
+  &reftitle.changelog;
+  <para>
+   <informaltable>
+    <tgroup cols="2">
+     <thead>
+      <row>
+       <entry>&Version;</entry>
+       <entry>&Description;</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry>5.5.0/PECL 3.0.0</entry>
+       <entry>
+        <classname>IntlCalendar</classname> オブジェクトを渡せるようになりました。
+       </entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </informaltable>
+  </para>
+ </refsect1>
+
  <refsect1 role="examples">
   &reftitle.examples;
    <example>
@@ -90,13 +126,41 @@ echo "Now calendar of the formatter is : ".$fmt->getCalendar();
 ]]>
     </programlisting>
    </example>
-     &example.outputs;
-     <screen>
-         <![CDATA[
+   &example.outputs;
+   <screen>
+    <![CDATA[
 calendar of the formatter is : 1
 Now calendar of the formatter is : 0
 ]]>
-     </screen>
+   </screen>
+
+  <example>
+  <title>引数に <classname>IntlCalendar</classname> を使う例</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+$time = strtotime("2013-03-03 00:00:00 UTC");
+$formatter = IntlDateFormatter::create("en_US", NULL, NULL, "Europe/Amsterdam");
+
+echo "before: ", $formatter->format($time), "\n";
+
+/* カレンダーのロケールは使われないことに注目 */
+$formatter->setCalendar(IntlCalendar::createInstance(
+               "America/New_York", "pt_PT@calendar=islamic"));
+
+echo "after:  ", $formatter->format($time), "\n";
+
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+before: Sunday, March 3, 2013 at 1:00:00 AM Central European Standard Time
+after:  Saturday, Rabiʻ II 20, 1434 at 7:00:00 PM Eastern Standard Time
+
+]]>
+   </screen>
+  </example>
  </refsect1>
 
  <refsect1 role="seealso">
@@ -104,6 +168,7 @@ Now calendar of the formatter is : 0
   <para>
     <simplelist>
     <member><function>datefmt_get_calendar</function></member>
+    <member><function>datefmt_get_calendar_object</function></member>
     <member><function>datefmt_create</function></member>
     </simplelist>
   </para>
