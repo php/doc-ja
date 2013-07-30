@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: aefd0b0e10b1af7119a378f56a6b1a2593d0cf85 Maintainer: takagi Status: working -->
+<!-- EN-Revision: aefd0b0e10b1af7119a378f56a6b1a2593d0cf85 Maintainer: takagi Status: ready -->
 
 <book xml:id="book.pthreads" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>pthreads</title>
@@ -33,55 +33,83 @@
   </para>
   <para>
  Stackable オブジェクト:
- A Stackable Object can read/write and execute the Worker during execution, simply provide the stackable a reference to the appropriate object before runtime. 
- Additionally, any context with a reference to the Stackable can read, write and execute its methods before during and after execution.
+ Stackable オブジェクトは、実行時に Worker の読み書きや実行ができ、
+ 実行前に適切なオブジェクトへの参照を提供します。
+ さらに、Stackable への参照があるあらゆるコンテキストは、実行前と実行後の間にそのメソッドの読み書きや実行ができます。
   </para>
   <para>
  同期処理:
- All of the objects that pthreads creates have built in synchronization in the ( familiar to java programmers ) form of ::wait and ::notify. 
- Calling ::wait on an object will cause the context to wait for another context to call ::notify on the same object. 
- This allows for powerful synchronization between Threaded Objects in PHP.
+ pthreds が用意するすべてのオブジェクトには、
+ (Java プログラマーならおなじみの) ::wait と ::notify による同期処理が組み込まれています。
+ あるオブジェクトの ::wait を呼ぶと、別のコンテキストから同じオブジェクトの ::notify
+ が呼ばれるのを待つようになります。
+ これを使えば、PHP 内のスレッド化されたオブジェクト (Threaded Object) どうしで強力な同期処理ができるようになります。
   </para>
   <para>
- Wait, Threaded Objects ?
- A Stackable, Thread or Worker can be thought of, and should be used as a Threaded stdClass: A Thread, Worker and Stackable all behave in the same way in any context with a reference.
- Any objects that are intended for use in the multi-threaded parts of your application should extend the Stackable, Thread or Worker declaration. 
- Which means they must implement run but may not ever be executed; it will often be the case that Objects being used in a multi-threaded environment are intended for execution. 
- Doing so means any context ( that's Thread/Worker/Stackable/Process ) with a reference can read, write and execute the members of the Threaded Object before, during, and after execution.
+ スレッド化されたオブジェクトって？
+ Stackable や Thread、そして Worker はスレッド化された stdClass とみなせて、実際そのように使えます。
+ Thread、Worker そして Stackable のいずれも、参照を含むあらゆるコンテキストで同じように振舞います。
+ マルチスレッド対応の部分で使うことを想定したあらゆるオブジェクトは、
+ Stackable か Thread あるいは Worker のいずれかを継承しなければいけません。
+ つまり、run メソッドを実装する必要があるけれども、それが必ずしも実行されるとは限らないということです。
+ マルチスレッド環境で使われるオブジェクトの多くは、実行されることを意図しています。
+ つまり、参照付きのあらゆるコンテキスト (Thread/Worker/Stackable/Process)
+ は、スレッド化されたオブジェクトのメンバーの読み書きや実行を、
+ 実行前/実行中/実行後 にできるということです。
   </para>
   <para>
- Method Modifiers:
- The protected methods of Threaded Objects are protected by pthreads, such that only one context may call that method at a time. 
- The private methods of Threaded Objects can only be called from within the Threaded Object during execution.
+ メソッドの修飾子:
+ スレッド化されたオブジェクトの protected メソッドは、pthreads がプロテクトします。
+ そしてこのメソッドは、同時に複数のコンテキストからは呼べなくなります。
+ スレッド化されたオブジェクトの private メソッドは、
+ 実行中のそのオブジェクトの中からしか呼べません。
   </para>
   <para>
- Data Storage:
- As a rule of thumb, any data type that can be serialized can be used as a member of a Threaded object, it can be read and written from any context with a reference to the Threaded Object. 
- Not every type of data is stored serially, basic types are stored in their true form. 
- Complex types, Arrays, and Objects that are not Threaded are stored serially; they can be read and written to the Threaded Object from any context with a reference.
- With the exception of Threaded Objects any reference used to set a member of a Threaded Object is separated from the reference in the Threaded Object; 
- the same data can be read directly from the Threaded Object at any time by any context with a reference to the Threaded Object.
+ データストレージ:
+ 目安として、シリアライズ可能なデータ型なら何でも、スレッド化されたオブジェクトのメンバーとして使えます。
+ そのオブジェクトへの参照を持つあらゆるコンテキストから、メンバーの読み書きができます。
+ すべてのデータ型がシリアライズされるわけではなく、基本型はそのままの形式で格納されます。
+ それ以外の複雑な型や配列、スレッド化されていないオブジェクトは、シリアライズして格納されます。
+ これらは、参照を持つ任意のコンテキストから、スレッド化されたオブジェクトへの読み書きができます。
+ スレッド化されたオブジェクトを例外として、
+ あるスレッド化されたオブジェクトのメンバーを設定するために使うあらゆる参照は、
+ そのスレッド化されたオブジェクト内の参照とは区別されます。
+ 同じデータを、いつでもどのコンテキストからでも、
+ スレッド化されたオブジェクトから直接読み込めます。
   </para>
   <para>
- Static Members:
- When a new context is created ( Thread or Worker ), only the simple members of static classes are copied, no resources or objects are copied into the threading context from static class members. This allows them to function as a kind of thread local storage. For example, upon starting the context, a class whose static members include connection information for a database server, and the connection itself, will only have the simple connection information copied, not the connection. Allowing the new context to initiate a connection in the same way as the context that created it, storing the connection in the same place without affecting the original context.
+ 静的メンバー:
+ 新しいコンテキスト (Thread あるいは Worker) を作るときには、
+ 単純型の静的メンバーだけがコピーされます。
+ リソースやオブジェクトは、静的なクラスメンバーからスレッドのコンテキストにはコピーされません。
+ これを、一種のスレッドローカルストレージとして使えます。
+ たとえば、データベースサーバーへの接続情報と接続そのものを静的メンバーとして持つクラスがあるとします。
+ コンテキストを開始するときには接続情報だけがコピーされ、接続自体はコピーされません。
+ 新しいコンテキスト上ではそのコンテキストを作ったオブジェクトと同じ方法で接続を立ち上げることができ、
+ その接続を同じ場所に格納しても元のコンテキストには何も影響を及ぼしません。
   </para>
   <caution>
   <para>
- When print_r, var_dump and other object debug functions are executed, they do not include recursion protection.
+ print_r や var_dump などのオブジェクトのデバッグ用関数を実行するきには、
+ 再帰の制限には含まれません。
   </para>
   </caution>
   <note>
    <para>
- Resources:
- The extensions and functionality that define resources in PHP are completely unprepared for this kind of environment; pthreads makes provisions for Resources to be shared among contexts, however, for most types of resource it should be considered unsafe. Extreme caution and care should be used when sharing resources among contexts.
+ リソース:
+ PHP のリソースを定義している拡張モジュールは、この手の環境で扱うには不十分です。
+ pthreads はリソースをコンテキスト間で共有するための対策を用意していますが、
+ 大半のリソース型は安全には扱えません。
+ コンテキスト間でリソースを共有するときには、いくら注意してもしすぎることはありません。
    </para>
   </note>
   <caution>
    <para>
- pthreads was, and is, an experiment with pretty good results. Any of its limitations or features may change at any time; that is the nature of experimentation. 
- Its limitations - often imposed by the implementation - exist for good reason; the aim of pthreads is to provide a useable solution to multi-tasking in PHP at any level. 
- In the environment which pthreads executes, some restrictions and limitations are necessary in order to provide a stable environment.
+ pthreads は、今もまだ実験中の段階ですが、よい結果が出ています。
+ 現在の制約や機能がいつ何時変わるかはわかりません。実験的なモジュールである以上、そういうものです。
+ 現在の制約はその実装によるものがほとんどですが、ちゃんとした理由があります。
+ pthreads の狙いは、PHP であらゆるレベルでのマルチタスク処理をするための便利なソリューションを提供することです。
+ pthreads の実行環境を安定させるには、いくつかの制限は必要になるのです。
    </para>
   </caution>
  </preface>
