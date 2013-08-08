@@ -1,60 +1,82 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: dd4ec3dda763201e3a95d7f61e6515f85417d5a5 Maintainer: takagi Status: working -->
+<!-- EN-Revision: dd4ec3dda763201e3a95d7f61e6515f85417d5a5 Maintainer: takagi Status: ready -->
 <sect1 xml:id="internals2.memory.management" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>基本的なメモリ管理</title>
  
  <para>
-  The engine's memory management is implemented with features important to a system like PHP. The exact functionality of the engine's memory management and the optmizations performed are out of the scope of this document. However, a good understanding of its functionality provides a basis for a good understanding of the rest of the <code>Hacker's Guide</code>, and introduce you to terminology and functionality used throughout PHP.
+  Zend エンジンのメモリ管理は、PHP のようなシステムにとって重要な機能として実装されています。
+  メモリの管理や最適化が実際にどのような動きになっているかは、ここでは取り上げません。
+  しかし、その機能をきちんと理解しておけば、この<code>ハッカー向けガイド</code>の理解がさらに深まり、
+  PHP 全体で使われる用語や機能を把握できるでしょう。
  </para>
  
  <para>
-  The most important of its features for the <code>Hacker</code>, and the first thing to mention is tracking allocations. Tracking allocations allow the memory manager to avoid leaks, a thorn in the side of most <code>Hackers</code>. When PHP is built in debug mode (<code>--enable-debug</code>), detected leaks are reported, in a perfect world they would never get to deployment.
+  <code>ハッカー</code>にとって最も重要な機能である、メモリ割り当ての追跡について最初に説明しましょう。
+  メモリ割り当てを追跡すれば、<code>ハッカー</code>の悩みの種であるメモリリークを回避できます。
+  PHP をデバッグモードで (<code>--enable-debug</code> をつけて) ビルドすると、
+  検出したメモリリークが逐一報告されるという、これまでにない完全な世界になります。
  </para>
  
- <para>While tracking allocations is an important, and highly useful feature, the <code>Hacker</code> should not become lazy! Always attempt to resolve leaks before deploying your code, a memory leak in a SAPI environment can become a very big problem, very quickly.</para>
+ <para>
+  この機能は重要なものだしとても便利なものではありますが、
+  <code>ハッカー</code>たる者、それに甘えてはいけません。
+  コードをデプロイする前にメモリリークは解決しておくようにしましょう。
+  SAPI 環境でのメモリリークは、あっという間に深刻な問題を引き起こします。
+ </para>
  
- <para>Another, perhaps more incidental but still noteworthy, feature is that the memory manager is the part that allows a hard limit on memory usage for each instance of PHP. As we all know, there is no such thing as unlimited. If some code is running out of memory, it is likely to be written wrong, either by the <code>Hacker</code>, or the programmer of PHP. Limiting the memory therefore is not a restriction on the language that is supposed to be experienced in production, it is simply a way from stopping development environments from spiraling out of control when mistakes are made, and equally, when bugs are found in production.</para>
+ <para>
+  もう一つ、副次的な機能ではあるけれども注目すべきものがあります。
+  それは、メモリマネージャーが、PHP のインスタンスごとのメモリ使用量のハードリミットを決める一因となっていることです。
+  ご存じのとおり、無限に使えるものなんてどこにもありません。
+  何かのコードがメモリを使い切ってしまったとしたら、おそらくそれは、Zend エンジンの<code>ハッカー</code>
+  あるいは PHP プログラマーのどちらかがまずいコードを書いたのでしょう。
+  したがって、メモリの使用量を制限するというのは、単にその言語の実行時に期待される内容に制約を加えるというものではありません。
+  単に、何かの手違いで開発環境が制御不能にならないようにしたり、実行時にバグが発生しないようにするための方法でしかありません。
+ </para>
  
- <para>From the <code>Hacker's</code> perspective, the memory management API looks very much like libc's (or whoever the <code>Hacker</code> prefers !) malloc implementation.</para>
+ <para>
+  <code>ハッカー</code>の視点で見たメモリ管理 API は、
+  libc (あるいはその他お好みのライブラリ) の malloc の実装にそっくりです。
+ </para>
  
  <table xml:id="internals2.memory.management.apis">
-  <title>Main memory APIs</title>
+  <title>メインメモリ API</title>
   <tgroup cols="2">
    <thead>
     <row>
-     <entry>Prototype</entry>
-     <entry>Description</entry>
+     <entry>プロトタイプ</entry>
+     <entry>説明</entry>
     </row>
    </thead>
    <tbody>
     
     <row>
      <entry><code>void *emalloc(size_t size)</code></entry>
-     <entry>Allocate <code>size</code> bytes of memory.</entry>
+     <entry><code>size</code> バイトのメモリを確保します。</entry>
     </row>
     
     <row>
      <entry><code>void *ecalloc(size_t nmemb, size_t size)</code></entry>
      <entry>
-      Allocate a buffer for <code>nmemb</code> elements of
-      <code>size</code> bytes and makes sure it is initialized with zeros.
+      <code>size</code> バイトのバッファを <code>nmemb</code> 要素だけ確保し、
+      ゼロで初期化します。
      </entry>
     </row>
     
     <row>
      <entry><code>void *erealloc(void *ptr, size_t size)</code></entry>
      <entry>
-      Resize the buffer <code>ptr</code>, which was allocated using
-      <code>emalloc</code> to hold <code>size</code> bytes of memory.
+      <code>emalloc</code> を使って確保したバッファ <code>ptr</code> のサイズを変更し、
+      <code>size</code> バイトにします。
      </entry>
     </row>
     
     <row>
      <entry><code>void efree(void *ptr)</code></entry>
      <entry>
-      Free the buffer pointed by <code>ptr</code>. The buffer had to be 
-      allocated by <code>emalloc</code>.
+      <code>ptr</code> が指すバッファを解放します。このバッファは
+      <code>emalloc</code> で確保したものでなければいけません。
      </entry>
     </row>
     
@@ -63,18 +85,18 @@
       <code>void *safe_emalloc(size_t nmemb, size_t size, size_t offset)</code>
      </entry>
      <entry>
-      Allocate a buffer for holding <code>nmemb</code> blocks of each
-      <code>size</code> bytes and an additional <code>offset</code> bytes.
-      This is similar to <code>emalloc(nmemb * size + offset)</code> but adds
-      a special protection against overflows.
+      <code>size</code> バイトのバッファを <code>nmemb</code> ブロックぶんと、さらに
+      <code>offset</code> バイトを確保します。
+      <code>emalloc(nmemb * size + offset)</code> と似ていますが、
+      オーバーフロー対策の特別な保護が追加されています。
      </entry>
     </row>
     
     <row>
      <entry><code>char *estrdup(const char *s)</code></entry>
      <entry>
-      Allocate a buffer that can hold the NULL-terminated string
-      <code>s</code> and copy the <code>s</code> into that buffer.
+      NULL 終端文字列 <code>s</code> を保持できるだけのバッファを確保し、
+      <code>s</code> をそのバッファにコピーします。
      </entry>
     </row>
     
@@ -83,8 +105,7 @@
       <code>char *estrndup(const char *s, unsigned int length)</code>
      </entry>
      <entry>
-      Similar to <code>estrdup</code> while the length of the
-      NULL-terminated string is already known.
+      <code>estrdup</code> と似ていますが、NULL 終端文字列の長さが既知である場合に使います。
      </entry>
     </row>
    </tbody>
@@ -93,24 +114,37 @@
  
  <note>
   <simpara>
-   The engines memory management functions do not return <code>NULL</code> upon failure, if memory cannot be allocated at runtime, the engine bails and raises an error.
+   エンジンのメモリ管理関数は、失敗しても <code>NULL</code> は返しません。
+   実行時にメモリの確保に失敗した場合は、エラーが発生します。
   </simpara>
  </note>
  
  <caution>
   <simpara>
-   Always use valgrind before deploying code and as a normal part of the <code>Hacker's</code> process. The engine can only report and detect leaks where it has allocated the memory. All of PHP is only a thin wrapper around third parties, those third parties do not use the engines memory management. Additionally, valgrind will catch errors that do not always halt or even have an apparent effect at execution time, it is just as important that there should be no errors, as it is important that avoidable leaks should be avoided.
+   コードをデプロイする前には常に valgrind を使いましょう。<code>ハッカー</code>としてのたしなみです。
+   Zend エンジンが検出して報告してくれるのは、確保済みのメモリのリークだけです。
+   PHP 事態はサードパーティのソフトウェアに対する薄いラッパーに過ぎず、サードパーティのソフトウェアは
+   Zend エンジンのメモリ管理は使いません。
+   さらに valgrind は、常に落ちるわけではないというエラーを捕捉してくれたり、
+   実行時に明確な影響が出るわけではないエラーを見つけてくれたりもします。
+   これらに対応することも大切で、回避できるリークは回避しておかなければいけません。
   </simpara>
  </caution>
  
  <note>
-  <simpara>Some leaks are unavoidable, some libraries rely on the end of a process to free some of their structures, this is normal under some circumstances and acceptable where it is out of the <code>Hacker's</code> control.</simpara>
+  <simpara>
+   回避不能なリークもあります。ライブラリによってはプロセス終了のタイミングでメモリを解放する仕組みになっているものがあり
+   (場合によっては普通にあり得ることです)、その場合は制御不能だからです。
+  </simpara>
  </note>
  
- <simpara>While executing in a debug environment, configured with <code>--enable-debug</code>, the leak function used in the next example is actually implemented by the engine and is available to call in userland.</simpara>
+ <simpara>
+  <code>--enable-debug</code> を付けて構築したデバッグ環境では、次の例の leak 関数が実装された状態になり、
+  ユーザーのスクリプトからも呼べるようになります。
+ </simpara>
  
  <example xml:id="internals2.memory.management.example.leak">
-  <title>Leak Detection in Action</title>
+  <title>リークの検出の実例</title>
   <programlisting role="c">
 <![CDATA[
 ZEND_FUNCTION(leak)
@@ -136,7 +170,10 @@ ZEND_FUNCTION(leak)
  </example>
  
  <note>
-  <simpara>USE_ZEND_ALLOC=0 in the environment will stop the memory manager from functioning, all allocations fall back on the default system allocators which can be useful for debugging leaks.</simpara>
+  <simpara>
+   USE_ZEND_ALLOC=0 を指定するとメモリマネージャーの機能が停止し、
+   すべてのメモリ管理をシステムのデフォルトのアロケーターに任せます。これは、リークのデバッグ時に便利です。
+  </simpara>
  </note>
  
 </sect1>
