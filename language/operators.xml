@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 095653e0ce6242091a95f50dd0cdad6f73692211 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 6d1db2739b2d65998f9ae4bd565772681ed15514 Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa -->
  <chapter xml:id="language.operators" xmlns="http://docbook.org/ns/docbook">
   <title>演算子</title>
@@ -44,12 +44,27 @@
    <para>
     演算子の優先順位が等しい場合は、その結合性によって評価順
     (右から評価するのか、あるいは左から評価するのか) が決まります。
-    以下の例を参照ください。
+    たとえば "-" は左結合なので、
+    <literal>1 - 2 - 3</literal> は <literal>(1 - 2) - 3</literal> とグループ分けされて、
+    評価結果は <literal>-4</literal> になります。
+    一方、"=" は右結合です。つまり <literal>$a = $b = $c</literal> のグループ分けは
+    <literal>$a = ($b = $c)</literal> となります。
+   </para>
+   <para>
+    優先順位が同じで結合しない演算子を並べることはできません。つまり、たとえば
+    <literal>1 &lt; 2 &gt; 1</literal> は PHP では無効になります。
+    一方 <literal>1 &lt;= 1 == 1</literal> は問題ありません。
+    <literal>==</literal> 演算子の優先順位が
+    <literal>&lt;=</literal> 演算子より低いからです。
+   </para>
+   <para>
+    厳密には不要な場所であっても、括弧をつけておけばコードの可読性があがります。
+    明示的にグループ分けをしておくことで、演算子の優先順位や結合性による暗黙のグループ分けに頼らずに済むからです。
    </para>
    <para>
     次の表では、優先順位が高い順に演算子を挙げています。
     同じ行にある演算子は優先順位が等しくなります。そのような場合は、
-    結合時の評価にしたがって評価順が決まります。
+    結合時の評価にしたがってグループ分けが決まります。
     <table>
      <title>演算子の優先順位</title>
      <tgroup cols="2">
@@ -209,15 +224,6 @@
     </table>
    </para>
    <para>
-    演算子の優先順位が同じ場合、
-    結合時の評価が left の場合は式が左から右に評価され、一方 right の場合は
-    その逆となります。
-    優先順位が同じ演算子で結合しないものが並んだ場合、自分自身で結合することはありません。
-    つまり、たとえば
-    <literal>1 &lt; 2 &gt; 1</literal> のような文は PHP では無効になります。
-    一方 <literal>1 &lt;= 1 == 1</literal> は無効ではありません。というのも、
-    <constant>T_IS_EQUAL</constant> 演算子の優先順位が
-    <constant>T_IS_SMALLER_OR_EQUAL</constant> 演算子より低いからです。
     <example>
      <title>結合時の評価</title>
      <programlisting role="php">
@@ -229,15 +235,30 @@ $a = true ? 0 : true ? 1 : 2; // (true ? 0 : true) ? 1 : 2 = 2
 $a = 1;
 $b = 2;
 $a = $b += 3; // $a = ($b += 3) -> $a = 5, $b = 5
-
-// ++ と + を同時に使ったときの挙動は未定義です
-$a = 1;
-echo ++$a + $a++; // 4 になるかもしれないし、5 になるかもしれません
 ?>
 ]]>
      </programlisting>
     </example>
-    厳密には不要な場所であっても、括弧をつけておけばコードの可読性があがります。
+   </para>
+   <para>
+    演算子の優先順位や結合性は、あくまでも式のグループ分けだけを決めるものであり、評価順を決めるものではありません。
+    PHP では一般に、式をどの順番で評価するかは決めていませｎ。
+    そのため、特定の順序で式が評価されることを前提としたコードを書いてはいけません。
+    PHP のバージョンが変わったり前後のコードが変わったりしたときに、評価順が変わる可能性があるからです。
+    <example>
+     <title>評価順序は未定義</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+$a = 1;
+echo $a + $a++; // 1 になるかもしれないし、2 になるかもしれません
+
+$i = 1;
+$array[$i] = $i++; // インデックス 1 をセットするかもしれないし、インデックス 2 をセットするかもしれません
+?>
+]]>
+     </programlisting>
+    </example>
    </para>
    <note>
     <para>
