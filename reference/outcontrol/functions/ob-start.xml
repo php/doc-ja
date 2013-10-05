@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: f68abbe82cc5429cde1ff576e536956fb547f324 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: be1c862babddf0359d9660d11f67ae6b8b9ab247 Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa -->
 <refentry xmlns="http://docbook.org/ns/docbook" xml:id="function.ob-start">
  <refnamediv>
@@ -12,9 +12,9 @@
   &reftitle.description;
   <methodsynopsis>
    <type>bool</type><methodname>ob_start</methodname>
-   <methodparam choice="opt"><type>callable</type><parameter>output_callback</parameter></methodparam>
+   <methodparam choice="opt"><type>callable</type><parameter>output_callback</parameter><initializer>&null;</initializer></methodparam>
    <methodparam choice="opt"><type>int</type><parameter>chunk_size</parameter><initializer>0</initializer></methodparam>
-   <methodparam choice="opt"><type>bool</type><parameter>erase</parameter><initializer>true</initializer></methodparam>
+   <methodparam choice="opt"><type>int</type><parameter>flags</parameter><initializer><constant>PHP_OUTPUT_HANDLER_STDFLAGS</constant></initializer></methodparam>
   </methodsynopsis>
   <para>
    この関数は出力のバッファリングをオンにします。
@@ -144,12 +144,55 @@
      </listitem>
     </varlistentry>
     <varlistentry>
-     <term><parameter>erase</parameter></term>
+     <term><parameter>flags</parameter></term>
      <listitem>
       <para>
-       オプションのパラメータ <parameter>erase</parameter> に &false; を指定すると、
-       スクリプトが終了するまでバッファは削除されません。その結果、
-       flush 関数や clean 関数がコールされると notice が発生し、&false; を返すようになります。
+       <parameter>flags</parameter> はビットマスクで、出力バッファ上でどんな操作ができるのかを制御します。
+       デフォルトでは、出力バッファのクリーン、フラッシュ、削除がすべてできるようになっています。
+       これは、明示的に
+       <constant>PHP_OUTPUT_HANDLER_CLEANABLE</constant> |
+       <constant>PHP_OUTPUT_HANDLER_FLUSHABLE</constant> |
+       <constant>PHP_OUTPUT_HANDLER_REMOVABLE</constant> と設定したり、あるいは短縮形で
+       <constant>PHP_OUTPUT_HANDLER_STDFLAGS</constant> と設定したりするのと同じです。
+      </para>
+      <para>
+       各フラグが、次の表のように関数へのアクセスを制御します。
+       <informaltable>
+        <tgroup cols="2">
+         <thead>
+          <row>
+           <entry>定数</entry>
+           <entry>関数</entry>
+          </row>
+         </thead>
+         <tbody>
+          <row>
+           <entry><constant>PHP_OUTPUT_HANDLER_CLEANABLE</constant></entry>
+           <entry>
+            <function>ob_clean</function>、
+            <function>ob_end_clean</function> および
+            <function>ob_get_clean</function>
+           </entry>
+          </row>
+          <row>
+           <entry><constant>PHP_OUTPUT_HANDLER_FLUSHABLE</constant></entry>
+           <entry>
+            <function>ob_end_flush</function>、
+            <function>ob_flush</function> および
+            <function>ob_get_flush</function>
+           </entry>
+          </row>
+          <row>
+           <entry><constant>PHP_OUTPUT_HANDLER_REMOVABLE</constant></entry>
+           <entry>
+            <function>ob_end_clean</function>、
+            <function>ob_end_flush</function> および
+            <function>ob_get_flush</function>
+           </entry>
+          </row>
+         </tbody>
+        </tgroup>
+       </informaltable>
       </para>
      </listitem>
     </varlistentry>
@@ -176,6 +219,20 @@
       </row>
      </thead>
      <tbody>
+      <row>
+       <entry>5.4.0</entry>
+       <entry>
+        <function>ob_start</function> の三番目のパラメータが
+        <type>boolean</type> <parameter>erase</parameter>
+        (これを &false; にすると、スクリプトの実行が終了するまで出力バッファを削除できなくなります)
+        から <type>integer</type> <parameter>flags</parameter> に変わりました。
+        残念ながら、そのせいで API の互換性が崩れてしまい。
+        PHP 5.4.0 より前のバージョンで三番目のパラメータを使っていたコードは、
+        そのままでは期待通りに動かなくなりました。
+        <link linkend="function.ob-start.flags-bc">この例</link>
+        のようにして、両方のバージョンでの互換性を保つ必要があります。
+       </entry>
+      </row>
       <row>
        <entry>5.4.0</entry>
        <entry>
@@ -242,6 +299,26 @@ ob_end_flush();
 </html>
 ]]>
     </screen>
+   </example>
+  </para>
+
+  <para>
+   <example xml:id="function.ob-start.flags-bc">
+    <title>削除不可能な出力バッファを、PHP 5.3 と 5.4 のどちらでも動くように作る例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+if (version_compare(PHP_VERSION, '5.4.0', '>=')) {
+  ob_start(null, 0, PHP_OUTPUT_HANDLER_STDFLAGS ^
+    PHP_OUTPUT_HANDLER_REMOVABLE);
+} else {
+  ob_start(null, 0, false);
+}
+
+?>
+]]>
+    </programlisting>
    </example>
   </para>
  </refsect1>
