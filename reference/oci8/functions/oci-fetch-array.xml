@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- $Revision$ -->
-<!-- EN-Revision: cd110607fd94ccea0f99a693be555a50ce5c6b1e Maintainer: satoruyoshida Status: ready -->
+<!-- EN-Revision: 5a3f0c18ac46e6d4313367e44866527badac5b73 Maintainer: satoruyoshida Status: ready -->
 <!-- CREDITS: shimooka -->
 <refentry xml:id="function.oci-fetch-array" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -22,6 +22,14 @@
    この関数の典型的な使い方は、ループの中で &false; を返すまでコールすることです。
    &false; は、もう行がないことを意味します。
   </para>
+  <para>
+   <parameter>statement</parameter> が Oracle Database 12c
+   の暗黙の結果セットを返す PL/SQL ブロックである場合、
+   すべてのセットからの行を続けて取得します。
+   <parameter>statement</parameter> が
+   <function>oci_get_implicit_resultset</function> の戻す値である場合、
+   ひとつの子クエリーからの行のサブセットだけを返します。
+  </para>
   &oci.datatypes;
  </refsect1>
 
@@ -33,6 +41,9 @@
      <term><parameter>statement</parameter></term>
      <listitem>
        &oci.arg.statement.id;
+       <para>
+        <function>oci_get_implicit_resultset</function> が戻すステートメント ID も指定できます。
+       </para>
      </listitem>
     </varlistentry>
     <varlistentry>
@@ -515,36 +526,99 @@ if (!$conn) {
     trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
 }
 
+// データベースのバージョンを調べます
+preg_match('/Release ([0-9]+)\./', oci_server_version($conn), $matches);
+$oracleversion = $matches[1];
+
 // これが実行したいクエリーです
 $sql = 'SELECT city, postal_code FROM locations ORDER BY city';
 
-// このネストしたクエリーにより、 $sql から行のサブセットが選択されます。
-// 製品環境では、連結した SQL 文による SQL インジェクションの問題を
+// ネストしたクエリーを作り、$sql から行のサブセットを選択します。
+// 運用環境では、連結した SQL 文による SQL インジェクションの問題を
 // 防止するよう気をつけてください
-$limit_sql = 
-   'select *
-    from ( select a.*, rownum as rnum
-        from (' . $sql . ') a
-        where rownum < :FIRST_ROW + :NUM_ROWS )
-    where rnum >= :FIRST_ROW';
+if ($oracleversion >= 12) {
+    // Oracle 12c の OFFSET / FETCH NEXT 構文を使います
+    $sql = $sql . ' OFFSET :offset ROWS FETCH NEXT :numrows ROWS ONLY';
+} else {
+    // 旧バージョンでは、このような構文を使うか、ベースのクエリーを書き換えて
+    // row_number() 関数を使うようにする必要があります
+    $sql = "SELECT * FROM (SELECT A.*, ROWNUM AS MY_RNUM
+                           FROM ($sql) A
+                           WHERE ROWNUM <= :offset + :numrows)
+            WHERE MY_RNUM > :offset";
+}
 
-$first = 1;  // 最初の行で開始
-$num   = 5;  // 5 行を返す
-$stid = oci_parse($conn, $limit_sql);
-oci_bind_by_name($stid, ':FIRST_ROW', $first);
-oci_bind_by_name($stid, ':NUM_ROWS', $num);
+$offset  = 0;  // この行数だけ飛ばす
+$numrows = 5;  // 5 行を返す
+$stid = oci_parse($conn, $sql);
+oci_bind_by_name($stid, ':numrows', $numrows);
+oci_bind_by_name($stid, ':offset', $offset);
 oci_execute($stid);
 
-while (($row = oci_fetch_array($stid, OCI_ASSOC))) {
+while (($row = oci_fetch_array($stid, OCI_ASSOC + OCI_RETURN_NULLS))) {
     echo $row['CITY'] . " " . $row['POSTAL_CODE'] . "<br>\n";
 }
 
 // 出力です。
-//    Beijing 190518x
-//    Bern 3095x
-//    Bombay 490231x
-//    Geneva 1730x
-//    Hiroshima 6823x
+//    Beijing 190518
+//    Bern 3095
+//    Bombay 490231
+//    Geneva 1730
+//    Hiroshima 6823
+
+oci_free_statement($stid);
+oci_close($conn);
+
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+  <para>
+   <example>
+    <title><function>oci_fetch_array</function> で Oracle Database 12<emphasis>c</emphasis> の暗黙の結果セットを使う例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+$conn = oci_connect('hr', 'welcome', 'localhost/pdborcl');
+if (!$conn) {
+    $e = oci_error();
+    trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
+}
+
+// OCI8 2.0 と Oracle Database 12c が必要です。
+// oci_get_implicit_resultset() も参照ください。
+$sql = 'DECLARE
+            c1 SYS_REFCURSOR;
+        BEGIN
+           OPEN c1 FOR SELECT city, postal_code FROM locations WHERE ROWNUM < 4 ORDER BY city;
+           DBMS_SQL.RETURN_RESULT(c1);
+           OPEN c1 FOR SELECT country_id FROM locations WHERE ROWNUM < 4 ORDER BY city;
+           DBMS_SQL.RETURN_RESULT(c1);
+        END;';
+
+$stid = oci_parse($conn, $sql);
+oci_execute($stid);
+
+// 注意: oci_fetch_all と oci_fetch() は、この場合は使えません
+echo "<table>\n";
+while (($row = oci_fetch_array($stid, OCI_ASSOC+OCI_RETURN_NULLS)) != false) {
+    echo "<tr>\n";
+    foreach ($row as $item) {
+        echo "  <td>".($item!==null?htmlentities($item, ENT_QUOTES|ENT_SUBSTITUTE):"&nbsp;")."</td>\n";
+    }
+    echo "</tr>\n";
+}
+echo "</table>\n";
+
+// 出力です。
+//    Beijing 190518
+//    Bern    3095
+//    Bombay  490231
+//    CN
+//    CH
+//    IN
 
 oci_free_statement($stid);
 oci_close($conn);
