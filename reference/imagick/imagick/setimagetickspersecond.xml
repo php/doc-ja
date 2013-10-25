@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 196abbabb4f94cc5e9de0ace42e121e5fdb4de7f Maintainer: takagi Status: ready -->
+<!-- EN-Revision: d6da6ad11e81e7588c0875a47d431520bf6fd159 Maintainer: takagi Status: ready -->
 <refentry xmlns="http://docbook.org/ns/docbook" xml:id="imagick.setimagetickspersecond">
  <refnamediv>
   <refname>Imagick::setImageTicksPerSecond</refname>
@@ -11,11 +11,23 @@
   &reftitle.description;
   <methodsynopsis>
    <type>bool</type><methodname>Imagick::setImageTicksPerSecond</methodname>
-   <methodparam><type>int</type><parameter>ticks_per-second</parameter></methodparam>
+   <methodparam><type>int</type><parameter>ticks_per_second</parameter></methodparam>
   </methodsynopsis>
   <para>
-   画像の ticks-per-second を設定します。
+   アニメーション画像のフレームを表示する時間を調整します。
   </para>
+  <note>
+   <para>
+    アニメーション GIF の場合、この関数は秒間の 'image ticks' の数は変更しません。常に 100 です。
+    そのかわりに、'ticks per second' を変更し、フレームを表示する時間を変更したように見せます。
+   </para>
+   <para>
+    たとえば、各フレームを 20 ticks (1/5 秒) ずつ表示させるようにしているアニメーション GIF
+    に対して、この関数の引数に <literal>50</literal> を渡して呼び出すと、
+    各フレームの表示時間を 40 ticks (2/5 秒) に変更します。
+    その結果、元の半分の速さで表示されるようになります。
+   </para>
+  </note>
  </refsect1>
 
  <refsect1 role="parameters">
@@ -23,9 +35,10 @@
   <para>
    <variablelist>
     <varlistentry>
-     <term><parameter>ticks_per-second</parameter></term>
+     <term><parameter>ticks_per_second</parameter></term>
      <listitem>
       <para>
+       画像を表示させる時間を ticks per second で表した値。
       </para>
      </listitem>
     </varlistentry>
@@ -37,6 +50,50 @@
   &reftitle.returnvalues;
   <para>
    &imagick.return.success;
+  </para>
+ </refsect1>
+
+ <refsect1 role="examples">
+    &reftitle.examples;
+  <para>
+   <example>
+    <title><function>Imagick::setImageTicksPerSecond</function> によるアニメーション GIF の変更</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+// アニメーション GIF の前半の再生スピードを元の半分に、
+// そして後半の再生スピードを元の倍にします。
+
+$imagick = new Imagick(realpath("Test.gif"));
+$imagick = $imagick->coalesceImages();
+
+$totalFrames = $imagick->getNumberImages();
+
+$frameCount = 0;
+
+foreach ($imagick as $frame) {
+    $imagick->setImageTicksPerSecond(50);
+    
+    if ($frameCount < ($totalFrames / 2)) {
+        // フレームの表示時間を元の二倍にします
+        $imagick->setImageTicksPerSecond(50);
+    } else {
+        // フレームの表示時間を元の半分にします
+        $imagick->setImageTicksPerSecond(200);
+    }
+
+    $frameCount++;
+}
+
+$imagick = $imagick->deconstructImages();
+
+$imagick->writeImages("/path/to/save/output.gif", true);
+
+?>
+]]>
+    </programlisting>
+   </example>
   </para>
  </refsect1>
 
