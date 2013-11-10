@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 7da0357629d4f40105a314a9e63eff559bbeb351 Maintainer: masakielastic Status: ready -->
+<!-- EN-Revision: ac78bae531756815da86f105c9a70f66cd48f417 Maintainer: masakielastic Status: ready -->
 <!-- Reviewed: no -->
 
 <refentry xml:id="function.hash-pbkdf2" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
@@ -48,7 +48,7 @@
      <term><parameter>salt</parameter></term>
      <listitem>
       <para>
-       派生に使うソルト
+       派生に使うソルト。ランダムに生成した値でなければいけません。
       </para>
      </listitem>
     </varlistentry>
@@ -64,7 +64,10 @@
      <term><parameter>length</parameter></term>
      <listitem>
       <para>
-       出力する派生キーの長さ。<literal>0</literal> の場合、渡されたアルゴリズムの長さが使われます。
+       出力する文字列の長さ。<parameter>raw_output</parameter> が &true;
+       の場合、これは派生キーのバイト長になります。
+       <parameter>raw_output</parameter> が &false; の場合、
+       これは派生キーのバイト長の二倍になります (キーの全バイトが十六進二桁で返されるからです)。
       </para>
      </listitem>
     </varlistentry>
@@ -83,7 +86,7 @@
  <refsect1 role="returnvalues"><!-- {{{ -->
   &reftitle.returnvalues;
   <para>
-   小文字の16進数を含む文字列が返されます。<parameter>raw_output</parameter> が true の場合、派生キーの生のバイナリ表現が返されます。
+   小文字の16進数を含む文字列が返されます。<parameter>raw_output</parameter> が &true; の場合、派生キーの生のバイナリ表現が返されます。
   </para>
  </refsect1><!-- }}} -->
 
@@ -104,13 +107,18 @@
 <![CDATA[
 <?php
 $password = "password";
-$salt = "salt";
-$hash = hash_pbkdf2("sha256", $password, $salt, 1, 20);
+$iterations = 1000;
+
+// ランダムな IV を、mcrypt_create_iv() や
+// openssl_random_pseudo_bytes() などの適切なソースを使って生成します。
+$salt = mcrypt_create_iv(16, MCRYPT_DEV_URANDOM);
+
+$hash = hash_pbkdf2("sha256", $password, $salt, $iterations, 20);
 echo $hash;
 ?>
 ]]>
     </programlisting>
-    &example.outputs;
+    &example.outputs.similar;
     <screen>
 <![CDATA[
 120fb6cffcf8b32c43e7
@@ -124,8 +132,9 @@ echo $hash;
   &reftitle.notes;
   <caution>
    <para>
-    PBKDF2 による方法はパスワードのハッシュを保存するために使うことができます (NIST が認めた利用方法です)。
-    しかしながら、<constant>CRYPT_BLOWFISH</constant> のほうがパスワードの保存に適しており、<function>crypt</function> を通じて利用できることを記しておきます。
+    PBKDF2 による方法はパスワードのハッシュを保存するために使うことができます。
+    しかし、<function>password_hash</function> や <function>crypt</function>
+    で <constant>CRYPT_BLOWFISH</constant> を使うのほうが、パスワードの保存に適しています。
    </para>
   </caution>
  </refsect1>
@@ -135,6 +144,7 @@ echo $hash;
   <para>
    <simplelist>
     <member><function>crypt</function></member>
+    <member><function>password_hash</function></member>
     <member><function>hash</function></member>
     <member><function>hash_algos</function></member>
     <member><function>hash_init</function></member>
