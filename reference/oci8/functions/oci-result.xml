@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 96c9d88bad9a7d7d44bfb7f26c226df7ee9ddf26 Maintainer: shimooka Status: ready -->
+<!-- EN-Revision: 445c757a35e0f4f893796f7147336ad3f075c1d6 Maintainer: shimooka Status: ready -->
 <refentry xml:id="function.oci-result" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>oci_result</refname>
@@ -39,6 +39,8 @@
       <para>
        カラム番号
        (1から始まる) またはカラム名 (大文字) のどちらかを使用可能です。
+       カラム名の大文字小文字は、Oracle のメタデータで定義されているものに会わせる必要があります。
+       カラムの作成時に大文字小文字を明示しなかった場合、メタデータ上は大文字で記録されています。
       </para>
      </listitem>
     </varlistentry>
@@ -51,6 +53,44 @@
   <para>
    抽象型 (ROWID, LOB, FILE) を除き、全てを文字列として返します。
    エラーの場合、&false; を返します。
+  </para>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title><function>oci_fetch</function> と <function>oci_result</function> を組み合わせる例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+$conn = oci_connect('hr', 'welcome', 'localhost/XE');
+if (!$conn) {
+    $e = oci_error();
+    trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
+}
+
+$sql = 'SELECT location_id, city FROM locations WHERE location_id < 1200';
+$stid = oci_parse($conn, $sql);
+oci_execute($stid);
+
+while (oci_fetch($stid)) {
+    echo oci_result($stid, 'LOCATION_ID') . " is ";
+    echo oci_result($stid, 'CITY') . "<br>\n";
+}
+
+// 表示:
+//   1000 is Roma
+//   1100 is Venice
+
+oci_free_statement($stid);
+oci_close($conn);
+
+?>
+]]>
+    </programlisting>
+   </example>
   </para>
  </refsect1>
 
