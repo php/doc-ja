@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 834e755b8d998407bda7643ac1cd576e2ea2a125 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 2d4b995d680332b66a53f8278439ba1d6454a9eb Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi -->
 <refentry xmlns="http://docbook.org/ns/docbook" xml:id="function.openssl-verify">
  <refnamediv>
@@ -15,7 +15,7 @@
    <methodparam><type>string</type><parameter>data</parameter></methodparam>
    <methodparam><type>string</type><parameter>signature</parameter></methodparam>
    <methodparam><type>mixed</type><parameter>pub_key_id</parameter></methodparam>
-   <methodparam choice="opt"><type>int</type><parameter>signature_alg</parameter><initializer>OPENSSL_ALGO_SHA1</initializer></methodparam>
+   <methodparam choice="opt"><type>mixed</type><parameter>signature_alg</parameter><initializer>OPENSSL_ALGO_SHA1</initializer></methodparam>
   </methodsynopsis>
   <para>
    <function>openssl_verify</function> は、
@@ -35,6 +35,7 @@
      <term><parameter>data</parameter></term>
      <listitem>
       <para>
+       署名を作成するときに使ったデータの文字列。
       </para>
      </listitem>
     </varlistentry>
@@ -42,6 +43,7 @@
      <term><parameter>signature</parameter></term>
      <listitem>
       <para>
+       生のバイナリ文字列。<function>openssl_sign</function> もしくはそれと同等の手段を使って生成したもの。
       </para>
      </listitem>
     </varlistentry>
@@ -49,16 +51,22 @@
      <term><parameter>pub_key_id</parameter></term>
      <listitem>
       <para>
+       <type>resource</type> - <function>openssl_get_publickey</function> が返す鍵。
       </para>
+      <para>
+       <type>string</type> - PEM フォーマットの鍵 ("-----BEGIN PUBLIC KEY-----
+MIIBCgK..." など)。
+      </para>     
      </listitem>
     </varlistentry>
     <varlistentry>
      <term><parameter>signature_alg</parameter></term>
      <listitem>
       <para>
-       詳細な情報は、
-       <link linkend="openssl.signature-algos">署名アルゴリズム</link>
-       の一覧を参照ください。
+       <type>int</type> - いずれかの <link linkend="openssl.signature-algos">署名アルゴリズム</link>。
+      </para>
+      <para>
+       <type>string</type> - <function>openssl_get_md_methods</function> が返す文字列 ("sha1WithRSAEncryption" や "sha512" など)。
       </para>
      </listitem>
     </varlistentry>
@@ -109,10 +117,7 @@
 // $data および $signature はデータおよび署名が含まれていると仮定
 
 // 認証局から公開鍵を取得し、使用可能にする
-$fp = fopen("/src/openssl-0.9.6/demos/sign/cert.pem", "r");
-$cert = fread($fp, 8192);
-fclose($fp);
-$pubkeyid = openssl_get_publickey($cert);
+$pubkeyid = openssl_pkey_get_public("file://src/openssl-0.9.6/demos/sign/cert.pem");
 
 // 署名が正しいかどうかを確認
 $ok = openssl_verify($data, $signature, $pubkeyid);
@@ -125,6 +130,38 @@ if ($ok == 1) {
 }
 // メモリからキーを開放
 openssl_free_key($pubkeyid);
+?>
+]]>
+    </programlisting>
+   </example>
+   <example>
+    <title><function>openssl_verify</function> の例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+// 署名したいデータ
+$data = 'my data';
+
+// 新しい秘密鍵と公開鍵を作成
+$private_key_res = openssl_pkey_new(array(
+    "private_key_bits" => 2048,
+    "private_key_type" => OPENSSL_KEYTYPE_RSA,
+));
+$details = openssl_pkey_get_details($private_key_res);
+$public_key_res = openssl_pkey_get_public($details['key']);
+
+// 署名を作成
+openssl_sign($data, $signature, $private_key_res, "sha1WithRSAEncryption");
+
+// 署名を検証
+$ok = openssl_verify($data, $signature, $public_key_res, OPENSSL_ALGO_SHA1);
+if ($ok == 1) {
+    echo "valid";
+} elseif ($ok == 0) {
+    echo "invalid";
+} else {
+    echo "error: ".openssl_error_string();
+}
 ?>
 ]]>
     </programlisting>

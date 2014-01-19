@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 96c9d88bad9a7d7d44bfb7f26c226df7ee9ddf26 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 2d4b995d680332b66a53f8278439ba1d6454a9eb Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi -->
 <refentry xmlns="http://docbook.org/ns/docbook" xml:id="function.openssl-sign">
  <refnamediv>
@@ -15,14 +15,13 @@
    <methodparam><type>string</type><parameter>data</parameter></methodparam>
    <methodparam><type>string</type><parameter role="reference">signature</parameter></methodparam>
    <methodparam><type>mixed</type><parameter>priv_key_id</parameter></methodparam>
-   <methodparam choice="opt"><type>int</type><parameter>signature_alg</parameter><initializer>OPENSSL_ALGO_SHA1</initializer></methodparam>
+   <methodparam choice="opt"><type>mixed</type><parameter>signature_alg</parameter><initializer>OPENSSL_ALGO_SHA1</initializer></methodparam>
   </methodsynopsis>
   <para>
-   <function>openssl_sign</function> は、指定した 
-   <parameter>data</parameter> に関してハッシュ計算に SHA1 を使用して
-   署名を計算し、その後 <parameter>priv_key_id</parameter> で
-   指定した秘密鍵を使用して暗号化を行います。data 自体は
-   暗号化されないことに注意してください。
+   <function>openssl_sign</function> は、指定した
+   <parameter>data</parameter> の署名を作ります。
+   <parameter>priv_key_id</parameter> で指定した秘密鍵を使用して、暗号のデジタル署名を生成します。
+   data 自体は暗号化されないことに注意してください。
   </para>
  </refsect1>
 
@@ -34,6 +33,7 @@
      <term><parameter>data</parameter></term>
      <listitem>
       <para>
+       署名したいデータの文字列。
       </para>
      </listitem>
     </varlistentry>
@@ -49,6 +49,10 @@
      <term><parameter>priv_key_id</parameter></term>
      <listitem>
       <para>
+       <type>resource</type> - <function>openssl_get_privatekey</function> が返す鍵。
+      </para>
+      <para>
+       <type>string</type> - PEM フォーマットの鍵。
       </para>
      </listitem>
     </varlistentry>
@@ -56,9 +60,10 @@
      <term><parameter>signature_alg</parameter></term>
      <listitem>
       <para>
-       詳細な情報は、
-       <link linkend="openssl.signature-algos">署名アルゴリズム</link>
-       の一覧を参照ください。
+       <type>int</type> - いずれかの <link linkend="openssl.signature-algos">署名アルゴリズム</link>。
+      </para>
+      <para>
+       <type>string</type> - <function>openssl_get_md_methods</function> が返す文字列 ("sha256WithRSAEncryption" や "sha384" など)。
       </para>
      </listitem>
     </varlistentry>
@@ -107,11 +112,8 @@
 <?php
 // $data に署名するデータが含まれていると仮定
 
-// ファイルから秘密鍵を取得するには、使用することができます
-$fp = fopen("/src/openssl-0.9.6/demos/sign/key.pem", "r");
-$priv_key = fread($fp, 8192);
-fclose($fp);
-$pkeyid = openssl_get_privatekey($priv_key);
+// ファイルから秘密鍵を取得して準備
+$pkeyid = openssl_pkey_get_private("file://src/openssl-0.9.6/demos/sign/key.pem");
 
 // 署名を計算
 openssl_sign($data, $signature, $pkeyid);
@@ -122,6 +124,40 @@ openssl_free_key($pkeyid);
 ]]>
     </programlisting>
    </example>
+   <example>
+    <title><function>openssl_sign</function> の例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+// 署名したいデータ
+$data = 'my data';
+
+// 新しい秘密鍵と公開鍵を作成
+$new_key_pair = openssl_pkey_new(array(
+    "private_key_bits" => 2048,
+    "private_key_type" => OPENSSL_KEYTYPE_RSA,
+));
+openssl_pkey_export($new_key_pair, $private_key_pem);
+
+$details = openssl_pkey_get_details($new_key_pair);
+$public_key_pem = $details['key'];
+
+// 署名を作成
+openssl_sign($data, $signature, $private_key_pem, OPENSSL_ALGO_SHA256);
+
+// それらを保存
+file_put_contents('private_key.pem', $private_key_pem);
+file_put_contents('public_key.pem', $public_key_pem);
+file_put_contents('signature.dat', $signature);
+
+// 署名を検証
+$r = openssl_verify($data, $signature, $public_key_pem, "sha256WithRSAEncryption");
+var_dump($r);
+?>
+]]>
+    </programlisting>
+   </example>
+ 
   </para>
  </refsect1>
 
