@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: b34a4dd8e5d73b712352a6491fcb1c7bc876d906 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 3107c3b0120f98446e284877fa7e277ed2fbde83 Maintainer: takagi Status: ready -->
 
 <phpdoc:classref xml:id="class.mongobindata" xmlns:phpdoc="http://php.net/ns/phpdoc" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xi="http://www.w3.org/2001/XInclude">
 
@@ -29,8 +29,9 @@
 <![CDATA[
 <?php
 
-$profile = array("username" => "foobity",
-    "pic" => new MongoBinData(file_get_contents("gravatar.jpg"))
+$profile = array(
+    "username" => "foobity",
+    "pic" => new MongoBinData(file_get_contents("gravatar.jpg"), MongoBinData::GENERIC),
 );
 
 $users->save($profile);
@@ -42,10 +43,12 @@ $users->save($profile);
    <para>
     このクラスには <varname>type</varname> フィールドがありますが、
     現時点ではこのフィールドはドライバやデータベースに対して何の効果も及ぼしません。
-    5 種類の型が定義済み (以下のクラス定数を参照ください) です。
-    (BSON 仕様からはずれることを覚悟の上で)
-    ユーザーが自分で定義することもできます。
-    デフォルトでは、PHP ドライバは常に type 2: バイト配列を使います。
+    7 種類の型が定義済み (以下のクラス定数を参照ください) です。
+    過去のバージョンとの互換性のため、デフォルトは
+    <constant>MongoBinData::BYTE_ARRAY</constant>
+    となっていますが、将来のバージョンでは
+    <constant>MongoBinData::GENERIC</constant> に変わるかもしれません。
+    <function>MongoBinData::__construct</function> できちんと型を定義するようにしましょう。
    </para>
   </section>
 <!-- }}} -->
@@ -69,13 +72,19 @@ $users->save($profile);
     <fieldsynopsis>
      <modifier>const</modifier>
      <type>int</type>
+     <varname linkend="mongobindata.constants.generic">MongoBinData::GENERIC</varname>
+     <initializer>0</initializer>
+    </fieldsynopsis>
+    <fieldsynopsis>
+     <modifier>const</modifier>
+     <type>int</type>
      <varname linkend="mongobindata.constants.func">MongoBinData::FUNC</varname>
      <initializer>1</initializer>
     </fieldsynopsis>
     <fieldsynopsis>
      <modifier>const</modifier>
      <type>int</type>
-     <varname linkend="mongobindata.constants.bytearray">MongoBinData::BYTE_ARRAY</varname>
+     <varname linkend="mongobindata.constants.byte_array">MongoBinData::BYTE_ARRAY</varname>
      <initializer>2</initializer>
     </fieldsynopsis>
     <fieldsynopsis>
@@ -83,6 +92,12 @@ $users->save($profile);
      <type>int</type>
      <varname linkend="mongobindata.constants.uuid">MongoBinData::UUID</varname>
      <initializer>3</initializer>
+    </fieldsynopsis>
+    <fieldsynopsis>
+     <modifier>const</modifier>
+     <type>int</type>
+     <varname linkend="mongobindata.constants.uuid_rfc4122">MongoBinData::UUID_RFC4122</varname>
+     <initializer>4</initializer>
     </fieldsynopsis>
     <fieldsynopsis>
      <modifier>const</modifier>
@@ -123,6 +138,15 @@ $users->save($profile);
    <section xml:id="mongobindata.constants.types">
     <title>バイナリデータ型</title>
     <variablelist>
+     <varlistentry xml:id="mongobindata.constants.generic">
+      <term><constant>MongoBinData::GENERIC</constant></term>
+      <term><constant>0x00</constant></term>
+      <listitem>
+       <simpara>
+        汎用的なバイナリデータ。
+       </simpara>
+      </listitem>
+     </varlistentry>
      <varlistentry xml:id="mongobindata.constants.func">
       <term><constant>MongoBinData::FUNC</constant></term>
       <term><constant>0x01</constant></term>
@@ -132,12 +156,13 @@ $users->save($profile);
        </simpara>
       </listitem>
      </varlistentry>
-     <varlistentry xml:id="mongobindata.constants.bytearray">
+     <varlistentry xml:id="mongobindata.constants.byte_array">
       <term><constant>MongoBinData::BYTE_ARRAY</constant></term>
       <term><constant>0x02</constant></term>
       <listitem>
        <simpara>
-        バイト配列。
+        汎用的なバイナリデータ (非推奨。かわりに
+        <constant>MongoBinData::GENERIC</constant> を使いましょう)。
        </simpara>
       </listitem>
      </varlistentry>
@@ -146,7 +171,18 @@ $users->save($profile);
       <term><constant>0x03</constant></term>
       <listitem>
        <simpara>
-        全体で一意な識別子。
+        全体で一意な識別子 (非推奨。かわりに
+        <constant>MongoBinData::UUID_RFC4122</constant> を使いましょう)。
+       </simpara>
+      </listitem>
+     </varlistentry>
+     <varlistentry xml:id="mongobindata.constants.uuid_rfc4122">
+      <term><constant>MongoBinData::UUID_RFC4122</constant></term>
+      <term><constant>0x04</constant></term>
+      <listitem>
+       <simpara>
+        全体で一意な識別子
+        (<link xlink:href="&url.rfc;4122">RFC 4122</link> 準拠)。
        </simpara>
       </listitem>
      </varlistentry>
@@ -172,6 +208,29 @@ $users->save($profile);
    </section>
   </section>
 <!-- }}} -->
+
+  <simplesect role="changelog">
+   &reftitle.changelog;
+   <informaltable>
+    <tgroup cols="2">
+     <thead>
+      <row>
+       <entry>&Version;</entry>
+       <entry>&Description;</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry>1.5.0</entry>
+       <entry>
+        定数 <constant>MongoBinData::GENERIC</constant> および
+        <constant>MongoBinData::UUID_RFC4122</constant> が追加されました。
+       </entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </informaltable>
+  </simplesect>
 
  </partintro>
 
