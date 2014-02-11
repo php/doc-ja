@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 5a3f0c18ac46e6d4313367e44866527badac5b73 Maintainer: shimooka Status: ready -->
+<!-- EN-Revision: 44e38e287d29857e5cd5da1f045695e6838170b3 Maintainer: shimooka Status: ready -->
 <refentry xml:id="function.oci-bind-by-name" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>oci_bind_by_name</refname>
@@ -217,6 +217,12 @@
          <para>
           <constant>SQLT_RSET</constant> - カーソル用。
           <function>oci_new_cursor</function> により、前もって生成されたもの。
+         </para>
+        </listitem>
+        <listitem>
+         <para>
+          <constant>SQLT_BOL</constant> あるいは <constant>OCI_B_BOL</constant>
+          PL/SQL の BOOLEAN 用 (OCI8 2.0.7 以降と Oracle Database 12c 以降が必要)
          </para>
         </listitem>
        </itemizedlist>
@@ -741,6 +747,38 @@ while ($row = oci_fetch_array($stid, OCI_ASSOC)) {
   print '<tr><td>'.$result.'</td></tr>';
 }
 print '</table>';
+
+?>
+]]>
+   </programlisting>
+  </example>
+  </para>
+
+  <para>
+  <example>
+   <title>PL/SQL の BOOLEAN のバインド</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+$conn = oci_connect('hr', 'welcome', 'localhost/XE');
+if (!$conn) {
+    $e = oci_error();
+    trigger_error(htmlentities($e['message']), E_USER_ERROR);
+}
+
+$plsql = 
+  "begin
+    :output1 := true;
+    :output2 := false;
+   end;";
+
+$s = oci_parse($c, $plsql);
+oci_bind_by_name($s, ':output1', $output1, -1, OCI_B_BOL);
+oci_bind_by_name($s, ':output2', $output2, -1, OCI_B_BOL);
+oci_execute($s);
+var_dump($output1);  // true
+var_dump($output2);  // false
 
 ?>
 ]]>
