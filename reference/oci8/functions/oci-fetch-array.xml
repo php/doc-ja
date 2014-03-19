@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 46854b1593fc9bf77d14db6fddcbfb73a20cbf86 Maintainer: satoruyoshida Status: ready -->
+<!-- EN-Revision: a48bfbee2a121bdf25ceee2946aa27728e611365 Maintainer: satoruyoshida Status: ready -->
 <!-- CREDITS: shimooka -->
 <refentry xml:id="function.oci-fetch-array" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -320,6 +320,9 @@ oci_execute($stid);
 while (($row = oci_fetch_array($stid, OCI_ASSOC+OCI_RETURN_LOBS)) != false) {
     echo $row['ID'] . "<br>\n";
     echo $row['DESCRIPTION'] . "<br>\n"; // DESCRIPTION の全てが含まれます
+    // ループ内で、大きなサイズの変数を解放してから次のフェッチに進めます。
+    // これで、PHP のピークメモリ利用量を抑えます。
+    unset($row);
 }
 
 // 出力です。
@@ -590,7 +593,7 @@ if (!$conn) {
 // OCI8 2.0 と Oracle Database 12c が必要です。
 // oci_get_implicit_resultset() も参照ください。
 $sql = 'DECLARE
-            c1 SYS_REFCURSOR;
+           c1 SYS_REFCURSOR;
         BEGIN
            OPEN c1 FOR SELECT city, postal_code FROM locations WHERE ROWNUM < 4 ORDER BY city;
            DBMS_SQL.RETURN_RESULT(c1);

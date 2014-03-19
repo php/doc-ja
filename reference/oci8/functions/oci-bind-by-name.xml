@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 44e38e287d29857e5cd5da1f045695e6838170b3 Maintainer: shimooka Status: ready -->
+<!-- EN-Revision: a48bfbee2a121bdf25ceee2946aa27728e611365 Maintainer: shimooka Status: ready -->
 <refentry xml:id="function.oci-bind-by-name" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>oci_bind_by_name</refname>
@@ -364,16 +364,21 @@ if (!$conn) {
     trigger_error(htmlentities($m['message']), E_USER_ERROR);
 }
 
-$sql = 'SELECT last_name FROM employees WHERE employee_id = :eidbv';
+$sql = 'SELECT last_name FROM employees WHERE department_id = :didbv ORDER BY last_name';
 $stid = oci_parse($conn, $sql);
-$myeid = 101;
-oci_bind_by_name($stid, ':eidbv', $myeid);
+$didbv = 60;
+oci_bind_by_name($stid, ':didbv', $didbv);
 oci_execute($stid);
-$row = oci_fetch_array($stid, OCI_ASSOC);
-echo $row['LAST_NAME'] ."<br>\n";
+while (($row = oci_fetch_array($stid, OCI_ASSOC)) != false) {
+    echo $row['LAST_NAME'] ."<br>\n";
+}
 
 // 出力は
-//    Kochhar
+//    Austin
+//    Ernst
+//    Hunold
+//    Lorentz
+//    Pataballa
 
 oci_free_statement($stid);
 oci_close($conn);
@@ -742,9 +747,11 @@ oci_bind_by_name($stid, ":mykey", $mykey, 5);
 oci_execute($stid);
 
 print '<table border="1">';
-while ($row = oci_fetch_array($stid, OCI_ASSOC)) {
-  $result = $row['MYCLOB']->load();
-  print '<tr><td>'.$result.'</td></tr>';
+while ($row = oci_fetch_array($stid, OCI_ASSOC+OCI_RETURN_LOBS)) {
+    print '<tr><td>'.$row['MYCLOB'].'</td></tr>';
+    // ループ内で、大きなサイズの変数を解放してから次のフェッチに進めます。
+    // これで、PHP のピークメモリ利用量を抑えます。
+    unset($row);
 }
 print '</table>';
 

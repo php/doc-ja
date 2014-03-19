@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: dab77ef62857c1aa62757be95b918dc01e0c9563 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: a48bfbee2a121bdf25ceee2946aa27728e611365 Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa,shimooka -->
 <chapter xml:id="oci8.examples" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  &reftitle.examples;
@@ -109,6 +109,45 @@ oci_close($conn);
  </example>
 
  <example>
+  <title>クエリの WHERE 句でのバインド</title>
+  <para>
+   単一のスカラー値のバインドの例です。
+  </para>
+  <programlisting role="php">
+<![CDATA[
+<?php
+
+$conn = oci_connect("hr", "hrpwd", "localhost/XE");
+if (!$conn) {
+    $m = oci_error();
+    trigger_error(htmlentities($m['message']), E_USER_ERROR);
+}
+
+$sql = 'SELECT last_name FROM employees WHERE department_id = :didbv ORDER BY last_name';
+$stid = oci_parse($conn, $sql);
+$didbv = 60;
+oci_bind_by_name($stid, ':didbv', $didbv);
+oci_execute($stid);
+while (($row = oci_fetch_array($stid, OCI_ASSOC)) != false) {
+    echo $row['LAST_NAME'] ."<br>\n";
+}
+
+// 出力は
+//    Austin
+//    Ernst
+//    Hunold
+//    Lorentz
+//    Pataballa
+
+oci_free_statement($stid);
+oci_close($conn);
+
+?>
+]]>
+  </programlisting>
+ </example>
+
+ <example>
   <title>CLOB カラムにデータを挿入する</title>
   <para>
    巨大なデータに対しては、バイナリラージオブジェクト (BLOB)
@@ -152,9 +191,11 @@ oci_bind_by_name($stid, ":mykey", $mykey, 5);
 oci_execute($stid);
 
 print '<table border="1">';
-while ($row = oci_fetch_array($stid, OCI_ASSOC)) {
-    $result = $row['MYCLOB']->load();
-    print '<tr><td>'.$result.'</td></tr>';
+while ($row = oci_fetch_array($stid, OCI_ASSOC+OCI_RETURN_LOBS)) {
+    print '<tr><td>'.$row['MYCLOB'].'</td></tr>';
+    // ループ内で、大きなサイズの変数を解放してから次のフェッチに進めます。
+    // これで、PHP のピークメモリ利用量を抑えます。
+    unset($row);
 }
 print '</table>';
 
