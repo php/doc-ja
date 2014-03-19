@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 96c9d88bad9a7d7d44bfb7f26c226df7ee9ddf26 Maintainer: shimooka Status: ready -->
+<!-- EN-Revision: 8c1fe071140833a8e90b266523ff26a32520c4e7 Maintainer: shimooka Status: ready -->
 <refentry xml:id="function.oci-field-is-null" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>oci_field_is_null</refname>
-  <refpurpose>フィールドが &null; であるかどうかを確認する</refpurpose>
+  <refpurpose>フェッチしたフィールドが &null; であるかどうかを確認する</refpurpose>
  </refnamediv>
  
  <refsect1 role="description">
@@ -15,7 +15,7 @@
    <methodparam><type>mixed</type><parameter>field</parameter></methodparam>
   </methodsynopsis>
   <para>
-   <parameter>statement</parameter> の、
+   <parameter>statement</parameter> の現在の行の、
    指定したフィールド <parameter>field</parameter> が &null;
    であるかどうかを調べます。
   </para>
@@ -37,7 +37,7 @@
      <term><parameter>field</parameter></term>
      <listitem>
       <para>
-       フィールド番号またはフィールド名 (大文字)。
+       (1 から始まる) フィールド番号、またはフィールド名。
       </para>
      </listitem>
     </varlistentry>
@@ -50,6 +50,50 @@
   <para>
    <parameter>field</parameter> が &null; の場合に &true;、
    それ以外の場合に &false; を返します。
+  </para>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title><function>oci_field_name</function> の例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+// 以下のテーブルを用意します
+//   CREATE TABLE mytab (c1 NUMBER);
+//   INSERT INTO mytab VALUES (1);
+//   INSERT INTO mytab VALUES (NULL);
+
+$conn = oci_connect("hr", "hrpwd", "localhost/XE");
+if (!$conn) {
+    $m = oci_error();
+    trigger_error(htmlentities($m['message']), E_USER_ERROR);
+}
+
+$stid = oci_parse($conn, "SELECT * FROM mytab");
+oci_execute($stid);
+
+while (($row = oci_fetch_array($stid, OCI_RETURN_NULLS)) != false) {
+    $ncols = oci_num_fields($stid);
+    for ($col = 1; $col <= $ncols; $col++) {
+        var_dump(oci_field_is_null($stid, $col));
+    }    
+}
+
+// 出力は
+//    bool(false)
+//    bool(true)
+
+oci_free_statement($stid);
+oci_close($conn);
+
+?>
+]]>
+    </programlisting>
+   </example>
   </para>
  </refsect1>
 
