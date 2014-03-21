@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- $Revision$ -->
-<!-- EN-Revision: a48bfbee2a121bdf25ceee2946aa27728e611365 Maintainer: satoruyoshida Status: ready -->
+<!-- EN-Revision: e85d788eabb67456a5101afd7b994b69a495af4f Maintainer: satoruyoshida Status: ready -->
 <!-- CREDITS: shimooka -->
 <refentry xml:id="function.oci-fetch-array" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -518,7 +518,7 @@ oci_close($conn);
   </para>
   <para>
    <example>
-    <title><function>oci_fetch_array</function> での <literal>LIMIT</literal> 風のクエリの使用例</title>
+    <title><function>oci_fetch_array</function> での <literal>LIMIT</literal> 風のクエリによるページング</title>
     <programlisting role="php">
 <![CDATA[
 <?php
@@ -533,22 +533,22 @@ if (!$conn) {
 preg_match('/Release ([0-9]+)\./', oci_server_version($conn), $matches);
 $oracleversion = $matches[1];
 
-// これが実行したいクエリーです
+// これがページングさせたいクエリーです
 $sql = 'SELECT city, postal_code FROM locations ORDER BY city';
 
-// ネストしたクエリーを作り、$sql から行のサブセットを選択します。
-// 運用環境では、連結した SQL 文による SQL インジェクションの問題を
-// 防止するよう気をつけてください
 if ($oracleversion >= 12) {
     // Oracle 12c の OFFSET / FETCH NEXT 構文を使います
     $sql = $sql . ' OFFSET :offset ROWS FETCH NEXT :numrows ROWS ONLY';
 } else {
-    // 旧バージョンでは、このような構文を使うか、ベースのクエリーを書き換えて
-    // row_number() 関数を使うようにする必要があります
-    $sql = "SELECT * FROM (SELECT A.*, ROWNUM AS MY_RNUM
-                           FROM ($sql) A
+    // 古いバージョンの Oracle では、ネストしたクエリーを作り、$sql から
+    // 行のサブセットを選択する必要があります。あるいは、開発時に SQL 文が
+    // わかっているのなら、この方法ではなく row_number() 関数を使うことを
+    // 検討しましょう。運用環境では、文字列の連結にともなう SQL インジェクション
+    // の問題に気をつけましょう。
+    $sql = "SELECT * FROM (SELECT a.*, ROWNUM AS my_rnum
+                           FROM ($sql) a
                            WHERE ROWNUM <= :offset + :numrows)
-            WHERE MY_RNUM > :offset";
+            WHERE my_rnum > :offset";
 }
 
 $offset  = 0;  // この行数だけ飛ばす
@@ -562,7 +562,7 @@ while (($row = oci_fetch_array($stid, OCI_ASSOC + OCI_RETURN_NULLS)) != false) {
     echo $row['CITY'] . " " . $row['POSTAL_CODE'] . "<br>\n";
 }
 
-// 出力です。
+// 出力は
 //    Beijing 190518
 //    Bern 3095
 //    Bombay 490231

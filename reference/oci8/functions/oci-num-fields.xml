@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 96c9d88bad9a7d7d44bfb7f26c226df7ee9ddf26 Maintainer: shimooka Status: ready -->
+<!-- EN-Revision: fc4b5ceed64bea906904851d0ab8b1cd84b2e2e8 Maintainer: shimooka Status: ready -->
 <refentry xml:id="function.oci-num-fields" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>oci_num_fields</refname>
@@ -50,24 +50,31 @@
     <programlisting role="php">
 <![CDATA[
 <?php
-$conn = oci_connect("scott", "tiger");
-$stmt = oci_parse($conn, "select * from emp");
 
-oci_execute($stmt);
+// 以下のテーブルを用意します
+//   CREATE TABLE mytab (id NUMBER, quantity NUMBER);
 
-while (oci_fetch($stmt)) {
-    echo "\n";
-    $ncols = oci_num_fields($stmt);
-    for ($i = 1; $i <= $ncols; $i++) {
-        $column_name  = oci_field_name($stmt, $i);
-        $column_value = oci_result($stmt, $i);
-        echo $column_name . ': ' . $column_value . "\n";
-    }
-    echo "\n";
+$conn = oci_connect("hr", "hrpwd", "localhost/XE");
+if (!$conn) {
+    $m = oci_error();
+    trigger_error(htmlentities($m['message']), E_USER_ERROR);
 }
 
-oci_free_statement($stmt);
+$stid = oci_parse($conn, "SELECT * FROM mytab");
+oci_execute($stid, OCI_DESCRIBE_ONLY); // 行をフェッチしない場合は OCI_DESCRIBE_ONLY を使います
+
+$ncols = oci_num_fields($stid);
+for ($i = 1; $i <= $ncols; $i++) {
+    echo oci_field_name($stid, $i) . " " . oci_field_type($stid, $i) . "<br>\n";
+}
+
+// 出力は
+//    ID NUMBER
+//    QUANTITY NUMBER
+
+oci_free_statement($stid);
 oci_close($conn);
+
 ?>
 ]]>
     </programlisting>
