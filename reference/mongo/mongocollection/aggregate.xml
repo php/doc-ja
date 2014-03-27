@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: fa909446a4cf15b5829ca87417db5ebcffc32a5c Maintainer: takagi Status: ready -->
+<!-- EN-Revision: f1759a0d8cf67e5c5de929293fa06d0d999b607d Maintainer: takagi Status: ready -->
 
 <refentry xml:id="mongocollection.aggregate" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -13,6 +13,11 @@
   <methodsynopsis>
    <modifier>public</modifier> <type>array</type><methodname>MongoCollection::aggregate</methodname>
    <methodparam><type>array</type><parameter>pipeline</parameter></methodparam>
+   <methodparam choice="opt"><type>array</type><parameter>options</parameter></methodparam>
+  </methodsynopsis>
+  <methodsynopsis>
+   <modifier>public</modifier> <type>array</type><methodname>MongoCollection::aggregate</methodname>
+   <methodparam><type>array</type><parameter>op</parameter></methodparam>
    <methodparam choice="opt"><type>array</type><parameter>op</parameter></methodparam>
    <methodparam choice="opt"><type>array</type><parameter>...</parameter></methodparam>
   </methodsynopsis>
@@ -36,7 +41,26 @@
     <term><parameter>pipeline</parameter></term>
     <listitem>
      <para>
-      パイプライン演算子の配列、あるいは最初の演算子。
+      パイプライン演算子の配列。
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term><parameter>options</parameter></term>
+    <listitem>
+     <para>
+      コマンドの引数 (<literal>allowDiskUse</literal> や <literal>explain</literal> あるいは <literal>cursor</literal> など) の配列。
+     </para>
+    </listitem>
+   </varlistentry>
+  </variablelist>
+  <para>Or</para>
+  <variablelist>
+   <varlistentry>
+    <term><parameter>op</parameter></term>
+    <listitem>
+     <para>
+      最初のパイプライン演算子。
      </para>
     </listitem>
    </varlistentry>
@@ -91,6 +115,28 @@
   </para>
  </refsect1>
 
+ <refsect1 role="changelog"><!-- {{{ -->
+  &reftitle.changelog;
+  <informaltable>
+   <tgroup cols="2">
+    <thead>
+     <row>
+      <entry>&Version;</entry>
+      <entry>&Description;</entry>
+     </row>
+    </thead>
+    <tbody>
+     <row>
+      <entry>1.5.0</entry>
+      <entry>
+       オプションの引数 <parameter>options</parameter> が追加されました。
+      </entry>
+     </row>
+    </tbody>
+   </tgroup>
+  </informaltable>
+ </refsect1><!-- }}} -->
+
  <refsect1 role="examples">
   &reftitle.examples;
   <example xml:id="mongocollection.aggregate.example.basic">
@@ -102,7 +148,7 @@
    <programlisting role="php">
 <![CDATA[
 <?php
-$m = new Mongo;
+$m = new MongoClient("localhost");
 $c = $m->selectDB("examples")->selectCollection("article");
 $data = array (
     'title' => 'this is my title',
@@ -199,20 +245,24 @@ array(2) {
    <programlisting role="php">
 <![CDATA[
 <?php
-$m = new Mongo;
+$m = new MongoClient("localhost");
 $c = $m->selectDB("test")->selectCollection("zips");
 
-$out = $c->aggregate(array(
+$pipeline = array(
+    array(
         '$group' => array(
-            '_id' => '$state',
-           'totalPop' => array('$sum' => '$pop')
+            '_id' => array('state' => '$state', 'city' => '$city' ),
+            'pop' => array('$sum' => '$pop' )
         )
     ),
     array(
-        '$match' => array('totalPop' => array('$gte' => 10*1000*1000))
+        '$group' => array(
+            '_id' => '$_id.state',
+            'avgCityPop' => array('$avg' => '$pop')
+        )
     )
 );
-
+$out = $c->aggregate($pipeline);
 var_dump($out);
 ?>
 ]]>
@@ -288,7 +338,7 @@ array(2) {
    <programlisting role="php">
 <![CDATA[
 <?php
-$m = new Mongo;
+$m = new MongoClient;
 $c = $m->selectDB("test")->selectCollection("zips");
 
 $out = $c->aggregate(
@@ -330,56 +380,7 @@ array(2) {
       ["avgCityPop"]=>
       float(14481.913043478)
     }
-    [2]=>
-    array(2) {
-      ["_id"]=>
-      string(2) "RI"
-      ["avgCityPop"]=>
-      float(18933.283018868)
-    }
-    [3]=>
-    array(2) {
-      ["_id"]=>
-      string(2) "AL"
-      ["avgCityPop"]=>
-      float(7907.2152641879)
-    }
-    [4]=>
-    array(2) {
-      ["_id"]=>
-      string(2) "NH"
-      ["avgCityPop"]=>
-      float(5232.320754717)
-    }
 ...
-    [45]=>
-    array(2) {
-      ["_id"]=>
-      string(2) "WY"
-      ["avgCityPop"]=>
-      float(3359.9111111111)
-    }
-    [46]=>
-    array(2) {
-      ["_id"]=>
-      string(2) "MN"
-      ["avgCityPop"]=>
-      float(5335.4865853659)
-    }
-    [47]=>
-    array(2) {
-      ["_id"]=>
-      string(2) "OK"
-      ["avgCityPop"]=>
-      float(6155.7436399217)
-    }
-    [48]=>
-    array(2) {
-      ["_id"]=>
-      string(2) "IL"
-      ["avgCityPop"]=>
-      float(9931.0182450043)
-    }
     [49]=>
     array(2) {
       ["_id"]=>
@@ -393,6 +394,125 @@ array(2) {
       string(2) "WV"
       ["avgCityPop"]=>
       float(2759.1953846154)
+    }
+  }
+  ["ok"]=>
+  float(1)
+}
+]]>
+   </screen>
+  </example>
+
+  <example xml:id="mongocollection.aggregate.example.zipcode.explain">
+   <title><methodname>MongoCollection::aggregate</methodname> でのコマンド引数</title>
+   <para>
+    パイプラインをどのように処理するのかの情報を返すには、<literal>explain</literal> オプションを使います。
+   </para>
+   <programlisting role="php">
+<![CDATA[
+<?php
+$m = new MongoClient;
+$c = $m->selectDB("test")->selectCollection("zips");
+
+$pipeline = array(array(
+        '$group' => array(
+            '_id' => '$state',
+           'totalPop' => array('$sum' => '$pop'),
+        ),
+    ),
+    array(
+        '$match' => array('totalPop' => array('$gte' => 10*1000*1000)),
+    ),
+    array(
+        '$sort' => array("totalPop" => -1),
+    ),
+);
+
+$options = array("explain" => true);
+$out = $c->aggregate($pipeline, $options);
+var_dump($out);
+?>
+]]>
+   </programlisting>
+   &example.outputs.similar;
+   <screen>
+<![CDATA[
+array(2) {
+  ["stages"]=>
+  array(4) {
+    [0]=>
+    array(1) {
+      ["$cursor"]=>
+      array(3) {
+        ["query"]=>
+        array(0) {
+        }
+        ["fields"]=>
+        array(3) {
+          ["pop"]=>
+          int(1)
+          ["state"]=>
+          int(1)
+          ["_id"]=>
+          int(0)
+        }
+        ["plan"]=>
+        array(4) {
+          ["cursor"]=>
+          string(11) "BasicCursor"
+          ["isMultiKey"]=>
+          bool(false)
+          ["scanAndOrder"]=>
+          bool(false)
+          ["allPlans"]=>
+          array(1) {
+            [0]=>
+            array(3) {
+              ["cursor"]=>
+              string(11) "BasicCursor"
+              ["isMultiKey"]=>
+              bool(false)
+              ["scanAndOrder"]=>
+              bool(false)
+            }
+          }
+        }
+      }
+    }
+    [1]=>
+    array(1) {
+      ["$group"]=>
+      array(2) {
+        ["_id"]=>
+        string(6) "$state"
+        ["totalPop"]=>
+        array(1) {
+          ["$sum"]=>
+          string(4) "$pop"
+        }
+      }
+    }
+    [2]=>
+    array(1) {
+      ["$match"]=>
+      array(1) {
+        ["totalPop"]=>
+        array(1) {
+          ["$gte"]=>
+          int(10000000)
+        }
+      }
+    }
+    [3]=>
+    array(1) {
+      ["$sort"]=>
+      array(1) {
+        ["sortKey"]=>
+        array(1) {
+          ["totalPop"]=>
+          int(-1)
+        }
+      }
     }
   }
   ["ok"]=>

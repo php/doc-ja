@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: e483c805dd7d5d8df2e551eb3fa5b8b834fa759e Maintainer: takagi Status: ready -->
+<!-- EN-Revision: fb7390ad0479f231a8d30aa9ff904da21627baee Maintainer: takagi Status: ready -->
 
 <refentry xml:id="mongoclient.construct" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -14,6 +14,7 @@
    <modifier>public</modifier> <methodname>MongoClient::__construct</methodname>
    <methodparam choice="opt"><type>string</type><parameter>server</parameter><initializer>"mongodb://localhost:27017"</initializer></methodparam>
    <methodparam choice="opt"><type>array</type><parameter>options</parameter><initializer>array("connect" => &true;)</initializer></methodparam>
+   <methodparam choice="opt"><type>array</type><parameter>driver_options</parameter></methodparam>
   </constructorsynopsis>
   <para>
    パラメータを省略した場合は、"localhost:27017" (あるいは php.ini の
@@ -313,6 +314,32 @@ mongodb://[username:password@]host1[:port1][,host2[:port2:],...]/db
       </para>
      </listitem>
     </varlistentry>
+
+    <varlistentry>
+     <term>
+      <parameter>driver_options</parameter>
+     </term>
+     <listitem>
+      <para>
+       MongoDB ドライバーへのオプションの配列。SSL 用の接続コンテキストのオプションや、
+       ログ出力用のコールバックも含みます。
+       <itemizedlist>
+        <listitem>
+         <para>
+          <literal>"context"</literal>
+         </para>
+         <para>
+          コンテキストオプションを渡す方法。このオプションで、SSL 証明書の設定ができます。
+          詳細は <link
+          linkend="context.ssl">SSL コンテキストオプション</link> を参照ください。
+          詳しい使いかたは <link
+          linkend="mongoclient.construct.context.ssl">この例</link> を参照ください。
+         </para>
+        </listitem>
+       </itemizedlist>
+      </para>
+     </listitem>
+    </varlistentry>
    </variablelist>
   </para>
  </refsect1>
@@ -420,7 +447,7 @@ $m = new MongoClient("mongodb:///tmp/mongodb-27017.sock,localhost:27017");
     認証を使うには、admin データベースにユーザーが存在しなければなりません。
     Mongo シェルでユーザーを作るには、次のようにします。
    </para>
-   <programlisting>
+   <programlisting role="shell">
 <![CDATA[
 > use admin
 switched to db admin
@@ -477,7 +504,7 @@ $m = new MongoClient($uri, array('replicaSet' => 'rs'));
     この例では、journal オプションを true、そして readPreference を secondary
     にする設定を、すべての書き込み操作のデフォルトとします。
    </para>
-   <programlisting>
+   <programlisting role="php">
 <![CDATA[
 <?php
 $m = new MongoClient("mongodb://localhost/?journal=true&readPreference=secondary");
@@ -487,7 +514,7 @@ $m = new MongoClient("mongodb://localhost/?journal=true&readPreference=secondary
    <para>
     同じ設定を、このようにすることもできます。
    </para>
-   <programlisting>
+   <programlisting role="php">
 <![CDATA[
 <?php
 $options = array(
@@ -511,6 +538,32 @@ $uri  = 'mongodb://rs1.example.com,rs2.example.com/';
 $uri .= '?readPreference=nearest';
 $uri .= '&readPreferenceTags=dc:east';
 $m = new MongoClient($uri, array('replicaSet' => 'rs'));
+?>
+]]>
+   </programlisting>
+   <para>
+    詳細な情報は、このマニュアルの <link linkend="mongo.readpreferences">優先読み込み</link>
+    のページを参照ください。
+   </para>
+  </example>
+
+  <example xml:id="mongoclient.construct.context.ssl">
+   <title><function>MongoClient::__construct</function> で SSL 証明書を使って接続する例</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+$ctx = stream_context_create( array(
+    'ssl' => array(
+        'local_cert' => '/vagrant/certs/client.pem',
+        'cafile' => '/vagrant/certs/ca.pem',
+    )
+) );
+
+$m = new MongoClient(
+    "mongodb://mongod/?ssl=true", 
+    array(), 
+    array('context' => $ctx)
+);
 ?>
 ]]>
    </programlisting>
