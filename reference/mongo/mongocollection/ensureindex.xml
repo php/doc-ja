@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: e7e7f8d5e5282963edfac5f13bd0e59bd13c7b12 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 30ed36d66fa3fa4433dfd082fcc1a1f000a97f4a Maintainer: takagi Status: working -->
 
 <refentry xml:id="mongocollection.ensureindex" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
   <refname>MongoCollection::ensureIndex</refname>
   <refpurpose>
-   指定したフィールドにインデックスを作成する (すでに存在する場合は何もしない)
+   指定したフィールドが存在しない場合にインデックスを作成する
   </refpurpose>
  </refnamediv>
 
@@ -24,14 +24,23 @@
    </para>
   </warning>
   <para>
-   このメソッドは、コレクション上の指定されたフィールドにインデックスを作成します。
-   キーの指定方法は、単一のフィールド名を文字列で指定するか
-   あるいはフィールド名とソート方向を対応させた配列でも指定できます。
+   コレクション上の指定されたフィールドが存在しない場合に、インデックスを作成します。
+   フィールドのインデックスは、方向 (昇順あるいは降順) で指定するか、
+   あるいは特定の型 (text, geospatial, hashed) で指定できます。
   </para>
+  <note>
+   <para>
+    This method will use the
+    <link xlink:href="&url.mongodb.dochub.createindexes;">createIndexes</link>
+    database command when communicating with MongoDB 2.6+. For previous database
+    versions, the method will perform an insert operation on the
+    special <literal>system.indexes</literal> collection.
+   </para>
+  </note>
  </refsect1>
 
- <refsect1 role="parameters"> 
-  &reftitle.parameters; 
+ <refsect1 role="parameters">
+  &reftitle.parameters;
   <para>
    <variablelist>
     <varlistentry>
@@ -41,108 +50,48 @@
      <listitem>
       <para>
        インデックスをソートするフィールドの配列。配列の各要素のキーがフィールド名、
-       そして昇順の場合は <literal>1</literal>、降順の場合は <literal>-1</literal>
-       を値に指定します。
+       値には、方向あるいは <link xlink:href="&url.mongodb.dochub.indexes.types;">index type</link>.
+       を指定します。方向を指定する場合は、昇順なら <literal>1</literal>、降順なら
+       <literal>-1</literal> と指定します。
       </para>
      </listitem>
-    </varlistentry>   
+    </varlistentry>
     <varlistentry>
      <term>
       <parameter>options</parameter>
      </term>
      <listitem>
       <para>
-       このパラメータは
-       <literal>array("optionname" => &lt;boolean&gt;, ...)</literal>
-       形式の連想配列で、現在サポートしているオプションは次の通りです。
+       An array of options for the index creation. Currently available options
+       include:
+       <itemizedlist>
+        &mongo.index.parameters.unique;
+        &mongo.index.parameters.dropdups;
+        &mongo.index.parameters.sparse;
+        &mongo.index.parameters.expireafterseconds;
+        &mongo.index.parameters.name;
+        &mongo.writes.parameters.sockettimeoutms;
+       </itemizedlist>
+      </para>
+      <para>
+       The following option may be used with MongoDB 2.6+:
+       <itemizedlist>
+        &mongo.command.parameters.maxtimems;
+       </itemizedlist>
+      </para>
+      <para>
+       The following options may be used with MongoDB versions before 2.6:
        <itemizedlist>
         &mongo.writes.parameters.writeconcern;
-        <listitem>
-         <para>
-          <literal>"unique"</literal>
-         </para>
-         <para>
-          一意なインデックスを作ります。
-         </para>
-         <warning>
-          <para>
-           そのフィールドを持たないドキュメントが複数ある場合は、
-           そこに一意なインデックスを作成することはできません。
-           フィールドが存在しないときは事実上そのフィールドは
-           &null; ということになり、それが複数存在すると既に一意ではなくなっているからです。
-           スパースなインデキシングを使えばこれを回避できるかもしれません。
-           そのフィールドを持たないドキュメントをインデックスしないようになるからです。
-          </para>
-         </warning>
-        </listitem>
-        <listitem>
-         <para>
-          <literal>"dropDups"</literal>
-         </para>
-         <para>
-          一意なインデックスを作ったときに重複する値が存在すれば、
-          ひとつを除いてその他すべてを削除します。
-         </para>
-        </listitem>
-        <listitem>
-         <para>
-          <literal>"sparse"</literal>
-         </para>
-         <para>
-          スパースなインデックスを作り、そのフィールドを含むドキュメントだけを含めるようにします。
-          このオプションは、単一フィールドインデックスでしか使えません。
-         </para>
-        </listitem>
-        <listitem>
-         <para>
-          <literal>"expireAfterSeconds"</literal>
-         </para>
-         <para>
-          このオプションの値には、ドキュメントが期限切れになって自動的にコレクションから削除されるようになるまでの秒数を指定します。
-          このオプションは、単一フィールドインデックスかつそのフィールドに
-          <classname>MongoDate</classname> の値を含む場合しか使えません。
-         </para>
-         <para>
-          この機能が使えるのは MongoDB 2.2 以降です。詳細は
-          <link xlink:href="&url.mongodb.docs.expire_data;">Expire Data from Collections by Setting TTL</link>
-          を参照ください。
-         </para>
-        </listitem>
-        <listitem>
-         <para>
-          <literal>"background"</literal>
-         </para>
-         <para>
-          デフォルトではインデックスの作成はブロック操作になり、
-          処理が完了するまではデータベース上で他の操作を進めることができません。
-          このオプションを &true; にすると、
-          インデックスの作成をバックグラウンドで行うようになり、
-          作成中にも他の操作ができるようになります。
-         </para>
-         <warning>
-          <para>
-           MongoDB 2.1.0 より前のバージョンでのインデックス作成は、
-           セカンダリへのレプリケートのときには
-           このオプションの値にかかわらずバックグラウンド処理になりませんでした。
-           詳細は
-           <link xlink:href="&url.mongodb.dochub.indexes.rs;">Building Indexes with Replica Sets</link>
-           を参照ください。
-          </para>
-         </warning>
-        </listitem>
-        <listitem>
-         <para>
-          <literal>"name"</literal>
-         </para>
-         <para>
-          このオプションを指定すると、ドライバーがインデックス名を作るときのアルゴリズムを上書きし、
-          好きな名前を指定できます。
-          これは、多くのキーにインデックスをつけるときに「インデックス名が長すぎる」
-          と Mongo に言われた場合などに有用です。
-         </para>
-        </listitem>
-        &mongo.writes.parameters.timeout;
+        &mongo.writes.parameters.writeconcerntimeoutms;
+       </itemizedlist>
+      </para>
+      <para>
+       The following options are deprecated and should no longer be used:
+       <itemizedlist>
         &mongo.writes.parameters.safe;
+        &mongo.writes.parameters.timeout;
+        &mongo.writes.parameters.writeconcerntimeout;
        </itemizedlist>
       </para>
      </listitem>
@@ -154,13 +103,24 @@
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
-   <literal>"w"</literal> オプションが設定されている場合は、
-   インデックスの作成の状態を含む配列を返します。それ以外の場合は
-   &true; を返します。
+   Returns an array containing the status of the index creation. The array
+   contains whether the operation succeeded (<literal>"ok"</literal>), the
+   number of indexes before and after the operation
+   (<literal>"numIndexesBefore"</literal> and
+   <literal>"numIndexesAfter"</literal>), and whether the collection that the
+   index belongs to has been created
+   (<literal>"createdCollectionAutomatically"</literal>). If the index already
+   existed and did not need to be created, a <literal>"note"</literal> field may
+   be present in lieu of <literal>"numIndexesAfter"</literal>.
   </para>
   <para>
-   配列のフィールドについての説明は
-   <function>MongoCollection::insert</function> を参照ください。
+   With MongoDB 2.4 and earlier, a status document is only returned if the
+   <link linkend="mongo.writeconcerns">write concern</link> is at least
+   <literal>1</literal>. Otherwise, &true; is returned. The fields in the status
+   document are different, except for the <literal>"ok"</literal> field, which
+   signals whether the index creation was successful. Additional fields are
+   described in the documentation for
+   <function>MongoCollection::insert</function>.
   </para>
  </refsect1>
 
@@ -177,50 +137,78 @@
      </thead>
      <tbody>
       <row>
+       <entry>1.5.0</entry>
+       <entry>
+        <para>
+         Renamed the <literal>"wtimeout"</literal> option to
+         <literal>"wTimeoutMS"</literal>. Emits
+         <constant>E_DEPRECATED</constant> when <literal>"wtimeout"</literal> is
+         used.
+        </para>
+        <para>
+         Renamed the <literal>"timeout"</literal> option to
+         <literal>"socketTimeoutMS"</literal>. Emits
+         <constant>E_DEPRECATED</constant> when <literal>"timeout"</literal> is
+         used.
+        </para>
+        <para>
+         Emits <constant>E_DEPRECATED</constant> when <literal>"safe"</literal>
+         is used.
+        </para>
+       </entry>
+      </row>
+      <row>
+       <entry>1.3.4</entry>
+       <entry>Added <literal>"wtimeout"</literal> option.</entry>
+      </row>
+      <row>
        <entry>1.3.0</entry>
        <entry>
-        <parameter>options</parameter> パラメータで、boolean
-        だけを渡してユニークインデックスを指定することができなくなりました。
-        同じことをするには <literal>array('unique' => true)</literal>
-        としなければなりません。
+        <para>Added <literal>"w"</literal> option.</para>
+        <para>
+         The <parameter>options</parameter> parameter no longer accepts a
+         boolean to signify a unique index. Instead, this now has to be done
+         with <literal>array('unique' => true)</literal>.
+        </para>
        </entry>
       </row>
       <row>
        <entry>1.2.11</entry>
        <entry>
-        <parameter>options</parameter> が <type>scalar</type> のときに <constant>E_DEPRECATED</constant> を発行するようになりました。
+        Emits <constant>E_DEPRECATED</constant> when
+        <parameter>options</parameter> is <type>scalar</type>.
        </entry>
       </row>
       <row>
        <entry>1.2.0</entry>
-       <entry><literal>"timeout"</literal> オプションが追加されました。</entry>
+       <entry>Added <literal>"timeout"</literal> option.</entry>
       </row>
       <row>
        <entry>1.0.11</entry>
        <entry>
         <para>
-         <literal>"safe"</literal> は必要に応じてプライマリのフェイルオーバーを行うようになりました。
+         The <literal>"safe"</literal> option will trigger a primary failover,
+         if necessary.
         </para>
         <para>
-         インデックス名 (自動生成されたものあるいは設定したもののどちらでも)
-         の長さが 128 バイトを超えた場合に
-         <classname>MongoException</classname> をスローするようになりました。
+         <classname>MongoException</classname> will be thrown if the index name
+         (either generated or set) is longer than 128 bytes.
         </para>
        </entry>
       </row>
       <row>
        <entry>1.0.5</entry>
        <entry>
-        <literal>"name"</literal> オプションで、インデックス名の作成を上書きできるようになりました。
+        Added the <literal>"name"</literal> option to override index name
         creation.
        </entry>
       </row>
       <row>
        <entry>1.0.2</entry>
        <entry>
-        <parameter>options</parameter> パラメータが boolean から配列に変わりました。
-        1.0.2 より前のバージョンでは二番目のパラメータはオプションの boolean
-        値で、一意なインデックスを指定するものでした。
+        Changed <parameter>options</parameter> parameter from boolean to array.
+        Pre-1.0.2, the second parameter was an optional boolean value specifying
+        a unique index.
        </entry>
       </row>
      </tbody>
@@ -232,10 +220,16 @@
  <refsect1 role="errors">
   &reftitle.errors;
   <para>
-   インデックス名 (自動生成されたものあるいは設定したもののどちらでも)
-   の長さが 128 バイトを超えた場合に
-   <classname>MongoException</classname> をスローします
-   (バージョン 1.0.11 以降)。
+   Throws <classname>MongoException</classname> if the index name is longer
+   than 128 bytes, or if the index specification is not an array.
+  </para>
+  <para>
+   Throws <classname>MongoDuplicateKeyException</classname> if the server could not
+   create the unique index due to conflicting documents.
+  </para>
+  <para>
+   Throws <classname>MongoResultException</classname> if the server could not
+   create the index due to an error.
   </para>
   &mongo.errors.exceptions.writeconcern;
  </refsect1>
@@ -243,72 +237,66 @@
  <refsect1 role="examples">
   &reftitle.examples;
   <example>
-   <title><function>MongoCollection::ensureIndex</function> の例</title>
+   <title><function>MongoCollection::ensureIndex</function> example</title>
    <programlisting role="php">
 <![CDATA[
 <?php
 
 $c = new MongoCollection($db, 'foo');
 
-// 'x' の昇順にインデックスを作成します
-$c->ensureIndex('x');
+// create an index on 'x' ascending
+$c->ensureIndex(array('x' => 1));
 
-// 'y' の昇順にインデックスを作成します
-$c->ensureIndex(array('y' => 1));
+// create a unique index on 'y'
+$c->ensureIndex(array('y' => 1), array('unique' => true));
 
-// 'z' の昇順、'zz' の降順にインデックスを作成します
-$c->ensureIndex(array('z' => 1, 'zz' => -1));
-
-// 'x' に一意なインデックスを作成します
-$c->ensureIndex(array('x' => 1), array("unique" => true));
+// create a compound index on 'za' ascending and 'zb' descending
+$c->ensureIndex(array('za' => 1, 'zb' => -1));
 
 ?>
 ]]>
    </programlisting>
   </example>
   <example>
-   <title>重複を削除する例</title>
-   <programlisting role="php">
-<![CDATA[
-<?php
-
-$collection->insert(array("username" => "joeschmoe"));
-$collection->insert(array("username" => "joeschmoe"));
-
-/*
- * インデックスの作成に失敗します。重複する値があるキーに
- * 一意なインデックスを作ることはできません。
- */
-$collection->ensureIndex(array("username" => 1), array("unique" => 1));
-
-/*
- * インデックスの作成に成功します。ドキュメントのひとつがコレクションから削除されます。
- */
-$collection->ensureIndex(array("username" => 1), array("unique" => 1, "dropDups" => 1));
-
-/* 
- * 一意なインデックスができたあとは、同じユーザー名を
- * このように追加しようとしても失敗します。
- */
-$collection->insert(array("username" => "joeschmoe"));
-
-?>
-]]>
-   </programlisting>
-  </example>
-
-  <example>
-   <title>地理空間のインデックス</title>
+   <title>Geospatial Indexing</title>
    <para>
-    Mongo は地理空間のインデックスをサポートしています。
-    これを使うと、指定した場所のそば、あるいは図形の範囲内にあるドキュメントを探すことができます。
-    たとえば、"loc" フィールドに地理空間のインデックスを作るには次のようにします。
+    Mongo supports geospatial indexes, which allow you to search for documents
+    near a given location or within a shape. The following example creates a
+    geospatial index on the <literal>"loc"</literal> field:
    </para>
    <programlisting role="php">
 <![CDATA[
 <?php
 
-$collection->ensureIndex(array("loc" => "2d"));
+$collection->ensureIndex(array('loc' => '2dsphere'));
+
+?>
+]]>
+   </programlisting>
+  </example>
+  <example>
+   <title>Drop duplicates example</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+$collection->insert(array('username' => 'joeschmoe'));
+$collection->insert(array('username' => 'joeschmoe'));
+
+/* Index creation fails, since you cannot create a unique index on a field when
+ * duplicates exist.
+ */
+$collection->ensureIndex(array('username' => 1), array('unique' => 1));
+
+/* MongoDB will one of the conflicting documents and allow the unique index to
+ * be created.
+ */
+$collection->ensureIndex(array('username' => 1), array('unique' => 1, 'dropDups' => 1));
+
+/* We now have a unique index and subsequent inserts with the same username will
+ * fail.
+ */
+$collection->insert(array('username' => 'joeschmoe'));
 
 ?>
 ]]>
@@ -320,13 +308,13 @@ $collection->ensureIndex(array("loc" => "2d"));
   &reftitle.seealso;
   <simplelist>
    <member><methodname>MongoCollection::createIndex</methodname></member>
+   <member>
+    The MongoDB
+    <link xlink:href="&url.mongodb.dochub.indexes;">index</link> and
+    <link xlink:href="&url.mongodb.dochub.indexes.types;">index type</link>
+    documentation.
+   </member>
   </simplelist>
-  <para>
-   MongoDB コアドキュメントの
-   <link xlink:href="&url.mongodb.dochub.indexes;">vanilla indexes</link> および
-   <link xlink:href="&url.mongodb.dochub.geo;">geospatial indexes</link>
-   を参照ください。
-  </para>
  </refsect1>
 
 </refentry>
