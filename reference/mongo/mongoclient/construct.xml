@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: fb7390ad0479f231a8d30aa9ff904da21627baee Maintainer: takagi Status: ready -->
+<!-- EN-Revision: adffd231a78f0c8e4e2c8eb24931e56d0830a629 Maintainer: takagi Status: ready -->
 
 <refentry xml:id="mongoclient.construct" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -95,6 +95,55 @@ mongodb://[username:password@]host1[:port1][,host2[:port2:],...]/db
        <itemizedlist>
         <listitem>
          <para>
+          <literal>"authMechanism"</literal>
+         </para>
+         <para>
+          以下の機構が選べます。
+          <informaltable>
+           <tgroup cols="3">
+            <thead>
+             <row>
+              <entry>認証機構</entry>
+              <entry>説明</entry>
+              <entry>利用可能</entry>
+             </row>
+            </thead>
+            <tbody>
+             <row>
+              <entry>MONGODB-CR</entry>
+              <entry>チャレンジレスポンス方式を使った認証。デフォルトです。</entry>
+              <entry>すべてのバージョンの MongoDB</entry>
+             </row>
+             <row>
+              <entry>X509</entry>
+              <entry>X509 証明書による認証。</entry>
+              <entry>MongoDB 2.6。<xref linkend="book.openssl" /> が有効な場合のみ。</entry>
+             </row>
+             <row>
+              <entry>PLAIN</entry>
+              <entry>暗号化されていないユーザー名とパスワードによる認証。SSL 接続上でのみ使うこと。サードパーティの LDAP サーバー経由での MongoDB へのログインの際に利用する。</entry>
+              <entry>MongoDB Enterprise 2.4。CyrusSASL2 を使うようにドライバをコンパイルしておく必要がある。</entry>
+             </row>
+             <row>
+              <entry>GSSAPI</entry>
+              <entry>ケルベロス認証</entry>
+              <entry>MongoDB Enterprise 2.4。CyrusSASL2 を使うようにドライバをコンパイルしておく必要がある。</entry>
+             </row>
+            </tbody>
+           </tgroup>
+          </informaltable>
+         </para>
+        </listitem>
+        <listitem>
+         <para>
+          <literal>"authSource"</literal>
+         </para>
+         <para>
+          ユーザーが定義されているデータベース名を設定します。
+         </para>
+        </listitem>
+        <listitem>
+         <para>
           <literal>"connect"</literal>
          </para>
          <para>
@@ -173,6 +222,15 @@ mongodb://[username:password@]host1[:port1][,host2[:port2:],...]/db
         </listitem>
         <listitem>
          <para>
+          <literal>"gssapiServiceName"</literal>
+         </para>
+         <para>
+          <link xlink:href="&url.mongodb.docs.kerberos.service-principal;">Kerberos サービスプリンシパル</link>
+          を設定します。authMechanism=GSSAPI の場合にのみ用いられるもので、デフォルトは "mongodb" です。
+         </para>
+        </listitem>
+        <listitem>
+         <para>
           <literal>"password"</literal>
          </para>
          <para>
@@ -224,6 +282,16 @@ mongodb://[username:password@]host1[:port1][,host2[:port2:],...]/db
         </listitem>
         <listitem>
          <para>
+          <literal>"secondaryAcceptableLatencyMS"</literal>
+         </para>
+         <para>
+          セカンダリから (優先読み込みを使って) 読み込むときに、
+          <literal>secondaryAcceptableLatencyMS</literal> 以上はなれているセカンダリからは読み込みません。
+          デフォルトは <literal>15</literal> です。
+         </para>
+        </listitem>
+        <listitem>
+         <para>
           <literal>"socketTimeoutMS"</literal>
          </para>
          <para>
@@ -235,6 +303,7 @@ mongodb://[username:password@]host1[:port1][,host2[:port2:],...]/db
             に達してしまうと、サーバーが実際に書き込みを受信したかどうかを知るすべがなくなります。
            </simpara>
           </note>
+          デフォルトは 30 秒です。カーソルごとに設定するには <methodname>MongoCursor::timeout</methodname> を使います。
          </para>
         </listitem>
         <listitem>
@@ -292,14 +361,22 @@ mongodb://[username:password@]host1[:port1][,host2[:port2:],...]/db
        </itemizedlist>
       </para>
       <para>
-       The following options are deprecated and should no longer be used:
+       以下のオプションは廃止予定です。使ってはいけません。
        <itemizedlist>
+        <listitem>
+         <para>
+          <literal>"slaveOkay"</literal>
+         </para>
+         <para>
+          非推奨です。<link linkend="mongo.readpreferences">優先読み込み</link> のオプションを使いましょう。
+         </para>
+        </listitem>
         <listitem>
          <para>
           <literal>"timeout"</literal>
          </para>
          <para>
-          "connectTimeoutMS" へのエイリアス。非推奨です。
+          <literal>"connectTimeoutMS"</literal> へのエイリアス。非推奨です。
          </para>
         </listitem>
         <listitem>
@@ -307,7 +384,7 @@ mongodb://[username:password@]host1[:port1][,host2[:port2:],...]/db
           <literal>"wTimeout"</literal>
          </para>
          <para>
-          "wTimeoutMS" へのエイリアス。非推奨です。
+          <literal>"wTimeoutMS"</literal> へのエイリアス。非推奨です。
          </para>
         </listitem>
        </itemizedlist>
@@ -321,19 +398,17 @@ mongodb://[username:password@]host1[:port1][,host2[:port2:],...]/db
      </term>
      <listitem>
       <para>
-       MongoDB ドライバーへのオプションの配列。SSL 用の接続コンテキストのオプションや、
-       ログ出力用のコールバックも含みます。
+       MongoDB ドライバーへのオプションの配列。<link linkend="mongo.connecting.context.ssl">SSL 用の接続コンテキストのオプション</link>や、
+       <link linkend="context.mongodb">ログ出力用のコールバック</link>も含みます。
        <itemizedlist>
         <listitem>
          <para>
           <literal>"context"</literal>
          </para>
          <para>
-          コンテキストオプションを渡す方法。このオプションで、SSL 証明書の設定ができます。
-          詳細は <link
-          linkend="context.ssl">SSL コンテキストオプション</link> を参照ください。
-          詳しい使いかたは <link
-          linkend="mongoclient.construct.context.ssl">この例</link> を参照ください。
+          新しい接続をアタッチするストリームコンテキスト。このオプションで、SSL 証明書の設定などができます。
+          詳細は <link linkend="context.ssl">SSL コンテキストオプション</link> を参照ください。
+          詳しい使いかたは <link linkend="mongo.connecting.context.ssl">SSL 接続</link>のチュートリアルを参照ください。
          </para>
         </listitem>
        </itemizedlist>
@@ -546,32 +621,6 @@ $m = new MongoClient($uri, array('replicaSet' => 'rs'));
     のページを参照ください。
    </para>
   </example>
-
-  <example xml:id="mongoclient.construct.context.ssl">
-   <title><function>MongoClient::__construct</function> で SSL 証明書を使って接続する例</title>
-   <programlisting role="php">
-<![CDATA[
-<?php
-$ctx = stream_context_create( array(
-    'ssl' => array(
-        'local_cert' => '/vagrant/certs/client.pem',
-        'cafile' => '/vagrant/certs/ca.pem',
-    )
-) );
-
-$m = new MongoClient(
-    "mongodb://mongod/?ssl=true", 
-    array(), 
-    array('context' => $ctx)
-);
-?>
-]]>
-   </programlisting>
-   <para>
-    詳細な情報は、このマニュアルの <link linkend="mongo.readpreferences">優先読み込み</link>
-    のページを参照ください。
-   </para>
-  </example>
  </refsect1>
 
  <refsect1 role="changelog">
@@ -587,11 +636,32 @@ $m = new MongoClient(
      </thead>
      <tbody>
       <row>
+       <entry>1.5.0</entry>
+       <entry>
+        <para>
+         <literal>"authMechanism"</literal>、<literal>"gssapiServiceName"</literal> および <literal>"secondaryAcceptableLatencyMS"</literal>
+         が追加されました。
+        </para>
+       </entry>
+      </row>
+      <row>
        <entry>1.4.0</entry>
        <entry>
         <para>
          <literal>"wTimeoutMS"</literal> オプションが追加されました。これは
          <literal>"wTimeout"</literal> の代替です。
+        </para>
+        <para>
+         <literal>"slaveOkay"</literal> や <literal>"timeout"</literal> を使うと
+         <constant>E_DEPRECATED</constant> が発生します。
+        </para>
+       </entry>
+      </row>
+      <row>
+       <entry>1.5.0</entry>
+       <entry>
+        <para>
+         <literal>"authSource"</literal> が追加されました。
         </para>
        </entry>
       </row>
