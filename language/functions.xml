@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 6e8d8b98a7ba7bad9e585465438fa47f163b7504 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 0e9eb8a8c76de2365decd77a46d96ddfeec2bac8 Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa -->
  <chapter xml:id="language.functions" xmlns="http://docbook.org/ns/docbook">
   <title>関数</title>
@@ -182,10 +182,6 @@ function recursion($a)
     をサポートしています。また、
     <link linkend="functions.variable-arg-list">可変長引数リスト</link>
     もサポートしてます。
-    <function>func_num_args</function>,
-    <function>func_get_arg</function>, 
-    <function>func_get_args</function> に関する関数リファレンスを
-    参照ください。
    </para>
    <para>
     <example>
@@ -366,17 +362,168 @@ Making a bowl of acidophilus raspberry.
     
     <simpara>
      PHP は、可変長引数をユーザー定義関数でサポートしています。
-     可変長引数の使用法は非常に簡単で、
+     PHP 5.6 以降では <literal>...</literal> を使って実装されており、
+     PHP 5.5 以前では
      <function>func_num_args</function>,
-     <function>func_get_arg</function>, 
+     <function>func_get_arg</function>,
      <function>func_get_args</function> 関数を使用します。
     </simpara>
     
-    <simpara>
-     可変長引数に関して特別な構文は必要としません。
-     引数リストは従来と同様に関数定義で明示的に指定することができ、
-     動作も従来と変わりません。
-    </simpara>
+    <sect3 xml:id="functions.variable-arg-list.new">
+     <title>PHP 5.6 以降における <literal>...</literal></title>
+
+     <para>
+      PHP 5.6 以降では、引数リストに
+      <literal>...</literal> トークンを含めることで、
+      その関数が可変長の引数を受け取ることを示せます。
+      引数は、指定した変数に配列として渡されます。次の例を参照ください。
+
+      <example>
+       <title><literal>...</literal> を使った、可変長引数へのアクセス</title>
+       <programlisting role="php">
+<![CDATA[
+<?php
+function sum(...$numbers) {
+    $acc = 0;
+    foreach ($numbers as $n) {
+        $acc += $n;
+    }
+    return $acc;
+}
+
+echo sum(1, 2, 3, 4);
+?>
+]]>
+       </programlisting>
+       &example.outputs;
+       <screen>
+<![CDATA[
+10
+]]>
+       </screen>
+      </example>
+     </para>
+
+     <para>
+      関数を呼び出すときに <literal>...</literal> を使うと、
+      配列変数や <classname>Traversable</classname> クラスを引数リストに含めることができます。
+
+      <example>
+       <title>引数での <literal>...</literal> の使用例</title>
+       <programlisting role="php">
+<![CDATA[
+<?php
+function add($a, $b) {
+    return $a + $b;
+}
+
+echo add(...[1, 2])."\n";
+
+$a = [1, 2];
+echo add(...$a);
+?>
+]]>
+       </programlisting>
+       &example.outputs;
+       <screen>
+<![CDATA[
+3
+3
+]]>
+       </screen>
+      </example>
+     </para>
+
+     <para>
+      通常の引数を、<literal>...</literal> の前に指定することもできます。
+      この場合は、通常の引数リストにマッチしなかったのこりの引数が
+      <literal>...</literal> による配列に追加されます。
+     </para>
+
+     <para>
+      <literal>...</literal> トークンの前に、
+      <link linkend="language.oop5.typehinting">タイプヒント</link> を付加することもできます。
+      タイプヒントがある場合、<literal>...</literal> が取り込むすべての引数はそのヒントに従わなければいけません。
+
+      <example>
+       <title>タイプヒントつきの可変長引数</title>
+       <programlisting role="php">
+<![CDATA[
+<?php
+function total_intervals($unit, DateInterval ...$intervals) {
+    $time = 0;
+    foreach ($intervals as $interval) {
+        $time += $interval->$unit;
+    }
+    return $time;
+}
+
+$a = new DateInterval('P1D');
+$b = new DateInterval('P2D');
+echo total_intervals('d', $a, $b).' days';
+
+// これは失敗します。null は DateInterval オブジェクトではないからです。
+echo total_intervals('d', null);
+?>
+]]>
+       </programlisting>
+       &example.outputs;
+       <screen>
+<![CDATA[
+3 days
+Catchable fatal error: Argument 2 passed to total_intervals() must be an instance of DateInterval, null given, called in - on line 14 and defined in - on line 2
+]]>
+       </screen>
+      </example>
+     </para>
+
+     <para>
+      可変長引数の
+      <link linkend="functions.arguments.by-reference">参照渡し</link>
+      もできます。その場合は、<literal>...</literal> の前にアンパサンド
+      (<literal>&amp;</literal>) を付加します。
+     </para>
+    </sect3>
+
+    <sect3 xml:id="functions.variable-arg-list.old">
+     <title>古いバージョンの PHP</title>
+
+     <para>
+      可変長引数に関して特別な構文は必要としません。しかし、関数の引数にアクセスするには
+      <function>func_num_args</function>、<function>func_get_arg</function>
+      および <function>func_get_args</function> といった関数を使う必要があります。
+     </para>
+
+     <para>
+      先ほどの最初の例を、PHP 5.5 以前のバージョンで実装すると、以下のようになります。
+      earlier:
+
+      <example>
+       <title>可変長引数へのアクセス (PHP 5.5 以前)</title>
+       <programlisting role="php">
+<![CDATA[
+<?php
+function sum() {
+    $acc = 0;
+    foreach (func_get_args() as $n) {
+        $acc += $n;
+    }
+    return $acc;
+}
+
+echo sum(1, 2, 3, 4);
+?>
+]]>
+       </programlisting>
+       &example.outputs;
+       <screen>
+<![CDATA[
+10
+]]>
+       </screen>
+      </example>
+     </para>
+    </sect3>
     
    </sect2>
    
