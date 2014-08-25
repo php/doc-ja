@@ -1,0 +1,374 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision$ -->
+<!-- EN-Revision: 28ab7af4e84f7268a75894cff91bcecebf7f051a Maintainer: takagi Status: ready -->
+
+<sect1 xml:id="migration56.new-features" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <title>新機能</title>
+
+ <sect2 xml:id="migration56.new-features.const-scalar-exprs">
+  <title>定数のスカラー式</title>
+
+  <para>
+   数値や文字列リテラルと定数を、これまでのバージョンでは静的な値が想定されていた場面
+   (定数やプロパティの宣言、関数のデフォルト引数など)
+   で、スカラー式として扱えるようになりました。
+  </para>
+
+  <informalexample>
+   <programlisting role="php">
+<![CDATA[
+<?php
+const ONE = 1;
+const TWO = ONE * 2;
+
+class C {
+    const THREE = TWO + 1;
+    const ONE_THIRD = ONE / self::THREE;
+    const SENTENCE = 'THREE の値は '.self::THREE;
+
+    public function f($a = ONE + self::THREE) {
+        return $a;
+    }
+}
+
+echo (new C)->f()."\n";
+echo C::SENTENCE;
+?>
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+4
+THREE の値は 3
+]]>
+   </screen>
+  </informalexample>
+ </sect2>
+
+ <sect2 xml:id="migration56.new-features.variadics">
+  <title><literal>...</literal> による可変個引数関数</title>
+
+  <para>
+   <link linkend="functions.variable-arg-list">可変個引数の関数</link>
+   の実装に <literal>...</literal> 演算子が使えるようになり、
+   <function>func_get_args</function> を使わずに済むようになりました。
+  </para>
+
+  <informalexample>
+   <programlisting role="php">
+<![CDATA[
+<?php
+function f($req, $opt = null, ...$params) {
+    // $params は配列で、残りのすべての引数が含まれます
+    printf('$req: %d; $opt: %d; パラメータ数: %d'."\n",
+           $req, $opt, count($params));
+}
+
+f(1);
+f(1, 2);
+f(1, 2, 3);
+f(1, 2, 3, 4);
+f(1, 2, 3, 4, 5);
+?>
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+$req: 1; $opt: 0; パラメータ数: 0
+$req: 1; $opt: 2; パラメータ数: 0
+$req: 1; $opt: 2; パラメータ数: 1
+$req: 1; $opt: 2; パラメータ数: 2
+$req: 1; $opt: 2; パラメータ数: 3
+]]>
+   </screen>
+  </informalexample>
+ </sect2>
+
+ <sect2 xml:id="migration56.new-features.splat">
+  <title><literal>...</literal> による引数のアンパック</title>
+
+  <para>
+   <link linkend="language.types.array">配列</link> や
+   <interfacename>Traversable</interfacename> オブジェクトを引数リストにアンパックするために、
+   関数の呼び出し時に <literal>...</literal> 演算子が使えるようになりました。
+   これは、Ruby などの他の言語では splat 演算子と呼ばれることもあります。
+  </para>
+
+  <informalexample>
+   <programlisting role="php">
+<![CDATA[
+<?php
+function add($a, $b, $c) {
+    return $a + $b + $c;
+}
+
+$operators = [2, 3];
+echo add(1, ...$operators);
+?>
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+6
+]]>
+   </screen>
+  </informalexample>
+ </sect2>
+
+ <sect2 xml:id="migration56.new-features.exponentiation">
+  <title>累乗演算子 <literal>**</literal></title>
+
+  <para>
+   右から評価する <literal>**</literal> 演算子が追加されました。
+   これは累乗をサポートするものです。さらに、短縮代入演算子
+   <literal>**=</literal> も追加されました。
+  </para>
+
+  <informalexample>
+   <programlisting role="php">
+<![CDATA[
+<?php
+printf("2 ** 3 ==      %d\n", 2 ** 3);
+printf("2 ** 3 ** 2 == %d\n", 2 ** 3 ** 2);
+
+$a = 2;
+$a **= 3;
+printf("a ==           %d\n", $a);
+?>
+]]>
+   </programlisting>
+  &example.outputs;
+  <screen>
+<![CDATA[
+2 ** 3 ==      8
+2 ** 3 ** 2 == 512
+a ==           8
+]]>
+  </screen>
+  </informalexample>
+ </sect2>
+
+ <sect2 xml:id="migration56.new-features.use">
+  <title><literal>use function</literal> および <literal>use const</literal></title>
+
+  <para>
+   The
+   <link linkend="language.namespaces.importing"><literal>use</literal></link>
+   演算子を拡張し、クラスだけではなく関数や定数もインポートできるようになりました。
+   それぞれ、言語構造
+   <literal>use function</literal> および <literal>use const</literal>
+   を用います。
+  </para>
+
+  <informalexample>
+   <programlisting role="php">
+<![CDATA[
+<?php
+namespace Name\Space {
+    const FOO = 42;
+    function f() { echo __FUNCTION__."\n"; }
+}
+
+namespace {
+    use const Name\Space\FOO;
+    use function Name\Space\f;
+
+    echo FOO."\n";
+    f();
+}
+?>
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+42
+Name\Space\f
+]]>
+   </screen>
+  </informalexample>
+ </sect2>
+
+ <sect2 xml:id="migration56.new-features.phpdbg">
+  <title>phpdbg</title>
+
+  <para>
+   PHP now includes an interactive debugger called phpdbg implemented as a SAPI module.
+   詳細な情報は
+   <link xlink:href="&url.phpdbg.docs;">phpdbg のドキュメント</link>
+   を参照ください。
+  </para>
+ </sect2>
+
+ <sect2 xml:id="migration56.new-features.default-encoding">
+  <title>デフォルトの文字エンコーディング</title>
+
+  <para>
+   エンコーディングに依存する関数、たとえば <function>htmlspecialchars</function>
+   などにおけるデフォルトの文字セットとして、
+   <link linkend="ini.default-charset">default_charset</link> を利用するようになりました。
+   iconv (非推奨) や mbstring でのエンコードが設定されている場合は、
+   default_charset よりもそちらのほうが優先されます。
+  </para>
+
+  <para>
+   この設定のデフォルト値は <literal>UTF-8</literal> です。
+  </para>
+ </sect2>
+
+ <sect2 xml:id="migration56.new-features.reusable-input">
+  <title><link linkend="wrappers.php.input"><literal>php://input</literal></link> が再利用可能に</title>
+
+  <para>
+   <link linkend="wrappers.php.input"><literal>php://input</literal></link>
+   が再オープンできるようになり、必要に応じて何度でも読めるようになりました。
+   その結果として、POST されたデータを読むときに必要となるメモリの量が大幅に削減されました。
+  </para>
+ </sect2>
+
+ <sect2 xml:id="migration56.new-features.large-file">
+  <title>巨大なファイルのアップロード</title>
+
+  <para>
+   2 ギガバイトより大きいサイズのファイルもアップロードできるようになりました。
+  </para>
+ </sect2>
+
+ <sect2 xml:id="migration56.new-features.gmp">
+  <title><link linkend="book.gmp">GMP</link> での演算子オーバーロードのサポート</title>
+
+  <para>
+   <link linkend="book.gmp">GMP</link> オブジェクトが、
+   演算子のオーバーロードやスカラー型へのキャストに対応するようになりました。
+   GMP を使って、よりわかりやすいコードが書けるようになります。
+  </para>
+
+  <informalexample>
+   <programlisting role="php">
+<![CDATA[
+<?php
+$a = gmp_init(42);
+$b = gmp_init(17);
+
+// 5.6 より前のバージョンのコード
+var_dump(gmp_add($a, $b));
+var_dump(gmp_add($a, 17));
+var_dump(gmp_add(42, $b));
+
+// 5.6 以降の新しいコード
+var_dump($a + $b);
+var_dump($a + 17);
+var_dump(42 + $b);
+?>
+]]>
+   </programlisting>
+  </informalexample>
+ </sect2>
+
+ <sect2 xml:id="migration56.new-features.hash-equals">
+  <title><function>hash_equals</function> による、タイミング攻撃に対応した文字列比較</title>
+
+  <para>
+   <function>hash_equals</function> 関数が追加されました。
+   この関数は、二つの文字列の比較を一定の時間で行います。
+   タイミング攻撃を防ぐために、文字列の比較にはこの関数を使うべきです。
+   たとえば <function>crypt</function> のパスワードハッシュをチェックしたりするときに使えます
+   (<function>password_hash</function> や
+   <function>password_verify</function> が使えない場合を想定。
+   これらの関数は、タイミング攻撃の影響を受けません)。
+  </para>
+
+  <!-- TODO: update crypt() examples -->
+
+  <informalexample>
+   <programlisting role="php">
+<![CDATA[
+<?php
+$expected  = crypt('12345', '$2a$07$usesomesillystringforsalt$');
+$correct   = crypt('12345', '$2a$07$usesomesillystringforsalt$');
+$incorrect = crypt('1234',  '$2a$07$usesomesillystringforsalt$');
+
+var_dump(hash_equals($expected, $correct));
+var_dump(hash_equals($expected, $incorrect));
+?>
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+bool(true)
+bool(false)
+]]>
+   </screen>
+  </informalexample>
+ </sect2>
+
+ <sect2 xml:id="migration56.new-features.gost">
+  <title>gost-crypto ハッシュアルゴリズム</title>
+
+  <para>
+   ハッシュアルゴリズム <literal>gost-crypto</literal> が追加されました。
+   これは GOST ハッシュ関数を実装したもので、
+   <link xlink:href="&url.rfc;4357">RFC 4357, section 11.2</link>
+   に記載されている CryptoPro S-box テーブルを使っています。
+  </para>
+ </sect2>
+
+ <sect2 xml:id="migration56.new-features.openssl">
+  <title>SSL/TLS の改良</title>
+
+  <para>
+   PHP 5.6 では、SSL/TLS のサポートに幅広い改良が加わりました。
+   <link linkend="migration56.incompatible.peer-verification">ピア検証にデフォルトで対応</link>したり、
+   証明書のフィンガープリントのマッチングに対応したり、
+   TLS 再ネゴシエーションアタックの対策をしたり、多数の
+   <link linkend="context.ssl">SSL コンテキストオプション</link>を新たに導入したりしました。
+   これらによって、暗号化されたストリームに関するよりきめ細やかな制御ができるようになりました。
+  </para>
+
+  <para>
+   変更内容の詳細を、
+   <link linkend="migration56.openssl">PHP 5.6.x における OpenSSL 関連の変更</link>
+   にまとめました。
+  </para>
+ </sect2>
+
+ <sect2 xml:id="migration56.new-features.postgresql">
+  <title><link linkend="book.pgsql">pgsql</link> の非同期サポート</title>
+
+  <para>
+   <link linkend="book.pgsql">pgsql</link> 拡張モジュールが、
+   非同期の接続や問い合わせに対応しました。
+   PostgreSQL データベースとのやりとりで、ノンブロッキング処理ができるようになります。
+   非同期接続を確立するには、定数
+   <constant>PGSQL_CONNECT_ASYNC</constant> を利用します。そして、新しい関数
+   <function>pg_connect_poll</function>、<function>pg_socket</function>、
+   <function>pg_consume_input</function>、<function>pg_flush</function>
+   を使って、非同期接続や問い合わせを処理します。
+  </para>
+ </sect2>
+</sect1>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"~/.phpdoc/manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
