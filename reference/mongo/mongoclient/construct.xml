@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: d2f03350deec90514f2fa4b2fd563323f1afbc31 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: f79489c9b3bd65aac58cc699f8087067674e1140 Maintainer: takagi Status: ready -->
 
 <refentry xml:id="mongoclient.construct" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -166,6 +166,12 @@ mongodb://[username:password@]host1[:port1][,host2[:port2:],...]/db
          </para>
          <para>
           接続を開こうとしてタイムアウトになるまでの時間の長さ（ミリ秒単位）。
+          デフォルトは <literal>60000</literal> (60 秒) です。
+         </para>
+         <para>
+          <literal>-1</literal> を指定すると、接続タイムアウトを適用せず、PHP は
+          <link linkend="ini.default-socket-timeout">default_socket_timeout</link>
+          を利用します。
          </para>
         </listitem>
         <listitem>
@@ -295,16 +301,23 @@ mongodb://[username:password@]host1[:port1][,host2[:port2:],...]/db
           <literal>"socketTimeoutMS"</literal>
          </para>
          <para>
-          ソケットの送受信がタイムアウトになるまでの時間の長さ。
-          <note>
-           <simpara>
-            これはクライアント側のタイムアウトです。
-            <literal>insert</literal> が <literal>"socketTimeoutMS"</literal>
-            に達してしまうと、サーバーが実際に書き込みを受信したかどうかを知るすべがなくなります。
-           </simpara>
-          </note>
-          デフォルトは 30 秒です。カーソルごとに設定するには <methodname>MongoCursor::timeout</methodname> を使います。
+          ソケットの操作 (読み書き) がタイムアウトになるまでの時間の長さ。
+          ミリ秒単位で、デフォルトは <literal>30000</literal> (30 秒) です。
          </para>
+         <para>
+          <literal>-1</literal> を設定すると、ソケットの操作を永遠にブロックします。
+          このオプションは、操作単位以外でも設定できます。
+          クエリごとに設定するには <methodname>MongoCursor::timeout</methodname>、
+          書き込みメソッドごとに設定するには <literal>"socketTimeoutMS"</literal> オプションを使います。
+         </para>
+         <note>
+          <simpara>
+           これはクライアント側のタイムアウトです。書き込み操作がタイムアウトに達してしまうと、
+           サーバーが実際に書き込みを受信したかどうかを知るすべがなくなります。そして、
+           書き込みの結果を返す代わりに
+           <classname>MongoCursorTimeoutException</classname> をスローします。
+          </simpara>
+         </note>
         </listitem>
         <listitem>
          <para>

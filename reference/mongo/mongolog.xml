@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: ebd6689db56f26f247af88b58df40e4124b91971 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 6b2eb216fd3b435212c79c31b4e024b6cd7c13e7 Maintainer: takagi Status: ready -->
 
 <phpdoc:classref xml:id="class.mongolog" xmlns:phpdoc="http://php.net/ns/phpdoc" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xi="http://www.w3.org/2001/XInclude">
 
@@ -14,17 +14,7 @@
    &reftitle.intro;
    <para>
     ログ機能を使うと、ドライバが何をしているのかに関する詳細な情報を取得できます。
-    MongoLog が使うログ機能は、すべてのメッセージを PHP の notice として記録します。
-    使っているサーバーのインターフェイスによって出力先は変わり、
-    PHP-CLI の場合は標準エラー出力に送られ
-    それ以外の場合はウェブサーバーのエラーログに送られます。
-    ログメッセージを出力するには、PHP の設定で E_NOTICE
-    を表示するようにしておかねばなりません。
-    つまり、E_NOTICE を error_reporting に含めて
-    display_errors を 1 にするということです。
-   </para>
-   <para>
-    ログ機能はデフォルトでは無効になっています。このクラスを使うと、
+    ログ機能はデフォルトでは無効になっています。しかし、このクラスを使うと、
     ドライバの特定の部分について指定したレベルでのログ出力を有効にできます。
     たとえば次のように使います。
    </para>
@@ -40,13 +30,26 @@ MongoLog::setModule(MongoLog::ALL); // ドライバのすべての部分
 MongoLog::setLevel(MongoLog::INFO);
 MongoLog::setModule(MongoLog::RS);
 
-// レプリカセットと接続プーリングに関する info および server tuning レベルのイベントを表示します
+// レプリカセットと接続に関する info および diagnostic レベルのイベントを表示します
 MongoLog::setLevel(MongoLog::INFO|MongoLog::FINE);
-MongoLog::setModule(MongoLog::RS|MongoLog::POOL);
+MongoLog::setModule(MongoLog::RS|MongoLog::CON);
 
 ?>
 ]]>
    </programlisting>
+   <note>
+    <para>
+     デフォルトでは、MongoLog はすべてのログメッセージを PHP の notice として発行します。
+     利用する <acronym>SAPI</acronym> によって、
+     このメッセージが <literal>stderr</literal> に送られる (<acronym>CLI</acronym> の場合)
+     こともあれば、ウェブサーバーのエラーログに書き出されることもあります、
+     MongoLog を設定したのにログメッセージが期待通りに出力されない場合は、
+     <link linkend="ini.error-reporting">error_reporting</link>
+     の設定に <constant>E_NOTICE</constant> が含まれているかどうかと、
+     <link linkend="ini.display-errors">display_errors</link> が on
+     になっているかどうかを確認しましょう。
+    </para>
+   </note>
   </section>
 <!-- }}} -->
 
@@ -110,6 +113,12 @@ MongoLog::setModule(MongoLog::RS|MongoLog::POOL);
      <modifier>const</modifier>
      <type>int</type>
      <varname linkend="mongolog.constants.pool">MongoLog::POOL</varname>
+     <initializer>1</initializer>
+    </fieldsynopsis>
+    <fieldsynopsis>
+     <modifier>const</modifier>
+     <type>int</type>
+     <varname linkend="mongolog.constants.con">MongoLog::CON</varname>
      <initializer>2</initializer>
     </fieldsynopsis>
     <fieldsynopsis>
@@ -133,13 +142,20 @@ MongoLog::setModule(MongoLog::RS|MongoLog::POOL);
 
     <classsynopsisinfo role="comment">フィールド</classsynopsisinfo>
     <fieldsynopsis>
-     <modifier>public</modifier>
-     <modifier></modifier>
+     <modifier>private</modifier>
+     <modifier>static</modifier>
+     <type>int</type>
+     <varname>callback</varname>
+    </fieldsynopsis>
+    <fieldsynopsis>
+     <modifier>private</modifier>
+     <modifier>static</modifier>
      <type>int</type>
      <varname>level</varname>
     </fieldsynopsis>
     <fieldsynopsis>
-     <modifier>public</modifier>
+     <modifier>private</modifier>
+     <modifier>static</modifier>
      <type>int</type>
      <varname>module</varname>
     </fieldsynopsis>
@@ -166,7 +182,7 @@ MongoLog::setModule(MongoLog::RS|MongoLog::POOL);
       <term><constant>MongoLog::NONE</constant></term>
       <listitem>
        <simpara>
-        ログ出力を無効にする定数。
+        ログ出力を無効にする。
        </simpara>
       </listitem>
      </varlistentry>
@@ -174,7 +190,7 @@ MongoLog::setModule(MongoLog::RS|MongoLog::POOL);
       <term><constant>MongoLog::ALL</constant></term>
       <listitem>
        <simpara>
-        すべてをログ出力する定数。
+        すべてをログ出力する。
        </simpara>
       </listitem>
      </varlistentry>
@@ -191,7 +207,8 @@ MongoLog::setModule(MongoLog::RS|MongoLog::POOL);
       <term><constant>MongoLog::WARNING</constant></term>
       <listitem>
        <simpara>
-        これは、何かおかしいけれども例外を発生させるほどではないハプニングのログメッセージを表示します。
+        これは、何かおかしいけれども例外を発生させるほどではないできごと
+        (復旧可能な接続エラーなど) を記録します。
        </simpara>
       </listitem>
      </varlistentry>
@@ -200,7 +217,7 @@ MongoLog::setModule(MongoLog::RS|MongoLog::POOL);
       <listitem>
        <simpara>
         管理者にとっては有用だと思われるが
-        特に注目には値しないできごとを記録します。
+        特に注目には値しないできごと (オプションのパース、認証処理など) を記録します。
        </simpara>
       </listitem>
      </varlistentry>
@@ -208,7 +225,9 @@ MongoLog::setModule(MongoLog::RS|MongoLog::POOL);
       <term><constant>MongoLog::FINE</constant></term>
       <listitem>
        <simpara>
-        ドライバの動作における大半のできごとを記録します。記録対象のモジュールにもよりますが、
+        ドライバの動作における大半のできごと
+        (サーバーの選択やソケット通信など)
+        を記録します。記録対象のモジュールにもよりますが、
         ログがノイズまみれになる可能性もあります。主な用途はデバッグです。
        </simpara>
       </listitem>
@@ -222,6 +241,15 @@ MongoLog::setModule(MongoLog::RS|MongoLog::POOL);
      これらの定数は <function>MongoLog::setModule</function> で使えます。
     </para>
     <variablelist>
+     <varlistentry xml:id="mongolog.constants.con">
+      <term><constant>MongoLog::CON</constant></term>
+      <listitem>
+       <simpara>
+        接続のアクティビティを記録します。
+        新規接続の作成、認証、ping、タイムアウトなどです。
+       </simpara>
+      </listitem>
+     </varlistentry>
      <varlistentry xml:id="mongolog.constants.io">
       <term><constant>MongoLog::IO</constant></term>
       <listitem>
@@ -236,7 +264,8 @@ MongoLog::setModule(MongoLog::RS|MongoLog::POOL);
       <term><constant>MongoLog::PARSE</constant></term>
       <listitem>
        <simpara>
-        サーバーの文字列パースを記録します。
+        <classname>MongoClient</classname> を作成するときの、
+        接続文字列やオプションのパースを記録します。
        </simpara>
       </listitem>
      </varlistentry>
@@ -244,8 +273,8 @@ MongoLog::setModule(MongoLog::RS|MongoLog::POOL);
       <term><constant>MongoLog::POOL</constant></term>
       <listitem>
        <simpara>
-        接続プールの活動を記録します。新しい接続の作成や
-        既存の接続の再利用、そして接続の切断などです。
+        かつては接続プールの活動を記録していました。今は非推奨で、
+        <constant>MongoLog::RS</constant> のエイリアスとなっています。
        </simpara>
       </listitem>
      </varlistentry>
@@ -253,8 +282,8 @@ MongoLog::setModule(MongoLog::RS|MongoLog::POOL);
       <term><constant>MongoLog::RS</constant></term>
       <listitem>
        <simpara>
-        レプリカセットの活動を記録します。フェイルオーバーや ping、
-        読み込み元のセカンダリの選択などです。
+        レプリカセットの活動を記録します。フェイルオーバーや、
+        優先読み込みの選択などです。
        </simpara>
       </listitem>
      </varlistentry>
@@ -262,13 +291,39 @@ MongoLog::setModule(MongoLog::RS|MongoLog::POOL);
       <term><constant>MongoLog::SERVER</constant></term>
       <listitem>
        <simpara>
-        サーバーの状態の変更を記録します。
-        プライマリやセカンダリ、そして複製の検出をします。
+        かつてはサーバーの状態の変更を記録していました。今は非推奨で、
+        <constant>MongoLog::RS</constant> のエイリアスとなっています。
        </simpara>
       </listitem>
      </varlistentry>
     </variablelist>
    </section>
+  </section>
+
+  <section role="changelog">
+   &reftitle.changelog;
+   <para>
+    <informaltable>
+     <tgroup cols="2">
+      <thead>
+       <row>
+        <entry>&Version;</entry>
+        <entry>&Description;</entry>
+       </row>
+      </thead>
+      <tbody>
+       <row>
+        <entry>1.3.0</entry>
+        <entry>
+         <constant>MongoLog::CON</constant> が追加され、
+         <constant>MongoLog::POOL</constant> と
+         <constant>MongoLog::SERVER</constant> が非推奨になりました。
+        </entry>
+       </row>
+      </tbody>
+     </tgroup>
+    </informaltable>
+   </para>
   </section>
 
  </partintro>
