@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: aa742af0b78990a4e431dc3ba2452c2d75c99968 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: a7ff20f87d80fe3491b24f0997eadbaf9ddfa477 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi -->
 <refentry xml:id="function.max" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -27,12 +27,12 @@
   </para>
   <note>
    <para>
-    PHP は、数値として解釈できない <type>string</type> を <type>integer</type> と比較する場合には
-    <literal>0</literal> と評価します。しかし、もしそれが最大値であった
-    場合、返り値はもとの文字列となります。<literal>0</literal> と評価される
-    引数が複数存在した場合、<function>max</function> はもしその中に
-    数値の <literal>0</literal> があればそれを返し、そうでなければ
-    アルファベット順で一番大きな文字列の値が返されます。
+    異なる型の値を比較する際には、<link linkend="language.operators.comparison">
+    標準の比較ルール</link>に従います。
+    たとえば、数値形式でない <type>string</type> を
+    <type>integer</type> と比較するときには、数値 <literal>0</literal> と評価します。
+    しかし、<type>string</type> どうしを比較するときには、アルファベット順で評価します。
+    返される値は、何も変換をしていない、元の型の値となります。
    </para>
   </note>
  </refsect1>
@@ -81,16 +81,9 @@
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
-   <function>max</function> は、パラメータとして渡した値の中で
-   数値として最も大きいものを返します。
-   同じ大きさの値が複数あった場合は、最初にあらわれたものを返します。
-  </para>
-  <para>
-   <function>max</function> に複数の配列を渡した場合は、いちばん長い配列を返します。
-   すべての配列が同じ長さの場合は、辞書順の並べ替えで返り値を見つけます。
-  </para>
-  <para>
-   文字列を渡した場合は、<type>integer</type> に変換してから比較します。
+   <function>max</function> は、パラメータとして渡した値の中で、標準の比較ルールに従って最大になるものを返します。
+   異なる型で同じ値と評価される複数の値 (<literal>0</literal> と <literal>'abc'</literal> など)
+   があった場合は、関数に最初に渡されたほうを返します。
   </para>
  </refsect1>
  <refsect1 role="examples">
@@ -101,29 +94,36 @@
     <programlisting role="php">
 <![CDATA[
 <?php
-echo max(1, 3, 5, 6, 7);  // 7
+echo max(2, 3, 1, 6, 7);  // 7
 echo max(array(2, 4, 5)); // 5
 
-// 'hello' を integer に変換すると 0 になります。ふたつのパラメータの長さは
+// 'hello' を int と比較するときは、0 と評価します。ふたつの値が
 // 等しくなるので、パラメータを渡した順によって結果が決まります
 echo max(0, 'hello');     // 0
 echo max('hello', 0);     // hello
 
-echo max('42', 3); // '42'
-
-// 0 > -1 なので、返り値は 'hello' となります
-echo max(-1, 'hello');    // hello
+// -1 と 0 の比較なので、'hello' のほうが大きくなります
+echo max('hello', -1);    // hello
 
 // 長さが異なる複数の配列を渡すと、いちばん長い配列を返します
 $val = max(array(2, 2, 2), array(1, 1, 1, 1)); // array(1, 1, 1, 1)
 
 // 同じ長さの複数の配列を渡すと、max はその要素を左から
-// 辞書順に比較します。この例では 2 == 2 ですが 4 < 5 となります
-$val = max(array(2, 4, 8), array(2, 5, 7)); // array(2, 5, 7)
+// 辞書順に比較します。この例では 2 == 2 ですが 5 > 4 となります
+$val = max(array(2, 4, 8), array(2, 5, 1)); // array(2, 5, 1)
 
 // 配列と配列でない値が渡された場合、常に
 // 配列が最大と判定されます。
 $val = max('string', array(2, 5, 7), 42);   // array(2, 5, 7)
+
+// 一方の値が NULL や boolean の場合、それを他の値と比較するときには、
+// もう一方の値の型が何であるかにかかわらず、FALSE < TRUE というルールを使います。
+// 以下の例では、-10 は TRUE と評価されます。
+$val = max(-10, FALSE); // -10
+$val = max(-10, FALSE); // -10
+
+// 一方 0 は FALSE と評価されるので、TRUE よりは小さいとみなされます。
+$val = max(0, TRUE); // TRUE
 ?>
 ]]>
     </programlisting>
