@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 0e9eb8a8c76de2365decd77a46d96ddfeec2bac8 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 850354823a33c044b39aedcfd96b8c196f6e84f2 Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa -->
  <chapter xml:id="language.functions" xmlns="http://docbook.org/ns/docbook">
   <title>関数</title>
@@ -832,6 +832,69 @@ $greet('PHP');
    <simpara>
     クロージャは、変数を親のスコープから引き継ぐことができます。
     引き継ぐ変数は、<literal>use</literal> で渡さなければなりません。
+   </simpara>
+
+   <example>
+    <title>親のスコープからの変数の引き継ぎ</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$message = 'hello';
+
+// "use" がない場合
+$example = function () {
+    var_dump($message);
+};
+echo $example();
+
+// $message を引き継ぎます
+$example = function () use ($message) {
+    var_dump($message);
+};
+echo $example();
+
+// 引き継がれた変数の値は、関数が定義された時点のものであり、
+// 関数が呼ばれた時点のものではありません
+$message = 'world';
+echo $example();
+
+// $message をリセットします
+$message = 'hello';
+
+// 参照渡しで引き継ぎます
+$example = function () use (&$message) {
+    var_dump($message);
+};
+echo $example();
+
+// 親のスコープで変更された値が、
+// 関数呼び出しの内部にも反映されます
+$message = 'world';
+echo $example();
+
+// クロージャは、通常の引数も受け付けます
+$example = function ($arg) use ($message) {
+    var_dump($arg . ' ' . $message);
+};
+$example("hello");
+?>
+]]>
+    </programlisting>
+    &example.outputs.similar;
+    <screen>
+<![CDATA[
+Notice: Undefined variable: message in /example.php on line 6
+NULL
+string(5) "hello"
+string(5) "hello"
+string(5) "hello"
+string(5) "world"
+string(11) "hello world"
+]]>
+    </screen>
+   </example>
+
+   <simpara>
     親のスコープからの変数の引き継ぎは、グローバル変数を使うのとは
     <emphasis>異なります</emphasis>。グローバル変数は、
     関数が実行されるかどうかにかかわらずグローバルスコープに存在します。
