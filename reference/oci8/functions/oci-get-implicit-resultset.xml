@@ -1,0 +1,326 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision$ -->
+<!-- EN-Revision: cb2e7b70b1354e5468e538720d59c37e273bc98e Maintainer: satoruyoshida Status: ready -->
+<refentry xml:id="function.oci-get-implicit-resultset" xmlns="http://docbook.org/ns/docbook">
+ <refnamediv>
+  <refname>oci_get_implicit_resultset</refname>
+  <refpurpose>Oracle Database 12c の暗黙の結果セットを持つ親ステートメント・リソースから次の子ステートメント・リソースを返す
+  </refpurpose>
+ </refnamediv>
+ 
+ <refsect1 role="description">
+  &reftitle.description;
+  <methodsynopsis>
+   <type>resource </type><methodname>oci_get_implicit_resultset</methodname>
+   <methodparam><type>resource</type><parameter>statement</parameter></methodparam>
+  </methodsynopsis>
+  <para>
+   ストアドまたは匿名の Oracle PL/SQL ブロックを実行後、
+   クエリの結果の連続したセットを取得するために使用されます。
+   そのブロックは、Oracle の <emphasis>DBMS_SQL.RETURN_RESULT</emphasis>
+   PL/SQL 関数によりクエリの結果を返します。
+   これにより、PL/SQL ブロックはクエリ結果を簡単に返すことができます。
+  </para>
+  <para>
+   子ステートメントは、任意の OCI8 取得関数とともに使用できます。
+   その関数は、<function>oci_fetch</function>、<function>oci_fetch_all</function>、
+   <function>oci_fetch_array</function>、<function>oci_fetch_object</function>、
+   <function>oci_fetch_assoc</function> または <function>oci_fetch_row</function> です。
+  </para>
+  <para>
+   子ステートメントは、それらの親ステートメントのプリフェッチ値を継承するか、
+   または <function>oci_set_prefetch</function> により明示的に設定することができます。
+  </para>
+ </refsect1>
+
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <para>
+   <variablelist>
+    <varlistentry>
+     <term><parameter>statement</parameter></term>
+     <listitem>
+       <para>
+        <function>oci_parse</function> により作成され、
+        <function>oci_execute</function> により実行される
+        有効な OCI8 ステートメント ID 。
+        そのステートメント ID は、
+        暗黙の結果セットを返す SQL 文に関連づけられているかもしれませんし、
+        いないかもしれません。
+       </para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
+  </para>
+ </refsect1>
+
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <para>
+   <parameter>statement</parameter> 上で使用可能な
+   次の子ステートメントに対する文ハンドラを返します。
+   子ステートメントが存在しないか、
+   または <function>oci_get_implicit_resultset</function> への前の呼び出しにより、
+   すべての子ステートメントが返されていた場合、
+    &false; を返します。
+  </para>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title>ループ内で暗黙の結果セットを取得</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+$conn = oci_connect('hr', 'welcome', 'localhost/pdborcl');
+if (!$conn) {
+    $e = oci_error();
+    trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
+}
+
+$sql = 'DECLARE
+            c1 SYS_REFCURSOR;
+        BEGIN
+           OPEN c1 FOR SELECT city, postal_code FROM locations WHERE ROWNUM < 4 ORDER BY city;
+           DBMS_SQL.RETURN_RESULT(c1);
+           OPEN c1 FOR SELECT country_id FROM locations WHERE ROWNUM < 4 ORDER BY city;
+           DBMS_SQL.RETURN_RESULT(c1);
+        END;';
+
+$stid = oci_parse($conn, $sql);
+oci_execute($stid);
+
+while (($stid_c = oci_get_implicit_resultset($stid))) {
+    echo "<h2>新規の暗黙の結果セット:</h2>\n";
+    echo "<table>\n";
+    while (($row = oci_fetch_array($stid_c, OCI_ASSOC+OCI_RETURN_NULLS)) != false) {
+        echo "<tr>\n";
+        foreach ($row as $item) {
+            echo "  <td>".($item!==null?htmlentities($item, ENT_QUOTES|ENT_SUBSTITUTE):"&nbsp;")."</td>\n";
+        }
+        echo "</tr>\n";
+    }
+    echo "</table>\n";
+}
+
+// 出力です。
+//    新規の暗黙の結果セット:
+//     Beijing 190518
+//     Bern    3095
+//     Bombay  490231
+//    新規の暗黙の結果セット:
+//     CN
+//     CH
+//     IN
+
+oci_free_statement($stid);
+oci_close($conn);
+
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+
+  <para>
+   <example>
+    <title>子ステートメントのハンドラをそれぞれ取得</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+$conn = oci_connect('hr', 'welcome', 'localhost/pdborcl');
+if (!$conn) {
+    $e = oci_error();
+    trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
+}
+
+$sql = 'DECLARE
+            c1 SYS_REFCURSOR;
+        BEGIN
+           OPEN c1 FOR SELECT city, postal_code FROM locations WHERE ROWNUM < 4 ORDER BY city;
+           DBMS_SQL.RETURN_RESULT(c1);
+           OPEN c1 FOR SELECT country_id FROM locations WHERE ROWNUM < 4 ORDER BY city;
+           DBMS_SQL.RETURN_RESULT(c1);
+        END;';
+
+$stid = oci_parse($conn, $sql);
+oci_execute($stid);
+
+$stid_1 = oci_get_implicit_resultset($stid);
+$stid_2 = oci_get_implicit_resultset($stid);
+
+$row = oci_fetch_array($stid_1, OCI_ASSOC+OCI_RETURN_NULLS);
+var_dump($row);
+$row = oci_fetch_array($stid_2, OCI_ASSOC+OCI_RETURN_NULLS);
+var_dump($row);
+$row = oci_fetch_array($stid_1, OCI_ASSOC+OCI_RETURN_NULLS);
+var_dump($row);
+$row = oci_fetch_array($stid_2, OCI_ASSOC+OCI_RETURN_NULLS);
+var_dump($row);
+
+// 出力です。
+//    array(2) {
+//      ["CITY"]=>
+//      string(7) "Beijing"
+//      ["POSTAL_CODE"]=>
+//      string(6) "190518"
+//    }
+//    array(1) {
+//      ["COUNTRY_ID"]=>
+//      string(2) "CN"
+//    }
+//    array(2) {
+//      ["CITY"]=>
+//      string(4) "Bern"
+//      ["POSTAL_CODE"]=>
+//      string(4) "3095"
+//    }
+//    array(1) {
+//      ["COUNTRY_ID"]=>
+//      string(2) "CH"
+//    }
+
+oci_free_statement($stid);
+oci_close($conn);
+
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+
+  <para>
+   <example>
+    <title>プリフェッチ数を明示的に設定</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+$conn = oci_connect('hr', 'welcome', 'localhost/pdborcl');
+if (!$conn) {
+    $e = oci_error();
+    trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
+}
+
+$sql = 'DECLARE
+            c1 SYS_REFCURSOR;
+        BEGIN
+           OPEN c1 FOR SELECT city, postal_code FROM locations ORDER BY city;
+           DBMS_SQL.RETURN_RESULT(c1);
+        END;';
+
+$stid = oci_parse($conn, $sql);
+oci_execute($stid);
+
+$stid_c = oci_get_implicit_resultset($stid);
+oci_set_prefetch($stid_c, 200);   // 子ステートメントから取得する前にプリフェッチを設定
+echo "<table>\n";
+while (($row = oci_fetch_array($stid_c, OCI_ASSOC+OCI_RETURN_NULLS)) != false) {
+    echo "<tr>\n";
+    foreach ($row as $item) {
+        echo "  <td>".($item!==null?htmlentities($item, ENT_QUOTES|ENT_SUBSTITUTE):"&nbsp;")."</td>\n";
+    }
+    echo "</tr>\n";
+}
+echo "</table>\n";
+
+oci_free_statement($stid);
+oci_close($conn);
+
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+
+  <para>
+   <example>
+    <title><function>oci_get_implicit_resultset</function> を使用しない暗黙の結果セットの例</title>
+    <para>
+     すべてのクエリからすべての結果が連続して返されます。
+    </para>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+$conn = oci_connect('hr', 'welcome', 'localhost/pdborcl');
+if (!$conn) {
+    $e = oci_error();
+    trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
+}
+
+$sql = 'DECLARE
+            c1 SYS_REFCURSOR;
+        BEGIN
+           OPEN c1 FOR SELECT city, postal_code FROM locations WHERE ROWNUM < 4 ORDER BY city;
+           DBMS_SQL.RETURN_RESULT(c1);
+           OPEN c1 FOR SELECT country_id FROM locations WHERE ROWNUM < 4 ORDER BY city;
+           DBMS_SQL.RETURN_RESULT(c1);
+        END;';
+
+$stid = oci_parse($conn, $sql);
+oci_execute($stid);
+
+// 注意: oci_fetch_all および oci_fetch() はこの方法では使用できません
+echo "<table>\n";
+while (($row = oci_fetch_array($stid, OCI_ASSOC+OCI_RETURN_NULLS)) != false) {
+    echo "<tr>\n";
+    foreach ($row as $item) {
+        echo "  <td>".($item!==null?htmlentities($item, ENT_QUOTES|ENT_SUBSTITUTE):"&nbsp;")."</td>\n";
+    }
+    echo "</tr>\n";
+}
+echo "</table>\n";
+
+// 出力です。
+//    Beijing 190518
+//    Bern 3095
+//    Bombay 490231
+//    CN
+//    CH
+//    IN
+
+oci_free_statement($stid);
+oci_close($conn);
+
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+ </refsect1>
+
+ <refsect1 role="notes">
+  &reftitle.notes;
+  <note>
+   &oci.use.setprefetch;
+  </note>
+ </refsect1>
+
+</refentry>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"~/.phpdoc/manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
+
