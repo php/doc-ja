@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!-- $Revision$ -->
-<!-- EN-Revision: 8bbdbb8d6b7631c45d6616873afa7f98de979072 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: a7f59b47610f593f9232b081192b57c0079de649 Maintainer: takagi Status: ready -->
 <refentry xml:id="mongocursor.info" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
   <refname>MongoCursor::info</refname>
-  <refpurpose>このカーソルの query、fields、limit そして skip を取得する</refpurpose>
+  <refpurpose>カーソルの作成と走査に関する情報を取得する</refpurpose>
  </refnamediv>
 
  <refsect1 role="description">
@@ -15,7 +15,7 @@
    <void/>
   </methodsynopsis>
   <para>
-   これは、クエリの前でも後でもコールすることができます。
+   これは、カーソルの反復処理が始まる前でも後でもコールすることができます。
   </para>
  </refsect1>
 
@@ -27,7 +27,8 @@
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;  
   <para>
-   このカーソルの namespace、limit、skip、query そして fields を返します。
+   このカーソルの namespace、batch size、limit、skip、flags、query そして fields を返します。
+   カーソルの反復処理が始まっている場合は、接続などの追加情報も含まれます。
   </para>
  </refsect1>
 
@@ -74,9 +75,15 @@
    <programlisting role="php">
 <![CDATA[
 <?php
-
 $m = new MongoClient();
-$cursor = $m->foo->bar->find(array("x" => 4), array("y" => false));
+
+$cursor = $m->test->foo->find(array("x" => 4), array("y" => 0));
+
+echo "Before iteration started:\n";
+var_dump($cursor->info());
+
+echo "\nAfter iteration started:\n";
+$cursor->rewind();
 var_dump($cursor->info());
 
 ?>
@@ -85,12 +92,17 @@ var_dump($cursor->info());
    &example.outputs.similar;
    <screen>
 <![CDATA[
-array(5) {
+Before iteration started:
+array(8) {
   ["ns"]=>
-  string(7) "foo.bar"
+  string(8) "test.foo"
   ["limit"]=>
   int(0)
+  ["batchSize"]=>
+  int(0)
   ["skip"]=>
+  int(0)
+  ["flags"]=>
   int(0)
   ["query"]=>
   array(1) {
@@ -102,6 +114,48 @@ array(5) {
     ["y"]=>
     int(0)
   }
+  ["started_iterating"]=>
+  bool(false)
+}
+
+After iteration started:
+array(15) {
+  ["ns"]=>
+  string(8) "test.foo"
+  ["limit"]=>
+  int(0)
+  ["batchSize"]=>
+  int(0)
+  ["skip"]=>
+  int(0)
+  ["flags"]=>
+  int(0)
+  ["query"]=>
+  array(1) {
+    ["x"]=>
+    int(4)
+  }
+  ["fields"]=>
+  array(1) {
+    ["y"]=>
+    int(0)
+  }
+  ["started_iterating"]=>
+  bool(true)
+  ["id"]=>
+  int(0)
+  ["at"]=>
+  int(0)
+  ["numReturned"]=>
+  int(1)
+  ["server"]=>
+  string(25) "localhost:27017;-;.;26450"
+  ["host"]=>
+  string(9) "localhost"
+  ["port"]=>
+  int(27017)
+  ["connection_type_desc"]=>
+  string(10) "STANDALONE"
 }
 ]]>
    </screen>
