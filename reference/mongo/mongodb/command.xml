@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 0e0f965045c491dfe12eb0cd1fb61c12b46e9f91 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: fda62fbc6e78725e81f39fa44de52ccd4c2869d1 Maintainer: takagi Status: ready -->
 
 <refentry xml:id="mongodb.command" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -13,6 +13,7 @@
    <modifier>public</modifier> <type>array</type><methodname>MongoDB::command</methodname>
    <methodparam><type>array</type><parameter>command</parameter></methodparam>
    <methodparam choice="opt"><type>array</type><parameter>options</parameter><initializer>array()</initializer></methodparam>
+   <methodparam choice="opt"><type>string</type><parameter role="reference">hash</parameter></methodparam>
   </methodsynopsis>
   <para>
    CRUD 操作以外のほとんどすべての操作は、データベースコマンドで行います。
@@ -68,6 +69,23 @@ public function command($data) {
       </para>
      </listitem>
     </varlistentry>
+    <varlistentry>
+     <term>
+      <parameter>hash</parameter>
+     </term>
+     <listitem>
+      <para>
+       コマンドを実行するサーバーの接続ハッシュを設定します。
+       コマンドの結果が
+       <classname>MongoCommandCursor</classname> の作成に適したものである場合、このハッシュは
+       <function>MongoCommandCursor::createFromDocument</function> に渡されます。
+      </para>
+      <para>
+       このハッシュは、
+       <function>MongoClient::getConnections</function> が返す接続に対応しています。
+      </para>
+     </listitem>
+    </varlistentry>
    </variablelist>
   </para>
  </refsect1>
@@ -91,6 +109,9 @@ public function command($data) {
          オプション <literal>"timeout"</literal> の名前が
          <literal>"socketTimeoutMS"</literal> に変わりました。
          <literal>"wtimeout"</literal> を使うと、<constant>E_DEPRECATED</constant> が発生します。
+        </para>
+        <para>
+         参照渡しの <literal>hash</literal> パラメータが追加されました。
         </para>
        </entry>
       </row>
@@ -269,86 +290,6 @@ User 4af467e4fd543cce7b0ea8e2 had 1 sale(s).
     <link xlink:href="&url.mongodb.mapreduceapi.blog;">blog の記事</link>
     を参照ください。
    </para>
-  </example>
-
-  <example>
-   <title><function>MongoDB::command</function> での "textSearch" の例</title>
-   <para>
-    MongoDB 2.4 以降では、"text search" 機能を使った全文検索ができます。
-   </para>
-   <programlisting role="php">
-<![CDATA[
-<?php
-$m = new MongoClient();
-$d = $m->demo;
-$c = $d->planets;
-
-$c->insert(array("name" => "Mercury", "desc" => "Mercury is the smallest and closest to the Sun"));
-$c->insert(array("name" => "Venus", "desc" => "Venus is the second planet from the Sun, orbiting it every 224.7 Earth days."));
-$c->insert(array("name" => "Earth", "desc" => "Earth is the densest of the eight planets in the Solar System."));
-$c->insert(array("name" => "Mars", "desc" => "Mars is named after the Roman god of war."));
-
-$c->ensureIndex(array('desc' => 'text'));
-
-$r = $d->command(array("text" => "planets", 'search' => "sun" ));
-print_r($r);
-?>
-]]>
-   </programlisting>
-   &example.outputs.similar;
-   <screen>
-Array
-(
-    [queryDebugString] => sun||||||
-    [language] => english
-    [results] => Array
-        (
-            [0] => Array
-                (
-                    [score] => 0.625
-                    [obj] => Array
-                        (
-                            [_id] => MongoId Object
-                                (
-                                    [$id] => 517549d944670a4a5cb3059a
-                                )
-
-                            [name] => Mercury
-                            [desc] => Mercury is the smallest and closest to the Sun
-                        )
-
-                )
-
-            [1] => Array
-                (
-                    [score] => 0.55
-                    [obj] => Array
-                        (
-                            [_id] => MongoId Object
-                                (
-                                    [$id] => 517549d944670a4a5cb3059b
-                                )
-
-                            [name] => Venus
-                            [desc] => Venus is the second planet from the Sun, orbiting it every 224.7 Earth days.
-                        )
-
-                )
-
-        )
-
-    [stats] => Array
-        (
-            [nscanned] => 2
-            [nscannedObjects] => 0
-            [n] => 2
-            [nfound] => 2
-            [timeMicros] => 95
-        )
-
-    [ok] => 1
-)
-   </screen>
   </example>
 
   <example>
