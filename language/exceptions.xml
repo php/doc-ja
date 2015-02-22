@@ -1,180 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 7aa0b252a3f29ae1d7e58d7f9363e4b922771b0d Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 4c4736f7d3bbe24552038e5887708b268da89fe8 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi -->
 
 <chapter xml:id="language.exceptions" xmlns="http://docbook.org/ns/docbook">
  <title>例外(exceptions)</title>
-
- <para>
-  PHP 5 は、他のプログラミング言語に似た例外モデルを有しています。
-  PHP 内で例外が投げられ ("<literal>throw</literal>" され)、それが
-  捕捉され ("<literal>catch</literal>" され) ます。発生した例外を
-  捕捉するには、コードを <literal>try</literal> ブロックで囲みます。
-  各 <literal>try</literal> ブロックには、対応する <literal>catch</literal>
-  ブロックが存在する必要があります。異なる型の例外を捕捉するために
-  複数の <literal>catch</literal> フロックを使用することができます。
-  通常の実行時 (<literal>try</literal> ブロック内で例外が投げられなかった
-  場合、あるいは投げられた例外に対応する <literal>catch</literal>
-  ブロックが存在しなかった場合) は、<literal>catch</literal>
-  ブロック内は処理されず、それ以降から処理が続けられます。
-  <literal>catch</literal> ブロックの中から例外を投げる
-  (あるいは投げなおす) こともできます。
- </para>
- <para>
-  例外が投げられた場合、その命令に続くコードは実行されず、
-  PHP は最初にマッチする <literal>catch</literal> ブロックを探します。
-  例外が捕捉されない場合、PHP は "<literal>Uncaught Exception ...</literal>"
-  というメッセージとともに
-  致命的なエラー(fatal error)を発行します。
-  ただし、<function>set_exception_handler</function> でハンドラが
-  定義されている場合を除きます。
- </para>
-  <para>
-   PHP 5.5 以降では、<literal>catch</literal> ブロックの後に
-   <literal>finally</literal> ブロックも指定できるようになりました。
-   <literal>finally</literal> ブロックの何かに書いたコードは、
-   <literal>try</literal> および <literal>catch</literal> ブロックの後で常に実行されます。
-   例外がスローさされたかどうかには関係ありません。
-   <literal>finally</literal> ブロックを実行してから、通常の処理を続行します。
-  </para>
-  <para>
-   スローされるオブジェクトは、<classname>Exception</classname> クラスあるいは
-   <classname>Exception</classname> のサブクラスのインスタンスでなければなりません。
-   それ以外のオブジェクトをスローしようとすると
-   PHP の Fatal Error が発生します。
-  </para>
-  <note>
-   <para>
-    PHP の内部関数の多くは
-    <link linkend="ini.error-reporting">エラー報告</link>
-    を使っており、例外を使っているのは新しい
-    <link linkend="language.oop5">オブジェクト指向</link>
-    の拡張モジュールのみです。
-    しかし、<link linkend="class.errorexception">ErrorException</link>
-    を使えば簡単にエラーを例外に変換することができます。
-   </para>
-  </note>
-  <tip>
-   <para>
-    <link linkend="intro.spl">Standard PHP Library (SPL)</link>
-    には<link linkend="spl.exceptions">組み込みの例外</link>が数多く用意されています。
-   </para>
-  </tip>
- <example>
-  <title>例外を投げるには</title>
-  <programlisting role="php">
-<![CDATA[
-<?php
-function inverse($x) {
-    if (!$x) {
-        throw new Exception('ゼロによる除算。');
-    }
-    return 1/$x;
-}
-
-try {
-    echo inverse(5) . "\n";
-    echo inverse(0) . "\n";
-} catch (Exception $e) {
-    echo '捕捉した例外: ',  $e->getMessage(), "\n";
-}
-
-// 実行は継続される
-echo "Hello World\n";
-?>
-]]>
-  </programlisting>
-    &example.outputs;
-    <screen>
-<![CDATA[
-0.2
-捕捉した例外: ゼロによる除算。
-Hello World
-]]>
-    </screen>
- </example>
-   <example>
-    <title>例外処理での <literal>finally</literal> ブロック</title>
-    <programlisting role="php">
-<![CDATA[
-<?php
-function inverse($x) {
-    if (!$x) {
-        throw new Exception('ゼロによる除算。');
-    }
-    return 1/$x;
-}
-
-try {
-    echo inverse(5) . "\n";
-} catch (Exception $e) {
-    echo '捕捉した例外: ',  $e->getMessage(), "\n";
-} finally {
-    echo "First finally.\n";
-}
-
-try {
-    echo inverse(0) . "\n";
-} catch (Exception $e) {
-    echo '捕捉した例外: ',  $e->getMessage(), "\n";
-} finally {
-    echo "Second finally.\n";
-}
-
-// 処理を続行します
-echo "Hello World\n";
-?>
-]]>
-    </programlisting>
-    &example.outputs;
-    <screen>
-<![CDATA[
-0.2
-First finally.
-捕捉した例外: ゼロによる除算。
-Second finally.
-Hello World
-]]>
-    </screen>
-   </example>
-   <example>
-    <title>ネストした例外</title>
-    <programlisting role="php">
-<![CDATA[
-<?php
-
-class MyException extends Exception { }
-
-class Test {
-    public function testing() {
-        try {
-            try {
-                throw new MyException('foo!');
-            } catch (MyException $e) {
-                // 改めてスロー
-                throw $e;
-            }
-        } catch (Exception $e) {
-            var_dump($e->getMessage());
-        }
-    }
-}
-
-$foo = new Test;
-$foo->testing();
-
-?>
-]]>
-    </programlisting>
-    &example.outputs;
-    <screen>
-<![CDATA[
-string(4) "foo!"
-]]>
-    </screen>
-   </example>
- 
+   
  <sect1 xml:id="language.exceptions.extending">
   <title>例外を拡張する</title>
   <para>
@@ -386,6 +217,198 @@ class MyException extends Exception
     </note>
    </example>
   </sect1>
+
+  <simplesect xml:id="language.exceptions.introduction">
+   <para>
+    PHP 5 は、他のプログラミング言語に似た例外モデルを有しています。
+    PHP 内で例外が投げられ (&throw; され)、それが
+    捕捉され (&catch; され) ます。発生した例外を
+    捕捉するには、コードを &try; ブロックで囲みます。
+    各 &try; ブロックには、対応する &catch;
+    ブロックあるいは &finally; ブロックが存在する必要があります。
+   </para>
+
+   <para>
+    スローされるオブジェクトは、<classname>Exception</classname> クラスあるいは
+    <classname>Exception</classname> のサブクラスのインスタンスでなければなりません。
+    それ以外のオブジェクトをスローしようとすると
+    PHP の Fatal Error が発生します。
+   </para>
+  </simplesect>
+
+  <simplesect xml:id="language.exceptions.catch">
+   <title><literal>catch</literal></title>
+   <para>
+    さまざまな型の例外を捕捉するために
+    複数の &catch; フロックを使用することができます。
+    通常の実行時 (&try; ブロック内で例外が投げられなかった
+    場合、あるいは投げられた例外に対応する &catch;
+    ブロックが存在しなかった場合) は、&catch;
+    ブロック内は処理されず、それ以降から処理が続けられます。
+    &catch; ブロックの中から例外を &throw; する
+    (あるいは &throw; しなおす) こともできます。
+   </para>
+   <para>
+    例外が投げられた場合、その命令に続くコードは実行されず、
+    PHP は最初にマッチする &catch; ブロックを探します。
+    例外が捕捉されない場合、PHP は "<literal>Uncaught Exception ...</literal>"
+    というメッセージとともに
+    致命的なエラー(fatal error)を発行します。
+    ただし、<function>set_exception_handler</function> でハンドラが
+    定義されている場合を除きます。
+   </para>
+  </simplesect>
+
+  <simplesect xml:id="language.exceptions.finally">
+   <title><literal>finally</literal></title>
+   <para>
+    PHP 5.5 以降では、&catch; ブロックの後に
+    &finally; ブロックも指定できるようになりました。
+    &finally; ブロックの何かに書いたコードは、
+    &try; および &catch; ブロックの後で常に実行されます。
+    例外がスローさされたかどうかには関係ありません。
+   </para>
+  </simplesect>
+
+  <simplesect xml:id="language.exceptions.notes">
+   &reftitle.notes;
+
+   <note>
+    <para>
+     PHP の内部関数の多くは
+     <link linkend="ini.error-reporting">エラー報告</link>
+     を使っており、例外を使っているのは新しい
+     <link linkend="language.oop5">オブジェクト指向</link>
+     の拡張モジュールのみです。
+     しかし、<link linkend="class.errorexception">ErrorException</link>
+     を使えば簡単にエラーを例外に変換することができます。
+    </para>
+   </note>
+   <tip>
+    <para>
+     <link linkend="intro.spl">Standard PHP Library (SPL)</link>
+     には<link linkend="spl.exceptions">組み込みの例外</link>が数多く用意されています。
+    </para>
+   </tip>
+  </simplesect>
+
+  <simplesect xml:id="language.exceptions.examples">
+   &reftitle.examples;
+
+   <example>
+    <title>例外を投げるには</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+function inverse($x) {
+    if (!$x) {
+        throw new Exception('ゼロによる除算。');
+    }
+    return 1/$x;
+}
+
+try {
+    echo inverse(5) . "\n";
+    echo inverse(0) . "\n";
+} catch (Exception $e) {
+    echo '捕捉した例外: ',  $e->getMessage(), "\n";
+}
+
+// 実行は継続される
+echo "Hello World\n";
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+0.2
+捕捉した例外: ゼロによる除算。
+Hello World
+]]>
+    </screen>
+   </example>
+   <example>
+    <title>例外処理での <literal>finally</literal> ブロック</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+function inverse($x) {
+    if (!$x) {
+        throw new Exception('ゼロによる除算。');
+    }
+    return 1/$x;
+}
+
+try {
+    echo inverse(5) . "\n";
+} catch (Exception $e) {
+    echo '捕捉した例外: ',  $e->getMessage(), "\n";
+} finally {
+    echo "First finally.\n";
+}
+
+try {
+    echo inverse(0) . "\n";
+} catch (Exception $e) {
+    echo '捕捉した例外: ',  $e->getMessage(), "\n";
+} finally {
+    echo "Second finally.\n";
+}
+
+// 処理を続行します
+echo "Hello World\n";
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+0.2
+First finally.
+捕捉した例外: ゼロによる除算。
+Second finally.
+Hello World
+]]>
+    </screen>
+   </example>
+   <example>
+    <title>ネストした例外</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+class MyException extends Exception { }
+
+class Test {
+    public function testing() {
+        try {
+            try {
+                throw new MyException('foo!');
+            } catch (MyException $e) {
+                // 改めてスロー
+                throw $e;
+            }
+        } catch (Exception $e) {
+            var_dump($e->getMessage());
+        }
+    }
+}
+
+$foo = new Test;
+$foo->testing();
+
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+string(4) "foo!"
+]]>
+    </screen>
+   </example>
+  </simplesect>
 
  </chapter>
  
