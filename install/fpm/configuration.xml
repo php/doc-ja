@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 1f983228aa30b62d4195b8df304ef6ffcbb0bfa2 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 335858 Maintainer: takagi Status: ready -->
   <sect1 xml:id="install.fpm.configuration" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
    <title>設定</title>
    <para>
@@ -29,6 +29,7 @@
        <para>
         エラーログファイルへのパス。デフォルト値:
         <literal>#INSTALL_PREFIX#/log/php-fpm.log</literal>
+        "syslog" と設定すると、ログをローカルファイルに書き出すのではなく、syslogd に送信します。
        </para> 
       </listitem>
      </varlistentry>
@@ -41,6 +42,32 @@
        <para>
         エラーログのレベル。使用可能な値: alert, error, warning, notice,
         debug、デフォルト値: notice
+       </para> 
+      </listitem>
+     </varlistentry>
+     <varlistentry xml:id="syslog-facility">
+      <term>
+       <parameter>syslog.facility</parameter>
+       <type>string</type>
+      </term>
+      <listitem>
+       <para>
+        メッセージを記録するプログラムの種別。
+        デフォルト値: daemon
+       </para> 
+      </listitem>
+     </varlistentry>
+     <varlistentry xml:id="syslog-ident">
+      <term>
+       <parameter>syslog.ident</parameter>
+       <type>string</type>
+      </term>
+      <listitem>
+       <para>
+        すべてのメッセージの先頭に付加する内容。
+        複数の FPM インスタンスを同一サーバー上で実行する場合には、
+        デフォルト値を変更すれば区別できるようになります。
+        デフォルト値: php-fpm
        </para> 
       </listitem>
      </varlistentry>
@@ -84,6 +111,33 @@
        </para> 
       </listitem>
      </varlistentry>
+     <varlistentry xml:id="process-max">
+      <term>
+       <parameter>process.max</parameter>
+       <type>int</type>
+      </term>
+      <listitem>
+       <para>
+        FPM がフォークするプロセスの最大数。
+        多数のプール内で動的な PM を使う場合に、全体のプロセス数を制御するために用意されたものです。
+        気をつけて使うようにしましょう。
+        デフォルト値: 0
+       </para> 
+      </listitem>
+     </varlistentry>
+     <varlistentry xml:id="process-priority">
+      <term>
+       <parameter>process.priority</parameter>
+       <type>int</type>
+      </term>
+      <listitem>
+       <para>
+        マスタープロセスに適用する nice(2) 値。
+        -19 (優先度最高) から 20 (優先度最低) までの値を指定します。
+        デフォルト値: 未設定
+       </para> 
+      </listitem>
+     </varlistentry>
      <varlistentry xml:id="daemonize">
       <term>
        <parameter>daemonize</parameter>
@@ -97,7 +151,58 @@
        </para> 
       </listitem>
      </varlistentry>
+     <varlistentry xml:id="rlimit-files-master">
+      <term>
+       <parameter>rlimit_files</parameter>
+       <type>int</type>
+      </term>
+      <listitem>
+       <para>
+        マスタープロセス用の、オープン時のファイル記述子の rlimit。デフォルト値: システムで定義されている値
+       </para> 
+      </listitem>
+     </varlistentry>
+     <varlistentry xml:id="rlimit-core-master">
+      <term>
+       <parameter>rlimit_core</parameter>
+       <type>int</type>
+      </term>
+      <listitem>
+       <para>
+        マスタープロセス用の、最大コアサイズの rlimit。
+        デフォルト値: 0
+       </para> 
+      </listitem>
+     </varlistentry>
+     <varlistentry xml:id="events-mechanism">
+      <term>
+       <parameter>events.mechanism</parameter>
+       <type>string</type>
+      </term>
+      <listitem>
+       <para>
+        FPM が利用するイベントメカニズム。
+        select、pool、epoll、kqueue (*BSD)、port (Solaris) が利用可能。
+        デフォルト値: 未設定 (自動検出)
+       </para> 
+      </listitem>
+     </varlistentry>
+     <varlistentry xml:id="systemd-interval">
+      <term>
+       <parameter>systemd_interval</parameter>
+       <type>int</type>
+      </term>
+      <listitem>
+       <para>
+        FPM を systemd 統合込みでビルドした場合に、
+        ヘルスチェックのレポートを systemd に送る間隔 (秒単位)。
+        0 にすると、無効化されます。
+        デフォルト値: 10
+       </para> 
+      </listitem>
+     </varlistentry>
     </variablelist>
+
    </sect2>
 
    <sect2> 
@@ -143,7 +248,8 @@
         における環境変数 FCGI_WEB_SERVER_ADDRS と同じです。
         tcp でリスンするソケットに対してのみ意味をなします。
         書くアドレスはカンマ区切りで指定します。この値を空にしておくと、任意の ip アドレスからの接続を許可します。
-        デフォルト値: 任意の ip アドレスを許可
+        デフォルト値: 任意の ip アドレスを許可。
+        5.5.20 および 5.6.4 以降は、IPv6 アドレスも指定できるようになりました。
        </para> 
       </listitem>
      </varlistentry>
@@ -180,6 +286,31 @@
       <listitem>
        <para>
         <literal>listen.owner</literal> を参照ください。
+       </para> 
+      </listitem>
+     </varlistentry>
+     <varlistentry xml:id="listen-acl-users">
+      <term>
+       <parameter>listen.acl_users</parameter>
+       <type>string</type>
+      </term>
+      <listitem>
+       <para>
+        POSIX の Access Control List をサポートしている場合は、このオプションでそれを指定できます。
+        これを設定した場合は、<literal>listen.owner</literal> および <literal>listen.group</literal> は無視されます。
+        値には、ユーザー名をカンマ区切りのリスト形式で指定します。PHP 5.6.5 以降で利用可能です。
+       </para> 
+      </listitem>
+     </varlistentry>
+     <varlistentry xml:id="listen-acl-groups">
+      <term>
+       <parameter>listen.acl_groups</parameter>
+       <type>string</type>
+      </term>
+      <listitem>
+       <para>
+        <literal>listen.acl_users</literal> を参照。
+        グループ名を、カンマ区切りのリスト形式で指定します。PHP 5.6.5 以降で利用可能です。
        </para> 
       </listitem>
      </varlistentry>
@@ -392,7 +523,7 @@
       </term>
       <listitem>
        <para>
-        オープン時のファイル記述子の rlimit。デフォルト値: システムで定義されている値
+        このプール内の子プロセス用の、オープン時のファイル記述子の rlimit。デフォルト値: システムで定義されている値
        </para> 
       </listitem>
      </varlistentry>
@@ -403,7 +534,7 @@
       </term>
       <listitem>
        <para>
-        最大コアサイズの rlimit。
+        このプール内の子プロセス用の、最大コアサイズの rlimit。
         使用可能な値: 'unlimited' あるいは 0 以上の整数値、
         デフォルト値: システムで定義されている値
        </para> 
@@ -444,6 +575,36 @@
         省略した場合は、FastCGI の仕様にしたがって標準出力および標準エラー出力を
         /dev/null にリダイレクトします。
         デフォルト値: no
+       </para> 
+      </listitem>
+     </varlistentry>
+     <varlistentry xml:id="clear-env">
+      <term>
+       <parameter>clear_env</parameter>
+       <type>boolean</type>
+      </term>
+      <listitem>
+       <para>
+        FPM ワーカー内の環境をクリアする。
+        任意の環境変数が FPM ワーカープロセスに到達してしまうことを防ぐために、
+        ワーカー内の環境をいったんクリアしてから、このプールの設定で指定された環境変数を追加します。
+        PHP 5.4.27 以降で利用可能です。
+        デフォルト値: Yes
+       </para> 
+      </listitem>
+     </varlistentry>
+     <varlistentry xml:id="security-limit-extensions">
+      <term>
+       <parameter>security.limit_extensions</parameter>
+       <type>string</type>
+      </term>
+      <listitem>
+       <para>
+        FPM がパース可能なメインスクリプトを拡張子で制限する。
+        サーバー側の設定ミスによる被害を抑えることができます。
+        FPM には拡張子 .php だけをパースさせるようにしておけば、
+        悪意のあるユーザーがその他の拡張子で php のコードを実行させようとする試みを防ぐことができます。
+        デフォルト値: .php
        </para> 
       </listitem>
      </varlistentry>
