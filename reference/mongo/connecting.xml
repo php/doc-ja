@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: ad82d24105b67e06222f57be7ee3318d752a74cd Maintainer: takagi Status: ready -->
+<!-- EN-Revision: b1ab1b184052aa6f5c73f64fe6438e834cfd6e0d Maintainer: takagi Status: ready -->
 
 <chapter xml:id="mongo.connecting" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>接続</title>
@@ -38,14 +38,28 @@ $mc = new MongoClient("mongodb://server1", array("ssl" => true));
    <programlisting role="php">
 <![CDATA[
 <?php
+$SSL_DIR = "/vagrant/certs/";
+$SSL_FILE = "CA_Root_Certificate.pem";
+
 $ctx = stream_context_create(array(
     "ssl" => array(
-        /* Optionally verify the server is who he says he is, and has been certified by CA we trust */
-        "verify_peer"       => true,
+        /* Certificate Authority the remote server certificate must be signed by */
+        "cafile"            => $SSL_DIR . "/" . $SSL_FILE,
+
+        /* Disable self signed certificates */
         "allow_self_signed" => false,
-        "cafile"            => "/vagrant/certs/ca.pem",
+
+        /* Verify the peer certificate against our provided Certificate Authority root certificate */
+        "verify_peer"       => true, /* Default to false pre PHP 5.6 */
+
+        /* Verify the peer name (e.g. hostname validation) */
+        /* Will use the hostname used to connec to the node */
+        "verify_peer_name"  => true,
+
+        /* Verify the server certificate has not expired */
+        "verify_expiry"     => true, /* Only available in the MongoDB PHP Driver */
     ),
-));
+);
 
 $mc = new MongoClient(
     "mongodb://server1", 
@@ -55,6 +69,13 @@ $mc = new MongoClient(
 ?>
 ]]>
    </programlisting>
+   <note>
+    <para>
+     <literal>"verify_peer_name"</literal> は PHP 5.6.0 で導入されました。
+     しかし、MongoDB ドライバの 1.6.5 以降ではこの機能をドライバ自身にバックポートして組み込んでいるので、
+     PHP 5.3 や 5.4 でも使えます。
+    </para>
+   </note>
   </example>
 
 
@@ -63,15 +84,23 @@ $mc = new MongoClient(
    <programlisting role="php">
 <![CDATA[
 <?php
+$SSL_DIR  = "/vagrant/certs/";
+$SSL_FILE = "CA_Root_Certificate.pem";
+
+MYCERT   = "/vagrant/certs/ca-signed-client.pem";
+
 $ctx = stream_context_create(array(
     "ssl" => array(
-        "local_cert" => "/vagrant/certs/client.pem",
+        "local_cert"        => $MYCERT,
         /* If the certificate we are providing was passphrase encoded, we need to set it here */
-        "passphrase" => "My Passphrase for the local_cert",
+        "passphrase"        => "My Passphrase for the local_cert",
 
         /* Optionally verify the server is who he says he is */
-        "verify_peer" => true,
-        "cafile"      => "/vagrant/certs/ca.pem",
+        "cafile"            => $SSL_DIR . "/" . $SSL_FILE,
+        "allow_self_signed" => false,
+        "verify_peer"       => true,
+        "verify_peer_name"  => true,
+        "verify_expiry"     => true,
     ),
 ));
 
