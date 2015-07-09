@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 5486657cd95d764253b335c26b201c3693772704 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 6f005996fc5395c98c069021e1bf362957be4eb1 Maintainer: takagi Status: working -->
 <!-- CREDITS: hirokawa -->
  <chapter xml:id="language.functions" xmlns="http://docbook.org/ns/docbook">
   <title>関数</title>
@@ -390,7 +390,187 @@ Making a bowl of acidophilus raspberry.
      </simpara>
     </note>
    </sect2>
+   <sect2 xml:id="functions.scalar-type-declaration">
+    <title>Scalar Type Declaration</title>
+    <para>
+    <note>
+     <para>
+      Type declaration is also known as Type Hinting.
+     </para>
+    </note>
+     PHP 7 introduces scalar type declaration. Functions are now able to force parameters
+     to be <type>string</type>, <type>int</type>, <type>float</type> or <type>bool</type>.
+     By default all PHP Files are in weakly typed mode. 
+     To enable strict type checking, <link linkend="control-structures.declare">declare(strict_types=1)</link>
+     directive must be the first
+     statement in the file. strict_types has two options, 1 for strict type
+     checking and 0 for weak type checking. This only affects the file this is stated in and not
+     files either included in this file or other files that include this file.
+     Whether or not the function being called was declared in a file that uses strict or weak 
+     type checking is irrelevant. The type checking mode depends on the file where the function is called from.
+    </para>
+    <para>
+     <example>
+      <title>Scalar Type Declaration examples</title>
+       <programlisting role="php">
+<![CDATA[
+<?php
+declare(strict_types=1); // Fatal error if this is not the first statement
+include "foo.php";
 
+foo(); // strictly type-checked function call
+
+function foobar() {
+    foo(); // strictly type-checked function call
+}
+ 
+class baz {
+    function foobar() {
+        foo(); // strictly type-checked function call
+    }
+}
+
+]]>
+  </programlisting>
+  <programlisting role="php">
+<![CDATA[
+<?php 
+declare(strict_types=1); // file 1
+
+/*
+ file 1 - strictly type checked
+ file 2 - weakly type checked
+*/
+
+include 'file2.php';
+
+a(1); // strictly type checked
+b(1); // strictly type checked
+
+function a(int $a) {
+    return $a;
+}
+
+?>
+
+<?php // file 2
+
+b(1); // weakly type checked
+
+function b(int $a) {
+    return $a;
+}
+
+?>
+
+]]>
+  </programlisting>
+  <programlisting role="php">
+<![CDATA[
+<?php // file 1
+
+/*
+ file 1 - weakly type checked
+ file 2 - strictly type checked
+*/
+
+include 'file2.php';
+
+a(1); // weakly type checked
+b(1); // weakly type checked
+
+function a(int $a) {
+    return $a;
+}
+
+
+?>
+
+<?php // file 2
+declare(strict_types=1);
+
+b(1); // strictly type checked
+
+function b(int $a) {
+    return $a;
+}
+
+?>
+
+]]>
+      </programlisting>
+     </example>
+    </para>
+
+
+    <sect3>
+      <para>
+        <example>
+          <title>Type Widening</title>
+          <programlisting role="php">
+<![CDATA[
+<?php 
+declare(strict_types=1);
+
+function a(float $a) {    
+    var_dump($a); // float(1)
+}
+
+$a = 1; // int(1)
+var_dump($a);    
+a($a); 
+
+]]>
+          </programlisting>
+        </example>
+      </para>
+    </sect3>
+    <sect3 xml:id="functions.scalar-type-declaration-error">
+     <title>Type Error</title>
+     <para>Absences of a &try; &catch; block will result in a <constant>E_ERROR</constant></para>
+      <example>
+       <title>Type Error with try catch</title>
+       <programlisting role="php">
+<![CDATA[
+<?php 
+declare(strict_types=1);
+
+function show(int $intNum)
+{
+	return $a;
+}
+
+
+try {
+
+ show("1");
+
+} catch (TypeError $e) {
+
+ var_dump($e->getmessage()); //  "Argument 1 passed to show() must be of the type 
+                             //  integer, string given, called in %s on line %d"
+}
+?>
+]]>
+       </programlisting>
+       <programlisting role="php">
+<![CDATA[
+<?php 
+declare(strict_types=1);
+
+function show(int $intNum)
+{
+	return $a;
+}
+
+ show("1"); // Fatal Error
+
+?>
+]]>
+       </programlisting>
+      </example>
+    </sect3>
+   </sect2>
    <sect2 xml:id="functions.variable-arg-list">
     <title>可変長引数リスト</title>
     
