@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 6f005996fc5395c98c069021e1bf362957be4eb1 Maintainer: takagi Status: working -->
+<!-- EN-Revision: 6f005996fc5395c98c069021e1bf362957be4eb1 Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa -->
  <chapter xml:id="language.functions" xmlns="http://docbook.org/ns/docbook">
   <title>関数</title>
@@ -391,42 +391,44 @@ Making a bowl of acidophilus raspberry.
     </note>
    </sect2>
    <sect2 xml:id="functions.scalar-type-declaration">
-    <title>Scalar Type Declaration</title>
+    <title>スカラー型宣言</title>
     <para>
     <note>
      <para>
-      Type declaration is also known as Type Hinting.
+      型宣言は、タイプヒンティングと呼ばれることもあります。
      </para>
     </note>
-     PHP 7 introduces scalar type declaration. Functions are now able to force parameters
-     to be <type>string</type>, <type>int</type>, <type>float</type> or <type>bool</type>.
-     By default all PHP Files are in weakly typed mode. 
-     To enable strict type checking, <link linkend="control-structures.declare">declare(strict_types=1)</link>
-     directive must be the first
-     statement in the file. strict_types has two options, 1 for strict type
-     checking and 0 for weak type checking. This only affects the file this is stated in and not
-     files either included in this file or other files that include this file.
-     Whether or not the function being called was declared in a file that uses strict or weak 
-     type checking is irrelevant. The type checking mode depends on the file where the function is called from.
+     PHP 7 以降で、スカラー型宣言が導入されました。
+     関数のパラメータが <type>string</type> や <type>int</type>、<type>float</type>、<type>bool</type> であることを強制できるようになります。
+     デフォルトでは、すべての PHP ファイルは弱い型付けモードになっています。
+     厳密な型チェックを有効にするには、ファイルの先頭に <link linkend="control-structures.declare">declare(strict_types=1)</link>
+     ディレクティブを置かなければいけません。
+     strict_types には二つのオプションを指定できます。1 が厳密な型チェック、0 が弱い型チェックを表します。
+     この指定が有効なのはあくまでもそれを記入したファイルの中だけであり、
+     このファイルからインクルードした別のファイルには影響しません。
+     また、他のファイルからこのファイルをインクルードした場合にも、インクルード元のファイルには影響しません。
+     使おうとしている関数が宣言されているファイルがどちらの型チェックモードになっているかは、
+     関数を呼び出す側が気にする必要はありません。
+     型チェックモードは、あくまでも関数の呼び出し側のファイルでの指定によって決まるものです。
     </para>
     <para>
      <example>
-      <title>Scalar Type Declaration examples</title>
+      <title>スカラー型宣言の例</title>
        <programlisting role="php">
 <![CDATA[
 <?php
-declare(strict_types=1); // Fatal error if this is not the first statement
+declare(strict_types=1); // これが先頭行になければ Fatal error になります
 include "foo.php";
 
-foo(); // strictly type-checked function call
+foo(); // 厳密な型チェックで関数を呼び出します
 
 function foobar() {
-    foo(); // strictly type-checked function call
+    foo(); // 厳密な型チェックで関数を呼び出します
 }
  
 class baz {
     function foobar() {
-        foo(); // strictly type-checked function call
+        foo(); // 厳密な型チェックで関数を呼び出します
     }
 }
 
@@ -434,18 +436,18 @@ class baz {
   </programlisting>
   <programlisting role="php">
 <![CDATA[
-<?php 
-declare(strict_types=1); // file 1
+<?php // ファイル1
+declare(strict_types=1);
 
 /*
- file 1 - strictly type checked
- file 2 - weakly type checked
+ ファイル1 - 厳密な型チェック
+ ファイル2 - 弱い型チェック
 */
 
 include 'file2.php';
 
-a(1); // strictly type checked
-b(1); // strictly type checked
+a(1); // 厳密な型チェックを行います
+b(1); // 厳密な型チェックを行います
 
 function a(int $a) {
     return $a;
@@ -453,9 +455,9 @@ function a(int $a) {
 
 ?>
 
-<?php // file 2
+<?php // ファイル2
 
-b(1); // weakly type checked
+b(1); // 弱い型チェックを行います
 
 function b(int $a) {
     return $a;
@@ -467,17 +469,17 @@ function b(int $a) {
   </programlisting>
   <programlisting role="php">
 <![CDATA[
-<?php // file 1
+<?php // ファイル1
 
 /*
- file 1 - weakly type checked
- file 2 - strictly type checked
+ ファイル1 - 弱い型チェック
+ ファイル2 - 厳密な型チェック
 */
 
 include 'file2.php';
 
-a(1); // weakly type checked
-b(1); // weakly type checked
+a(1); // 弱い型チェックを行います
+b(1); // 弱い型チェックを行います
 
 function a(int $a) {
     return $a;
@@ -486,10 +488,10 @@ function a(int $a) {
 
 ?>
 
-<?php // file 2
+<?php // ファイル2
 declare(strict_types=1);
 
-b(1); // strictly type checked
+b(1); // 厳密な型チェックを行います
 
 function b(int $a) {
     return $a;
@@ -506,7 +508,7 @@ function b(int $a) {
     <sect3>
       <para>
         <example>
-          <title>Type Widening</title>
+          <title>型の拡大</title>
           <programlisting role="php">
 <![CDATA[
 <?php 
@@ -526,10 +528,10 @@ a($a);
       </para>
     </sect3>
     <sect3 xml:id="functions.scalar-type-declaration-error">
-     <title>Type Error</title>
-     <para>Absences of a &try; &catch; block will result in a <constant>E_ERROR</constant></para>
+     <title>型エラー</title>
+     <para>&try; &catch; ブロックがなければ、<constant>E_ERROR</constant> となります。</para>
       <example>
-       <title>Type Error with try catch</title>
+       <title>try catch を使った場合の型エラー</title>
        <programlisting role="php">
 <![CDATA[
 <?php 
