@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 6f005996fc5395c98c069021e1bf362957be4eb1 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 635e2ad129cc7f55b27e32aa5a5e1e96832f404e Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa -->
  <chapter xml:id="language.functions" xmlns="http://docbook.org/ns/docbook">
   <title>関数</title>
@@ -539,7 +539,7 @@ declare(strict_types=1);
 
 function show(int $intNum)
 {
-	return $a;
+    return $a;
 }
 
 
@@ -562,7 +562,7 @@ declare(strict_types=1);
 
 function show(int $intNum)
 {
-	return $a;
+    return $a;
 }
 
  show("1"); // Fatal Error
@@ -755,11 +755,31 @@ echo sum(1, 2, 3, 4);
     箇所に制御を戻すことが出来ます。詳細に関しては
     <function>return</function> を参照してください。
    </para>
+   <para>
+    <informaltable>
+     <tgroup cols="2">
+      <thead>
+       <row>
+        <entry>&Version;</entry>
+        <entry>&Description;</entry>
+       </row>
+      </thead>
+      <tbody>
+       <row>
+        <entry>7.0.0</entry>
+        <entry>戻り値の型宣言が追加されました。</entry>
+       </row>
+      </tbody>
+     </tgroup>
+    </informaltable>
+   </para> 
    <note>
     <para>
      <function>return</function> を省略した場合は &null; を返します。
     </para>
    </note>
+   <sect2>
+    <title>return の使いかた</title>
    <para>
     <example>
      <title><function>return</function> の使用法</title>
@@ -821,6 +841,149 @@ $newref =& returns_reference();
     リファレンスに関するさらに詳しい情報が<link 
     linkend="language.references">リファレンスの説明</link>にあります。
    </simpara>
+  </sect2>   
+  <sect2>
+     <title>戻り値の型宣言</title>
+     <para>
+       PHP 7 以降で、戻り値の型宣言が導入されました。関数の戻り値が定義済みの型になるよう強制できるようになります。
+       これを有効にするには、
+       <link linkend="control-structures.declare">declare(strict_types=1)</link> と設定しなければいけません。
+       このディレクティブが 0 であったり未設定であったりする場合は、関数に対して弱い型チェックをするようになります。
+       このディレクティブが有効なのはそれを記入したファイル内で宣言した関数だけであり、
+       このファイルからインクルードした別のファイルには影響しません。
+       また、他のファイルからこのファイルをインクルードした場合にも、インクルード元のファイルには影響しません。
+       関数が呼び出し元がどこであるかは、気にする必要はありません。
+       宣言できる型は Classe、Interface、Array、Int、Float、String、Bool です。
+     </para>
+  <para>
+    <example>
+     <title>strict_types ディレクティブの影響</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+declare(strict_types=1); // file1.php
+
+// file 1 - 厳密な型チェック
+// file 2 - 弱い型チェック
+
+include "file2.php";
+
+var_dump(a()); // 正しく動作します
+var_dump(b()); // TypeError となります
+
+
+function b() : int{
+   return "1";  
+}
+?>
+
+
+<?php
+// file2.php
+function a(): int{
+   return "1";
+}
+
+?>
+]]>
+     </programlisting>
+    </example>
+  </para>
+  <para>
+    <example>
+     <title>戻り値の型</title>
+     <para>
+      関数のシグネチャは、親クラスでの宣言と一致する必要があります。親が戻り値の型を宣言していない場合は、
+      子の側で型を宣言できます。
+     </para>
+     <programlisting role="php">
+<![CDATA[
+<?php
+declare(strict_types=1);
+
+interface Numbers{
+  abstract public function one() : int ;
+  abstract public function two();         // 戻り値の型を定義していません
+}
+
+class NumClass implements Numbers
+{
+  public function one()  : int {  // 戻り値の型は抽象クラスと同じ
+    return 0;
+  }
+
+  public function two()  {  // 親の抽象クラスの関数で、
+    return 2;               // 戻り値の型が定義されていません
+  }
+}
+
+class display extends NumClass
+{
+  public function one() : int // 戻り値の型は親クラスと同じ
+  {
+    return 1;
+  }
+
+  public function two() : int // 戻り値の型は親クラスと同じ
+  {
+    return 2;
+  }
+}
+
+$dis = new display();
+var_dump($dis->one());
+var_dump($dis->two());
+
+?>
+]]>
+     </programlisting>
+    </example>
+ </para>
+ <para>
+    <example>
+     <title>クラスを戻す</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+declare(strict_types=1);
+
+interface A {
+    static function make();
+}
+class B implements A {
+    static function make(): B { // 有効
+        return new B();
+    }
+}
+]]>
+     </programlisting>
+    </example>
+  </para>
+    <para>
+     <example>
+     <title>TypeError</title>
+      <para>戻り値の型が不正な場合は TypeError となります。</para> 
+     <programlisting role="php">
+<![CDATA[
+<?php
+declare(strict_types=1);
+
+function show(): int{
+	return "1";
+}
+
+try {
+	show();	
+} catch (TypeError $e) {
+ var_dump($e->getMessage()); // string(121) "Return value of show() must be of the type integer, 
+                             // string returned in %s on line 5"
+}
+?>
+]]>
+     </programlisting>
+    </example>
+    </para>
+   </sect2>
   </sect1>
 
   <sect1 xml:id="functions.variable-functions">
