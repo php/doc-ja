@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 3e6d9035f77b1d44ee95b36f00d6523139efbf5f Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 01851927f909a3a383f93e04dff0c79d596916c6 Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa -->
  <chapter xml:id="language.functions" xmlns="http://docbook.org/ns/docbook">
   <title>関数</title>
@@ -180,35 +180,7 @@ function recursion($a)
     このリストは、カンマで区切られた式のリストです。
     引数の評価は、左から右の順番で行われます。
    </simpara>
-   <para>
-      <informaltable>
-       <tgroup cols="2">
-        <thead>
-         <row>
-          <entry>&Version;</entry>
-          <entry>&Description;</entry>
-         </row>
-        </thead>
-        <tbody>
-         <row>
-          <entry>5.1.0</entry>
-          <entry>クラス、インターフェイス、そして配列の型宣言に対応しました。</entry>
-         </row>
-         <row>
-          <entry>5.4.0</entry>
-          <entry><type>callable</type> の型宣言に対応しました。</entry>
-         </row>
-         <row>
-          <entry>7.0.0</entry>
-          <entry>スカラー型 (<type>int</type>, 
-           <type>float</type>, 
-           <type>string</type>, 
-           <type>bool</type>) の型宣言に対応しました。</entry>
-         </row>
-        </tbody>
-       </tgroup>
-      </informaltable>
-     </para>  
+
    <para>
     PHP は、値渡し(デフォルト)、
     <link linkend="functions.arguments.by-reference">参照渡し</link>、
@@ -219,7 +191,7 @@ function recursion($a)
    </para>
    <para>
     <example>
-     <title>Passing arrays to functions</title>
+     <title>関数に配列を渡す</title>
      <programlisting role="php">
 <![CDATA[
 <?php
@@ -234,7 +206,7 @@ function takes_array($input)
    </para>
    
    <sect2 xml:id="functions.arguments.by-reference">
-    <title>参照渡しで引数を作成する</title>
+    <title>引数の参照渡し</title>
  
     <simpara>
      デフォルトで、関数の引数は値で渡されます。(このため、関数の内部で
@@ -248,7 +220,7 @@ function takes_array($input)
     </para>
     <para>
      <example>
-      <title>Passing function parameters by reference</title>
+      <title>関数のパラメータの参照渡し</title>
       <programlisting role="php">
 <![CDATA[
 <?php
@@ -258,7 +230,7 @@ function add_some_extra(&$string)
 }
 $str = 'This is a string, ';
 add_some_extra($str);
-echo $str;    // outputs 'This is a string, and something extra.'
+echo $str;    // 出力は 'This is a string, and something extra.' となります
 ?>
 ]]>
       </programlisting>
@@ -390,192 +362,332 @@ Making a bowl of acidophilus raspberry.
      </simpara>
     </note>
    </sect2>
-   <sect2 xml:id="functions.scalar-type-declaration">
-    <title>スカラー型宣言</title>
-    <para>
+
+   <sect2 xml:id="functions.arguments.type-declaration">
+    <title>型宣言</title>
+
     <note>
      <para>
-      型宣言は、タイプヒンティングと呼ばれることもあります。
+      型宣言は、PHP 5 ではタイプヒンティングとも呼ばれていました。
      </para>
     </note>
-     PHP 7 以降で、スカラー型宣言が導入されました。
-     関数のパラメータが <type>string</type> や <type>int</type>、<type>float</type>、<type>bool</type> であることを強制できるようになります。
-     デフォルトでは、すべての PHP ファイルは弱い型付けモードになっています。
-     厳密な型チェックを有効にするには、ファイルの先頭に <link linkend="control-structures.declare">declare(strict_types=1)</link>
-     ディレクティブを置かなければいけません。
-     strict_types には二つのオプションを指定できます。1 が厳密な型チェック、0 が弱い型チェックを表します。
-     この指定が有効なのはあくまでもそれを記入したファイルの中だけであり、
-     このファイルからインクルードした別のファイルには影響しません。
-     また、他のファイルからこのファイルをインクルードした場合にも、インクルード元のファイルには影響しません。
-     使おうとしている関数が宣言されているファイルがどちらの型チェックモードになっているかは、
-     関数を呼び出す側が気にする必要はありません。
-     型チェックモードは、あくまでも関数の呼び出し側のファイルでの指定によって決まるものです。
-    </para>
+
     <para>
+     型宣言を使うと、関数の呼び出し時にパラメータが特定の型であることを要求できるようになります。
+     指定した値が不正な型であった場合はエラーとなります。
+     PHP 5 では、このエラーは recoverable fatal error でした。
+     PHP 7 では、この場合に <classname>TypeError</classname> 例外をスローします。
+    </para>
+
+    <para>
+     型宣言を指定するには、型の名前をパラメータ名の前に追加します。
+     パラメータのデフォルト値が &null; である場合は、型宣言でも &null;
+     値を受け付けることができます。
+    </para>
+
+    <sect3 xml:id="functions.arguments.type-declaration.types">
+     <title>有効な型</title>
+     <informaltable>
+      <tgroup cols="3">
+       <thead>
+        <row>
+         <entry>型</entry>
+         <entry>説明</entry>
+         <entry>利用可能な PHP の最低バージョン</entry>
+        </row>
+       </thead>
+       <tbody>
+        <row>
+         <entry>クラス名 / インターフェイス名</entry>
+         <entry>
+          パラメータは、指定したクラスやインターフェイスのインスタンスでなければいけません。
+         </entry>
+         <entry>PHP 5.0.0</entry>
+        </row>
+        <row>
+         <entry><type>array</type></entry>
+         <entry>
+          パラメータは配列でなければいけません。
+         </entry>
+         <entry>PHP 5.1.0</entry>
+        </row>
+        <row>
+         <entry><type>callable</type></entry>
+         <entry>
+          パラメータは <type>callable</type> でなければいけません。
+         </entry>
+         <entry>PHP 5.4.0</entry>
+        </row>
+        <row>
+         <entry><type>bool</type></entry>
+         <entry>
+          パラメータは <type>boolean</type> 値でなければいけません。
+         </entry>
+         <entry>PHP 7.0.0</entry>
+        </row>
+        <row>
+         <entry><type>float</type></entry>
+         <entry>
+          パラメータは <type>float</type> でなければいけません。
+         </entry>
+         <entry>PHP 7.0.0</entry>
+        </row>
+        <row>
+         <entry><type>int</type></entry>
+         <entry>
+          パラメータは <type>integer</type> でなければいけません。
+         </entry>
+         <entry>PHP 7.0.0</entry>
+        </row>
+        <row>
+         <entry><type>string</type></entry>
+         <entry>
+          パラメータは <type>string</type> でなければいけません。
+         </entry>
+         <entry>PHP 7.0.0</entry>
+        </row>
+       </tbody>
+      </tgroup>
+     </informaltable>
+    </sect3>
+
+    <sect3 xml:id="functions.arguments.type-declaration.examples">
+     &reftitle.examples;
      <example>
-      <title>スカラー型宣言の例</title>
-       <programlisting role="php">
+      <title>クラスの型宣言の基本例</title>
+      <programlisting role="php">
 <![CDATA[
 <?php
-declare(strict_types=1); // これが先頭行になければ Fatal error になります
-include "foo.php";
+class C {}
+class D extends C {}
 
-foo(); // 厳密な型チェックで関数を呼び出します
+// これは C を継承していません。
+class E {}
 
-function foobar() {
-    foo(); // 厳密な型チェックで関数を呼び出します
-}
- 
-class baz {
-    function foobar() {
-        foo(); // 厳密な型チェックで関数を呼び出します
-    }
+function f(C $c) {
+    echo get_class($c)."\n";
 }
 
-]]>
-  </programlisting>
-  <programlisting role="php">
-<![CDATA[
-<?php // ファイル1
-declare(strict_types=1);
-
-/*
- ファイル1 - 厳密な型チェック
- ファイル2 - 弱い型チェック
-*/
-
-include 'file2.php';
-
-a(1); // 厳密な型チェックを行います
-b(1); // 厳密な型チェックを行います
-
-function a(int $a) {
-    return $a;
-}
-
+f(new C);
+f(new D);
+f(new E);
 ?>
-
-<?php // ファイル2
-
-b(1); // 弱い型チェックを行います
-
-function b(int $a) {
-    return $a;
-}
-
-?>
-
-]]>
-  </programlisting>
-  <programlisting role="php">
-<![CDATA[
-<?php // ファイル1
-
-/*
- ファイル1 - 弱い型チェック
- ファイル2 - 厳密な型チェック
-*/
-
-include 'file2.php';
-
-a(1); // 弱い型チェックを行います
-b(1); // 弱い型チェックを行います
-
-function a(int $a) {
-    return $a;
-}
-
-
-?>
-
-<?php // ファイル2
-declare(strict_types=1);
-
-b(1); // 厳密な型チェックを行います
-
-function b(int $a) {
-    return $a;
-}
-
-?>
-
 ]]>
       </programlisting>
-     </example>
-    </para>
-
-
-    <sect3>
-      <para>
-        <example>
-          <title>型の拡大</title>
-          <programlisting role="php">
+      &example.outputs;
+      <screen>
 <![CDATA[
-<?php 
-declare(strict_types=1);
+C
+D
 
-function a(float $a) {    
-    var_dump($a); // float(1)
-}
-
-$a = 1; // int(1)
-var_dump($a);    
-a($a); 
-
+Fatal error: Uncaught TypeError: Argument 1 passed to f() must be an instance of C, instance of E given, called in - on line 14 and defined in -:8
+Stack trace:
+#0 -(14): f(Object(E))
+#1 {main}
+  thrown in - on line 8
 ]]>
-          </programlisting>
-        </example>
-      </para>
-    </sect3>
-    <sect3 xml:id="functions.scalar-type-declaration-error">
-     <title>型エラー</title>
-     <para>&try; &catch; ブロックがなければ、<constant>E_ERROR</constant> となります。</para>
-      <example>
-       <title>try catch を使った場合の型エラー</title>
-       <programlisting role="php">
-<![CDATA[
-<?php 
-declare(strict_types=1);
+      </screen>
+     </example>
 
-function show(int $intNum)
-{
-    return $a;
+     <example>
+      <title>インターフェイスの型宣言の基本例</title>
+      <programlisting role="php">
+<![CDATA[
+<?php
+interface I { public function f(); }
+class C implements I { public function f() {} }
+
+// これは I を実装していません。
+class E {}
+
+function f(I $i) {
+    echo get_class($i)."\n";
 }
 
+f(new C);
+f(new E);
+?>
+]]>
+      </programlisting>
+      &example.outputs;
+      <screen>
+<![CDATA[
+C
+
+Fatal error: Uncaught TypeError: Argument 1 passed to f() must implement interface I, instance of E given, called in - on line 13 and defined in -:8
+Stack trace:
+#0 -(13): f(Object(E))
+#1 {main}
+  thrown in - on line 8
+]]>
+      </screen>
+     </example>
+
+     <example>
+      <title>Null を許可する型宣言</title>
+      <programlisting role="php">
+<![CDATA[
+<?php
+class C {}
+
+function f(C $c = null) {
+    var_dump($c);
+}
+
+f(new C);
+f(null);
+?>
+]]>
+      </programlisting>
+      &example.outputs;
+      <screen>
+<![CDATA[
+object(C)#1 (0) {
+}
+NULL
+]]>
+      </screen>
+     </example>
+    </sect3>
+
+    <sect3 xml:id="functions.arguments.type-declaration.strict">
+     <title>強い型付け</title>
+
+     <para>
+      デフォルトでは、間違った型を渡された場合でも、可能な限りは来されている型に変換します。
+      たとえば、<type>string</type> を想定している関数のパラメータに
+      <type>integer</type> が渡された場合は、その値を
+      <type>string</type> 型として受け取ります。
+     </para>
+
+     <para>
+      ファイル単位で厳密な型チェックを有効にすることもできます。
+      この場合は、宣言されたとおりの型でない限りは受け付けず、
+      <classname>TypeError</classname> をスローします。
+      ただし、<type>float</type> が指定されているところに
+      <type>integer</type> を渡した場合だけは例外です。
+     </para>
+
+     <para>
+      厳密な型チェックを有効にするには、&declare; 文を用いて
+      <literal>strict_types</literal> を宣言します。
+     </para>
+
+     <caution>
+      <para>
+       厳密な型チェックを有効にすると、
+       <link linkend="functions.returning-values.type-declaration">戻り値の型宣言</link>
+       にも影響を及ぼします。
+      </para>
+     </caution>
+
+     <note>
+      <para>
+       厳密な型チェックが適用されるのは、それを有効にしたファイル
+       <emphasis>の中からの</emphasis>関数呼び出しだけです。
+       そのファイル内で宣言されている関数に適用されるわけではありません。
+       厳密な型チェックを有効にしていないファイルから、
+       厳密な型チェックを有効にしたファイル内で定義された関数を呼び出した場合は、
+       呼び出し元の設定 (弱い型チェック) が適用されて、自動的に型変換を行います。
+      </para>
+     </note>
+
+     <note>
+      <para>
+       厳密な型チェックはスカラー型宣言に対してのみ定義されるものであり、
+       PHP 7.0.0 以降でなければ使えません。そもそもスカラー型宣言が追加されたのが
+       PHP 7.0.0 だからです。
+      </para>
+     </note>
+
+     <example>
+      <title>厳密な型チェック</title>
+      <programlisting role="php">
+<![CDATA[
+<?php
+declare(strict_types=1);
+
+function sum(int $a, int $b) {
+    return $a + $b;
+}
+
+var_dump(sum(1, 2));
+var_dump(sum(1.5, 2.5));
+?>
+]]>
+      </programlisting>
+      &example.outputs;
+      <screen>
+<![CDATA[
+int(3)
+
+Fatal error: Uncaught TypeError: Argument 1 passed to sum() must be of the type integer, float given, called in - on line 9 and defined in -:4
+Stack trace:
+#0 -(9): sum(1.5, 2.5)
+#1 {main}
+  thrown in - on line 4
+]]>
+      </screen>
+     </example>
+
+     <example>
+      <title>弱い型チェック</title>
+      <programlisting role="php">
+<![CDATA[
+<?php
+function sum(int $a, int $b) {
+    return $a + $b;
+}
+
+var_dump(sum(1, 2));
+
+// これらは integer 型として扱われます。出力例に注目！
+var_dump(sum(1.5, 2.5));
+?>
+]]>
+      </programlisting>
+      &example.outputs;
+      <screen>
+<![CDATA[
+int(3)
+int(3)
+]]>
+      </screen>
+     </example>
+
+     <example>
+      <title><classname>TypeError</classname> の捕捉</title>
+      <programlisting role="php">
+<![CDATA[
+<?php
+declare(strict_types=1);
+
+function sum(int $a, int $b) {
+    return $a + $b;
+}
 
 try {
-
- show("1");
-
+    var_dump(sum(1, 2));
+    var_dump(sum(1.5, 2.5));
 } catch (TypeError $e) {
-
- var_dump($e->getmessage()); //  "Argument 1 passed to show() must be of the type 
-                             //  integer, string given, called in %s on line %d"
+    echo 'Error: '.$e->getMessage();
 }
 ?>
 ]]>
-       </programlisting>
-       <programlisting role="php">
+      </programlisting>
+      &example.outputs;
+      <screen>
 <![CDATA[
-<?php 
-declare(strict_types=1);
-
-function show(int $intNum)
-{
-    return $a;
-}
-
- show("1"); // Fatal Error
-
-?>
+int(3)
+Error: Argument 1 passed to sum() must be of the type integer, float given, called in - on line 10
 ]]>
-       </programlisting>
-      </example>
+      </screen>
+     </example>
     </sect3>
    </sect2>
    <sect2 xml:id="functions.variable-arg-list">
     <title>可変長引数リスト</title>
-    
+
     <simpara>
      PHP は、可変長引数をユーザー定義関数でサポートしています。
      PHP 5.6 以降では <literal>...</literal> を使って実装されており、
@@ -584,7 +696,7 @@ function show(int $intNum)
      <function>func_get_arg</function>,
      <function>func_get_args</function> 関数を使用します。
     </simpara>
-    
+
     <sect3 xml:id="functions.variable-arg-list.new">
      <title>PHP 5.6 以降における <literal>...</literal></title>
 
@@ -712,7 +824,6 @@ Catchable fatal error: Argument 2 passed to total_intervals() must be an instanc
 
      <para>
       先ほどの最初の例を、PHP 5.5 以前のバージョンで実装すると、以下のようになります。
-      earlier:
 
       <example>
        <title>可変長引数へのアクセス (PHP 5.5 以前)</title>
@@ -740,9 +851,8 @@ echo sum(1, 2, 3, 4);
       </example>
      </para>
     </sect3>
-    
+
    </sect2>
-   
   </sect1>
  
   <sect1 xml:id="functions.returning-values">
@@ -755,29 +865,13 @@ echo sum(1, 2, 3, 4);
     箇所に制御を戻すことが出来ます。詳細に関しては
     <function>return</function> を参照してください。
    </para>
-   <para>
-    <informaltable>
-     <tgroup cols="2">
-      <thead>
-       <row>
-        <entry>&Version;</entry>
-        <entry>&Description;</entry>
-       </row>
-      </thead>
-      <tbody>
-       <row>
-        <entry>7.0.0</entry>
-        <entry>戻り値の型宣言が追加されました。</entry>
-       </row>
-      </tbody>
-     </tgroup>
-    </informaltable>
-   </para> 
+
    <note>
     <para>
      <function>return</function> を省略した場合は &null; を返します。
     </para>
    </note>
+
    <sect2>
     <title>return の使いかた</title>
    <para>
@@ -842,147 +936,115 @@ $newref =& returns_reference();
     linkend="language.references">リファレンスの説明</link>にあります。
    </simpara>
   </sect2>   
-  <sect2>
-     <title>戻り値の型宣言</title>
-     <para>
-       PHP 7 以降で、戻り値の型宣言が導入されました。関数の戻り値が定義済みの型になるよう強制できるようになります。
-       これを有効にするには、
-       <link linkend="control-structures.declare">declare(strict_types=1)</link> と設定しなければいけません。
-       このディレクティブが 0 であったり未設定であったりする場合は、関数に対して弱い型チェックをするようになります。
-       このディレクティブが有効なのはそれを記入したファイル内で宣言した関数だけであり、
-       このファイルからインクルードした別のファイルには影響しません。
-       また、他のファイルからこのファイルをインクルードした場合にも、インクルード元のファイルには影響しません。
-       関数が呼び出し元がどこであるかは、気にする必要はありません。
-       宣言できる型は Classe、Interface、Array、Int、Float、String、Bool です。
-     </para>
-  <para>
-    <example>
-     <title>strict_types ディレクティブの影響</title>
-     <programlisting role="php">
-<![CDATA[
-<?php
-declare(strict_types=1); // file1.php
 
-// file 1 - 厳密な型チェック
-// file 2 - 弱い型チェック
+  <sect2 xml:id="functions.returning-values.type-declaration">
+   <title>戻り値の型宣言</title>
 
-include "file2.php";
+   <para>
+    PHP 7 以降で、戻り値の型宣言が導入されました。
+    <link linkend="functions.arguments.type-declaration">引数の型宣言</link>
+    と同様に、戻り値の型宣言は、関数から戻される値の型を指定します。
+    戻り値の型宣言で使える
+    <link linkend="functions.arguments.type-declaration.types">型</link>
+    は、引数の型宣言で使えるものと同じです。
+   </para>
 
-var_dump(a()); // 正しく動作します
-var_dump(b()); // TypeError となります
+   <para>
+    <link linkend="functions.arguments.type-declaration.strict">厳密な型チェック</link>
+    は、戻り値の型宣言にも影響を及ぼします。デフォルトの弱い型付けでは、
+    もし戻り値の型が正しいものではなくても、自動的に型変換を行います。
+    強い型付けの場合は、戻り値の型が正確に一致しなければならず、違っている場合は
+    <classname>TypeError</classname> が発生します。
+   </para>
 
-
-function b() : int{
-   return "1";  
-}
-?>
-
-
-<?php
-// file2.php
-function a(): int{
-   return "1";
-}
-
-?>
-]]>
-     </programlisting>
-    </example>
-  </para>
-  <para>
-    <example>
-     <title>戻り値の型</title>
-     <para>
-      関数のシグネチャは、親クラスでの宣言と一致する必要があります。親が戻り値の型を宣言していない場合は、
-      子の側で型を宣言できます。
-     </para>
-     <programlisting role="php">
-<![CDATA[
-<?php
-declare(strict_types=1);
-
-interface Numbers{
-  abstract public function one() : int ;
-  abstract public function two();         // 戻り値の型を定義していません
-}
-
-class NumClass implements Numbers
-{
-  public function one()  : int {  // 戻り値の型は抽象クラスと同じ
-    return 0;
-  }
-
-  public function two()  {  // 親の抽象クラスの関数で、
-    return 2;               // 戻り値の型が定義されていません
-  }
-}
-
-class display extends NumClass
-{
-  public function one() : int // 戻り値の型は親クラスと同じ
-  {
-    return 1;
-  }
-
-  public function two() : int // 戻り値の型は親クラスと同じ
-  {
-    return 2;
-  }
-}
-
-$dis = new display();
-var_dump($dis->one());
-var_dump($dis->two());
-
-?>
-]]>
-     </programlisting>
-    </example>
- </para>
- <para>
-    <example>
-     <title>クラスを戻す</title>
-     <programlisting role="php">
-<![CDATA[
-<?php
-declare(strict_types=1);
-
-interface A {
-    static function make();
-}
-class B implements A {
-    static function make(): B { // 有効
-        return new B();
-    }
-}
-]]>
-     </programlisting>
-    </example>
-  </para>
+   <note>
     <para>
-     <example>
-     <title>TypeError</title>
-      <para>戻り値の型が不正な場合は TypeError となります。</para> 
+     親クラスのメソッドをオーバーライドする場合、子クラスのメソッドの戻り値の型は、
+     親クラスで宣言されたものと同じでなければいけません。
+     親クラスのメソッドが戻り値の型を宣言していない場合は、
+     子クラスのメソッドで型宣言をすることもできます。
+    </para>
+   </note>
+
+   <sect3 xml:id="functions.returning-values.type-declaration.examples">
+    &reftitle.examples;
+
+    <example>
+     <title>戻り値の型宣言の基本例</title>
      <programlisting role="php">
+<![CDATA[
+<?php
+function sum($a, $b): float {
+    return $a + $b;
+}
+
+// 戻り値が float となることに注目
+var_dump(sum(1, 2));
+?>
+]]>
+      </programlisting>
+      &example.outputs;
+      <screen>
+<![CDATA[
+float(3)
+]]>
+      </screen>
+     </example>
+
+     <example>
+      <title>強い型付けの例</title>
+      <programlisting role="php">
 <![CDATA[
 <?php
 declare(strict_types=1);
 
-function show(): int{
-	return "1";
+function sum($a, $b): int {
+    return $a + $b;
 }
 
-try {
-	show();	
-} catch (TypeError $e) {
- var_dump($e->getMessage()); // string(121) "Return value of show() must be of the type integer, 
-                             // string returned in %s on line 5"
-}
+var_dump(sum(1, 2));
+var_dump(sum(1, 2.5));
 ?>
 ]]>
-     </programlisting>
-    </example>
-    </para>
+      </programlisting>
+      &example.outputs;
+      <screen>
+<![CDATA[
+int(3)
+
+Fatal error: Uncaught TypeError: Return value of sum() must be of the type integer, float returned in - on line 5 in -:5
+Stack trace:
+#0 -(9): sum(1, 2.5)
+#1 {main}
+  thrown in - on line 5
+]]>
+      </screen>
+     </example>
+
+     <example>
+      <title>オブジェクトを返す例</title>
+      <programlisting role="php">
+<![CDATA[
+<?php
+class C {}
+
+function getC(): C {
+    return new C;
+}
+
+var_dump(getC());
+?>
+]]>
+      </programlisting>
+      &example.outputs;
+      <screen>
+<![CDATA[
+object(C)#1 (0) {
+}
+]]>
+      </screen>
+     </example>
+    </sect3>
    </sect2>
   </sect1>
 
