@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision$ -->
+<!-- EN-Revision: b7a780f8e762e290552b9f79d346f2bcbc272e0c Maintainer: takagi Status: ready -->
+
+<sect2 xml:id="migration70.incompatible.other">
+ <title>下位互換性のないその他の変更</title>
+
+ <sect3 xml:id="migration70.incompatible.other.new-by-ref">
+  <title>新しいオブジェクトを参照渡しで代入できない</title>
+
+  <para>
+   &new; 文の結果を参照渡しで変数に代入することができなくなりました。
+   by reference:
+  </para>
+
+  <informalexample>
+   <programlisting role="php">
+<![CDATA[
+<?php
+class C {}
+$c =& new C;
+?>
+]]>
+   </programlisting>
+   &example.outputs.5;
+   <screen>
+<![CDATA[
+Deprecated: Assigning the return value of new by reference is deprecated in /tmp/test.php on line 3
+]]>
+   </screen>
+   &example.outputs.7;
+   <screen>
+<![CDATA[
+Parse error: syntax error, unexpected 'new' (T_NEW) in /tmp/test.php on line 3
+]]>
+   </screen>
+  </informalexample>
+ </sect3>
+
+ <sect3 xml:id="migration70.incompatible.other.classes">
+  <title>無効なクラス名、インターフェイス名、トレイト名</title>
+
+  <para>
+   以下の名前は、クラスやインターフェイスそしてトレイトの名前としては使えなくなりました。
+  </para>
+
+  <itemizedlist>
+   <listitem>
+    <simpara><type>bool</type></simpara>
+   </listitem>
+   <listitem>
+    <simpara><type>int</type></simpara>
+   </listitem>
+   <listitem>
+    <simpara><type>float</type></simpara>
+   </listitem>
+   <listitem>
+    <simpara><type>string</type></simpara>
+   </listitem>
+   <listitem>
+    <simpara>&null;</simpara>
+   </listitem>
+   <listitem>
+    <simpara>&true;</simpara>
+   </listitem>
+   <listitem>
+    <simpara>&false;</simpara>
+   </listitem>
+  </itemizedlist>
+
+  <para>
+   さらに、以下に挙げる名前も使うべきではありません。
+   PHP 7.0 の時点ではまだエラーにはなりませんが、
+   これらの名前は将来のバージョン用に予約されており、いずれ使えなくなると考えるべきです。
+  </para>
+
+  <itemizedlist>
+   <listitem>
+    <simpara><type>resource</type></simpara>
+   </listitem>
+   <listitem>
+    <simpara><type>object</type></simpara>
+   </listitem>
+   <listitem>
+    <simpara><type>mixed</type></simpara>
+   </listitem>
+   <listitem>
+    <simpara><type>numeric</type></simpara>
+   </listitem>
+  </itemizedlist>
+ </sect3>
+
+ <sect3 xml:id="migration70.incompatible.other.php-tags">
+  <title>ASP タグと script タグの廃止</title>
+
+  <para>
+   ASP 形式のタグや script タグを使って PHP コードを囲むことはできなくなりました。
+   この影響を受けるのは、以下のタグです。
+  </para>
+
+  <table>
+   <title>削除された ASP タグおよび script タグ</title>
+   <tgroup cols="2">
+    <thead>
+     <row>
+      <entry>開始タグ</entry>
+      <entry>終了タグ</entry>
+     </row>
+    </thead>
+    <tbody>
+     <row>
+      <entry><code>&lt;%</code></entry>
+      <entry><code>%&gt;</code></entry>
+     </row>
+     <row>
+      <entry><code>&lt;%=</code></entry>
+      <entry><code>%&gt;</code></entry>
+     </row>
+     <row>
+      <entry><code>&lt;script language="php"&gt;</code></entry>
+      <entry><code>&lt;/script&gt;</code></entry>
+     </row>
+    </tbody>
+   </tgroup>
+  </table>
+ </sect3>
+
+ <sect3 xml:id="migration70.incompatible.other.incompatible-this">
+  <title>非互換のコンテキストからの呼び出しの削除</title>
+
+  <para>
+   <link linkend="migration56.deprecated.incompatible-context">既に PHP 5.6 で非推奨になっていますが</link>、
+   static ではないメソッドに対して非互換のコンテキストで static 呼び出しを行うと、
+   呼ばれた側のメソッドが未定義の <literal>$this</literal> 変数を持つことになって警告が発生します。
+  </para>
+
+  <informalexample>
+   <programlisting role="php">
+<![CDATA[
+<?php
+class A {
+    public function test() { var_dump($this); }
+}
+
+// Note: Does NOT extend A
+class B {
+    public function callNonStaticMethodOfA() { A::test(); }
+}
+
+(new B)->callNonStaticMethodOfA();
+?>
+]]>
+   </programlisting>
+   &example.outputs.5;
+   <screen>
+<![CDATA[
+Deprecated: Non-static method A::test() should not be called statically, assuming $this from incompatible context in /tmp/test.php on line 8
+object(B)#1 (0) {
+}
+]]>
+   </screen>
+   &example.outputs.7;
+   <screen>
+<![CDATA[
+Deprecated: Non-static method A::test() should not be called statically in /tmp/test.php on line 8
+
+Notice: Undefined variable: this in /tmp/test.php on line 3
+NULL
+]]>
+   </screen>
+  </informalexample>
+ </sect3>
+
+ <sect3 xml:id="migration70.incompatible.other.yield">
+  <title>&yield; が右代入演算子に</title>
+
+  <para>
+    &yield; で括弧が必須ではなくなり、右代入演算子に変わりました。
+   優先順位は
+   <literal>print</literal> と <literal>=&gt;</literal> の間になります。
+   これによって、以下のように振る舞いが変わります。
+  </para>
+
+  <informalexample>
+   <programlisting role="php">
+<![CDATA[
+<?php
+echo yield -1;
+// 以前はこのように解釈されました
+echo (yield) - 1;
+// PHP 7 ではこのように解釈されます
+echo yield (-1);
+
+yield $foo or die;
+// 以前はこのように解釈されました
+yield ($foo or die);
+// PHP 7 ではこのように解釈されます
+(yield $foo) or die;
+?>
+]]>
+   </programlisting>
+  </informalexample>
+
+  <para>
+   括弧を使えば、曖昧さを排除できます。
+  </para>
+ </sect3>
+
+ <sect3 xml:id="migration70.incompatible.other.func-parameters">
+  <title>同じ名前のパラメータをひとつの関数に複数定義できない</title>
+
+  <para>
+   関数内の複数のパラメータを同じ名前にすることができなくなりました。
+   たとえば次のようなメソッドは
+   <constant>E_COMPILE_ERROR</constant> となります。
+  </para>
+
+  <informalexample>
+   <programlisting role="php">
+<![CDATA[
+<?php
+function foo($a, $b, $unused, $unused) {
+    //
+}
+?>
+]]>
+   </programlisting>
+  </informalexample>
+ </sect3>
+
+ <sect3 xml:id="migration70.incompatible.other.http-raw-post-data">
+  <title><varname>$HTTP_RAW_POST_DATA</varname> の削除</title>
+
+  <para>
+   <varname>$HTTP_RAW_POST_DATA</varname> が使えなくなりました。かわりに
+   <link linkend="wrappers.php.input"><literal>php://input</literal></link>
+   ストリームを使いましょう。
+  </para>
+ </sect3>
+
+ <sect3 xml:id="migration70.incompatible.other.ini-comments">
+  <title>INI ファイルにおける <literal>#</literal> 形式のコメントの削除</title>
+
+  <para>
+   INI ファイルにおいて <literal>#</literal> で始まる行をコメントとする機能が削除されました。
+   かわりに <literal>;</literal> を使いましょう。
+  </para>
+ </sect3>
+</sect2>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"~/.phpdoc/manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
