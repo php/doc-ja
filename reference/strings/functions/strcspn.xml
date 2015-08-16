@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 8b5940cadeb4f1c8492f4a7f70743a2be807cf39 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 5fb277d606b080ae0a481201386c6a574d64f775 Maintainer: hirokawa Status: working -->
 <!-- CREDITS: shimooka -->
 <refentry xmlns="http://docbook.org/ns/docbook" xml:id="function.strcspn">
  <refnamediv>
@@ -12,14 +12,22 @@
   &reftitle.description;
   <methodsynopsis>
    <type>int</type><methodname>strcspn</methodname>
-   <methodparam><type>string</type><parameter>str1</parameter></methodparam>
-   <methodparam><type>string</type><parameter>str2</parameter></methodparam>
+   <methodparam><type>string</type><parameter>subject</parameter></methodparam>
+   <methodparam><type>string</type><parameter>mask</parameter></methodparam>
    <methodparam choice="opt"><type>int</type><parameter>start</parameter></methodparam>
    <methodparam choice="opt"><type>int</type><parameter>length</parameter></methodparam>
   </methodsynopsis>
   <para>
-   <parameter>str1</parameter> において <parameter>str2</parameter>
+   <parameter>subject</parameter> において <parameter>mask</parameter>
    の文字がどれも含まれて<emphasis>いない</emphasis>最初のセグメントの長さを返します。
+  </para>
+  <para>
+   If <parameter>start</parameter> and <parameter>length</parameter>
+   are omitted, then all of <parameter>subject</parameter> will be
+   examined. If they are included, then the effect will be the same as
+   calling <literal>strcspn(substr($subject, $start, $length),
+   $mask)</literal> (see <xref linkend="function.substr" />
+   for more information).
   </para>
  </refsect1>
 
@@ -28,18 +36,18 @@
   <para>
    <variablelist>
     <varlistentry>
-     <term><parameter>str1</parameter></term>
+     <term><parameter>subject</parameter></term>
      <listitem>
       <para>
-       最初の文字列。
+       調べたい文字列。
       </para>
      </listitem>
     </varlistentry>
     <varlistentry>
-     <term><parameter>str2</parameter></term>
+     <term><parameter>mask</parameter></term>
      <listitem>
       <para>
-       2 番目の文字列。
+       許可しない文字をすべて含む文字列。
       </para>
      </listitem>
     </varlistentry>
@@ -47,7 +55,24 @@
      <term><parameter>start</parameter></term>
      <listitem>
       <para>
-       調べ始める位置。
+       <parameter>subject</parameter> の中で調べ始める位置。
+      </para>
+      <para>
+       If <parameter>start</parameter> is given and is non-negative,
+       then <function>strcspn</function> will begin
+       examining <parameter>subject</parameter> at
+       the <parameter>start</parameter>'th position. For instance, in
+       the string '<literal>abcdef</literal>', the character at
+       position <literal>0</literal> is '<literal>a</literal>', the
+       character at position <literal>2</literal> is
+       '<literal>c</literal>', and so forth.
+      </para>
+      <para>
+       If <parameter>start</parameter> is given and is negative,
+       then <function>strspn</function> will begin
+       examining <parameter>subject</parameter> at
+       the <parameter>start</parameter>'th position from the end
+       of <parameter>subject</parameter>.
       </para>
      </listitem>
     </varlistentry>
@@ -55,7 +80,19 @@
      <term><parameter>length</parameter></term>
      <listitem>
       <para>
-       調べる文字列の長さ。
+       <parameter>subject</parameter> の中での調べるセグメントの長さ。
+      </para>
+      <para>
+       If <parameter>length</parameter> is given and is non-negative,
+       then <parameter>subject</parameter> will be examined
+       for <parameter>length</parameter> characters after the starting
+       position.
+      </para>
+      <para>
+       If <parameter>length</parameter> is given and is negative,
+       then <parameter>subject</parameter> will be examined from the
+       starting position up to <parameter>length</parameter>
+       characters from the end of <parameter>subject</parameter>.
       </para>
      </listitem>
     </varlistentry>
@@ -66,8 +103,16 @@
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
-   セグメントの長さを返します。
+   Returns the length of the initial segment of <parameter>subject</parameter>
+   which consists entirely of characters <emphasis>not</emphasis> in <parameter>mask</parameter>.
   </para>
+  <note>
+   <para>
+    When a <parameter>start</parameter> parameter is set, the returned length
+    is counted starting from this position, not from the beginning of
+    <parameter>subject</parameter>.
+   </para>
+  </note>
  </refsect1>
 
  <refsect1 role="examples">
@@ -81,11 +126,15 @@ $a = strcspn('abcd',  'apple');
 $b = strcspn('abcd',  'banana');
 $c = strcspn('hello', 'l');
 $d = strcspn('hello', 'world');
+$e = strcspn('abcdhelloabcd', 'abcd', -9);
+$f = strcspn('abcdhelloabcd', 'abcd', -9, -5);
 
 var_dump($a);
 var_dump($b);
 var_dump($c);
 var_dump($d);
+var_dump($e);
+var_dump($f);
 ?>
 ]]>
    </programlisting>
@@ -96,6 +145,8 @@ int(0)
 int(0)
 int(2)
 int(2)
+int(5)
+int(4)
 ]]>
    </screen>
   </example>
