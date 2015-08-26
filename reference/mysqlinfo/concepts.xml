@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 0aa774414ae3ca9032fa586b59554dd66fc376df Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 4fd68bd86c4b6d2766765bf9ab902082eff9aa62 Maintainer: takagi Status: ready -->
 <chapter xml:id="mysqlinfo.concepts" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>コンセプト</title>
  <para>
@@ -160,6 +160,9 @@ $mysqli->query("SET CHARACTER SET utf8");
 // しかしこの方法なら $mysqli->real_escape_string(); にもきちんと影響します
 $mysqli->set_charset('utf8');
 
+// いっぽう、こちらは影響を及ぼしません (utf-8 と utf8 の違いに注目) -- ここではハイフンを使ってはいけません
+$mysqli->set_charset('utf-8');
+
 ?>
 ]]>
    </programlisting>
@@ -168,6 +171,14 @@ $mysqli->set_charset('utf8');
   <para>
    実行時に文字セットを変更する適切な方法を、各 API について示します。
   </para>
+  
+  <note>
+   <title>UTF-8 でありがちなミス</title>
+   <para>
+    MySQL の文字セット名はハイフンを含まないので、MySQL で UTF-8 を表す文字セットは
+    "utf8" が正解です。"utf-8" ではないので、"utf-8" と指定しても文字セットは変わりません。
+   </para>
+  </note>
 
   <example>
    <title>文字セットの設定: mysqli</title>
@@ -177,12 +188,14 @@ $mysqli->set_charset('utf8');
 
 $mysqli = new mysqli("localhost", "my_user", "my_password", "world");
 
+printf("Initial character set: %s\n", $mysqli->character_set_name());
+
 if (!$mysqli->set_charset('utf8')) {
     printf("Error loading character set utf8: %s\n", $mysqli->error);
-} else {
-    printf("Current character set: %s\n", $mysqli->character_set_name());
+    exit;
 }
 
+echo "New character set information:\n";
 print_r( $mysqli->get_charset() );
 
 ?>
@@ -209,9 +222,10 @@ $pdo = new PDO("mysql:host=localhost;dbname=world;charset=utf8", 'my_user', 'my_
    <programlisting role="php">
 <![CDATA[
 <?php
-
 $conn = mysql_connect("localhost", "my_user", "my_pass");
 $db   = mysql_select_db("world");
+
+echo 'Initial character set: ' .  mysql_client_encoding($conn) . "\n";
 
 if (!mysql_set_charset('utf8', $conn)) {
     echo "Error: Unable to set the character set.\n";
@@ -219,7 +233,6 @@ if (!mysql_set_charset('utf8', $conn)) {
 }
 
 echo 'Your current character set is: ' .  mysql_client_encoding($conn);
-
 ?>
 ]]>
    </programlisting>
