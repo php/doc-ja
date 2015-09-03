@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: b1ab1b184052aa6f5c73f64fe6438e834cfd6e0d Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 42238e5d2034bb8a78988b0ffd395e8af19cd733 Maintainer: takagi Status: ready -->
 
 <chapter xml:id="mongo.connecting" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>接続</title>
@@ -487,6 +487,64 @@ $m = new MongoClient("mongodb://username:password@/tmp/mongo-27017.sock:0/foo");
 
  </section>
 
+ <section xml:id="mongo.connecting.persistent">
+  <title>持続的接続 (バージョン 1.3.0 以降)</title>
+
+  <para>
+   バージョン 1.3.0 以降のドライバは、持続的接続を活用してデータベースサーバーへの接続数を最小化します。
+   接続は PHP のワーカープロセスに保存され、別のリクエストで再利用されることもあります。
+  </para>
+
+  <para>
+   データベースサーバーに接続する前に、ドライバはその接続のハッシュ値を算出します。
+   このときに利用する情報は、ホストやポート、レプリカセット名 (使っている場合)、
+   認証情報 (ユーザー名、パスワード、データベース名)、プロセス ID です。
+   同じハッシュ値の接続が既に存在する場合は、新しい接続を作らずに既存の接続を再利用します。
+   個々の持続的接続の情報を取得するには <function>MongoClient::getConnections</function> を使います。
+   次のプログラムを見てみましょう。
+  </para>
+
+  <example xml:id="mongo.connecting.persistent-example">
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+$m1 = new MongoClient('mongodb://localhost');
+$m2 = new MongoClient('mongodb://localhost');
+$m3 = new MongoClient('mongodb://user:pw@localhost');
+$m4 = new MongoClient('mongodb://127.0.0.1');
+$m5 = new MongoClient('mongodb://rs1.local:30017,rs2.local:30018/?replicaSet=rs');
+$m6 = new MongoClient('mongodb://sharding.local:40017');
+
+foreach (MongoClient::getConnections() as $conn) {
+    echo $conn['hash'], "\n";
+}
+
+?>
+]]>
+   </programlisting>
+   &example.outputs.similar;
+   <screen>
+<![CDATA[
+localhost:27017;-;X;15487
+localhost:27017;-;admin/user/c56c…8bbc;15487
+127.0.0.1:27017;-;X;15487
+rs1.local:30017;rs;X;15487
+rs2.local:30018;rs;X;15487
+sharding.local:40017;-;X;15487
+]]>
+   </screen>
+  </example>
+
+  <para>
+   この例では <literal>$m1</literal> と <literal>$m2</literal> のハッシュ値が同じになるので、
+   これらは持続的接続を共有します。その他の MongoClient インスタンス用の接続はハッシュ値が別になるので、
+   それぞれ別のソケットを利用します。
+   "localhost" と "127.0.0.1" のハッシュ値が同じにならないことに注意しましょう。
+   DNS の名前解決については考慮していません。
+  </para>
+ </section>
+
  <section xml:id="mongo.connecting.pools">
   <title>接続プーリング (バージョン 1.2.0-1.2.12 限定)</title>
   <note>
@@ -601,8 +659,8 @@ $m = new MongoClient("mongodb://username:password@/tmp/mongo-27017.sock:0/foo");
   </section>
  </section>
 
- <section xml:id="mongo.connecting.persistent">
-  <title>持続的接続 (バージョン 1.1.4 まで限定)</title>
+ <section xml:id="mongo.connecting.persistent.manual">
+  <title>手動での持続的接続 (バージョン 1.1.4 まで限定)</title>
   <note>
    <para>
     この節は 1.2.0 以降のバージョンには関係ありません。
@@ -623,7 +681,7 @@ $m = new MongoClient("mongodb://username:password@/tmp/mongo-27017.sock:0/foo");
    たとえば、この単純なプログラムはデータベースに 1000 回接続します。
   </para>
 
-  <example xml:id="mongo.connecting.no-persistent-example">
+  <example xml:id="mongo.connecting.no-manual-persist-example">
    <programlisting role="php">
 <![CDATA[
 <?php
@@ -641,7 +699,7 @@ for ($i=0; $i<1000; $i++) {
    実行時間は約 18 秒です。これを、持続的接続を使うように変更してみましょう。
   </para>
 
-  <example xml:id="mongo.connecting.persistent-example">
+  <example xml:id="mongo.connecting.manual-persist-example">
    <programlisting role="php">
 <![CDATA[
 <?php
