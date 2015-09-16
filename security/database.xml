@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 6bfcf7d9af614b4155c72e84814a61607be21229 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 1e62810892b046040f252fca61913817e3aef39f Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa,shimooka -->
 
   <chapter xml:id="security.database" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
@@ -97,16 +97,60 @@
      しているので役に立つでしょう。データ格納時に暗号化を行い、取得時に
      復号化します。この方法についてはリファレンスを参照してください。
     </simpara>
-    <simpara>
-     もし完全にデータを隠したい場合や、元のデータ自体は必要ない場合(つまり
-     表示されない場合)は、ハッシュも考慮に入れたほうが良いでしょう。
-     ハッシュの良く知られた使用方法は、パスワードをそのまま格納せずに、
-     その暗号学的ハッシュ値を格納する方法です。<function>crypt</function>
-     も参照してください。
-    </simpara>
-    <example>
-     <title>ハッシュされたパスワードフィールドを使う</title>
-     <programlisting role="php">
+
+    <sect2 xml:id="security.database.storage.hashing">
+    <title>ハッシュ</title>
+     <simpara>
+      もし完全にデータを隠したい場合や、元のデータ自体は必要ない場合(つまり
+      表示されない場合)は、ハッシュも考慮に入れたほうが良いでしょう。
+      ハッシュの良く知られた使用方法は、パスワードをそのまま格納せずに、
+      その暗号学的ハッシュ値を格納する方法です。
+     </simpara>
+     <simpara>
+      PHP 5.5 以降には <link linkend="ref.password">password</link> 関数があり、
+      機密データをハッシュしたりそのハッシュを扱ったりする便利な仕組みが用意されています。
+      PHP 5.3.7 以降では <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="&url.password.compat;">
+      password_compat</link> ライブラリも使えます。
+     </simpara>
+     <simpara>
+      <function>password_hash</function> は、その時点で最も強力なアルゴリズムを使って、
+      与えられた文字列をハッシュします。また <function>password_verify</function>
+      は、与えられたパスワードのハッシュがデータベース内のハッシュと一致するかどうかを調べます。
+     </simpara>
+     <example>
+      <title>ハッシュされたパスワードフィールド</title>
+      <programlisting role="php">
+<![CDATA[
+<?php
+
+// ハッシュされたパスワードを格納する
+$query  = sprintf("INSERT INTO users(name,pwd) VALUES('%s','%s');",
+            pg_escape_string($username),
+            password_hash($password, PASSWORD_DEFAULT));
+$result = pg_query($connection, $query);
+
+// パスワードが正しいかどうか問い合わせる
+$query = sprintf("SELECT pwd FROM users WHERE name='%s';",
+            pg_escape_string($username));
+$row = pg_fetch_assoc(pg_query($connection, $query));
+
+if ($row && password_verify($password, $row['pwd'])) {
+    echo 'Welcome, ' . htmlspecialchars($username) . '!';
+} else {
+    echo 'Authentication failed for ' . htmlspecialchars($username) . '.';
+}
+
+?>
+]]>
+      </programlisting>
+     </example>
+     <simpara>
+      古いバージョンの PHP で同じことを実現するには <function>crypt</function>
+      関数を使用します。
+     </simpara>
+     <example>
+      <title><function>crypt</function> によるパスワードのハッシュ</title>
+      <programlisting role="php">
 <![CDATA[
 <?php
 
@@ -130,8 +174,9 @@ if ($row && crypt($password, $row['pwd']) == $row['pwd']) {
 
 ?>
 ]]>
-     </programlisting>
-    </example>
+      </programlisting>
+     </example>
+    </sect2>
    </sect1>
 
    <sect1 xml:id="security.database.sql-injection">
