@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: f6ae711462700cbebe5a317d9d54bd97d0751e6c Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 12b92ba1e3f5f241da447fdeb741594d139b020a Maintainer: takagi Status: ready -->
 
 <sect1 xml:id="migration70.new-features" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>新機能</title>
@@ -387,29 +387,29 @@ bool(true)
   <title>Expectation</title>
 
   <para>
-   Expectation は、かつての
+   <link linkend="function.assert.expectations">Expectations</link> は、かつての
    <function>assert</function> 関数を、下位互換性を保ったまま拡張したものです。
    これを用いると、コストをかけずに実運用コードの中にアサーションを組み込めます。
-   そして、エラーが発生した際に自作の例外をスローできるようになります。
+   そして、アサーションが失敗した際に自作の例外をスローできるようになります。
   </para>
 
   <para>
-   かつての <function>assert</function> 関数と同じく、
-   最初の引数に文字列を渡すとその文字列を評価します。
-   二番目の引数には、単純な文字列あるいは自作の例外オブジェクト (エラーメッセージを含むもの) を指定できます。
-   文字列を指定した場合は AssertionError を発生させます。
+   これまでの API も下位互換性を保つために維持されていますが、
+   <function>assert</function> は言語構造となりました。
+   最初のパラメータには、単に評価対象の文字列や <type>boolean</type>
+   値を指定するだけではなく、式を渡せます。
   </para>
 
   <informalexample>
    <programlisting role="php">
 <![CDATA[
 <?php
-
 ini_set('assert.exception', 1);
 
 class CustomError extends AssertionError {}
 
 assert(false, new CustomError('Some error message'));
+?>
 ]]>
    </programlisting>
    &example.outputs;
@@ -421,62 +421,25 @@ Fatal error: Uncaught CustomError: Some error message
   </informalexample>
 
   <para>
-   この機能に関連する php.ini の設定項目とそのデフォルト値は、以下のとおりです。
-  </para>
-  <itemizedlist>
-   <listitem>
-    <simpara>
-     <link linkend="ini.zend.assertions">zend.assertions</link> = 1
-    </simpara>
-   </listitem>
-   <listitem>
-    <simpara>
-     <link linkend="ini.assert.exception">assert.exception</link> = 0
-    </simpara>
-   </listitem>
-  </itemizedlist>
-
-  <para>
-   <link linkend="ini.zend.assertions">zend.assertions</link> には以下の値を設定できます。
-  </para>
-  <itemizedlist>
-   <listitem>
-    <simpara>
-     1 = コードを生成して実行する (開発モード)
-    </simpara>
-   </listitem>
-   <listitem>
-    <simpara>
-     0 = コードを生成するが、実行時には読み飛ばす
-    </simpara>
-   </listitem>
-   <listitem>
-    <simpara>
-     -1 = コードを生成しない (運用モード。コストがかからない)
-    </simpara>
-   </listitem>
-  </itemizedlist>
-
-  <para>
-   <link linkend="ini.assert.exception">assert.exception</link>
-   は、アサーションに失敗したときに例外をスローするかどうかを表します。
-   デフォルトはオフで、これはかつての <function>assert</function> 関数と同じ挙動です。
+   開発環境および運用環境での設定方法などの詳細については、
+   <function>assert</function> のマニュアルの
+   <link linkend="function.assert.expectations">expectation</link>
+   の節を参照ください。
   </para>
  </sect2>
+
  <sect2 xml:id="migration70.new-features.group-use-declarations">
   <title><literal>use</literal> 宣言のグループ化</title>
 
   <para>
-   これは、複数の <literal>use</literal> 宣言を名前空間単位でまとめられるようにする機能です。
-   同じ名前空間に属する複数のクラスや関数そして定数をインポートする際に、
-   コードが冗長にならないようにすることが狙いです。
+   複数のクラスや関数そして定数を同じ &namespace; からインポートする際に、
+   単一の &use.namespace; 文にまとめられるようになりました。
   </para>
 
   <informalexample>
    <programlisting role="php">
 <![CDATA[
 <?php
-
 // 以前のバージョンのコード
 use some\namespace\ClassA;
 use some\namespace\ClassB;
@@ -494,10 +457,12 @@ use const some\namespace\ConstC;
 use some\namespace\{ClassA, ClassB, ClassC as C};
 use function some\namespace\{fn_a, fn_b, fn_c};
 use const some\namespace\{ConstA, ConstB, ConstC};
+?>
 ]]>
    </programlisting>
   </informalexample>
  </sect2>
+
  <sect2 xml:id="migration70.new-features.generator-return-expressions">
   <title>ジェネレータでの return</title>
 
@@ -551,45 +516,33 @@ echo $gen->getReturn(), PHP_EOL;
   <title>ジェネレータの委譲</title>
 
   <para>
-   ジェネレータから値を返せるようになったことで、ジェネレータの委譲ができるようになりました。
-   新しい構文
-   <literal>yield from &lt;expr&gt;</literal>
-   を利用します。&lt;expr&gt; の部分には、任意の
-   <literal>Traversable</literal> オブジェクトあるいは配列が使えます。
-   この &lt;expr&gt; が値を戻さなくなるまで処理を進めた後に、
-   呼び出し元のジェネレータの処理を続行します。
-   この機能を使えば <literal>yield</literal> 文を複数の小さな操作に分割できるようになります。
-   コードもよりクリーンになり、再利用性も高まるでしょう。
+   ジェネレータを、別のジェネレータや
+   <classname>Traversable</classname> オブジェクトそして配列に委譲できるようになりました。
+   外側のジェネレータに決まり文句を書いたりする必要はなく、単に &yield.from; 構文を使うだけです。
   </para>
 
   <informalexample>
    <programlisting role="php">
 <![CDATA[
 <?php
-
 function gen()
 {
     yield 1;
     yield 2;
-
-    return yield from gen2();
+    yield from gen2();
 }
 
 function gen2()
 {
     yield 3;
-
-    return 4;
+    yield 4;
 }
 
-$gen = gen();
-
-foreach ($gen as $val)
+foreach (gen() as $val)
 {
     echo $val, PHP_EOL;
 }
-
-echo $gen->getReturn();
+?>
 ]]>
    </programlisting>
    &example.outputs;
@@ -603,20 +556,21 @@ echo $gen->getReturn();
    </screen>
   </informalexample>
  </sect2>
+
  <sect2 xml:id="migration70.new-features.intdiv">
   <title><function>intdiv</function> による整数の除算</title>
 
   <para>
-   <function>intdiv</function> 関数が導入されました。
-   これは、商を整数で返す除算を扱うものです。
+   新しい <function>intdiv</function> 関数は、
+   オペランドに対して整数の除算を行い、その結果を返します。
   </para>
 
   <informalexample>
    <programlisting role="php">
 <![CDATA[
 <?php
-
 var_dump(intdiv(10, 3));
+?>
 ]]>
    </programlisting>
    &example.outputs;
@@ -627,138 +581,70 @@ int(3)
    </screen>
   </informalexample>
  </sect2>
+
  <sect2 xml:id="migration70.new-features.session-start-options">
-  <title><function>session_start</function> のオプション</title>
+  <title>セッションのオプション</title>
 
   <para>
-   <function>session_start</function> 関数に、オプションの配列を渡せるようになりました。
-   これを用いて、セッションベースの php.ini オプションを設定できます。
+   <function>session_start</function> にオプションの配列を渡せるようになりました。
+   これは、php.ini などで設定した
+   <link linkend="session.configuration">session 設定ディレクティブ</link>
+   を上書きします。
+  </para>
+
+  <para>
+   新たな設定オプション
+   <link linkend="ini.session.lazy-write">session.lazy_write</link>
+   をサポートするようになりました。これはデフォルトで有効になっており、
+   セッションのデータが書き換えられたときにだけセッションファイルを上書きします。
+   また、<literal>read_and_close</literal> も追加されました。
+   このオプションは <function>session_start</function> だけに渡せるもので、
+   セッションデータを読み込んだら何も変更せずその場でクローズするよう指示します。
+  </para>
+
+  <para>
+   たとえば、
+   <link linkend="ini.session.cache-limiter">session.cache_limiter</link>
+   を <literal>private</literal> にして、読み込んだセッションをすぐにクローズさせるには次のようにします。
   </para>
 
   <informalexample>
    <programlisting role="php">
 <![CDATA[
 <?php
-
-session_start(['cache_limiter' => 'private']); // このセッション内に限った session.cache_limiter オプションを設定します
+session_start([
+    'cache_limiter' => 'private',
+    'read_and_close' => true,
+]);
+?>
 ]]>
    </programlisting>
   </informalexample>
-
-  <para>
-   この機能とともに、新しい php.ini 項目 session.lazy_write が追加されました。
-   デフォルトは true で、このときは、セッションのデータが変更された場合にだけ再書き込みを行います。
-  </para>
  </sect2>
+
  <sect2 xml:id="migration70.new-features.preg-repace-callback-array-function">
-  <title><function>preg_replace_callback_array</function> 関数</title>
+  <title><function>preg_replace_callback_array</function></title>
 
   <para>
-   この関数は、
+   新しい <function>preg_replace_callback_array</function> 関数は、
    <function>preg_replace_callback</function> 関数を使ったコードをよりすっきりと書けるようにするものです。
    これまでのバージョンの PHP では、正規表現ごとにコールバックを実行したければ、
-   コールバック関数 (<function>preg_replace_callback</function> の第二パラメータ)
-   が分岐だらけになってしまっていました。
+   コールバック関数が分岐だらけになってしまっていました。
   </para>
 
   <para>
    PHP 7 以降では、個々の正規表現に対するコールバックを連想配列で登録できるようになりました。
    連想配列のキーが正規表現で、その値がコールバックとなります。
   </para>
-
-  <para>
-   関数のシグネチャは次のとおりです。
-  </para>
-
-  <programlisting>
-<![CDATA[
-string preg_replace_callback_array(array $regexesAndCallbacks, string $input);
-]]>
-  </programlisting>
-
-  <informalexample>
-   <programlisting role="php">
-<![CDATA[
-<?php
-
-$tokenStream = []; // [tokenName, lexeme] のペア
-
-$input = <<<'end'
-$a = 3; // 変数の初期化
-end;
-
-// 以前のバージョンのコード
-preg_replace_callback(
-    [
-        '~\$[a-z_][a-z\d_]*~i',
-        '~=~',
-        '~[\d]+~',
-        '~;~',
-        '~//.*~'
-    ],
-    function ($match) use (&$tokenStream) {
-        if (strpos($match[0], '$') === 0) {
-            $tokenStream[] = ['T_VARIABLE', $match[0]];
-        } elseif (strpos($match[0], '=') === 0) {
-            $tokenStream[] = ['T_ASSIGN', $match[0]];
-        } elseif (ctype_digit($match[0])) {
-            $tokenStream[] = ['T_NUM', $match[0]];
-        } elseif (strpos($match[0], ';') === 0) {
-            $tokenStream[] = ['T_TERMINATE_STMT', $match[0]];
-        } elseif (strpos($match[0], '//') === 0) {
-            $tokenStream[] = ['T_COMMENT', $match[0]];
-        }
-    },
-    $input
-);
-
-// PHP 7 以降でのコード
-preg_replace_callback_array(
-    [
-        '~\$[a-z_][a-z\d_]*~i' => function ($match) use (&$tokenStream) {
-            $tokenStream[] = ['T_VARIABLE', $match[0]];
-        },
-        '~=~' => function ($match) use (&$tokenStream) {
-            $tokenStream[] = ['T_ASSIGN', $match[0]];
-        },
-        '~[\d]+~' => function ($match) use (&$tokenStream) {
-            $tokenStream[] = ['T_NUM', $match[0]];
-        },
-        '~;~' => function ($match) use (&$tokenStream) {
-            $tokenStream[] = ['T_TERMINATE_STMT', $match[0]];
-        },
-        '~//.*~' => function ($match) use (&$tokenStream) {
-            $tokenStream[] = ['T_COMMENT', $match[0]];
-        }
-    ],
-    $input
-);
-]]>
-   </programlisting>
-  </informalexample>
  </sect2>
+
  <sect2 xml:id="migration70.new-features.csprng-functions">
   <title><link linkend="book.csprng">CSPRNG</link> 関数</title>
 
   <para>
-   暗号論的に安全な整数値および文字列を生成する、二つの新しい関数を提供します。
-   API はシンプルで、プラットフォームに依存しません。
-  </para>
-
-  <para>
-   関数のシグネチャは次のとおりです。
-  </para>
-
-  <programlisting>
-<![CDATA[
-string random_bytes(int length);
-int random_int(int min, int max);
-]]>
-  </programlisting>
-
-  <para>
-   十分なランダム性を持つソースが見つからない場合は、
-   どちらの関数も E_WARNING を発行して <literal>false</literal> を返します。
+   暗号論的に安全な整数値および文字列を生成する、
+   プラットフォームに依存しない二つの新しい関数が追加されました。
+   <function>random_bytes</function> と <function>random_int</function> です。
   </para>
  </sect2>
 
@@ -769,6 +655,9 @@ int random_int(int min, int max);
   </title>
 
   <para>
+   これまでのバージョンでは、<classname>ArrayAccess</classname>
+   を実装したオブジェクトに対して <function>list</function> が正常に機能しないことがありました。
+   PHP 7 ではこの問題が修正されました。
   </para>
  </sect2>
 </sect1>

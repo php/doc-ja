@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: d53c79d392b1e9e9295ae33795b3f851983d12db Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: d8849b5554a4b934cc8aacce047d8ec7b7cdec80 Maintainer: hirokawa Status: ready -->
 <refentry xmlns="http://docbook.org/ns/docbook" xml:id="function.session-start">
  <refnamediv>
   <refname>session_start</refname>
@@ -11,7 +11,7 @@
   &reftitle.description;
   <methodsynopsis>
    <type>bool</type><methodname>session_start</methodname>
-   <void/>
+   <methodparam choice="opt"><type>array</type><parameter>options</parameter><initializer>[]</initializer></methodparam>
   </methodsynopsis>
   <para>
    <function>session_start</function> は、セッションを作成します。
@@ -46,6 +46,29 @@
   </para>
  </refsect1>
 
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <variablelist>
+   <varlistentry>
+    <term><parameter>options</parameter></term>
+    <listitem>
+     <para>
+      オプションの連想配列を指定することができます。これは、現在設定されている
+      <link linkend="session.configuration">セッションの設定ディレクティブ</link>
+      を上書きします。
+      連想配列のキーにはプレフィックス <literal>session.</literal> を含めてはいけません。
+     </para>
+     <para>
+      通常の設定ディレクティブ群に加えて、
+      <literal>read_and_close</literal> オプションを指定することもできます。
+      これを &true; にすると、セッションを読み込んだらその場ですぐにクローズします。
+      セッションのデータを書き換えるつもりがない場合は、こうしておけば、意図せぬロックを防げます。
+     </para>
+    </listitem>
+   </varlistentry>
+  </variablelist>
+ </refsect1>
+
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
@@ -66,6 +89,12 @@
       </row>
      </thead>
      <tbody>
+      <row>
+       <entry>7.0.0</entry>
+       <entry>
+        <parameter>options</parameter> パラメータが追加されました。
+       </entry>
+      </row>
       <row>
        <entry>5.3.0</entry>
        <entry>
@@ -90,10 +119,13 @@
 
  <refsect1 role="examples">
   &reftitle.examples;
-  <para>
-   <example>
-    <title>セッションの例 <filename>page1.php</filename></title>
-    <programlisting role="php">
+  <refsect2>
+   <title>基本的なセッションの例</title>
+
+   <para>
+    <example>
+     <title><filename>page1.php</filename></title>
+     <programlisting role="php">
 <![CDATA[
 <?php
 // page1.php
@@ -113,20 +145,20 @@ echo '<br /><a href="page2.php">page 2</a>';
 echo '<br /><a href="page2.php?' . SID . '">page 2</a>';
 ?>
 ]]>
-    </programlisting>
-   </example>
-  </para>
-  <para>
-   <filename>page1.php</filename> を表示した後なら、
-   <filename>page2.php</filename> はセッション上の情報を含んでいるはずです。
-   <link linkend="ref.session">セッションについてのリファレンス</link> を読むと、
-   <link linkend="session.idpassing">セッションIDの伝達</link> に関する情報が得られます。
-   例えば、<constant>SID</constant> とは何かといったことです。
-  </para>
-  <para>
-   <example>
-    <title>セッションの例: <filename>page2.php</filename></title>
-    <programlisting role="php">
+     </programlisting>
+    </example>
+   </para>
+   <para>
+    <filename>page1.php</filename> を表示した後なら、
+    <filename>page2.php</filename> はセッション上の情報を含んでいるはずです。
+    <link linkend="ref.session">セッションについてのリファレンス</link> を読むと、
+    <link linkend="session.idpassing">セッションIDの伝達</link> に関する情報が得られます。
+    例えば、<constant>SID</constant> とは何かといったことです。
+   </para>
+   <para>
+    <example>
+     <title><filename>page2.php</filename></title>
+     <programlisting role="php">
 <![CDATA[
 <?php
 // page2.php
@@ -143,9 +175,43 @@ echo date('Y m d H:i:s', $_SESSION['time']);
 echo '<br /><a href="page1.php">page 1</a>';
 ?>
 ]]>
+     </programlisting>
+    </example>
+   </para>
+  </refsect2>
+  <refsect2>
+   <title><function>session_start</function> のオプションの指定</title>
+
+   <example>
+    <title>クッキーの有効期限の上書き</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+// これは、有効期限が1日の永続クッキーを送信します
+session_start([
+    'cookie_lifetime' => 86400,
+]);
+?>
+]]>
     </programlisting>
    </example>
-  </para>
+
+   <example>
+    <title>セッションの読み込みとクローズ</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+// セッション内で何も変更する必要がないことがわかっている場合は、
+// セッションを読み込んですぐにクローズしてしまえば、
+// セッションファイルをロックして他のページをブロックしてしまうことを防げます
+session_start([
+    'cookie_lifetime' => 86400,
+    'read_and_close'  => true,
+]);
+]]>
+    </programlisting>
+   </example>
+  </refsect2>
  </refsect1>
 
  <refsect1 role="notes">
