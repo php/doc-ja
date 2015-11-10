@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 377cbed58017458cd07b087a70d26624def218a4 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: ff4c97050881f69e37bc44cd4034c268566e376d Maintainer: takagi Status: ready -->
 
 <chapter xml:id="eio.examples" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  &reftitle.examples;
@@ -191,7 +191,7 @@ bool(true)
 
 <para>
   <example>
-   <title>eio と libevent を組み合わせる</title>
+   <title>eio と libevent 拡張モジュールを組み合わせる</title>
    <programlisting role="php"><![CDATA[
 <?php
 function my_eio_poll($fd, $events, $arg) {
@@ -241,6 +241,51 @@ int(0)
 string(8) "nop data"
 int(0)
 string(10) "mkdir data"
+ ]]>
+ </screen>
+</example>
+</para>
+
+<para>
+  <example>
+   <title>eio と event 拡張モジュールを組み合わせる</title>
+   <programlisting role="php"><![CDATA[
+<?php
+$base = new EventBase();
+
+// eio ポーリングストリームを取得します
+// この変数は、イベントループの実行中ずっと有効でなければいけないことに注意しましょう
+$eio_stream = eio_get_event_stream();
+
+// eio ポーリングストリームをイベントループにバインドします
+$poll_event = new Event($base, $eio_stream, Event::READ, function () {
+  if (eio_nreqs()) {
+    eio_poll();
+  }
+});
+$poll_event->add();
+
+// eio ジョブを追加します
+eio_nop(EIO_PRI_DEFAULT, function () {
+  echo "eio_nop\n";
+});
+
+// イベントを追加します
+$timer = Event::timer($base, function () {
+  echo "2 seconds elapsed\n";
+});
+$timer->add(2);
+
+// イベントをディスパッチします
+$base->dispatch();
+?>
+]]></programlisting>
+
+&example.outputs.similar;
+<screen>
+ <![CDATA[
+eio_nop
+2 seconds elapsed
  ]]>
  </screen>
 </example>
