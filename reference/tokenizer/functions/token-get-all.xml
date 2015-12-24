@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 96c9d88bad9a7d7d44bfb7f26c226df7ee9ddf26 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: fabcfdd3e2cbf87eef7ccdffd82045a61e0c05d6 Maintainer: hirokawa Status: ready -->
 <refentry xml:id="function.token-get-all" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>token_get_all</refname>
@@ -11,6 +11,7 @@
   <methodsynopsis>
    <type>array</type><methodname>token_get_all</methodname>
    <methodparam><type>string</type><parameter>source</parameter></methodparam>
+   <methodparam choice="opt"><type>int</type><parameter>flags</parameter><initializer>0</initializer></methodparam>
   </methodsynopsis>
   <para>
    <function>token_get_all</function> は指定した文字列
@@ -35,42 +36,33 @@
       </para>
      </listitem>
     </varlistentry>
+    <varlistentry>
+     <term><parameter>flags</parameter></term>
+     <listitem>
+      <para>
+       以下のフラグが使えます。
+       <itemizedlist>
+        <listitem>
+         <simpara>
+          <constant>TOKEN_PARSE</constant> -
+          特定のコンテキストで予約語を使った場合に、それをを認識する。
+         </simpara>
+        </listitem>
+       </itemizedlist>
+      </para>
+     </listitem>
+    </varlistentry>
    </variablelist>
   </para>
  </refsect1>
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
-   トークン ID の配列を返します。配列の各要素には、1 文字単位の文字列
+   トークン ID の配列を返します。配列の各要素には、一文字単位の文字列
    (例: <literal>;</literal>、<literal>.</literal>、
    <literal>&gt;</literal>、<literal>!</literal> など...)、
    またはトークンのインデックスを 0 番目の要素、トークンの文字列表現を 1 番目の要素、
    行番号を 2 番目の要素とする配列が含まれます。
-  </para>
- </refsect1>
- <refsect1 role="examples">
-  &reftitle.examples;
-  <para>
-   <example>
-    <title><function>token_get_all</function> の例</title>
-    <programlisting role="php">
-<![CDATA[
-<?php
-$tokens = token_get_all('<?php echo; ?>'); /* => array(
-                                                  array(T_OPEN_TAG, '<?php'), 
-                                                  array(T_ECHO, 'echo'),
-                                                  ';',
-                                                  array(T_CLOSE_TAG, '?>') ); */
-
-/* 以下の例では、文字列が T_COMMENT (PHP <5 では T_ML_COMMENT)
-   ではなく T_INLINE_HTML とパースされていることに注意しましょう。
-   これは、指定した "code" の中に開始タグ/終了タグが含まれていないからです。
-   通常のファイルで、コメントを <?php ?> タグの外部に書いた場合にも同じようになります。 */
-$tokens = token_get_all('/* comment */'); // => array(array(T_INLINE_HTML, '/* comment */'));
-?>
-]]>
-    </programlisting>
-   </example>
   </para>
  </refsect1>
  <refsect1 role="changelog">
@@ -86,13 +78,135 @@ $tokens = token_get_all('/* comment */'); // => array(array(T_INLINE_HTML, '/* c
      </thead>
      <tbody>
       <row>
+       <entry>7.0.0</entry>
+       <entry>
+        オプションの <parameter>flags</parameter> パラメータと
+        <constant>TOKEN_PARSE</constant> フラグが導入されました。
+       </entry>
+      </row>
+      <row>
        <entry>5.2.2</entry>
-       <entry>2 番目の要素として行番号を返すようになりました。
+       <entry>
+        二番目の要素として行番号を返すようになりました。
        </entry>
       </row>
      </tbody>
     </tgroup>
    </informaltable>
+  </para>
+ </refsect1>
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title><function>token_get_all</function> の例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$tokens = token_get_all('<?php echo; ?>');
+
+foreach ($tokens as $token) {
+    if (is_array($token)) {
+        echo "Line {$token[2]}: ", token_name($token[0]), " ('{$token[1]}')", PHP_EOL;
+    }
+}
+?>
+]]>
+    </programlisting>
+    &example.outputs.similar;
+    <screen>
+<![CDATA[
+Line 1: T_OPEN_TAG ('<?php ')
+Line 1: T_ECHO ('echo')
+Line 1: T_WHITESPACE (' ')
+Line 1: T_CLOSE_TAG ('?>')
+]]>
+    </screen>
+   </example>
+  </para>
+  <para>
+   <example>
+    <title><function>token_get_all</function> の間違った使いかた</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$tokens = token_get_all('/* comment */');
+
+foreach ($tokens as $token) {
+    if (is_array($token)) {
+        echo "Line {$token[2]}: ", token_name($token[0]), " ('{$token[1]}')", PHP_EOL;
+    }
+}
+?>
+]]>
+    </programlisting>
+    &example.outputs.similar;
+    <screen>
+<![CDATA[
+Line 1: T_INLINE_HTML ('/* comment */')
+]]>
+    </screen>
+   </example>
+   先ほどの例では、文字列が <constant>T_COMMENT</constant>
+   ではなく <constant>T_INLINE_HTML</constant> とパースされていたことに注意しましょう。
+   これは、指定した "code" の中に開始タグが含まれていないからです。
+   通常のファイルで、コメントを PHP タグの外部に書いた場合にも同じようになります。
+  </para>
+  <para>
+   <example>
+    <title>
+     予約語を使ったクラスでの <function>token_get_all</function> の例
+    </title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+$source = <<<'code'
+<?php
+
+class A
+{
+    const PUBLIC = 1;
+}
+code;
+
+$tokens = token_get_all($source, TOKEN_PARSE);
+
+foreach ($tokens as $token) {
+    if (is_array($token)) {
+        echo token_name($token[0]) , PHP_EOL;
+    }
+}
+?>
+]]>
+    </programlisting>
+    &example.outputs.similar;
+    <screen>
+<![CDATA[
+T_OPEN_TAG
+T_WHITESPACE
+T_CLASS
+T_WHITESPACE
+T_STRING
+T_CONST
+T_WHITESPACE
+T_STRING
+T_LNUMBER
+]]>
+    </screen>
+   </example>
+   <constant>TOKEN_PARSE</constant> フラグを指定しなければ、最後から二番目のトークン
+   (<constant>T_STRING</constant>) が
+   <constant>T_PUBLIC</constant> と解釈されてしまいます。
+  </para>
+ </refsect1>
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <para>
+   <simplelist>
+    <member><function>token_name</function></member>
+   </simplelist>
   </para>
  </refsect1>
 </refentry>
