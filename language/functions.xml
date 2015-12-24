@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 740336ed228874ebc439334c41adcbef30734779 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 20f201c32ce940b21678860ebe00aad67c0cac96 Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa -->
  <chapter xml:id="language.functions" xmlns="http://docbook.org/ns/docbook">
   <title>関数</title>
@@ -373,8 +373,8 @@ Making a bowl of acidophilus raspberry.
     </note>
 
     <para>
-     型宣言を使うと、関数の呼び出し時にパラメータが特定の型であることを要求できるようになります。
-     指定した値が不正な型であった場合はエラーとなります。
+     型宣言を使うと、関数の宣言時に、パラメータが特定の型であることを指定できるようになります。
+     関数に渡された値が不正な型であった場合はエラーとなります。
      PHP 5 では、このエラーは recoverable fatal error でした。
      PHP 7 では、この場合に <classname>TypeError</classname> 例外をスローします。
     </para>
@@ -457,6 +457,36 @@ Making a bowl of acidophilus raspberry.
        </tbody>
       </tgroup>
      </informaltable>
+
+     <warning>
+      <para>
+       これらのスカラー方のエイリアスはサポートしていません。
+       エイリアスは、クラス名あるいはインターフェイス名として解釈されます。
+       つまり、パラメータや返り値の型として
+       <literal>boolean</literal> を用いると、
+       <type>bool</type> であることを宣言したのではなく
+       <literal>boolean</literal> クラス (あるいはインターフェイス)
+       のインスタンスであると宣言したことになります。
+      </para>
+      <para>
+       <example>
+        <programlisting role="php">
+ <![CDATA[
+ <?php
+ function test(boolean $param) {}
+ test(true);
+ ?>
+ ]]>
+        </programlisting>
+        &example.outputs;
+        <screen>
+ <![CDATA[
+ Fatal error: Uncaught TypeError: Argument 1 passed to test() must be an instance of boolean, boolean given, called in - on line 1 and defined in -:1
+ ]]>
+        </screen>
+       </example>
+      </para>
+     </warning>
     </sect3>
 
     <sect3 xml:id="functions.arguments.type-declaration.examples">
@@ -1351,18 +1381,18 @@ $message = 'hello';
 $example = function () {
     var_dump($message);
 };
-echo $example();
+$example();
 
 // $message を引き継ぎます
 $example = function () use ($message) {
     var_dump($message);
 };
-echo $example();
+$example();
 
 // 引き継がれた変数の値は、関数が定義された時点のものであり、
 // 関数が呼ばれた時点のものではありません
 $message = 'world';
-echo $example();
+$example();
 
 // $message をリセットします
 $message = 'hello';
@@ -1371,12 +1401,12 @@ $message = 'hello';
 $example = function () use (&$message) {
     var_dump($message);
 };
-echo $example();
+$example();
 
 // 親のスコープで変更された値が、
 // 関数呼び出しの内部にも反映されます
 $message = 'world';
-echo $example();
+$example();
 
 // クロージャは、通常の引数も受け付けます
 $example = function ($arg) use ($message) {

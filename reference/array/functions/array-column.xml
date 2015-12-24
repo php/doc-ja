@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 5be9b3288b378c3c837d7d0c367ea6e334f5e9ae Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 424e4bdde84f9b975515f6ce88b8d12662f5c87d Maintainer: takagi Status: ready -->
 <refentry xml:id="function.array-column" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>array_column</refname>
@@ -10,13 +10,13 @@
   &reftitle.description;
   <methodsynopsis>
    <type>array</type><methodname>array_column</methodname>
-   <methodparam><type>array</type><parameter>array</parameter></methodparam>
+   <methodparam><type>array</type><parameter>input</parameter></methodparam>
    <methodparam><type>mixed</type><parameter>column_key</parameter></methodparam>
    <methodparam choice="opt"><type>mixed</type><parameter>index_key</parameter><initializer>null</initializer></methodparam>
   </methodsynopsis>
   <para>
    <function>array_column</function> は、
-   配列 <parameter>array</parameter> の中から
+   配列 <parameter>input</parameter> の中から
    <parameter>column_key</parameter> で指定した単一のカラムの値を返します。
    オプションで <parameter>index_key</parameter> も指定できます。これを指定すると、
    入力配列内のカラム <parameter>index_key</parameter> の値に基づいて結果を並べ替えます。
@@ -27,10 +27,14 @@
   <para>
    <variablelist>
     <varlistentry>
-     <term><parameter>array</parameter></term>
+     <term><parameter>input</parameter></term>
      <listitem>
       <para>
-       値を取り出したい多次元配列 (レコードセット)。
+       値を取り出したい多次元配列 (あるいはオブジェクトの配列)。
+       オブジェクトの配列を指定した場合は、public プロパティはそのまま取得できます。
+       protected や private なプロパティを取得したい場合は、そのクラスがマジックメソッド
+       <function>__get</function> および <function>__isset</function>
+       を実装している必要があります。
       </para>
      </listitem>
     </varlistentry>
@@ -40,8 +44,8 @@
       <para>
        値を返したいカラム。
        取得したいカラムの番号を整数値で指定することもできるし、
-       連想配列のキーの名前を指定することもできます。
-       &null; を指定すると、配列全体を返します
+       連想配列のキーやプロパティの名前を指定することもできます。
+       &null; を指定すると、配列やオブジェクト全体を返します
        (<parameter>index_key</parameter> との組み合わせで、配列の並べ替えをするときに便利です)。
       </para>
      </listitem>
@@ -62,6 +66,29 @@
   &reftitle.returnvalues;
   <para>
    入力配列の単一のカラムを表す値の配列を返します。
+  </para>
+ </refsect1>
+ <refsect1 role="changelog">
+  &reftitle.changelog;
+  <para>
+   <informaltable>
+    <tgroup cols="2">
+     <thead>
+      <row>
+       <entry>&Version;</entry>
+       <entry>&Description;</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry>7.0.0</entry>
+       <entry>
+        <parameter>input</parameter> にオブジェクトの配列を渡せるようになりました。
+       </entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </informaltable>
   </para>
  </refsect1>
  <refsect1 role="examples">
@@ -142,6 +169,102 @@ Array
 ]]>
     </screen>
    </example>
+  </para>
+  <para>
+   <example>
+    <title>
+     オブジェクトの public プロパティ "username" からユーザー名を取得する例
+    </title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+class User
+{
+    public $username;
+
+    public function __construct(string $username)
+    {
+        $this->username = $username;
+    }
+}
+
+$users = [
+    new User('user 1'),
+    new User('user 2'),
+    new User('user 3'),
+];
+
+print_r(array_column($users, 'username'));
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen role="php">
+<![CDATA[
+Array
+(
+    [0] => user 1
+    [1] => user 2
+    [2] => user 3
+)
+]]>
+    </screen>
+   </example>
+  </para>
+  <para>
+   <example>
+    <title>
+     オブジェクトの private プロパティ "name" から、マジックメソッド
+     <function>__get</function> を使って名前を取得する例
+    </title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+class Person
+{
+    private $name;
+
+    public function __construct(string $name)
+    {
+        $this->name = $name;
+    }
+
+    public function __get($prop)
+    {
+        return $this->$prop;
+    }
+
+    public function __isset($prop) : bool
+    {
+        return isset($this->$prop);
+    }
+}
+
+$people = [
+    new Person('Fred'),
+    new Person('Jane'),
+    new Person('John'),
+];
+
+print_r(array_column($people, 'name'));
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen role="php">
+<![CDATA[
+Array
+(
+    [0] => Fred
+    [1] => Jane
+    [2] => John
+)
+]]>
+    </screen>
+   </example>
+   <function>__isset</function> が用意されていなければ、空の配列が返されます。
   </para>
  </refsect1>
 
