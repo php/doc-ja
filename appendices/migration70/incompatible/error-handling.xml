@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: bc29c366012575b4fb2cccee8e85c62d42f16975 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 44b298ee5daf7c79a8e63c7e80ffe65232822838 Maintainer: takagi Status: ready -->
 
 <sect2 xml:id="migration70.incompatible.error-handling">
  <title>エラーや例外の取り扱いの変更</title>
@@ -22,6 +22,45 @@
   <link linkend="language.errors.php7">PHP 7 のエラー</link> を参照ください。
   この移行ガイドでは、下位互換性のない変更点を列挙するだけにとどめます。
  </para>
+
+ <sect3 xml:id="migration70.incompatible.error-handling.set-exception-handler">
+  <title>
+   <function>set_exception_handler</function> が常に
+   <classname>Exception</classname> オブジェクトを受け取るとは限らない
+  </title>
+
+  <para>
+   <function>set_exception_handler</function>
+   で登録した例外ハンドラの実装で <classname>Exception</classname>
+   型を宣言している場合は、
+   <classname>Error</classname> オブジェクトがスローされると fatal エラーが発生します。
+  </para>
+
+  <para>
+   PHP 5 と PHP 7 の両方で動くハンドラを書く場合は、ハンドラで型宣言をしてはいけません。
+   PHP 5 で動いていたコードを移行する際に、そのコードが PHP 7 でだけ動けばいいのなら、
+   <classname>Exception</classname> 型で宣言している部分を単純に
+   <classname>Throwable</classname> 型に置換するだけでかまいません。
+  </para>
+
+  <informalexample>
+   <programlisting role="php">
+<![CDATA[
+<?php
+// PHP 5 でのこの実装は、そのままでは PHP 7 では動きません
+function handler(Exception $e) { ... }
+set_exception_handler('handler');
+
+// PHP 5 と 7 の両方で動きます
+function handler($e) { ... }
+
+// PHP 7 でだけ動きます
+function handler(Throwable $e) { ... }
+?>
+]]>
+   </programlisting>
+  </informalexample>
+ </sect3>
 
  <sect3 xml:id="migration70.incompatible.error-handling.constructors">
   <title>内部のコンストラクタは、失敗したときに常に例外をスローする</title>

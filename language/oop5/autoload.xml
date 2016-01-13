@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 5b5ab43c78ecf2d9b8c678569afceff8b5e79c5f Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 56125c6883209edb8e4f86fef58fc015add2c7ec Maintainer: hirokawa Status: ready -->
 
  <sect1 xml:id="language.oop5.autoload" xmlns="http://docbook.org/ns/docbook">
  <title>クラスのオートローディング</title>
@@ -12,29 +12,29 @@
  </para>
  <para>
   PHP 5では、これはもう不要です。
-  未定義のクラス/インターフェイスを使用しようとした時に
-  自動的にコールされる <function>__autoload</function> 関数を定義することができます。
-  この関数をコールすることにより、
-  スクリプトエンジンは、PHPがエラーで止まる前にクラスをロードする最後の
-  チャンスを与えます。
+  <function>spl_autoload_register</function> 関数で任意の数のオートローダーを登録できて、
+  クラスやインターフェイスが定義されていなくても自動的に読み込めるようになります。
+  オートローダーを登録すれば、PHPがエラーで止まる前にクラスをロードする最後の
+  チャンスが与えられます。
  </para>
   <tip>
    <para>
-    <function>spl_autoload_register</function>
-    を使えば、より柔軟にクラスのオートロードができます。
-    そのため、今や <function>__autoload</function> を使うことはおすすめできません。
+    <function>__autoload</function> 関数でもクラスやインターフェイスのオートロードができますが、
+    <function>spl_autoload_register</function> 関数を使うことをおすすめします。
+    こちらのほうが、より柔軟に使えるからです
+    (任意の数のオートローダーを登録して、サードパーティのライブラリなどに対応することもできます)。
+    <function>__autoload</function> を使うことはおすすめできません。
     将来のバージョンではこの機能が非推奨となり、削除されるかもしれません。
    </para>
   </tip>
  <note>
   <para>
-   5.3.0 より前のバージョンでは、__autoload 関数の内部でスローされた例外を
+   PHP 5.3 より前のバージョンでは、<function>__autoload</function> 関数の内部でスローされた例外を
    <link linkend="language.exceptions">catch</link>
    ブロックでキャッチすることができず、致命的なエラーとなります。
-   5.3.0 以降では __autoload 関数の内部でスローされた例外を <link linkend="language.exceptions">
-   catch</link> ブロックでキャッチできますが、ひとつだけ条件があります。
+   PHP 5.3 以降ではこれをキャッチできるようになりました。ただし、
    独自の例外クラスをスローした場合は、その例外クラスが利用可能でなければなりません。
-   __autoload 関数を再帰的に用いて、独自の例外クラスをオートロードします。
+   <function>__autoload</function> 関数を再帰的に用いて、独自の例外クラスをオートロードします。
   </para>
  </note>
   <note>
@@ -64,9 +64,9 @@
    <programlisting role="php">
 <![CDATA[
 <?php
-function __autoload($class_name) {
+spl_autoload_register(function ($class_name) {
     include $class_name . '.php';
-}
+});
 
 $obj  = new MyClass1();
 $obj2 = new MyClass2();
@@ -83,9 +83,9 @@ $obj2 = new MyClass2();
 <![CDATA[
 <?php
 
-function __autoload($name) {
+spl_autoload_register(function ($name) {
     var_dump($name);
-}
+});
 
 class Foo implements ITest {
 }
@@ -107,10 +107,10 @@ Fatal error: Interface 'ITest' not found in ...
     <programlisting role="php">
 <![CDATA[
 <?php
-function __autoload($name) {
+spl_autoload_register(function ($name) {
     echo "Want to load $name.\n";
     throw new Exception("Unable to load $name.");
-}
+});
 
 try {
     $obj = new NonLoadableClass();
@@ -136,10 +136,10 @@ Unable to load NonLoadableClass.
     <programlisting role="php">
 <![CDATA[
 <?php
-function __autoload($name) {
+spl_autoload_register(function ($name) {
     echo "Want to load $name.\n";
     throw new MissingException("Unable to load $name.");
-}
+});
 
 try {
     $obj = new NonLoadableClass();
@@ -167,8 +167,9 @@ Fatal error: Class 'MissingException' not found in testMissingException.php on l
     <simplelist>
      <member><function>unserialize</function></member>
      <member><link linkend="unserialize-callback-func">unserialize_callback_func</link></member>
-     <member><function>spl_autoload</function></member>
      <member><function>spl_autoload_register</function></member>
+     <member><function>spl_autoload</function></member>
+     <member><function>__autoload</function></member>
     </simplelist>
    </para>
   </simplesect>
