@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: ae1355bad7563709df486d9e7a7fa3599fe66f14 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 0d871eae6ef2187b9b89c16109afc4697ab6fa12 Maintainer: takagi Status: ready -->
 
 <refentry xml:id="mongocollection.aggregate" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -271,16 +271,15 @@ $c = $m->selectDB("test")->selectCollection("zips");
 $pipeline = array(
     array(
         '$group' => array(
-            '_id' => array('state' => '$state', 'city' => '$city' ),
-            'pop' => array('$sum' => '$pop' )
+            '_id' => array('state' => '$state'),
+            'totalPop' => array('$sum' => '$pop')
         )
     ),
     array(
-        '$group' => array(
-            '_id' => '$_id.state',
-            'avgCityPop' => array('$avg' => '$pop')
+        '$match' => array(
+            'totalPop' => array('$gte' => 10 * 1000 * 1000)
         )
-    )
+    ),
 );
 $out = $c->aggregate($pipeline);
 var_dump($out);
@@ -434,14 +433,17 @@ array(2) {
 $m = new MongoClient;
 $c = $m->selectDB("test")->selectCollection("zips");
 
-$pipeline = array(array(
+$pipeline = array(
+    array(
         '$group' => array(
             '_id' => '$state',
            'totalPop' => array('$sum' => '$pop'),
         ),
     ),
     array(
-        '$match' => array('totalPop' => array('$gte' => 10*1000*1000)),
+        '$match' => array(
+            'totalPop' => array('$gte' => 10 * 1000 * 1000)
+        )
     ),
     array(
         '$sort' => array("totalPop" => -1),
