@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: c723b31c1e183971c5b16d6ae3c907f6cfbc170b Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 239e96a218079d1211bbf7f1d73947039a00ab5e Maintainer: takagi Status: ready -->
 
 <sect1 xml:id="control-structures.foreach" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title><literal>foreach</literal></title>
@@ -72,9 +72,45 @@ unset($value); // 最後の要素への参照を解除します
    </programlisting>
   </informalexample>
  </para>
+ <warning>
+  <para>
+   <literal>foreach</literal> ループを終えた後でも、
+   <literal>$value</literal> は配列の最後の要素を参照したままとなります。
+   <function>unset</function> でその参照を解除しておくようにしましょう。
+   さもないと、次のような目に遭うことになるでしょう。
+  </para>
+  <informalexample>
+   <programlisting role="php">
+<![CDATA[
+<?php
+$arr = array(1, 2, 3, 4);
+foreach ($arr as &$value) {
+    $value = $value * 2;
+}
+// この時点で、$arr は array(2, 4, 6, 8) となります
+
+// unset($value) しなければ、$value は今でも最後の要素 ($arr[3]) を指したままです
+
+foreach ($arr as $key => $value) {
+    // $arr[3] が、$arr の各要素で上書きされて...
+    echo "{$key} => {$value} ";
+    print_r($arr);
+}
+// ...つまり、二番目から最後までの値が最後の値にコピーされていきます
+
+// 出力
+// 0 => 2 Array ( [0] => 2, [1] => 4, [2] => 6, [3] => 2 )
+// 1 => 4 Array ( [0] => 2, [1] => 4, [2] => 6, [3] => 4 )
+// 2 => 6 Array ( [0] => 2, [1] => 4, [2] => 6, [3] => 6 )
+// 3 => 6 Array ( [0] => 2, [1] => 4, [2] => 6, [3] => 6 )
+?>
+]]>
+   </programlisting>
+  </informalexample>
+ </warning>
  <para>
-  <literal>$value</literal> の参照は、ループ処理される配列が参照可能である場合 (すなわち、
-  変数である) のみ使用可能です。つまり、次のコードは動作しません。
+  PHP 5.5.0 より前のバージョンでは、<literal>$value</literal> の参照は、ループ処理される配列が参照可能である場合 (すなわち、
+  変数である) のみ使用可能です。次のコードは、PHP 5.5.0 以降でしか動作しません。
   <informalexample>
    <programlisting role="php">
 <![CDATA[
@@ -87,13 +123,6 @@ foreach (array(1, 2, 3, 4) as &$value) {
    </programlisting>
   </informalexample>
  </para>
- <warning>
-  <para>
-   <literal>foreach</literal> ループを終えた後でも、
-   <literal>$value</literal> は配列の最後の要素を参照したままとなります。
-   <function>unset</function> でその参照を解除しておくようにしましょう。
-  </para>
- </warning>
  <para>
   <note>
    <para>
@@ -306,6 +335,44 @@ A: 3; B: 4; C:
    </informalexample>
   </para>
  </sect2>
+
+ <sect2 role="changelog">
+  &reftitle.changelog;
+  <para>
+   <informaltable>
+    <tgroup cols="2">
+     <thead>
+      <row>
+       <entry>&Version;</entry>
+       <entry>&Description;</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry>7.0.0</entry>
+       <entry>
+        <literal>foreach</literal> が内部の配列ポインタを使わなくなりました。
+       </entry>
+      </row>
+      <row>
+       <entry>5.5.0</entry>
+       <entry>
+        式から <literal>$value</literal> を参照できるようになりました。
+        これより前のバージョンでは、変数からの参照にだけ対応していました。
+       </entry>
+      </row>
+      <row>
+       <entry>5.5.0</entry>
+       <entry>
+        ネストした配列の <function>list</function> による展開に対応しました。
+       </entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </informaltable>
+  </para>
+ </sect2>
+
 </sect1>
 
 <!-- Keep this comment at the end of the file

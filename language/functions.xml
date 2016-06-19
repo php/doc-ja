@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: dcafd6ef3d94c77eee1173d22f2bcad56e7c1a44 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: ec6a5fb91f8b7eb6b312b4773ef22162116e45d3 Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa -->
  <chapter xml:id="language.functions" xmlns="http://docbook.org/ns/docbook">
   <title>関数</title>
@@ -604,6 +604,8 @@ NULL
       <classname>TypeError</classname> をスローします。
       ただし、<type>float</type> が指定されているところに
       <type>integer</type> を渡した場合だけは例外です。
+      組み込み関数内からの関数呼び出しは、
+      <literal>strict_types</literal> 宣言の影響を受けません。
      </para>
 
      <para>
@@ -1325,6 +1327,10 @@ $func(); // PHP 7.0.0 以降では "bar" を表示します。それより前の
     <link linkend="language.types.callback">コールバック</link>
     パラメータとして使う際に便利ですが、用途はそれにとどまりません。
    </simpara>
+   <simpara>
+    無名関数の実装には <link linkend="class.closure">
+    <classname>Closure</classname></link> クラスを使っています。
+   </simpara>
 
    <example>
     <title>無名関数の例</title>
@@ -1497,11 +1503,102 @@ print $my_cart->getTotal(0.05) . "\n";
 ]]>
     </programlisting>
    </example>
-   
-   <simpara>
-    無名関数の実装には <link linkend="class.closure">
-    <classname>Closure</classname></link> クラスを使っています。
-   </simpara>
+
+   <example>
+    <title><literal>$this</literal> の自動バインド</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+class Test
+{
+    public function testing()
+    {
+        (function() {
+            var_dump($this);
+        })();
+    }
+}
+
+(new Test)->testing(); // PHP 5.4 以降
+    
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+object(Test)#1 (0) {
+}
+]]>
+    </screen>
+   </example>
+
+   <para>
+    クラスのコンテキストで宣言した場合は現在のクラスが自動的にバインドされて、
+    関数のスコープで <literal>$this</literal> が使えるようになります。
+    現在のクラスへの自動バインドを望まない場合は、
+    <link linkend="functions.anonymous-functions.static">静的無名関数</link>
+    を使いましょう。
+   </para>
+
+   <sect2 xml:id="functions.anonymous-functions.static">
+    <title>静的無名関数</title>
+    <para>
+     PHP 5.4 以降では、静的な無名関数を宣言できるようになりました。
+     こうすれば、現在のクラスが無名関数を自動的にバインドすることがなくなります。
+     オブジェクトも、実行時にはバインドされなくなります。
+    </para>
+    <para>
+     <example>
+      <title>静的無名関数内での <literal>$this</literal> の使用例</title>
+      <programlisting role="php">
+<![CDATA[
+<?php
+
+new class {
+    function __construct()
+    {
+        (static function() {
+            var_dump($this);
+        })();
+    }
+};
+?>
+]]>
+      </programlisting>
+      &example.outputs;
+      <screen>
+<![CDATA[
+Notice: Undefined variable: this in %s on line %d
+NULL
+]]>
+      </screen>
+     </example>
+    </para>
+
+    <para>
+     <example>
+      <title>静的無名関数へのオブジェクトのバインド</title>
+      <programlisting role="php">
+<![CDATA[
+<?php
+
+(static function() {
+    // 関数の本体
+})->call(new StdClass);
+?>
+]]>
+      </programlisting>
+      &example.outputs;
+      <screen>
+<![CDATA[
+Warning: Cannot bind an instance to a static closure in /in/sLLS9 on line 5
+]]>
+      </screen>
+     </example>
+    </para>
+   </sect2>
    
    <sect2 role="changelog">
     &reftitle.changelog;
@@ -1518,7 +1615,7 @@ print $my_cart->getTotal(0.05) . "\n";
         <row>
          <entry>5.4.0</entry>
          <entry>
-          無名関数で
+          無名関数で、静的に宣言したときのように
           <varname>$this</varname> を使えるようになりました。
          </entry>
         </row>
