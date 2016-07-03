@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 19059652f1059bf80f0290c0f65870ded996a02b Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 8c3557271d9ae71bbc8ec2a47ad83960d4272184 Maintainer: takagi Status: ready -->
 <chapter xml:id="language.generators" xmlns="http://docbook.org/ns/docbook">
  <title>ジェネレータ</title>
 
@@ -395,6 +395,62 @@ foreach (gen_reference() as &$number) {
      ジェネレータに対して <command>yield from</command> を使った場合は、
      <command>yield from</command> 式は内側のジェネレータが返す任意の値を返します。
     </para>
+    
+    <caution>
+     <title><function>iterator_to_array</function> を用いた、配列への格納</title>
+
+      <para>
+       <command>yield from</command> は配列のキーをリセットしません。
+       <classname>Traversable</classname> オブジェクトや <type>array</type>
+       が返すキーを、そのまま利用します。つまり、別々の
+       <command>yield</command> や <command>yield from</command>
+       から取得した異なる値のキーが、重複することもありえます。
+       これを配列に格納すると、後からきた値がそれまでの値を上書きします。
+      </para>
+
+      <para>
+       <function>iterator_to_array</function> を使う場合に問題になることがよくあります。
+       この関数はデフォルトで数値添字配列を返すので、予期せぬ結果を引き起こす可能性があります。
+       <function>iterator_to_array</function> には二番目のパラメータ
+       <parameter>use_keys</parameter> があり、これを &false;
+       にすれば、<classname>Generator</classname> が返すキーを無視してすべての値を取得できます。
+      </para>
+     
+      <example>
+       <title><command>yield from</command> と <function>iterator_to_array</function></title>
+       <programlisting role="php">
+<![CDATA[
+<?php
+function from() {
+    yield 1; // キー 0
+    yield 2; // キー 1
+    yield 3; // キー 2
+}
+function gen() {
+    yield 0; // キー 0
+    yield from from(); // キー 0〜2
+    yield 4; // キー 1
+}
+// 二番目のパラメータに false を指定すると、結果は array [0, 1, 2, 3, 4] となります
+var_dump(iterator_to_array(gen()));
+?>
+]]>
+       </programlisting>
+       &example.outputs;
+       <screen>
+<![CDATA[
+array(3) {
+  [0]=>
+  int(1)
+  [1]=>
+  int(4)
+  [2]=>
+  int(3)
+}
+]]>
+       </screen>
+      </example>
+    </caution>
 
     <example>
      <title><command>yield from</command> の基本的な使いかた</title>

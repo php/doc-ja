@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 06df50f0b11dab8ad595fb8c544c478019ff1d17 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 4392990fb654c30e30019ef1ed41721956dd5bf8 Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa -->
 
 <sect1 xml:id="language.oop5.basic" xmlns="http://docbook.org/ns/docbook">
@@ -57,10 +57,20 @@ class SimpleClass
     コンテキストから <link linkend="language.oop5.static">スタティックに</link>
     コールされる場合には、別のオブジェクトとなる場合もあります)
     への参照です。
+    PHP 7.0.0 以降は、スタティックではないメソッドを非互換のコンテキストでスタティックに呼び出すと、
+    そのメソッド内では $this が未定義の状態になります。
+    スタティックではないメソッドの、非互換なコンテキストにおけるスタティック呼び出しは PHP 5.6.0 で非推奨になりました。
+    PHP 7.0.0 ではさらに、コンテキストの互換・非互換にかかわらず、
+    スタティックではないメソッドのスタティック呼び出し全般が非推奨となりました。
+    PHP 5.6.0 より前のバージョンでも、これらは既に strict 通知が出ていたものです。
    </para>
    <para>
     <example xml:id="language.oop5.basic.class.this">
      <title><varname>$this</varname> 疑似変数の例</title>
+     <simpara>
+      この例は、error_reporting が無効になっていることを前提としています。
+      これが有効になっている場合、PHP のバージョンによって deprecated や strict の通知が出るでしょう。
+     </simpara>
     <programlisting role="php">
 <![CDATA[
 <?php
@@ -82,7 +92,6 @@ class B
 {
     function bar()
     {
-        // 注意: E_STRICT が有効な場合、次の行で警告が発生します
         A::foo();
     }
 }
@@ -90,17 +99,15 @@ class B
 $a = new A();
 $a->foo();
 
-// 注意: E_STRICT が有効な場合、次の行で警告が発生します
 A::foo();
 $b = new B();
 $b->bar();
 
-// 注意: E_STRICT が有効な場合、次の行で警告が発生します
 B::bar();
 ?>
 ]]>
     </programlisting>
-    &example.outputs;
+     &example.outputs.5;
     <screen>
 <![CDATA[
 $this is defined (A)
@@ -109,6 +116,15 @@ $this is defined (B)
 $this is not defined.
 ]]>
     </screen>
+     &example.outputs.7;
+     <screen>
+<![CDATA[
+$this is defined (A)
+$this is not defined.
+$this is not defined.
+$this is not defined.
+]]>
+     </screen>
     </example>
   </para>
  </sect2>
