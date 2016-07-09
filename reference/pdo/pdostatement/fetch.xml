@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: b71889694a693b789c6e67d414ccc26c5739d0c9 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: e440c79af15cf829549736b2a292b5f8f6887142 Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa -->
 <refentry xml:id="pdostatement.fetch" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -57,6 +57,8 @@
          <literal>PDO::FETCH_CLASS</literal>:
          結果セットのカラムがクラス内の名前付けされたプロパティに
          マッピングされている、要求されたクラスの新規インスタンスを返します。
+         <literal>PDO::FETCH_PROPS_LATE</literal> を指定していない限りは、
+         カラムをマッピングしてからクラスのコンストラクタを呼び出します。
          <parameter>fetch_style</parameter> に PDO::FETCH_CLASSTYPE が
          含まれている場合 (例: <literal>PDO::FETCH_CLASS |
          PDO::FETCH_CLASSTYPE</literal>) は、最初のカラムの値から
@@ -87,6 +89,11 @@
          <literal>PDO::FETCH_OBJ</literal>:
          結果セットに返された際のカラム名と同名のプロパティを有する
          匿名のオブジェクトを返します。
+        </para></listitem>
+        <listitem><para>
+         <literal>PDO::FETCH_PROPS_LATE</literal>:
+         <literal>PDO::FETCH_CLASS</literal> とともに使用すると、
+         まずクラスのコンストラクタを呼び出してから、カラムの値をプロパティに代入します。
         </para></listitem>
        </itemizedlist>
       </para>
@@ -267,6 +274,55 @@ Reading backwards:
     </screen>
    </example>
 
+   <example><title>構築の順序</title>
+    <simpara>
+     <literal>PDO::FETCH_CLASS</literal> でオブジェクトを取得するときには、
+     まずオブジェクトのプロパティへの代入を終えてから、そのクラスのコンストラクタを実行します。
+     <literal>PDO::FETCH_PROPS_LATE</literal> を指定した場合はこの順序が逆転します。
+     つまり、まずコンストラクタを呼び出してから、プロパティへの代入を行います。
+    </simpara>
+    <programlisting role="php">
+<![CDATA[
+<?php
+class Person
+{
+    private $name;
+
+    public function __construct()
+    {
+        $this->tell();
+    }
+
+    public function tell()
+    {
+        if (isset($this->name)) {
+            echo "I am {$this->name}.\n";
+        } else {
+            echo "I don't have a name yet.\n";
+        }
+    }
+}
+
+$sth = $dbh->query("SELECT * FROM people");
+$sth->setFetchMode(PDO::FETCH_CLASS, 'Person');
+$person = $sth->fetch();
+$person->tell();
+$sth->setFetchMode(PDO::FETCH_CLASS|PDO::FETCH_PROPS_LATE, 'Person');
+$person = $sth->fetch();
+$person->tell();
+?>
+]]>
+    </programlisting>
+    &example.outputs.similar;
+    <screen>
+<![CDATA[
+I am Alice.
+I am Alice.
+I don't have a name yet.
+I am Bob.
+]]>
+    </screen>
+   </example>
   </para>
  </refsect1>
 
