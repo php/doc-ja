@@ -1,18 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 15bae4a24dc210a86368ae6bc5235b9f758bd666 Maintainer: takagi Status: working -->
+<!-- EN-Revision: 15bae4a24dc210a86368ae6bc5235b9f758bd666 Maintainer: takagi Status: ready -->
 
 <sect1 xml:id="migration71.incompatible">
  <title>下位互換性のない変更点</title>
 
  <sect2 xml:id="migration71.incompatible.too-few-arguments-exception">
-  <title>Throw on passing too few function arguments</title>
+  <title>関数に渡す引数が少ない場合の挙動</title>
 
   <para>
-   Previously, a warning would be emitted for invoking user-defined functions
-   with too few arguments. Now, this warning has been promoted to an Error
-   exception. This change only applies to user-defined functions, not internal
-   functions. For example:
+   これまでのバージョンでは、ユーザー定義の関数に渡す引数が足りない場合は
+   warning が発生していました。PHP 7.1 以降では、warning ではなく
+   Error 例外が発生するようになります。
+   この変更はユーザー定義の関数に対してだけのもので、
+   内部関数には影響を及ぼしません。
   </para>
 
   <informalexample>
@@ -33,19 +34,20 @@ Uncaught Error: Too few arguments to function test(), 0 passed in %s on line %d 
  </sect2>
 
  <sect2 xml:id="migration71.incompatible.forbid-dynamic-calls-to-scope-introspection-functions">
-  <title>Forbid dynamic calls to scope introspection functions</title>
+  <title>スコープを調べる関数の動的呼び出しの禁止</title>
 
   <para>
-   Dynamic calls for certain functions have been forbidden (in the form of
-   <literal>$func()</literal> or <literal>array_map('extract', ...)</literal>,
-   etc). These functions either inspect or modify another scope, and present
-   with them ambiguous and unreliable behavior. The functions are as follows:
+   ある種の関数について、動的な呼び出し
+   (<literal>$func()</literal> や <literal>array_map('extract', ...)</literal> のような形式)
+   が使えなくなりました。対象になるのは、別のスコープを調べたり変更したり、
+   あいまいな挙動になってしまったりするような関数です。
+   この変更の影響を受ける関数は、以下のとおりです。
   </para>
 
   <itemizedlist>
    <listitem>
     <simpara>
-     <function>assert</function> - with a string as the first argument
+     <function>assert</function> - 最初の引数に文字列を渡した場合
     </simpara>
    </listitem>
    <listitem>
@@ -80,12 +82,12 @@ Uncaught Error: Too few arguments to function test(), 0 passed in %s on line %d 
    </listitem>
    <listitem>
     <simpara>
-     <function>mb_parse_str</function> - with one arg
+     <function>mb_parse_str</function> - 引数が一つだけの場合
     </simpara>
    </listitem>
    <listitem>
     <simpara>
-     <function>parse_str</function> - with one arg
+     <function>parse_str</function> - 引数が一つだけの場合
     </simpara>
    </listitem>
   </itemizedlist>
@@ -109,10 +111,10 @@ Warning: Cannot call func_num_args() dynamically in %s on line %d
  </sect2>
 
  <sect2 xml:id="migration71.incompatible.invalid-class-names">
-  <title>Invalid class, interface, and trait names</title>
+  <title>クラス、インターフェイス、トレイトに使えない名前</title>
 
   <para>
-   The following names cannot be used to name classes, interfaces, or traits:
+   これらのキーワードが、クラスやインターフェイスやトレイトの名前として使えなくなりました。
   </para>
 
   <itemizedlist>
@@ -126,95 +128,93 @@ Warning: Cannot call func_num_args() dynamically in %s on line %d
  </sect2>
 
  <sect2 xml:id="migration71.incompatible.numerical-strings-scientific-notation">
-  <title>Numerical string conversions now respect scientific notation</title>
+  <title>数値形式文字列の変換が科学記法に対応</title>
 
   <para>
-   Integer operations and conversions on numerical strings now respect
-   scientific notation. This also includes the <literal>(int)</literal> cast
-   operation, and the following functions: <function>intval</function> (where
-   the base is 10), <function>settype</function>, <function>decbin</function>,
-   <function>decoct</function>, and <function>dechex</function>.
+   数値形式の文字列の演算や型変換が、科学記法に対応するようになりました。
+   <literal>(int)</literal> によるキャストや、
+   <function>intval</function> (基数が10の場合)、
+   <function>settype</function>、<function>decbin</function>、
+   <function>decoct</function>、<function>dechex</function> といった関数もその対象です。
   </para>
  </sect2>
 
  <sect2 xml:id="migration71.incompatible.fixes-to-mt_rand-algorithm">
-  <title>Fixes to <function>mt_rand</function> algorithm</title>
+  <title><function>mt_rand</function> のアルゴリズムの修正</title>
 
   <para>
-   <function>mt_rand</function> will now default to using the fixed version of
-   the Mersenne Twister algorithm. If deterministic output from
-   <function>mt_srand</function> was relied upon, then the
-   <constant>MT_RAND_PHP</constant> with the ability to preserve the old
-   (incorrect) implementation via an additional optional second parameter to
-   <function>mt_srand</function>.
+   <function>mt_rand</function> のデフォルトが、修正版のメルセンヌ・ツイスタ
+   アルゴリズムを使うようになりました。<function>mt_srand</function>
+   の結果に依存するコードを書いていた場合は、<function>mt_srand</function>
+   のオプションの第二引数に <constant>MT_RAND_PHP</constant>
+   を指定すると、これまでの挙動 (間違った実装) を維持できます。
   </para>
  </sect2>
 
  <sect2 xml:id="migration71.incompatible.rand-srand-aliases">
   <title>
-   <function>rand</function> aliased to <function>mt_rand</function> and
-   <function>srand</function> aliased to <function>mt_srand</function>
+   <function>rand</function> と <function>srand</function> が、
+   それぞれ <function>mt_rand</function> と <function>mt_srand</function> のエイリアスとなる
   </title>
 
   <para>
-   <function>rand</function> and <function>srand</function> have now been made
-   aliases to <function>mt_rand</function> and <function>mt_srand</function>,
-   respectively. This means that the output for the following functions have
-   changes: <function>rand</function>, <function>shuffle</function>,
-   <function>str_shuffle</function>, and <function>array_rand</function>.
+   <function>rand</function> と <function>srand</function> は、それぞれ
+   <function>mt_rand</function> と <function>mt_srand</function>
+   のエイリアスになりました。つまり、
+   <function>rand</function>、<function>shuffle</function>、
+   <function>str_shuffle</function>、<function>array_rand</function>
+   の出力がこれまでのバージョンとは変わるということです。
   </para>
  </sect2>
 
  <sect2 xml:id="migration71.incompatible.delete-control-character-in-identifiers">
-  <title>Disallow the ASCII delete control character in identifiers</title>
+  <title>ASCII 制御文字 delete は識別子として使えない</title>
 
   <para>
-   The ASCII delete control character (<literal>0x7F</literal>) can no longer
-   be used in identifiers that are not quoted.
+   ASCII 制御文字 delete (<literal>0x7F</literal>) は、
+   クォートしない限りは識別子として使えなくなりました。
   </para>
  </sect2>
 
  <sect2 xml:id="migration71.incompatible.error_log-syslog">
   <title>
-   <parameter>error_log</parameter> changes with <literal>syslog</literal>
-   value
+   <parameter>error_log</parameter> に <literal>syslog</literal> を指定した場合の変更
   </title>
 
   <para>
-   If the <parameter>error_log</parameter> ini setting is set to
-   <literal>syslog</literal>, the PHP error levels are mapped to the syslog
-   error levels. This brings finer differentiation in the error logs in
-   contrary to the previous approach where all the errors are loggged with the
-   notice level only.
+   INI 項目 <parameter>error_log</parameter> の設定値を
+   <literal>syslog</literal> にした場合に、PHP のエラーレベルが syslog
+   のエラーレベルにマッピングされるようになりました。
+   これまでのバージョンではすべてのエラーが notice レベルで記録されていましたが、
+   この変更によって、今までよりも細やかな区別ができるようになります。
   </para>
  </sect2>
 
  <sect2 xml:id="migration71.incompatible.dont-call-destructors">
-  <title>Do not call destructors on incomplete objects</title>
+  <title>未完成のオブジェクトのデストラクタは呼び出されない</title>
 
   <para>
-   Destructors are no longer called upon incomplete objects (such as throwing
-   an exception in the constructor).
+   未完成のオブジェクト (たとえばコンストラクタ内で例外が発生したオブジェクトなど)
+   について、デストラクタは呼び出されなくなりました。
   </para>
  </sect2>
 
  <sect2 xml:id="migration71.incompatible.call_user_func-with-ref-args">
   <title>
-   <function>call_user_func</function> fails on calls to functions with
-   reference arguments
+   参照渡しの引数を持つ関数の <function>call_user_func</function> による呼び出しは失敗する
   </title>
 
   <para>
-   <function>call_user_func</function> will now always fail upon calls to
-   functions that expect references as arguments.
+   引数を参照で受け取るような関数の
+   <function>call_user_func</function> による呼び出しは、失敗するようになりました。
   </para>
  </sect2>
 
  <sect2 xml:id="migration71.incompatible.removed-ini-directives">
-  <title>Removed ini directives</title>
+  <title>削除された INI 項目</title>
 
   <para>
-   The following ini directives have been removed:
+   以下の INI 項目は、削除されました。
   </para>
 
   <itemizedlist>
