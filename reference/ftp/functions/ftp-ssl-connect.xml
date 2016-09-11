@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: d78c0a4f3335f668b36ae2309350649b45486f78 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 221f0c17eeb602fdb40df87058658a5404c5badf Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi -->
 <refentry xml:id="function.ftp-ssl-connect" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -17,7 +17,12 @@
   </methodsynopsis>
   <para>
    <function>ftp_ssl_connect</function> は、指定した
-   <parameter>host</parameter> への明示的な SSL-FTP 接続をオープンします。
+   <parameter>host</parameter> への<emphasis>明示的な</emphasis> SSL-FTP 接続をオープンします。
+   サーバー側が SSL-FTP 接続に対応していなかったり、証明書が無効であったりした場合でも、
+   <function>ftp_ssl_connect</function> は成功します。
+   そういった場合は、<function>ftp_login</function>
+   を呼んで AUTH FTP コマンドを送信した時点ではじめて、
+   <function>ftp_login</function> が失敗することになります。
   </para>
   <note>
    <title>この関数が存在しないことがあるのはなぜですか？</title>
@@ -121,6 +126,11 @@ $conn_id = ftp_ssl_connect($ftp_server);
 
 // ユーザー名とパスワードでログインする
 $login_result = ftp_login($conn_id, $ftp_user_name, $ftp_user_pass);
+
+if (!$login_result) {
+    // この場合は、すでに PHP 側で E_WARNING レベルのメッセージを発行しています。
+    die("can't login");
+}
 
 echo ftp_pwd($conn_id); // /
 
