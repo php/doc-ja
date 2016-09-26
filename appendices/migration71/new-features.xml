@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: be0bcdaba05001453b0a4f66570638885bd9bfb1 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 6de59f6d362dfde9ec7167489b0d8bfc25254202 Maintainer: takagi Status: ready -->
 
 <sect1 xml:id="migration71.new-features" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>新機能</title>
@@ -9,22 +9,36 @@
   <title>nullable な型</title>
 
   <para>
-   型を nullable にできるようになりました。
-   関数に渡す引数や関数の返り値が、指定した型あるいは <type>null</type>
-   のいずれかであればよいということを指定できるようになります。
-   nullable であることを指定するには、型の前にクエスチョンマークをつけます。
+   パラメータや返り値の型宣言で nullable 指定ができるようになりました。
+   型の前にクエスチョンマークをつけると、nullable であることを指定できます。
+   nullable 指定をすると、指定した型だけでなく <type>null</type> も渡せるようになります。
   </para>
 
   <informalexample>
    <programlisting role="php">
 <![CDATA[
 <?php
+
+function testReturn(): ?string
+{
+    return 'elePHPant';
+}
+
+var_dump(testReturn());
+
+function testReturn(): ?string
+{
+    return null;
+}
+
+var_dump(testReturn());
+
 function test(?string $name)
 {
     var_dump($name);
 }
 
-test('tpunt');
+test('elePHPant');
 test(null);
 test();
 ]]>
@@ -32,7 +46,9 @@ test();
    &example.outputs;
    <screen>
 <![CDATA[
-string(5) "tpunt"
+string(10) "elePHPant"
+NULL
+string(10) "elePHPant"
 NULL
 Uncaught Error: Too few arguments to function test(), 0 passed in...
 ]]>
@@ -44,10 +60,9 @@ Uncaught Error: Too few arguments to function test(), 0 passed in...
   <title>void 関数</title>
 
   <para>
-   PHP 7 で導入された返り値の型に、新たに <type>void</type> が加わりました。
-   返り値の型を void にした場合は、return 文を省略することができます。
-   あるいは、空の return 文を書いてもかまいません。
-   void 関数で null を返すことはできません。
+   返り値の型として <type>void</type> が導入されました。返り値の型を void
+   と宣言した関数は、関数内での return 文を省略するか、あるいは空の return を使う必要があります。
+   void 関数から <type>null</type> を返すことはできません。
   </para>
 
   <informalexample>
@@ -81,7 +96,7 @@ int(1)
   </informalexample>
 
   <para>
-   void 関数の返り値を使おうとした場合はその値は null と評価されます。
+   void 関数の返り値を使おうとした場合はその値は <type>null</type> と評価されます。
    警告は発生しません。警告を発生させると、一般的な高階関数の利用にも影響するからです。
   </para>
  </sect2>
@@ -92,7 +107,8 @@ int(1)
   <para>
    配列の短縮構文 (<literal>[]</literal>) を使って、
    代入用に配列の値を取り出せるようになりました (<literal>foreach</literal> でも使えます)。
-   このパターンマッチング機能を使うと、配列からの値の抽出がより簡単に行えるようになります。
+   これは、<function>list</function> の代替として使えます
+   (<function>list</function> もまだ使えます)。
   </para>
 
   <informalexample>
@@ -100,11 +116,23 @@ int(1)
 <![CDATA[
 <?php
 $data = [
-    ['id' => 1, 'name' => 'Tom'],
-    ['id' => 2, 'name' => 'Fred'],
+    [1, 'Tom'],
+    [2, 'Fred'],
 ];
 
-while (['id' => $id, 'name' => $name] = $data) {
+// list() 形式
+list($id1, $name1) = $data[0];
+
+// [] 形式
+[$id1, $name1] = $data[0];
+
+// list() 形式
+foreach ($data as list($id, $name)) {
+    // $id と $name を使う処理をここに書きます
+}
+
+// [] 形式
+foreach ($data as [$id, $name]) {
     // $id と $name を使う処理をここに書きます
 }
 ]]>
@@ -193,9 +221,10 @@ try {
   <title><function>list</function> におけるキーのサポート</title>
 
   <para>
-   <function>list</function> の内部でキーを指定できるようになりました。
-   つまり、どんな形式の配列であっても、(配列の短縮構文と同様に)
-   値を取り出せるようになったということです。
+   <function>list</function> (あるいはその短縮版である <literal>[]</literal> 構文)
+   の内部でキーを指定できるようになりました。
+   つまり、キーが整数でなかったりシーケンシャルでなかったりした場合でも、
+   配列の値を取り出せるようになったということです。
   </para>
 
   <informalexample>
@@ -203,11 +232,23 @@ try {
 <![CDATA[
 <?php
 $data = [
-    ['id' => 1, 'name' => 'Tom'],
-    ['id' => 2, 'name' => 'Fred'],
+    ["id" => 1, "name" => 'Tom'],
+    ["id" => 2, "name" => 'Fred'],
 ];
 
-while (list('id' => $id, 'name' => $name) = $data) {
+// list() 形式
+list("id" => $id1, "name" => $name1) = $data[0];
+
+// [] 形式
+["id" => $id1, "name" => $name1] = $data[0];
+
+// list() 形式
+foreach ($data as list("id" => $id, "name" => $name)) {
+    // $id と $name を使う処理をここに書きます
+}
+
+// [] 形式
+foreach ($data as ["id" => $id, "name" => $name]) {
     // $id と $name を使う処理をここに書きます
 }
 ]]>
@@ -219,9 +260,12 @@ while (list('id' => $id, 'name' => $name) = $data) {
   <title>負の文字列オフセットのサポート</title>
 
   <para>
-   組み込みの文字列関数のうち、オフセット指定のできるものすべてについて、
-   負のオフセットを指定できるようになりました。
-   配列のデリファレンス演算子 (<literal>[]</literal>) と同じ挙動になります。
+   <link linkend="book.strings">文字列操作関数</link>
+   のうちオフセット指定のできるものすべてについて、負のオフセットを指定できるようになりました。
+   <literal>[]</literal> や <literal>{}</literal> による
+   <link linkend="language.types.string.substr">文字列への文字単位のアクセス</link>
+   についても同様です。
+   負のオフセットは、文字列の末尾からのオフセットと解釈されます。
   </para>
 
   <informalexample>
@@ -253,7 +297,7 @@ int(3)
  </sect2>
 
  <sect2 xml:id="migration71.new-features.convert-callables-to-closures">
-  <title><methodname>Closure::fromCallable</methodname> による callables からクロージャへの変換</title>
+  <title><methodname>Closure::fromCallable</methodname> による callables から <classname>Closure</classname> への変換</title>
 
   <para>
    <classname>Closure</classname> クラスに新しい静的メソッドが追加されました。
