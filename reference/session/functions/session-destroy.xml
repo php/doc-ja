@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 96c9d88bad9a7d7d44bfb7f26c226df7ee9ddf26 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 894b3c74d9a9e4c6100139cabaa7c97eb2e294c0 Maintainer: hirokawa Status: working -->
 <refentry xmlns="http://docbook.org/ns/docbook" xml:id="function.session-destroy">
  <refnamediv>
   <refname>session_destroy</refname>
   <refpurpose>セッションに登録されたデータを全て破棄する</refpurpose>
  </refnamediv>
- 
+
  <refsect1 role="description">
   &reftitle.description;
   <methodsynopsis>
@@ -21,13 +21,45 @@
    セッション変数の利用を再開するには <function>session_start</function>
    をコールする必要があります。
   </simpara>
+  <note>
+   <simpara>
+     You do not have to call <function>session_destroy</function> from usual
+     code. Cleanup $_SESSION array rather than destroying session data.
+   </simpara>
+  </note>
   <para>
-   ユーザーがログアウトするときのように、セッションを切断するには、
+   セッションを切断するには、
    セッション ID の割り当ても解除する必要があります。セッション ID の受け渡しに
    クッキーが使用されている場合（デフォルト）には、セッションクッキーも
    削除されなければなりません。
    そのためには <function>setcookie</function> が利用できます。
   </para>
+  <para>
+   When <link linkend="ini.session.use-strict-mode">session.use_strict_mode</link>
+   is enabled. You do not have to remove obsolete session ID cookie because
+   session module will not accept session ID cookie when there is no
+   data associated to the session ID and set new session ID cookie.
+   Enabling <link linkend="ini.session.use-strict-mode">session.use_strict_mode</link>
+   is recommended for all sites.
+  </para>
+  <warning>
+   <para>
+    Immediate session deletion may cause unwanted results. When there is
+    concurrent requests, other connections may see sudden session data
+    loss. e.g. Requests from JavaScript and/or requests from URL links.
+   </para>
+   <para>
+    Although current session module does not accept empty session ID
+    cookie, but immediate session deletion may result in empty session ID
+    cookie due to client(browser) side race condition. This will result
+    that the client creates many session ID needlessly.
+   </para>
+   <para>
+    To avoid these, you must set deletion time-stamp to $_SESSION and
+    reject access while later. Or make sure your application does not
+    have concurrent requests. This applies to <function>session_regenerate_id</function> also.
+   </para>
+  </warning>
  </refsect1>
 
  <refsect1 role="returnvalues">
@@ -85,6 +117,9 @@ session_destroy();
   &reftitle.seealso;
   <para>
    <simplelist>
+    <member><link linkend="ini.session.use-strict-mode">session.use_strict_mode</link></member>
+    <member><function>session_reset</function></member>
+    <member><function>session_regenerate_id</function></member>
     <member><function>unset</function></member>
     <member><function>setcookie</function></member>
    </simplelist>
