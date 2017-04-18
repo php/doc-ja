@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 3ec69d212daf9147cd34130ace1efaefeed35506 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 95bdd6883b5dde9504701777ba81b3c5f15df52b Maintainer: takagi Status: working -->
 <!-- CREDITS: hirokawa,shimooka -->
 <sect1 xml:id="language.types.string">
  <title>文字列</title>
@@ -14,6 +14,9 @@
 
  <note>
   <simpara>
+   As of PHP 7.0.0, there are no particular restrictions regarding the length of
+   a <type>string</type> on 64-bit builds. On 32-bit builds and in earlier
+   versions,<!-- to be translated -->
    文字列の最大長は 2GB (2147483647 バイト) です。
   </simpara>
  </note>
@@ -239,14 +242,26 @@ echo 'Variables do not $expand $either';
      スクリプトの最終行でパースエラーが発生します。
     </simpara>
 
-    <para>
-     ヒアドキュメント構文を、クラスのプロパティの初期化に用いることはできません。
-     PHP 5.3 以降では、変数を含まないヒアドキュメントではこの制約はなくなりました。
-    </para>
-
     <example>
      <title>間違った例</title>
      <programlisting role="php">
+      <!-- This is an INVALID example -->
+<![CDATA[
+<?php
+class foo {
+    public $bar = <<<EOT
+bar
+    EOT;
+}
+// 識別子はインデントしてはいけません
+?>
+]]>
+     </programlisting>
+    </example>
+    <example>
+     <title>有効な例</title>
+     <programlisting role="php">
+      <!-- This is a VALID example -->
 <![CDATA[
 <?php
 class foo {
@@ -258,6 +273,12 @@ EOT;
 ]]>
      </programlisting>
     </example>
+
+    <para>
+     ヒアドキュメント構文を、クラスのプロパティの初期化に用いることはできません。
+     PHP 5.3 以降では、変数を含まないヒアドキュメントではこの制約はなくなりました。
+    </para>
+
    </warning>
 
    <para>
@@ -571,6 +592,28 @@ John Smith drank some apple juice.
 John Smith then said hello to Jane Smith.
 John Smith's wife greeted Robert Paulsen.
 Robert Paulsen greeted the two .
+]]>
+     </screen>
+    </example>
+
+    <simpara>
+     As of PHP 7.1.0 also <emphasis>negative</emphasis> numeric indices are
+     supported.<!-- to be translated -->
+    </simpara>
+
+    <example><title>Negative numeric indices</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+$array = [-3 => 'foo'];
+echo "The element at index -3 is $array[-3].", PHP_EOL;
+?>
+]]>
+     </programlisting>
+     &example.outputs;
+     <screen>
+<![CDATA[
+The element at index -3 is foo.
 ]]>
      </screen>
     </example>
@@ -969,11 +1012,8 @@ bool(false)
   </para>
 
   <para>
-   PHP 4 のオブジェクトは、常に <literal>"Object"</literal> という文字列に変換されます。
-   デバッグ等のために <type>object</type> の内部の変数を出力するような場合には、
-   以下をご覧ください。オブジェクトがなんという名前のクラスの
-   インスタンスなのかを知るには <function>get_class</function> をご覧ください。
-   PHP 5 以降では、もし存在すれば __toString() メソッドを使用します。
+   <type>object</type> を <type>string</type> へ変換するには、
+  マジック・メソッド <link linkend="language.oop5.magic">__toString</link> を使用してください。
   </para>
 
   <para>
@@ -1100,7 +1140,7 @@ echo "\$foo==$foo; type is " . gettype ($foo) . "<br />\n";
   <para>
    PHP が文字列に対して特定のエンコーディングを強制しないのなら、
    いったいどのようにして文字列リテラルをエンコードしているのでしょう?
-   たとえば、文字列 <literal>"á"</literal> と同等なのは <literal>"\xE1"</literal> (ISO-8859-1)、
+   たとえば、文字列 <literal>"a"</literal> と同等なのは <literal>"\xE1"</literal> (ISO-8859-1)、
    <literal>"\xC3\xA1"</literal> (UTF-8, C form)、
    <literal>"\x61\xCC\x81"</literal> (UTF-8, D form) のどれでしょう?
    あるいはそれ以外の何かなのでしょうか?
@@ -1153,8 +1193,8 @@ echo "\$foo==$foo; type is " . gettype ($foo) . "<br />\n";
      <function>strtoupper</function> そして <function>ucfirst</function> です。
      つまり、これらの関数はシングルバイトエンコーディングでしか使えず、
      さらにエンコーディングとロケールがマッチしていなければならないということです。
-     たとえば、<literal>strtoupper("á")</literal> が正しく <literal>"Á"</literal>
-     を返すには、ロケールを正しく設定したうえで <literal>á</literal>
+     たとえば、<literal>strtoupper("a")</literal> が正しく <literal>"A"</literal>
+     を返すには、ロケールを正しく設定したうえで <literal>a</literal>
      をシングルバイトで符号化しておかなければなりません。仮に UTF-8 を使っていたとすると、
      正しい結果は返されないでしょう。さらに、現在のロケール設定によっては
      返される文字列が壊れてしまう可能性もあります。
