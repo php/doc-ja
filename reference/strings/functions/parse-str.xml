@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: afc3f34c682418a582b0f9199db0bac4a087821f Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 028513e94be0922956387803e75b575973539254 Maintainer: hirokawa Status: working -->
 <!-- CREDITS: shimooka -->
 <refentry xmlns="http://docbook.org/ns/docbook" xml:id="function.parse-str">
  <refnamediv>
@@ -12,13 +12,148 @@
   &reftitle.description;
   <methodsynopsis>
    <type>void</type><methodname>parse_str</methodname>
-   <methodparam><type>string</type><parameter>str</parameter></methodparam>
-   <methodparam choice="opt"><type>array</type><parameter role="reference">arr</parameter></methodparam>
+   <methodparam><type>string</type><parameter>encoded_string</parameter></methodparam>
+   <methodparam choice="opt"><type>array</type><parameter role="reference">result</parameter></methodparam>
   </methodsynopsis>
   <para>
-   URL 経由で渡されるクエリ文字列と同様に <parameter>str</parameter>
+   URL 経由で渡されるクエリ文字列と同様に <parameter>encoded_string</parameter>
    を処理し、現在のスコープに変数をセットします。
+   (or in the array if <parameter>result</parameter> is provided)<!-- to be translated -->
   </para>
+ </refsect1>
+
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <para>
+   <variablelist>
+    <varlistentry>
+     <term><parameter>encoded_string</parameter></term>
+     <listitem>
+      <para>
+       入力文字列。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>result</parameter></term>
+     <listitem>
+      <para>
+       2 番目の引数
+       <parameter>result</parameter> が指定された場合、
+       変数は、代わりに配列の要素としてこの変数に保存されます。
+      </para>
+<!-- to be translated -->
+      <warning>
+       <para>
+        Using this function without the <parameter>result</parameter> parameter is highly
+        <emphasis>DISCOURAGED</emphasis> and <emphasis>DEPRECATED</emphasis> as of PHP 7.2.
+       </para>
+       <para>
+        Dynamically setting variables in function's scope suffers from exactly same problems
+        as <link linkend="ini.magic-quotes-gpc">register_globals</link>.
+       </para>
+       <para>
+        Read section on security of <link linkend="security.globals">Using Register Globals</link>
+        explaining why it is dangerous.
+       </para>
+      </warning>
+     </listitem>
+    </varlistentry>
+   </variablelist>
+  </para>
+ </refsect1>
+
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <para>
+   &return.void;
+  </para>
+ </refsect1>
+
+ <refsect1 role="changelog">
+  &reftitle.changelog;
+  <para>
+   <informaltable>
+    <tgroup cols="2">
+     <thead>
+      <row>
+       <entry>&Version;</entry>
+       <entry>&Description;</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry>7.2.0</entry>
+       <entry>
+<!-- to be translated -->
+        Usage of <function>parse_str</function> without a second parameter
+        now emits an <constant>E_DEPRECATED</constant> notice.
+       </entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </informaltable>
+  </para>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title><function>parse_str</function> の使用法</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$str = "first=value&arr[]=foo+bar&arr[]=baz";
+
+// Recommended
+parse_str($str, $output);
+echo $output['first'];  // value
+echo $output['arr'][0]; // foo bar
+echo $output['arr'][1]; // baz
+
+// DISCOURAGED
+parse_str($str);
+echo $first;  // value
+echo $arr[0]; // foo bar
+echo $arr[1]; // baz
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+  <para>
+<!-- to be translated -->
+   Because variables in PHP can't have dots and spaces in their names,
+   those are converted to underscores. Same applies to naming of
+   respective key names in case of using this function with
+   <parameter>result</parameter> parameter.   
+   <example>
+    <title><function>parse_str</function> name mangling</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+parse_str($"My Value=Something");
+echo $My_Value; // Something
+
+parse_str($"My Value=Something", $output);
+echo $output['My_Value']; // Something
+?>
+]]>
+    </programlisting>
+   </example>
+  </para> 
+ </refsect1>
+
+ <refsect1 role="notes">
+  &reftitle.notes;
+
+  <note>
+   <para>
+    All variables created (or values returned into array if second parameter is set)
+    are already <function>urldecode</function>d.
+   </para>
+  </note>
   <note>
    <para>
     現在の <literal>QUERY_STRING</literal> を取得するには、変数
@@ -39,65 +174,6 @@
   </note>
  </refsect1>
 
- <refsect1 role="parameters">
-  &reftitle.parameters;
-  <para>
-   <variablelist>
-    <varlistentry>
-     <term><parameter>str</parameter></term>
-     <listitem>
-      <para>
-       入力文字列。
-      </para>
-     </listitem>
-    </varlistentry>
-    <varlistentry>
-     <term><parameter>arr</parameter></term>
-     <listitem>
-      <para>
-       2 番目の引数
-       <parameter>arr</parameter> が指定された場合、
-       変数は、代わりに配列の要素としてこの変数に保存されます。
-      </para>
-     </listitem>
-    </varlistentry>
-   </variablelist>
-  </para>
- </refsect1>
-
- <refsect1 role="returnvalues">
-  &reftitle.returnvalues;
-  <para>
-   &return.void;
-  </para>
- </refsect1>
-
- <refsect1 role="examples">
-  &reftitle.examples;
-  <para>
-   <example>
-    <title><function>parse_str</function> の使用法</title>
-    <programlisting role="php">
-<![CDATA[
-<?php
-$str = "first=value&arr[]=foo+bar&arr[]=baz";
-parse_str($str);
-echo $first;  // value
-echo $arr[0]; // foo bar
-echo $arr[1]; // baz
-
-parse_str($str, $output);
-echo $output['first'];  // value
-echo $output['arr'][0]; // foo bar
-echo $output['arr'][1]; // baz
-
-?>
-]]>
-    </programlisting>
-   </example>
-  </para>
- </refsect1>
-
  <refsect1 role="seealso">
   &reftitle.seealso;
   <para>
@@ -105,7 +181,6 @@ echo $output['arr'][1]; // baz
     <member><function>parse_url</function></member>
     <member><function>pathinfo</function></member>
     <member><function>http_build_query</function></member>
-    <member><function>get_magic_quotes_gpc</function></member>
     <member><function>urldecode</function></member>
    </simplelist>
   </para>
