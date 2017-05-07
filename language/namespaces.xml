@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: e52f86cf48f181cefa150a4d89c90a8a8a5c6bad Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 27e86fd791a1b083db2e08a37ce3443bd93cf13c Maintainer: takagi Status: working -->
 <chapter xml:id="language.namespaces" xmlns="http://docbook.org/ns/docbook"
  version="1.1">
  <title>名前空間</title>
@@ -904,45 +904,76 @@ if (is_array('hi')) { // "is not array" と表示します
       </para>
      </listitem>
     </varlistentry>
+    <varlistentry>
+     <!-- to be translated -->
+     <term>Relative name</term>
+     <listitem>
+      <para>
+       This is an identifier starting with <literal>namespace</literal>, such as
+       <literal>namespace\Foo\Bar</literal>.
+      </para>
+     </listitem>
+    </varlistentry>
    </variablelist>
   </para>
   <para>
    名前解決は、これらの解決ルールによって行われます。
    <orderedlist>
     <listitem>
+     <!-- to be translated -->
      <simpara>
-      完全修飾された関数、クラス、定数へのコールはコンパイル時に解決されます。
-      たとえば、<literal>new \A\B</literal> は <literal>A\B</literal> クラスと解釈されます。
+      Fully qualified names always resolve to the name without leading namespace separator.
+      たとえば、<literal>\A\B</literal> は <literal>A\B</literal> と解釈されます。
+     </simpara>
+    </listitem>
+    <listitem>
+     <!-- to be translated -->
+     <simpara>
+      Relative names always resolve to the name with <literal>namespace</literal> replaced by
+      the current namespace. If the name occurs in the global namespace, the
+      <literal>namespace\</literal> prefix is stripped. For example <literal>namespace\A</literal>
+      inside namespace <literal>X\Y</literal> resolves to <literal>X\Y\A</literal>. The same name
+      inside the global namespace resolves to <literal>A</literal>.
      </simpara>
     </listitem>
     <listitem>
      <simpara>
-      非修飾名および (完全修飾でない) 修飾名の変換は、現在のインポートルールに基づいてコンパイル時に行われます。
-      たとえば、名前空間 <literal>A\B\C</literal> が
-      <literal>C</literal> という名前でインポートされている場合、
-      <literal>C\D\e()</literal> へのコールは <literal>A\B\C\D\e()</literal>
-      と変換されます。
+      For qualified names the first segment of the name is translated according to the current
+      class/namespace import table. For example, if the namespace <literal>A\B\C</literal> is
+      imported as <literal>C</literal>, the name <literal>C\D\E</literal> is translated to
+      <literal>A\B\C\D\E</literal>.
      </simpara>
     </listitem>
     <listitem>
      <simpara>
-      名前空間内で、インポートルールによる変換が行われなかった修飾名は
-      現在の名前空間が先頭に付加されます。たとえば、
-      <literal>C\D\e()</literal> へのコールが名前空間 <literal>A\B</literal>
-      内で行われた場合、それは <literal>A\B\C\D\e()</literal> に変換されます。
+      For qualified names, if no import rule applies, the current namespace is prepended to the
+      name. For example, the name <literal>C\D\E</literal> inside namespace <literal>A\B</literal>,
+      resolves to <literal>A\B\C\D\E</literal>.
      </simpara>
     </listitem>
     <listitem>
      <simpara>
-      非修飾クラス名の変換は、現在のインポートルールに基づいてコンパイル時に行われます
-      (インポートされた短い名前がフルネームに置き換わります)。たとえば、
-      名前空間 <literal>A\B\C</literal> が C という名前でインポートされている場合、
-      <literal>new C()</literal> は <literal>new A\B\C()</literal> と変換されます。
+      For unqualified names, the name is translated according to the current import table for the
+      respective symbol type. This means that class-like names are translated according to the
+      class/namespace import table, function names according to the function import table and
+      constants according to the constant import table. For example, after
+      <literal>use A\B\C;</literal> a usage such as <literal>new C()</literal> resolves to the name
+      <literal>A\B\C()</literal>. Similarly, after <literal>use function A\B\fn;</literal> a usage
+      such as <literal>fn()</literal> resolves to the name <literal>A\B\fn</literal>.
      </simpara>
     </listitem>
     <listitem>
      <simpara>
-      名前空間内 (ここでは A\B としましょう) で、非修飾な関数へのコールは実行時に解決されます。
+      For unqualified names, if no import rule applies and the name refers to a class-like symbol,
+      the current namespace is prepended. For example <literal>new C()</literal> inside namespace
+      <literal>A\B</literal> resolves to name <literal>A\B\C</literal>.
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      For unqualified names, if no import rule applies and the name refers to a function or constant
+      and the code is outside the global namespace, the name is resolved at runtime.
+      Assuming the code is in namespace <literal>A\B</literal>,
       関数 <literal>foo()</literal> のコールは、次のように解決されます。
      </simpara>
       <orderedlist>
@@ -959,48 +990,6 @@ if (is_array('hi')) { // "is not array" と表示します
         </simpara>
        </listitem>
       </orderedlist>
-    </listitem>
-    <listitem>
-     <simpara>
-      名前空間内 (ここでは <literal>A\B</literal> としましょう) で、
-      非修飾あるいは (完全修飾でない) 修飾なクラスへのコールは実行時に解決されます。
-      <literal>new C()</literal> や <literal>new D\E()</literal>
-      がどのように解決されるかを示します。
-      <literal> new C()</literal> の場合は、
-     </simpara>
-     <orderedlist>
-      <listitem>
-       <simpara>
-        まず現在の名前空間からクラス
-        <literal>A\B\C</literal> を探します。
-       </simpara>
-      </listitem>
-      <listitem>
-       <simpara>
-        <literal>A\B\C</literal> を autoload します。
-       </simpara>
-      </listitem>
-     </orderedlist>
-     <simpara>
-      <literal> new D\E()</literal> の場合は、
-     </simpara>
-     <orderedlist>
-      <listitem>
-       <simpara>
-        現在の名前空間を先頭につけた
-        <literal>A\B\D\E</literal> を探します。
-       </simpara>
-      </listitem>
-      <listitem>
-       <simpara>
-        <literal>A\B\D\E</literal> を autoload します。
-       </simpara>
-      </listitem>
-     </orderedlist>
-     <simpara>
-      グローバル名前空間内のグローバルクラスを参照するには、完全修飾形式の
-      <literal>new \C()</literal> を使わなければなりません。
-     </simpara>
     </listitem>
    </orderedlist>
   </para>
