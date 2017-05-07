@@ -1,69 +1,77 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: e0dac54a11c7f71e9cb7309c8f93a5438cd395ac Maintainer: takagi Status: working -->
+<!-- EN-Revision: e0dac54a11c7f71e9cb7309c8f93a5438cd395ac Maintainer: takagi Status: ready -->
+<!-- CREDITS: hotta -->
 <chapter xml:id="internals2.variables" xmlns="http://docbook.org/ns/docbook">
- <title>変数の作成</title>
+ <title>変数の処理</title>
  <section xml:id="internals2.variables.intro">
-  <title>Introduction to Variables</title>
+  <title>変数入門</title>
   <para>
-   A good understanding of how variables are stored and manipulated is essential to becoming a <code>Hacker</code>.
-   The engine attempts to cover up the complexity of the concept of a variable that can be any type by 
-   providing a uniform and intuitive set of macros for accessing the structures various fields. As the <code>Hacker</code> works
-   through this chapter, they should become comfortable with the terminology and concepts involved with Variables in PHP.
+   変数がどのように格納され処理されているのかについてきちんと理解することは、
+   <code>ハッカー</code>になるための第一歩です。エンジンは、構造体のさまざまな
+   フィールドにアクセスするための統一された直感的なマクロを提供することで、
+   それがどのような型の変数であっても、その概念の複雑さを隠蔽しようとします。
+   この章の中身に沿って学習していけば、<code>ハッカー</code>はPHPの変数に関する
+   専門用語やその概念についての理解を深めることができるはずです。
   </para>
   <note>
-   <para>PHP is a dynamic, loosely typed language, that uses copy-on-write and reference counting.</para>
+   <para>PHPはコピーオンライトや参照カウント法を使う、動的で型の制約がゆるい言語です。
+   </para>
   </note>
   <para>
-   To clarify what exactly is meant by the statement above: PHP is a high level language, weak typing is implicit of the engines preference to
-   convert, or coerce variables into the required type at execution time. Reference counting is the means by which the engine can deduce when a
-   variable no longer has any references in the users code, and so is able to free the structures associated with the variable.
+  前述の内容もう少し正確に言うと、PHPは高水準言語であり、緩い型付けにより変数は
+  エンジニアの好みに応じて暗黙に解釈され、実行時に必要な型に強制的に変換されます。
+  参照カウント法は、ある変数がユーザーのコードの中でもはや参照されなくなったことを
+  エンジンが推測し、その変数に関連付けられた構造体を開放するという仕組みです。
   </para>
   <para>
-   All variables in PHP are represented by one structure, the <code>zval</code>:
+   PHP内部の変数は、すべて<code>zval</code>と呼ばれるひとつの構造体で表現されています。
   </para>
   <screen>
 <![CDATA[
 typedef struct _zval_struct {
-    zvalue_value value;        /* variable value */
-    zend_uint refcount__gc;    /* reference counter */
-    zend_uchar type;           /* value type */
-    zend_uchar is_ref__gc;     /* reference flag */
+    zvalue_value value;        /* 変数の値 */
+    zend_uint refcount__gc;    /* 参照回数 */
+    zend_uchar type;           /* 変数の型 */
+    zend_uchar is_ref__gc;     /* 参照フラグ */
 } zval;]]>
   </screen>
   <para>
-   The <code>zval_value</code> is a union which can represent all types a variable may hold:
+   <code>zval_value</code>は、ひとつの変数が持ちうるすべての型を表現可能な共用体です。
   </para>
   <screen>
 <![CDATA[
 typedef union _zvalue_value {
-    long lval;                 /* long value */
-    double dval;               /* double value */
+    long lval;                 /* long 値 */
+    double dval;               /* double 値 */
     struct {                   
         char *val;
-        int len;               /* this will always be set for strings */
-    } str;                     /* string (always has length) */
-    HashTable *ht;             /* an array */
-    zend_object_value obj;     /* stores an object store handle, and handlers */
+        int len;               /* 常に文字列用として設定されます */
+    } str;                     /* 文字列(常に長さを持ちます) */
+    HashTable *ht;             /* 配列 */
+    zend_object_value obj;     /* オジュジェクト格納用ハンドルやハンドラを保持します */
 } zvalue_value;
 ]]>
   </screen>
   <para>
-   It should be clear from the structures above that a variable can be of one type, the variable data is represented by the appropriate field in the <code>zval_value</code> union. The <code>zval</code> itself holds the type, reference count and a flag to indicate if a variable is a reference.
+   この構造体により、ある変数はいずれかひとつの型を持つことができ、そのデータは
+   <code>zval_value</code>共用体の中の適切なフィールドによって表現されている
+   ことがわかります。<code>zval</code>自体に型や参照回数と、その変数がまだ参照
+   されているかどうかを示すフラグを持っています。
   </para>
   <table xml:id="internals2.variables.types.api">
-   <title>Native Type Constants</title>
+   <title>ネイティブ型定数</title>
    <tgroup cols="2">
     <thead>
      <row>
-      <entry>Constant</entry>
-      <entry>Mapping</entry>
+      <entry>定数</entry>
+      <entry>マッピング</entry>
      </row>
     </thead>
     <tbody>
      <row>
       <entry><code>IS_NULL</code></entry>
-      <entry>no value is set in this case</entry>
+      <entry>値がセットされていない</entry>
      </row>
      
      <row>
@@ -106,28 +114,29 @@ typedef union _zvalue_value {
   </table>
   
   <note>
-   <para>There are additional constants that help to identify internal types such as constant arrays and callable objects, their usage is outside the scope of this part of the documentation.</para>
+   <para>上記の他にも、定数の配列や callable オブジェクトといった内部的な型を
+   あらわす定数があるのですが、それらの利用法についてはこのドキュメントでは扱いません。</para>
   </note>
   
-  <para>
-   The following table defines the macros exposed by the engine for working with <code>zval</code> values:
+  <para>エンジンが公開しているマクロのうち、<code>zval</code>値で扱えるものを
+  以下の表に示します。
   </para>
   
   <table xml:id="internals2.variables.zvals.api">
-   <title>Accessor Macros</title>
+   <title>アクセサ・マクロ</title>
    <tgroup cols="3">
     <thead>
      <row>
-      <entry>Prototype</entry>
-      <entry>Accesses</entry>
-      <entry>Description</entry>
+      <entry>プロトタイプ</entry>
+      <entry>アクセス</entry>
+      <entry>説明</entry>
      </row>
     </thead>
     <tbody>
      <row>
       <entry><code>zend_uchar Z_TYPE(zval zv)</code></entry>
       <entry>type</entry>
-      <entry>returns the type of the <code>value</code></entry>
+      <entry><code>value</code>の型を返す</entry>
      </row>
      
      <row>
@@ -139,7 +148,7 @@ typedef union _zvalue_value {
      <row>
       <entry><code>zend_bool Z_BVAL(zval zv)</code></entry>
       <entry>value.lval</entry>
-      <entry>cast long <code>value</code> to zend_bool</entry>
+      <entry>long の<code>value</code>を zend_bool にキャスト</entry>
      </row>
      
      <row>
@@ -151,67 +160,68 @@ typedef union _zvalue_value {
      <row>
       <entry><code>long Z_RESVAL(zval zv)</code></entry>
       <entry>value.lval</entry>
-      <entry>returns the resource list identifier for <code>value</code></entry>
+      <entry>リソース一覧における<code>value</code>の識別子を返す</entry>
      </row>
      
      <row>
       <entry><code>char* Z_STRVAL(zval zv)</code></entry>
       <entry>value.str.val</entry>
-      <entry>return the string <code>value</code></entry>
+      <entry>文字列の<code>value</code>を返す</entry>
      </row>
      
      <row>
       <entry><code>int Z_STRLEN(zval zv)</code></entry>
       <entry>value.str.len</entry>
-      <entry>return the length of the string <code>value</code></entry>
+      <entry>文字列<code>value</code>の文字数を返す</entry>
      </row>
      
      <row>
       <entry><code>HashTable* Z_ARRVAL(zval zv)</code></entry>
       <entry>value.ht</entry>
-      <entry>return the HashTable (array) <code>value</code></entry>
+      <entry>ハッシュテーブル（配列）の<code>value</code>を返す</entry>
      </row>
      
      <row>
       <entry><code>zend_object_value Z_OBJVAL(zval zv)</code></entry>
       <entry>value.obj</entry>
-      <entry>returns object <code>value</code></entry>
+      <entry>オブジェクトの<code>value</code>を返す</entry>
      </row>
      
      <row>
       <entry><code>uint Z_OBJ_HANDLE(zval zv)</code></entry>
       <entry>value.obj.handle</entry>
-      <entry>returns the object handle for object <code>value</code></entry>
+      <entry>オブジェクト<code>value</code>のオブジェクトハンドルを返す</entry>
      </row>
      
      <row>
       <entry><code>zend_object_handlers* Z_OBJ_HT_P(zval zv)</code></entry>
       <entry>value.obj.handlers</entry>
-      <entry>returns the handler table for object <code>value</code></entry>
+      <entry>オブジェクト<code>value</code>のハンドラテーブルを返す</entry>
      </row>
      
      <row>
       <entry><code>zend_class_entry* Z_OBJCE(zval zv)</code></entry>
       <entry>value.obj</entry>
-      <entry>returns the class entry for object <code>value</code></entry>
+      <entry>オブジェクト<code>value</code>のクラスエントリを返す</entry>
      </row>
      
      <row>
       <entry><code>HashTable* Z_OBJPROP(zval zv)</code></entry>
       <entry>value.obj</entry>
-      <entry>returns the properties of object <code>value</code></entry>
+      <entry>オブジェクト<code>value</code>のプロパティを返す</entry>
      </row>
      
      <row>
       <entry><code>HashTable* Z_OBJPROP(zval zv)</code></entry>
       <entry>value.obj</entry>
-      <entry>returns the properties of object <code>value</code></entry>
+      <entry>オブジェクト<code>value</code>のプロパティを返す</entry>
      </row>
      
      <row>
       <entry><code>HashTable* Z_OBJDEBUG(zval zv)</code></entry>
       <entry>value.obj</entry>
-      <entry>if an object has the get_debug_info handler set, it is called, else Z_OBJPROP is called</entry>
+      <entry>オブジェクトに get_debug_info ハンドラがセットされている
+      場合はそれが呼ばれ、そうでなければ Z_OBJPROP が呼ばれる</entry>
      </row>
      
     </tbody>
@@ -219,57 +229,58 @@ typedef union _zvalue_value {
   </table>
   
   <!-- this is not good enough information -->
-  <para>Please check the <xref linkend="features.gc.refcounting-basics"/> chapter for details how reference counting and references work in detail.</para>
+  <para><xref linkend="features.gc.refcounting-basics"/>の章をチェックして、
+  参照カウント法や参照がどのような仕組みで動いているのかを調べてみてください。</para>
   
   <table xml:id="internals2.variables.refcounts.api">
-   <title>Reference Count Manipulation</title>
+   <title>参照カウントの操作</title>
    <tgroup cols="2">
     <thead>
      <row>
-      <entry>Prototype</entry>
-      <entry>Description</entry>
+      <entry>プロトタイプ</entry>
+      <entry>説明</entry>
      </row>
     </thead>
     
     <tbody>
      <row>
       <entry><code>zend_uint Z_REFCOUNT(zval zv)</code></entry>
-      <entry>returns the reference count of the <code>value</code></entry>
+      <entry><code>value</code>の参照カウントを返す</entry>
      </row>
      
      <row>
       <entry><code>zend_uint Z_SET_REFCOUNT(zval zv)</code></entry>
-      <entry>sets the reference count of the <code>value</code>, returning it</entry>
+      <entry><code>value</code>の参照カウントをセットしてそれを返す</entry>
      </row>
      
      <row>
       <entry><code>zend_uint Z_ADDREF(zval zv)</code></entry>
-      <entry>pre-increments the reference count of <code>value</code>, returning it</entry>
+      <entry><code>value</code>の参照カウントを事前インクリメントしてそれを返す</entry>
      </row>
      
      <row>
       <entry><code>zend_uint Z_DELREF(zval zv)</code></entry>
-      <entry>pre-decrements the reference count of <code>value</code>, returning it</entry>
+      <entry><code>value</code>の参照カウントを事前デクリメントしてそれを返す</entry>
      </row>
      
      <row>
       <entry><code>zend_bool Z_ISREF(zval zv)</code></entry>
-      <entry>tells if the zval is a reference</entry>
+      <entry>zval が参照かどうかを返す</entry>
      </row>
      
      <row>
       <entry><code>void Z_UNSET_ISREF(zval zv)</code></entry>
-      <entry>set is_ref__gc to 0</entry>
+      <entry>is_ref__gc を 0 にする</entry>
      </row>
      
      <row>
       <entry><code>void Z_SET_ISREF(zval zv)</code></entry>
-      <entry>set is_ref__gc to 1</entry>
+      <entry>is_ref__gc を 1 にする</entry>
      </row>
      
      <row>
       <entry><code>void Z_SET_ISREF_TO(zval zv, zend_uchar to)</code></entry>
-      <entry>set is_ref__gc to <code>to</code></entry>
+      <entry>is_ref__gc を<code>to</code>にする</entry>
      </row>
      
     </tbody>
@@ -277,83 +288,100 @@ typedef union _zvalue_value {
   </table>
   
   <note>
-   <para>The Z_* macros above all take a zval, they are all defined again suffixed with _P to take a pointer to a zval, for example <code>zend_uchar Z_TYPE_P(zval* pzv)</code>, and again suffixed with _PP to take a pointer to a pointer to a zval, for example <code>zend_uchar Z_TYPE_PP(zval** ppzv)</code></para>
+   <para>
+   前述の Z_* マクロはどれも１個の zval を受け取りますが、これらに _P サフィックス
+   がついた、たとえば<code>zend_uchar Z_TYPE_P(zval* pzv)</code>のようなマクロも
+   定義されていて、これらはすべて zval へのポインタを受け取ります。さらに、たとえば
+   <code>zend_uchar Z_TYPE_PP(zval** ppzv)</code>のように _PP サフィックスがついた
+   ものもあり、これらは zval へのポインタのポインタを受け取ります。</para>
   </note>
   
   <table xml:id="internals2.variables.general.api">
-   <title>Creation, Destruction, Separation and Copying</title>
+   <title>生成、破壊、分割、コピー</title>
    <tgroup cols="2">
     <thead>
      <row>
-      <entry>Prototype</entry>
-      <entry>Description</entry>
+      <entry>プロトタイプ</entry>
+      <entry>説明</entry>
      </row>
     </thead>
     
     <tbody>
      <row>
       <entry><code>ALLOC_ZVAL(zval* pzval)</code></entry>
-      <entry>emallocs <code>pzval</code></entry>
+      <entry><code>pzval</code>を emalloc する</entry>
      </row>
      
      <row>
       <entry><code>ALLOC_INIT_ZVAL(zval* pzval)</code></entry>
-      <entry>emallocs <code>pzval</code>, and points <code>pzval</code> at a null typed zval for sanity</entry>
+      <entry><code>pzval</code>を emalloc し、<code>pzval</code>は初期化のために
+      NULL として型付けられた zval を指すようにする</entry>
      </row>
      
      <row>
       <entry><code>MAKE_STD_ZVAL(zval* pzval)</code></entry>
-      <entry>emallocs <code>pzval</code>, setting the refcount to <code>1</code></entry>
+      <entry><code>pzval</code>を emalloc し、参照カウントを
+      <code>1</code>にする</entry>
      </row>
      
      <row>
       <entry><code>ZVAL_COPY_VALUE(zval* dst, zval* src)</code></entry>
-      <entry>sets the value and type of <code>dst</code> from the value and type of <code>src</code></entry>
+      <entry><code>src</code>の値と型を<code>dst</code>の値と型としてセットする
+      </entry>
      </row>
      
      <row>
       <entry><code>INIT_PZVAL_COPY(zval* dst, zval*dst) </code></entry>
-      <entry>performs ZVAL_COPY_VALUE, setting refcount of <code>dst</code> to 1, and setting is_ref__gc to <code>0</code></entry>
+      <entry>ZVAL_COPY_VALUE を実行し、<code>dst</code>の参照カウントを 1 にし、
+      is_ref__gc を<code>0</code>にする</entry>
      </row>
      
      <row>
       <entry><code>SEPARATE_ZVAL(zval** ppzval)</code></entry>
-      <entry>if the refcount of <code>ppzval</code> is >1, redirects <code>*ppzval</code> to a newly emalloc'd, copied, and constructed zval of the same type and value</entry>
+      <entry><code>ppzval</code>の参照カウントが 1 より大きい場合、新たに emalloc 
+      して zval の中身をコピーし、zval と同じ型で同じ値にした場所を
+      <code>*ppzval</code>が指すようにする</entry>
      </row>
      
      <row>
       <entry><code>SEPARATE_ZVAL_IF_NOT_REF(zval** ppzval)</code></entry>
-      <entry>if <code>*ppzval</code> is not a reference, will perform SEPARATE_ZVAL on <code>ppzval</code></entry>
+      <entry><code>*ppzval</code>が参照ではない場合、<code>ppzval</code>に対して
+      SEPARATE_ZVAL を行う</entry>
      </row>
      
      <row>
       <entry><code>SEPARATE_ZVAL_TO_MAKE_IS_REF(zval** ppzval)</code></entry>
-      <entry>if <code>*ppzval</code> is not a reference, performs SEPARATE_ZVAL then Z_SET_ISREF_PP on <code>ppzval</code></entry>
+      <entry><code>*ppzval</code>が参照ではない場合、<code>ppzval</code>に対して
+      SEPARATE_ZVAL と Z_SET_ISREF_PP を行う</entry>
      </row>
      
      <row>
       <entry><code>COPY_PZVAL_TO_ZVAL(zval dst, zval** src)</code></entry>
-      <entry>results in <code>dst</code> being a copy of <code>src</code> without affecting the refcount of <code>src</code></entry>
+      <entry><code>src</code>の参照カウントを変更せずに、<code>dst</code>を
+      <code>src</code>のコピーにする</entry>
      </row>
      
      <row>
       <entry><code>MAKE_COPY_ZVAL(zval** src, zval* dst)</code></entry>
-      <entry>performs INIT_PZVAL_COPY, then zval_copy_ctor on the new zval</entry>
+      <entry>INIT_PZVAL_COPY を行い、新しい zval に対して zval_copy_ctor する
+      </entry>
      </row>
      
      <row>
       <entry><code>void zval_copy_ctor(zval** pzval)</code></entry>
-      <entry>performs maintenance of reference counts, used widely throughout the engine</entry>
+      <entry>参照カウントをメンテナンスする。エンジン全体を通して広く使われる。
+      </entry>
      </row>
      
      <row>
       <entry><code>void zval_ptr_dtor(zval* pzval)</code></entry>
-      <entry>decrements the refcount for the variable, if no refcounts remain the variable is destroyed</entry>
+      <entry>変数の参照カウントをデクリメントする。
+      参照カウントが 0 になったら変数は破壊される。</entry>
      </row>
      
      <row>
       <entry><code>FREE_ZVAL(zval* pzval)</code></entry>
-      <entry>efrees <code>pzval</code></entry>
+      <entry><code>pzval</code>を efree する</entry>
      </row>
      
     </tbody>
@@ -361,19 +389,29 @@ typedef union _zvalue_value {
   </table>
   
   <note>
-   <para>Objects and Resources have a reference count as part of their respective structures, when zval_ptr_dtor is called on either, their appropriate del_ref method is executed. See Working with Objects and Working with Resources for more information.</para>
+   <para>オブジェクトとリソースは、それぞれの構造体の一部として参照カウントを
+   持っています。これらについて zval_ptr_dtor が呼ばれると、それぞれにあった del_ref
+   が実行されます。詳細はオブジェクトの扱いとリソースの扱いを参照してください。
+   </para>
   </note>
   
-  <para>If the <code>Hacker</code> only has room to remember two more functions, they should be <code>zval_copy_ctor</code> and <code>zval_ptr_dtor</code>, these are at the basis of the engines reference counting mechanisms and it is important to note that <code>zval_copy_ctor</code> does not actually result in any copying occuring under normal circumstances, it simply increases the reference count. By the same token, <code>zval_ptr_dtor</code> only really destroys a variable when there are no references remaining to it and the refcount is at 0.</para>
+  <para>さらに<code>ハッカー</code>が知っておくべき機能をふたつだけ挙げるとすれば、
+  それは<code>zval_copy_ctor</code>と<code>zval_ptr_dtor</code>でしょう。これらは
+  エンジンにおける参照カウントメカニズムの基本です。重要なことは、通常の環境で
+  <code>zval_copy_ctor</code>が呼ばれても、実際には何も起こらないことです。
+  これは単に参照カウントを増やしているだけです。同様に、<code>zval_ptr_dtor</code>
+  が本当に変数を破壊するのは、それを参照するものがなくなって、参照カウントが 0 
+  になった時だけです。</para>
   
-  <para>PHP is weakly typed, as such the engine provides API functions for converting variables from one type to another.</para>
+  <para>PHP 自体は弱い型付けしか行いませんが、エンジンが変数の型を別の型にするための
+  API 関数を提供しています。</para>
   
   <table xml:id="internals2.variables.conversion.api">
-   <title>Type Conversion</title>
+   <title>型の変換</title>
    <tgroup cols="1">
     <thead>
      <row>
-      <entry>Prototype</entry>
+      <entry>プロトタイプ</entry>
      </row>
     </thead>
     <tbody>
@@ -415,37 +453,44 @@ typedef union _zvalue_value {
   </table>
   
   <note>
-   <para><code>convert_func_t</code> functions should have the prototype <code>(void) (zval* pzval)</code></para>
+   <para><code>convert_func_t</code> 関数には<code>(void) (zval* pzval)</code>
+   というプロトタイプが必要です。</para>
   </note>
   
-  <para>By now you should have a good understanding of: the types that are native to the engine, how to detect types and read zval values, how to manipulate refcounts, and other zval flags</para>
+  <para>ここまで読んでもらえたので、あなたはネイティブからエンジンまでの型、
+  型の検出とzval 値の読み取り方法、参照カウントや zval のフラグの操作等についての
+  理解が進んだはずです。</para>
   
  </section>
  
  <section xml:id="internals2.variables.arrays">
-  <title>Working with Arrays</title>
+  <title>配列の扱い</title>
   <para>
-   Arrays are stored in HashTable strucures, and have the zval type IS_ARRAY. The API functions for creating, destroying and manipulating these structures as variables are documented here and can be found in <code>Zend/zend_API.h</code>
+  配列は HashTable 構造体に格納され、zval の型は IS_ARRAY となります。ここでは、
+  これらの構造体を変数として作成したり破壊したり操作したりする API 関数について
+  説明します。これらの内容は <code>Zend/zend_API.h</code>でも確認できます。
   </para>
   
   <table xml:id="internals2.variables.arrays.api">
-   <title>HashTable as Variable API</title>
+   <title>変数としての HashTable の API</title>
    <tgroup cols="2">
     <thead>
      <row>
-      <entry>Prototype</entry>
-      <entry>Description</entry>
+      <entry>プロトタイプ</entry>
+      <entry>説明</entry>
      </row>
     </thead>
     <tbody>
      <row>
       <entry><code>void array_init(zval* pzval)</code></entry>
-      <entry>initializes the variable as a <code>HashTable</code>, setting type and appropriate destructor function for the <code>HashTable</code></entry>
+      <entry>変数を<code>HashTable</code>として初期化し、その<code>HashTable</code>
+      に対して型と適切なデストラクタ関数を設定する</entry>
      </row>
      
      <row>
       <entry><code>void array_init_size(zval* pzval)</code></entry>
-      <entry>initializes the variable as array_init with a minimum of <code>size</code> buckets</entry>
+      <entry>最小限<code>size</code>個の入れ物を用意して変数を array_init で初期化する
+      </entry>
      </row>
      
     </tbody>
@@ -453,15 +498,18 @@ typedef union _zvalue_value {
   </table>
   
   <note>
-   <para>Do not squint too hard looking for array_destroy: to destroy a variable array you should call <code>zval_ptr_dtor</code> on the variable, if there are no other references to the variable it will result in the array being destroyed.</para>
+   <para>何度も array_destroy を呼び出さないようにしてください。変数の配列を破壊
+   するには、その変数に対して<code>zval_ptr_dtor</code>をコールします。その変数
+   へのその他の参照がなくなった時点で、自動的にその配列の中身も破壊されます。
+   </para>
   </note>
   
   <table xml:id="internals2.variables.iarrays.api">
-   <title>Indexed Arrays API</title>
+   <title>インデックス配列用の API</title>
    <tgroup cols="1">
     <thead>
      <row>
-      <entry>Prototype</entry>
+      <entry>プロトタイプ</entry>
      </row>
     </thead>
     <tbody>
@@ -538,11 +586,11 @@ typedef union _zvalue_value {
   </table>
   
   <table xml:id="internals2.variables.aarrays.api">
-   <title>Associative Arrays API</title>
+   <title>連想配列用 API</title>
    <tgroup cols="1">
     <thead>
      <row>
-      <entry>Prototype</entry>
+      <entry>プロトタイプ</entry>
      </row>
     </thead>
     <tbody>
@@ -619,46 +667,62 @@ typedef union _zvalue_value {
   </table>
   
   <note>
-   <para>add_*_string functions that accept a parameter named duplicate, will duplicate the string with <code>estrndup</code> when <code>duplicate</code> is true</para>
+   <para>
+   duplicate という名前のパラメータを取る add_*_string 関数群は、<code>duplicate</code>
+   が真の場合、<code>estrndup</code>を使って文字列を複製します。</para>
   </note>
   
   <note>
-   <para>add_*_zval functions do not adjust the refcount of the <code>value</code> parameter</para>
+   <para>add_*_zval 関数は<code>value</code>パラメータの参照カウントを調整しません。
+   </para>
   </note>
   
   <para>
-   To perform more advanced operations on array variables we must use the HashTable API directly.
+  配列変数に対してさらに高度な操作をしたい場合、直接 HashTable API を使う必要があります。
   </para>
  </section>
  
  <section xml:id="internals2.variables.tables">
-  <title>Working with HashTable</title>
+  <title>HashTable の扱い</title>
   
-  <para>The <code>HashTable</code> structure serves many purposes in PHP and can be found everywhere, a good understanding of it's functionality is a preqrequisite of being a good <code>Hacker</code>.</para>
+  <para>PHP の内部で多くの役割を提供する<code>HashTable</code>構造体は至る所で
+  使われており、この機能を理解することはよい<code>ハッカー</code>になるための
+  必要条件です。</para>
   
-  <para>The <code>HashTable</code> implemented by the engine is a standard <code>HashTable</code>, that is to say, a key =&gt; value based store, where the keys are always strings, whose hashes are calculated with a built in hashing algorythim <code>zend_inline_hash_func(const char* key, uint length)</code>, which results in good distribution, and reasonable usage.</para>
+  <para>エンジンにおける<code>HashTable</code>の実装は標準の<code>HashTable</code>です。
+  つまりキー =&gt; 値をベースにした格納方式であり、キーは常に文字列で、そのハッシュ値は
+  ビルトインのハッシュアルゴリズム
+  <code>zend_inline_hash_func(const char* key, uint length)</code>により計算されます。
+  これは広く流通しており、妥当な利用法と言えます。</para>
   
-  <para>The internal structure and exact operation of <code>HashTable</code> is out of the scope of this document, this document serves to inform you of the API's available and how best to use them. For a more detailed picture of the HashTable see <code>Zend/zend_hash.h</code>.</para>
+  <para><code>HashTable</code>の内部構造や厳密な操作についてはこの文書の範疇を超えます。
+  この文書では API の入手や最適な利用法などについてご紹介しています。HashTable
+  に関する詳細な考え方等は<code>Zend/zend_hash.h</code>を参照してください。</para>
   
-  <para>Unless otherwise stated, these functions all return <code>FAILURE</code> if the requested operation fails for any reason, otherwise <code>SUCCESS</code> is returned.</para>
+  <para>特に記載のない限り、これらの関数は何らかの原因で要求した操作ができない場合
+  <code>FAILURE</code>を返し、そうでなければ<code>SUCCESS</code>を返します。</para>
   
   <note>
-   <para>It is important to remember that ordinarily <code>HashTable</code> API functions expect key lengths to be the length of the null terminated string, including the null termination, in other words they expect <code>strlen(key) + 1</code></para>
+   <para><code>HashTable</code> API 関数は通常、キーの長さは NULL で終端された文字列の
+   長さに等しいことを期待していることに気をつけてください。これには NULL 終端の分も
+   含みます。つまり、<code>strlen(key) + 1</code>を期待しているということです。</para>
   </note>
   
-  <para>Below are some typedefs you should know when interacting with <code>HashTable</code>. They are mostly self explanitory and will allow the <code>Hacker</code> to fully understand the prototypes below properly.</para>
+  <para><code>HashTable</code>を使う際に知っておくべき typedef 定義を以下に記載します。
+  これらのほとんどは定義そのものが説明のようになっているので、<code>ハッカー</code>
+  はこれらのプロトタイプを深く理解できるはずです。</para>
   
   <screen>
 <![CDATA[
-typedef ulong (*hash_func_t)(const char *arKey, uint nKeyLength); /* mostly redundant */
-typedef int  (*compare_func_t)(const void *, const void * TSRMLS_DC); /* comparison function */
-typedef void (*sort_func_t)(void *, size_t, register size_t, compare_func_t TSRMLS_DC); /* sorting function */
-typedef void (*dtor_func_t)(void *pDest); /* destructor function */
-typedef void (*copy_ctor_func_t)(void *pElement); /* copy constructor */
-typedef void (*copy_ctor_param_func_t)(void *pElement, void *pParam); /* copy with argument constructor */
-typedef int (*apply_func_t)(void *pDest TSRMLS_DC); /* apply function */
-typedef int (*apply_func_arg_t)(void *pDest, void *argument TSRMLS_DC); /* apply with argument function */
-typedef int (*apply_func_args_t)(void *pDest TSRMLS_DC, int num_args, va_list args, zend_hash_key *hash_key); /* apply with multiple arguments function */
+typedef ulong (*hash_func_t)(const char *arKey, uint nKeyLength); /* ほとんど冗長 */
+typedef int  (*compare_func_t)(const void *, const void * TSRMLS_DC); /* 比較関数 */
+typedef void (*sort_func_t)(void *, size_t, register size_t, compare_func_t TSRMLS_DC); /* ソート関数 */
+typedef void (*dtor_func_t)(void *pDest); /* デストラクタ関数 */
+typedef void (*copy_ctor_func_t)(void *pElement); /* コピーコンストラクタ */
+typedef void (*copy_ctor_param_func_t)(void *pElement, void *pParam); /* 引数付きのコピーコンストラクタ */
+typedef int (*apply_func_t)(void *pDest TSRMLS_DC); /* 適用関数 */
+typedef int (*apply_func_arg_t)(void *pDest, void *argument TSRMLS_DC); /* 関数引数付きの適用関数 */
+typedef int (*apply_func_args_t)(void *pDest TSRMLS_DC, int num_args, va_list args, zend_hash_key *hash_key); /* 複数の関数引数を伴う適用関数 */
 ]]>
   </screen>
   
@@ -671,7 +735,10 @@ typedef int (*apply_func_args_t)(void *pDest TSRMLS_DC, int num_args, va_list ar
      </row>
      
      <row>
-      <entry>Initializes the hash table to hold at least <code>size</code> elements, <code>hash</code> exists for historical reasons and is always ignored, <code>zend_inline_hash_func</code> is always used as the hashing function. <code>destructor</code> may be <code>NULL</code>.</entry>
+      <entry>ハッシュテーブルを初期化して、少なくとも<code>size</code>個の要素を
+      保持する。<code>hash</code>は歴史的な経緯により存在するだけで常に無視される。
+      <code>zend_inline_hash_func</code>が常にハッシュ関数として使われる。
+      <code>destructor</code>は<code>NULL</code>でもよい。</entry>
      </row>
      
      <row>
@@ -679,7 +746,9 @@ typedef int (*apply_func_args_t)(void *pDest TSRMLS_DC, int num_args, va_list ar
      </row>
      
      <row>
-      <entry>adds <code>data</code> to the table using the specified <code>key</code>, where the key  is <code>length</code> bytes long (and will be copied from <code>key</code> to the table). If the key is set FAILURE will be returned.</entry>
+      <entry>指定された<code>key</code>を使ってテーブルに<code>data</code>を追加する。
+      キーは<code>length</code>バイトの長さを持つ（そして<code>key</code>からテーブル
+      にコピーされる）。キーが存在すると FAILURE が返される。</entry>
      </row>
      
      <row>
@@ -687,7 +756,10 @@ typedef int (*apply_func_args_t)(void *pDest TSRMLS_DC, int num_args, va_list ar
      </row>
      
      <row>
-      <entry>adds <code>data</code> to the table using the specified <code>key</code>, where the key  is <code>length</code> bytes long (and will be copied from <code>key</code> to the table). If the key has been set previously the old data has <code>dtor_func_t</code> called on it and the existing data is replaced with <code>data</code></entry>
+      <entry>指定された<code>key</code>を使ってテーブルに<code>data</code>を追加する。
+      キーは<code>length</code>バイトの長さを持つ（そして<code>key</code>からテーブル
+      にコピーされる）。キーが存在した場合、古いデータに対して<code>dtor_func_t</code>
+      が呼ばれ、既存のデータは<code>data</code>で上書きされる。</entry>
      </row>
      
      <row>
@@ -695,7 +767,8 @@ typedef int (*apply_func_args_t)(void *pDest TSRMLS_DC, int num_args, va_list ar
      </row>
      
      <row>
-      <entry>searches the table for <code>key</code>, setting <code>*data</code> and returning SUCCESS if it is found.</entry>
+      <entry>テーブルを<code>key</code>で検索し、見つかったら<code>*data</code>
+      をセットして SUCCESS を返す。</entry>
      </row>
      
      <row>
@@ -703,7 +776,7 @@ typedef int (*apply_func_args_t)(void *pDest TSRMLS_DC, int num_args, va_list ar
      </row>
      
      <row>
-      <entry>returns positively if <code>key</code> is found in <code>ht</code></entry>
+      <entry><code>ht</code>に<code>key</code>があれば正の値を返す。</entry>
      </row>
      
      <row>
@@ -711,7 +784,7 @@ typedef int (*apply_func_args_t)(void *pDest TSRMLS_DC, int num_args, va_list ar
      </row>
      
      <row>
-      <entry>removes the entry identified by <code>key</code> from the table if found</entry>
+      <entry>テーブル内に<code>key</code>で特定されるエントリがあれば削除する。</entry>
      </row>
      
      <row>
@@ -719,7 +792,8 @@ typedef int (*apply_func_args_t)(void *pDest TSRMLS_DC, int num_args, va_list ar
      </row>
      
      <row>
-      <entry>updates the entry at <code>index</code> in <code>ht</code>, with the data at <code>data</code></entry>
+      <entry><code>ht</code>の中の<code>index</code>で指定されたエントリのデータを
+      <code>data</code>で更新する。</entry>
      </row>
      
      <row>
@@ -727,7 +801,8 @@ typedef int (*apply_func_args_t)(void *pDest TSRMLS_DC, int num_args, va_list ar
      </row>
      
      <row>
-      <entry>deletes the entry at <code>index</code> from <code>ht</code></entry>
+      <entry><code>ht</code>から<code>index</code>で指定されたエントリを削除する。
+      </entry>
      </row>
      
      <row>
@@ -735,7 +810,8 @@ typedef int (*apply_func_args_t)(void *pDest TSRMLS_DC, int num_args, va_list ar
      </row>
      
      <row>
-      <entry>redirects <code>*data</code> to the data identified by <code>index</code> in <code>ht</code></entry>
+      <entry><code>ht</code>の中で<code>index</code>で指定されたデータを
+      <code>*data</code>にリダイレクトする。</entry>
      </row>
      
      <row>
@@ -743,7 +819,7 @@ typedef int (*apply_func_args_t)(void *pDest TSRMLS_DC, int num_args, va_list ar
      </row>
      
      <row>
-      <entry>returns positively if <code>index</code> is found in <code>ht</code></entry>
+      <entry><code>ht</code>に<code>index</code>があれば正の値を返す。</entry>
      </row>
      
      <row>
@@ -751,7 +827,7 @@ typedef int (*apply_func_args_t)(void *pDest TSRMLS_DC, int num_args, va_list ar
      </row>
      
      <row>
-      <entry>returns the index of the next free element in <code>ht</code></entry>
+      <entry><code>ht</code>の中で次に利用可能な要素のインデックスを返す。</entry>
      </row>
      
     </tbody>
@@ -759,68 +835,85 @@ typedef int (*apply_func_args_t)(void *pDest TSRMLS_DC, int num_args, va_list ar
   </table>
   
   <caution>
-   <para>zend_hash_* functions that accept <code>void* data</code> should normally cast it to <code>(void**)</code> (ie, <code>(void**) &amp;data</code>)</para>
+   <para>zend_hash_* 関数のうち<code>void* data</code>を受け付けるものは、
+   通常それを<code>(void**)</code> (すなわち<code>(void**) &amp;data</code>)に
+   キャストしなければいけません。</para>
   </caution>
   
-  <para>Traversing the HashTable is often necessary, to do this you provide a pointer to a <code>HashTable</code>, with an optional <code>HashPosition</code> - a structure internal to the HashTable API that allows traversal not to affect the internal position of HashTable. The following traversal functions are provided, and an example usage found below.</para>
+  <para>HashTable の中を行き来しなければならない場合も少なくありません。
+  これを行うには、<code>HashTable</code>へのポインタに加えて<code>HashPosition</code>
+  オプションを指定します。これは HashTable API への内部構造であり、HashTable の
+  内部位置に影響を与えずに内部を移動できるようになります。以下の移動用関数が提供
+  されており、以下にその利用例を示します。</para>
   
   <table xml:id="internals2.variables.trarrays.api">
-   <title>HashTable Traversal API</title>
+   <title>HashTable 内の移動 API</title>
    <tgroup cols="1">
     <tbody>
      <row>
       <entry><code>int zend_hash_internal_pointer_reset(HashTable* ht)</code></entry>
      </row>
      <row>
-      <entry>resets the internal pointer of <code>ht</code> to the start</entry>
+      <entry><code>ht</code>の内部ポインタを開始位置にリセットする。</entry>
      </row>
      <row>
       <entry><code>int zend_hash_internal_pointer_reset_ex(HashTable* ht, HashPosition position)</code></entry>
      </row>
      <row>
-      <entry>sets <code>position</code> the the start of <code>ht</code></entry>
+      <entry><code>position</code>を<code>ht</code>の開始位置にセットする。</entry>
      </row>
      <row>
       <entry><code>int zend_hash_get_current_data(HashTable* ht, void* data)</code></entry>
      </row>
      <row>
-      <entry>gets the data at the current position in <code>ht</code>, <code>data</code> should be cast to <code>void**</code>, ie: <code>(void**) &amp;data</code></entry>
+      <entry><code>ht</code>の現在位置にあるデータを取得する。<code>data</code>
+      は<code>void**</code>にキャストしなければならない
+      （すなわち<code>(void**) &amp;data</code>）。</entry>
      </row>
      <row>
       <entry><code>int zend_hash_get_current_data_ex(HashTable* ht, void* data, HashPosition position)</code></entry>
      </row>
      <row>
-      <entry>sets <code>data</code> to the data at <code>position</code> in <code>ht</code></entry>
+      <entry><code>ht</code>の中で<code>data</code>を<code>position</code>
+      の位置にセットする。</entry>
      </row>
      <row>
       <entry><code>int zend_hash_get_current_key(HashTable* ht, void* data, char**key, uint klen, ulong index, zend_bool duplicate)</code></entry>
      </row>
      <row>
-      <entry>sets <code>key</code>, <code>klen</code>, and <code>index</code> from the key information at the current position. The possible return values HASH_KEY_IS_STRING and HASH_KEY_IS_LONG are indicative of the kind of key found at the current posision.</entry>
+      <entry>現在位置のキーの情報から <code>key</code>, <code>klen</code>, 
+       <code>index</code> を取得する。戻り値として HASH_KEY_IS_STRING や
+       HASH_KEY_IS_LONG が返される場合があるが、これは現在位置にその種類のキーが
+       あったことを表している。</entry>
      </row>
      <row>
       <entry><code>int zend_hash_get_current_key_ex(HashTable* ht, void* data, char**key, uint klen, ulong index, zend_bool duplicate, HashPosition position)</code></entry>
      </row>
      <row>
-      <entry>sets <code>key</code>, <code>klen</code>, and <code>index</code> from the key information at <code>position</code>. The possible return values <code>HASH_KEY_IS_STRING</code> and <code>HASH_KEY_IS_LONG</code> are indicative of the kind of key found at <code>position</code>.</entry>
+      <entry><code>position</code>位置のキーの情報から <code>key</code>, 
+       <code>klen</code>, <code>index</code> を取得する。戻り値として
+       HASH_KEY_IS_STRING や HASH_KEY_IS_LONG が返される場合があるが、
+       これは現在位置にその種類のキーがあったことを表している。</entry>
      </row>
      <row>
       <entry><code>int zend_hash_move_forward(HashTable* ht)</code></entry>
      </row>
      <row>
-      <entry>moves the internal pointer of <code>ht</code> to the next entry in <code>ht</code></entry>
+      <entry><code>ht</code>の内部ポインタを<code>ht</code>内の次のエントリに動かす。
+      </entry>
      </row>
      <row>
       <entry><code>int zend_hash_move_forward_ex(HashTable* ht, HashPosition position)</code></entry>
      </row>
      <row>
-      <entry>moves <code>position</code> to the next entry in <code>ht</code> </entry>
+      <entry><code>position</code>を<code>ht</code>内の次のエントリに動かす。</entry>
      </row>
     </tbody>
    </tgroup>
   </table>
   
-  <para>The functions above allow traversal over a <code>HashTable</code> to be much like a normal loop, which will look something like:</para>
+  <para>前述の関数は、<code>HashTable</code>内部を通常のループのように移動できます。
+  たとえば以下のように使います。</para>
   
   <screen>
 <![CDATA[
@@ -831,33 +924,42 @@ for (zend_hash_internal_pointer_reset_ex(ht, &position);
      zend_hash_get_current_data_ex(ht, (void**) &data, &position) == SUCCESS;
      zend_hash_move_forward_ex(ht, &position)) {
      
-     /* by now we have data set and can use Z_ macros for accessing type and variable data */
+     /* ここではすでにデータがセットされているので、
+         Z_ マクロを使って型や変数データにアクセスできます。 */
 
      char *key = NULL;
      uint  klen;
      ulong index;
 
      if (zend_hash_get_current_key_ex(ht, &key, &klen, &index, 0, &position) == HASH_KEY_IS_STRING) {
-         /* the key is a string, key and klen will be set */
+         /* キーは文字列で、key と klen がセットされます */
      } else {
-         /* we assume the key to be long, index will be set */
+         /* キーを long 値とみなし、index がセットされます */
      }
 }
 ]]>
   </screen>
   
   <note>
-   <para>If a <code>HashTable</code> has been passed into the engine, it is a good idea to use the zend_hash_*_ex API to avoid unexpected behaviour in userland.</para>
+   <para><code>HashTable</code>をエンジンに渡した場合、意図しない事態にならないように、
+   ユーザーランドでは zend_hash_*_ex API を使うとよいでしょう。</para>
   </note>
   
   <note>
-   <para>If a <code>duplicate</code> of the key is requested and <code>HAS_KEY_IS_STRING</code> is returned the caller must <code>efree</code> the duplicated key</para>
+   <para>キーの<code>duplicate</code>を要求して<code>HAS_KEY_IS_STRING</code>
+   が返された場合、呼び出し元は重複キーを<code>efree</code>しなければなりません。
+   </para>
   </note>
   
-  <para>In addition to traversal, the engine provides API functions for merging, copying, and comparing HashTables. These are all concepts that the <code>Hacker</code> should be familiar with. A concept possibly not in the repertoire of the <code>Hacker</code> is <code>applying</code>, which is lamens terms is functionality of the <code>HashTable</code> API allowing the <code>Hacker</code> to pass a callback function to be executed on every entry in a <code>HashTable</code>.</para>
+  <para>内部移動以外にも、エンジンではハッシュテーブルのマージ、コピー、比較といった
+  API を提供しています。<code>ハッカー</code>はこれらのどの概念にも精通して
+  いなければなりません。
+  関数の適用 (<code>apply</code>) という概念にはなじみがない人もいるかもしれません。
+  要するにこれは、<code>HashTable</code> API の機能を使ってコールバック関数を渡して、
+  <code>HashTable</code>中のすべてのエントリでそれを実行させる仕組みのことです。</para>
   
   <table xml:id="internals2.variables.coparrays.api">
-   <title>Copying, Merging and Sorting</title>
+   <title>コピー、マージ、ソート</title>
    <tgroup cols="1">
     <tbody>
      <row>
@@ -865,7 +967,9 @@ for (zend_hash_internal_pointer_reset_ex(ht, &position);
      </row>
      
      <row>
-      <entry>Copies the contents of <code>source</code> to <code>target</code>. <code>tmp</code> should be an unallocated temporary pointer of the appropriate type, used during copying. <code>size</code> is the size of each element.</entry>
+      <entry><code>source</code>の中身を<code>target</code>にコピーする。
+      <code>tmp</code>にはコピーの中で使われる領域確保されていない適切な型の
+      ポインタを、<code>size</code>には各要素の個数を指定する。</entry>
      </row>
      
      <row>
@@ -873,7 +977,8 @@ for (zend_hash_internal_pointer_reset_ex(ht, &position);
      </row>
      
      <row>
-      <entry>Merges the contents of <code>source</code> into <code>destination</code>, replacing existing entries only where <code>overwrite</code> is true.</entry>
+      <entry><code>source</code>の中身を<code>destination</code>にマージする。
+      <code>overwrite</code>が真の場合、既存のエントリを置き換える。</entry>
      </row>
      
      <row>
@@ -881,7 +986,8 @@ for (zend_hash_internal_pointer_reset_ex(ht, &position);
      </row>
      
      <row>
-      <entry><code>renumber</code> controls if indexes should be preserved, see the typedefs at the start of this section for more information</entry>
+      <entry><code>renumber</code>はインデックスを保持するかどうかを制御する。
+      詳細はこの章の最初に出てきた typedef を参照のこと。</entry>
      </row>
      
     </tbody>
@@ -889,14 +995,17 @@ for (zend_hash_internal_pointer_reset_ex(ht, &position);
   </table>
   
   <note>
-   <para>When a function accepts a <code>copy_ctor_func_t pCopyConstructor</code>, the function passed with be executed upon creation of every new entry in the <code>HashTable</code>. The most common copy constructor used within the engine is a wrapper around <code>zval_copy_ctor</code>, the macro <code>ZVAL_COPY_CTOR</code>.
+   <para>ある関数が<code>copy_ctor_func_t pCopyConstructor</code>を受け付ける場合、
+   一緒に渡された関数は<code>HashTable</code>内で新しいエントリが生成されるたびに
+   実行されます。エンジン内で使われる通常のコピーコンストラクタのほとんどは、
+   <code>ZVAL_COPY_CTOR</code>マクロの<code>zval_copy_ctor</code>のラッパーです。
    </para>
   </note>
   
  </section>
  
  <section xml:id="internals2.variables.objects">
-  <title>Working with Objects</title>
+  <title>オブジェクトの扱い</title>
   <para>
    <!-- ... -->
   </para>
