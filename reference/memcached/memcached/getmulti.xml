@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: d23298a70c0a1a48402844e0a6b818de27feb146 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 7e2f7b05e2fcb759e22e98bd5033a4baf5fb6789 Maintainer: takagi Status: ready -->
 
 <refentry xml:id="memcached.getmulti" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -13,30 +13,31 @@
   <methodsynopsis>
    <modifier>public</modifier> <type>mixed</type><methodname>Memcached::getMulti</methodname>
    <methodparam><type>array</type><parameter>keys</parameter></methodparam>
-   <methodparam choice="opt"><type>array</type><parameter role="reference">cas_tokens</parameter></methodparam>
    <methodparam choice="opt"><type>int</type><parameter>flags</parameter></methodparam>
   </methodsynopsis>
   <para>
    <function>Memcached::getMulti</function> は
    <methodname>Memcached::get</methodname> と似ていますが、ひとつのキーのアイテムを取得するのではなく
    <parameter>keys</parameter> 配列で指定したキー群から複数のアイテムを取得します。
-   <parameter>cas_tokens</parameter> 変数を指定した場合は、取得したアイテムの
-   CAS トークンの値をそこに格納します。
    <note>
     <para>
-     <methodname>Memcached::get</methodname> とは異なり、
-     <function>Memcached::getMulti</function> では
-     read-through キャッシュコールバックを指定することができません。
-     memcache プロトコルでは、複数キーのリクエストでどのキーが見つからなかったのかを知る手段がないからです。
+     v3.0 より前のバージョンでは、二番目のパラメータ <parameter role="reference">cas_tokens</parameter>
+     が存在して、見つかったアイテムの CAS トークンが書き込まれるようになっていました。
+     この <parameter role="reference">cas_tokens</parameter> パラメータは memcached 拡張モジュールの
+     v3.0 で削除されました。
+     その代わりに追加されたのが <constant>Memcached::GET_EXTENDED</constant> フラグで、
+     これを <parameter>flags</parameter> に指定すれば CAS トークンを得られます。
     </para>
    </note>
   </para>
   <para>
    <parameter>flags</parameter> パラメータを使用して、
    <function>Memcached::getMulti</function>
-   用の追加のオプションを設定します。現在使用可能なオプションは
-   <constant>Memcached::GET_PRESERVE_ORDER</constant> だけで、
-   これは要求したのと同じ順番でキーが返されることを保障します。
+   用の追加のオプションを設定します。
+   <constant>Memcached::GET_PRESERVE_ORDER</constant>
+   は、要求したのと同じ順番でキーが返されることを保証します。
+   <constant>Memcached::GET_EXTENDED</constant>
+   は、CAS トークンも含めて返すようにします。
   </para>
  </refsect1>
 
@@ -49,14 +50,6 @@
      <listitem>
       <para>
        取得したいキーの配列。
-      </para>
-     </listitem>
-    </varlistentry>
-    <varlistentry>
-     <term><parameter>cas_tokens</parameter></term>
-     <listitem>
-      <para>
-       見つかったアイテムの CAS トークンを格納する変数。
       </para>
      </listitem>
     </varlistentry>
@@ -84,10 +77,48 @@
   &reftitle.examples;
   <para>
    <example>
-    <title><function>Memcached::getMulti</function> の例</title>
+    <title><function>Memcached::getMulti</function> example for Memcached v3</title>
     <programlisting role="php">
 <![CDATA[
 <?php
+// Valid for v3 of the extension
+
+$m = new Memcached();
+$m->addServer('localhost', 11211);
+
+$items = array(
+    'key1' => 'value1',
+    'key2' => 'value2',
+    'key3' => 'value3'
+);
+$m->setMulti($items);
+$result = $m->getMulti(array('key1', 'key3', 'badkey'));
+var_dump($result);
+?>
+]]>
+    </programlisting>
+    &example.outputs.similar;
+    <screen>
+<![CDATA[
+array(2) {
+  ["key1"]=>
+  string(6) "value1"
+  ["key3"]=>
+  string(6) "value3"
+}
+]]>
+    </screen>
+   </example>
+  </para>
+
+  <para>
+   <example>
+    <title><function>Memcached::getMulti</function> example for Memcached v1 and v2</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+// Valid for v1 and v2 of the extension
+
 $m = new Memcached();
 $m->addServer('localhost', 11211);
 
@@ -121,12 +152,60 @@ array(2) {
     </screen>
    </example>
   </para>
+
   <para>
    <example>
-    <title><constant>Memcached::GET_PRESERVE_ORDER</constant> の例</title>
+    <title>Memcached v3 用の <constant>Memcached::GET_PRESERVE_ORDER</constant> の例</title>
     <programlisting role="php">
 <![CDATA[
 <?php
+// Valid for v3 of the extension
+
+$m = new Memcached();
+$m->addServer('localhost', 11211);
+
+$data = array(
+    'foo' => 'foo-data',
+    'bar' => 'bar-data',
+    'baz' => 'baz-data',
+    'lol' => 'lol-data',
+    'kek' => 'kek-data',
+);
+
+$m->setMulti($data, 3600);
+
+$keys = array_keys($data);
+$keys[] = 'zoo';
+$got = $m->getMulti($keys, Memcached::GET_PRESERVE_ORDER);
+
+foreach ($got as $k => $v) {
+    echo "$k $v\n";
+}
+?>
+]]>
+    </programlisting>
+    &example.outputs.similar;
+    <screen>
+<![CDATA[
+foo foo-data
+bar bar-data
+baz baz-data
+lol lol-data
+kek kek-data
+zoo 
+]]>
+    </screen>
+   </example>
+  </para>
+
+  <para>
+   <example>
+    <title>Memcached v1 および v2 用の <constant>Memcached::GET_PRESERVE_ORDER</constant> の例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+// Valid for v1 and v2 of the extension
+
 $m = new Memcached();
 $m->addServer('localhost', 11211);
 
@@ -164,6 +243,29 @@ zoo
     </screen>
    </example>
   </para>
+ </refsect1>
+
+ <refsect1 role="changelog">
+  &reftitle.changelog;
+  <informaltable>
+   <tgroup cols="2">
+    <thead>
+     <row>
+      <entry>&Version;</entry>
+      <entry>&Description;</entry>
+     </row>
+    </thead>
+    <tbody>
+     <row>
+      <entry>3.0.0</entry>
+      <entry>
+       <parameter role="reference">cas_tokens</parameter> パラメータが削除されました。
+       <constant>Memcached::GET_EXTENDED</constant> が追加され、これをフラグとして渡すと CAS トークンも取得するようになりました。
+      </entry>
+     </row>
+    </tbody>
+   </tgroup>
+  </informaltable>
  </refsect1>
 
  <refsect1 role="seealso">
