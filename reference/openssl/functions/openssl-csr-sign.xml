@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: e41aab5ecacf449e51179886c17f1d41735b0234 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 8fdb77c6032ddfd31031df8f1e1f080a66a11880 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi -->
 <refentry xmlns="http://docbook.org/ns/docbook" xml:id="function.openssl-csr-sign">
  <refnamediv>
   <refname>openssl_csr_sign</refname>
-  <refpurpose>他の CERT（あるいは自分自身）で証明書をサインする</refpurpose>
+  <refpurpose>CSRに他の証明書（あるいは自分自身）で署名して証明書を作成する</refpurpose>
  </refnamediv>
  
  <refsect1 role="description">
@@ -34,10 +34,9 @@
      <term><parameter>csr</parameter></term>
      <listitem>
       <para>
-       <function>openssl_csr_new</function> で作成した CSR。
-       <filename>file://path/to/csr</filename> 、あるいは
-       <function>openssl_csr_export</function> で生成した文字列で指定した場合は
-       PEM エンコードされた CSR も使用可能です。
+       事前に <function>openssl_csr_new</function> で作成した CSR。
+       <filename>file://path/to/csr</filename> のように指定された PEM エンコードされた CSR へのパス、
+       あるいは <function>openssl_csr_export</function> で生成した文字列も使用可能です。
       </para>
      </listitem>
     </varlistentry>
@@ -110,20 +109,20 @@
 // CSR を利用すると仮定します。
 $csrdata = $_POST["CSR"];
 
-// これから、私たち自身 "certificate authority" 証明書を使用して
-// 署名を行います。どんな証明書でも署名は可能ですが、署名された
-// 証明書がソフトウェアやユーザーに信頼されない限り、その手続きは
-// 無意味です。
+// ここでは自己認証局の証明書を用いて署名要求に署名します。
+// どんな証明書でも署名は可能ですが、署名に用いる証明書が
+// 新たに署名される証明書を取り扱うであろうソフトウェアや
+// ユーザーらに信頼されていない限り、その手続きは無意味です。
 
-// CA cert および秘密鍵が必要です。
+// 自己認証局証明書とその秘密鍵が必要です。
 $cacert = "file://path/to/ca.crt";
 $privkey = array("file://path/to/ca.key", "your_ca_key_passphrase");
 
-$usercert = openssl_csr_sign($csrdata, $cacert, $privkey, 365);
+$usercert = openssl_csr_sign($csrdata, $cacert, $privkey, 365, array('digest_alg'=>'sha256') );
 
-// 作成された証明書を表示します。これをコピーして、
-// ローカル設定（たとえば SSL サーバーへの接続設定ファイルなど）
-// に貼り付けます。
+// ユーザーがローカル設定（SSL サーバー用の証明書
+// ファイルなど）にコピー＆ペーストできるように
+// 作成された証明書をそのまま表示します。
 openssl_x509_export($usercert, $certout);
 echo $certout;
 
