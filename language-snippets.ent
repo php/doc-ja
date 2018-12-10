@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: b96bdc3d45e1f79bf61d6025a267dddcb05e3904 Maintainer: takagi Status: working -->
+<!-- EN-Revision: ca35bb0ee60fdbf44956427c44c4eee7b1ea0fdb Maintainer: takagi Status: working -->
 <!-- Credits: hirokawa,haruki,shimooka -->
 
 <!ENTITY changelog.randomseed '<row xmlns="http://docbook.org/ns/docbook"><entry>4.2.0</entry><entry>
@@ -810,6 +810,12 @@ imap_stream</parameter></term><listitem><para><function>imap_open</function>
 &apos;<literal>~/mail/&#37;</literal>&apos; は
 <filename>~/mail</filename> ディレクトリ内のすべてのメールボックスを返しますが、
 そのディレクトリのサブフォルダにあるメールボックスは返しません。</para>'>
+
+<!ENTITY imap.mailboxname.insecure '<warning xmlns="http://docbook.org/ns/docbook"><simpara>
+信頼できないデータをこのパラメータに渡すのであれば、
+<link linkend="ini.imap.enable-insecure-rsh">imap.enable_insecure_rsh</link>
+を無効にしておかなければ<emphasis>危険</emphasis>です。
+</simpara></warning>'>
 
 <!-- intl notes -->
 
@@ -1660,17 +1666,7 @@ xattr はデフォルトでユーザー名前空間で処理を行いますが�
 </literal> で追加されました。</simpara></note>'>
 
 <!-- Notes for tidy -->
-<!ENTITY note.tidy.ze2 '<note xmlns="http://docbook.org/ns/docbook"><simpara>この関数は、Zend Engine 2、つまり、PHP
-&gt;= 5.0.0でのみ利用可能です。</simpara></note>'>
-
 <!ENTITY tidy.object '<classname xmlns="http://docbook.org/ns/docbook">Tidy</classname> オブジェクト。'>
-
-<!ENTITY note.tidy.1only '<note xmlns="http://docbook.org/ns/docbook"><simpara>この関数は、Tidy 1.0 でのみ利用可能です。
-この関数は、Tidy 2.0 では古い関数として削除されているためです。</simpara></note>'>
-
-<!ENTITY note.tidy.2only '<note xmlns="http://docbook.org/ns/docbook"><simpara>オプションのパラメータ
-<literal>config_options</literal> と <literal>enconding</literal> は
-Tidy 2.0 で追加されました。</simpara></note>'>
 
 <!ENTITY tidy.conf-enc '<para xmlns="http://docbook.org/ns/docbook"><parameter>config</parameter>パラメータは、配列または
 文字列として指定することができます。文字列として指定した場合には設定ファイルの名前として解釈され、
@@ -2285,6 +2281,20 @@ xmlns="http://docbook.org/ns/docbook">この拡張モジュールは非推奨で
           </entry>
          </row>
 '>
+<!-- to be translated -->
+<!ENTITY mongodb.option.transactionReadWriteConcern '
+     <warning xmlns="http://docbook.org/ns/docbook">
+      <para>
+       If you are using a <literal>"session"</literal> which has a transaction
+       in progress, you cannot specify a <literal>"readConcern"</literal> or
+       <literal>"writeConcern"</literal> option. This will result in an
+       <classname>MongoDB\Driver\Exception\InvalidArgumentException</classname>
+       being thrown. Instead, you should set these two options when you create
+       the transaction with
+       <methodname>MongoDB\Driver\Session::startTransaction</methodname>.
+      </para>
+     </warning>
+'>
 <!ENTITY mongodb.option.writeConcern '
          <row xmlns="http://docbook.org/ns/docbook">
           <entry>writeConcern</entry>
@@ -2380,6 +2390,7 @@ xmlns="http://docbook.org/ns/docbook">この拡張モジュールは非推奨で
 <!ENTITY mongodb.throws.std '&mongodb.throws.argumentparsing;&mongodb.throws.connection;&mongodb.throws.authentication;'>
 
 <!-- to be translated -->
+<!ENTITY mongodb.throws.session-readwriteconcern '<member xmlns="http://docbook.org/ns/docbook">Throws <classname>MongoDB\Driver\Exception\InvalidArgumentException</classname> if the <literal>"session"</literal> option is used with an associated transaction in combination with a <literal>"readConcern"</literal> or <literal>"writeConcern"</literal> option.</member>'>
 <!ENTITY mongodb.throws.session-unacknowledged '<member xmlns="http://docbook.org/ns/docbook">Throws <classname>MongoDB\Driver\Exception\InvalidArgumentException</classname> if the <literal>"session"</literal> option is used in combination with an unacknowledged write concern.</member>'>
 
 <!ENTITY mongodb.throws.bulkwriteexception '<member xmlns="http://docbook.org/ns/docbook">書き込みが失敗した場合 (書き込み先の適用に失敗した場合など) に <classname>MongoDB\Driver\Exception\BulkWriteException</classname> をスローします。</member>'>
@@ -2398,6 +2409,21 @@ xmlns="http://docbook.org/ns/docbook">この拡張モジュールは非推奨で
      BSON 型でこれを使おうとすると、エラーが発生します。
     </simpara>
    </note>
+'>
+<!-- to be translated -->
+<!ENTITY mongodb.note.extended-json '
+  <note xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+   <simpara>
+    The output is consistent with the <function>MongoDB\BSON\toJSON</function>
+    function, which uses the driver-specific legacy extended JSON format. This
+    does not necessarily match the
+    <link xlink:href="&url.mongodb.specs.extendedjson;#relaxed-extended-json-example">relaxed</link>
+    or <link xlink:href="&url.mongodb.specs.extendedjson;#canonical-extended-json-example">canonical</link>
+    extended JSON representations used by
+    <function>MongoDB\BSON\toRelaxedExtendedJSON</function> and
+    <function>MongoDB\BSON\toCanonicalExtendedJSON</function>, respectively.
+   </simpara>
+  </note>
 '>
 <!ENTITY mongodb.note.forking '
    <note xmlns="http://docbook.org/ns/docbook">
@@ -2531,18 +2557,20 @@ xmlns="http://docbook.org/ns/docbook">この拡張モジュールは非推奨で
 <para xmlns="http://docbook.org/ns/docbook">
  この関数が使う不規則性のソースはつぎのとおりです。
 </para>
-<itemizedlist xmlns="http://docbook.org/ns/docbook">
+<itemizedlist xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <listitem>
   <simpara>
    Windows では、常に
-   <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="&url.csprng.crypt-gen-random;"><function>CryptGenRandom</function></link>
-   を使います。
+   <link xlink:href="&url.csprng.crypt-gen-random;"><function>CryptGenRandom</function></link>
+   を使います。PHP 7.2.0 以降は、常に
+   <link xlink:href="&url.csprng.cng-api;">CNG-API</link>
+   を使うようになりました。
   </simpara>
  </listitem>
  <listitem>
   <simpara>
    Linux では、システムコール
-   <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="&url.csprng.get-random-2;">getrandom(2)</link>
+   <link xlink:href="&url.csprng.get-random-2;">getrandom(2)</link>
    があればそれを使います。
   </simpara>
  </listitem>
