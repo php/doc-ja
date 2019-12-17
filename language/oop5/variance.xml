@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision$ -->
+<!-- EN-Revision: a2063d133694286a06fc7cbbd73684c49dc1accb Maintainer: mumumu Status: ready -->
+<sect1 xml:id="language.oop5.variance" xmlns="http://docbook.org/ns/docbook">
+
+ <title>共変性と反変性</title>
+
+ <para>
+  PHP 7.4.0 以降では、共変性 と 反変性 の概念がサポートされています。
+  一方でこれらはややこしく <emphasis>聞こえる</emphasis>
+  かもしれませんが、実際はかなり単純、かつオブジェクト指向プログラミングに非常に役立つものです。
+ </para>
+
+ <sect2 xml:id="language.oop5.variance.covariance">
+  <title>共変性</title>
+
+  <para>
+   共変性
+   とは、子クラスのメソッドが、親クラスの返り値よりも、より特定の、狭い型を返すことを許すことです。
+   これは、例で示したほうが良いでしょう。
+  </para>
+
+  <para>
+   単純な抽象クラスの親である<varname>Animal</varname> から始めましょう。  
+   このクラスは子クラス <varname>Cat</varname> と <varname>Dog</varname>
+   に継承されています。
+  </para>
+
+  <informalexample>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+abstract class Animal
+{
+    protected string $name;
+
+    public function __construct(string $name)
+    {
+        $this->name = $name;
+    }
+
+    abstract public function speak();
+}
+
+class Dog extends Animal
+{
+    public function speak()
+    {
+        echo $this->name . " barks";
+    }
+}
+
+class Cat extends Animal 
+{
+    public function speak()
+    {
+        echo $this->name . " meows";
+    }
+}
+]]>
+   </programlisting>
+  </informalexample>
+
+  <para>
+   この例では、どのメソッドも値を返さないことに気付くでしょう。
+   以下ではこれらのクラスを使い、
+   <varname>Animal</varname>, <varname>Cat</varname> または
+   <varname>Dog</varname>
+   クラスの新しいオブジェクトを返すファクトリをいくつか作ってみることにします。
+   共変性を実際に見てみることにしましょう！
+  </para>
+
+  <informalexample>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+interface AnimalShelter
+{
+    public function adopt(string $name): Animal;
+}
+
+class CatShelter implements AnimalShelter
+{
+    public function adopt(string $name): Cat // Animal 型を返す代わりに、Cat型を返すことができる
+    {
+        return new Cat($name);
+    }
+}
+
+class DogShelter implements AnimalShelter
+{
+    public function adopt(string $name): Dog // Animal 型を返す代わりに、Dog型を返すことができる
+    {
+        return new Dog($name);
+    }
+}
+
+$kitty = (new CatShelter)->adopt("Ricky");
+$kitty->speak();
+echo "\n";
+
+$doggy = (new DogShelter)->adopt("Mavrick");
+$doggy->speak();
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+Ricky meows
+Mavrick barks
+]]>
+   </screen>
+  </informalexample>
+ </sect2>
+
+ <sect2 xml:id="language.oop5.variance.contravariance">
+  <title>反変性</title>
+
+  <para>
+   一方で 反変性 は、子クラスのメソッドで、
+   親クラスのものよりも、より抽象的な、広い型を引数に指定することを許すものです。
+   既に示した <varname>Animal</varname>, <varname>Cat</varname> および
+   <varname>Dog</varname> クラスの例を引き続き使い、
+   <varname>Food</varname> と <varname>AnimalFood</varname> クラスを追加し、
+   <varname>Animal</varname> 抽象クラスに
+   <varname>eat(AnimalFood $food)</varname> メソッドを追加してみましょう。
+  </para>
+
+  <informalexample>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+class Food {}
+
+class AnimalFood extends Food {}
+
+abstract class Animal
+{
+    protected string $name;
+
+    public function __construct(string $name)
+    {
+        $this->name = $name;
+    }
+
+    public function eat(AnimalFood $food)
+    {
+        echo $this->name . " nom noms " . get_class($food);
+    }
+}
+]]>
+   </programlisting>
+  </informalexample>
+
+  <para>
+   通常、猫
+   は選り好みが激しい動物です。彼らは特定の型の食べ物を食べるでしょうし、それでおしまいです。
+   一方犬は何でも食べます。よって、<varname>Dog</varname> クラスの
+   <varname>eat</varname> メソッドをオーバーライドし、あらゆる
+   <varname>Food</varname> 型のオブジェクトを受け入れることにします。
+   <varname>Cat</varname> クラスは変更していません。
+  </para>
+
+  <informalexample>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+class Dog extends Animal
+{
+    public function eat(Food $food) {
+        echo $this->name . " nom noms " . get_class($food);
+    }
+}
+]]>
+   </programlisting>
+  </informalexample>
+
+  <para>
+   さて、反変性がどのように動くかが以下でわかるでしょう。
+  </para>
+
+  <informalexample>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+$kitty = (new CatShelter)->adopt("Ricky");
+$catFood = new AnimalFood();
+$kitty->eat($catFood);
+echo "\n";
+
+$doggy = (new DogShelter)->adopt("Mavrick");
+$banana = new Food();
+$doggy->eat($banana);
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+Ricky nom noms AnimalFood
+Mavrick nom noms Food
+]]>
+   </screen>
+
+   <para>
+    しかし、<varname>$kitty</varname> の <varname>eat</varname> メソッドに
+    <varname>$banana</varname> を渡すとどうなるでしょう？
+   </para>
+
+   <programlisting role="php">
+<![CDATA[
+$kitty->eat($banana);
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+Fatal error: Uncaught TypeError: Argument 1 passed to Animal::eat() must be an instance of AnimalFood, instance of Food given
+]]>
+   </screen>
+  </informalexample>
+ </sect2>
+</sect1>
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"~/.phpdoc/manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
