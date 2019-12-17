@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision: 346991 $ -->
+<!-- EN-Revision: 140252dcf2932d788f14a67295c7bf4acdc0c665 Maintainer: mumumu Status: ready -->
 
 <sect1 xml:id="migration73.incompatible" xmlns:xlink="http://www.w3.org/1999/xlink">
- <title>Backward Incompatible Changes</title>
+ <title>下位互換性のない変更点</title>
 
  <sect2 xml:id="migration73.incompatible.core">
-  <title>PHP Core</title>
+  <title>PHP コア</title>
 
   <sect3 xml:id="migration73.incompatible.core.heredoc-nowdoc">
-   <title>Heredoc/Nowdoc Ending Label Interpretation</title>
+   <title>ヒアドキュメント/Nowdoc の終了ラベルの解釈</title>
 
    <para>
-    Due to the introduction of <link
-    linkend="migration73.new-features.core.heredoc">flexible heredoc/nowdoc
-    syntax</link>, doc strings that contain the ending label inside their body
-    may cause syntax errors or change in interpretation. For example in:
-    <informalexample>
-     <programlisting role="php">
+    <link
+    linkend="migration73.new-features.core.heredoc">ヒアドキュメント/nowdoc
+    の文法が柔軟になった</link> ことにより、本体の内部に終了ラベルが含まれた
+    ドキュメンテーション文字列は、エラーが発生するか、解釈の振る舞いが変わる可能性があります。
+    たとえば、以下のような場合です: <informalexample> <programlisting role="php">
 <![CDATA[
 <?php
 $str = <<<FOO
@@ -27,23 +27,23 @@ FOO;
 ]]>
      </programlisting>
     </informalexample>
-    the indented occurrence of <literal>FOO</literal> did not previously have any
-    special meaning. Now it will be interpreted as the end of the heredoc string
-    and the following <literal>FOO;</literal> will cause a syntax error. This issue can
-    always be resolved by choosing an ending label that does not occur within the
-    contents of the string.
+    インデントされた <literal>FOO</literal>
+    が入ったとしても、以前は特別な意味は何もありませんでした。
+    ですが、このバージョンからは ヒアドキュメントの終了と解釈され、
+    後に続く <literal>FOO;</literal> が syntax error になるでしょう。
+    この問題は、文字列の内容に決して含まれることのない終了ラベルを選ぶことで常に回避できます。
    </para>
   </sect3>
 
   <sect3 xml:id="migration73.incompatible.core.continue-targeting-switch">
-   <title>Continue Targeting Switch issues Warning</title>
+   <title>switch の制御フローを変更する continue 文は警告が出る</title>
 
    <para>
-    <literal>continue</literal> statements targeting <literal>switch</literal>
-    control flow structures will now generate a warning. In PHP such
-    <literal>continue</literal> statements are equivalent to
-    <literal>break</literal>, while they behave as <literal>continue 2</literal>
-    in other languages.
+    <literal>switch</literal> の制御フローを変更することを狙った 
+    <literal>continue</literal> 文は、警告が出るようになりました。
+    PHP では、このような <literal>continue</literal> 文は
+    <literal>break</literal> と同等で、他のプログラミング言語の
+    <literal>continue 2</literal> と同じように振る舞います。
     <informalexample>
      <programlisting role="php">
 <![CDATA[
@@ -64,28 +64,31 @@ while ($foo) {
   </sect3>
 
   <sect3 xml:id="migration73.incompatible.core.arrayaccess">
-   <title>Strict Interpretation of Integer String Keys on ArrayAccess</title>
+   <title>ArrayAccess を実装したオブジェクトに対する、
+   数値文字列キーの解釈が厳密に</title>
 
    <para>
-    Array accesses of type <literal>$obj["123"]</literal>, where
-    <literal>$obj</literal> implements <classname>ArrayAccess</classname> and
-    <literal>"123"</literal> is an integer <type>string</type> literal will no
-    longer result in an implicit conversion to integer, i.e.,
-    <literal>$obj->offsetGet("123")</literal> will be called instead of
-    <literal>$obj->offsetGet(123)</literal>. This matches existing behavior for
-    non-literals. The behavior of arrays is not affected in any way, they
-    continue to implicitly convert integeral string keys to integers.
+    <literal>$obj</literal> が <classname>ArrayAccess</classname>
+    を実装したオブジェクトで、
+    <literal>"123"</literal> が数値の文字列リテラルだった場合、
+    この <literal>"123"</literal>
+    は暗黙のうちに整数型に変換されなくなりました。
+    つまり、<literal>$obj->offsetGet(123)</literal> ではなく、
+    <literal>$obj->offsetGet("123")</literal> がコールされるようになります。
+    これは、リテラルでない値の既存の振る舞いに一致します。
+    配列の振る舞いには全く影響しません。
+    配列については、数値の文字列リテラルのキーは、数値側に暗黙のうちに変換され続けます。
    </para>
   </sect3>
 
   <sect3 xml:id="migration73.incompatible.core.static-properties">
-   <title>Static Properties no longer separated by Reference Assignment</title>
+   <title>static なプロパティが参照の代入によって分裂しなくなった</title>
 
    <para>
-    In PHP, static properties are shared between inheriting classes, unless the
-    static property is explicitly overridden in a child class. However, due to an
-    implementation artifact it was possible to separate the static properties by
-    assigning a reference. This loophole has been fixed.
+    PHP では、子クラスで明示的にオーバーライドされない限り、static
+    なプロパティが継承関係にあるクラスの間で共有されます。しかし、
+    実装上の副作用により、参照を代入することによって、static
+    なプロパティが異なる値になる可能性がありました。こうした抜け穴がこのバージョンでは修正されました。
     <informalexample>
      <programlisting role="php">
 <![CDATA[
@@ -109,12 +112,12 @@ var_dump(Test::$x, Test2::$x);
   </sect3>
 
   <sect3 xml:id="migration73.incompatible.core.reference-unwrapping">
-   <title>References returned by Array and Property Accesses are immediately unwrapped</title>
+   <title>配列から返される参照とプロパティのアクセスは、即座に分割される</title>
 
    <para>
-    References returned by array and property accesses are now unwrapped as part
-    of the access. This means that it is no longer possible to modify the
-    reference between the access and the use of the accessed value:
+    配列から返された参照と、プロパティのアクセスは、
+    アクセスの一部として別に扱われるようになりました。
+    これは、配列へのアクセスと、配列の値を使う間に、値を変更できなくなったということです。
     <informalexample>
      <programlisting role="php">
 <![CDATA[
@@ -127,18 +130,20 @@ var_dump($arr[0] + ($arr[0] = 2));
 ]]>
      </programlisting>
     </informalexample>
-    This makes the behavior of references and non-references consistent. Please
-    note that reading and writing a value inside a single expression remains
-    undefined behavior and may change again in the future.
+    これにより、参照と参照でない値の振る舞いが一貫したものになります。
+    単一の式の中で値を読んだり書いたりする場合の振る舞いは未定義のままであり、
+    将来再び動作が変更される可能性があることに注意して下さい。
    </para>
   </sect3>
 
   <sect3 xml:id="migration73.incompatible.core.traversable-unpacking">
-   <title>Argument Unpacking of Traversables with non-Integer Keys no longer supported</title>
+   <title>Traversable
+   への引数のアンパックを非数のキーで行うことはサポートされない</title>
 
    <para>
-    Argument unpacking stopped working with <classname>Traversable</classname>s
-    with non-integer keys. The following code worked in PHP 5.6-7.2 by accident.
+    <classname>Traversable</classname>
+    への引数のアンパックを非数のキーで行うコードは動作しなくなりました。
+    次のようなコードが、 PHP 5.6 から 7.2 の間は偶然動いていました。
     <informalexample>
      <programlisting role="php">
 <![CDATA[
@@ -158,131 +163,142 @@ foo(...gen());
   </sect3>
 
   <sect3 xml:id="migration73.incompatible.core.misc">
-   <title>Miscellaneous</title>
+   <title>その他雑多な変更</title>
 
    <para>
-    The <filename>ext_skel</filename> utility has been completely redesigned with
-    new options and some old options removed. This is now written in PHP and has
-    no external dependencies.
+    <filename>ext_skel</filename> ユーティリティは、
+    新しいオプションで完全に再設計され、いくつかの古いオプションは削除されました。
+    このユーティリティは、PHP
+    で書かれており、それ以外の外部への依存はありません。
    </para>
 
    <para>
-    Support for BeOS has been dropped.
+    BeOS のサポートが削除されました。
    </para>
 
    <para>
-    Exceptions thrown due to automatic conversion of warnings into exceptions in
-    <literal>EH_THROW</literal> mode (e.g. some <classname>DateTime</classname>
-    exceptions) no longer populate <function>error_get_last</function> state. As
-    such, they now work the same way as manually thrown exceptions.
+    <literal>EH_THROW</literal> モードの、警告を自動的に例外に変換することで
+    スローされる例外(e.g. いくつかの <classname>DateTime</classname> 例外)
+    は、<function>error_get_last</function> 関数の状態を収集しなくなりました。
+    そうした例外は、手動でスローされる例外と同じように動くようになります。
    </para>
 
    <para>
-    <classname>TypeError</classname> now reports wrong types as
-    <literal>int</literal> and <literal>bool</literal> instead of
-    <literal>integer</literal> and <literal>boolean</literal>, respectively.
+    <classname>TypeError</classname> は、<literal>integer</literal> と
+    <literal>boolean</literal> ではなく、 
+    それぞれ <literal>int</literal> と <literal>bool</literal>
+    を誤った型として報告するようになります。
    </para>
 
    <para>
-    Undefined variables passed to <function>compact</function> will now be
-    reported as a notice.
+    <function>compact</function>
+    関数に渡された未定義の値は、NOTICEレベルの警告を発生させるようになります。
    </para>
 
    <para>
-    <function>getimagesize</function> and related functions now report the mime
-    type of BMP images as <literal>image/bmp</literal> instead of
-    <literal>image/x-ms-bmp</literal>, since the former has been registered with
-    the IANA (see <link xlink:href="&url.rfc;7903">RFC 7903</link>).
+    <function>getimagesize</function> 関数と関連する関数は、BMP画像の MIME Type
+    を <literal>image/x-ms-bmp</literal> ではなく
+    <literal>image/bmp</literal> と報告するようになりました。
+    なぜなら、前者は IANA に登録されているから (<link
+    xlink:href="&url.rfc;7903">RFC 7903</link> を参照) です。
    </para>
 
    <para>
-    <function>stream_socket_get_name</function> will now return IPv6 addresses
-    wrapped in brackets. For example <literal>"[::1]:1337"</literal> will be
-    returned instead of <literal>"::1:1337"</literal>.
+    <function>stream_socket_get_name</function> 関数は、
+    ブラケットでラップされた IPv6 アドレスを返すようになります。
+    たとえば、<literal>"::1:1337"</literal> ではなく、
+    <literal>"[::1]:1337"</literal> を返すようになるでしょう。
    </para>
   </sect3>
  </sect2>
 
  <sect2 xml:id="migration73.incompatible.bc">
-  <title>BCMath Arbitrary Precision Mathematics</title>
+  <title>BCMath</title>
 
   <para>
-   All warnings thrown by <link linkend="ref.bc">BCMath functions</link> are
-   now using PHP's error handling. Formerly some warnings have directly been
-   written to stderr.
+   <link linkend="ref.bc">BCMath 関数</link> でスローされる全ての例外は、
+   PHP のエラーハンドリングの機構を使うようになりました。
+   以前は、いくつかのエラーが stderr に直接出力されていました。
   </para>
 
   <para>
-   <function>bcmul</function> and <function>bcpow</function> now return numbers
-   with the requested scale. Formerly, the returned numbers may have omitted
-   trailing decimal zeroes.
+   <function>bcmul</function> および <function>bcpow</function>
+   関数は、指定された精度の数値を返すようになりました。
+   以前は、返される値の後ろが、0埋めされることで省略される可能性がありました。
   </para>
  </sect2>
 
  <sect2 xml:id="migration73.incompatible.imap">
-  <title>IMAP, POP3 and NNTP</title>
+  <title>IMAP, POP3 および NNTP</title>
 
   <para>
-   <command>rsh</command>/<command>ssh</command> logins are disabled by default.
-   Use <link
-   linkend="ini.imap.enable-insecure-rsh">imap.enable_insecure_rsh</link> if you
-   want to enable them. Note that the IMAP library does not filter mailbox names
-   before passing them to the <command>rsh</command>/<command>ssh</command>
-   command, thus passing untrusted data to this function with
-   <command>rsh</command>/<command>ssh</command> enabled is insecure.
+   <command>rsh</command>/<command>ssh</command>
+   ログインはデフォルトで無効になりました。
+   これらを有効にしたい場合、<link
+   linkend="ini.imap.enable-insecure-rsh">imap.enable_insecure_rsh</link>
+   を使って下さい。
+   IMAPライブラリは <command>rsh</command>/<command>ssh</command>
+   コマンドに渡す前にメールボックス名をフィルタしないので、
+   <command>rsh</command>/<command>ssh</command> を有効にした状態で
+   この関数に信頼できないデータを渡すことは安全ではありません。
   </para>
  </sect2>
 
  <sect2 xml:id="migration73.incompatible.mbstring">
-  <title>Multibyte String</title>
+  <title>マルチバイト文字列</title>
 
   <para>
-    Due to added support for named captures, <literal>mb_ereg_*()</literal>
-    patterns using named captures will behave differently. In particular named
-    captures will be part of matches and <function>mb_ereg_replace</function>
-    will interpret additional syntax. See <link
-    linkend="migration73.new-features.mbstring.named-captures">Named
-    Captures</link> for more information.
+    名前付きキャプチャのサポートが追加されたことにより、
+    <literal>mb_ereg_*()</literal>
+    におけるパターンに名前付きキャプチャを使うと、これまでと異なる振る舞いをします。
+    特に、名前付きキャプチャが matches の一部になった場合、
+    <function>mb_ereg_replace</function> はこれを追加の文法に従って解釈します。
+    さらに詳しい情報は、<link
+    linkend="migration73.new-features.mbstring.named-captures">名前付きキャプチャ
+    </link> を参照して下さい。
   </para>
  </sect2>
 
  <sect2 xml:id="migration73.incompatible.mysqli">
-  <title>MySQL Improved Extension</title>
+  <title>MySQL 改良版拡張モジュール</title>
 
   <para>
-   Prepared statements now properly report the fractional seconds for
-   <literal>DATETIME</literal>, <literal>TIME</literal> and
-   <literal>TIMESTAMP</literal> columns with decimals specifier (e.g.
-   <literal>TIMESTAMP(6)</literal> when using microseconds). Formerly, the
-   fractional seconds part was simply omitted from the returned values.
+   プリペアドステートメント が、カラムに小数の桁数を指定する(e.g.
+   マイクロ秒を使う場合 <literal>TIMESTAMP(6)</literal> のようにする)
+   ことによって、 <literal>DATETIME</literal>, <literal>TIME</literal> および
+   <literal>TIMESTAMP</literal> 型の秒の小数部を報告するようになりました。
+   以前のバージョンでは、秒の小数部は返り値から単に省略されていました。
   </para>
  </sect2>
 
  <sect2 xml:id="migration73.incompatible.pdo-mysql">
-  <title>MySQL Functions (PDO_MYSQL)</title>
+  <title>MySQL関数 (PDO_MYSQL)</title>
 
   <para>
-   Prepared statements now properly report the fractional seconds for
-   <literal>DATETIME</literal>, <literal>TIME</literal> and
-   <literal>TIMESTAMP</literal> columns with decimals specifier (e.g.
-   <literal>TIMESTAMP(6)</literal> when using microseconds). Formerly, the
-   fractional seconds part was simply omitted from the returned values. Please
-   note that this only affects the usage of <link
-   linkend="ref.pdo-mysql">PDO_MYSQL</link> with emulated prepares turned off
-   (e.g. using the native preparation functionality). Statements using
-   connections having <constant>PDO::ATTR_EMULATE_PREPARES</constant>=&true;
-   (which is the default) were not affected by the bug fixed and have already
-   been getting the proper fractional seconds values from the engine.
+   プリペアドステートメント が、カラムに小数の桁数を指定する(e.g.
+   マイクロ秒を使う場合 <literal>TIMESTAMP(6)</literal> のようにする)
+   ことによって、<literal>DATETIME</literal>, <literal>TIME</literal> および
+   <literal>TIMESTAMP</literal> 型の秒の小数部を報告するようになりました。
+   以前のバージョンでは、秒の小数部は返り値から単に省略されていました。
+   この変更は、<link
+   linkend="ref.pdo-mysql">PDO_MYSQL</link>
+   のプリペアドステートメントをエミュレートする機能を無効にしていた場合
+   (e.g つまり、MySQLネイティブなプリペアの機能を使っていた場合)
+   にのみ影響があることに注意して下さい。
+   <constant>PDO::ATTR_EMULATE_PREPARES</constant>=&true;
+   (これはデフォルトです) にした接続を使う Statement は影響を受けず、
+   既に適切な秒の小数部をエンジンから取得していました。
   </para>
  </sect2>
 
  <sect2 xml:id="migration73.incompatible.reflection">
-  <title>Reflection</title>
+  <title>リフレクション</title>
 
   <para>
-   <link linkend="book.reflection">Reflection</link> export to string now uses
-   <literal>int</literal> and <literal>bool</literal> instead of
-   <literal>integer</literal> and <literal>boolean</literal>, respectively.
+   <link linkend="book.reflection">リフレクション</link>
+   を文字列にエクスポートした場合、<literal>integer</literal> と
+   <literal>boolean</literal> ではなく、<literal>int</literal> と
+   <literal>bool</literal> をそれぞれ使うようになりました。
   </para>
  </sect2>
 
@@ -290,9 +306,9 @@ foo(...gen());
   <title>Standard PHP Library (SPL)</title>
 
   <para>
-   If an <link linkend="book.spl">SPL</link> autoloader throws an exception,
-   following autoloaders will not be executed. Previously all autoloaders were
-   executed and exceptions were chained.
+   <link linkend="book.spl">SPL</link> autoloader が例外を投げた場合、後に続く
+   autoloader は実行されなくなりました。以前は、全ての autoloader
+   が実行され、例外がチェインしていました。
   </para>
  </sect2>
 
@@ -300,10 +316,10 @@ foo(...gen());
   <title>SimpleXML</title>
 
   <para>
-   Mathematic operations involving <link
-   linkend="book.simplexml">SimpleXML</link> objects will now treat the text as
-   an <type>integer</type> or <type>float</type>, whichever is more appropriate.
-   Previously values were treated as <type>integer</type>s unconditionally.
+   数学的な演算 に <link linkend="book.simplexml">SimpleXML</link>
+   オブジェクトが含まれていた場合、テキストが <type>integer</type> または
+   <type>float</type> のうち、より適切なものとして扱われるようになりました。
+   以前は値が意図せず <type>integer</type> として扱われた場合がありました。
   </para>
  </sect2>
 
