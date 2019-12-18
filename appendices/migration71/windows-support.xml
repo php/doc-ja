@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision: 345239 $ -->
+<!-- EN-Revision: 3cd337b4dc91c827399961b9b45524ae4f2b50c9 Maintainer: mumumu Status: working -->
+
+<sect1 xml:id="migration71.windows-support" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <title>Windows のサポート</title>
+
+ <sect2 xml:id="migration71.windows-support.long-and-utf8-path">
+  <title>長いpath と UTF-8のpath のサポート</title>
+  <para>
+    Webアプリケーションが UTF-8
+    に対応しているなら、追加の処理は必要ありません。
+    UTF-8 でないpathへの I/O に依存したアプリケーションについては、
+    明示的に INIディレクティブを設定する必要があります。
+    エンコーディングのINI設定のチェックは、コアの順番に依存します:
+  </para>
+  <itemizedlist>
+   <listitem>
+    <simpara>
+     internal_encoding
+    </simpara>
+   </listitem>
+    <listitem>
+    <simpara>
+     default_charset
+    </simpara>
+   </listitem>
+   <listitem>
+    <simpara>
+     zend.multibyte
+    </simpara>
+   </listitem>
+  </itemizedlist>
+  <para>
+    コードページを扱う関数がいくつか追加されました:
+  </para>
+      <itemizedlist>
+       <listitem>
+        <simpara>
+         sapi_windows_cp_set() は、デフォルトのコードページを設定します
+        </simpara>
+       </listitem>
+       <listitem>
+        <simpara>
+         sapi_windows_cp_get() は、現在のコードページを取得します
+        </simpara>
+       </listitem>
+       <listitem>
+        <simpara>
+         sapi_windows_cp_is_utf8()
+        </simpara>
+       </listitem>
+       <listitem>
+        <simpara>
+         sapi_windows_cp_conv() は、iconv() 互換のシグナチャで、コードページ間の変換を行います。
+        </simpara>
+       </listitem>
+      </itemizedlist>
+  <para>
+   これらの関数はスレッドセーフです。
+  </para>
+  <para>
+    The console output codepage is adjusted depending on the encoding used in
+    PHP. Depending on the concrete system OEM codepage, the visible output
+    might or might be not correct. For example, in the default cmd.exe and on
+    a system with the OEM codepage 437, outputs in codepages 1251, 1252, 1253
+    and some others can be shown correctly when using UTF-8. On the same system,
+    chars in codepage like 20932 probably won't be shown correctly. This refers
+    to the particular system rules for codepage, font compatibility and the
+    particular console program used. PHP automatically sets the console codepage
+    according to the encoding rules from php.ini. Using alternative consoles
+    instead of cmd.exe directly might bring better experience in some cases.
+  </para>
+  <para>
+    Nevertheless be aware, runtime codepage switch after the request start
+    might bring unexpected side effects on CLI. The preferable way is php.ini,
+    When PHP CLI is used in a console emulator, that doesn't support Unicode,
+    it might possibly be required, to avoid changing the console codepage. The
+    best way to achieve it is by setting the default or internal encoding to
+    correspond the ANSI codepage. Another method is to set the INI directives
+    output_encoding and input_encoding to the required codepage, in which case
+    however the difference between internal and I/O codepage is likely to cause
+    mojibake. In rare cases, if PHP happens to crash gracefully, the original
+    console codepage might be not restored. In this case, the chcp command
+    can be used, to restore it manually.
+  </para>
+  <para>
+    Special awareness for the DBCS systems - the codepage switch on runtime
+    using <function>ini_set</function> is likely to cause display issues. The difference to the
+    non DBCS systems is, that the extended characters require two console cells
+    to be displayed. In certain case, only the mapping of the characters into
+    the glyph set of the font could happen, no actual font change. This is the
+    nature of DBCS systems, the most simple way to prevent display issues is
+    to avoid usage of <function>ini_set</function> for the codepage change.
+  </para>
+  <para>
+    As a result of UTF-8 support in the streams, PHP scripts are not limited
+    to ASCII or ANSI filenames anymore. This is supported out of the box on
+    CLI. For other SAPI, the documentation for the corresponding server
+    is useful.
+  </para>
+  <para>
+    Long paths support is transparent. Paths longer than 260 bytes get
+    automatically prefixed with <literal>\\?\</literal>. The max path length is limited to
+    2048 bytes. Be aware, that the path segment limit (basename length) still
+    persists.
+  </para>
+  <para>
+    For the best portability, it is strongely recommended to handle filenames,
+    I/O and other related topics UTF-8. Additionally, for the console applications,
+    the usage of a TrueType font is preferable and the usage of ini_set() for
+    the codepage change is discouraged.
+  </para>
+  <para>
+  </para>
+  <para>
+  </para>
+ </sect2>
+
+ <sect2 xml:id="migration71.windows-support.readline">
+  <title>readline</title>
+
+  <para>
+   <link linkend="book.readline">readline 拡張機能</link>
+   が <link xlink:href="&url.readline.windows;">WinEditLine ライブラリ</link>
+   を通じてサポートされました。
+   これにより、インタラクティブな <acronym>CLI</acronym>
+   シェルもサポートされました (<literal>php.exe -a</literal>)。
+  </para>
+ </sect2>
+
+ <sect2 xml:id="migration71.windows-support.php-fcgi-children">
+  <title>PHP_FCGI_CHILDREN</title>
+  <para>
+  環境変数 <varname>PHP_FCGI_CHILDREN</varname> が尊重されるようになりました。
+  この環境変数が定義されていた場合、最初の <filename>php-cgi.exe</filename> 
+  プロセスが指定された数の子プロセスを実行します。
+  これらは同じTCPソケットを共有します。
+  </para>
+ </sect2>
+
+ <sect2 xml:id="migration71.windows-support.ftok">
+  <title>ftok()</title>
+  <para>
+   <function>ftok</function> 関数のサポートが追加されました。
+  </para>
+ </sect2>
+
+</sect1>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"~/.phpdoc/manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
