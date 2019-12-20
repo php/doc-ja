@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 1d957218630af3c8f607fc39d19d6609f8fb0334 Maintainer: hirokawa Status: working -->
-<!-- CREDITS: takagi -->
+<!-- EN-Revision: 0853ac91680817a11b8e87a9a4beb12dd2bbcaef Maintainer: hirokawa Status: working -->
+<!-- CREDITS: takagi,mumumu -->
 
  <chapter xml:id="language.constants" xmlns="http://docbook.org/ns/docbook">
   <title>定数</title>
@@ -18,8 +18,16 @@
    定数の名前は、PHP のラベルと同じ規則に従います。有効な定数の名前は、
    文字またはアンダースコアで始まり、任意の数の文字、数字、
    アンダースコアが後に続きます。正規表現で示すと次のようになります。
-   <literal>[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*</literal>
+   <code>^[a-zA-Z_\x80-\xff][a-zA-Z0-9_\x80-\xff]*$</code>
   </para>
+  <para>
+   <function>define</function> 関数を使うと、予約されていたり、
+   正しくない名前の定数を定義することが可能ですが、
+   これらの値は <function>constant</function> 関数によって (のみ)
+   取得できます。
+   しかし、こんなことは推奨しません。
+  </para>
+
   &tip.userlandnaming;
   <para>
    <example>
@@ -48,8 +56,8 @@ define("__FOO__", "something");
   </para>
   <note>
    <simpara>
-    本節の目的においては、文字は a-z, A-Z, および127から255まで
-    (0x7f-0xff)のASCII文字を指します。
+    本節の目的においては、文字は a-z, A-Z, および128から255まで
+    (0x80-0xff)のASCII文字を指します。
    </simpara>
   </note>
   <simpara>
@@ -100,9 +108,11 @@ define("__FOO__", "something");
     未定義の定数を使用した場合、ちょうど<type>string</type>として
     コールしたかのように(CONSTANT vs "CONSTANT")、
     PHPはその定数自体の名前を使用したと仮定します。
-    この際、<link linkend="ref.errorfunc">E_NOTICE</link> が発生します。
-    ある定数が設定されているかどうかを知るには、
-    <function>defined</function> 関数を使用してください。
+    このような振る舞いは、PHP 7.2.0
+    以降では非推奨となり、<constant>E_WARNING</constant>
+    が発生するようになりました。
+    (それより前のバージョンでは、
+    <link linkend="ref.errorfunc">E_NOTICE</link> が発生していました)
     なぜ
     <link linkend="language.types.array.foo-bar">$foo[bar]</link>が間違っている
     （まず<literal>bar</literal>を定数として<function>define</function>しなければ）
@@ -207,12 +217,12 @@ echo ANIMALS[1]; // 出力は "cat"
     </para>
    </note>
 
-   <!-- to be translated -->
    <note>
     <para>
-     Constants defined using the <literal>const</literal> keyword are always
-     case-sensitive, while constants defined using <function>define</function>
-     may be case-insensitive.
+     キーワード <literal>const</literal> を使って定義された定数は、
+     常に大文字小文字を区別します。
+     しかし、<function>define</function> 関数を使って定義された定数は、
+     大文字小文字を区別しません。
     </para>
    </note>
 
@@ -235,12 +245,12 @@ echo ANIMALS[1]; // 出力は "cat"
    </simpara>
 
    <para>
-    使われ方によって変化する自動的に定義される定数（マジカル定数）が 9 つあります。
+    使われる場所によって値が変化する定数（マジカル定数）が 9 つあります。
     例えば、<constant>__LINE__</constant>はスクリプト上において
-    呼び出された行番号です。
-    All these "magical" constants are resolved
-    at compile time, unlike regular constants thats resolved at runtime.<!-- to be translated -->
-    特別定数は大文字小文字を区別しません。
+    使われる行によって値が変化します。
+    これらの
+    "マジカル"定数は、実行時に解決される通常の定数とは異なり、コンパイル時に解決されまる。
+    これらの特別な定数は大文字小文字を区別しません。
     内容は以下のとおりです:
    </para>
    <para>
@@ -279,7 +289,7 @@ echo ANIMALS[1]; // 出力は "cat"
        <row xml:id="constant.function">
         <entry><constant>__FUNCTION__</constant></entry>
         <entry>
-         関数名。
+         関数名。無名関数の場合は、<literal>{closure}</literal>
         </entry>
        </row>
        <row xml:id="constant.class">
@@ -360,32 +370,6 @@ echo ANIMALS[1]; // 出力は "cat"
          <entry>5.3.0</entry>
          <entry>
           <constant>__DIR__</constant> と <constant>__NAMESPACE__</constant> が追加されました。
-         </entry>
-        </row>
-        <row>
-         <entry>5.0.0</entry>
-         <entry>
-          <constant>__METHOD__</constant> が追加されました。
-         </entry>
-        </row>
-        <row>
-         <entry>5.0.0</entry>
-         <entry>
-          これより前のバージョンでは、マジック定数のうちのいくつかが、常に小文字化されていました。
-          このバージョン以降は、すべて大文字小文字を区別する (宣言したとおりに設定される) ようになります。
-         </entry>
-        </row>
-        <row>
-         <entry>4.3.0</entry>
-         <entry>
-          <constant>__FUNCTION__</constant> と <constant>__CLASS__</constant> が追加されました。
-         </entry>
-        </row>
-        <row>
-         <entry>4.0.2</entry>
-         <entry>
-          <constant>__FILE__</constant> に常に絶対パスを含め、シンボリックリンクも解決するようになりました。
-          これより前のバージョンでは、場合によっては相対パスが含まれていることもありました。
          </entry>
         </row>
        </tbody>
