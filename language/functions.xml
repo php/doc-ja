@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: db1dd771e136321869b23aaf231549b9d7e46dab Maintainer: takagi Status: working -->
-<!-- CREDITS: hirokawa -->
+<!-- EN-Revision: 6187696fb48916b4585a8a837bf725845f7cf3c7 Maintainer: takagi Status: ready -->
+<!-- CREDITS: hirokawa,mumumu -->
  <chapter xml:id="language.functions" xmlns="http://docbook.org/ns/docbook">
   <title>関数</title>
   
@@ -36,7 +36,7 @@ function foo($arg_1, $arg_2, /* ..., */ $arg_n)
     関数名は、PHP の他のラベルと同じ規則に従います。関数名として有効な
     形式は、まず文字かアンダースコアで始まり、その後に任意の数の文字・
     数字・あるいはアンダースコアが続くものです。正規表現で表すと、
-    <literal>[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*</literal>
+    <code>^[a-zA-Z_\x80-\xff][a-zA-Z0-9_\x80-\xff]*$</code>.
     となります。
    </para>
    &tip.userlandnaming;
@@ -462,6 +462,13 @@ Making a bowl of acidophilus raspberry.
          </entry>
          <entry>PHP 7.1.0</entry>
         </row>
+        <row>
+         <entry><literal>object</literal></entry>
+         <entry>
+          パラメータは、<type>object</type> でなければいけません。
+         </entry>
+         <entry>PHP 7.2.0</entry>
+        </row>
        </tbody>
       </tgroup>
      </informaltable>
@@ -565,6 +572,37 @@ Stack trace:
 #0 -(13): f(Object(E))
 #1 {main}
   thrown in - on line 8
+]]>
+      </screen>
+     </example>
+
+     <example>
+      <title>型付きパラメータを参照渡しする例</title>
+      <simpara>
+       参照パラメータに宣言された型は、関数が返る時ではなく、
+       関数に入る時にチェックされます。よって、関数が返った後は、
+       引数の型は変わっている可能性があります。
+      </simpara>
+      <programlisting role="php">
+<![CDATA[
+<?php
+function array_baz(array &$param)
+{
+    $param = 1;
+}
+$var = [];
+array_baz($var);
+var_dump($var);
+array_baz($var);
+?>
+]]>
+      </programlisting>
+      &example.outputs.similar;
+      <screen>
+<![CDATA[
+int(1)
+
+Fatal error: Uncaught TypeError: Argument 1 passed to array_baz() must be of the type array, int given, called in %s on line %d
 ]]>
       </screen>
      </example>
@@ -1005,6 +1043,13 @@ $newref =& returns_reference();
     <classname>TypeError</classname> が発生します。
    </para>
 
+   <para>
+    PHP 7.1.0 以降では、型の名前の前にクエスチョンマーク
+    (<literal>?</literal>) を付けることによって、
+    戻り値の値が nullable とマークできるようになりました。
+    これは、関数の戻り地の型が特定の型か、&null; を返すかの印になります。
+   </para>
+
    <note>
     <para>
      親クラスのメソッドをオーバーライドする場合、子クラスのメソッドの戻り値の型は、
@@ -1092,6 +1137,24 @@ object(C)#1 (0) {
 ]]>
       </screen>
      </example>
+
+     <example>
+      <title>Nullable な返り値の型宣言 (PHP 7.1.0 以降)</title>
+      <programlisting role="php">
+<![CDATA[
+<?php
+function get_item(): ?string {
+    if (isset($_GET['item'])) {
+        return $_GET['item'];
+    } else {
+        return null;
+    }
+}
+?>
+]]>
+      </programlisting>
+     </example>
+
     </sect3>
    </sect2>
   </sect1>
@@ -1283,7 +1346,7 @@ $func(); // PHP 7.0.0 以降では "bar" を表示します。それより前の
     <function>imagecreatetruecolor</function>のような
     <link linkend="ref.image">画像</link>関数を使用するには、
     <productname>GD</productname>サポートを有効にしてPHPをコンパイルしておく必要があります。
-    また、<function>mysql_connect</function>を使う場合もやはり
+    また、<function>mysqli_connect</function>を使う場合もやはり
     <link linkend="ref.mysql">MySQL</link>サポートを有効にしてPHPが
     コンパイルされている必要があります。
     <link linkend="ref.strings">string</link>や
@@ -1384,9 +1447,8 @@ $greet('PHP');
    <simpara>
     クロージャは、変数を親のスコープから引き継ぐことができます。
     引き継ぐ変数は、<literal>use</literal> で渡さなければなりません。
-    <!-- to be translated -->
-    From PHP 7.1, these variables must not include &link.superglobals;,
-    <varname>$this</varname>, or variables with the same name as a parameter.
+    PHP 7.1 以降は、引き継ぐ値に &link.superglobals; や
+    <varname>$this</varname>、およびパラメータと同じ名前の変数を含めてはいけません。
    </simpara>
 
    <example>
@@ -1643,10 +1705,9 @@ Warning: Cannot bind an instance to a static closure in %s on line %d
         <row>
          <entry>7.1.0</entry>
          <entry>
-          <!-- to be translated -->
-          Anonymous functions may not close over &link.superglobals;,
-          <varname>$this</varname>, or any variable with the same name as a
-          parameter.
+          無名関数は、&link.superglobals; や、
+          <varname>$this</varname>, もしくは
+          引数と同じ名前の変数を use で引き継げなくなりました。
          </entry>
         </row>
         <row>
