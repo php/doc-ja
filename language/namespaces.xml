@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 27e86fd791a1b083db2e08a37ce3443bd93cf13c Maintainer: takagi Status: working -->
+<!-- EN-Revision: 15aac5e453d7cbd1bec62e21282e15ca2334dca0 Maintainer: takagi Status: ready -->
+<!-- CREDITS: mumumu -->
+
 <chapter xml:id="language.namespaces" xmlns="http://docbook.org/ns/docbook"
  version="1.1">
  <title>名前空間</title>
@@ -92,10 +94,15 @@ echo constant($d); // "名前空間および動的言語機能" を参照くだ�
    </programlisting>
   </example>
   <note>
+   <simpara>
+    名前空間の名前は、大文字小文字を区別しません。
+   </simpara>
+  </note>     
+  <note>
    <para>
-    名前空間の名前として <literal>PHP</literal> や <literal>php</literal> は使えません。これらで始まる名前
-    (<literal>PHP\Classes</literal> など) も同様です。
-    これらの名前は言語の内部で使うために予約されており、ユーザーのコードで使うことはできません。
+    名前空間の名前として <literal>PHP</literal> や これらで始まる名前
+    (<literal>PHP\Classes</literal> など) は
+    言語の内部で使うために予約されており、ユーザーのコードで使うべきではありません。
    </para>
   </note>
  </sect1>
@@ -905,12 +912,11 @@ if (is_array('hi')) { // "is not array" と表示します
      </listitem>
     </varlistentry>
     <varlistentry>
-     <!-- to be translated -->
-     <term>Relative name</term>
+     <term>相対名</term>
      <listitem>
       <para>
-       This is an identifier starting with <literal>namespace</literal>, such as
-       <literal>namespace\Foo\Bar</literal>.
+       <literal>namespace\Foo\Bar</literal> のように、
+       <literal>namespace</literal> で始まる識別子です。
       </para>
      </listitem>
     </varlistentry>
@@ -920,60 +926,75 @@ if (is_array('hi')) { // "is not array" と表示します
    名前解決は、これらの解決ルールによって行われます。
    <orderedlist>
     <listitem>
-     <!-- to be translated -->
      <simpara>
-      Fully qualified names always resolve to the name without leading namespace separator.
+      完全修飾名は、先頭の名前空間区切り文字を除いた名前に常に解決されます。
       たとえば、<literal>\A\B</literal> は <literal>A\B</literal> と解釈されます。
      </simpara>
     </listitem>
     <listitem>
-     <!-- to be translated -->
      <simpara>
-      Relative names always resolve to the name with <literal>namespace</literal> replaced by
-      the current namespace. If the name occurs in the global namespace, the
-      <literal>namespace\</literal> prefix is stripped. For example <literal>namespace\A</literal>
-      inside namespace <literal>X\Y</literal> resolves to <literal>X\Y\A</literal>. The same name
-      inside the global namespace resolves to <literal>A</literal>.
+      相対名は、<literal>namespace</literal> という名前を、
+      現在の名前空間に置き換えたものに常に解決されます。
+      現在の名前空間がグローバル名前空間だった場合、
+      <literal>namespace\</literal> 名前空間は取り除かれます。
+      たとえば、名前空間 <literal>X\Y</literal> の中にある
+      <literal>namespace\A</literal> は、
+      <literal>X\Y\A</literal> に解決されます。
+      グローバル名前空間の中にある同じ名前は、
+      <literal>A</literal> に解決されます。
      </simpara>
     </listitem>
     <listitem>
      <simpara>
-      For qualified names the first segment of the name is translated according to the current
-      class/namespace import table. For example, if the namespace <literal>A\B\C</literal> is
-      imported as <literal>C</literal>, the name <literal>C\D\E</literal> is translated to
-      <literal>A\B\C\D\E</literal>.
+      修飾名の場合は、名前の最初の識別子を、
+      現在のクラス/名前空間のインポートテーブルに従って翻訳します。
+      たとえば、名前空間 <literal>A\B\C</literal> が 
+      <literal>C</literal> としてインポートされた場合、
+      <literal>C\D\E</literal> という名前は、
+      <literal>A\B\C\D\E</literal> と翻訳されます。
      </simpara>
     </listitem>
     <listitem>
      <simpara>
-      For qualified names, if no import rule applies, the current namespace is prepended to the
-      name. For example, the name <literal>C\D\E</literal> inside namespace <literal>A\B</literal>,
-      resolves to <literal>A\B\C\D\E</literal>.
+      修飾名の場合で、適用すべきインポートルールがない場合、
+      現在の名前空間が名前の先頭に付加されます。
+      たとえば、名前空間 <literal>A\B</literal> の中にある
+      <literal>C\D\E</literal> という名前は
+      <literal>A\B\C\D\E</literal> に解決されます。
      </simpara>
     </listitem>
     <listitem>
      <simpara>
-      For unqualified names, the name is translated according to the current import table for the
-      respective symbol type. This means that class-like names are translated according to the
-      class/namespace import table, function names according to the function import table and
-      constants according to the constant import table. For example, after
-      <literal>use A\B\C;</literal> a usage such as <literal>new C()</literal> resolves to the name
-      <literal>A\B\C()</literal>. Similarly, after <literal>use function A\B\fn;</literal> a usage
-      such as <literal>fn()</literal> resolves to the name <literal>A\B\fn</literal>.
+      非修飾名の場合、名前はそれぞれのシンボルタイプの
+      現在のインポートテーブルに従って翻訳されます。
+      これは、クラスのような名前は、クラス/名前空間のインポートテーブルに従って
+      翻訳されるし、関数名は、関数のインポートテーブルに従うし、
+      定数は定数のインポートテーブルに従うということになります。
+      たとえば、<literal>use A\B\C;</literal> の後に、
+      <literal>new C()</literal> のようなことをすると、
+      C は <literal>A\B\C()</literal> に解決されます。
+      同じように、<literal>use function A\B\fn;</literal>
+      の後に <literal>fn()</literal> のようなことをすると、
+      <literal>A\B\fn</literal> という名前に解決されます。
      </simpara>
     </listitem>
     <listitem>
      <simpara>
-      For unqualified names, if no import rule applies and the name refers to a class-like symbol,
-      the current namespace is prepended. For example <literal>new C()</literal> inside namespace
-      <literal>A\B</literal> resolves to name <literal>A\B\C</literal>.
+      非修飾名について、適用すべきインポートルールが存在せず、
+      名前がクラスのようなシンボルを参照している場合、
+      現在の名前空間が先頭に付加されます。
+      たとえば、名前空間 <literal>A\B</literal> の内部にある
+      <literal>new C()</literal> は、
+      <literal>A\B\C</literal> という名前に解決されます。
      </simpara>
     </listitem>
     <listitem>
      <simpara>
-      For unqualified names, if no import rule applies and the name refers to a function or constant
-      and the code is outside the global namespace, the name is resolved at runtime.
-      Assuming the code is in namespace <literal>A\B</literal>,
+      非修飾名について、適用すべきインポートルールが存在せず、
+      名前が関数や定数を参照しており、
+      コードがグローバル名前空間の外に存在する場合は
+      名前は実行時に解決されます。
+      コードが名前空間 <literal>A\B</literal> の中にあると仮定すると、
       関数 <literal>foo()</literal> のコールは、次のように解決されます。
      </simpara>
       <orderedlist>
