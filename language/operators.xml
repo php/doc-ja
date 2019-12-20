@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 603d5c848b77b2ac7637b4b14b7821162678be50 Maintainer: takagi Status: ready -->
-<!-- CREDITS: hirokawa -->
+<!-- EN-Revision: 6ccb666358375c6815e5fadbf6386a496af1d794 Maintainer: takagi Status: ready -->
+<!-- CREDITS: hirokawa,mumumu -->
  <chapter xml:id="language.operators" xmlns="http://docbook.org/ns/docbook">
   <title>演算子</title>
   <simpara>
@@ -83,11 +83,6 @@
          <literal>new</literal>
         </entry>
         <entry><link linkend="language.oop5.cloning">clone</link> および <link linkend="language.oop5.basic.new">new</link></entry>
-       </row>
-       <row>
-        <entry>left</entry>
-        <entry><literal>[</literal></entry>
-        <entry><function>array</function></entry>
        </row>
        <row>
         <entry>right</entry>
@@ -223,7 +218,7 @@
         <entry>right</entry>
         <entry><literal>??</literal></entry>
         <entry>
-         <link linkend="language.operators.comparison">比較演算子</link>
+         <link linkend="language.operators.comparison.coalesce">NULL合体演算子</link>
         </entry>
        </row>
        <row>
@@ -252,6 +247,20 @@
         </entry>
         <entry>
          <link linkend="language.operators.assignment">代入演算子</link>
+        </entry>
+       </row>
+       <row>
+        <entry>right</entry>
+        <entry><literal>yield from</literal></entry>
+        <entry>
+         <link linkend="control-structures.yield.from">yield from</link>
+        </entry>
+       </row>
+       <row>
+        <entry>right</entry>
+        <entry><literal>yield</literal></entry>
+        <entry>
+         <link linkend="control-structures.yield">yield</link>
         </entry>
        </row>
        <row>
@@ -503,8 +512,9 @@ $b .= "There!"; // $bを"Hello There!"にセットします。$b = $b . "There!"
     コピーする必要がある場合には問題を生じる可能性があります。
    </para>
    <para>
-    PHP では通常は値による代入になりますが、オブジェクト型については例外です。
-    PHP 5 以降、オブジェクトは参照で代入されるようになりました。オブジェクトを明示的にコピーするには
+    PHP では通常は値による代入になりますが、
+    オブジェクトは参照で代入されます。
+    オブジェクトを明示的にコピーするには
     <link linkend="language.oop5.cloning">clone</link> キーワードを使います。
    </para>
 
@@ -539,7 +549,7 @@ print "$b\n"; // 表示: 4
      </example>
     </para>
     <para>
-     PHP 5 以降では、<link linkend="language.oop5.basic.new">new</link>
+     <link linkend="language.oop5.basic.new">new</link>
      演算子が自動的に参照を返すようになりました。そのため、
      <link linkend="language.oop5.basic.new">new</link> の結果を参照で代入することは
      PHP 7.0.0 から許されなくなりました。
@@ -1222,7 +1232,10 @@ Expression: 0 = -4 << 62
    </para>
    <warning>
     <para>
-     システムの long 型で扱える範囲以上の整数値をシフトした場合の結果は未定義です。
+     PHP 7.0 より前のバージョンでは、
+     システムの long 型で扱える範囲以上の整数値をシフトしたり、
+     負の値をシフトさせた場合の結果は未定義でした。
+     言い換えると、PHP 5.x を使っているのなら、
      32ビットシステム上では、32ビット以上の値をシフトしないようにしましょう。
      同様に、64ビットシステム上では、64ビット以上の値をシフトしないようにしましょう。
     </para>
@@ -1311,11 +1324,11 @@ Expression: 0 = -4 << 62
       </row>
       <row>
        <entry>$a &lt;=&gt; $b</entry>
-       <entry>宇宙船</entry>
+       <entry>宇宙船演算子</entry>
        <entry>
-        <varname>$a</varname> が <varname>$b</varname> より小さいときに負の値、
-        <varname>$b</varname> と等しいときに 0、
-        <varname>$b</varname> より大きいときに正の値。
+        <varname>$a</varname> が
+        <varname>$b</varname> より大きいか、0等しいか、小さい場合に、
+        それぞれ、0より大きい か、0か、0より小さい <type>integer</type>。
         PHP 7 以降で使用可能。
        </entry>
       </row>
@@ -1390,7 +1403,7 @@ $a = (object) ["a" => "c"];
 $b = (object) ["a" => "b"]; 
 echo $a <=> $b; // 1
  
-// 値だけを比較します
+// 比較するのは値だけではない; キーも一致しなければならない
 $a = (object) ["a" => "b"]; 
 $b = (object) ["b" => "b"]; 
 echo $a <=> $b; // 1
@@ -1429,9 +1442,9 @@ echo $a <=> $b; // 1
       <row>
        <entry><type>object</type></entry>
        <entry><type>object</type></entry>
-       <entry>組み込みクラスには独自の比較基準が定義されています。それ以外の
-        クラスは比較できません。同じクラスであるかどうかは - プロパティが
-        同じ値であるかどうかを配列形式で比較（PHP 4）、PHP 5 では <link
+       <entry>組み込みクラスには独自の比較基準が定義されています。
+        異なるクラスは比較できません。同じクラスであるかどうかは 
+        <link
         linkend="language.oop5.object-comparison">ここで説明されています</link>。
        </entry>
       </row>
@@ -1786,7 +1799,7 @@ echo "<pre>$output</pre>";
    <note>
     <simpara>
      加算子/減算子は、数値や文字列にしか影響を及ぼしません。
-     配列やオブジェクトそしてリソースには、何も変更を加えません。
+     配列やオブジェクト、boolean、そしてリソースには、何も変更を加えません。
      同じく &null; に減算子を適用しても何も起こりませんが、&null; に加算子を
      適用すると <literal>1</literal> となります。
     </simpara>
@@ -2160,11 +2173,11 @@ array(3) {
 }
 Union of $a += $b:
 array(3) {
-  'a' =>
+  ["a"]=>
   string(5) "apple"
-  'b' =>
+  ["b"]=>
   string(6) "banana"
-  'c' =>
+  ["c"]=>
   string(6) "cherry"
 }
 ]]>
@@ -2296,7 +2309,7 @@ bool(true)
     <link linkend="language.oop5.interfaces">インターフェイス</link>
     を実装したクラスのオブジェクトのインスタンスであるかどうかも調べることができます。
     <example>
-     <title>クラスでの <literal>instanceof</literal> の使用法</title>
+     <title>インターフェイスでの <literal>instanceof</literal> の使用法</title>
      <programlisting role="php">
 <![CDATA[
 <?php
