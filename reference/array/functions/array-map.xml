@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 9caf16a8ba22366befab30e1d4d5759a4cd406f3 Maintainer: takagi Status: ready -->
-<!-- CREDITS: hirokawa -->
+<!-- EN-Revision: 1397ae6df7e79a59fec7b167f7bc1adba415013f Maintainer: takagi Status: ready -->
+<!-- CREDITS: hirokawa,mumumu -->
 <refentry xml:id="function.array-map" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>array_map</refname>
@@ -18,8 +18,9 @@
   </methodsynopsis>
   <para>
    <function>array_map</function> は、<parameter>array1</parameter>
+   (および、 それ以上の配列が与えられた場合は <parameter>...</parameter>)
    の各要素に <parameter>callback</parameter> 関数を適用した後、
-   その全ての要素を含む配列を返します。
+   適用後の要素を含む &array; を返します。
    <parameter>callback</parameter> 関数が受け付けるパラメータの数は、
    <function>array_map</function> に渡される配列の数に一致している必要があります。
   </para>
@@ -35,6 +36,12 @@
       <para>
        配列の各要素に適用するコールバック関数。
       </para>
+      <para>
+       複数の配列に zip 操作を行うために、
+       <parameter>callback</parameter> に &null; を渡すことができます。
+       <parameter>array1</parameter> のみが与えられた場合、
+       <methodname>array_map</methodname> は、入力された配列を返します。
+      </para>
      </listitem>
     </varlistentry>
     <varlistentry>
@@ -49,7 +56,7 @@
      <term><parameter>...</parameter></term>
      <listitem>
       <para>
-       コールバック関数に渡す引数を指定する配列の可変リスト。
+       <parameter>callback</parameter> に渡す引数を指定する配列の可変リスト。
       </para>
      </listitem>
     </varlistentry>
@@ -61,8 +68,10 @@
   &reftitle.returnvalues;
   <para>
    <parameter>array1</parameter>
+   (および、 それ以上の配列が与えられた場合は <parameter>...</parameter>)
    の各要素に <parameter>callback</parameter> 関数を適用した後、
-   その全ての要素を含む配列を返します。
+   適用後の要素を含む &array; を返します。
+
   </para>
   <para>
    引数で渡した配列のキーがそのまま維持されるのは、渡した配列がひとつだけである場合のみです。
@@ -80,11 +89,11 @@
 <?php
 function cube($n)
 {
-    return($n * $n * $n);
+    return ($n * $n * $n);
 }
 
-$a = array(1, 2, 3, 4, 5);
-$b = array_map("cube", $a);
+$a = [1, 2, 3, 4, 5];
+$b = array_map('cube', $a);
 print_r($b);
 ?>
 ]]>
@@ -142,21 +151,21 @@ Array
 <?php
 function show_Spanish($n, $m)
 {
-    return("The number $n is called $m in Spanish");
+    return "The number {$n} is called {$m} in Spanish";
 }
 
 function map_Spanish($n, $m)
 {
-    return(array($n => $m));
+    return [$n => $m];
 }
 
-$a = array(1, 2, 3, 4, 5);
-$b = array("uno", "dos", "tres", "cuatro", "cinco");
+$a = [1, 2, 3, 4, 5];
+$b = ['uno', 'dos', 'tres', 'cuatro', 'cinco'];
 
-$c = array_map("show_Spanish", $a, $b);
+$c = array_map('show_Spanish', $a, $b);
 print_r($c);
 
-$d = array_map("map_Spanish", $a , $b);
+$d = array_map('map_Spanish', $a , $b);
 print_r($d);
 ?>
 ]]>
@@ -222,13 +231,13 @@ Array
   </para>
   <para>
    <example>
-    <title>配列の配列を生成する</title>
+    <title>配列のzip操作を行う</title>
     <programlisting role="php">
 <![CDATA[
 <?php
-$a = array(1, 2, 3, 4, 5);
-$b = array("one", "two", "three", "four", "five");
-$c = array("uno", "dos", "tres", "cuatro", "cinco");
+$a = [1, 2, 3, 4, 5];
+$b = ['one', 'two', 'three', 'four', 'five'];
+$c = ['uno', 'dos', 'tres', 'cuatro', 'cinco'];
 
 $d = array_map(null, $a, $b, $c);
 print_r($d);
@@ -280,21 +289,51 @@ Array
     </screen>
    </example>
   </para>
+
+  <para>
+   <example>
+    <title>
+     &null; を <parameter>callback</parameter> に渡し、
+     <parameter>array1</parameter> だけを渡す例
+    </title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$array = [1, 2, 3];
+var_dump(array_map(null, $array));
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+array(3) {
+  [0]=>
+  int(1)
+  [1]=>
+  int(2)
+  [2]=>
+  int(3)
+}
+]]>
+    </screen>
+   </example>
+  </para>
   <para>
    <example>
     <title><function>array_map</function> - 文字列キーの例</title>
     <programlisting role="php">
 <![CDATA[
 <?php
-$arr = array("stringkey" => "value");
+$arr = ['stringkey' => 'value'];
 function cb1($a) {
-    return array ($a);
+    return [$a];
 }
 function cb2($a, $b) {
-    return array ($a, $b);
+    return [$a, $b];
 }
-var_dump(array_map("cb1", $arr));
-var_dump(array_map("cb2", $arr, $arr));
+var_dump(array_map('cb1', $arr));
+var_dump(array_map('cb2', $arr, $arr));
 var_dump(array_map(null,  $arr));
 var_dump(array_map(null, $arr, $arr));
 ?>
