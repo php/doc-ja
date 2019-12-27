@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: a3c18bfa37d1ccefec6f7f485cb2c77d30d59d09 Maintainer: takagi Status: ready -->
-<!-- CREDITS: hirokawa -->
+<!-- EN-Revision: 708c4884f2400b7f788b728ea2fa73ea8aa789bb Maintainer: takagi Status: ready -->
+<!-- CREDITS: hirokawa,mumumu -->
  
 <book xml:id="book.bc" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <?phpdoc extension-membership="bundled" ?>
@@ -12,10 +12,39 @@
  <preface xml:id="intro.bc">
   &reftitle.intro;
   <para>
-   任意精度演算に関して、
-   文字列として表された 2147483647-1 (0x7FFFFFFF-1) までの範囲の、
-   任意の大きさおよび精度の数字をサポートするバイナリ計算機を提供します。
+    任意の精度の演算をサポートするために、PHP は 
+    <literal>2147483647</literal> (または <literal>0x7FFFFFFF</literal>) までの
+    任意のサイズおよび精度をサポートする小数の 2進数の計算機 を提供します。
+    十分なメモリがあれば、文字列表現もサポートします。
   </para>
+  <caution>
+   <para>
+    <type>string</type>
+    であることが期待されている <type>float</type> 型の値を BCMath 関数に渡してしまうと、
+    PHP が <type>float</type> 型の値を <type>string</type> 型に変換するやり方の影響で、
+    あなたが望む結果にならない可能性があります。
+    すなわち、 <type>string</type> が、ネイピア数を使った表記
+    (これは BCMath では未サポートです) である可能性があったり、
+    小数点の記号がロケール依存(BCMath は常に小数点(.)を期待しています)
+    であったりする場合です。
+   </para>
+   <informalexample>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$num1 = 0; // (string) 0 => '0'
+$num2 = -0.000005; // (string) -0.000005 => '-5.05E-6'
+echo bcadd($num1, $num2, 6); // => '0.000000'
+
+setlocale(LC_NUMERIC, 'de_DE'); // 小数点がコンマになるロケール
+$num2 = 1.2; // (string) 1.2 => '1,2'
+echo bcsub($num1, $num2, 1); // => '0.0'
+?>
+]]>
+    </programlisting>
+   </informalexample>
+  </caution>
+
  </preface>
  <!-- }}} -->
  
