@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision: 345239 $ -->
-<!-- EN-Revision: 3cd337b4dc91c827399961b9b45524ae4f2b50c9 Maintainer: mumumu Status: working -->
+<!-- EN-Revision: 3cd337b4dc91c827399961b9b45524ae4f2b50c9 Maintainer: mumumu Status: ready -->
 
 <sect1 xml:id="migration71.windows-support" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>Windows のサポート</title>
@@ -9,7 +9,7 @@
   <title>長いpath と UTF-8のpath のサポート</title>
   <para>
     Webアプリケーションが UTF-8
-    に対応しているなら、追加の処理は必要ありません。
+    に対応しているなら、追加の作業は必要ありません。
     UTF-8 でないpathへの I/O に依存したアプリケーションについては、
     明示的に INIディレクティブを設定する必要があります。
     エンコーディングのINI設定のチェックは、コアの順番に依存します:
@@ -60,56 +60,71 @@
    これらの関数はスレッドセーフです。
   </para>
   <para>
-    The console output codepage is adjusted depending on the encoding used in
-    PHP. Depending on the concrete system OEM codepage, the visible output
-    might or might be not correct. For example, in the default cmd.exe and on
-    a system with the OEM codepage 437, outputs in codepages 1251, 1252, 1253
-    and some others can be shown correctly when using UTF-8. On the same system,
-    chars in codepage like 20932 probably won't be shown correctly. This refers
-    to the particular system rules for codepage, font compatibility and the
-    particular console program used. PHP automatically sets the console codepage
-    according to the encoding rules from php.ini. Using alternative consoles
-    instead of cmd.exe directly might bring better experience in some cases.
+    コンソール出力のコードページは、
+    PHP の内部で使用されるエンコーディングに基づいて調整されます。
+    具体的な システム OEM のコードページによっては、
+    目に見える出力は正しいかもしれませんし、正しくないかもしれません。
+    たとえば、OEM コードページ 437 のシステム上での
+    デフォルトの cmd.exe は、1251, 1252, 1253 や、
+    他のいくつかのコードページを出力しますが、
+    これらは UTF-8 で表示すれば正しく表示できます。
+    同じシステム上で、20932 のようなコードページ上の文字は、
+    正しく表示できません。
+    これは、コードページにまつわる特定のシステムのルールや、
+    フォントの互換性、そして特定のコンソールプログラムが関係しています。
+    PHP は、php.ini から読み取ったエンコーディングのルールに沿って、
+    コンソールのコードページを自動的に設定します。
+    cmd.exe 以外のコンソールを使う場合、
+    ケースによってはより良い体験が得られるかもしれません。
   </para>
   <para>
-    Nevertheless be aware, runtime codepage switch after the request start
-    might bring unexpected side effects on CLI. The preferable way is php.ini,
-    When PHP CLI is used in a console emulator, that doesn't support Unicode,
-    it might possibly be required, to avoid changing the console codepage. The
-    best way to achieve it is by setting the default or internal encoding to
-    correspond the ANSI codepage. Another method is to set the INI directives
-    output_encoding and input_encoding to the required codepage, in which case
-    however the difference between internal and I/O codepage is likely to cause
-    mojibake. In rare cases, if PHP happens to crash gracefully, the original
-    console codepage might be not restored. In this case, the chcp command
-    can be used, to restore it manually.
+    それでもなお知っておくべきなのは、
+    リクエストの処理が始まったあとの実行時にコードページを変更すると、
+    CLI 上では予測できない副作用をもたらす可能性があることです。
+    好ましいやり方は、Unicode をサポートしていない PHP CLI
+    がコンソールのエミュレータとして使われている場合、必須ではないものの、
+    php.ini を使うことでコンソールのコードページを変更することを避けることです。
+    これを達成する最良のやり方は、デフォルト、
+    または内部エンコーディングの設定を ANSI コードページにすることです。
+    別のやり方として、INI ディレクティブの output_encoding と input_encoding
+    を必要なコードページに設定することがあります。しかしこの場合、
+    内部のコードページと I/O のコードページが異なることが原因で、
+    文字化けを引き起こしがちです。レアケースではありますが、
+    PHP が偶然綺麗にクラッシュしたとしても、
+    オリジナルのコンソールのコードページがリストアされない可能性もあります。
+    この場合、手動でリストアする方法として、chcp コマンドが使えます。
   </para>
   <para>
-    Special awareness for the DBCS systems - the codepage switch on runtime
-    using <function>ini_set</function> is likely to cause display issues. The difference to the
-    non DBCS systems is, that the extended characters require two console cells
-    to be displayed. In certain case, only the mapping of the characters into
-    the glyph set of the font could happen, no actual font change. This is the
-    nature of DBCS systems, the most simple way to prevent display issues is
-    to avoid usage of <function>ini_set</function> for the codepage change.
+    DBCS システムについては、特別に知っておくべきことがあります。
+    実行時に <function>ini_set</function> を使ってコードページを変更すると、
+    表示上の問題を引き起こす可能性があることです。
+    DBCS でないシステムとの違いは、
+    コンソールのセルふたつ分を表示に要求する拡張文字を表示する場合です。
+    場合によっては、フォントのグリフセットへの文字のマッピングが発生するのに、
+    実際のフォントは変わらないといったことが起こります。
+    これは DBCS システムの性質によって起こります。
+    この手の表示の問題を避けるもっとも簡単な方法は、
+    コードページの変更に <function>ini_set</function> を使わないことです。
   </para>
   <para>
-    As a result of UTF-8 support in the streams, PHP scripts are not limited
-    to ASCII or ANSI filenames anymore. This is supported out of the box on
-    CLI. For other SAPI, the documentation for the corresponding server
-    is useful.
+    ストリームで UTF-8 がサポートされたことによって、
+    PHP スクリプトは ASCII や ANSI のファイル名にもはや縛られなくなりました。
+    これは CLI の枠を越えたサポートです。他の SAPI については、
+    対応するサーバのドキュメントを見ると有益でしょう。
   </para>
   <para>
-    Long paths support is transparent. Paths longer than 260 bytes get
-    automatically prefixed with <literal>\\?\</literal>. The max path length is limited to
-    2048 bytes. Be aware, that the path segment limit (basename length) still
-    persists.
+    長いパス名のサポートは透過的です。
+    260バイトより長いパス名には、
+    自動的に <literal>\\?\</literal> という prefix が付きます。
+    パス名の最大の長さは、2048バイトに制限されています。
+    パスセグメントの長さの制限 (basepath の長さ) はまだ続いていることも知っておいてください。
   </para>
   <para>
-    For the best portability, it is strongely recommended to handle filenames,
-    I/O and other related topics UTF-8. Additionally, for the console applications,
-    the usage of a TrueType font is preferable and the usage of ini_set() for
-    the codepage change is discouraged.
+    移植性を最大にするために、ファイル名や I/O 、
+    そして他の関連するトピックを UTF-8 で扱うことを強くお勧めします。
+    それに加えて、コンソールアプリケーションについては、
+    TrueType フォントを使うことが好ましいです。
+    また、コードページの変更に ini_set() を使うことは推奨されません。
   </para>
   <para>
   </para>
