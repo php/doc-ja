@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 4c10034ceed36be7bba47b5d824f3f37e0060df5 Maintainer: takagi Status: ready -->
-<!-- CREDITS: hirokawa,shimooka -->
+<!-- EN-Revision: 652367cc9d51966f31e0b85874a325ead7087c31 Maintainer: takagi Status: ready -->
+<!-- CREDITS: hirokawa,shimooka,mumumu -->
 <refentry xmlns="http://docbook.org/ns/docbook" xml:id="function.strrpos">
  <refnamediv>
   <refname>strrpos</refname>
@@ -13,7 +13,7 @@
   <methodsynopsis>
    <type>int</type><methodname>strrpos</methodname>
    <methodparam><type>string</type><parameter>haystack</parameter></methodparam>
-   <methodparam><type>string</type><parameter>needle</parameter></methodparam>
+   <methodparam><type>mixed</type><parameter>needle</parameter></methodparam>
    <methodparam choice="opt"><type>int</type><parameter>offset</parameter><initializer>0</initializer></methodparam>
   </methodsynopsis>
   <para>
@@ -37,18 +37,31 @@
     <varlistentry>
      <term><parameter>needle</parameter></term>
      <listitem>
-      <para>
-       <parameter>needle</parameter> が文字列でない場合は、
-       それを整数に変換し、その番号に対応する文字として扱います。
-      </para>
+      &strings.parameter.needle.non-string;
      </listitem>
     </varlistentry>
     <varlistentry>
      <term><parameter>offset</parameter></term>
      <listitem>
+      <para> 
+       ゼロまたは正の値の場合、
+       <parameter>haystack</parameter> の 
+       最初の <parameter>offset</parameter> バイトをスキップし、
+       左から右に検索が行われます。
+      </para>
       <para>
-       指定すると、文字列の開始位置からこの文字数だけ進んだところで検索を中止します。
-       負の値を指定すると、文字列の最後からこの文字数だけ戻ったところから逆向きに検索を開始します。
+       負の値の場合、
+       <parameter>haystack</parameter> の 
+       最後の <parameter>offset</parameter> バイトをスキップし、
+       右から左に検索が行われ、
+       <parameter>needle</parameter> が最初に現れる場所を探します。
+       <note>
+        <para>
+         この方が、最後の <parameter>offset</parameter> バイトより前にある、
+         最後の <parameter>needle</parameter> 
+         を効率的に探せます。
+        </para>
+       </note>
       </para>
      </listitem>
     </varlistentry>
@@ -61,35 +74,14 @@
   <para>
    needle が見つかった位置を、
    <parameter>haystack</parameter> 文字列の先頭 (offset の値とは無関係) からの相対位置で返します。
-   文字列の開始位置は 0 であり、1 ではないことに注意しましょう。
+   <note>
+    <simpara>
+     文字列の開始位置は 0 であり、1 ではありません。
+    </simpara>
+   </note>
   </para>
   <para>
    needle が見つからない場合は &false; を返します。
-  </para>
- </refsect1>
- 
- <refsect1 role="changelog">
-  &reftitle.changelog;
-  <para>
-   <informaltable>
-    <tgroup cols="2">
-     <thead>
-      <row>
-       <entry>&Version;</entry>
-       <entry>&Description;</entry>
-      </row>
-     </thead>
-     <tbody>
-      <row>
-       <entry>5.0.0</entry>
-       <entry>
-        <parameter>needle</parameter>
-        は 1 文字以上の文字列を指定可能です。
-       </entry>
-      </row>
-     </tbody>
-    </tgroup>
-   </informaltable>
   </para>
  </refsect1>
  
@@ -124,16 +116,41 @@ if ($pos === false) { // 注意: 等号が 3 つ並んでいます
 <?php
 $foo = "0123456789a123456789b123456789c";
 
-var_dump(strrpos($foo, '7', -5));  // 末尾から 5 文字戻ったところから検索を始めます
-                                   // 結果: int(17)
+// Looking for '0' from the 0th byte (from the beginning)
+var_dump(strrpos($foo, '0', 0));
 
-var_dump(strrpos($foo, '7', 20));  // 文字列の 20 文字目から検索を始めます
-                                   // 結果: int(27)
+// Looking for '0' from the 1st byte (after byte "0")
+var_dump(strrpos($foo, '0', 1));
 
-var_dump(strrpos($foo, '7', 28));  // 結果: bool(false)
+// Looking for '7' from the 21th byte (after byte 20)
+var_dump(strrpos($foo, '7', 20));
+
+// Looking for '7' from the 29th byte (after byte 28)
+var_dump(strrpos($foo, '7', 28));
+
+// Looking for '7' right to left from the 5th byte from the end
+var_dump(strrpos($foo, '7', -5));
+
+// Looking for 'c' right to left from the 2nd byte from the end
+var_dump(strrpos($foo, 'c', -2));
+
+// Looking for '9c' right to left from the 2nd byte from the end
+var_dump(strrpos($foo, '9c', -2));
 ?>
 ]]>
     </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+int(0)
+bool(false)
+int(27)
+bool(false)
+int(17)
+bool(false)
+int(29)
+]]>
+   </screen>
    </example>
   </para>
  </refsect1>
