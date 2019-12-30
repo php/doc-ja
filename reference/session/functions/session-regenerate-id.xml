@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: b8758b0605e80c4e3610137b7502a6abeea5c69b Maintainer: hirokawa Status: working -->
-<!-- CREDITS: shimooka -->
+<!-- EN-Revision: b4174dfea1d674adb77efb461e368bf6b0eef622 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: shimooka,mumumu -->
 <refentry xmlns="http://docbook.org/ns/docbook" xml:id="function.session-regenerate-id">
  <refnamediv>
   <refname>session_regenerate_id</refname>
@@ -27,18 +27,21 @@
   </para>
   <warning>
    <para>
-    Current session_regenerate_id does not handle unstable network well.
-    e.g. Mobile and WiFi network. Therefore, you may experience lost
-    session by calling session_regenerate_id.
+    現在の session_regenerate_id は、不安定なネットワークをうまく扱えません。
+    たとえば、モバイルネットワークや WiFi ネットワークです。
+    よって、 session_regenerate_id を 呼ぶことで、セッションの消失を経験するかもしれません。
    </para>
    <para>
-    You should not destroy old session data immediately, but should use
-    destroy time-stamp and control access to old session ID. Otherwise,
-    concurrent access to page may result in inconsistent state, or you
-    may have lost session, or it may cause client(browser) side race
-    condition and may create many session ID needlessly. Immediate
-    session data deletion disables session hijack attack detection
-    and prevention also.<!-- to be translated -->
+    すぐに古いセッションデータを破棄すべきではありませんが、
+    古いセッションID のタイムスタンプと、
+    アクセス制御は破棄すべきでしょう。
+    さもないと、ページへの同時アクセスによって、
+    状態の不整合が発生したり、セッションが失われたり、
+    クライアント(ブラウザ) 側のレースコンディションが発生したり、
+    不必要なセッションIDをたくさん作らなければならなくなるかもしれません。
+    セッションデータをすぐに破棄してしまうと、
+    セッションハイジャックの検出だけでなく、
+    防止もできなくしてしまいます。
    </para>
   </warning>
  </refsect1>
@@ -52,9 +55,8 @@
       <listitem>
        <para>
         関連付けられた古いセッションを削除するかどうか。
-        You should not delete old session if you need to avoid
-        races caused by deletion or detect/avoid session hijack
-        attacks.<!-- to be translated -->
+        削除による競合や、セッションハイジャックを 防止/防ぐ
+        必要がある場合には、古いセッションを削除すべきではありません。
        </para>
       </listitem>
      </varlistentry>
@@ -84,22 +86,14 @@
       <row>
        <entry>7.0.0</entry>
        <entry>
-        <function>session_regenerate_id</function> saves old session data
-        before closing.<!-- to be translated -->
+        <function>session_regenerate_id</function> 関数は、
+        終了する前に古いセッションデータを保存するようになりました。
        </entry>
       </row>
       <row>
        <entry>5.1.0</entry>
        <entry>
         <parameter>delete_old_session</parameter> パラメータが追加されました。
-       </entry>
-      </row>
-      <row>
-       <entry>4.3.3</entry>
-       <entry>
-        これ以降、セッション保持にクッキーを使用している場合、
-        <function>session_regenerate_id</function> を使用することにより
-        新しいセッション ID を持つセッションクッキーも発行します。
        </entry>
       </row>
      </tbody>
@@ -112,34 +106,33 @@
   &reftitle.examples;
   <para>
    <example>
-    <title>A <function>session_regenerate_id</function> の使用例</title>
-    <!-- to be translated -->
+    <title><function>session_regenerate_id</function> の使用例</title>
     <programlisting role="php">
 <![CDATA[
 <?php
-// NOTE: This code is not fully working code, but an example!
+// 注意: このコードは完全に動作するわけではありません。一例です！
 
 session_start();
 
-// Check destroyed time-stamp
+// 破棄されたタイムスタンプをチェック
 if (isset($_SESSION['destroyed'])
     && $_SESSION['destroyed'] < time() - 300) {
-    // Should not happen usually. This could be attack or due to unstable network.
-    // Remove all authentication status of this users session.
+    // 通常は起こるべきではない。攻撃や不安定なネットワークによる可能性がある
+    // このユーザーのセッションから、全ての認証ステータスを削除
     remove_all_authentication_flag_from_active_sessions($_SESSION['userid']);
     throw(new DestroyedSessionAccessException);
 }
 
 $old_sessionid = session_id();
 
-// Set destroyed timestamp
-$_SESSION['destroyed'] = time(); // Since PHP 7.0.0 and up, session_regenerate_id() saves old session data
+// 破棄されたタイムスタンプを設定
+$_SESSION['destroyed'] = time(); // PHP 7.0.0 以降では、session_regenerate_id() は古いセッションデータを保存します。
 
-// Simply calling session_regenerate_id() may result in lost session, etc.
-// See next example.
+// 単に session_regenerate_id() を呼ぶだけでは、セッションの消失などに繋がる可能性があります。
+// 次の例を見てください。
 session_regenerate_id();
 
-// New session does not need destroyed timestamp
+// 新しいセッションには、破棄されたタイムスタンプは不要
 unset($_SESSION['destroyed']);
 
 $new_sessionid = session_id();
@@ -155,38 +148,40 @@ print_r($_SESSION);
   </para>
 
   <para>
-   Current session module does not handle unstable network well. You should
-   manage session ID to avoid lost session by session_regenerate_id.
+   現在のセッションモジュールは、不安定なネットワークをうまく扱えません。
+   session_regenerate_id によるセッションの消失を避けるために、
+   セッションIDを管理すべきです。
   </para>
 
   <para>
    <example>
-    <title>Avoiding lost session by <function>session_regenerate_id</function></title>
+    <title><function>session_regenerate_id</function> による、セッションの消失を避ける</title>
     <programlisting role="php">
 <![CDATA[
 <?php
-// NOTE: This code is not fully working code, but an example!
-// my_session_start() and my_session_regenerate_id() avoid lost sessions by
-// unstable network. In addition, this code may prevent exploiting stolen
-// session by attackers.
+// 注意: このコードは完全に動作するわけではありません。一例です！
+//  my_session_start() and my_session_regenerate_id() によって、
+//  不安定なネットワークによるセッションの消失を避けています。
+//  それに加えて、このコードは攻撃者から、盗まれたセッションを利用した
+//  攻撃を防ぐ可能性もあります。
 
 function my_session_start() {
     session_start();
     if (isset($_SESSION['destroyed'])) {
        if ($_SESSION['destroyed'] < time()-300) {
-           // Should not happen usually. This could be attack or due to unstable network.
-           // Remove all authentication status of this users session.
+           // 通常は起こるべきではない。攻撃や不安定なネットワークによる可能性がある
+           // このユーザーのセッションから、全ての認証ステータスを削除
            remove_all_authentication_flag_from_active_sessions($_SESSION['userid']);
            throw(new DestroyedSessionAccessException);
        }
        if (isset($_SESSION['new_session_id'])) {
-           // Not fully expired yet. Could be lost cookie by unstable network.
-           // Try again to set proper session ID cookie.
-           // NOTE: Do not try to set session ID again if you would like to remove
-           // authentication flag.
+           // 完全に expire してはいない。
+           // Cookie が不安定なネットワークによって失われた可能性がある。
+           // 適切なセッションIDのクッキーを設定するためにリトライする。
+           // 注意: 認証フラグを削除したい場合は、セッションIDを再度設定しようとしてはいけない。
            session_commit();
            session_id($_SESSION['new_session_id']);
-           // New session ID should exist
+           // 新しいセッションIDが存在しているはず
            session_start();
            return;
        }
@@ -194,24 +189,24 @@ function my_session_start() {
 }
 
 function my_session_regenerate_id() {
-    // New session ID is required to set proper session ID
-    // when session ID is not set due to unstable network.
+    // 不安定なネットワークのために、セッションID が設定されなかったときは、
+    // 新しいセッションID が、適切なセッションIDに設定されることが必須。
     $new_session_id = session_create_id();
     $_SESSION['new_session_id'] = $new_session_id;
     
-    // Set destroy timestamp
+    // 破棄された時のタイムスタンプを設定
     $_SESSION['destroyed'] = time();
     
-    // Write and close current session;
+    // 現在のセッションを書き込んで閉じる
     session_commit();
 
-    // Start session with new session ID
+    // 新しいセッションを新しいセッションIDで開始
     session_id($new_session_id);
     ini_set('session.use_strict_mode', 0);
     session_start();
     ini_set('session.use_strict_mode', 1);
     
-    // New session does not need them
+    // 新しいセッションには、以下の情報は不要
     unset($_SESSION['destroyed']);
     unset($_SESSION['new_session_id']);
 }
