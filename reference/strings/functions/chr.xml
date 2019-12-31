@@ -1,21 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: aab798badad7eb20ab21897fc80f8c1bfaa18a4e Maintainer: hirokawa Status: ready -->
-<!-- CREDITS: shimooka -->
+<!-- EN-Revision: ff7a473972e00d0d2dafabd94adb3663cb8f746a Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: shimooka,mumumu -->
 <refentry xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://docbook.org/ns/docbook" xml:id="function.chr">
  <refnamediv>
   <refname>chr</refname>
-  <refpurpose>特定の文字を返す</refpurpose>
+  <refpurpose>数値から、1バイトの文字列を生成する</refpurpose>
  </refnamediv>
  
  <refsect1 role="description">
   &reftitle.description;
   <methodsynopsis>
    <type>string</type><methodname>chr</methodname>
-   <methodparam><type>int</type><parameter>ascii</parameter></methodparam>
+   <methodparam><type>int</type><parameter>bytevalue</parameter></methodparam>
   </methodsynopsis>
   <para>
-   <parameter>ascii</parameter>で指定された、1文字からなる文字列を返します。
+   <parameter>bytevalue</parameter>
+   を符号なし数値と解釈することによって指定された文字を含む、
+   1文字からなる文字列を返します。
+  </para>
+  <para>
+   この関数は、ASCII,
+   ISO-8859, Windows 1252 のような シングルバイトエンコーディング 
+   においては、文字セットのマッピングテーブルにある望みの文字の位置を  
+   渡すことで、一文字の文字列を作り出すのに使えます。
+   しかし、この関数は <parameter>string</parameter> のエンコーディングについて知りませんし、
+   特に UTF-8 や UTF-16 のようなマルチバイトエンコーディングについては、
+   この関数に Unicode のコードポイントは渡せないことに注意してください。
   </para>
   <para>
    この関数は<function>ord</function>の逆の動作をします。
@@ -27,20 +38,20 @@
   <para>
    <variablelist>
     <varlistentry>
-     <term><parameter>ascii</parameter></term>
+     <term><parameter>bytevalue</parameter></term>
      <listitem>
       <para>
-       拡張 ASCII コード。
+       0 から 255 までの数値
       </para>
       <para>
        妥当な範囲 (0..255) 外の値を渡した場合は、255 とのビット AND を行います。
        この処理は、以下のコードと同様のアルゴリズムです。
        <programlisting role="php">
 <![CDATA[
-while ($ascii < 0) {
-    $ascii += 256;
+while ($bytevalue < 0) {
+    $bytevalue += 256;
 }
-$ascii %= 256;
+$bytevalue %= 256;
 ]]>
        </programlisting>
       </para>
@@ -53,7 +64,7 @@ $ascii %= 256;
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
-   指定した文字を返します。
+   指定されたバイトを含む、一文字からなる文字列を返します。
   </para>
  </refsect1>
  <refsect1 role="examples">
@@ -64,6 +75,8 @@ $ascii %= 256;
     <programlisting role="php">
 <![CDATA[
 <?php
+// Assumes the string will be used as ASCII or an ASCII-compatible encoding
+
 $str = "この文字列はエスケープで終了します: ";
 $str .= chr(27); /* $str の最後にエスケープ文字を付加する */
 
@@ -91,6 +104,24 @@ aA
     </screen>
    </example>
   </para>
+  <para> 
+   <example>
+    <title>個別のバイトから、UTF-8 文字列を組み立てる</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+declare(encoding='UTF-8');
+$str = chr(240) . chr(159) . chr(144) . chr(152);
+echo $str;
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+🐘
+    </screen>
+   </example>
+  </para>
  </refsect1>
 
  <refsect1 role="seealso">
@@ -100,6 +131,7 @@ aA
     <member><function>sprintf</function> のフォーマット文字列 <literal>%c</literal></member>
     <member><function>ord</function></member>
     <member><link xlink:href="&url.asciitable;">ASCII テーブル</link></member>
+    <member><function>mb_chr</function></member>
    </simplelist>
   </para>
  </refsect1>
