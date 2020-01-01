@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: ed0816f0b0e500f668eb8e89e28cb034afb52c81 Maintainer: takagi Status: working -->
+<!-- EN-Revision: 40352bfbde2dba2110bab608d6a65687c85ad064 Maintainer: takagi Status: ready -->
+<!-- Credits: mumumu -->
 <refentry xml:id="function.json-decode" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>json_decode</refname>
@@ -12,7 +13,7 @@
   <methodsynopsis>
    <type>mixed</type><methodname>json_decode</methodname>
    <methodparam><type>string</type><parameter>json</parameter></methodparam>
-   <methodparam choice="opt"><type>bool</type><parameter>assoc</parameter><initializer>false</initializer></methodparam>
+   <methodparam choice="opt"><type>bool</type><parameter>assoc</parameter><initializer>&false;</initializer></methodparam>
    <methodparam choice="opt"><type>int</type><parameter>depth</parameter><initializer>512</initializer></methodparam>
    <methodparam choice="opt"><type>int</type><parameter>options</parameter><initializer>0</initializer></methodparam>
   </methodsynopsis>
@@ -58,14 +59,15 @@
      <term><parameter>options</parameter></term>
      <listitem>
       <para>
-       JSON デコードオプションのビットマスクです。
-       <!-- to be translated -->
-       Currently there are two supported
-       options. The first is <constant>JSON_BIGINT_AS_STRING</constant> that
-       allows casting big integers to string instead of floats which is the
-       default. The second option is <constant>JSON_OBJECT_AS_ARRAY</constant>
-       that has the same effect as setting <parameter>assoc</parameter> to
-       &true;.
+       <constant>JSON_BIGINT_AS_STRING</constant>,
+       <constant>JSON_INVALID_UTF8_IGNORE</constant>,
+       <constant>JSON_INVALID_UTF8_SUBSTITUTE</constant>,
+       <constant>JSON_OBJECT_AS_ARRAY</constant>,
+       <constant>JSON_THROW_ON_ERROR</constant>.
+       からなるビットマスク。
+       各定数の意味については
+       <link linkend="json.constants">JSON 定数のページ</link>
+       に説明があります。
       </para>
      </listitem>
     </varlistentry>
@@ -82,6 +84,94 @@
    そして &null; として返されます。
    <parameter>json</parameter> のデコードに失敗したり
    エンコードされたデータが再帰制限を超えているなどの場合、&null; を返します。
+  </para>
+ </refsect1>
+
+ <refsect1 role="changelog">
+  &reftitle.changelog;
+  <para>
+   <informaltable>
+    <tgroup cols="2">
+     <thead>
+      <row>
+       <entry>&Version;</entry>
+       <entry>&Description;</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry>7.3.0</entry>
+       <entry>
+        <parameter>options</parameter> パラメータに
+        <constant>JSON_THROW_ON_ERROR</constant>
+        が追加されました。
+       </entry>
+      </row>
+      <row>
+       <entry>7.2.0</entry>
+       <entry>
+        <parameter>options</parameter> パラメータに
+        <constant>JSON_INVALID_UTF8_IGNORE</constant> および
+        <constant>JSON_INVALID_UTF8_SUBSTITUTE</constant> が追加されました。
+       </entry>
+      </row>
+      <row>
+       <entry>7.1.0</entry>
+       <entry>
+        空の JSONキー  ("") は、
+        <literal>_empty_</literal> というキーではなく、
+        空のオブジェクトプロパティにエンコードされるようになりました。
+       </entry>
+      </row>
+      <row>
+       <entry>7.0.0</entry>
+       <entry>
+        RFC 7159 と非互換の数値フォーマットは拒むようになりました。
+        トップレベルでは
+        (07, 0xff, .1, -.1) のような形式を拒み、
+        全レベルで ([1.], [1.e1]) のような形式を拒否します。
+       </entry>
+      </row>
+      <row>
+       <entry>7.0.0</entry>
+       <entry>
+        空の PHP文字列 または、文字列にキャスト後の値が空文字列になる値
+        (<literal>NULL</literal>, <literal>FALSE</literal>) については、
+        JSON の syntax error が発生するようになりました。
+       </entry>
+      </row>
+      <row>
+       <entry>5.6.0</entry>
+       <entry>
+        <literal>true</literal>、
+        <literal>false</literal> および <literal>null</literal>
+        は、すべて小文字のものだけを有効な値として受け付けるようになりました。
+        大文字が含まれる場合は警告が発生します。
+       </entry>
+      </row>
+      <row>
+       <entry>5.4.0</entry>
+       <entry>
+        <parameter>options</parameter> パラメータが追加されました。
+       </entry>
+      </row>
+      <row>
+       <entry>5.3.0</entry>
+       <entry>オプションの <parameter>depth</parameter> が追加されました。デフォルトの再帰の深さが 128 から 512 に増えました。</entry>
+      </row>
+      <row>
+       <entry>5.2.3</entry>
+       <entry>ネストの制限が 20 から 128 に拡張されました。</entry>
+      </row>
+      <row>
+       <entry>5.2.1</entry>
+       <entry>
+        基本型の JSON デコードに対応しました。
+       </entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </informaltable>
   </para>
  </refsect1>
 
@@ -277,76 +367,6 @@ object(stdClass)#1 (1) {
     を使用すればエラーの正確な状態を知ることができます。
    </para>
   </note>
- </refsect1>
-
- <refsect1 role="changelog">
-  &reftitle.changelog;
-  <para>
-   <informaltable>
-    <tgroup cols="2">
-     <thead>
-      <row>
-       <entry>&Version;</entry>
-       <entry>&Description;</entry>
-      </row>
-     </thead>
-     <tbody>
-      <!-- to be translated -->
-      <row>
-       <entry>7.1.0</entry>
-       <entry>
-        An empty JSON key ("") can be encoded to the empty object property
-        instead of using a key with value <literal>_empty_</literal>.
-       </entry>
-      </row>
-      <row>
-       <entry>7.0.0</entry>
-       <entry>
-        Rejected RFC 7159 incompatible number formats - top level
-        (07, 0xff, .1, -.1) and all levels ([1.], [1.e1])
-       </entry>
-      </row>
-      <row>
-       <entry>7.0.0</entry>
-       <entry>
-        An empty PHP string or value that after casting to string is an empty
-        string (<literal>NULL</literal>, <literal>FALSE</literal>) results
-        in JSON syntax error.
-       </entry>
-      </row>
-      <row>
-       <entry>5.6.0</entry>
-       <entry>
-        <literal>true</literal>、
-        <literal>false</literal> および <literal>null</literal>
-        は、すべて小文字のものだけを有効な値として受け付けるようになりました。
-        大文字が含まれる場合は警告が発生します。
-       </entry>
-      </row>
-      <row>
-       <entry>5.4.0</entry>
-       <entry>
-        <parameter>options</parameter> パラメータが追加されました。
-       </entry>
-      </row>
-      <row>
-       <entry>5.3.0</entry>
-       <entry>オプションの <parameter>depth</parameter> が追加されました。デフォルトの再帰の深さが 128 から 512 に増えました。</entry>
-      </row>
-      <row>
-       <entry>5.2.3</entry>
-       <entry>ネストの制限が 20 から 128 に拡張されました。</entry>
-      </row>
-      <row>
-       <entry>5.2.1</entry>
-       <entry>
-        基本型の JSON デコードに対応しました。
-       </entry>
-      </row>
-     </tbody>
-    </tgroup>
-   </informaltable>
-  </para>
  </refsect1>
 
  <refsect1 role="seealso">
