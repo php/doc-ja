@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 2c649053d0415b3a38321bd443f7b929b98916e6 Maintainer: takagi Status: working -->
-<!-- CREDITS: hirokawa -->
+<!-- EN-Revision: 0b3846c46547edafcac79acec77a5efb2a8b6330 Maintainer: takagi Status: ready -->
+<!-- CREDITS: hirokawa,mumumu -->
 <refentry xml:id="function.curl-setopt" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>curl_setopt</refname>
@@ -124,8 +124,9 @@
            <entry valign="top"><constant>CURLOPT_DNS_USE_GLOBAL_CACHE</constant></entry>
            <entry valign="top">
             &true; を設定すると、グローバル DNS キャッシュを利用します。
-            このオプションはスレッドセーフではありません。また、デフォルトで
-            有効になっています。
+            このオプションはスレッドセーフではありません。
+            また、PHP がスレッドセーフでない用途でビルドされている場合
+            (CLI, FCGI, Apache2-Prefork など) には、デフォルトで有効になっています。
            </entry>
            <entry valign="top">
            </entry>
@@ -398,7 +399,10 @@
            </entry>
            <entry valign="top">
             PHP 5.5.0 で追加され、デフォルトは &false; でした。
-            PHP 5.6.0 以降は、デフォルトが &true; に変わります。
+            PHP 5.6.0 で、デフォルトが &true; に変わりました。
+            PHP 7 で、このオプションは削除されました;
+            つまり、ファイルをアップロードするためには
+            CURLFile インターフェイスを使わなければならないということです。
            </entry>
           </row>
           <row>
@@ -605,35 +609,40 @@
             cURL 7.12.2 で追加されました。
            </entry>
           </row>
-          <!-- TODO: to be tlanslated -->
           <row>
            <entry valign="top"><constant>CURLOPT_HEADEROPT</constant></entry>
            <entry valign="top">
-            How to deal with headers. One of the following constants:
+            ヘッダをどう扱うかを指定します。
+            次の定数のうち、一つを指定できます:
             <simpara>
-             <constant>CURLHEADER_UNIFIED</constant>: the headers specified in
-             <constant>CURLOPT_HTTPHEADER</constant> will be used in requests
-             both to servers and proxies. With this option enabled, 
-             <constant>CURLOPT_PROXYHEADER</constant> will not have any effect.
+             <constant>CURLHEADER_UNIFIED</constant>: 
+             <constant>CURLOPT_HTTPHEADER</constant> で指定されたヘッダが、
+             サーバとプロキシ双方のリクエストに対して使われます。
+             このオプションが有効な場合、
+             <constant>CURLOPT_PROXYHEADER</constant> は効果がありません。
             </simpara>
             <simpara>
-             <constant>CURLHEADER_SEPARATE</constant>: makes
-             <constant>CURLOPT_HTTPHEADER</constant> headers only get sent to
-             a server and not to a proxy. Proxy headers must be set with
-             <constant>CURLOPT_PROXYHEADER</constant> to get used. Note that if
-             a non-CONNECT request is sent to a proxy, libcurl will send both
-             server headers and proxy headers. When doing CONNECT, libcurl will
-             send <constant>CURLOPT_PROXYHEADER</constant> headers only to the
-             proxy and then <constant>CURLOPT_HTTPHEADER</constant> headers
-             only to the server.
+             <constant>CURLHEADER_SEPARATE</constant>:
+             <constant>CURLOPT_HTTPHEADER</constant> で指定されたヘッダは、
+             プロキシには送られず、サーバにのみ送られます。
+             プロキシに送るヘッダは、
+             <constant>CURLOPT_PROXYHEADER</constant> を設定しなければなりません。
+             CONNECT でないリクエストがプロキシに送信された場合、
+             libcurl はサーバとプロキシ両方にヘッダを送信することに注意してください。
+             CONNECT リクエストを送信する場合、
+             libcurl は <constant>CURLOPT_PROXYHEADER</constant> 
+             をプロキシのみに送り、
+             <constant>CURLOPT_HTTPHEADER</constant> をサーバにのみ送信します。
             </simpara>
             <simpara>
-             Defaults to <constant>CURLHEADER_SEPARATE</constant> as of cURL
-             7.42.1, and <constant>CURLHEADER_UNIFIED</constant> before.
+             cURL 7.42.1 以降は
+             <constant>CURLHEADER_SEPARATE</constant> がデフォルトで、
+             それより前では、
+             <constant>CURLHEADER_UNIFIED</constant> がデフォルトでした。
             </simpara>
            </entry>
            <entry valign="top">
-            Added in cURL 7.37.0. Available since PHP 7.0.7.
+            cURL 7.37.0 で追加されました。PHP 7.0.7 以降で利用可能です。
            </entry>
           </row>
           <row>
@@ -843,31 +852,32 @@
           <row>
            <entry valign="top"><constant>CURLOPT_SSL_OPTIONS</constant></entry>
            <entry valign="top">
-            Set SSL behavior options, which is a bitmask of any of the following constants:
+            SSL 関連の振る舞いのオプションを設定します。
+            以下に示す定数のビットマスクの組み合わせです:
             <simpara>
-             <constant>CURLSSLOPT_ALLOW_BEAST</constant>: do not attempt to use
-             any workarounds for a security flaw in the SSL3 and TLS1.0 protocols.
+             <constant>CURLSSLOPT_ALLOW_BEAST</constant>:
+             SSL3 や TLS1.0 プロトコルのセキュリティ上の欠陥を回避するあらゆる手段を使わない。
             </simpara>
             <simpara>
-             <constant>CURLSSLOPT_NO_REVOKE</constant>: disable certificate
-             revocation checks for those SSL backends where such behavior is
-             present.
+             <constant>CURLSSLOPT_NO_REVOKE</constant>:
+             証明書の失効チェックを行うSSLバックエンドについて、それを無効にする。
             </simpara>
            </entry>
            <entry valign="top">
-            Added in cURL 7.25.0. Available since PHP 7.0.7.
+            cURL 7.25.0 で追加されました。PHP 7.0.7 以降で利用可能です。
            </entry>
           </row>
           <row>
            <entry valign="top"><constant>CURLOPT_SSL_VERIFYHOST</constant></entry>
            <entry valign="top">
-            1 は SSL ピア証明書に一般名が存在するかどうかを調べます。
-            2 はそれに加え、その名前がホスト名と一致することを検証します。
+            <literal>1</literal> は SSL ピア証明書に一般名が存在するかどうかを調べます。
+            <literal>2</literal> はそれに加え、その名前がホスト名と一致することを検証します。
+            <literal>0</literal> は、名前をチェックしません。
             本番環境では、このオプションの値は常に
-            2 (デフォルト値) にしておかなければなりません。
+            <literal>2</literal> (デフォルト値) にしておかなければなりません。
            </entry>
            <entry valign="top">
-            値 1 は、cURL 7.28.1 以降では使えなくなりました。
+            値 <literal>1</literal> は、cURL 7.28.1 以降では使えなくなりました。
            </entry>
           </row>
           <row>
@@ -893,10 +903,10 @@
           <row>
            <entry valign="top"><constant>CURLOPT_STREAM_WEIGHT</constant></entry>
            <entry valign="top">
-            Set the numerical stream weight (a number between 1 and 256).
+            ストリームの重みを数値で設定します(1 から 256 までの数値)
            </entry>
            <entry valign="top">
-            Added in cURL 7.46.0. Available since PHP 7.0.7.
+            cURL 7.46.0 で追加されました。PHP 7.0.7 以降で利用可能です。
            </entry>
           </row>
           <row>
@@ -1103,40 +1113,40 @@
           <row>
            <entry valign="top"><constant>CURLOPT_DEFAULT_PROTOCOL</constant></entry>
            <entry valign="top"><para>
-            The default protocol to use if the URL is missing a scheme name.
+            URL にスキーム名がなかった場合のデフォルトのプロトコル
            </para></entry>
            <entry valign="top">
-            Added in cURL 7.45.0. Available since PHP 7.0.7.
+            cURL 7.45.0 で追加されました。PHP 7.0.7 以降で利用可能です。
            </entry>
           </row>
           <row>
            <entry valign="top"><constant>CURLOPT_DNS_INTERFACE</constant></entry>
            <entry valign="top"><para>
-            Set the name of the network interface that the DNS resolver should bind to.
-            This must be an interface name (not an address).
+            DNS リゾルバがバインドするべきネットワークインターフェイス名を設定します。
+            これは、(アドレスではなく)インターフェイス名でなければなりません。
             </para></entry>
            <entry valign="top">
-            Added in cURL 7.33.0. Available since PHP 7.0.7.
+            cURL 7.33.0 で追加されました。PHP 7.0.7 以降で利用可能です。
            </entry>
           </row>
           <row>
            <entry valign="top"><constant>CURLOPT_DNS_LOCAL_IP4</constant></entry>
            <entry valign="top"><para>
-            Set the local IPv4 address that the resolver should bind to. The argument
-            should contain a single numerical IPv4 address as a string.
+            リゾルバがバインドするべきローカルの IPv4 アドレスを設定します。
+            この値は、数値の IPv4 アドレスを文字列で含めるべきです。
             </para></entry>
            <entry valign="top">
-            Added in cURL 7.33.0. Available since PHP 7.0.7.
+            cURL 7.33.0 で追加されました。PHP 7.0.7 以降で利用可能です。
            </entry>
           </row>
           <row>
            <entry valign="top"><constant>CURLOPT_DNS_LOCAL_IP6</constant></entry>
            <entry valign="top"><para>
-            Set the local IPv6 address that the resolver should bind to. The argument
-            should contain a single numerical IPv6 address as a string.
+            リゾルバがバインドするべきローカルの IPv6 アドレスを設定します。
+            この値は、数値の IPv6 アドレスを文字列で含めるべきです。
             </para></entry>
            <entry valign="top">
-            Added in cURL 7.33.0. Available since PHP 7.0.7.
+            cURL 7.33.0 で追加されました。PHP 7.0.7 以降で利用可能です。
            </entry>
           </row>
           <row>
@@ -1211,29 +1221,30 @@
            <entry valign="top">
            </entry>
           </row>
+          <!-- to be translated -->
           <row>
            <entry valign="top"><constant>CURLOPT_LOGIN_OPTIONS</constant></entry>
            <entry valign="top">
-            Can be used to set protocol specific login options, such as the
-            preferred authentication mechanism via "AUTH=NTLM" or "AUTH=*",
-            and should be used in conjunction with the
-            <constant>CURLOPT_USERNAME</constant> option.
+            プロトコル特有のログインオプションを設定するために使えます。
+            たとえば好ましい認証メカニズムが "AUTH=NTLM" とか "AUTH=*" の場合で、
+            <constant>CURLOPT_USERNAME</constant> オプションと組み合わせて使うべき場合です。
            </entry>
            <entry valign="top">
-            Added in cURL 7.34.0. Available since PHP 7.0.7.
+            cURL 7.34.0 で追加されました。PHP 7.0.7 以降で利用可能です。
            </entry>
           </row>
           <row>
            <entry valign="top"><constant>CURLOPT_PINNEDPUBLICKEY</constant></entry>
            <entry valign="top">
-             Set the pinned public key.
-             The string can be the file name of your pinned public key. The file
-             format expected is "PEM" or "DER". The string can also be any
-             number of base64 encoded sha256 hashes preceded by "sha256//" and
-             separated by ";".
+             ピン止めされた公開鍵を設定します。
+             ピン止めされた公開鍵のファイル名ファイル名を文字列として指定できます。
+             期待されているファイルフォーマットは "PEM" または "DER" 形式です。
+             文字列は、 base64 エンコードされた sha256 ハッシュで、
+             "sha256//" が先頭に付いたものです。これを任意の数だけ指定でき、
+             ";" で区切られます。
            </entry>
            <entry valign="top">
-            Added in cURL 7.39.0. Available since PHP 7.0.7.
+            cURL 7.39.0 で追加されました。PHP 7.0.7 以降で利用可能です。
            </entry>
           </row>
           <row>
@@ -1292,10 +1303,10 @@
           <row>
            <entry valign="top"><constant>CURLOPT_PROXY_SERVICE_NAME</constant></entry>
            <entry valign="top">
-            The proxy authentication service name.
+            プロキシ認証サービス名
            </entry>
            <entry valign="top">
-            Added in cURL 7.34.0. Available since PHP 7.0.7.
+            cURL 7.34.0 で追加されました。PHP 7.0.7 以降で利用可能です。
            </entry>
           </row>
           <row>
@@ -1338,10 +1349,10 @@
           <row>
            <entry valign="top"><constant>CURLOPT_SERVICE_NAME</constant></entry>
            <entry valign="top">
-            The authentication service name.
+            認証サービス名
            </entry>
            <entry valign="top">
-            Added in cURL 7.43.0. Available since PHP 7.0.7.
+            cURL 7.43.0 で追加されました。PHP 7.0.7 以降で利用可能です。
            </entry>
           </row>
           <row>
@@ -1471,11 +1482,12 @@
           <row>
            <entry valign="top"><constant>CURLOPT_UNIX_SOCKET_PATH</constant></entry>
            <entry valign="top">
-            Enables the use of Unix domain sockets as connection endpoint and
-            sets the path to the given <type>string</type>.
+            接続のエンドポイントとして Unixドメインソケットの利用を有効にし、
+            ドメインソケットのパスを与えられた <type>string</type> として設定します。
            </entry>
            <entry valign="top">
-            Added in cURL 7.40.0. Available since PHP 7.0.7.
+            cURL 7.40.0 で追加されました。
+            PHP 7.0.7 以降で利用可能です。
            </entry>
           </row>
           <row>
@@ -1499,10 +1511,10 @@
           <row>
            <entry valign="top"><constant>CURLOPT_USERNAME</constant></entry>
            <entry valign="top">
-            The user name to use in authentication.
+            認証に使うユーザー名
            </entry>
            <entry valign="top">
-            Added in cURL 7.19.1. Available since PHP 5.5.0.
+            cURL 7.19.1 で追加されました。PHP 5.5.0 以降で利用可能です。
            </entry>
           </row>
           <row>
@@ -1517,10 +1529,10 @@
           <row>
            <entry valign="top"><constant>CURLOPT_XOAUTH2_BEARER</constant></entry>
            <entry valign="top">
-            Specifies the OAuth 2.0 access token.
+            OAuth 2.0 のアクセストークンを指定します。
            </entry>
            <entry valign="top">
-            Added in cURL 7.33.0. Available since PHP 7.0.7.
+            cURL 7.33.0 で追加されました。PHP 7.0.7 以降で利用可能です。
            </entry>
           </row>
          </tbody>
@@ -1544,12 +1556,14 @@
           <row>
            <entry valign="top"><constant>CURLOPT_CONNECT_TO</constant></entry>
            <entry valign="top">
-            Connect to a specific host and port instead of the URL's host and port.
-            Accepts an array of strings with the format
-            <literal>HOST:PORT:CONNECT-TO-HOST:CONNECT-TO-PORT</literal>.
+            URL で指定されたホストとポートのかわりに接続する、
+            特定のホストとポート。
+            <literal>HOST:PORT:CONNECT-TO-HOST:CONNECT-TO-PORT</literal>
+            というフォーマット文字列の配列を受け入れます。
            </entry>
            <entry valign="top">
-            Added in cURL 7.49.0. Available since PHP 7.0.7.
+            cURL 7.49.0 で追加されました。
+            PHP 7.0.7 以降で利用可能です。
            </entry>
           </row>
           <row>
@@ -1584,10 +1598,11 @@
           <row>
            <entry valign="top"><constant>CURLOPT_PROXYHEADER</constant></entry>
            <entry valign="top">
-            An array of custom HTTP headers to pass to proxies.
+            プロキシに渡すカスタムHTTPヘッダの配列
            </entry>
            <entry valign="top">
-            Added in cURL 7.37.0. Available since PHP 7.0.7.
+            cURL 7.37.0 で追加されました。
+            PHP 7.0.7 以降で利用可能です。
            </entry>
           </row>
           <row>
@@ -1596,6 +1611,22 @@
             FTP リクエストの前にサーバー上で実行する FTP コマンドの配列。
            </entry>
            <entry valign="top">
+           </entry>
+          </row>
+          <row>
+           <entry valign="top"><constant>CURLOPT_RESOLVE</constant></entry>
+           <entry valign="top">
+            特定のホストとポートのペアのための、カスタムアドレスを指定します。
+            ホスト名、ポート、そして IP アドレスの文字列の配列です。
+            それぞれの要素はコロンで区切らる必要があります。
+            以下のようなフォーマットになります:
+            <code>
+             array("example.com:80:127.0.0.1")
+            </code>
+           </entry>
+           <entry valign="top">
+            cURL 7.21.3 で追加されました。
+            PHP 5.5.0 以降で利用可能です。
            </entry>
           </row>
          </tbody>
@@ -1802,6 +1833,14 @@
         <constant>CURLPROXY_HTTP_1_0</constant>, <constant>CURLSSH_AUTH_AGENT</constant>,
         <constant>CURLSSLOPT_NO_REVOKE</constant>
         が追加されました。
+       </entry>
+      </row>
+      <row>
+       <entry>7.0.0</entry>
+       <entry>
+        <constant>CURLOPT_SAFE_UPLOAD</constant> オプションを無効にするサポートが削除されました。
+        全ての curl によるファイルアップロードは、
+        <classname>CURLFile</classname> を使わなければなりません。
        </entry>
       </row>
       <row>

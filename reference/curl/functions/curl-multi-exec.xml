@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: b653253e42693d51085cc03257f56b5d75626b02 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 6c9c135b4171be3c1004348e89e51bb46136d38d Maintainer: takagi Status: ready -->
+<!-- Credits: mumumu -->
 <refentry xml:id="function.curl-multi-exec" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>curl_multi_exec</refname>
@@ -67,7 +68,7 @@ $ch1 = curl_init();
 $ch2 = curl_init();
 
 // URL およびその他適切なオプションを設定します。
-curl_setopt($ch1, CURLOPT_URL, "http://lxr.php.net/");
+curl_setopt($ch1, CURLOPT_URL, "http://example.com/");
 curl_setopt($ch1, CURLOPT_HEADER, 0);
 curl_setopt($ch2, CURLOPT_URL, "http://www.php.net/");
 curl_setopt($ch2, CURLOPT_HEADER, 0);
@@ -79,19 +80,14 @@ $mh = curl_multi_init();
 curl_multi_add_handle($mh,$ch1);
 curl_multi_add_handle($mh,$ch2);
 
-$active = null;
 // ハンドルを実行します
 do {
-    $mrc = curl_multi_exec($mh, $active);
-} while ($mrc == CURLM_CALL_MULTI_PERFORM);
-
-while ($active && $mrc == CURLM_OK) {
-    if (curl_multi_select($mh) != -1) {
-        do {
-            $mrc = curl_multi_exec($mh, $active);
-        } while ($mrc == CURLM_CALL_MULTI_PERFORM);
+    $status = curl_multi_exec($mh, $active);
+    if ($active) {
+        // Wait a short time for more activity
+        curl_multi_select($mh);
     }
-}
+} while ($active && $status == CURLM_OK);
 
 // ハンドルを閉じます
 curl_multi_remove_handle($mh, $ch1);
