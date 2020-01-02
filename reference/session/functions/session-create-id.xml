@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision$ -->
+<!-- EN-Revision: a9ada9d6f9b5504aca3815eed58aa5d499e03eab Maintainer: mumumu Status: ready -->
+
+<refentry xmlns="http://docbook.org/ns/docbook" xml:id="function.session-create-id">
+ <refnamediv>
+  <refname>session_create_id</refname>
+  <refpurpose>新しいセッションIDを作成する</refpurpose>
+ </refnamediv>
+ <refsect1 role="description">
+  &reftitle.description;
+  <methodsynopsis>
+   <type>string</type><methodname>session_create_id</methodname>
+   <methodparam choice="opt"><type>string</type><parameter>prefix</parameter></methodparam>
+  </methodsynopsis>
+  <para>
+   <function>session_create_id</function> 関数は、
+   現在のセッションのための新しいセッションIDを作成するのに使われます。
+   この関数は、衝突しないセッションIDを返します。
+  </para>
+  <para>
+   セッションがアクティブでなければ、衝突しているかどうかのチェックは省略されます。
+  </para>
+  <para>
+   php.ini の設定に従って、セッションIDは作成されます。
+  </para>
+  <para>
+   重要なのは、あなたの Webサーバが使っているものと同じユーザIDを、
+   GC タスクのスクリプトで使うことが重要です。
+   そうしないと、特にファイルの保存ハンドラでパーミッションの問題が起こるかもしれません。
+  </para>
+ </refsect1>
+
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <para>
+   <variablelist>
+    <varlistentry>
+     <term><parameter>prefix</parameter></term>
+      <listitem>
+       <para>
+        <parameter>prefix</parameter> が指定されると、
+        新しいセッションIDの前に、
+        <parameter>prefix</parameter> が付きます。
+        セッションIDに全ての文字が許されているわけではありません。
+        <literal>a-z A-Z 0-9 , (コンマ) そして -
+        (マイナス)</literal> が許可されています。
+       </para> 
+      </listitem>
+     </varlistentry>
+   </variablelist>
+  </para>
+ </refsect1>
+
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <para>
+   <function>session_create_id</function> 関数は、
+   現在のセッションのための、衝突しない新しいセッションIDを返します。
+   セッションがアクティブでない時に使われると、
+   衝突しているかどうかのチェックは省略されます。
+  </para>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title><function>session_regenerate_id</function> と一緒に、<function>session_create_id</function> を使う例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+// タイムスタンプにおる管理をサポートした
+// 自前のセッション開始関数
+function my_session_start() {
+    session_start();
+    // 古過ぎるセッションIDを使うことを許してはいけない
+    if (!empty($_SESSION['deleted_time']) && $_SESSION['deleted_time'] < time() - 180) {
+        session_destroy();
+        session_start();
+    }
+}
+
+// 自前のセッションID再生成関数
+function my_session_regenerate_id() {
+    // セッションがアクティブな間は、
+    // 衝突しないことを確実にするため
+    // session_create_id() を呼び出す
+    if (session_status() != PHP_SESSION_ACTIVE) {
+        session_start();
+    }
+    // 警告: 秘密の文字列を prefix に使ってはいけない!
+    $newid = session_create_id('myprefix-');
+    // Set deleted timestamp. Session data must not be deleted immediately for reasons.
+
+    // 削除時のタイムスタンプを設定
+    // セッションデータは、それなりの理由があるので、すぐに削除してはいけない
+    $_SESSION['deleted_time'] = time();
+    // セッションを終了する
+    session_commit();
+    // ユーザー定義のセッションIDを確実に受け入れるようにする
+    // 注意: 通常の操作のためには、use_strict_mode は有効でなければならない
+    ini_set('session.use_strict_mode', 0);
+    // 新しいカスタムのセッションIDを設定
+    session_id($newid);
+    // カスタムのセッションIDでセッションを開始
+    session_start();
+}
+
+// use_strict_mode を確実に有効にする
+// use_strict_mode は、セキュリティ上の都合で強制する
+ini_set('session.use_strict_mode', 1);
+my_session_start();
+
+// セッションID は以下の場合に再生成しなければならない
+//  - ユーザーのログイン時
+//  - ユーザーがログアウト時
+//  - 一定時間経過時
+my_session_regenerate_id();
+
+// Write useful codes
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+ </refsect1>
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <para>
+   <simplelist>
+    <member><function>session_regenerate_id</function></member>
+    <member><function>session_start</function></member>
+    <member><link linkend="ini.session.use-strict-mode">session.use_strict_mode</link></member>
+    <member><methodname>SessionHandler::create_sid</methodname></member>
+   </simplelist>
+  </para>
+ </refsect1>
+</refentry>
+
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"~/.phpdoc/manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
