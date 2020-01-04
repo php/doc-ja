@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 96c9d88bad9a7d7d44bfb7f26c226df7ee9ddf26 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: c84f47ac7f4c2de13fc06a13bb7a0680e1d9aa56 Maintainer: takagi Status: ready -->
+<!-- Credits: mumumu -->
 <refentry xml:id="function.date-sun-info" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>date_sun_info</refname>
@@ -52,7 +53,119 @@
   &reftitle.returnvalues;
   <para>
    成功した場合に配列、&return.falseforfailure;。
+   配列の構造の詳細は、以下のリストのとおりです
   </para>
+  <para>
+   <variablelist>
+    <varlistentry>
+     <term><literal>sunrise</literal></term>
+     <listitem>
+      <simpara>
+       日の出の時刻 (天頂角 = 90°50' )
+      </simpara>
+     </listitem> 
+    </varlistentry>
+    <varlistentry>
+     <term><literal>sunset</literal></term>
+     <listitem>
+      <simpara>
+       日の入りの時刻 (天頂角 = 90°35' )
+      </simpara>
+     </listitem> 
+    </varlistentry>
+    <varlistentry>
+     <term><literal>transit</literal></term>
+     <listitem>
+      <simpara>
+       太陽が天頂に達する時刻。
+       つまり、もっとも上部に達した時刻です。
+      </simpara>
+     </listitem> 
+    </varlistentry>
+    <varlistentry>
+     <term><literal>civil_twilight_begin</literal></term>
+     <listitem>
+      <simpara>
+       夜明けの始まり(天頂角 = 96°)
+       <literal>sunrise</literal> の時刻に終了します。
+      </simpara>
+     </listitem> 
+    </varlistentry>
+    <varlistentry>
+     <term><literal>civil_twilight_end</literal></term>
+     <listitem>
+      <simpara>
+       夕暮れの終わり(天頂角 =  96°)
+       <literal>sunset</literal> の時刻に始まります。
+      </simpara>
+     </listitem> 
+    </varlistentry>
+    <varlistentry>
+     <term><literal>nautical_twilight_begin</literal></term>
+     <listitem>
+      <simpara>
+       航海上の夜明け (天頂角 = 102°)
+       <literal>civil_twilight_begin</literal> に終了します。
+      </simpara>
+     </listitem> 
+    </varlistentry>
+    <varlistentry>
+     <term><literal>nautical_twilight_end</literal></term>
+     <listitem>
+      <simpara>
+       航海上の夕暮れ (天頂角 =  102°)
+       <literal>civil_twilight_end</literal> の時刻に始まります。
+      </simpara>
+     </listitem> 
+    </varlistentry>
+    <varlistentry>
+     <term><literal>astronomical_twilight_begin</literal></term>
+     <listitem>
+      <simpara>
+       天文学上の夜明け (天頂角 = 108°)
+       <literal>nautical_twilight_begin</literal> に終了します。
+      </simpara>
+     </listitem> 
+    </varlistentry>
+    <varlistentry>
+     <term><literal>astronomical_twilight_end</literal></term>
+     <listitem>
+      <simpara>
+       天文学上の夕暮れ (天頂角 = 108°)
+       <literal>nautical_twilight_end</literal> の時刻に始まります。
+      </simpara>
+     </listitem> 
+    </varlistentry>
+   </variablelist>
+  </para>
+  <para> 
+   配列の要素の値は、UNIXタイムスタンプ、または
+   太陽が天頂より一日中下にある場合、&false; です。
+   また、一日中天頂より上にある場合、 &true; です。
+  </para>
+ </refsect1>
+
+ <refsect1 role="changelog">
+  &reftitle.changelog;
+  <informaltable>
+   <tgroup cols="2">
+    <thead>
+     <row>
+      <entry>&Version;</entry>
+      <entry>&Description;</entry>
+     </row>
+    </thead>
+    <tbody>
+     <row>
+      <entry>5.2.2</entry>
+      <entry>
+       <parameter>latitude</parameter> と 
+       <parameter>longitude</parameter> の順番が逆になりました。
+      </entry>
+     </row>
+    </tbody>
+   </tgroup>
+  </informaltable>
  </refsect1>
 
  <refsect1 role="examples">
@@ -82,6 +195,76 @@ nautical_twilight_begin: 04:52:25
 nautical_twilight_end: 16:41:06
 astronomical_twilight_begin: 04:21:32
 astronomical_twilight_end: 17:12:00
+]]>
+    </screen>
+   </example>
+   <example>
+    <title>Polar night</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+var_dump(date_sun_info(strtotime("2017-12-21"), 90, 0));
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+array(9) {
+  ["sunrise"]=>
+  bool(false)
+  ["sunset"]=>
+  bool(false)
+  ["transit"]=>
+  int(1513857490)
+  ["civil_twilight_begin"]=>
+  bool(false)
+  ["civil_twilight_end"]=>
+  bool(false)
+  ["nautical_twilight_begin"]=>
+  bool(false)
+  ["nautical_twilight_end"]=>
+  bool(false)
+  ["astronomical_twilight_begin"]=>
+  bool(false)
+  ["astronomical_twilight_end"]=>
+  bool(false)
+}
+]]>
+    </screen>
+   </example>
+   <example>
+    <title>Midnight sun</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+var_dump(date_sun_info(strtotime("2017-06-21"), 90, 0));
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+array(9) {
+  ["sunrise"]=>
+  bool(true)
+  ["sunset"]=>
+  bool(true)
+  ["transit"]=>
+  int(1498046510)
+  ["civil_twilight_begin"]=>
+  bool(true)
+  ["civil_twilight_end"]=>
+  bool(true)
+  ["nautical_twilight_begin"]=>
+  bool(true)
+  ["nautical_twilight_end"]=>
+  bool(true)
+  ["astronomical_twilight_begin"]=>
+  bool(true)
+  ["astronomical_twilight_end"]=>
+  bool(true)
+}
 ]]>
     </screen>
    </example>
