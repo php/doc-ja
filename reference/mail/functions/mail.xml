@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: f10ab85a2947f2ebf32fd3ee05df0dbca4095188 Maintainer: hirokawa Status: ready -->
-<!-- CREDITS: takagi -->
+<!-- EN-Revision: ce9318501243db8c1bdfd2aa64595c772f92427e Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: takagi,mumumu -->
 <refentry xml:id="function.mail" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
   <refname>mail</refname>
@@ -15,7 +15,7 @@
    <methodparam><type>string</type><parameter>to</parameter></methodparam>
    <methodparam><type>string</type><parameter>subject</parameter></methodparam>
    <methodparam><type>string</type><parameter>message</parameter></methodparam>
-   <methodparam choice="opt"><type>string</type><parameter>additional_headers</parameter></methodparam>
+   <methodparam choice="opt"><type>mixed</type><parameter>additional_headers</parameter></methodparam>
    <methodparam choice="opt"><type>string</type><parameter>additional_parameters</parameter></methodparam>
   </methodsynopsis>
   <para>
@@ -89,16 +89,21 @@ $text = str_replace("\n.", "\n..", $text);
      <term><parameter>additional_headers</parameter>（オプション）</term>
      <listitem>
       <para>
-       メールヘッダの最後に挿入される文字列。
+       メールヘッダの最後に挿入される <type>String</type> または <type>array</type>。
       </para>
       <para>
        通常、これは追加のヘッダ（From、Cc、Bcc）のために用いられます。
        複数のヘッダを追加する場合は CRLF（\r\n）で区切ります。
        外部からのデータを用いてヘッダを組み立てる際には、想定外のヘッダが注入されることを防ぐための処理が必要です。
       </para>
+      <para>
+       <type>array</type> が渡されると、キーがヘッダの名前となり、
+       値がそれぞれのヘッダの値になります。
+      </para>
       <note>
        <para>
-        <parameter>additional_headers</parameter> は、メールヘッダインジェクション対策を行っていません。
+        PHP 5.4.42 および 5.5.27 より前のバージョンでは、<parameter>additional_headers</parameter> は、
+        メールヘッダインジェクション対策を行っていませんでした。
         したがって、指定したヘッダが安全なものであり、ヘッダ以外のものを含まないようにするのはユーザー側の役目となります。
         複数の改行文字を置くことでメール本文を始めたりしてはいけません。
        </para>
@@ -192,12 +197,18 @@ $text = str_replace("\n.", "\n..", $text);
      </thead>
      <tbody>
       <row>
-       <entry>4.2.3</entry>
+       <entry>7.2.0</entry>
        <entry>
-        <link linkend="ini.safe-mode">safe_mode</link> 時には
-        <parameter>additional_parameters</parameter> パラメータを無効に
-        しました。もし用いられた場合には <function>mail</function> 関数は
-        警告メッセージを出して &false; を返します。
+        <parameter>additional_headers</parameter> パラメータは、
+        <type>array</type> も受け入れるようになりました。
+       </entry>
+      </row>
+      <row>
+       <entry>5.4.42, 5.5.27</entry>
+       <entry>
+        ヘッダインジェクション攻撃に対する防御が
+        <parameter>additional_headers</parameter> パラメータに追加されました。
+        これは、複数の連続した改行文字がもはや許されないことを意味します。
        </entry>
       </row>
      </tbody>
@@ -250,7 +261,30 @@ mail($to, $subject, $message, $headers);
     </programlisting>
    </example>
    <example>
-    <title>追加ヘッダ及び追加コマンドラインパラメータを指定してメールを送信する</title>
+    <title>追加のヘッダを <type>array</type> で指定してメールを送信する</title>
+    <para>
+     この例は、すぐ上の例と同じメールを送信します。
+     しかし、追加のヘッダを配列で渡しています (PHP 7.2.0 以降で利用可能)
+    </para>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$to      = 'nobody@example.com';
+$subject = 'the subject';
+$message = 'hello';
+$headers = array(
+    'From' => 'webmaster@example.com',
+    'Reply-To' => 'webmaster@example.com',
+    'X-Mailer' => 'PHP/' . phpversion()
+);
+
+mail($to, $subject, $message, $headers);
+?>
+]]>
+    </programlisting>
+   </example>
+   <example>
+    <title>追加のコマンドラインパラメータを指定してメールを送信する</title>
     <para>
      <literal>sendmail_path</literal> を用いてメールを送信する際に利用する
      追加パラメータとして、<parameter>additional_parameters</parameter>
@@ -391,6 +425,7 @@ mail($to, $subject, $message, implode("\r\n", $headers));
   &reftitle.seealso;
   <para>
    <simplelist>
+    <member><function>mb_send_mail</function></member>
     <member><function>imap_mail</function></member>
     <member><link xlink:href="&url.pear.package;Mail">PEAR::Mail</link></member>
     <member><link xlink:href="&url.pear.package;Mail_Mime">PEAR::Mail_Mime</link></member>
