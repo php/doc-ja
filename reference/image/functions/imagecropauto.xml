@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 055cdb7c7e4ade095b003dad1ab36a4c5a18b61d Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 80b8e5fbd91763fd10b43403093cbed990ba43d7 Maintainer: takagi Status: ready -->
+<!-- Credits: mumumu -->
 
 <refentry xml:id="function.imagecropauto" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -13,7 +14,7 @@
   <methodsynopsis>
    <type>resource</type><methodname>imagecropauto</methodname>
    <methodparam><type>resource</type><parameter>image</parameter></methodparam>
-   <methodparam choice="opt"><type>int</type><parameter>mode</parameter><initializer>-1</initializer></methodparam>
+   <methodparam choice="opt"><type>int</type><parameter>mode</parameter><initializer><constant>IMG_CROP_DEFAULT</constant></initializer></methodparam>
    <methodparam choice="opt"><type>float</type><parameter>threshold</parameter><initializer>.5</initializer></methodparam>
    <methodparam choice="opt"><type>int</type><parameter>color</parameter><initializer>-1</initializer></methodparam>
   </methodsynopsis>
@@ -40,8 +41,11 @@
        <term><constant>IMG_CROP_DEFAULT</constant></term>
        <listitem>
         <simpara>
-         <constant>IMG_CROP_TRANSPARENT</constant> を使うことを試みます。
-         失敗した場合は <constant>IMG_CROP_SIDES</constant> を使います。
+         <constant>IMG_CROP_TRANSPARENT</constant> と同じです。
+         PHP 7.4.0 より前のバージョンでは、
+         PHP にバンドルされた libgd は、
+         画像に透過色がない場合に <constant>IMG_CROP_SIDES</constant>
+         にフォールバックしていました。
         </simpara>
        </listitem>
       </varlistentry>
@@ -99,6 +103,14 @@
      <para>
       <constant>IMG_CROP_THRESHOLD</constant> モードのときにだけ利用します。
      </para>
+     <note>
+      <simpara>
+       PHP 7.4.0 より前のバージョンでは、
+       PHP にバンドルされていた libgd はやや異なるアルゴリズムを用いていました。
+       なので、同じ <parameter>threshold</parameter> を渡しても
+       システムの libgd と PHP にバンドルされた libgd とは異なる結果が生成されていました。
+      </simpara>
+     </note>
     </listitem>
    </varlistentry>
    <varlistentry>
@@ -119,9 +131,46 @@
   &reftitle.returnvalues;
   <para>
    成功した場合にクロップ後の画像リソースを返します。&return.falseforfailure;。
-   クロップする箇所がなかった場合やすべてクロップされてしまった場合は、処理が失敗したものとみなされます。
-   この場合は、<function>imagecrop</function> は &false; を返します。
+   すべてクロップされてしまった場合は、
+   <function>imagecrop</function> は &false; を返します。
   </para>
+ </refsect1>
+
+ <refsect1 role="changelog">
+  &reftitle.changelog;
+  <informaltable>
+   <tgroup cols="2">
+    <thead>
+     <row>
+      <entry>&Version;</entry>
+      <entry>&Description;</entry>
+     </row>
+    </thead>
+    <tbody>
+     <row>
+      <entry>7.4.0</entry>
+      <entry>
+       PHP にバンドルされた imagecropauto() の振る舞いは、
+       システムにインストールされる libgd のそれと同じになりました。
+       つまり、<constant>IMG_CROP_DEFAULT</constant>
+       が <constant>IMG_CROP_SIDES</constant> にフォールバックすることはななくなり、
+       しきい値によるクロップは、
+       システムにインストールされる libgd のアルゴリズムと同じものを使うようになりました。
+      </entry>
+     </row>
+     <row>
+      <entry>7.4.0</entry>
+      <entry>
+       <parameter>mode</parameter> パラメータのデフォルト値が
+       <constant>IMG_CROP_AUTO</constant> に変更されました。
+       これより前のバージョンでは、デフォルト値は
+       <literal>-1</literal> で、<constant>IMG_CROP_DEFAULT</constant> に対応しています。
+       しかし、<literal>-1</literal> を渡すのは非推奨になりました。
+      </entry>
+     </row>
+    </tbody>
+   </tgroup>
+  </informaltable>
  </refsect1>
 
  <refsect1 role="examples">
@@ -130,7 +179,7 @@
    <example>
     <title>自動クロップの適切な処理</title>
     <para>
-     返り値のところで説明したとおり、何もクロップしなかった場合や全部クロップしてしまったときに
+     返り値のところで説明したとおり、全部クロップしてしまったときに
      <function>imagecropauto</function> が返す値は &false; となります。
      この例では、クロップする部分がある場合にだけ画像リソース
      <literal>$im</literal> を自動クロップします。
