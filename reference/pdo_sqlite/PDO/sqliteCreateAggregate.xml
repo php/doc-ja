@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: dc706816c30f61d28686b4bf43f5b09e6d2de8e0 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 0c1b86e9c6ff3bb46c8f3383053972f2a7fbf251 Maintainer: takagi Status: ready -->
+<!-- Credits: mumumu -->
 <refentry xml:id="pdo.sqlitecreateaggregate" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>PDO::sqliteCreateAggregate</refname>
@@ -56,19 +57,44 @@
         <methodparam><type>mixed</type><parameter>context</parameter></methodparam>
         <methodparam><type>int</type><parameter>rownumber</parameter></methodparam>
         <methodparam><type>mixed</type><parameter>value1</parameter></methodparam>
-        <methodparam choice="opt"><type>mixed</type><parameter>value2</parameter></methodparam>
-        <methodparam choice="opt"><type>mixed</type><parameter>..</parameter></methodparam>
+        <methodparam choice="opt"><type>mixed</type><parameter>...</parameter></methodparam>
        </methodsynopsis>
-      </para>
-      <para>
-       <varname>context</varname> は最初の行では &null; となります。
-       それ以降の行では、その前の step 関数が返した値を保持します。
-       これを使用して、集約の状態を管理します。
-      </para>
-      <para>
-       <varname>rownumber</varname> は現在の行番号を保持します。
-      </para>
-      <para>
+       <variablelist>
+        <varlistentry>
+         <term><parameter>context</parameter></term>
+         <listitem>
+          <para>
+           最初の行では &null; 
+           二行目以降では、ステップ関数から以前返された値を持ちます。
+           この値を、集約の状態を管理するのに使うべきです。
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry>
+         <term><parameter>rownumber</parameter></term>
+         <listitem>
+          <para>
+           現在の行番号
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry>
+         <term><parameter>value1</parameter></term>
+         <listitem>
+          <para>
+           集約関数に渡されるはじめの引数
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry>
+         <term><parameter>...</parameter></term>
+         <listitem>
+          <para>
+           集約関数に渡されるふたつめ以降の引数
+          </para>
+         </listitem>
+        </varlistentry>
+       </variablelist>
        この関数の返り値を、次のステップあるいはファイナライズ関数の
        <parameter>context</parameter> 引数として使います。
       </para>
@@ -89,16 +115,26 @@
        <methodsynopsis>
         <type>mixed</type><methodname><replaceable>fini</replaceable></methodname>
         <methodparam><type>mixed</type><parameter>context</parameter></methodparam>
-        <methodparam><type>int</type><parameter>rownumber</parameter></methodparam>
+        <methodparam><type>int</type><parameter>rowcount</parameter></methodparam>
        </methodsynopsis>
-      </para>
-      <para>
-       <varname>context</varname> には、最後の step 関数の返り値が格納されます。
-      </para>
-      <para>
-       <varname>rownumber</varname> は、この集約関数が処理した行数を保持します。
-      </para>
-      <para>
+       <variablelist>
+        <varlistentry>
+         <term><parameter>context</parameter></term>
+         <listitem>
+          <para>
+           ステップ関数を最後に呼んだ時の戻り値を保持します。
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry>
+         <term><parameter>rowcount</parameter></term>
+         <listitem>
+          <para>
+           集約関数が実行された行数を保持します。
+          </para>
+         </listitem>
+        </varlistentry>
+       </variablelist>
        この関数の返り値が、集約の返り値となります。
       </para>
      </listitem>
@@ -151,7 +187,7 @@ foreach ($data as $str) {
 }
 $insert = null;
 
-function max_len_step(&$context, $rownumber, $string) 
+function max_len_step($context, $rownumber, $string) 
 {
     if (strlen($string) > $context) {
         $context = strlen($string);
@@ -159,7 +195,7 @@ function max_len_step(&$context, $rownumber, $string)
     return $context;
 }
 
-function max_len_finalize(&$context, $rownumber) 
+function max_len_finalize($context, $rownumber) 
 {
     return $context === null ? 0 : $context;
 }
@@ -177,16 +213,16 @@ var_dump($db->query('SELECT max_len(a) from strings')->fetchAll());
    この例では、
    テーブルのカラムの中で一番長い文字列の長さを計算する集約関数を作成します。
    各行について <literal>max_len_step</literal> 関数がコールされ、
-   <parameter>context</parameter> パラメータが渡されます。
+   <literal>$context</literal> パラメータが渡されます。
    このパラメータには、他の PHP 変数と同様に、配列やオブジェクトが設定されます。
    この例では、これまでに登場した値のうち長さが最大のものの長さを保持しています。
-   <parameter>string</parameter> が現在の最大値より長い場合に、
+   <literal>$string</literal> が現在の最大値より長い場合に、
    その値で現在の最大値を更新します。
   </para>
   <para>
    すべての行に対する処理が終わると、SQLite は
    <literal>max_len_finalize</literal> 関数をコールして集約結果を決定します。
-   ここでは、<parameter>context</parameter> の内容に基づいた、
+   ここでは、<literal>$context</literal> の内容に基づいた、
    なんらかの計算を行うことができます。
    しかし、この例ではクエリを処理している過程で既に結果が決定しているので、
    ここでは単に context の値を返しているだけです。
