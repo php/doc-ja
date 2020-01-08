@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: f6b3cb343776c44d10ad79dc56278caef5ba5372 Maintainer: hirokawa Status: ready -->
-<!-- Credits: haruki -->
+<!-- EN-Revision: 48bac4e0ab9958bb76f8ec4c3f4d2e4277e46cdc Maintainer: hirokawa Status: ready -->
+<!-- Credits: haruki,mumumu -->
 <refentry xml:id="function.preg-match" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>preg_match</refname>
@@ -59,13 +59,13 @@
      <term><parameter>flags</parameter></term>
      <listitem>
       <para>
-       <parameter>flags</parameter> には以下のフラグを指定できます。
+       <parameter>flags</parameter> には以下のフラグの組み合わせを指定できます。
        <variablelist>
         <varlistentry>
          <term><constant>PREG_OFFSET_CAPTURE</constant></term>
          <listitem>
           <para>
-           このフラグを設定した場合、各マッチに対応する文字列のオフセットも返されます。
+           このフラグを設定した場合、各マッチに対応する文字列のオフセットも(バイト単位で)返されます。
            これは、<parameter>matches</parameter> の値を配列に変更することに注意してください。
            その配列のすべての要素は、
            オフセット <literal>0</literal> で一致した文字列、
@@ -116,6 +116,52 @@ Array
           </para>
          </listitem>
         </varlistentry>
+        <varlistentry>
+         <term><constant>PREG_UNMATCHED_AS_NULL</constant></term>
+         <listitem>
+          <para>
+           このフラグが渡されると、マッチしなかったサブパターンは &null; として通知されます。
+           渡されなかった場合、空の <type>string</type> として通知されます。
+           <informalexample>
+            <programlisting role="php">
+<![CDATA[
+<?php
+preg_match('/(a)(b)*(c)/', 'ac', $matches);
+var_dump($matches);
+preg_match('/(a)(b)*(c)/', 'ac', $matches, PREG_UNMATCHED_AS_NULL);
+var_dump($matches);
+?>
+]]>
+            </programlisting>
+            &example.outputs;
+            <screen>
+<![CDATA[
+array(4) {
+  [0]=>
+  string(2) "ac"
+  [1]=>
+  string(1) "a"
+  [2]=>
+  string(0) ""
+  [3]=>
+  string(1) "c"
+}
+array(4) {
+  [0]=>
+  string(2) "ac"
+  [1]=>
+  string(1) "a"
+  [2]=>
+  NULL
+  [3]=>
+  string(1) "c"
+}
+]]>
+            </screen>
+           </informalexample>
+          </para>
+         </listitem>
+        </varlistentry>
        </variablelist>
       </para>
      </listitem>
@@ -131,7 +177,7 @@ Array
       <note>
        <para>
         <parameter>offset</parameter> を用いるのと、
-        <literal>substr($subject, $offset)</literal> を
+        <code>substr($subject, $offset)</code> を
         <function>preg_match</function>の対象文字列として指定するのとは
         等価ではありません。
         これは、<parameter>pattern</parameter> には、
@@ -186,6 +232,12 @@ Array
 )
 ]]>
          </screen>
+         <para>
+          <function>substr</function> 関数を利用しない別の方法として、
+          <literal>^</literal> アンカーではなく、 言明 <literal>\G</literal> または
+          <literal>A</literal> 修正子を使う方法があります。
+          これらは両方とも <parameter>offset</parameter> パラメータとともに動作します。
+         </para>
         </informalexample>
        </para>
       </note>
@@ -217,6 +269,13 @@ Array
       </row>
      </thead>
      <tbody>
+      <row>
+       <entry>7.2.0</entry>
+       <entry>
+        <parameter>$flags</parameter> パラメータが
+        <constant>PREG_UNMATCHED_AS_NULL</constant> をサポートしました。
+       </entry>
+      </row>
       <row>
        <entry>5.3.6</entry>
        <entry>
