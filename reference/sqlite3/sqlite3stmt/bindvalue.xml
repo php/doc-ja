@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: cd2eae76e7c53be3f9a3ed6427f38ea452d2560f Maintainer: takagi Status: ready -->
+<!-- EN-Revision: c644e37690e468f2b4bb566b515659dff04c1c12 Maintainer: takagi Status: working -->
+<!-- Credits: mumumu -->
 
 <refentry xml:id="sqlite3stmt.bindvalue" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -19,6 +20,14 @@
   <para>
    パラメータの値を変数にバインドします。
   </para>
+  <caution>
+   <!-- to be translated -->
+   <para>
+    Before PHP 7.2.14 and 7.3.0, respectively,
+    once the statement has been executed, <methodname>SQLite3Stmt::reset</methodname> 
+    needs to be called to be able to change the value of bound parameters.
+   </para>
+  </caution>
  </refsect1>
 
  <refsect1 role="parameters">
@@ -27,9 +36,15 @@
    <variablelist>
     <varlistentry>
      <term><parameter>sql_param</parameter></term>
+     <!-- to be translated -->
      <listitem>
       <para>
-       値をどの変数にバインドするかを表す文字列あるいは整数値。
+       Either a <type>string</type> (for named parameters) or an <type>int</type>
+       (for positional parameters) identifying the statement variable to which the
+        value should be bound.
+       If a named parameter does not start with a colon (<literal>:</literal>) or an
+       at sign (<literal>@</literal>), a colon (<literal>:</literal>) is automatically preprended.
+       Positional parameters start with <literal>1</literal>.
       </para>
      </listitem>
     </varlistentry>
@@ -49,36 +64,53 @@
        <itemizedlist>
         <listitem>
          <para>
-          <literal>SQLITE3_INTEGER</literal>: 符号付き整数。
+          <constant>SQLITE3_INTEGER</constant>: 符号付き整数。
           値の大きさに応じて 1, 2, 3, 4, 6, あるいは 8 バイトで格納されます。
          </para>
         </listitem>
         <listitem>
          <para>
-          <literal>SQLITE3_FLOAT</literal>: 浮動小数点数値。
+          <constant>SQLITE3_FLOAT</constant>: 浮動小数点数値。
           8 バイトの IEEE 浮動小数点数値として格納されます。
          </para>
         </listitem>
         <listitem>
          <para>
-          <literal>SQLITE3_TEXT</literal>: テキスト文字列。
+          <constant>SQLITE3_TEXT</constant>: テキスト文字列。
           データベースのエンコーディング (UTF-8, UTF-16BE あるいは UTF-16-LE)
           を用いて格納されます。
          </para>
         </listitem>
         <listitem>
          <para>
-          <literal>SQLITE3_BLOB</literal>: blob データ。
+          <constant>SQLITE3_BLOB</constant>: blob データ。
           入力がそのままの形式で格納されます。
          </para>
         </listitem>
         <listitem>
          <para>
-          <literal>SQLITE3_NULL</literal>: NULL 値。
+          <constant>SQLITE3_NULL</constant>: NULL 値。
          </para>
         </listitem>
        </itemizedlist>
       </para>
+      <!-- to be translated -->
+      <para>
+       As of PHP 7.0.7, if <parameter>type</parameter> is omitted, it is automatically
+       detected from the type of the <parameter>value</parameter>: <type>boolean</type>
+       and <type>integer</type> are treated as <constant>SQLITE3_INTEGER</constant>,
+       <type>float</type> as <constant>SQLITE3_FLOAT</constant>, <type>null</type>
+       as <constant>SQLITE3_NULL</constant> and all others as <constant>SQLITE3_TEXT</constant>.
+       Formerly, if <parameter>type</parameter> has been omitted, it has defaulted
+       to <constant>SQLITE3_TEXT</constant>.
+      </para>
+      <note>
+       <para>
+        If <parameter>value</parameter> is &null;, it is always treated as
+        <constant>SQLITE3_NULL</constant>, regardless of the given
+        <parameter>type</parameter>.
+       </para>
+      </note>
      </listitem>
     </varlistentry>
    </variablelist>
@@ -93,6 +125,28 @@
   </para>
  </refsect1>
 
+ <refsect1 role="changelog">
+  &reftitle.changelog;
+  <informaltable>
+   <tgroup cols="2">
+    <thead>
+     <row>
+      <entry>&Version;</entry>
+      <entry>&Description;</entry>
+     </row>
+    </thead>
+    <tbody>
+     <row>
+      <entry>7.4.0</entry>
+      <entry>
+       <parameter>sql_param</parameter> が、新たに <literal>@param</literal> 記法をサポートしました。
+      </entry>
+     </row>
+    </tbody>
+   </tgroup>
+  </informaltable>
+ </refsect1>
+
  <refsect1 role="examples">
   &reftitle.examples;
   <para>
@@ -101,8 +155,7 @@
     <programlisting role="php">
 <![CDATA[
 <?php
-unlink('mysqlitedb.db');
-$db = new SQLite3('mysqlitedb.db');
+$db = new SQLite3(':memory:');
 
 $db->exec('CREATE TABLE foo (id INTEGER, bar STRING)');
 $db->exec("INSERT INTO foo (id, bar) VALUES (1, 'This is a test')");
@@ -111,12 +164,29 @@ $stmt = $db->prepare('SELECT bar FROM foo WHERE id=:id');
 $stmt->bindValue(':id', 1, SQLITE3_INTEGER);
 
 $result = $stmt->execute();
-var_dump($result->fetchArray());
+var_dump($result->fetchArray(SQLITE3_ASSOC));
 ?>
 ]]>
     </programlisting>
+    &example.outputs;
+    <screen role="php">
+<![CDATA[
+array(1) {
+  ["bar"]=>
+  string(14) "This is a test"
+}
+]]>
+    </screen>
    </example>
   </para>
+ </refsect1>
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <simplelist>
+   <member><methodname>SQLite3Stmt::bindParam</methodname></member>
+   <member><methodname>SQLite3::prepare</methodname></member>
+  </simplelist>
  </refsect1>
 
 </refentry>

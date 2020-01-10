@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: af4410a7e15898c3dbe83d6ea38246745ed9c6fb Maintainer: takagi Status: ready -->
+<!-- EN-Revision: c644e37690e468f2b4bb566b515659dff04c1c12 Maintainer: takagi Status: ready -->
+<!-- Credits: mumumu -->
 
 <refentry xml:id="sqlite3.createaggregate" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -39,17 +40,97 @@
      <term><parameter>step_callback</parameter></term>
      <listitem>
       <para>
-       集約対象のすべての項目に適用するコールバックとして指定する、
-       PHP の関数あるいはユーザー定義関数の名前。
+       結果セットの各行ごとにコールされるコールバック関数。
+       この関数で結果を集約し、集約処理のコンテキストに保存すべきです。
       </para>
+      <para>
+       このコールバック関数は、以下のように定義すべきです:
+       <methodsynopsis>
+        <type>mixed</type><methodname><replaceable>step</replaceable></methodname>
+        <methodparam><type>mixed</type><parameter>context</parameter></methodparam>
+        <methodparam><type>int</type><parameter>rownumber</parameter></methodparam>
+        <methodparam><type>mixed</type><parameter>value1</parameter></methodparam>
+        <methodparam choice="opt"><type>mixed</type><parameter>...</parameter></methodparam>
+       </methodsynopsis>
+       <variablelist>
+        <varlistentry>
+         <term><parameter>context</parameter></term>
+         <listitem>
+          <para>
+           最初の行では &null; です。
+           2行目以降は、step 関数から返された値をとります。
+           これは、集約の状況を管理するのに使います。
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry>
+         <term><parameter>rownumber</parameter></term>
+         <listitem>
+          <para>
+           現在の行番号
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry>
+         <term><parameter>value1</parameter></term>
+         <listitem>
+          <para>
+           集約に渡されるはじめの引数
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry>
+         <term><parameter>...</parameter></term>
+         <listitem>
+          <para>
+           集約に渡されるふたつめ以降の引数
+          </para>
+         </listitem>
+        </varlistentry>
+       </variablelist>
+       この関数の戻り値は、
+       次のステップで呼ばれる際、または finalize 関数での
+       <parameter>context</parameter> の引数として使われます。
+      </para> 
      </listitem>
     </varlistentry>
     <varlistentry>
      <term><parameter>final_callback</parameter></term>
      <listitem>
       <para>
-       集約処理の最後に適用するコールバックとして指定する、
-       PHP の関数あるいはユーザー定義関数の名前。
+       各行からの "段階的に処理された" データを集約するコールバック関数です。
+       いったん全データが処理されると、この関数が呼ばれます。
+       集約処理のコンテキストからデータを取り出し、結果を返すべきです。
+       このコールバック関数は SQLite が理解する型を返します。
+       (例: <link
+       linkend="language.types.intro">スカラー型</link>)
+      </para>
+      <para>
+       このコールバック関数は、以下のように定義すべきです:
+       <methodsynopsis>
+        <type>mixed</type><methodname><replaceable>fini</replaceable></methodname>
+        <methodparam><type>mixed</type><parameter>context</parameter></methodparam>
+        <methodparam><type>int</type><parameter>rownumber</parameter></methodparam>
+       </methodsynopsis>
+       <variablelist>
+        <varlistentry>
+         <term><parameter>context</parameter></term>
+         <listitem>
+          <para>
+           最後に呼ばれた step 関数から返された値を保持します。
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry>
+         <term><parameter>rownumber</parameter></term>
+         <listitem>
+          <para>
+           常に <literal>0</literal>.
+          </para>
+         </listitem>
+        </varlistentry>
+       </variablelist>
+       この関数の戻り値は、集約の返り値として使われます。
       </para>
      </listitem>
     </varlistentry>
@@ -72,6 +153,96 @@
   <para>
    集約関数の作成に成功した場合に &true;、&return.falseforfailure;
   </para>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title>max_length 集約関数の例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$data = array(
+   'one',
+   'two',
+   'three',
+   'four',
+   'five',
+   'six',
+   'seven',
+   'eight',
+   'nine',
+   'ten',
+   );
+$db = new SQLite3(':memory:');
+$db->exec("CREATE TABLE strings(a)");
+$insert = $db->prepare('INSERT INTO strings VALUES (?)');
+foreach ($data as $str) {
+    $insert->bindValue(1, $str);
+    $insert->execute();
+}
+$insert = null;
+
+function max_len_step($context, $rownumber, $string)
+{
+    if (strlen($string) > $context) {
+        $context = strlen($string);
+    }
+    return $context;
+}
+
+function max_len_finalize($context, $rownumber)
+{
+    return $context === null ? 0 : $context;
+}
+
+$db->createAggregate('max_len', 'max_len_step', 'max_len_finalize');
+
+var_dump($db->querySingle('SELECT max_len(a) from strings'));
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen role="php">
+<![CDATA[
+int(5)
+]]>
+    </screen>
+   </example>
+  </para>
+  <para>
+   この例では、テーブルのカラムに入っている一番長い文字列を集約する関数を作っています。
+   1行ごとに、<literal>max_len_step</literal> 関数が呼ばれ、
+   <literal>$context</literal> パラメータが渡されます。 context パラメータ
+   は他のPHPの変数のように振る舞いますし、配列やオブジェクトを格納することさえできます。
+   この例では、単にこれまで見てきたものの中から一番大きな長さを保持するのに使っています。
+   つまり、<literal>$string</literal> が現在の最大値より大きな長さをもっていたら、
+   context を新しい最大値に更新しています。
+  </para>
+  <para>
+   全ての行を処理し終わったら、SQLite は
+   集約結果を決めるために <literal>max_len_finalize</literal> 関数を呼び出します。
+   ここでは、<literal>$context</literal> で見つかったデータを基にして、
+   ある種の計算を行うことができます。
+   私達のシンプルな例では、結果を段階的に計算してきているので、
+   単に context に入っている値を返すだけで済みます。
+  </para>
+  <tip>
+   <para>
+    値のコピーを context に保存し、一番最後に処理することは推奨できません。
+    なぜなら、SQLite がクエリを処理するのにたくさんのメモリを使うことになるからです。
+    - 100万行の情報がメモリに格納されていたとして、
+    それぞれの行が32バイトの長さを持っていたとすると、
+    どれくらいのメモリが必要になるのかを考えてみてください。
+   </para>
+  </tip>
+  <tip>
+   <para>
+    SQLite のネイティブなSQL関数を上書きするために 
+    <methodname>SQLite3::createAggregate</methodname> を使うことができます。
+   </para>
+  </tip>
  </refsect1>
 
 </refentry>
