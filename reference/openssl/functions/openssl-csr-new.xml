@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 07eb9953564f09e10f4c65da31c0339a2db613bb Maintainer: hirokawa Status: ready -->
-<!-- CREDITS: takagi -->
+<!-- EN-Revision: e7f9a4f893deee7a4017d7a8d5388671932e8ef5 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: takagi,mumumu -->
 <refentry xmlns="http://docbook.org/ns/docbook" xml:id="function.openssl-csr-new">
  <refnamediv>
   <refname>openssl_csr_new</refname>
@@ -19,7 +19,7 @@
   </methodsynopsis>
   <para>
    <function>openssl_csr_new</function> は、新しい CSR (Certificate Signing Request)
-   を <parameter>dn</parameter> の情報に基づいて作成します。dn は、証明書で使用される識別名です。
+   を <parameter>dn</parameter> の情報に基づいて作成します。
   </para>
   &note.openssl.cnf;
  </refsect1>
@@ -32,7 +32,7 @@
      <term><parameter>dn</parameter></term>
      <listitem>
       <para>
-       証明書で使用される識別名。
+       証明書で使用される識別名、またはsubjectフィールド。
       </para>
      </listitem>
     </varlistentry>
@@ -73,7 +73,10 @@
            <entry>digest_alg</entry>
            <entry><type>string</type></entry>
            <entry>default_md</entry>
-           <entry>使用するダイジェストメソッドを選択します</entry>
+           <entry>
+             ダイジェストメソッド、または署名のハッシュ。 
+             通常は <function>openssl_get_md_methods</function> 関数のリストのうちのひとつです。
+           </entry>
           </row>
           <row>
            <entry>x509_extensions</entry>
@@ -98,11 +101,11 @@
            <entry><type>integer</type></entry>
            <entry>none</entry>
            <entry>作成する秘密鍵の型を指定します。以下の定数
-            <constant>OPENSSL_KEYTYPE_DSA</constant>、
-            <constant>OPENSSL_KEYTYPE_DH</constant> あるいは
-            <constant>OPENSSL_KEYTYPE_RSA</constant> からひとつ選択します。
-            デフォルト値は <constant>OPENSSL_KEYTYPE_RSA</constant> で、
-            現時点でサポートしているのはこの型のみです。
+            <constant>OPENSSL_KEYTYPE_DSA</constant>,
+            <constant>OPENSSL_KEYTYPE_DH</constant>
+            <constant>OPENSSL_KEYTYPE_RSA</constant> あるいは
+            <constant>OPENSSL_KEYTYPE_EC</constant> からひとつ選択します。
+            デフォルト値は <constant>OPENSSL_KEYTYPE_RSA</constant> です。
            </entry>
           </row>
           <row>
@@ -117,6 +120,22 @@
            <entry>none</entry>
            <entry>
             <link linkend="openssl.ciphers">暗号定数</link>のうちの一つ。
+           </entry>
+          </row>
+          <row>
+           <entry>curve_name</entry>
+           <entry><type>string</type></entry>
+           <entry>none</entry>
+           <entry>
+            <function>openssl_get_curve_names</function> のうちの一つ。
+           </entry>
+          </row>
+          <row>
+           <entry>config</entry>
+           <entry><type>string</type></entry>
+           <entry>N/A</entry>
+           <entry>
+            代替の openssl.conf ファイルのパス
            </entry>
           </row>
          </tbody>
@@ -144,7 +163,30 @@
   &reftitle.returnvalues;
   <para>
    CSR を返します。
+   &return.falseforfailure;
   </para>
+ </refsect1>
+
+ <refsect1 role="changelog">
+  &reftitle.changelog;
+  <informaltable>
+   <tgroup cols="2">
+    <thead>
+     <row>
+      <entry>&Version;</entry>
+      <entry>&Description;</entry>
+     </row>
+    </thead>
+    <tbody>
+     <row>
+      <entry>7.1.0</entry>
+      <entry>
+       <parameter>configargs</parameter> が、新たに <literal>curve_name</literal> をサポートしました。
+      </entry>
+     </row>
+    </tbody>
+   </tgroup>
+  </informaltable>
  </refsect1>
 
  <refsect1 role="examples">
@@ -155,15 +197,12 @@
     <programlisting role="php">
 <![CDATA[
 <?php
-// 証明書で使用する識別名を指定します。
-// ご自分の環境に応じて、名前や会社名を変更する必要があります。
-// より厳密に言うなら、あなたが証明書を作成しようとしている個人あるいは
-// 組織の名前と会社名です。
-// SSL 証明書では、通常は証明書を使用するドメイン名を commonName に
-// 指定します。しかし S/MIME 証明書では、証明書を使用する個人の名前を
-// commonName に指定します。
+// SSLサーバ証明書では、commonName はセキュアにするドメインです。
+// S/MIME 電子メール証明書では、 commonName は電子メールアドレスのオーナーです。
+// location と identification フィールドは、セキュアにするドメイン
+// または電子メールのオーナーを参照します。
 $dn = array(
-    "countryName" => "UK",
+    "countryName" => "GB",
     "stateOrProvinceName" => "Somerset",
     "localityName" => "Glastonbury",
     "organizationName" => "The Brain Room Limited",
@@ -172,29 +211,24 @@ $dn = array(
     "emailAddress" => "wez@example.com"
 );
 
-// 新しい秘密鍵（および公開鍵）のペアを作成します
-$privkey = openssl_pkey_new();
+// 新しい 秘密鍵(と公開鍵の) キーペアを生成します
+$privkey = openssl_pkey_new(array(
+    "private_key_bits" => 2048,
+    "private_key_type" => OPENSSL_KEYTYPE_RSA,
+));
 
-// 証明書への署名要求を作成します
-$csr = openssl_csr_new($dn, $privkey);
+// CSR を生成します
+$csr = openssl_csr_new($dn, $privkey, array('digest_alg' => 'sha256'));
 
-// 認証局があなたの申請を受け付けてくれるまでは、自己署名の証明書を
-// 作成したくなるでしょう。
-// これは、365 日間有効な自己署名の証明書を作成します。
-$sscert = openssl_csr_sign($csr, null, $privkey, 365);
+// 自己署名の証明書を生成します。365日有効です
+$x509 = openssl_csr_sign($csr, null, $privkey, $days=365, array('digest_alg' => 'sha256'));
 
-// ここで、Web サーバーやメールサーバー、メールクライアント（証明書の使用方法に
-// 依存します）にインストールするために、
-// 作成した秘密鍵・CSR および自己署名の証明書を保存したくなることでしょう。
-// この例では、これらを変数に格納する方法を示します。とはいえ、もちろん
-// それを直接ファイルに保存することも可能です。
-// 一般的には、CSR を認証局に送り、「正式な」証明書として証明してもらう
-// ことになります。
+// 秘密鍵、CSR と自己署名証明書をあとで使うために保存します。
 openssl_csr_export($csr, $csrout) and var_dump($csrout);
-openssl_x509_export($sscert, $certout) and var_dump($certout);
+openssl_x509_export($x509, $certout) and var_dump($certout);
 openssl_pkey_export($privkey, $pkeyout, "mypassword") and var_dump($pkeyout);
 
-// 発生したエラーを表示します。
+// 起きたエラーを表示します。
 while (($e = openssl_error_string()) !== false) {
     echo $e . "\n";
 }
@@ -202,6 +236,44 @@ while (($e = openssl_error_string()) !== false) {
 ]]>
     </programlisting>
    </example>
+   
+   <example>
+    <title>自己署名の ECC 証明書を作成する (PHP 7.1.0 以降)</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$subject = array(
+    "commonName" => "docs.php.net",
+);
+
+// 新しい 秘密鍵(と公開鍵の) キーペアを生成します
+$private_key = openssl_pkey_new(array(
+    "private_key_type" => OPENSSL_KEYTYPE_EC,
+    "curve_name" => 'prime256v1',
+));
+
+// CSR を生成します
+$csr = openssl_csr_new($subject, $private_key, array('digest_alg' => 'sha384'));
+
+// 自己署名のEC証明書を生成します。
+$x509 = openssl_csr_sign($csr, null, $private_key, $days=365, array('digest_alg' => 'sha384'));
+openssl_x509_export_to_file($x509, 'ecc-cert.pem');
+openssl_pkey_export_to_file($private_key, 'ecc-private.key');
+?>
+]]>
+    </programlisting>
+   </example>
+   
+   
+  </para>
+ </refsect1>
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <para>
+   <simplelist>
+    <member><function>openssl_csr_sign</function></member>
+   </simplelist>
   </para>
  </refsect1>
 
