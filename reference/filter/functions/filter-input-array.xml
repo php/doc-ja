@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 318a3d5aa3242f5e641182e67949083db10a309a Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 97cb66b3f28d2394b70d3d5701b3136408fc412b Maintainer: takagi Status: ready -->
+<!-- Credits: mumumu -->
 <refentry xml:id="function.filter-input-array" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>filter_input_array</refname>
@@ -12,7 +13,7 @@
    <type>mixed</type><methodname>filter_input_array</methodname>
    <methodparam><type>int</type><parameter>type</parameter></methodparam>
    <methodparam choice="opt"><type>mixed</type><parameter>definition</parameter></methodparam>
-   <methodparam choice="opt"><type>bool</type><parameter>add_empty</parameter><initializer>true</initializer></methodparam>
+   <methodparam choice="opt"><type>bool</type><parameter>add_empty</parameter><initializer>&true;</initializer></methodparam>
   </methodsynopsis>
   <para>
    この関数を使用すると、大量のデータを取得する際に
@@ -68,14 +69,25 @@
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
-   成功した場合は要求された変数の値を含む配列、
-   あるいは失敗した場合に &false; を返します。
-   配列の値は、フィルタリングに失敗した場合には &false;、
-   変数が設定されていない場合は &null; となります。
+   成功した場合は要求された変数の値を含む配列。
+
+   <constant>FILTER_NULL_ON_FAILURE</constant> フラグが指定されない場合、
+   かつ <parameter>type</parameter> で指定された入力値の配列が得られなかった場合は、
+   この関数は &null; を返します。
+   <parameter>type</parameter> で指定された入力値の配列が得られなかった場合、
+   かつ <constant>FILTER_NULL_ON_FAILURE</constant> フラグが指定されていた場合は、
+   この関数は &false; を返します。その他の理由で失敗した場合でも &false; を返します。
+  </para>
+  <para>
+   フィルタが失敗した場合、配列の値は &false; になります。
+   変数が設定されていない場合は、&null; になります。
    フラグ <constant>FILTER_NULL_ON_FAILURE</constant>
    が指定されている場合は、変数が設定されていないときに &false;、
    フィルタリングに失敗した場合に &null; となります。
+   <parameter>add_empty</parameter> パラメータが &false; の場合、
+   配列の要素は追加されません。
   </para>
+
  </refsect1>
 
  <refsect1 role="examples">
@@ -89,11 +101,11 @@
 error_reporting(E_ALL | E_STRICT);
 /* データは、実際には POST リクエストでやってきます
 $_POST = array(
-    'product_id'    => 'libgd<script>',
-    'component'     => '10',
-    'versions'      => '2.0.33',
-    'testscalar'    => array('2', '23', '10', '12'),
-    'testarray'     => '2',
+    'product_id' => 'libgd<script>',
+    'component'  => array('10'),
+    'version'    => '2.0.33',
+    'testarray'  => array('2', '23', '10', '12'),
+    'testscalar' => '2',
 );
 */
 
@@ -103,7 +115,7 @@ $args = array(
                             'flags'     => FILTER_REQUIRE_ARRAY, 
                             'options'   => array('min_range' => 1, 'max_range' => 10)
                            ),
-    'versions'     => FILTER_SANITIZE_ENCODED,
+    'version'      => FILTER_SANITIZE_ENCODED,
     'doesnotexist' => FILTER_VALIDATE_INT,
     'testscalar'   => array(
                             'filter' => FILTER_VALIDATE_INT,
@@ -134,16 +146,22 @@ array(6) {
     [0]=>
     int(10)
   }
-  ["versions"]=>
+  ["version"]=>
   string(6) "2.0.33"
   ["doesnotexist"]=>
   NULL
   ["testscalar"]=>
-  bool(false)
+  int(2)
   ["testarray"]=>
-  array(1) {
+  array(4) {
     [0]=>
     int(2)
+    [1]=>
+    int(23)
+    [2]=>
+    int(10)
+    [3]=>
+    int(12)
   }
 }
 ]]>
