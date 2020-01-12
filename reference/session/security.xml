@@ -22,7 +22,7 @@
 
     <para>
      セッションモジュールは、セッションに保存された情報を
-     セッションを作成したユーザーだけが見ることができることを保証できません。
+     作成したユーザーだけが見られることを保証できません。
      セッションに紐付けられた値によっては、
      セッションの機密性を守るために追加の対策が必要です。
     </para>
@@ -46,7 +46,7 @@
      サードパーティがその特定のIDに紐付けられた全てのリソースに
      アクセスできるようになってしまいます。
 
-     まず最初は、URL でセッションIDを持ち回すやり方です。
+     既存のセッションIDを漏らす最初の方法は、URL でセッションIDを持ち回すやり方です。
      もし外部サイトやリソースへのリンクが存在したとすると、
      セッションIDを含むURLが、外部サイトのリファラログにに保存されるかもしれません。
      ふたつめは、より積極的な攻撃者がネットワークトラフィックを盗聴しているかもしれません。
@@ -82,7 +82,7 @@
     <link linkend="ini.session.use-strict-mode">session.use_strict_mode</link>
     が利用できます。
     これを有効にし、かつセッションの保存ハンドラがサポートしている場合、
-    初期化されていないセションIDは拒否され、新しいものが作成されます。
+    初期化されていないセッションIDは拒否され、新しいものが作成されます。
     これによって、攻撃者がユーザーに既知のセッションIDを強制的に使わせることを防止できます。
     攻撃者はセッションID付きのリンクをペーストしたり、
     そうしたリンクを含んだメールを送るかもしれません。
@@ -134,7 +134,7 @@
     </simpara>
 
     <simpara>
-     使われなくなったセッションにアクセスされたときのために、
+     有効期限が切れたセッションにアクセスされたときのために、
      開発者は全てのアクティブなユーザーのセッションデータを保存すべきです。
      この情報は後に行われる調査とも関係があります。
      ユーザーは全てのセッションから強制的にログアウトさせられるべきです。
@@ -145,17 +145,17 @@
 
    <warning>
     <simpara>
-     使われなくなったセッションにアクセスすることが、
+     有効期限が切れたセッションにアクセスすることが、
      必ずしも攻撃であることを示しているとは限りません。
      不安定なネットワークや、 
      アクティブなセッションをすぐに削除してしまったりすることが原因で、
-     正当なユーザーが使われなくなったセッションにアクセスすることがあるからです。
+     正当なユーザーが、有効期限が切れたセッションにアクセスすることがあるからです。
     </simpara>
    </warning>
 
    <para>
     PHP 7.1.0 以降、<function>session_create_id</function> が追加されました。
-    この関数は、セッションIDの前にユーザーのIDをつけることで、
+    この関数は、セッションIDの前にユーザー定義のIDをつけることで、
     全てのアクティブなユーザーのセッションに効率的にアクセスできます。
     <link linkend="ini.session.use-strict-mode">session.use_strict_mode</link>
     を有効にすることが重要です。有効にしないと、
@@ -165,7 +165,7 @@
    <note>
     <simpara>
      PHP 7.1.0 より前のバージョンのユーザーは新しいセッションIDを生成する
-     のに CSPRNG、つまり /dev/urandom や <function>random_bytes</function>、
+     のに CSPRNG、つまり /dev/urandom や <function>random_bytes</function>
      やハッシュ関数を使うべきです。
      <function>session_create_id</function> には衝突を検出する機能があり、
      セッションの INI 設定に従ってセッションIDを生成します。
@@ -180,106 +180,111 @@
 
    <para>
     <link linkend="ini.session.use-strict-mode">session.use_strict_mode</link>
-    is a good mitigation, however not sufficient. Developers must equally use
-    <function>session_regenerate_id</function> for session security.
+    は良い軽減策ですが、十分ではありません。開発者はセッションのセキュリティのために
+    <function>session_regenerate_id</function> を同時に使うべきです。
    </para>
 
    <para>
-    Session ID regeneration reduces the risk of stolen session IDs, thus
-    <function>session_regenerate_id</function> must be called periodically.
-    E.g. Regenerate the session ID every 15 minutes for security sensitive content.
-    Even in the case that a session ID is stolen, both the legitimate
-    user's and the attacker's session will expire.
-    In other words access by the user or the attacker will
-    generate an obsolete session access error.
+    セッションIDを再生成すると、盗まれたセッションIDを使われるリスクが減らせるので、
+    <function>session_regenerate_id</function> 関数は定期的に呼び出されなければなりません。
+    たとえば、セキュリティに敏感な内容を扱っているのなら、
+    セッションIDを15分毎に再生成するようにしてください。
+    セッションID が盗まれた場合でも、正当なユーザーと攻撃者のセッションは両方時間切れになります。
+    言い換えれば、ユーザーだろうと攻撃者のアクセスだろうと、
+    期限切れのセッションにアクセスしたとしてエラーになるのです。
    </para>
 
    <para>
-    Session IDs <emphasis>must</emphasis> be regenerated when user privileges
-    are elevated, such as after authenticating.
-    <function>session_regenerate_id</function> must be called prior to
-    setting the authentication information to $_SESSION. (As of PHP 7.0.0,
-    <function>session_regenerate_id</function> saves the current session data
-    automatically in order to save timestamp/etc. to the current session.)
-    Ensure only the new session contains the authenticated flag.
+    セッションID はユーザーの権限が上昇したときは再生成されなければ <emphasis>なりません</emphasis>。
+    たとえば認証が成功した後などです。
+    <function>session_regenerate_id</function> は、
+    認証情報を $_SESSION に設定する前に必ずコールされなければなりません。
+    (PHP 7.0.0 以降では、<function>session_regenerate_id</function> は
+    タイムスタンプなどを保存するために、現在のセッションにセッションデータを自動的に保存します)
+    必ず新しいセッションだけに、認証済みのフラグが含まれるようにしてください。
    </para>
 
    <para>
-    Developers <emphasis>must not</emphasis> rely on session ID expiration by
-    <link linkend="ini.session.gc-maxlifetime">session.gc_maxlifetime</link>.
-    Attackers may access a victim's session ID periodically to prevent its
-    expiration and keep exploiting it, including an authenticated session.
+    開発者は
+    <link linkend="ini.session.gc-maxlifetime">session.gc_maxlifetime</link>
+    によるセッションの期限切れに依存しては <emphasis>いけません</emphasis>。
+    攻撃者は、認証済みのセッションも含めて、期限切れを防いで悪用を続けるため、
+    ターゲットのセッションIDに定期的にアクセスしている可能性があるからです。
    </para>
 
    <para>
-     Instead, developers must implement timestamp based session data management.
+    そのかわりに、開発者はタイムスタンプベースのセッション管理を実装しなければなりません。
    </para>
 
    <warning>
     <simpara>
-     Although the session manager can manage timestamps transparently,
-     this feature is not implemented. Old session data must be kept until GC.
-     Simultaneously, developers must assure themselves obsolete session data
-     is removed. However, developers must not remove active session data immediately.
-     I.e. <literal>session_regenerate_id(true);</literal> and
-     <function>session_destroy</function> must never be called together for an active session.
-     This may sound contradictory, but this is a mandatory requirement.
+     セッションマネージャーはタイムスタンプを透過的に管理できますが、
+     この機能はまだ実装されていません。
+     古いセッションデータは GC されるまで保持されなければなりません。
+     同時に、開発者は期限切れになったセッションデータが削除されることを保証しなければなりません。
+     たとえば、<literal>session_regenerate_id(true);</literal> と
+     <function>session_destroy</function> をアクティブなセッションに対して同時に呼んでは絶対にいけません。
+     これは矛盾したように聞こえますが、これは必須条件です。
     </simpara>
    </warning>
 
    <para>
-    <function>session_regenerate_id</function> does <emphasis>not</emphasis>
-    delete outdated sessions by default.
-    Obsolete authenticated sessions may be present for use.
-    Developers must prevent outdated sessions to be consumed by anyone.
-    They must prohibit access to obsolete session data by themselves using timestamps.
+    <function>session_regenerate_id</function> は、
+    デフォルトで期限切れのセッションを削除 <emphasis>しません</emphasis>。
+    期限切れの認証済みのセッションが存在するかもしれません。
+    開発者は期限切れのセッションは、誰からも消費されないようにしなければなりません。
+    期限切れのセッションデータへのアクセスを、タイムスタンプを使うことで禁止すべきです。
    </para>
 
    <warning>
     <simpara>
-     The sudden removal of an active session produces undesirable side effects.
-     Sessions can vanish when there are concurrent connections to the web
-     application and/or the network is unstable.
+     アクティブなセッションを突然削除すると、望まない副作用が起きます。
+     Webアプリケーションへの同時接続が起きた かつ/または
+     ネットワークが不安定な場合に、セッションが突然消える可能性があります。
     </simpara>
     <simpara>
-     Potential malicious access is undetectable with the sudden removal of active sessions.
+     アクティブなセッションが突然消えてしまうと、
+     悪意のあるアクセスの可能性を検出することができなくなります。
     </simpara>
     <simpara>
-     Instead of deleting outdated sessions immediately, developers must set a
-     short-term expiration time (timestamp) in $_SESSION,
-     and prohibit access to the session data by themselves.
+     期限切れのセッションを突然削除するのではなく、
+     開発者は短い期限切れの時間(タイムスタンプ)を $_SESSION に設定し、
+     セッションデータにアクセスすることを自分で禁止すべきです。
     </simpara>
     <simpara>
-     Developers must not prohibit access to old session data immediately after
-     <function>session_regenerate_id</function>. It must be prohibited at a
-     later stage. E.g. a few seconds later for stable networks, like a wired network,
-     and a few minutes later for unstable networks such as cell phones or Wi-Fi.
+     開発者は <function>session_regenerate_id</function> を呼び出した後すぐに、
+     古いセッションデータへのアクセスを禁止してはいけません。
+     その後の段階で禁止しなければなりません。
+     たとえば、有線ネットワークのような安定したネットワークは数秒後、
+     無線LAN や携帯電話のような不安定なネットワークの場合は、2, 3分後です。
     </simpara>
     <simpara>
-     If a user accesses an obsolete session (expired session), access to it should be denied.
-     It is also recommended to remove the authenticated status from all of the user's
-     sessions to as it is likely to represent an attack.
+     ユーザーのアクセスが期限切れのセッションだった場合、
+     アクセスを拒否するべきです。攻撃されている可能性があるすべてのユーザーから、
+     認証済みのステータスを削除することも推奨します。
     </simpara>
    </warning>
 
    <para>
-    Proper use of <link linkend="ini.session.use-only-cookies">session.use_only_cookies</link>
-    and <function>session_regenerate_id</function> can cause personal DoS with
-    undeletable cookies set by attackers. In this case, developers may invite users
-    to remove cookies and advise them they may be affected by a security issue.
-    Attackers may set malicious cookies via a vulnerable web application,
-    an exposed/vicious browser plugin, a physically compromised device, etc.
+    <link linkend="ini.session.use-only-cookies">session.use_only_cookies</link>
+    と <function>session_regenerate_id</function> を適切に使うことで、
+    攻撃者によって設定された、削除できないクッキーを伴うDOSが発生することがあります。
+    この場合、開発者はユーザーに Cookie を削除させ、
+    セキュリティ上の問題に晒されていることを教えることができます。
+    攻撃者は、脆弱なWebアプリケーションや
+    ウイルスに感染したブラウザのプラグイン、
+    物理的に侵害されたデバイスなどを経由して悪意のあるCookieを設定している可能性があります。
    </para>
 
    <warning>
     <simpara>
-     Do not misunderstand the DoS risk. <literal>use_strict_mode=On</literal>
-     is mandatory for general session ID security! All sites are advised
-     to enable <literal>use_strict_mode</literal>.
+     DOS のリスクを誤解しないでください。
+     <literal>use_strict_mode=On</literal> は一般的なセッションIDのセキュリティには必須です!
+     全てのサイトが <literal>use_strict_mode</literal> を有効にすることをお勧めします。
     </simpara>
     <simpara>
-     DoS can only happen when the account is under attack. A JavaScript injection
-     vulnerability in an application represents the most common cause.
+     DOS はアカウントが攻撃されている場合にだけ発生する可能性があります。
+     アプリケーションに存在する JavaScript インジェクションの脆弱性がもっともよくある原因です。
     </simpara>
    </warning>
 
@@ -289,192 +294,198 @@
    <title>セッションデータを削除する</title>
 
    <para>
-    Obsolete session data must be inaccessible and deleted.
-    The current session module does not handle this well.
+    期限切れのセッションデータは、アクセス不能にし、削除しなければなりません。
+    現状のセッションモジュールはこの機能をうまく扱えません。
    </para>
 
    <para>
-    Obsolete session data should be removed as soon as possible.
-    However, active sessions must not be removed instantly.
-    To satisfy those requirements, developers must implement timestamp
-    based session data management by themselves.
+    期限切れのセッションデータは、できるだけ早く削除すべきです。
+    しかしながら、アクティブなセッションは、すぐに削除してはいけません。
+    これらの要求を満たすためには、
+    開発者はタイムスタンプベースのセッション管理を自分自身で実装する必要があります。
    </para>
 
    <para>
-    Set and manage expiration timestamp in $_SESSION.
-    Prohibit access to outdated session data.
-    When access to obsolete session data is detected, it is advised to remove all 
-    authenticated status from the user's sessions and force them to re-authenticate.
-    Access to obsolete session data can represent an attack.
-    To achieve this, developers must keep track of all active sessions of every user.
+    期限切れのタイムスタンプを $_SESSION に設定し、管理します。
+    期限切れのセッションデータへのアクセスは禁止します。
+    期限切れのセッションデータへのアクセスが検出された場合、
+    そのユーザーのセッションから認証済みのステータスを全て取り除き、
+    強制的に再認証させることをおすすめします。
+    期限切れのセッションデータへのアクセスは、攻撃されている可能性があります。
+    これを実現するために、
+    開発者はユーザーごとに全てのアクティブなセッションを追跡しなければなりません。
    </para>
 
    <note>
     <simpara>
-     Access to an obsolete session can also happen because of an unstable network
-     and/or concurrent access to the web site.
-     E.g the server tried to set a new session ID via a cookie, but the Set-Cookie
-     packet may not have reached the client due to loss of connection.
-     One connection may issue a new session ID by <function>session_regenerate_id</function>,
-     but another concurrent connection may not have received the new session ID yet.
-     Therefore, developers must prohibit access to obsolete session at a later stage.
-     I.e. timestamp based session management is mandatory.
+     期限切れのセッションへのアクセスは、ネットワークが不安定だったり、
+     Webサイトへの同時アクセスも原因で起こりえます。
+     たとえば、サーバは新しいセッションIDを Cookie 経由で設定しようとしたが、
+     接続が失われたため Set-Cookie のパケットが
+     クライアントに届かなかったりする可能性があります。
+     ある接続で、<function>session_regenerate_id</function> によって新しいセッションIDが発行されたけれども、
+     別の同時接続が、まだ新しいセッションIDを受け取っていない可能性もあります。
+     よって、開発者は期限切れのセッションへのアクセスを後の段階で禁止しなければなりません。
+     すなわち、タイムスタンプベースのセッション管理が必須なのです。
     </simpara>
    </note>
 
    <para>
-    In summary, session data must not be destroyed with
-    <function>session_regenerate_id</function> nor <function>session_destroy</function>,
-    but timestamps must be used to control access to session data.
-    Let <function>session_gc</function> remove obsolete data from the session data storage.
+    まとめると、セッションデータは
+    <function>session_regenerate_id</function> や <function>session_destroy</function>
+    を使って破棄してはいけません。
+    むしろ、セッションデータへのアクセスを制御するためにタイムスタンプを使わなければなりません。
+    <function>session_gc</function> 関数に、
+    セッションデータストレージから、期限切れのデータを削除させましょう。
    </para>
 
   </sect2>
 
   <sect2 xml:id="features.session.security.management.session-locking">
-   <title>Session and Locking</title>
+   <title>Session とロック</title>
 
    <para>
-    Session data is locked to avoid race conditions by default.
-    Locking is mandatory to keep session data consistent across requests.
+    セッションデータはレースコンディションを避けるため、デフォルトでロックされます。
+    ロックを掛けることは複数のリクエスト間でセッションデータの一貫性を保つため、必須です。
    </para>
 
    <para>
-    However, session-locking can be abused by attackers to perform DoS attacks.
-    To mitigate the risk of a DoS attack by session-locking, minimize locks.
-    Use read only sessions when session data does not need to be updated.
-    Use the 'read_and_close' option with <function>session_start</function>.
+    しかしながら、セッションをロックしてしまうと、
+    攻撃者がDOS攻撃に悪用する可能性があります。
+    セッションをロックすることによるDOS攻撃のリスクを軽減するためには、
+    ロックを最小限にすることです。
+    セッションデータを更新する必要がないときは、読み取り専用のセッションを使うようにします。
     <literal>session_start(['read_and_close'=>1]);</literal>
-    Close the session as soon as possible after updating $_SESSION by
-    using <function>session_commit</function>.
+    $_SESSION を更新した後は、<function>session_commit</function> を使って
+    できるだけ早くセッションを閉じるようにします。
    </para>
 
    <para>
-    The current session module does <emphasis>not</emphasis>
-    detect any modification of $_SESSION when the session is inactive.
-    It is the developer's responsibility not to modify $_SESSION when
-    the session is inactive.
+    現状のセッションモジュールは、
+    セッションがアクティブでない時に $_SESSION が変更されたかを検知 <emphasis>しません</emphasis>。
+    セッションがアクティブでない時に $_SESSION を変更しないことは、開発者の責任です。
    </para>
 
   </sect2>
 
   <sect2 xml:id="features.session.security.management.active-sessions">
-   <title>Active Sessions</title>
+   <title>アクティブなセッション</title>
 
    <para>
-    Developers should keep track of all active sessions for every user.
-    And notify them of how many active sessions, from which IP (and area),
-    how long it has been active, etc.
-    PHP does not keep track of these. Developers are supposed to do so.
+    開発者は、ユーザーごとにアクティブなセッションを追跡し続けるべきです。
+    そして、アクティブなセッションの数がどれくらいあるかや、
+    どのIP(や地域) からかとか、どのくらいの期間アクティブなのか、などです。
+    PHP はこれらを追跡しません。開発者が行うことが想定されています。
    </para>
 
    <para>
-    Various ways to implement this exist.
-    One possible implementation is setting up a database that keeps track
-    of the required data and stores any relevant information.
-    Since session data is GCed, developers must take care of the GCed data
-    to maintain the active session database consistency.
+    これを実装するやり方はたくさんあります。
+    ひとつの可能な実装は、データベースをセットアップして必須のデータを追跡し、
+    関連するあらゆる情報を保存することです。
+    セッションデータは GC されるので、開発者はアクティブなセッションのデータベースが一貫性を保つように
+    GC されたデータに注意を払わなければなりません。
    </para>
 
    <para>
-    One of the simplest implementations is "User ID prefixed session ID"
-    and store the required information in $_SESSION.
-    Many databases posses good performance for selecting string prefix.
-    Developers MAY use <function>session_regenerate_id</function> and
-    <function>session_create_id</function> for this.
+    一番簡単な実装は、"ユーザーIDをセッションIDの前に付ける" ことで、
+    必須の情報を $_SESSION に保存することです。
+    多くのデータベースは文字列の prefix を選択するのに良いパフォーマンスを発揮します。
+    開発者は <function>session_regenerate_id</function> と
+    <function>session_create_id</function> をこの目的で使うこともできます。
    </para>
 
    <warning>
     <simpara>
-     Never employ confidential data as a prefix.
-     If the user ID is confidential, consider using
-     <function>hash_hmac</function>.
+     秘密のデータを prefix に絶対に使わないでください。
+     ユーザーIDが秘密の場合、<function>hash_hmac</function> を使うことも検討しましょう。
     </simpara>
    </warning>
 
    <warning>
     <simpara>
-     Enabling <link linkend="ini.session.use-strict-mode">session.use_strict_mode</link>
-     is mandatory for this setup. Ensure it is enabled.
-     Otherwise the active session database can be compromised.
+     <link linkend="ini.session.use-strict-mode">session.use_strict_mode</link>
+     はこの場合に必須です。必ず有効にするようにしてください。
+     そうしなければ、アクティブなセッションデータベースが侵害される可能性があります。
     </simpara>
    </warning>
 
    <para>
-    Timestamp based session management is mandatory to detect access to obsolete sessions.
-    When access to an obsolete session is detected, authentication flags should
-    be removed from all active sessions of the user.
-    This prevents attackers to keep exploiting stolen sessions.
+    タイムスタンプベースのセッション管理は、時間切れのセッションへのアクセスを検知するのに必須です。
+    時間切れのセッションへのアクセスが検知された場合、
+    そのユーザーの全てのアクティブなセッションから認証済みのフラグを削除すべきです。
+    こうすることで、攻撃者が盗んだセッションを悪用し続けることを防げます。
    </para>
 
   </sect2>
 
   <sect2 xml:id="features.session.security.management.session-and-autologin">
-   <title>Session and Auto-login</title>
+   <title>Session と自動ログイン</title>
 
    <para>
-    Developers must not use long life session IDs for auto-login because it
-    increases the risk of stolen sessions.
-    An auto-login feature should be implemented by the developer.
+    開発者は有効期間が長いセッションを、自動ログインに使ってはいけません。
+    なぜなら、セッションが盗まれるリスクが増えるからです。
+    自動ログイン機能は、開発者が実装すべきです。
    </para>
 
    <para>
-    Use a secure one time hash key as an auto-login key using
-    <function>setcookie</function>. Use a secure hash stronger than SHA-2.
-    E.g. SHA-256 or greater with random data from <function>random_bytes</function>
-    or /dev/urandom.
+    <function>setcookie</function> を使い、
+    セキュアなワンタイムハッシュを自動ログインのキーとして使います。
+    SHA-2 より強いセキュアなハッシュを使います。
+    たとえば、 <function>random_bytes</function> や /dev/urandom で生成したランダムデータを 
+    SHA-256 またはそれより強いハッシュ関数と一緒に使います。
    </para>
 
    <para>
-    If the user is unauthenticated, check whether the one-time auto-login key is valid or not.
-    In the case it is valid, authenticate the user and set a new secure one-time hash key.
-    An auto-login key must only be used once, i.e. never reuse an auto-login key,
-    always generate a new one.
+    ユーザーが認証されていなかったら、ワンタイムの自動ログインキーが有効かどうかをチェックします。
+    もし、キーが正しければ、ユーザーを認証し、新しいセキュアなワンタイムハッシュキーを設定します。
+    自動ログインキーを使うのは一度きりです。つまり、再利用してはいけません。
+    常に新しいものを生成するようにします。
    </para>
 
    <para>
-    An auto-login key is a long life authentication key,
-    it should be protected as much as possible.
-    Use path/httponly/secure/SameSite cookie attributes to secure it.
-    I.e. never transmit the auto-login key unless required.
+    自動ログインのキーが長期間有効な認証キーである場合、
+    できるだけ手厚く保護すべきです。
+    path/httponly/secure/SameSite cookie 属性をセキュアにするために使います。
+    つまり、自動ログインキーを必要ないのに送信しないでください。
    </para>
 
    <para>
-    Developer must implement the features that disables
-    auto-login and removes unneeded auto-login key cookie.
+    開発者は自動ログインを無効にする機能や、
+    不要な自動ログインのキーを削除する機能を実装しなければなりません。
    </para>
 
   </sect2>
 
   <sect2 xml:id="features.session.security.management.csrf">
-   <title>CSRF (Cross-Site Request Forgeries) attacks</title>
+   <title>CSRF (Cross-Site Request Forgeries) 攻撃</title>
 
    <para>
-    Sessions and authentication do not protect against CSRF attacks.
-    Developers must implement CSRF protection by themselves.
+    セッションと認証は、CSRF 攻撃を防ぐことはありません。
+    開発者は CSRF への防御を自分で実装しなければなりません。
    </para>
 
    <para>
-    <function>output_add_rewrite_var</function> can be used for CSRF protection.
-    Refer to the manual page for more details.
+    CSRF 攻撃を防ぐために、
+    <function>output_add_rewrite_var</function> 関数が使えます。
+    詳細はマニュアルページを参照してください。
    </para>
 
    <note>
     <simpara>
-     PHP prior to 7.2.0 uses the same output buffer and INI setting as trans sid.
-     Therefore, use of <function>output_add_rewrite_var</function>
-     with PHP prior to version 7.2.0 is not advised.
+     PHP 7.2.0 より前のバージョンでは、trans sid と同じ出力バッファとINI 設定を使っていました。
+     よって、PHP 7.2.0 より前のバージョンで
+     <function>output_add_rewrite_var</function> を使うことはおすすめしません。
     </simpara>
    </note>
 
    <para>
-    Most web application frameworks support CSRF protection.
-    Refer to the web application framework manual for more details.
+    ほとんどの Webアプリケーションフレームワークは、CSRF から防御する機能をサポートしています。
+    詳細は、Webアプリケーションフレームワークのマニュアルを参照してください。
    </para>
 
    <para>
-    As of PHP 7.3 the SameSite attribute for the session cookie can be set.
-    This is an additional measure which can mitigate CSRF vulnerabilities.
+    PHP 7.3 以降では、セッションクッキーにSameSite 属性が設定できます。
+    この属性も、CSRF 脆弱性を軽減できる追加の対策になります。
    </para>
   </sect2>
  </sect1>
