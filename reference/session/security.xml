@@ -18,158 +18,165 @@
    <title>セッション管理の基礎</title>
 
    <sect2 xml:id="features.session.security.management.basic">
-    <title>Session Security</title>
+    <title>セッションのセキュリティ</title>
 
     <para>
-     The session module can not guarantee that the information stored
-     in a session is only viewed by the user who created the session.
-     Additional measures are needed to protect the confidentiality
-     of the session, depending on the value associated with it.
+     セッションモジュールは、セッションに保存された情報を
+     セッションを作成したユーザーだけが見ることができることを保証できません。
+     セッションに紐付けられた値によっては、
+     セッションの機密性を守るために追加の対策が必要です。
     </para>
 
     <para>
-     The importance of the data carried in the session needs to be
-     assessed and further protection may be deployed; this typically
-     comes at a price, such as reduced convenience for the user.
-     For example, to protect users from a simple social engineering
-     tactic, <literal>session.use_only_cookies</literal>
-     needs to be enabled. In that case, cookies must be enabled
-     unconditionally on the client side, or sessions will not work.
+     セッションに保存されているデータがどれくらい重要かを評価し、
+     さらなる防御策を展開すべきかもしれません。
+     通常、そうしてしまうとコストが高く付きます。
+     たとえば、ユーザーの利便性を損なうことが挙げられます。
+     たとえば、ユーザーを単純なソーシャルエンジニアリングから守るためには、
+     <literal>session.use_only_cookies</literal> を有効にする必要があります。
+     この場合、クッキーを無条件にクライアント側でも有効にしなければなりません。
+     さもないとセッションが動作しないからです。
     </para>
 
     <para>
-     There are several ways to leak an existing session ID to third
-     parties. E.g. JavaScript injections, session IDs in URLs,
-     packet sniffing, physical access to the device, etc.
-     A leaked session ID enables the third party to access all
-     resources associated with a specific ID. First, URLs carrying
-     session IDs. If there are links to an external site or resource,
-     the URL including the session ID might be stored in the external
-     site's referrer logs. Second, a more active attacker might listen
-     to network traffic. If it is unencrypted, session IDs will flow
-     in plain text over the network. The solution is to implement
-     SSL/TLS on the server and make it mandatory for users.
-     HSTS should be used for improved security.
+     既存のセッションIDをサードパーティに漏らす方法は複数あります。
+     JavaScriptインジェクション、セッションID を URL に埋め込む方法、
+     パケット盗聴、デバイスへの物理アクセス、などです。
+     セッションIDが漏れてしまうと、
+     サードパーティがその特定のIDに紐付けられた全てのリソースに
+     アクセスできるようになってしまいます。
+
+     まず最初は、URL でセッションIDを持ち回すやり方です。
+     もし外部サイトやリソースへのリンクが存在したとすると、
+     セッションIDを含むURLが、外部サイトのリファラログにに保存されるかもしれません。
+     ふたつめは、より積極的な攻撃者がネットワークトラフィックを盗聴しているかもしれません。
+     ネットワークトラフィックが暗号化されていないと、
+     セッションIDがネットワーク越しにプレーンテキスト内に流出してしまいます。
+     防御策は、SSL/TLS をサーバ側で実装し、ユーザーがそれを使うように強制することです。
+     HSTS も、セキュリティを向上させるために使えるはずです。
    </para>
 
    <note>
     <simpara>
-     Even HTTPS can not protect confidential data at all times.
-     For example the CRIME and Beast vulnerabilities may enable an
-     attacker to read the data. Also, note that many networks employ
-     HTTPS MITM proxies for audit purposes.
-     Attackers may also set up such a proxy.
+     HTTPS でさえも、あらゆる時に機密データを保護することはできません。
+     たとえば、CRIME や Beast 脆弱性が、攻撃者にデータを読めるようにしてしまうかもしれません。
+     また、多くのネットワークは HTTPS の MITMプロキシ を監査の目的で採用しています。
+     攻撃者も、そうしたプロキシをセットアップしているかもしれません。
     </simpara>
    </note>
 
   </sect2>
 
   <sect2 xml:id="features.session.security.management.non-adaptive-session">
-   <title>Nonadaptive Session Management</title>
+   <title>セッションアダプションを防ぐためのセッション管理</title>
 
    <para>
-    PHP's session manager is adaptive by default currently.
-    An adaptive session manager bears additional risks.
+    PHP のセッションマネージャーは、
+    現状ではデフォルトでセッションアダプション攻撃が可能です。
+    アダプション攻撃が可能なセッションマネージャーは、
+    追加のリスクを背負うことになります。
    </para>
 
    <para>
-    As of PHP 5.5.2,
+    PHP 5.5.2 以降では、
     <link linkend="ini.session.use-strict-mode">session.use_strict_mode</link>
-    is available. When it is enabled, and the session save handler supports it,
-    an uninitialized session ID is rejected and a new one is created.
-    This prevents an attack that forces users to use a known session ID.
-    An attacker may paste links or send emails that contains the session ID.
-    E.g. <literal>http://example.com/page.php?PHPSESSID=123456789</literal> if
-    <link linkend="ini.session.use-trans-sid">session.use_trans_sid</link>
-    is enabled, the victim will start a session using the session ID provided
-    by the attacker.
-    <link linkend="ini.session.use-strict-mode">session.use_strict_mode</link>
-    mitigate this risk.
+    が利用できます。
+    これを有効にし、かつセッションの保存ハンドラがサポートしている場合、
+    初期化されていないセションIDは拒否され、新しいものが作成されます。
+    これによって、攻撃者がユーザーに既知のセッションIDを強制的に使わせることを防止できます。
+    攻撃者はセッションID付きのリンクをペーストしたり、
+    そうしたリンクを含んだメールを送るかもしれません。
+    たとえば <literal>http://example.com/page.php?PHPSESSID=123456789</literal> のようなものです。
+    <link linkend="ini.session.use-trans-sid">session.use_trans_sid</link> が有効な場合、
+    ユーザーは攻撃者が提供したセッションIDを使ってセッションを開始してしまいます。
+    <link linkend="ini.session.use-strict-mode">session.use_strict_mode</link> は、
+    こうしたリスクを軽減します。
    </para>
 
    <warning>
     <simpara>
-     User defined save handlers can also support strict session mode by
-     implementing session ID validation. All user defined save handlers
-     should implement session ID validation.
+     ユーザー定義の保存ハンドラも、セッションIDの検証を行うことで
+     厳格なセッションモードをサポートできます。
+     保存ハンドラを定義した全てのユーザーは、セッションIDの検証を実装すべきです。
     </simpara>
    </warning>
 
    <para>
-    The session ID cookie may be set with the domain, path, httponly,
-    secure and, as of PHP 7.3, SameSite attributes.
-    <!-- Not exactly sure what the meaning here is - girgias -->
-    There is precedence defined by browsers.
-    By using the precedence, an attacker can set session ID that
-    could be used permanently. Use of
+    セッションIDクッキーは、domain, path, httponly, secure, そして
+    PHP 7.3 以降では、SameSite 属性とともに設定できます。
+    これは、ブラウザで定義されたものが優先します。
+    この優先される仕組みを使い、攻撃者は永久に使えるセッションIDを設定できてしまいます。
     <link linkend="ini.session.use-only-cookies">session.use_only_cookies</link>
-    will not solve this issue.
+    はこの問題を解決できません。
     <link linkend="ini.session.use-strict-mode">session.use_strict_mode</link>
-    mitigates this risk. With
-    <link linkend="ini.session.use-strict-mode">session.use_strict_mode</link>=On,
-    the uninitialized session ID will be refused.
+    を使うとこのリスクを軽減できます。
+    <link linkend="ini.session.use-strict-mode">session.use_strict_mode</link>=On にすると、
+    初期化されていないセッションIDは拒否されます。
    </para>
 
    <note>
     <simpara>
-     Even though
      <link linkend="ini.session.use-strict-mode">session.use_strict_mode</link>
-     mitigates the risk of adaptive session management, an attacker can force
-     users to use an initialized session ID which has been created by an attacker.
-     E.g. JavaScript injection.
-     This attack can be mitigated by this manual's recommendations.
+     はアダプション可能なセッション管理機構のリスクを軽減しますが、
+     攻撃者は自らが生成したセッションIDを、
+     初期化済みセッションIDとして使わせることが出来てしまいます。
+     たとえば JavaScriptインジェクション攻撃です。
+     この攻撃はこのマニュアルで推奨する方法で軽減できます。
     </simpara>
 
     <simpara>
-     By following this manual, developers should enable,
-     <link linkend="ini.session.use-strict-mode">session.use_strict_mode</link>,
-     use timestamp based session management, and regenerate session IDs using
-     <function>session_regenerate_id</function> with recommended procedures.
-     If developers follow all of the above, an attacker generated session ID
-     will eventually be deleted.
+     このマニュアルに従い、開発者は
+     <link linkend="ini.session.use-strict-mode">session.use_strict_mode</link>
+     を有効にし、タイムスタンプベースのセッション管理を行い、
+     推奨する手続きを使って <function>session_regenerate_id</function> を使い
+     セッションIDの再生成を行うべきです。
+     開発者が上記全てに従えば、攻撃者が生成したセッションIDは、結局は削除されます。
     </simpara>
 
     <simpara>
-     When an access to an obsolete session occurs, developers should save all
-     active session data of the user. As this information will be relevant
-     for an ensuing investigation. The user should be forcefully logged out
-     of all sessions, i.e. require them to reauthenticate.
-     This prevents attackers from abusing stolen sessions.
+     使われなくなったセッションにアクセスされたときのために、
+     開発者は全てのアクティブなユーザーのセッションデータを保存すべきです。
+     この情報は後に行われる調査とも関係があります。
+     ユーザーは全てのセッションから強制的にログアウトさせられるべきです。
+     つまり、再認証させるべきです。
+     こうすることで、攻撃者が盗まれたセッションを悪用することを防止できます。
     </simpara>
    </note>
 
    <warning>
     <simpara>
-     Access to an obsolete session does not necessarily suggest an attack.
-     An unstable network and/or immediate deletion of the active session
-     will result in legitimate users using obsolete sessions.
+     使われなくなったセッションにアクセスすることが、
+     必ずしも攻撃であることを示しているとは限りません。
+     不安定なネットワークや、 
+     アクティブなセッションをすぐに削除してしまったりすることが原因で、
+     正当なユーザーが使われなくなったセッションにアクセスすることがあるからです。
     </simpara>
    </warning>
 
    <para>
-    As of PHP 7.1.0, <function>session_create_id</function> has been added.
-    This function may be operated to access all active sessions of a user
-    efficiently by prefixing the session IDs with the user ID. Enabling
+    PHP 7.1.0 以降、<function>session_create_id</function> が追加されました。
+    この関数は、セッションIDの前にユーザーのIDをつけることで、
+    全てのアクティブなユーザーのセッションに効率的にアクセスできます。
     <link linkend="ini.session.use-strict-mode">session.use_strict_mode</link>
-    is vital with this setup. Otherwise, malicious users can set
-    malicious session ID for other users.
+    を有効にすることが重要です。有効にしないと、
+    悪意のあるユーザーが悪意のあるセッションIDを他のユーザーに設定できてしまいます。
    </para>
 
    <note>
     <simpara>
-     Users prior to PHP 7.1.0 SHOULD use CSPRNG, e.g. /dev/urandom, or
-     <function>random_bytes</function> and hash functions to generate
-     a new session ID. <function>session_create_id</function> has
-     collision detection and generates a session ID according to the
-     session's INI settings.
-     Use of <function>session_create_id</function> is preferred.
+     PHP 7.1.0 より前のバージョンのユーザーは新しいセッションIDを生成する
+     のに CSPRNG、つまり /dev/urandom や <function>random_bytes</function>、
+     やハッシュ関数を使うべきです。
+     <function>session_create_id</function> には衝突を検出する機能があり、
+     セッションの INI 設定に従ってセッションIDを生成します。
+     <function>session_create_id</function> の利用が好ましいです。
     </simpara>
    </note>
 
   </sect2>
 
   <sect2 xml:id="features.session.security.management.session-id-regeneration">
-   <title>Session ID Regeneration</title>
+   <title>セッションID の再生成</title>
 
    <para>
     <link linkend="ini.session.use-strict-mode">session.use_strict_mode</link>
@@ -279,7 +286,7 @@
   </sect2>
 
   <sect2 xml:id="features.session.security.management.session-data-deletion">
-   <title>Session Data Deletion</title>
+   <title>セッションデータを削除する</title>
 
    <para>
     Obsolete session data must be inaccessible and deleted.
