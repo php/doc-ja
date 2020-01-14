@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 79dcbe011fb254dcd92c597064571fe313362a09 Maintainer: takagi Status: ready -->
-<!-- CREDITS: hirokawa -->
+<!-- EN-Revision: cffb5f52894aa8a29109e3802e2257c56b51bcb6 Maintainer: takagi Status: ready -->
+<!-- CREDITS: hirokawa,mumumu -->
 
 <chapter xml:id="pgsql.examples" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  &reftitle.examples;
@@ -39,6 +39,80 @@ pg_free_result($result);
 
 // 接続をクローズする
 pg_close($dbconn);
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+ </section>
+
+ <section xml:id="pgsql.examples-queries">
+  <title>基本的な使い方</title>
+  <para>
+   以下の例には、レガシーなMySQL関数に似た、ユーザー定義関数が含まれています。
+
+   <example>
+    <title>PostgreSQL のユーザー定義関数の例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+// この関数は、PostgreSQL 接続がデータベースにバインドしているので必要
+// This function should be needed, since PostgreSQL connection binds database.
+function pg_list_dbs($db)
+{
+    assert(is_resource($db));
+    $query = '
+SELECT
+ d.datname as "Name",
+ u.usename as "Owner",
+ pg_encoding_to_char(d.encoding) as "Encoding"
+FROM
+ pg_database d LEFT JOIN pg_user u ON d.datdba = u.usesysid
+ORDER BY 1;
+';
+    return pg_query($db, $query);
+}
+
+// テーブルを一覧にする
+function pg_list_tables($db)
+{
+    assert(is_resource($db));
+    $query = "
+SELECT
+ c.relname as \"Name\",
+ CASE c.relkind WHEN 'r' THEN 'table' WHEN 'v' THEN 'view' WHEN 'i' THEN 'index' WHEN 'S' THEN 'sequence' WHEN 's' THEN 'special' END as \"Type\",
+  u.usename as \"Owner\"
+FROM
+ pg_class c LEFT JOIN pg_user u ON c.relowner = u.usesysid
+WHERE
+ c.relkind IN ('r','v','S','')
+ AND c.relname !~ '^pg_'
+ORDER BY 1;
+";
+    return pg_query($db, $query);
+}
+
+// pg_meta_data() も参照してください。フィールド定義を配列で返します。
+function pg_list_fields($db, $table)
+{
+    assert(is_resource($db));
+    $query = "
+SELECT
+ a.attname,
+ format_type(a.atttypid, a.atttypmod),
+ a.attnotnull,
+ a.atthasdef,
+ a.attnum
+FROM
+ pg_class c,
+ pg_attribute a
+WHERE
+ c.relname = '".$table."'
+ AND a.attnum > 0 AND a.attrelid = c.oid
+ORDER BY a.attnum;
+";
+    return pg_query($db, $query);
+}
 ?>
 ]]>
     </programlisting>

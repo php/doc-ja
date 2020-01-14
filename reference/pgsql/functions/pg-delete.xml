@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 49944c9148ba4e48c1aa96544cdec3911b2f4131 Maintainer: hirokawa Status: ready -->
-<!-- CREDITS: takagi -->
+<!-- EN-Revision: 65fe2493a38670a11240a7522733bcde8bb4b784 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: takagi,mumumu -->
 <refentry xml:id='function.pg-delete' xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>pg_delete</refname>
@@ -22,9 +22,24 @@
   <para>
    <function>pg_delete</function> は、<parameter>assoc_array</parameter>
    で指定したキーと値を用いてテーブルからレコードを削除します。
+  </para>
+  <para>
    <parameter>options</parameter> が指定された場合、指定したオプションを
    つけて <function>pg_convert</function> が <parameter>assoc_array</parameter>
    に適用されます。
+  </para>
+  <para>
+   デフォルトでは、
+   <function>pg_update</function> は生の値を渡します。
+   値はエスケープするか、PGSQL_DML_ESCAPE オプションを指定しなければいけません。
+   PGSQL_DML_ESCAPE はパラメータや識別子をクォートし、エスケープします。
+   よって、テーブル/カラム名は大文字小文字を区別します。
+  </para>
+  <para>
+   エスケープやプリペアドクエリであっても、
+   LIKE, JSON, Array, Regex などのクエリを守れない可能性があることに注意してください。
+   これらのパラメータはコンテクストに応じて処理されるべきです。
+   たとえば、値をエスケープ/検証する処理を行うことなどです。
   </para>
  </refsect1>
 
@@ -96,7 +111,9 @@
 <![CDATA[
 <?php 
   $db = pg_connect('dbname=foo');
-  // これは安全です。なぜなら $_POST は自動的に変換されるからです
+  // これは少しだけ安全です。なぜなら、全ての値がエスケープされるからです。
+  // しかし、PostgreSQL は JSON/Array をサポートしています。これらの型に
+  // ついてはエスケープされたクエリや、プリペアドクエリでも安全ではありません。
   $res = pg_delete($db, 'post_log', $_POST);
   if ($res) {
       echo "POST data is deleted: $res\n";

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
 <!-- splitted from ./en/functions/pgsql.xml, last change in rev 1.80 -->
-<!-- EN-Revision: 4501571c0db3a88528af1c5bcf8cb7193eec6961 Maintainer: hirokawa Status: ready -->
-<!-- CREDITS: takagi -->
+<!-- EN-Revision: 65fe2493a38670a11240a7522733bcde8bb4b784 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: takagi,mumumu -->
 <refentry xml:id='function.pg-update' xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>pg_update</refname>
@@ -27,6 +27,30 @@
    <literal>options</literal> が指定された場合、指定したオプションとともに
    <function>pg_convert</function> が <literal>data</literal> 
    に適用されます。
+  </para>
+  <para>
+   <function>pg_update</function> は、
+   <literal>field=>value</literal> 形式の
+   <literal>assoc_array</literal> で指定されたレコードを更新します。
+  </para>
+  <para>
+   <literal>options</literal> が指定されると、
+   指定されたフラグを
+   <function>pg_convert</function> が
+   <literal>assoc_array</literal> に適用します。
+  </para>
+  <para>
+   デフォルトでは、
+   <function>pg_update</function> は生の値を渡します。
+   値はエスケープするか、PGSQL_DML_ESCAPE オプションを指定しなければいけません。
+   PGSQL_DML_ESCAPE はパラメータや識別子をクォートし、エスケープします。
+   よって、テーブル/カラム名は大文字小文字を区別します。
+  </para>
+  <para>
+   エスケープやプリペアドクエリであっても、
+   LIKE, JSON, Array, Regex などのクエリを守れない可能性があることに注意してください。
+   これらのパラメータはコンテクストに応じて処理されるべきです。
+   たとえば、値をエスケープ/検証する処理を行うことなどです。
   </para>
  </refsect1>
 
@@ -109,7 +133,9 @@
   $db = pg_connect('dbname=foo');
   $data = array('field1'=>'AA', 'field2'=>'BB');
   
-  // これは安全です。なぜなら $_POST は自動的に変換されるからです。
+  // これは少しだけ安全です。なぜなら、全ての値がエスケープされるからです。
+  // しかし、PostgreSQL は JSON/Array をサポートしています。これらの型に
+  // ついてはエスケープされたクエリや、プリペアドクエリでも安全ではありません。
   $res = pg_update($db, 'post_log', $_POST, $data);
   if ($res) {
       echo "データが更新されました: $res\n";
