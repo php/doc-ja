@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 6eb1cef4f2ea20b73ff7bbf5df19fc752849156e Maintainer: takagi Status: ready -->
-<!-- CREDITS: hirokawa -->
+<!-- EN-Revision: f95409bf5ed7eca27653e29bb9c0085516c76df2 Maintainer: takagi Status: ready -->
+<!-- CREDITS: hirokawa,mumumu -->
 
 <chapter xml:id="ldap.examples" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  &reftitle.examples;
@@ -25,15 +25,15 @@ echo "Connecting ...";
 $ds=ldap_connect("localhost");  // 有効な LDAP サーバーに違いない!
 echo "connect result is " . $ds . "<br />";
 
-if ($ds) { 
-    echo "Binding ..."; 
+if ($ds) {
+    echo "Binding ...";
     $r=ldap_bind($ds);     // これは "匿名" バインドで、通常は
                            // 読みこみのみのアクセスとなります。
     echo "Bind result is " . $r . "<br />";
 
     echo "Searching for (sn=S*) ...";
     // 名前(surname)エントリを検索
-    $sr=ldap_search($ds, "o=My Company, c=US", "sn=S*");  
+    $sr=ldap_search($ds, "o=My Company, c=US", "sn=S*");
     echo "Search result is " . $sr . "<br />";
 
     echo "Number of entries returned is " . ldap_count_entries($ds, $sr) . "<br />";
@@ -54,6 +54,152 @@ if ($ds) {
 } else {
     echo "<h4>Unable to connect to LDAP server</h4>";
 }
+?>
+]]>
+   </programlisting>
+  </example>
+ </section>
+ <section xml:id="ldap.examples-controls">
+  <title>LDAP コントロール</title>
+  <para>
+   PHP &gt;= 7.3.0 で LDAPコントロールを使う例をいくつか示します。
+  </para>
+
+  <example>
+   <title>ppolicy(パスワードポリシー) 情報とバインドする</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+$user   = 'cn=admin,dc=example,dc=com';
+$passwd = 'adminpassword';
+
+$ds = ldap_connect('ldap://localhost');
+
+if ($ds) {
+    $r = ldap_bind_ext($ds, $user, $passwd, [['oid' => LDAP_CONTROL_PASSWORDPOLICYREQUEST]]);
+
+    if (ldap_parse_result($ds, $r, $errcode, $matcheddn, $errmsg, $referrals, $ctrls)) {
+        if ($errcode != 0) {
+            die("Error: $errmsg ($errcode)");
+        }
+        if (isset($ctrls[LDAP_CONTROL_PASSWORDPOLICYRESPONSE])) {
+            $value = $ctrls[LDAP_CONTROL_PASSWORDPOLICYRESPONSE]['value'];
+            echo "Expires in: ".$value['expire']." seconds\n";
+            echo "Number of auth left: ".$value['grace']."\n";
+            if (isset($value['error'])) {
+                echo "Ppolicy error code: ".$value['error'];
+            }
+        }
+    }
+} else {
+    die("Unable to connect to LDAP server");
+}
+?>
+]]>
+   </programlisting>
+  </example>
+
+  <example>
+   <title>空でない場合に限って、説明を変更する</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+// $link は、 LDAP 接続です
+
+$result = ldap_mod_replace_ext(
+    $link,
+    'o=test,dc=example,dc=com',
+    ['description' => 'New description'],
+    [
+        [
+            'oid'         => LDAP_CONTROL_ASSERT,
+            'iscritical'  => TRUE,
+            'value'       => ['filter' => '(!(description=*))']
+        ]
+    ]
+);
+
+// ここからは、ldap_parse_result を使う
+?>
+]]>
+   </programlisting>
+  </example>
+
+  <example>
+   <title>削除する前に、いくつか値を読み取る</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+// $link は、 LDAP 接続です
+
+$result = ldap_delete_ext(
+    $link,
+    'o=test,dc=example,dc=com',
+    [
+        [
+            'oid'         => LDAP_CONTROL_PRE_READ,
+            'iscritical'  => TRUE,
+            'value'       => ['attrs' => ['o', 'description']]
+        ]
+    ]
+);
+
+// ここからは、ldap_parse_result を使う
+?>
+]]>
+   </programlisting>
+  </example>
+
+  <example>
+   <title>参照を削除する</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+// $link は、 LDAP 接続です
+
+// コントロールが存在しない場合、参照されているノードを削除します。
+// それを避けるためにも、control を critical として必ず設定してください。
+$result = ldap_delete_ext(
+    $link,
+    'cn=reference,dc=example,dc=com',
+    [['oid' => LDAP_CONTROL_MANAGEDSAIT, 'iscritical' => TRUE]]
+);
+
+// ここからは、ldap_parse_result を使う
+?>
+]]>
+   </programlisting>
+  </example>
+
+  <example>
+   <title>検索結果を複数ページに分割する</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+// $link は、 LDAP 接続です
+
+$cookie = '';
+
+do {
+    $result = ldap_search(
+        $link, 'dc=example,dc=base', '(cn=*)', ['cn'], 0, 0, 0, LDAP_DEREF_NEVER,
+        [['oid' => LDAP_CONTROL_PAGEDRESULTS, 'value' => ['size' => 2, 'cookie' => $cookie]]]
+    );
+    ldap_parse_result($link, $result, $errcode , $matcheddn , $errmsg , $referrals, $controls);
+    // 例を短くするために、エラー処理はテストしていません
+    $entries = ldap_get_entries($link, $result);
+    foreach ($entries as $entry) {
+        echo "cn: ".$entry['cn'][0]."\n";
+    }
+    if (isset($controls[LDAP_CONTROL_PAGEDRESULTS]['value']['cookie'])) {
+        // 最後の呼び出しから得られる cookie を次に引き渡す必要があります
+        $cookie = $controls[LDAP_CONTROL_PAGEDRESULTS]['value']['cookie'];
+    } else {
+        $cookie = '';
+    }
+    // cookie が空の場合、最後のページ
+} while (!empty($cookie));
 ?>
 ]]>
    </programlisting>
