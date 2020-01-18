@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: f151d14e13833bba07b6d5d3c018f3d108e78409 Maintainer: hirokawa Status: ready -->
-<!-- CREDITS: takagi -->
+<!-- EN-Revision: 9f34a7ecf58a79efb4586dff4c21c24195479506 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: takagi,mumumu -->
 <refentry xml:id="function.ldap-connect" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>ldap_connect</refname>
@@ -12,6 +12,16 @@
   &reftitle.description;
   <methodsynopsis>
    <type>resource</type><methodname>ldap_connect</methodname>
+   <methodparam choice="opt"><type>string</type><parameter>ldap_uri</parameter><initializer>&null;</initializer></methodparam>
+  </methodsynopsis>
+  <warning>
+   <simpara>
+    <emphasis>次の</emphasis> シグナチャは後方互換のためまだサポートされていますが、
+    非推奨と見なされているのでもう使わないでください！
+   </simpara>
+  </warning> 
+  <methodsynopsis>
+   <type>resource</type><methodname>ldap_connect</methodname>
    <methodparam choice="opt"><type>string</type><parameter>host</parameter><initializer>&null;</initializer></methodparam>
    <methodparam choice="opt"><type>int</type><parameter>port</parameter><initializer>389</initializer></methodparam>
   </methodsynopsis>
@@ -20,10 +30,12 @@
    <parameter>host</parameter> および <parameter>port</parameter>
    が妥当であるかどうかを調べます。
   </para>
-  <para>
-   注意: この関数は、接続を確立するするわけでは <emphasis>ありません</emphasis>。
-   指定したパラメータが妥当であり、必要に応じて接続をオープンできるかどうかを調べるだけです。
-  </para>
+  <note>
+   <simpara>
+     注意: この関数は、接続を確立するするわけでは <emphasis>ありません</emphasis>。
+     指定したパラメータが妥当であり、必要に応じて接続をオープンできるかどうかを調べるだけです。
+   </simpara>
+  </note>
  </refsect1>
 
  <refsect1 role="parameters">
@@ -31,11 +43,10 @@
   <para>
    <variablelist>
     <varlistentry>
-     <term><parameter>host</parameter></term>
+     <term><parameter>ldap_uri</parameter></term>
      <listitem>
       <para>
-       このフィールドには、ホスト名を指定します。OpenLDAP 2.x.x 以降を使用している場合は、
-       LDAP URI を指定することもできます。<literal>ldap://hostname:port</literal>
+       完全な LDAP URI を指定します。<literal>ldap://hostname:port</literal>
        形式、あるいは SSL を用いる場合は <literal>ldaps://hostname:port</literal> 形式が使えます。
       </para>
       <para>
@@ -48,10 +59,18 @@
      </listitem>
     </varlistentry>
     <varlistentry>
+     <term><parameter>host</parameter></term>
+     <listitem>
+      <para>
+       接続するホスト名
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
      <term><parameter>port</parameter></term>
      <listitem>
       <para>
-       接続するポート。LDAP URI を用いる場合は使用しません。
+       接続するポート。
       </para>
      </listitem>
     </varlistentry>
@@ -62,11 +81,10 @@
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
-   指定したホスト名とポートの組み合わせ、あるいは LDAP URI が妥当であると思われる場合に正の LDAP リンク ID を返します。
+   LDAP URI が妥当であると思われる場合に正の LDAP リンク ID を返します。
    これは単なる構文チェックであり、実際にサーバーに接続するわけではありません。
    構文チェックに失敗した場合は &false; を返します。
-   OpenLDAP 2.x.x を使用している場合は、
-   <function>ldap_connect</function> は常に <type>resource</type>
+   失敗していない場合は、<function>ldap_connect</function> は常に <type>resource</type>
    を返しますが、実際には接続せずにパラメータの初期化だけを行います。
    実際に接続するのは次に ldap_* 関数がコールされた際で、これは
    通常は <function>ldap_bind</function> です。
@@ -86,12 +104,11 @@
 <?php
 
 // LDAP 変数
-$ldaphost = "ldap.example.com";  // ldap サーバー
-$ldapport = 389;                 // ldap サーバーのポート番号
+$ldapuri = "ldap://ldap.example.com:389";  // ldap-uri
 
 // LDAP に接続します
-$ldapconn = ldap_connect($ldaphost, $ldapport)
-          or die("Could not connect to $ldaphost");
+$ldapconn = ldap_connect($ldapuri)
+          or die("That LDAP-URI was not parseable");
 
 ?>
 ]]>
@@ -109,7 +126,7 @@ $ldaphost = "ldaps://ldap.example.com/";
 
 // LDAP に接続します
 $ldapconn = ldap_connect($ldaphost)
-          or die("Could not connect to {$ldaphost}");
+          or die("That LDAP-URI was not parseable");
 
 ?>
 ]]>
