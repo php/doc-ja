@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 6fea35d31f3be3cdab8aa93c521fb8bfd362d367 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: d44af38adb986251e792ac5a52a7907179d25f2c Maintainer: takagi Status: ready -->
+<!-- Credits: mumumu -->
 
 <book xml:id="book.pthreads" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>pthreads</title>
@@ -9,108 +10,129 @@
  <preface xml:id="intro.pthreads">
   &reftitle.intro;
   <para>
- pthreads はオブジェクト指向の API で、ユーザーランドでのマルチスレッド処理を PHP で行うためのものです。
- マルチスレッドアプリケーションを作るのに必要な、あらゆるツールが含まれています。
- PHP アプリケーションで、Thread や Worker そして Threaded を作ったり読み書きしたり実行したりできるようになります。
+    pthreads はオブジェクト指向の API で、PHP でマルチスレッド処理を行うのに必要なすべてのツールを提供します。
+    PHP アプリケーションで、Thread や Worker そして Threaded を作ったり読み書きしたり実行したりできるようになります。
+  </para>
+  <tip>
+   <simpara>
+    <link linkend="book.parallel">parallel</link> を代わりに使うことも検討してください。
+   </simpara>
+  </tip>
+  <warning>
+   <para>
+    pthreads 拡張モジュールは、Webサーバ環境では使えません。
+    よって、PHP でのスレッド処理は CLIベースのアプリケーションに限られています。
+   </para>
+  </warning>
+  <warning>
+   <para>
+    ptheads (v3) は PHP 7.2+ で使えます。
+    これは ZTS モードが 7.0 と 7.1 では安全でないためです。
+   </para>
+  </warning>
+  <para>
+   <classname>Threaded</classname> クラスが、pthreads が実行できる機能のもとになります。
+   このクラスは同期のメソッドとプログラマにとって便利なインタフェイスをいくつか公開しています。
   </para>
   <para>
- A Threaded Object:
- A Threaded Object forms the basis of the functionality that allows pthreads to operate. It exposes synchronization methods and some useful interfaces for the programmer.
+   <classname>Thread</classname> クラスと使うと、
+   それを継承し、<literal>run</literal> メソッドを実装するだけでスレッドを作れます。
+   あらゆるメンバにスレッドの参照を使ってあらゆるコンテキストで読み書きができます。
+   また、あらゆるコンテキストが public と protected なメソッドを実行できます。
+   run メソッドは、この実装オブジェクトが作られたスレッドとは別の、
+   <methodname>Thread::start</methodname> が呼ばれたスレッドで実行されます。
+   スレッドを作ったコンテキストだけが、スレッドの start や join を行えます。
   </para>
   <para>
- Thread オブジェクト:
- ユーザーがスレッドを実装するには、pthreads が用意した Thread の宣言を継承して run メソッドを実装します。
- Thread を参照すれば、あらゆるコンテキストから任意のメンバーの読み書きができ、
- すべての public メソッドおよび protected メソッドを任意のコンテキストで実行できます。
- run メソッドは、この実装オブジェクトの start メソッドを呼んだコンテキスト
- (Thread あるいは Process) とは別のスレッドで実行されます。
- スレッドを作ったコンテキストだけが、スレッドの start や join を行えます。
+   <classname>Worker</classname> クラスは永続的な状態を保持し、
+   <methodname>Thread::start</methodname> (またはそれを継承したメソッド) を呼んだ時点から
+   オブジェクトがスコープ外に消えるまで、
+   あるいは明示的に(<methodname>Worker::shutdown</methodname>経由で) shutdown するまで利用できます。
+   このオブジェクトを参照する任意のコンテキストから、
+   タスクを(<methodname>Worker::stack</methodname> 経由で)ワーカーに積むことができ、
+   これを、Worker が別スレッドで実行します。
+   Worker の <literal>run</literal> メソッドは、あらゆるオブジェクトがスタックに積まれる前に実行されます。
+   そのため、オブジェクトで必要となるリソースの初期化に使えます。
   </para>
   <para>
- Worker オブジェクト:
- ワーカースレッドは永続的な状態を保持し、start を呼んだ時点からオブジェクトがスコープ外に消えるまで
- (あるいは明示的に shutdown するまで) 使えます。
- このオブジェクトを参照する任意のコンテキストから、
- オブジェクトを Worker に渡せます。これを、Worker が別スレッドで実行します。
- Worker の run メソッドは、あらゆるオブジェクトがスタックに積まれる前に実行されます。
- そのため、オブジェクトで必要となるリソースの初期化に使えます。
+   <classname>Pool</classname> クラスを使って、
+   <classname>Threaded</classname> オブジェクトを分散させるワーカークラスのグループを作ることができます。
+   複数スレッドを扱う際に最も簡単かつ効率的な方法です。
+  </para>
+  <caution>
+   <para>
+    <classname>Pool</classname> クラスは <classname>Threaded</classname> クラスを継承していません。
+    そして、Pool ベースのオブジェクトは通常の PHP オブジェクトです。
+    よって、そのインスタンスをコンテキスト間で共有してはいけません。
+   </para>
+  </caution>
+  <para>
+   <classname>Volatile</classname> は pthreads v3 で登場した新しいクラスです。
+   これは <classname>Threaded</classname> クラスのプロパティを変更可能にするために使います
+   (なぜなら、これらはデフォルトでは変更できないからです)
+   PHP の配列を <classname>Threaded</classname> コンテキストに保存する目的でも使えます。
   </para>
   <para>
- プール:
- ワーカースレッドのプールを使って、プログラマーが宣言したワーカークラス群の間で Threaded オブジェクトを分散させることができます。
- Pool クラスがこの機能を実装しており、きちんと参照を管理してくれます。
- これは v1.0.0 で導入されました。複数スレッドを扱う際に最も簡単かつ効率的な方法です。
+   同期はスレッドを扱う際に重要な機能です。
+   pthreads が作る全てのオブジェクトには (Java プログラマーならおなじみの)
+   <methodname>Threaded::wait</methodname> と
+   <methodname>Threaded::notify</methodname> による同期処理が組み込まれています。
+   あるオブジェクトの <methodname>Threaded::wait</methodname> を呼ぶと、
+   別のコンテキストから同じオブジェクトの <methodname>Threaded::notify</methodname> 
+   が呼ばれるのを待つようになります。
+   これを使えば、PHP 内のスレッド化されたオブジェクト (<classname>Threaded</classname> Object)
+   どうしで強力な同期処理ができるようになります。
   </para>
   <caution>
   <para>
- プールは通常の PHP オブジェクトなので、そのインスタンスをコンテキスト間で共有してはいけません。
+   マルチスレッドで実行されるあらゆるオブジェクトは <classname>Threaded</classname> を継承すべきです。
   </para>
   </caution>
   <para>
- 同期処理:
- pthreds が用意するすべてのオブジェクトには、
- (Java プログラマーならおなじみの) ::wait と ::notify による同期処理が組み込まれています。
- あるオブジェクトの ::wait を呼ぶと、別のコンテキストから同じオブジェクトの ::notify
- が呼ばれるのを待つようになります。
- これを使えば、PHP 内のスレッド化されたオブジェクト (Threaded Object) どうしで強力な同期処理ができるようになります。
+   データストレージ:
+   目安として、シリアライズ可能なデータ型なら何でも、スレッド化されたオブジェクトのメンバーとして使えます。
+   そのオブジェクトへの参照を持つあらゆるコンテキストから、メンバーの読み書きができます。
+   すべてのデータ型がシリアライズされるわけではなく、基本型はそのままの形式で格納されます。
+   それ以外の複雑な型や配列、スレッド化されていないオブジェクトは、シリアライズして格納されます。
+   これらは、参照を持つ任意のコンテキストから、スレッド化されたオブジェクトへの読み書きができます。
+   スレッド化されたオブジェクトを例外として、
+   あるスレッド化されたオブジェクトのメンバーを設定するために使うあらゆる参照は、
+   そのスレッド化されたオブジェクト内の参照とは区別されます。
+   同じデータを、いつでもどのコンテキストからでも、
+   スレッド化されたオブジェクトから直接読み込めます。
+  </para>
+  <para>
+   静的メンバー:
+   新しいコンテキスト (Thread あるいは Worker) を作るときには、一般的にそれらはコピーされます。
+   しかし、リソースおよび内部状態を持つオブジェクトは、安全性を考慮して null 化されます。
+   これを、一種のスレッドローカルストレージとして使えます。
+   たとえば、データベースサーバーへの接続情報と接続そのものを静的メンバーとして持つクラスがあるとします。
+   コンテキストを開始するときには接続情報だけがコピーされ、接続自体はコピーされません。
+   新しいコンテキスト上ではそのコンテキストを作ったオブジェクトと同じ方法で接続を立ち上げることができ、
+   その接続を同じ場所に格納しても元のコンテキストには何も影響を及ぼしません。
   </para>
   <caution>
   <para>
- Any objects that are intended for use in the multi-threaded parts of your application should extend Threaded.
-  </para> 
-  </caution>
-  <para>
- メソッドの修飾子:
- スレッド化されたオブジェクトの protected メソッドは、pthreads がプロテクトします。
- そしてこのメソッドは、同時に複数のコンテキストからは呼べなくなります。
- スレッド化されたオブジェクトの private メソッドは、
- 実行中のそのオブジェクトの中からしか呼べません。
-  </para>
-  <para>
- データストレージ:
- 目安として、シリアライズ可能なデータ型なら何でも、スレッド化されたオブジェクトのメンバーとして使えます。
- そのオブジェクトへの参照を持つあらゆるコンテキストから、メンバーの読み書きができます。
- すべてのデータ型がシリアライズされるわけではなく、基本型はそのままの形式で格納されます。
- それ以外の複雑な型や配列、スレッド化されていないオブジェクトは、シリアライズして格納されます。
- これらは、参照を持つ任意のコンテキストから、スレッド化されたオブジェクトへの読み書きができます。
- スレッド化されたオブジェクトを例外として、
- あるスレッド化されたオブジェクトのメンバーを設定するために使うあらゆる参照は、
- そのスレッド化されたオブジェクト内の参照とは区別されます。
- 同じデータを、いつでもどのコンテキストからでも、
- スレッド化されたオブジェクトから直接読み込めます。
-  </para>
-  <para>
- 静的メンバー:
- 新しいコンテキスト (Thread あるいは Worker) を作るときには、一般的にそれらはコピーされます。
- しかし、リソースおよび内部状態を持つオブジェクトは、安全性を考慮して null 化されます。
- これを、一種のスレッドローカルストレージとして使えます。
- たとえば、データベースサーバーへの接続情報と接続そのものを静的メンバーとして持つクラスがあるとします。
- コンテキストを開始するときには接続情報だけがコピーされ、接続自体はコピーされません。
- 新しいコンテキスト上ではそのコンテキストを作ったオブジェクトと同じ方法で接続を立ち上げることができ、
- その接続を同じ場所に格納しても元のコンテキストには何も影響を及ぼしません。
-  </para>
-  <caution>
-  <para>
- print_r や var_dump などのオブジェクトのデバッグ用関数を実行するきには、
- 再帰の制限には含まれません。
+   print_r や var_dump などのオブジェクトのデバッグ用関数を実行するきには、
+   再帰の制限が含まれません。
   </para>
   </caution>
   <note>
    <para>
- リソース:
- PHP のリソースを定義している拡張モジュールは、この手の環境で扱うには不十分です。
- pthreads はリソースをコンテキスト間で共有するための対策を用意していますが、
- 大半のリソース型は安全には扱えません。
- コンテキスト間でリソースを共有するときには、いくら注意してもしすぎることはありません。
+    リソース:
+    PHP のリソースを定義している拡張モジュールは、この手の環境で扱うには不十分です。
+    pthreads はリソースをコンテキスト間で共有するための対策を用意していますが、
+    大半のリソース型は安全には扱えません。
+    コンテキスト間でリソースを共有するときには、いくら注意してもしすぎることはありません。
    </para>
   </note>
   <caution>
    <para>
- pthreads の実行環境を安定させるには、いくつかの制限は必要になるのです。
+    pthreads を実行する環境下では、安定した環境を提供するためにいくつかの制約と限界があります。
    </para>
   </caution>
  </preface>
-
+ 
  &reference.pthreads.setup;
  &reference.pthreads.constants;
  &reference.pthreads.threaded;
@@ -121,6 +143,7 @@
  &reference.pthreads.pool;
  &reference.pthreads.mutex;
  &reference.pthreads.cond;
+ &reference.pthreads.volatile;
 
 </book>
 
