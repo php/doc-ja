@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision$ -->
+<!-- EN-Revision: 1fed7cc0df0588f15e6490787ef9fcf7cf7b16f2 Maintainer: mumumu Status: ready -->
+<refentry xml:id="function.hash-hkdf" xmlns="http://docbook.org/ns/docbook"  xmlns:xlink="http://www.w3.org/1999/xlink">
+ <refnamediv>
+  <refname>hash_hkdf</refname>
+  <refpurpose>与えられたキーから導出されるHKDFキーを生成する</refpurpose>
+ </refnamediv>
+ <refsect1 role="description">
+  &reftitle.description;
+  <methodsynopsis>
+   <type>string</type><methodname>hash_hkdf</methodname>
+   <methodparam><type>string</type><parameter>algo</parameter></methodparam>
+   <methodparam><type>string</type><parameter>ikm</parameter></methodparam>
+   <methodparam choice="opt"><type>int</type><parameter>length</parameter><initializer>0</initializer></methodparam>
+   <methodparam choice="opt"><type>string</type><parameter>info</parameter><initializer>''</initializer></methodparam>
+   <methodparam choice="opt"><type>string</type><parameter>salt</parameter><initializer>''</initializer></methodparam>
+  </methodsynopsis>
+
+ </refsect1>
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <para>
+   <variablelist>
+    <varlistentry>
+     <term><parameter>algo</parameter></term>
+     <listitem>
+      <para>
+       選択したハッシュアルゴリズムの名前 (例. "sha256", "sha512", "haval160,4" など)
+       サポートされているアルゴリズムの一覧は <function>hash_algos</function> を参照してください。
+       <note>
+        <para>
+         暗号に適さないハッシュ関数は許可されません。
+        </para>
+       </note>
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>ikm</parameter></term>
+     <listitem>
+      <para>
+       入力キー (生のバイナリ)。
+       空ではいけません。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>length</parameter></term>
+     <listitem>
+      <para>
+       出力の長さをバイト単位で指定します。
+       選んだハッシュ関数のサイズの255倍以下でなければなりません。
+      </para>
+      <para>
+       <parameter>length</parameter> が <literal>0</literal> の場合、
+       出力の長さはハッシュ関数が選んだデフォルトのサイズになります。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>info</parameter></term>
+     <listitem>
+      <para>
+       アプリケーション/コンテキスト依存の情報を示す文字列
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>salt</parameter></term>
+     <listitem>
+      <para>
+       導出の間に使うソルト
+      </para>
+      <para>
+       この値はオプションですが、
+       ランダムなソルトを追加するとHKDFの強度が飛躍的に向上します。
+      </para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
+  </para>
+ </refsect1>
+
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <para>
+   導出されたキーの生バイナリ表現の文字列を返します(この値は、
+   出力キーマテリアル(OKM) としても知られています)。
+   失敗時には &false; を返します。
+  </para>
+ </refsect1>
+
+ <refsect1 role="errors">
+  &reftitle.errors;
+  <para>
+   <parameter>ikm</parameter> が空の場合だったり、
+   <parameter>algo</parameter> が未知だったり/暗号に適さなかったり、
+   <parameter>length</parameter> が0より小さいか大きすぎる
+   (ハッシュ関数のサイズの255倍より大きい)場合、
+   <constant>E_WARNING</constant> が発生します。
+  </para>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title><function>hash_hkdf</function> の例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+// ランダムなキーと、導出するキーを強力にするためのソルトを生成します。
+$inputKey = random_bytes(32);
+$salt = random_bytes(16);
+
+// 上で生成した同じ入力を使い、異なるキーのペアを導出します。
+$encryptionKey = hash_hkdf('sha256', $inputKey, 32, 'aes-256-encryption', $salt);
+$authenticationKey = hash_hkdf('sha256', $inputKey, 32, 'sha-256-authentication', $salt);
+
+var_dump($encryptionKey !== $authenticationKey); // bool(true)
+?>
+]]>
+    </programlisting>
+    <para>
+     上の例は、AES-256 encryption と SHA-256 authentication をそれぞれ使い、
+     encrypt-then-HMAC を生成する用途に合った、
+     異なるキーペアを生成します。
+    </para>
+   </example>
+  </para>
+ </refsect1>
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <para>
+   <simplelist>
+    <member><function>hash_pbkdf2</function></member>
+    <member><link xlink:href="&url.rfc;5869">RFC 5869</link></member>
+    <member><link xlink:href="&url.git.hub;narfbg/hash_hkdf_compat">userland implementation</link></member>
+   </simplelist>
+  </para>
+ </refsect1>
+
+</refentry>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"~/.phpdoc/manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
