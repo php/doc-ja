@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision$ -->
+<!-- EN-Revision: 0c82e58795993d5ec153386fa6aa52624f0172b1 Maintainer: mumumu Status: ready -->
+<refentry xmlns="http://docbook.org/ns/docbook" xml:id="function.openssl-x509-verify">
+ <refnamediv>
+  <refname>openssl_x509_verify</refname>
+  <refpurpose>x509証明書のデジタル署名を公開鍵で検証する</refpurpose>
+ </refnamediv>
+ 
+ <refsect1 role="description">
+  &reftitle.description;
+  <methodsynopsis>
+   <type>int</type><methodname>openssl_x509_verify</methodname>
+   <methodparam><type>mixed</type><parameter>x509</parameter></methodparam>
+   <methodparam><type>mixed</type><parameter>pub_key_id</parameter></methodparam>
+  </methodsynopsis>
+  <para>
+   <function>openssl_x509_verify</function> 関数は、
+   <parameter>x509</parameter> 証明書が 
+   公開鍵 <parameter>pub_key_id</parameter> に対応する秘密鍵で署名されたかどうかを検証します。
+  </para>
+ </refsect1>
+
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <para>
+   <variablelist>
+    &openssl.param.x509;
+    <varlistentry>
+     <term><parameter>pub_key_id</parameter></term>
+     <listitem>
+      <para>
+       <type>resource</type> - <function>openssl_get_publickey</function> で返された公開鍵
+      </para>
+      <para>
+       <type>string</type> - PEMエンコードされた鍵。"-----BEGIN PUBLIC KEY-----
+MIIBCgK..." のようなものです。
+      </para>     
+     </listitem>
+    </varlistentry>
+   </variablelist>
+  </para>
+ </refsect1>
+
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <para>
+   署名が正しければ 1 を。そうでなければ 0 を返し、
+   エラーが発生した場合は -1 を返します。
+  </para>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title><function>openssl_x509_verify</function> の例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$hostname = "news.php.net";
+$ssloptions = array(
+    "capture_peer_cert" => true, 
+    "capture_peer_cert_chain" => true, 
+    "allow_self_signed"=> false, 
+    "CN_match" => $hostname,
+    "verify_peer" => true,
+    "SNI_enabled" => true,
+    "SNI_server_name" => $hostname,
+);
+ 
+$ctx = stream_context_create( array("ssl" => $ssloptions) );
+$result = stream_socket_client("ssl://$hostname:443", $errno, $errstr, 30, STREAM_CLIENT_CONNECT, $ctx);
+$cont = stream_context_get_params($result);
+$x509 = $cont["options"]["ssl"]["peer_certificate"];
+$certparsed = openssl_x509_parse($x509);
+
+foreach($cont["options"]["ssl"]["peer_certificate_chain"] as $chaincert)
+{
+    $chainparsed = openssl_x509_parse($chaincert);
+    $chain_public_key = openssl_get_publickey($chaincert);
+    $r = openssl_x509_verify($x509, $chain_public_key);   
+    if ($r==1)
+    {
+        echo $certparsed['subject']['CN'];
+        echo " was digitally signed by ";
+        echo $chainparsed['subject']['CN']."\n";
+    }
+}
+?>
+]]>
+    </programlisting>
+   </example>
+
+  </para>
+ </refsect1>
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <para>
+   <simplelist>
+    <member><function>openssl_verify</function></member>
+    <member><function>openssl_get_publickey</function></member>
+   </simplelist>
+  </para>
+ </refsect1>
+
+</refentry>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"~/.phpdoc/manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
