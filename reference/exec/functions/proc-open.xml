@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 58f224110635890a9fb1449e00d787439c2d915a Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: f811c29cdcb9ae601c51346f139ec75eef2ce334 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi,mumumu -->
   <refentry xml:id='function.proc-open' xmlns="http://docbook.org/ns/docbook">
    <refnamediv>
@@ -13,7 +13,7 @@
     &reftitle.description;
      <methodsynopsis>
       <type>resource</type><methodname>proc_open</methodname>
-      <methodparam><type>string</type><parameter>cmd</parameter></methodparam>
+      <methodparam><type>mixed</type><parameter>cmd</parameter></methodparam>
       <methodparam><type>array</type><parameter>descriptorspec</parameter></methodparam>
       <methodparam><type>array</type><parameter role="reference">pipes</parameter></methodparam>
       <methodparam choice="opt"><type>string</type><parameter>cwd</parameter></methodparam>
@@ -49,7 +49,28 @@
      <term><parameter>cmd</parameter></term>
      <listitem>
       <para>
-       実行されるコマンド。
+       実行するコマンドラインを &string; として渡します。
+       特殊な文字は適切にエスケープされ、適切にクォートされます。
+      </para>
+      <note>
+       <simpara>
+        <emphasis>Windows</emphasis> では、
+        <parameter>other_options</parameter> の <literal>bypass_shell</literal> を &true; に設定しないと、
+        <command>cmd.exe</command> (実際は<literal>%ComSpec%</literal>) に 
+        <parameter>cmd</parameter> の値を <emphasis>クォートしないまま</emphasis>
+        (つまり、<function>proc_open</function> に渡されたそのままの値を)
+        <literal>/c</literal> と一緒に渡してしまいます。
+        この振る舞いによって、<command>cmd.exe</command> が 
+        <parameter>cmd</parameter> からクォートを削除してしまうため、
+        (詳細は <command>cmd.exe</command> のドキュメントを参照してください)
+        予期しない、潜在的に危険とさえ言える結果になります。なぜなら、
+        <command>cmd.exe</command> のエラーメッセージには、
+        渡された <parameter>cmd</parameter> (の一部) が含まれる可能性があるからです(下の例を見てください)。
+       </simpara>
+      </note>
+      <para>
+       PHP 7.4.0 以降、<parameter>cmd</parameter> にはコマンドの引数も含めた &array; を渡せるようになりました。
+       この場合、プロセスは直接(シェルを介さずに)オープンされ、PHP が必要な引数のエスケープを全て行います。
       </para>
      </listitem>
     </varlistentry>
@@ -180,6 +201,13 @@
       <row>
        <entry>7.4.0</entry>
        <entry>
+        <function>proc_open</function> 関数は、
+        <parameter>cmd</parameter> に &array; を渡せるようになりました。
+       </entry>
+      </row>
+      <row>
+       <entry>7.4.0</entry>
+       <entry>
         <parameter>other_options</parameter> パラメータに
         オプション <literal>create_process_group</literal> が追加されました。
        </entry>
@@ -257,6 +285,43 @@ Array
 command returned 0
 ]]>
     </screen>
+   </example>
+  </para>
+
+  <para>
+   <example>
+    <title><function>proc_open</function> 関数の癖(Windows限定)</title>
+    <simpara>
+     次のプログラムで、ファイル <filename>filename.txt</filename> にある
+     <literal>search</literal> というテキストを検索し、結果を出力したいのですが、
+     実際にはかなり異なる振る舞いをします。
+    </simpara>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$descriptorspec = [STDIN, STDOUT, STDOUT];
+$cmd = '"findstr" "search" "filename.txt"';
+$proc = proc_open($cmd, $descriptorspec, $pipes);
+proc_close($proc);
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+'findstr" "search" "filename.txt' is not recognized as an internal or external command,
+operable program or batch file.
+]]>
+    </screen>
+    <simpara>
+     この振る舞いを避けるには、
+     <parameter>cmd</parameter> を追加のクォートで囲めば通常は十分です:
+    </simpara>
+    <programlisting role="php">
+<![CDATA[
+$cmd = '""findstr" "search" "filename.txt""';
+]]>
+    </programlisting>
    </example>
   </para>
 
