@@ -1,24 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 4cb0a309c9718b09c2f0b904eec8bfeebc48f2d0 Maintainer: takagi Status: ready -->
-<!-- Credits: mumumu -->
-<refentry xml:id="ziparchive.addfile" xmlns="http://docbook.org/ns/docbook">
+<!-- EN-Revision: 4cb0a309c9718b09c2f0b904eec8bfeebc48f2d0 Maintainer: mumumu Status: ready -->
+<refentry xml:id="ziparchive.replacefile" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
-  <refname>ZipArchive::addFile</refname>
-  <refpurpose>指定したパスからファイルを ZIP アーカイブに追加する</refpurpose>
+  <refname>ZipArchive::replaceFile</refname>
+  <refpurpose>指定されたパスのファイルにアーカイブの一部を置き換える</refpurpose>
  </refnamediv>
  <refsect1 role="description">
   &reftitle.description;
   <methodsynopsis>
-   <type>bool</type><methodname>ZipArchive::addFile</methodname>
+   <type>bool</type><methodname>ZipArchive::replaceFile</methodname>
    <methodparam><type>string</type><parameter>filename</parameter></methodparam>
-   <methodparam choice="opt"><type>string</type><parameter>localname</parameter><initializer>&null;</initializer></methodparam>
+   <methodparam><type>int</type><parameter>index</parameter></methodparam>
    <methodparam choice="opt"><type>int</type><parameter>start</parameter><initializer>0</initializer></methodparam>
    <methodparam choice="opt"><type>int</type><parameter>length</parameter><initializer>0</initializer></methodparam>
    <methodparam choice="opt"><type>int</type><parameter>flags</parameter><initializer>ZipArchive::FL_OVERWRITE</initializer></methodparam>
   </methodsynopsis>
   <para>
-   指定したパスから、ファイルを ZIP アーカイブに追加します。
+   指定されたパスのファイルにアーカイブの一部を置き換えます。
   </para>
   &zip.filename.separator;
  </refsect1>
@@ -30,15 +29,15 @@
      <term><parameter>filename</parameter></term>
      <listitem>
       <para>
-       追加するファイルへのパス。
+       追加するファイルのパス。
       </para>
      </listitem>
     </varlistentry>
     <varlistentry>
-     <term><parameter>localname</parameter></term>
+     <term><parameter>index</parameter></term>
      <listitem>
       <para>
-       指定した場合は ZIP アーカイブ内部での名前となり、<parameter>filename</parameter> を上書きします。
+       置き換えるファイルのインデックス。名前は変更されません。
       </para>
      </listitem>
     </varlistentry>
@@ -46,7 +45,8 @@
      <term><parameter>start</parameter></term>
      <listitem>
       <para>
-       このパラメータは使いませんが、<classname>ZipArchive</classname> を継承するためには必要です。
+       このパラメータをここでは使いませんが、
+       <classname>ZipArchive</classname> を継承するのに必要です。
       </para>
      </listitem>
     </varlistentry>
@@ -54,7 +54,8 @@
      <term><parameter>length</parameter></term>
      <listitem>
       <para>
-       このパラメータは使いませんが、<classname>ZipArchive</classname> を継承するためには必要です。
+       このパラメータをここでは使いませんが、
+       <classname>ZipArchive</classname> を継承するのに必要です。
       </para>
      </listitem>
     </varlistentry>
@@ -63,10 +64,9 @@
      <listitem>
       <para>
        以下のビットマスクの組み合わせ: 
-       <constant>ZipArchive::FL_OVERWRITE</constant>,
        <constant>ZipArchive::FL_ENC_GUESS</constant>,
        <constant>ZipArchive::FL_ENC_UTF_8</constant>,
-       <constant>ZipArchive::FL_ENC_CP437</constant>。
+       <constant>ZipArchive::FL_ENC_CP437</constant>.
        これらの定数の振る舞いは、<link linkend="zip.constants">定義済みの定数</link> で説明しています。
       </para>
      </listitem>
@@ -79,30 +79,6 @@
   &reftitle.returnvalues;
   <para>
    &return.success;
-  </para>
- </refsect1>
-
- <refsect1 role="changelog">
-  &reftitle.changelog;
-  <para>
-   <informaltable>
-    <tgroup cols="2">
-     <thead>
-      <row>
-       <entry>&Version;</entry>
-       <entry>&Description;</entry>
-      </row>
-     </thead>
-     <tbody>
-      <row>
-       <entry>8.0.0 / 1.18.0</entry>
-       <entry>
-        <parameter>flags</parameter> が追加されました。
-       </entry>
-      </row>
-     </tbody>
-    </tgroup>
-   </informaltable>
   </para>
  </refsect1>
 
@@ -120,11 +96,11 @@
 <?php
 $zip = new ZipArchive;
 if ($zip->open('test.zip') === TRUE) {
-    $zip->addFile('/path/to/index.txt', 'newname.txt');
+    $zip->replaceFile('/path/to/index.txt', 1);
     $zip->close();
-    echo '成功';
+    echo 'ok';
 } else {
-    echo '失敗';
+    echo 'failed';
 }
 ?>
 ]]>
@@ -136,23 +112,10 @@ if ($zip->open('test.zip') === TRUE) {
     &reftitle.seealso;
     <para>
      <simplelist>
-      <member><methodname>ZipArchive::replaceFile</methodname></member>
+      <member><methodname>ZipArchive::addFile</methodname></member>
      </simplelist>
     </para>
    </refsect1>
-
- <refsect1 role="notes">
-  &reftitle.notes;
-  <note>
-   <para>
-    アーカイブにファイルを追加するよう設定すると、PHP はそのファイルをロックします。
-    ロックが解除されるのは、<methodname>ZipArchive::close</methodname> を呼ぶなり
-    <classname>ZipArchive</classname> オブジェクトを破棄するなりして
-    <classname>ZipArchive</classname> オブジェクトが閉じられたときだけです。
-    そのため、追加しようとしているファイルがロックが解除される前に削除されるようなことは起こりません。
-   </para>
-  </note>
- </refsect1>
 </refentry>
 
 <!-- Keep this comment at the end of the file
