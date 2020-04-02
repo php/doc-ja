@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 8e00768efc67a12ffec14d5dab06962936f27619 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: e1438a020bbc755a27f18235a0ea94f3d9d556aa Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: shimooka,mumumu -->
 
 <sect1 xml:id="language.oop5.magic" xmlns="http://docbook.org/ns/docbook">
@@ -17,6 +17,8 @@
    <link linkend="object.unset">__unset()</link>,
    <link linkend="object.sleep">__sleep()</link>,
    <link linkend="object.wakeup">__wakeup()</link>,
+   <link linkend="object.serialize">__serialize()</link>,
+   <link linkend="object.unserialize">__unserialize()</link>,
    <link linkend="object.tostring">__toString()</link>,
    <link linkend="object.invoke">__invoke()</link>,
    <link linkend="object.set-state">__set_state()</link>,
@@ -54,7 +56,7 @@
     <void/>
    </methodsynopsis>
    <methodsynopsis xml:id="object.wakeup">
-    <type>void</type><methodname>__wakeup</methodname>
+    <modifier>public</modifier> <type>void</type><methodname>__wakeup</methodname>
     <void/>
    </methodsynopsis>
    
@@ -126,6 +128,110 @@ class Connection
     
     public function __wakeup()
     {
+        $this->connect();
+    }
+}?>
+]]>
+    </programlisting>
+   </example>
+  </sect2>
+
+  <sect2 xml:id="language.oop5.magic.serialize">
+   <title>
+    <link linkend="object.serialize">__serialize()</link> と
+    <link linkend="object.unserialize">__unserialize()</link>
+   </title>
+
+   <methodsynopsis xml:id="object.serialize">
+    <modifier>public</modifier> <type>array</type><methodname>__serialize</methodname>
+    <void/>
+   </methodsynopsis>
+   <methodsynopsis xml:id="object.unserialize">
+    <modifier>public</modifier> <type>void</type><methodname>__unserialize</methodname>
+    <methodparam><type>array</type><parameter>data</parameter></methodparam>
+   </methodsynopsis>
+
+   <para>
+    <function>serialize</function> は、クラスが
+    特殊な名前 <link linkend="object.serialize">__serialize()</link> を持つかを調べます。
+    もしあれば、シリアル化の前にその関数を実行します。
+    この関数は、オブジェクトをシリアル化した状態を示すキー/値のペアを連想配列にして返さなければなりません。
+    配列を返さなかった場合、<classname>TypeError</classname> がスローされます。
+   </para>
+   <note>
+    <para>
+     <link linkend="object.serialize">__serialize()</link> と <link linkend="object.sleep">__sleep()</link>
+     が両方同じオブジェクトに定義されていた場合、
+     <link linkend="object.serialize">__serialize()</link> だけが呼び出されます。
+     <link linkend="object.sleep">__sleep()</link> は無視されます。
+     オブジェクトが <link linkend="class.serializable">Serializable</link>
+     インターフェイスを実装していた場合、
+     インターフェイスの <literal>serialize()</literal> メソッドは無視され、 
+     <link linkend="object.serialize">__serialize()</link> が代わりに使われます。
+    </para>
+   </note>
+   <para>
+    <link linkend="object.serialize">__serialize()</link> の目的は、
+    任意のオブジェクトの表現をシリアライズしやすいように定義することです。
+    配列の要素はオブジェクトのプロパティに対応していても構いませんが、必須ではありません。
+   </para>
+   <para>
+    逆に、<function>unserialize</function> は
+    特殊な名前 <link linkend="object.serialize">__unserialize()</link> を持つかを調べます。
+    もしあれば、<link linkend="object.serialize">__serialize()</link> が返した配列を復元し、この関数に渡します。
+    この関数では、その配列から必要に応じてオブジェクトのプロパティを復元して構いません。
+   </para>
+   <note>
+    <para>
+     <link linkend="object.unserialize">__unserialize()</link> と <link linkend="object.wakeup">__wakeup()</link>
+     が両方同じオブジェクトに定義されていた場合、
+     <link linkend="object.unserialize">__unserialize()</link> だけが呼び出されます。
+     <link linkend="object.wakeup">__wakeup()</link> は無視されます。
+    </para>
+   </note>
+   <note>
+    <para>
+     この機能は PHP 7.4.0 以降で利用できます。
+    </para>
+   </note>
+   <example>
+    <title>Serialize および unserialize</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+class Connection
+{
+    protected $link;
+    private $dsn, $username, $password;
+
+    public function __construct($dsn, $username, $password)
+    {
+        $this->dsn = $dsn;
+        $this->username = $username;
+        $this->password = $password;
+        $this->connect();
+    }
+
+    private function connect()
+    {
+        $this->link = new PDO($this->dsn, $this->username, $this->password);
+    }
+
+    public function __serialize(): array
+    {
+        return [
+          'dsn' => $this->dsn,
+          'user' => $this->username,
+          'pass' => $this->password,
+        ];
+    }
+
+    public function __unserialize(array $data): void
+    {
+        $this->dsn = $data['dsn'];
+        $this->username = $data['user'];
+        $this->password = $data['pass'];
+
         $this->connect();
     }
 }?>
