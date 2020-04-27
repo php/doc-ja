@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 886599435a522e09c98b6a8374f8723c024b92e6 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 9268006bcf989f31baeaa9035e4ef7cfc7690c28 Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa,mumumu -->
  <chapter xml:id="language.functions" xmlns="http://docbook.org/ns/docbook">
   <title>関数</title>
@@ -1741,6 +1741,167 @@ Warning: Cannot bind an instance to a static closure in %s on line %d
     </note>
    </sect2>
 
+  </sect1>
+  <sect1 xml:id="functions.arrow">
+   <title>アロー関数</title>
+
+   <simpara>
+    アロー関数は <link linkend="functions.anonymous">無名関数</link>
+    を簡潔に書ける文法として PHP 7.4 で追加されました。
+   </simpara>
+   <simpara>
+    無名関数とアロー関数は共に
+    <link linkend="class.closure"><classname>Closure</classname></link> クラスを使って実装されています。
+   </simpara>
+
+   <simpara>
+    アロー関数は
+    <code>fn (argument_list) =&gt; expr</code> という形で記述します。
+   </simpara>
+
+   <simpara>
+    アロー関数は
+    <link linkend="functions.anonymous">無名関数</link> と同じ機能をサポートしていますが、
+    親のスコープで使える変数が常に自動で使える点だけが異なります。
+   </simpara>
+
+   <simpara>
+    式の中で使える変数が親のスコープで定義されている場合、
+    暗黙のうちに参照ではなく値がキャプチャされます。
+    次の例では、<varname>$fn1</varname> と <varname>$fn2</varname> は同じ振る舞いをします。
+   </simpara>
+
+   <para>
+    <example>
+     <title>アロー関数は参照ではなく値を自動でキャプチャする</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+
+$y = 1;
+ 
+$fn1 = fn($x) => $x + $y;
+// $y を値渡しするのと同じ
+$fn2 = function ($x) use ($y) {
+    return $x + $y;
+};
+
+var_export($fn1(3));
+?>
+]]>
+     </programlisting>
+     &example.outputs;
+     <screen>
+<![CDATA[
+4
+]]>
+      </screen>
+    </example>
+   </para>
+   <simpara>
+    この仕組みは、アロー関数をネストした場合でも同じ動きをします:
+   </simpara>
+   <para>
+    <example>
+     <title>アロー関数は、ネストされた場合でも変数を値でキャプチャする</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+
+$z = 1;
+$fn = fn($x) => fn($y) => $x * $y + $z;
+// 51 を出力
+var_export($fn(5)(10));
+?>
+]]>
+     </programlisting>
+    </example>
+   </para>
+   <simpara>
+    無名関数と同じように、
+    アロー関数の文法は、引数や戻り値、デフォルト値、可変長引数、
+    参照渡しや参照返しを含む、任意の関数シグナチャを扱えます。
+    次に示す例は、全て正しいアロー関数の例です:
+   </simpara>
+   <para>
+    <example>
+     <title>アロー関数の例</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+
+fn(array $x) => $x;
+static fn(): int => $x;
+fn($x = 42) => $x;
+fn(&$x) => $x;
+fn&($x) => $x;
+fn($x, ...$rest) => $rest;
+
+?>
+]]>
+     </programlisting>
+    </example>
+   </para>
+   <simpara>
+    アロー関数は変数を値でバインドします。
+    これは変数 <varname>$x</varname> をアロー関数の内部で使うたびに
+    <code>use($x)</code> を実行することと大体同じです。
+    値でバインドするということは、アロー関数の外のスコープの値を変更することが不可能だということです。
+    参照でバインドしたい場合は、<link linkend="functions.anonymous">無名関数</link> が使えます。
+   </simpara>
+   <para>
+    <example>
+     <title>外部のスコープの値はアロー関数では変更できない</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+
+$x = 1;
+$fn = fn() => $x++; // 意味がない
+$fn();
+var_export($x);  // 1 を出力
+
+?>
+]]>
+     </programlisting>
+    </example>
+   </para>
+   
+   <sect2 role="changelog">
+    &reftitle.changelog;
+    <para>
+     <informaltable>
+      <tgroup cols="2">
+       <thead>
+        <row>
+         <entry>&Version;</entry>
+         <entry>&Description;</entry>
+        </row>
+       </thead>
+       <tbody>
+        <row>
+         <entry>7.4.0</entry>
+         <entry>
+          アロー関数が利用可能になりました。
+         </entry>
+        </row>
+       </tbody>
+      </tgroup>
+     </informaltable>
+    </para>
+   </sect2>
+
+   <sect2 role="notes">
+    &reftitle.notes;
+    <note>
+     <simpara>
+      アロー関数の内部から
+      <function>func_num_args</function>、
+      <function>func_get_arg</function> および <function>func_get_args</function>
+      を使用することができます。
+     </simpara>
+    </note>
+   </sect2>
   </sect1>
 
  </chapter>
