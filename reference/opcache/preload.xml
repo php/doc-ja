@@ -1,24 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 83c41a8f69bacceef42fb99b2188bb8b24b2fe58 Maintainer: mumumu Status: working -->
+<!-- EN-Revision: 83c41a8f69bacceef42fb99b2188bb8b24b2fe58 Maintainer: mumumu Status: ready -->
 
 <chapter xml:id="opcache.preloading" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>コードの事前ロード</title>
 
  <para>
-  PHP 7.4.0 以降、エンジンの起動時に opcache にあらかじめ読み込ませるスクリプトを指定できるようになりました。
+  PHP 7.4.0 以降では、エンジンの起動時に opcache にあらかじめ読み込ませるスクリプトを指定できるようになりました。
   指定されたファイルに存在する (関数やクラスなどの) あらゆるシンボルは、
   明示的にインクルードすることなく全てのリクエストからグローバルに利用できるようになります。
-  これにより、(コードが常に利用できるようになるため) メモリ使用量と、
+  これにより(コードが常に利用できるようになるため)、メモリ使用量と、
   パフォーマンスおよび便利さのトレードオフが発生します。
   あらかじめ読み込まれたスクリプトをクリアするには PHP プロセスの再起動が必要です。
-  つまり、この機能は本番環境でのみ役に立つものです。開発環境では役に立ちません。
+  つまり、この機能は本番環境でのみ役に立ちます。開発環境では役に立ちません。
  </para>
 
  <para>
   パフォーマンスとメモリ使用量の最適なトレードオフは、アプリケーションによって異なることに注意して下さい。
   "全てをあらかじめ読み込む" ことはもっとも簡単な戦略かもしれませんが、
-  必ずしも最適な戦略とは限りません。
+  必ずしも最適とは限りません。
   さらに、コードの事前ロードは、リクエストが終了しても継続して生き残るプロセスの場合にだけ役に立ちます。
   つまり、opcache が有効になった CLI スクリプトは動作はしますが、
   一般的にコードの事前ロードは役に立ちません。
@@ -46,19 +46,22 @@ opcache.preload=preload.php
  </informalexample>
 
  <para>
-  <filename>preload.php</filename> is an arbitrary file that will run once at server startup
-  (PHP-FPM, mod_php, etc.) and load code into persistent memory.  If PHP will be run as
-  root (not recommended), the <link linkend="ini.opcache.preload-user">opcache.preload_user</link>
-  value can specify an alternate system user to run the preloading.  Running preloading as
-  root is not allowed.
+  <filename>preload.php</filename> は、サーバの起動時(PHP-FPM, mod_php, など)
+  に一度だけ実行され、コードが永続的にメモリに読み込まれる任意のファイルです。
+  PHP が root 権限で実行(推奨されません)される場合のために、
+  <link linkend="ini.opcache.preload-user">opcache.preload_user</link>
+  によって、事前ロードを実行するためのシステムユーザーを指定することが出来ます。
+  事前ロードを root で行うことは禁止されています。
  </para>
 
  <para>
-  In the <filename>preload.php</filename> script, any file referenced by <function>include</function>,
-  <function>include_once</function>, <function>require</function>, <function>require_once</function>, or
-  <function>opcache_compile_file</function> will be parsed into persistent memory.  In the following example,
-  all <filename>.php</filename> files in the <filename>src</filename> directory will be preloaded, unless they
-  are a <literal>Test</literal> file.
+  <filename>preload.php</filename> スクリプトでは、
+  <function>include</function>,
+  <function>include_once</function>, <function>require</function>, <function>require_once</function>,
+  <function>opcache_compile_file</function> で参照されるあらゆるファイルがメモリ上でパースされます。
+  次の例では、<filename>src</filename> ディレクトリにある全ての
+  <filename>.php</filename> ファイルが事前ロードされます。
+  但し、<literal>Test</literal> ファイルの場合を除きます。
  </para>
 
  <informalexample>
@@ -78,28 +81,43 @@ foreach ($phpFiles as $key => $file) {
  </informalexample>
 
  <para>
-  Both <function>include</function> and <function>opcache_compile_file</function> will work, but have different
-  implications for how code gets handled.
+  <function>include</function> と <function>opcache_compile_file</function>
+  両方が動作しますが、コードをどう扱うかが異なります。
 
   <itemizedlist>
-   <listitem><simpara><function>include</function> will execute code in the file,
-    while <function>opcache_compile_file</function> will not.  That means only the former supports
-    conditional declaration (functions declared inside an if-block).</simpara></listitem>
-   <listitem><simpara>Because <function>include</function> will execute code, nested <function>include</function>d
-    files will also be parsed and their declarations preloaded.</simpara></listitem>
-   <listitem><simpara><function>opcache_compile_file</function> can load files in any order.  That is, if
-    <filename>a.php</filename> defines  class <literal>A</literal> and <filename>b.php</filename> defines class
-    <literal>B</literal> that extends <literal>A</literal>, then <function>opcache_compile_file</function> can
-    load those two files in any order.  When using <function>include</function>, however, <filename>a.php</filename>
-    <emphasis>must</emphasis> be included first.</simpara></listitem>
-   <listitem><simpara>In either case, if a later script includes a file that has already been preloaded then
-    its contents will still execute, but any symbols it defines will not be re-defined.  Using
-    <function>include_once</function> will not prevent the file from being included a second time.</simpara></listitem>
+   <listitem><simpara><function>include</function> は、ファイル内でコードを実行しますが、
+    <function>opcache_compile_file</function> は実行しません。
+    これは、前者のみが条件付きの宣言
+    (if ブロック内の関数宣言)をサポートしているということです。</simpara></listitem>
+
+   <listitem><simpara><function>include</function> はコードを実行するので、
+    ネストして <function>include</function> されたファイルもパースされ、
+    それに含まれる宣言も事前ロードされます。</simpara></listitem>
+
+   <listitem><simpara><function>opcache_compile_file</function>
+    は任意の順番でファイルを読み込むことが出来ます。
+    つまり、<filename>a.php</filename> が クラス <literal>A</literal> を定義しており、
+    <filename>b.php</filename> が <literal>A</literal> を継承したクラス
+    <literal>B</literal> を定義している場合、
+    <function>opcache_compile_file</function> はそれらふたつのファイルを任意の順番で読み込めます。
+    しかし、<function>include</function> を使う場合、
+    <filename>a.php</filename> は <emphasis>必ず</emphasis> 最初にインクルードしなければなりません。
+   </simpara></listitem>
+
+   <listitem><simpara>
+     どちらの場合も、後に読み込まれるスクリプトが、
+     既に事前ロードされているファイルをインクルードしていれば、
+     スクリプトの内容は実行されます。しかし、そこで定義されているシンボルは再定義されません。
+     <function>include_once</function> を使っても、
+     ファイルが二度インクルードされることを妨げません。
+   </simpara></listitem>
   </itemizedlist>
 
-  Which approach is better therefore depends on the desired behavior.  With code that would otherwise use an
-  autoloader, <function>opcache_compile_file</function> allows for greater flexibility.  With code that would
-  otherwise be loaded manually, <function>include</function> will be more robust.
+  どちらのアプローチが優れているかは、あなたがどのような挙動を望むか次第です。
+  オートローディング と一緒に使うことで、
+  <function>opcache_compile_file</function> は大きな柔軟性を得られます。
+  一方で、手動でコードをロードする場合、
+  <function>include</function> を使うほうが堅牢になるでしょう。
  </para>
 
 </chapter>
