@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: ba0a270fbc5b2d8afc879552c7579b76104d48d6 Maintainer: takagi Status: ready -->
-<!-- CREDITS: hirokawa,shimooka -->
+<!-- EN-Revision: 6ec0096178dba7d0619c2e421f70b130825743c2 Maintainer: takagi Status: ready -->
+<!-- CREDITS: hirokawa,shimooka,mumumu -->
 <refentry xmlns="http://docbook.org/ns/docbook" xml:id="function.session-set-save-handler" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
   <refname>session_set_save_handler</refname>
@@ -48,7 +48,7 @@
      <listitem>
       <para>
        <interfacename>SessionHandlerInterface</interfacename>、
-       <interfacename>SessionIdInterface</interfacename>
+       <interfacename>SessionIdInterface</interfacename>(オプション)
        または
        <interfacename>SessionUpdateTimestampHandlerInterface</interfacename>
         を実装したクラス、たとえば
@@ -72,8 +72,16 @@
 
    <variablelist>
     <varlistentry>
-     <term><parameter>open(string $savePath, string $sessionName)</parameter></term>
+     <term><parameter>open</parameter></term>
      <listitem>
+      <para>
+       以下のシグナチャを持つ callable:
+       <methodsynopsis>
+        <type>bool</type><methodname><replaceable>open</replaceable></methodname>
+        <methodparam><type>string</type><parameter>savePath</parameter></methodparam>
+        <methodparam><type>string</type><parameter>sessionName</parameter></methodparam>
+       </methodsynopsis>
+      </para>
       <para>
        open コールバックはクラスのコンストラクタのようなもので、セッションを開くときに実行されます。
        セッションが自動で開始したり、あるいは手動で <function>session_start</function>
@@ -83,8 +91,15 @@
      </listitem>
     </varlistentry>
     <varlistentry>
-     <term><parameter>close()</parameter></term>
+     <term><parameter>close</parameter></term>
      <listitem>
+      <para>
+       以下のシグナチャを持つ callable:
+       <methodsynopsis>
+        <type>bool</type><methodname><replaceable>close</replaceable></methodname>
+        <void/>
+       </methodsynopsis>
+      </para>
       <para>
        close コールバックはクラスのデストラクタのようなもので、write コールバックがコールされた後で実行されます。
        また、<function>session_write_close</function> がコールされたときにも実行されます。
@@ -93,8 +108,15 @@
      </listitem>
     </varlistentry>
     <varlistentry>
-     <term><parameter>read(string $sessionId)</parameter></term>
+     <term><parameter>read</parameter></term>
      <listitem>
+      <para>
+       以下のシグナチャを持つ callable:
+       <methodsynopsis>
+        <type>bool</type><methodname><replaceable>read</replaceable></methodname>
+        <methodparam><type>string</type><parameter>sessionId</parameter></methodparam>
+       </methodsynopsis>
+      </para>
       <para>
        <parameter>read</parameter> コールバックは、常にセッションエンコード (シリアライズ)
        された文字列を返さなければなりません。何もデータを読み込まなかった場合は空文字列を返します。
@@ -115,8 +137,16 @@
      </listitem>
     </varlistentry>
     <varlistentry>
-     <term><parameter>write(string $sessionId, string $data)</parameter></term>
+     <term><parameter>write</parameter></term>
      <listitem>
+      <para>
+       以下のシグナチャを持つ callable:
+       <methodsynopsis>
+        <type>bool</type><methodname><replaceable>write</replaceable></methodname>
+        <methodparam><type>string</type><parameter>sessionId</parameter></methodparam>
+        <methodparam><type>string</type><parameter>data</parameter></methodparam>
+       </methodsynopsis>
+      </para>
       <para>
        <parameter>write</parameter> コールバックは、セッションの保存や終了が必要となったときにコールされます。
        このコールバックが受け取るのは、現在のセッション ID とシリアライズ後のスーパーグローバル <varname>$_SESSION</varname> です。
@@ -145,8 +175,15 @@
      </listitem>
     </varlistentry>
     <varlistentry>
-     <term><parameter>destroy($sessionId)</parameter></term>
+     <term><parameter>destroy</parameter></term>
      <listitem>
+      <para>
+       以下のシグナチャを持つ callable:
+       <methodsynopsis>
+        <type>bool</type><methodname><replaceable>destroy</replaceable></methodname>
+        <methodparam><type>string</type><parameter>sessionId</parameter></methodparam>
+       </methodsynopsis>
+      </para>
       <para>
        このコールバックが実行されるのは、
        <function>session_destroy</function> あるいは
@@ -157,8 +194,15 @@
      </listitem>
     </varlistentry>
     <varlistentry>
-     <term><parameter>gc($lifetime)</parameter></term>
+     <term><parameter>gc</parameter></term>
      <listitem>
+      <para>
+       以下のシグナチャを持つ callable:
+       <methodsynopsis>
+        <type>bool</type><methodname><replaceable>gc</replaceable></methodname>
+        <methodparam><type>int</type><parameter>lifetime</parameter></methodparam>
+       </methodsynopsis>
+      </para>
       <para>
        ガベージコレクタコールバックは PHP が内部で定期的に実行し、古いセッションデータを破棄します。
        実行頻度は <link linkend="ini.session.gc-probability">session.gc_probability</link>
@@ -170,11 +214,58 @@
      </listitem>
     </varlistentry>
     <varlistentry>
-     <term><parameter>create_sid()</parameter></term>
+     <term><parameter>create_sid</parameter></term>
      <listitem>
+      <para>
+       以下のシグナチャを持つ callable:
+       <methodsynopsis>
+        <type>string</type><methodname><replaceable>create_sid</replaceable></methodname>
+        <void/>
+       </methodsynopsis>
+      </para>
       <para>
        このコールバックは、新しいセッション ID が必要になったときに実行されます。
        パラメータは不要です。返り値は、使っているハンドラで有効なセッション ID を表す文字列となります。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>validate_sid</parameter></term>
+     <listitem>
+      <para>
+       以下のシグナチャを持つ callable:
+       <methodsynopsis>
+        <type>bool</type><methodname><replaceable>validate_sid</replaceable></methodname>
+        <methodparam><type>string</type><parameter>key</parameter></methodparam>
+       </methodsynopsis>
+      </para>
+      <para>
+       このコールバックは、セッションが開始された場合に実行されます。
+       但し、セッションID が渡され、
+       <link linkend="ini.session.use-strict-mode">session.use_strict_mode</link> 
+       が有効な場合に限ります。
+       <parameter>key</parameter> は検証する セッションID を指定します。
+       渡されたID のセッションが既に存在する場合、セッションID は有効です。
+       成功した場合は &true;、失敗した場合は &false; を返します。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>update_timestamp</parameter></term>
+     <listitem>
+      <para>
+       以下のシグナチャを持つ callable:
+       <methodsynopsis>
+        <type>string</type><methodname><replaceable>update_timestamp</replaceable></methodname>
+        <methodparam><type>string</type><parameter>key</parameter></methodparam>
+        <methodparam><type>string</type><parameter>val</parameter></methodparam>
+       </methodsynopsis>
+      </para>
+      <para>
+       このコールバックは、セッションが更新された時に実行されます。
+       <parameter>key</parameter> はセッションID、
+       <parameter>val</parameter> はセッションデータを指定します。
+       成功した場合は &true;、失敗した場合は &false; を返します。
       </para>
      </listitem>
     </varlistentry>
