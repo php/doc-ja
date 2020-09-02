@@ -1,85 +1,80 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 6ccdace91b727bd0f32214d1670a5e765fd28a09 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: cd118fcbd8ac516b4f2bbe20a2eec7bcf7573b08 Maintainer: takagi Status: ready -->
 <!-- Credits: mumumu -->
 <sect1 xml:id="install.windows.manual" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
-  <title>Windows 上での PHP の手動インストール</title>
-  <sect2>
-    <title>ウェブサーバーの選択</title>
-    <para>
-   <itemizedlist spacing="compact">
-	<listitem>
-	  <para>
+ <title>Windows 上での PHP の手動インストール</title>
+ <sect2>
+  <title>ウェブサーバーの選択</title>
+  <sect3>
+   <title>IIS</title>
+   <para>
     IIS は Windows に標準で組み込まれています。
-
-    Windows サーバーの場合は、サーバーマネージャーを使って IIS ロールを追加します。CGI ロールを含めることを忘れないようにしましょう。
-
-    Windows デスクトップの場合は、コントロールパネルの「プログラムの追加と削除」を使って IIS を追加します。<link xlink:href="https://msdn.microsoft.com/en-us/library/ms181052%28v=vs.80%29.aspx?f=255&amp;MSPPError=-2147217396">https://msdn.microsoft.com/en-us/library/ms181052%28v=vs.80%29.aspx?f=255&amp;MSPPError=-2147217396</link> を参照ください。
-
+    Windows サーバーの場合は、サーバーマネージャーを使って IIS ロールを追加します。CGI ロールを含める必要があります。
+    Windows デスクトップの場合は、コントロールパネルの「プログラムの追加と削除」を使って IIS を追加します。
+    Microsoft のドキュメントに <link xlink:href="https://docs.microsoft.com/en-us/previous-versions/ms181052(v=vs.80)">詳細な手順があります</link>。
     デスクトップウェブアプリケーションやウェブ開発の場合は、IIS/Express や PHP Desktop も使えます。
-    
-      <example>
-       <title>IIS と PHP の設定をするためのコマンドライン</title>
-       <programlisting>
+
+    <example>
+     <title>IIS と PHP の設定をするためのコマンドライン</title>
+     <programlisting>
 <![CDATA[
 
-    @echo off
+@echo off
 
-    REM download .ZIP file of PHP build from http://windows.php.net/downloads/
-    REM
-    REM path to directory you decompressed PHP .ZIP file into
-set phpdir=c:\php
-set phppath=php-5.6.19-nts-Win32-VC11-x86
+REM download .ZIP file of PHP build from http://windows.php.net/downloads/
+
+REM path to directory you decompressed PHP .ZIP file into (no trailing \)
+set phppath=c:\php
+
 
 REM Clear current PHP handlers
 %windir%\system32\inetsrv\appcmd clear config /section:system.webServer/fastCGI
+REM The following command will generate an error message if PHP is not installed. This can be ignored.
 %windir%\system32\inetsrv\appcmd set config /section:system.webServer/handlers /-[name='PHP_via_FastCGI']
 
 REM Set up the PHP handler
-%windir%\system32\inetsrv\appcmd set config /section:system.webServer/fastCGI /+[fullPath='%phpdir%\%phppath%\php-cgi.exe']
-%windir%\system32\inetsrv\appcmd set config /section:system.webServer/handlers /+[name='PHP_via_FastCGI',path='*.php',verb='*',modules='FastCgiModule',scriptProcessor='%phpdir%\%phppath%\php-cgi.exe',resourceType='Unspecified']
+%windir%\system32\inetsrv\appcmd set config /section:system.webServer/fastCGI /+[fullPath='%phppath%\php-cgi.exe']
+%windir%\system32\inetsrv\appcmd set config /section:system.webServer/handlers /+[name='PHP_via_FastCGI',path='*.php',verb='*',modules='FastCgiModule',scriptProcessor='%phppath%\php-cgi.exe',resourceType='Unspecified']
 %windir%\system32\inetsrv\appcmd set config /section:system.webServer/handlers /accessPolicy:Read,Script
 
 REM Configure FastCGI Variables
-%windir%\system32\inetsrv\appcmd set config -section:system.webServer/fastCgi /[fullPath='%phpdir%\%phppath%\php-cgi.exe'].instanceMaxRequests:10000
-%windir%\system32\inetsrv\appcmd.exe set config -section:system.webServer/fastCgi /+"[fullPath='%phpdir%\%phppath%\php-cgi.exe'].environmentVariables.[name='PHP_FCGI_MAX_REQUESTS',value='10000']"
-%windir%\system32\inetsrv\appcmd.exe set config -section:system.webServer/fastCgi /+"[fullPath='%phpdir%\%phppath%\php-cgi.exe'].environmentVariables.[name='PHPRC',value='%phpdir%\%phppath%\php.ini']"
-
+%windir%\system32\inetsrv\appcmd set config -section:system.webServer/fastCgi /[fullPath='%phppath%\php-cgi.exe'].instanceMaxRequests:10000
+%windir%\system32\inetsrv\appcmd.exe set config -section:system.webServer/fastCgi /+"[fullPath='%phppath%\php-cgi.exe'].environmentVariables.[name='PHP_FCGI_MAX_REQUESTS',value='10000']"
+%windir%\system32\inetsrv\appcmd.exe set config -section:system.webServer/fastCgi /+"[fullPath='%phppath%\php-cgi.exe'].environmentVariables.[name='PHPRC',value='%phppath%\php.ini']"
 ]]>
-       </programlisting>
-      </example>
+     </programlisting>
+    </example>
 
-      <link linkend="install.windows.legacy.iis7">IIS を手動で設定する方法</link>
-     </para>
-    </listitem>
-    <listitem>
-     <para>
+    <link linkend="install.windows.legacy.iis7">古い IIS のインストール方法</link> も参照して下さい。
+   </para>
+  </sect3>
 
+  <sect3>
+   <title>Apache</title>
+   <para>
     Windows 用の Apache2 のビルドには、いくつかの種類があります。
 
-    PHP が公式にサポートするのは ApacheLounge ですが、それ以外にも XAMPP や WampServer や BitNami といったものがあり、これらはインストーラがついています。
+    ApacheLounge がおすすめですが、それ以外にも XAMPP や WampServer や BitNami といったものがあり、これらはインストーラがついています。
 
-    PHP を Apache に読み込みには、mod_php あるいは mod_fastcgi を用います。
+    Apache で PHP を使うには、mod_php あるいは mod_fastcgi を用います。
 
     mod_php を使う場合は、スレッドセーフ版の Apache を使う必要があります。また、同じバージョンの Visual C、同じ CPU (x86 あるいは x64) のビルドでなければいけません。
 
-      <link linkend="install.windows.legacy.apache2">Apache2 を手動で設定する方法</link>
-     </para>
-    </listitem>
-   </itemizedlist>
-  </para>
+    <link linkend="install.windows.legacy.apache2">古いApache のインストール手順</link> も参照して下さい。
+   </para>
+  </sect3>
  </sect2>
 
  <sect2>
   <title>ビルド方法の選択</title>
   <para>
- 
-   PHP のリリースは <link xlink:href="http://windows.php.net/download/">http://windows.php.net/download/</link> からダウンロードできます。
+   Windows 向けのビルドは <link xlink:href="http://windows.php.net/download/">http://windows.php.net/download/</link> からダウンロードできます。
 
-   これまでのスナップショットリリースや QA リリースで数多くのテストや最適化がなされていますが、さらに手助けしてくださるのも大歓迎です。
-
+   全てのビルドは最適化(<abbrev>PGO</abbrev>) されており、 QA や GA リリースで数多くのテストがなされています。
+  </para>
+  <para>
    PHP には四種類のビルドがあります。
-
    <itemizedlist spacing="compact">
     <listitem>
      <para>Thread-Safe(TS) - Apache と mod_php のような、シングルプロセスのウェブサービス用</para>
@@ -88,10 +83,10 @@ REM Configure FastCGI Variables
      <para>Non-Thread-Safe(NTS) - IIS やその他の FastCGI ウェブサーバー (Apache と mod_fastcgi など) 用。また、コマンドラインのスクリプト用にもおすすめ。</para>
     </listitem>
     <listitem>
-     <para>x86 - PHP 5.5、5.6、7.0 の実運用環境用。</para>
+     <para>x86 - PHP 5.5 以上の実運用環境用。</para>
     </listitem>
     <listitem>
-     <para>x64 - PHP 7.0+ の実運用環境用 (ただし、32ビット版のWindowsでは使えない)。5.5 と 5.6 の x64 版は実験的なもの。</para>
+     <para>x64 - PHP 7.0 の実運用環境用 (ただし、32ビット版のWindowsでは使えない)。5.5 と 5.6 の x64 版は実験的なもの。</para>
     </listitem>
    </itemizedlist>
   </para>
