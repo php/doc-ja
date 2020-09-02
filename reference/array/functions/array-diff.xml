@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 52ae7dd55e62b1e7b6920499ed7448892e09bb48 Maintainer: hirokawa Status: ready -->
-<!-- CREDITS: shimooka -->
+<!-- EN-Revision: b8990010918c977f62f147cf57a04c7e36f625e5 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: shimooka,mumumu -->
 <refentry xml:id="function.array-diff" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>array_diff</refname>
@@ -59,6 +59,7 @@
   <para>
    <parameter>array1</parameter>
    のエントリのうち、他のどの配列にも含まれない要素のみを含む配列を返します。
+   <parameter>array1</parameter> の配列のキーは維持されます。
   </para>
  </refsect1>
 
@@ -92,17 +93,54 @@ Array
     </screen>
    </example>
   </para>
+
+  <para>
+   <example>
+    <title>型が一致しない場合の <function>array_diff</function> の例</title>
+    <para>
+     <literal>(string) $elem1 === (string) $elem2</literal> の場合のみ、
+     つまり、<link linkend="language.types.string.casting">文字列表現</link> が同等な場合のみ、
+     2つの要素は等しいとみなされます。
+    </para>
+    <programlisting role="php">
+     <![CDATA[
+<?php
+// 以下の例は、配列が文字列にキャストできないので警告が発生します
+$source = [1, 2, 3, 4];
+$filter = [3, 4, [5], 6];
+$result = array_diff($source, $filter);
+
+// 一方で、以下の例は問題ありません。なぜなら、オブジェクトは文字列にキャストできるからです。
+class S {
+  private $v;
+
+  public function __construct(string $v) {
+    $this->v = $v;
+  }
+
+  public function __toString() {
+    return $this->v;
+  }
+}
+
+$source = [new S('a'), new S('b'), new S('c')];
+$filter = [new S('b'), new S('c'), new S('d')];
+
+$result = array_diff($source, $filter);
+
+// $result には、S('a') のインスタンスが一つ含まれます。
+?>
+]]>
+    </programlisting>
+    <para>
+     別の比較関数を使いたい場合は、<function>array_udiff</function> を参照して下さい。
+    </para>
+   </example>
+  </para>
  </refsect1>
 
  <refsect1 role="notes">
   &reftitle.notes;
-  <note>
-   <para>
-    二つの要素は、<literal>(string) $elem1 === (string) $elem2</literal>
-    の場合のみ等しいと見直されます。言い換えると、文字列表現が同じ場合となります。
-    <!-- TODO: example of it... -->
-   </para>
-  </note>
   <note>
    <para>
     この関数は n 次元配列の一つの次元しかチェックしません。
@@ -117,6 +155,7 @@ Array
   <para>
    <simplelist>
     <member><function>array_diff_assoc</function></member>
+    <member><function>array_udiff</function></member>
     <member><function>array_intersect</function></member>
     <member><function>array_intersect_assoc</function></member>
    </simplelist>
