@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 1c37e22f7dd18cb912d66907a719f5d787f7ce1a Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: df4203dcc5762f0570852ec4e1adc8ed8b0fc252 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi,mumumu -->
 <refentry xml:id="function.odbc-binmode" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -15,17 +15,22 @@
    <methodparam><type>int</type><parameter>mode</parameter></methodparam>
   </methodsynopsis>
   <para>
-   バイナリカラムデータを処理できるようにします
+   バイナリカラムデータを処理する方法を制御します。
    (関係するODBC SQL型: <literal>BINARY</literal>, <literal>VARBINARY</literal>, <literal>LONGVARBINARY</literal>)。
    デフォルトの処理モードは、&php.ini; の
    <link linkend="ini.uodbc.defaultbinmode">uodbc.defaultbinmode</link> 経由で設定できます。
   </para>
   <para>
-   バイナリ SQL データが文字データに変換される時、ソースデータの
+   バイナリ SQL データが文字データに変換される時 (<constant>ODBC_BINMODE_CONVERT</constant>)、ソースデータの
    各バイト (8 ビット) は、2 つのアスキー文字で表現されます。
    これらの文字は、16 進表現で数値をアスキー文字で表現したものです。
    例えば、2 進数 <literal>00000001</literal> は <literal>"01"</literal> に変換され、
    <literal>11111111</literal> は <literal>"FF"</literal> に変換されます。
+  </para>
+  <para>
+   <literal>BINARY</literal> と <literal>VARBINARY</literal> 型のカラムを処理する方法は
+   binmode によって決まります。<literal>LONGVARBINARY</literal> 型のカラムを処理する方法は、
+   longreadlen にも依存します:
    <table>
     <title>LONGVARBINARY 処理</title>
     <tgroup cols="3">
@@ -58,11 +63,6 @@
        <entry>通過</entry>
       </row>
       <row>
-       <entry><constant>ODBC_BINMODE_PASSTHRU</constant></entry>
-       <entry>>0</entry>
-       <entry>通過</entry>
-      </row>
-      <row>
        <entry><constant>ODBC_BINMODE_RETURN</constant></entry>
        <entry>>0</entry>
        <entry>そのまま返す</entry>
@@ -79,6 +79,8 @@
   <para>
    <function>odbc_fetch_into</function> を使用した場合、
    「通過」は空文字列が対応するカラムに返されることを意味します。
+   <function>odbc_result</function> を使用した場合、
+   「通過」はデータがクライアントに直接送信されることを意味します(つまり、表示されます)。
   </para>
  </refsect1>
  <refsect1 role="parameters">
@@ -94,14 +96,6 @@
       <para>
        <parameter>result_id</parameter> に <literal>0</literal> を指定した場合、
        ここで設定した値は、新規の結果に関するデフォルト値として用いられます。
-       <note>
-        <simpara>
-         <literal>longreadlen</literal> のデフォルト値は <literal>4096</literal> で、<parameter>mode</parameter>
-         のデフォルト値は <literal>ODBC_BINMODE_RETURN</literal> です。
-         バイナリロングカラムの処理は、<function>odbc_longreadlen</function> 
-         の影響も受けます。
-        </simpara>
-       </note>
       </para>
      </listitem>
     </varlistentry>
@@ -127,6 +121,12 @@
          </simpara>
         </listitem>
        </itemizedlist>
+       <note>
+        <simpara>
+         LONGVARBINARY 型のカラムを処理する方法は
+         <function>odbc_longreadlen</function> によっても影響を受けます。
+        </simpara>
+       </note>
       </para>
      </listitem>
     </varlistentry>
