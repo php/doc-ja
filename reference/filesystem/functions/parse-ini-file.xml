@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 9af43469f46843451955b8926fe470a9f3d45034 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 513913468bfc339440bab5553e39d8ec74023254 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: shimooka,mumumu -->
 <refentry xmlns="http://docbook.org/ns/docbook" xml:id="function.parse-ini-file">
  <refnamediv>
@@ -35,6 +35,9 @@
      <listitem>
       <para>
        パースしたい ini ファイルのファイル名。
+       相対パスが指定された場合、
+       現在のディレクトリから相対的な位置として評価され、
+       さらに <link linkend="ini.include-path">include_path</link> からファイルを探します。
       </para>
      </listitem>
     </varlistentry>
@@ -104,10 +107,12 @@ urls[git] = "http://git.php.net"
    <example>
     <title><function>parse_ini_file</function> の例</title>
     <para>
-     <link linkend="language.constants">定数</link>も ini ファイル上でパースされます。
+     <link linkend="language.constants">定数</link> 
+     (但し <constant>__FILE__</constant> のような "マジカル定数" は除く)
+     も ini ファイル上でパースされます。
      そのため、<function>parse_ini_file</function> をコールする前に
      ini ファイル上の値として定数を定義した場合、返り値に統合されます。
-     ini ファイル上の値だけが評価されます。以下は例です：
+     ini ファイル上の値だけが評価されます。この値は定数でなければなりません。以下は例です：
     </para>
     <programlisting role="php">
 <![CDATA[
@@ -224,6 +229,49 @@ echo '(loaded) magic_quotes_gpc = ' . yesno(get_cfg_var('magic_quotes_gpc')) . P
     </screen>
    </example>
   </para>
+  <para>
+   <example>
+    <title>ini ファイルの値の補完</title>
+    <para>
+     定数を評価することに加えて、文字によっては ini ファイルの値として特別な意味を持つものがあります。
+     さらに、環境変数や以前定義された値は <code>${}</code> を使って読み取ることができます。
+    </para>
+    <programlisting>
+<![CDATA[
+; | は ビット演算の OR
+is used for bitwise OR
+three = 2|3
+
+; & は ビット演算の AND
+four = 6&5
+
+; ^ は ビット演算の XOR
+five = 3^6
+
+; ~ は ビット演算の NOT
+negative_two = ~1
+
+; () はグループ化に使います
+seven = (8|7)&(6|5)
+
+; \ は値のエスケープに使います
+newline_is = "\\n" ; results in the string "\n", not a newline character.
+with quotes = "She said \"Exactly my point\"." ; Results in a string with quote marks in it.
+
+path = ${PATH}
+also_five = ${five}
+
+]]>
+    </programlisting>
+    &example.outputs.similar;
+    <screen>
+<![CDATA[
+(parsed) magic_quotes_gpc = Yes
+(loaded) magic_quotes_gpc = Yes
+]]>
+    </screen>
+   </example>
+  </para>
  </refsect1>
 
  <refsect1 role="notes">
@@ -264,6 +312,16 @@ echo '(loaded) magic_quotes_gpc = ' . yesno(get_cfg_var('magic_quotes_gpc')) . P
     たとえば MySQL の <filename>my.cnf</filename> には
     "no-auto-rehash" という設定項目がありますが、この項目には何も値を設定しません。
     そのため、この項目は無視されます。
+   </para>
+  </note>
+  <note>
+   <para>
+    ini ファイルは、一般的にWebサーバからはプレーンテキストとして扱われます。
+    よって、ini ファイルにリクエストがあった場合、ブラウザにそのまま表示されます。
+    これは、セキュリティを考慮すると、
+    ini ファイルはドキュメントルートの外側に置くか、
+    Webサーバがそれを返さないように設定を変更しなければならないということです。
+    そうしないと、セキュリティ上のリスクが発生する可能性があります。
    </para>
   </note>
  </refsect1>
