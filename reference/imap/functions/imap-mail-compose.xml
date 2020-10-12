@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: c598ef89271774850c51a33135908662f1dd5912 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 873035efec16397ab54daf7d339e8a82a731edf1 Maintainer: hirokawa Status: ready -->
 <!-- Credits: mumumu -->
 <refentry xml:id="function.imap-mail-compose" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -36,9 +36,12 @@
        <literal>"return_path"</literal>,
        <literal>"date"</literal>, <literal>"from"</literal>, <literal>"reply_to"</literal>,
        <literal>"in_reply_to"</literal>, <literal>"subject"</literal>,
-       <literal>"to"</literal>, <literal>"cc"</literal>, <literal>"bcc"</literal>,
-       <literal>"message_id"</literal>, <literal>"custom_headers"</literal>
-       (その他のヘッダの連想配列。例: <code>["User-Agent: My Mail Client"]</code>) です。
+       <literal>"to"</literal>, <literal>"cc"</literal>, <literal>"bcc"</literal>。
+       <literal>"message_id"</literal>。
+       これらの値は、連想配列の値に与えられた文字列でそれぞれのヘッダを設定します。
+       さらに追加のヘッダを設定する用途として、
+       <literal>"custom_headers"</literal> がサポートされています。
+       ここには、その他のヘッダの連想配列を指定します。例: <code>["User-Agent: My Mail Client"]</code>
       </para>
      </listitem>
     </varlistentry>
@@ -47,15 +50,101 @@
      <listitem>
       <para>
        本文の配列。
+       配列の最初の要素が、メッセージの中心部分です。
+       <constant>TYPEMULTIPART</constant> の場合にだけ、ふたつめ以降の要素が処理されます。
+       処理された要素は、本文の一部を構成します。
       </para>
       <para>
-       本文は、以下のキーからなる連想配列です。
-       <literal>"type"</literal>, <literal>"encoding"</literal>,
-       <literal>"charset"</literal>, <literal>"type.parameters"</literal>,
-       <literal>"subtype"</literal>, <literal>"id"</literal>,
-       <literal>"description"</literal>, <literal>"disposition.type"</literal>,
-       <literal>"disposition"</literal>, <literal>"contents.data"</literal>,
-       <literal>"lines"</literal>, <literal>"bytes"</literal>, <literal>"md5"</literal>。
+       <table>
+        <title>body に指定する配列の構造</title>
+        <tgroup cols="2">
+         <thead>
+          <row>
+           <entry>キー</entry>
+           <entry>型</entry>
+           <entry>説明</entry>
+          </row>
+         </thead>
+         <tbody>
+          <row>
+           <entry><literal>type</literal></entry>
+           <entry><type>int</type></entry>
+           <entry>
+            MIMEタイプ。
+            <constant>TYPETEXT</constant> (デフォルト), <constant>TYPEMULTIPART</constant>,
+            <constant>TYPEMESSAGE</constant>, <constant>TYPEAPPLICATION</constant>,
+            <constant>TYPEAUDIO</constant>, <constant>TYPEIMAGE</constant>,
+            <constant>TYPEMODEL</constant>, <constant>TYPEOTHER</constant> が指定できます。
+           </entry>
+          </row>
+          <row>
+           <entry><literal>encoding</literal></entry>
+           <entry><type>int</type></entry>
+           <entry>
+            <literal>Content-Transfer-Encoding</literal> の値を指定します。
+            <constant>ENC7BIT</constant> (デフォルト), <constant>ENC8BIT</constant>,
+            <constant>ENCBINARY</constant>, <constant>ENCBASE64</constant>,
+            <constant>ENCQUOTEDPRINTABLE</constant>, <constant>ENCOTHER</constant> が指定できます。
+           </entry>
+          </row>
+          <row>
+           <entry><literal>charset</literal></entry>
+           <entry><type>string</type></entry>
+           <entry>MIMEタイプの charset パラメータの値</entry>
+          </row>
+          <row>
+           <entry><literal>type.parameters</literal></entry>
+           <entry><type>array</type></entry>
+           <entry><literal>Content-Type</literal> の名前と値を連想配列で指定します。</entry>
+          </row>
+          <row>
+           <entry><literal>subtype</literal></entry>
+           <entry><type>string</type></entry>
+           <entry>MIMEサブタイプ。例: <constant>TYPEIMAGE</constant> の場合は <literal>'jpeg'</literal></entry>
+          </row>
+          <row>
+           <entry><literal>id</literal></entry>
+           <entry><type>string</type></entry>
+           <entry><literal>Content-ID</literal> の値</entry>
+          </row>
+          <row>
+           <entry><literal>description</literal></entry>
+           <entry><type>string</type></entry>
+           <entry><literal>Content-Description</literal> の値</entry>
+          </row>
+          <row>
+           <entry><literal>disposition.type</literal></entry>
+           <entry><type>string</type></entry>
+           <entry><literal>Content-Disposition</literal> の値。例: <literal>'attachment'</literal></entry>
+          </row>
+          <row>
+           <entry><literal>disposition</literal></entry>
+           <entry><type>array</type></entry>
+           <entry><literal>Content-Disposition</literal> の名前と値を連想配列で指定します。</entry>
+          </row>
+          <row>
+           <entry><literal>contents.data</literal></entry>
+           <entry><type>string</type></entry>
+           <entry>ペイロード</entry>
+          </row>
+          <row>
+           <entry><literal>lines</literal></entry>
+           <entry><type>int</type></entry>
+           <entry>The size of the payload in lines.</entry>
+          </row>
+          <row>
+           <entry><literal>bytes</literal></entry>
+           <entry><type>int</type></entry>
+           <entry>ペイロードのサイズをバイト単位で指定します。</entry>
+          </row>
+          <row>
+           <entry><literal>md5</literal></entry>
+           <entry><type>string</type></entry>
+           <entry>ペイロードのMD5チェックサム</entry>
+          </row>
+         </tbody>
+        </tgroup>
+       </table>
       </para>
      </listitem>
     </varlistentry>
@@ -65,7 +154,8 @@
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
-   MIME メッセージを返します。
+   MIME メッセージを文字列として返します。
+   &return.falseforfailure;
   </para>
  </refsect1>
  <refsect1 role="examples">
