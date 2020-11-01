@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: dec1f8445ab2af7fbafef012fb7907ab2cd349b5 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: cdaea0421544885f02ff3d36bd203dc01b78299e Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa,mumumu -->
  <chapter xml:id="language.operators" xmlns="http://docbook.org/ns/docbook">
   <title>演算子</title>
@@ -423,7 +423,7 @@ x minus one equals 3, or so I hope
       <row>
        <entry>$a ** $b</entry>
        <entry>累乗</entry>
-       <entry><varname>$a</varname> の <varname>$b</varname> 乗。PHP 5.6 で導入されました。</entry>
+       <entry><varname>$a</varname> の <varname>$b</varname> 乗。</entry>
       </row>
      </tbody>
     </tgroup>
@@ -556,14 +556,10 @@ print "$b\n"; // 表示: 4
     </para>
     <para>
      <link linkend="language.oop5.basic.new">new</link>
-     演算子が自動的に参照を返すようになりました。そのため、
-     <link linkend="language.oop5.basic.new">new</link> の結果を参照で代入することは
-     PHP 7.0.0 から許されなくなりました。
-     それより前のバージョンでは、PHP 5.3 以降では <constant>E_DEPRECATED</constant>、それより前のバージョンでは 
-     <constant>E_STRICT</constant> が発生していました。
+     演算子は自動的に参照を返します。そのため、
+     <link linkend="language.oop5.basic.new">new</link> の結果を参照で代入するとエラーが発生します。
     </para>
     <para>
-     たとえば、このコードはエラーが出るか、警告が発生します。
      <informalexample>
       <programlisting role="php">
 <![CDATA[
@@ -574,22 +570,10 @@ $o = &new C;
 ?>
 ]]>
       </programlisting>
-      &example.outputs.7;
+      &example.outputs;
       <screen>
 <![CDATA[
 Parse error: syntax error, unexpected 'new' (T_NEW) in …
-]]>
-      </screen>
-      &example.outputs.53;
-      <screen>
-<![CDATA[
-Deprecated: Assigning the return value of new by reference is deprecated in …
-]]>
-      </screen>
-      &example.outputs.5;
-      <screen>
-<![CDATA[
-Strict Standards: Assigning the return value of new by reference is deprecated in …
 ]]>
       </screen>
      </informalexample>
@@ -1357,28 +1341,26 @@ Expression: 0 = -4 << 62
    </para>
    <warning>
     <para>
-     PHP 7.0 より前のバージョンでは、
-     システムの long 型で扱える範囲以上の整数値をシフトしたり、
-     負の値をシフトさせた場合の結果は未定義でした。
-     言い換えると、PHP 5.x を使っているのなら、
-     32ビットシステム上では、32ビット以上の値をシフトしないようにしましょう。
-     同様に、64ビットシステム上では、64ビット以上の値をシフトしないようにしましょう。
-    </para>
-    <para>
      <literal>PHP_INT_MAX</literal> を超える数のビット演算には、
      <link linkend="book.gmp">gmp</link> 拡張モジュールの関数を使いましょう。
     </para>
    </warning>
-   <para>
-    <function>pack</function>,
-    <function>unpack</function>,
-    <function>gmp_and</function>,
-    <function>gmp_or</function>,
-    <function>gmp_xor</function>,
-    <function>gmp_testbit</function>,
-    <function>gmp_clrbit</function>
-    も参照ください。
-   </para>
+
+   <sect2 role="seealso">
+    &reftitle.seealso;
+    <para>
+     <simplelist>
+<!-- <link linkend="language.oop5.basic.class.class">::class</link> -->
+      <member><function>pack</function></member>
+      <member><function>unpack</function></member>
+      <member><function>gmp_and</function></member>
+      <member><function>gmp_or</function></member>
+      <member><function>gmp_xor</function></member>
+      <member><function>gmp_testbit</function></member>
+      <member><function>gmp_clrbit</function></member>
+     </simplelist>
+    </para>
+   </sect2>
   </sect1>
 
   <sect1 xml:id="language.operators.comparison">
@@ -1452,9 +1434,8 @@ Expression: 0 = -4 << 62
        <entry>宇宙船演算子</entry>
        <entry>
         <varname>$a</varname> が
-        <varname>$b</varname> より大きいか、0等しいか、小さい場合に、
+        <varname>$b</varname> より大きいか、0か、0より小さい場合に、
         それぞれ、0より大きい か、0か、0より小さい <type>integer</type>。
-        PHP 7 以降で使用可能。
        </entry>
       </row>
      </tbody>
@@ -1718,7 +1699,10 @@ if (empty($_POST['action'])) {
      <para>
       三項演算子を "積み重ねて" 使用することは避けましょう。
       ひとつの文の中で複数の三項演算子を使用した際の PHP の振る舞いは、
-      少々わかりにくいものです。
+      他のプログラミング言語のそれと比べて、少々わかりにくいものです。
+
+      PHP 8.0.0 より前のバージョンでは、三項演算子は左から右に評価されていました。
+      他の殆どのプログラミング言語では、右から左に評価されます。
       <example>
        <title>三項演算子のわかりにくい挙動</title>
        <programlisting role="php">
@@ -1727,7 +1711,7 @@ if (empty($_POST['action'])) {
 // ぱっと見た感じでは、これは 'true' と表示されると思うでしょう。
 echo (true?'true':false?'t':'f');
 
-// しかし、実際には上の出力結果は 't' です。
+// しかし、PHP 8.0.0 より前のバージョンでは、実際には上の出力結果は 't' です。
 // なぜなら、三項演算子は左から右へ順に評価されるからです。
 
 // 上のコードをもう少しわかりやすく書くと、このようになります。
@@ -1747,7 +1731,7 @@ echo ((true ? 'true' : false) ? 't' : 'f');
    <sect2 xml:id="language.operators.comparison.coalesce">
     <title>Null 合体演算子</title>
     <para>
-     PHP 7 以降ではさらに、"??" 演算子 (null 合体演算子) が使えるようになりました。
+     "??" 演算子 (null 合体演算子) を使うことが出来ます。
      <example>
       <title>デフォルト値の代入</title>
       <programlisting role="php">
@@ -2555,7 +2539,7 @@ bool(false)
     この問題の回避策としては、動的なクラス参照を使用するか、
     クラス名を含む文字列変数を使用します。
     <example>
-     <title>PHP 5.0 における、クラス名検索時の致命的エラーの回避策</title>
+     <title>クラス名検索時の致命的エラーの回避策</title>
      <programlisting role="php">
 <![CDATA[
 <?php
@@ -2573,16 +2557,21 @@ bool(false)
     </example>
    </para>
    <simpara>
-    <literal>instanceof</literal> 演算子は PHP 5 から使用可能になりました。
-    それ以前には <function>is_a</function> が使用されていましたが、
-    現在は <function>is_a</function> は推奨されておらず、
-    <literal>instanceof</literal> の使用が推奨されています。
-    PHP 5.3.0 以降、<function>is_a</function> は非推奨ではなくなったことに注意しましょう。
+    <literal>instanceof</literal> 演算子は、<function>is_a</function>
+    関数とは機能的に異なる部分があります。
    </simpara>
-   <para>
-    <function>get_class</function> および
-    <function>is_a</function> も参照ください。
-   </para>
+
+   <sect2 role="seealso">
+    &reftitle.seealso;
+    <para>
+     <simplelist>
+<!-- <link linkend="language.oop5.basic.class.class">::class</link> -->
+      <member><function>get_class</function></member>
+      <member><function>is_a</function></member>
+     </simplelist>
+    </para>
+   </sect2>
+
   </sect1>
  </chapter>
  
