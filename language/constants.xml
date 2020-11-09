@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 86e6094e86b84a51d00ab217ac50ce8dde33d82a Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: a71742330defbc0edfbc6822b4f947bf437b2f70 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi,mumumu -->
 
  <chapter xml:id="language.constants" xmlns="http://docbook.org/ns/docbook">
@@ -11,9 +11,18 @@
    スクリプト実行中に変更できません (<link 
    linkend="language.constants.predefined">マジック定数</link>
    は例外で、これらは実際は定数ではありません)。
-   デフォルトで定数では大文字小文字を区別します。慣習的に、
+   定数は大文字小文字を区別します。慣習的に、
    定数は常に大文字で表記されます。
   </simpara>
+
+  <note>
+   <para>
+    PHP 8.0.0 より前のバージョンでは、
+    <function>define</function> 関数を使って定義された定数は、
+    大文字小文字を区別していました。
+   </para>
+  </note>
+
   <para>
    定数の名前は、PHP のラベルと同じ規則に従います。有効な定数の名前は、
    文字またはアンダースコアで始まり、任意の数の文字、数字、
@@ -23,12 +32,13 @@
   <para>
    <function>define</function> 関数を使うと、
    予約語や有効でない名前の定数を定義することが可能です。
-   この場合の定数の値は constant() 関数によって (のみ) 取得できますが、
+   この場合の定数の値は constant() 関数によってのみ取得できますが、
    このような使い方は推奨できません。
   </para>
 
   &tip.userlandnaming;
   <para>
+<!-- TODO Move into syntax section? -->
    <example>
     <title>有効/無効な定数名の例</title>
     <programlisting role="php">
@@ -67,6 +77,13 @@ define("__FOO__", "something");
    をご覧ください。
   </simpara>
 
+  <note>
+   <simpara>
+    PHP 7.4.0 以降では、クラス定数は protected または private として宣言でき、
+    それが定義されたクラス階層のスコープでのみ利用可能にすることができます。
+   </simpara>
+  </note>
+
   <sect1 xml:id="language.constants.syntax">
    <title>構文</title>
    <simpara>
@@ -94,31 +111,39 @@ define("__FOO__", "something");
     定義済の定数の一覧を得るには、
     <function>get_defined_constants</function> を使用してください。
    </simpara>
+
    <note>
     <simpara>
      定数と(グローバル)変数は、異なる名前空間にあります。
      例えば、&true; と <varname>$TRUE</varname> は違うものを意味します。
     </simpara>
    </note>
+
    <simpara>
-    未定義の定数を使用した場合、ちょうど<type>string</type>として
+    未定義の定数を使用した場合、<classname>Error</classname> がスローされます。
+    PHP 8.0.0 より前のバージョンでは、
+    未定義の定数は、ちょうど<type>string</type>として
     コールしたかのように(CONSTANT vs "CONSTANT")、
-    PHPはその定数自体の名前を使用したと仮定します。
+    PHPはその定数自体の名前を使用したと解釈していました。
     このような振る舞いは、PHP 7.2.0
     以降では非推奨となり、<constant>E_WARNING</constant>
     が発生するようになりました。
     (それより前のバージョンでは、
     <link linkend="ref.errorfunc">E_NOTICE</link> が発生していました)
-    なぜ
+   （<literal>bar</literal>が定数でなければ) なぜ
     <link linkend="language.types.array.foo-bar">$foo[bar]</link>が間違っている
-    （まず<literal>bar</literal>を定数として<function>define</function>しなければ）
     のかというマニュアルもご覧ください。
     これは <link
     linkend="language.namespaces.rules">完全修飾形式の定数</link>
-    には適用されず、この場合は未定義なら fatal error となります。
-    定数がセットされているかを単にチェックするには
-    <function>defined</function>を使用してください。
+    には適用されず、この場合は未定義なら <classname>Error</classname> が発生します。
    </simpara>
+
+   <note>
+    <simpara>
+     定数が設定されているかを確認するには、<function>defined</function> 関数を使って下さい。
+    </simpara>
+   </note>
+
    <para>
     変数との違いは次のようになります。
     <itemizedlist>
@@ -154,7 +179,8 @@ define("__FOO__", "something");
 <?php
 define("CONSTANT", "Hello world.");
 echo CONSTANT; // "Hello world."を出力
-echo Constant; // "Constant" を出力し、警告 (notice) を発行
+echo Constant; // エラーが発生: Undefined constant "Constant"
+               // PHP 8.0.0 より前のバージョンでは、"Constant" を出力し、警告が発生
 ?>
 ]]>
      </programlisting>
@@ -209,10 +235,15 @@ echo ANIMALS[1]; // 出力は "cat"
     </para>
    </note>
 
-   <simpara>
-    <link linkend="language.oop5.constants">オブジェクト定数</link>
-    も参照ください。
-   </simpara>
+   <sect2 role="seealso">
+    &reftitle.seealso;
+    <para>
+     <simplelist>
+      <member><link linkend="language.oop5.constants">オブジェクト定数</link></member>
+     </simplelist>
+    </para>
+   </sect2>
+
   </sect1>
   
   <sect1 xml:id="language.constants.predefined">
@@ -242,8 +273,8 @@ echo ANIMALS[1]; // 出力は "cat"
      <tgroup cols="2">
       <thead>
        <row>
-        <entry>名前</entry>
-        <entry>説明</entry>
+        <entry>&Name;</entry>
+        <entry>&Description;</entry>
        </row>
       </thead>
       <tbody>
@@ -306,11 +337,9 @@ echo ANIMALS[1]; // 出力は "cat"
         </entry>
        </row>
        <row xml:id="constant.coloncolonclass">
-        <entry><constant>ClassName::class</constant></entry>
+        <entry><constant><replaceable>ClassName</replaceable>::class</constant></entry>
         <entry>
          完全に修飾されたクラス名。
-         詳しくは、
-         <link linkend="language.oop5.basic.class.class">::class</link> を参照してください。
         </entry>
        </row>
       </tbody>
@@ -322,7 +351,7 @@ echo ANIMALS[1]; // 出力は "cat"
     &reftitle.seealso;
     <para>
      <simplelist>
-<!-- <link linkend="language.oop5.basic.class.class">::class</link> -->
+      <member><link linkend="language.oop5.basic.class.class">::class</link></member>
       <member><function>get_class</function></member>
       <member><function>get_object_vars</function></member>
       <member><function>file_exists</function></member>
