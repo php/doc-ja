@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: d395ade5f79d7844b87923d0bcb9b7d765ab51b6 Maintainer: mumumu Status: working -->
+<!-- EN-Revision: f99285b50417abb9a6a11d5667ad1cb4e80b8766 Maintainer: mumumu Status: ready -->
 
 <sect1 xml:id="language.types.declarations">
  <title>型宣言</title>
@@ -164,7 +164,7 @@ Stack trace:
 class C {}
 class D extends C {}
 
-// This doesn't extend C.
+// このクラスは C を継承していません
 class E {}
 
 function f(C $c) {
@@ -200,7 +200,7 @@ Stack trace:
 interface I { public function f(); }
 class C implements I { public function f() {} }
 
-// This doesn't implement I.
+// このクラスは I を実装していません
 class E {}
 
 function f(I $i) {
@@ -235,7 +235,7 @@ function sum($a, $b): float {
     return $a + $b;
 }
 
-// Note that a float will be returned.
+// float が返される点に注意
 var_dump(sum(1, 2));
 ?>
 ]]>
@@ -419,7 +419,7 @@ NULL
    <title>重複した冗長な型</title>
    <para>
     union 型の宣言に関する単純なバグを見つけるため、
-    クラスを読み込みを行わずに検出できる冗長な型はコンパイル時にエラーになります。
+    クラスの読み込みを行わずに検出できる冗長な型はコンパイル時にエラーになります。
     たとえば、以下のような場合です:
     <itemizedlist>
      <listitem>
@@ -673,55 +673,55 @@ Stack trace:
     </listitem>
    </orderedlist>
 
-   <!-- to be translated -->
-   If the type both exists in the union, and the value can be coerced to the
-   type under PHPs existing type checking semantics, then the type is chosen.
-   Otherwise the next type is tried.
+   正確な型が union の中に存在するか、
+   値が PHP の既存の型チェックのセマンティクスによって型を強制できる場合、
+   その型が選択されます。
+   そうでない場合、次の型を試そうとします。
   </para>
 
   <caution>
    <para>
-    As an exception, if the value is a string and both int and float are part
-    of the union, the preferred type is determined by the existing
-    “numeric string” semantics.
-    For example, for <literal>"42"</literal> <type>int</type> is chosen,
-    while for <literal>"42.0"</literal> <type>float</type> is chosen.
+    例外として、値が文字列で、int と float が union に含まれていた場合、
+    型は既存の "数値文字列" を解釈するセマンティクスによって決まります。
+    たとえば、<literal>"42"</literal> の場合、
+    <type>int</type> が選ばれますし、
+    <literal>"42.0"</literal> の場合、<type>float</type> が選ばれます。
    </para>
   </caution>
 
   <note>
    <para>
-    Types that are not part of the above preference list are not eligible
-    targets for implicit coercion. In particular no implicit coercions to
-    the <literal>null</literal> and <literal>false</literal> types occur.
+    上のリストに入っていない型については、暗黙の型の強制が行われる対象ではありません。
+    特に、暗黙のうちに
+    <literal>null</literal> や <literal>false</literal> に強制されることはありません。
    </para>
   </note>
 
   <example>
-   <title>Example of types being coerced into a type part of the union</title>
+   <title>union の型のひとつに強制される例</title>
    <programlisting role="php">
 <![CDATA[
 <?php
 // int|string
-42    --> 42          // exact type
-"42"  --> "42"        // exact type
+42    --> 42          // 正確に型が一致
+"42"  --> "42"        // 正確に型が一致
 new ObjectWithToString --> "Result of __toString()"
-                      // object never compatible with int, fall back to string
-42.0  --> 42          // float compatible with int
-42.1  --> 42          // float compatible with int
-1e100 --> "1.0E+100"  // float too large for int type, fall back to string
-INF   --> "INF"       // float too large for int type, fall back to string
-true  --> 1           // bool compatible with int
-[]    --> TypeError   // array not compatible with int or string
+                      // オブジェクトは int と互換性がないので、文字列にフォールバック
+42.0  --> 42          // float は int と互換性がある
+42.1  --> 42          // float は int と互換性がある
+1e100 --> "1.0E+100"  // int には大きすぎる float なので、文字列にフォールバック
+INF   --> "INF"       // int には大きすぎる float なので、文字列にフォールバック
+true  --> 1           // bool は int と互換性がある
+[]    --> TypeError   // 配列はint, string と互換性はない。
 
 // int|float|bool
-"45"    --> 45        // int numeric string
-"45.0"  --> 45.0      // float numeric string
+"45"    --> 45        // int の数値文字列
+"45.0"  --> 45.0      // float の文字列
 
-"45X"   --> true      // not numeric string, fall back to bool
-""      --> false     // not numeric string, fall back to bool
-"X"     --> true      // not numeric string, fall back to bool
-[]      --> TypeError // array not compatible with int, float or bool
+"45X"   --> true      // 数値文字列ではない。boolにフォールバック
+""      --> false     // 数値文字列ではない。boolにフォールバック
+"X"     --> true      // 数値文字列ではない。boolにフォールバック
+[]      --> TypeError // 配列はint, float, bool と互換性はない。
 ?>
 ]]>
    </programlisting>
