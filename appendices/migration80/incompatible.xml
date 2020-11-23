@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision: 351500 $ -->
-<!-- EN-Revision: d7a2a4e3f7114ec8f0a71da90ed7e55b70fb77ec Maintainer: mumumu Status: working -->
+<!-- EN-Revision: d7a2a4e3f7114ec8f0a71da90ed7e55b70fb77ec Maintainer: mumumu Status: ready -->
 
 <sect1 xml:id="migration80.incompatible" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>下位互換性のない変更点</title>
@@ -12,9 +12,9 @@
    <title>文字列と数値の比較</title>
 
    <para>
-    数値と非数値文字列を(厳密でない)比較する場合、
+    (厳密でないやり方で)数値と非数値文字列を比較する場合、
     数値を文字列にキャストし、文字列と比較するようになりました。
-    数値と数値文字列の比較は、以前と同じふるまいをします。
+    数値と数値文字列の比較は、以前と同じ振る舞いをします。
     注意すべきなのは、これによって、
     <code>0 == "not-a-number"</code> が &false; と見なされるようになったことです。
     <informaltable>
@@ -298,22 +298,26 @@ function test(int $arg = null) {}
      <para>
       <simplelist>
        <member>
-        Attempting to write to a property of a non-object. Previously this
-        implicitly created an stdClass object for null, false and empty strings.
+        オブジェクトでない値にプロパティを書き込もうとした場合。
+        これより前のバージョンでは、
+        &null; については stdClass オブジェクトが暗黙のうちに作られ、
+        空文字列については &false; となっていました。
        </member>
        <member>
-        Attempting to append an element to an array for which the PHP_INT_MAX key
-        is already used.
+        PHP_INT_MAX キーが既に使われている配列に対して、
+        要素を追加しようとした場合。
        </member>
        <member>
-        Attempting to use an invalid type (array or object) as an array key or
-        string offset.
+        不正な型(配列やオブジェクト)
+        を配列のキーや文字列のオフセットとして使おうとした場合。
        </member>
-       <member>Attempting to write to an array index of a scalar value.</member>
-       <member>Attempting to unpack a non-array/Traversable.</member>
+       <member>スカラー値に配列のインデックスを書き込もうとした場合</member>
+       <member>配列やTraversable でない値をアンパックしようとした場合</member>
        <member>
-        Attempting to access unqualified constants which are undefined.
-        Previously, unqualified constant accesses resulted in a warning and were interpreted as strings.
+        未定義の、非修飾の定数にアクセスしようとした場合。
+        これより前のバージョンでは、
+        非修飾の定数にアクセスしようとすると、警告が発生し、
+        文字列として解釈されていました。
        </member>
       </simplelist>
      </para>
@@ -322,16 +326,16 @@ function test(int $arg = null) {}
      </para>
      <para>
       <simplelist>
-       <member>Attempting to read an undefined variable.</member>
-       <member>Attempting to read an undefined property.</member>
-       <member>Attempting to read an undefined array key.</member>
-       <member>Attempting to read a property of a non-object.</member>
-       <member>Attempting to access an array index of a non-array.</member>
-       <member>Attempting to convert an array to string.</member>
-       <member>Attempting to use a resource as an array key.</member>
-       <member>Attempting to use null, a boolean, or a float as a string offset.</member>
-       <member>Attempting to read an out-of-bounds string offset.</member>
-       <member>Attempting to assign an empty string to a string offset.</member>
+       <member>未定義の変数を読み取ろうとした場合</member>
+       <member>未定義のプロパティを読み取ろうとした場合</member>
+       <member>未定義の配列のキーを読み取ろうとした場合</member>
+       <member>オブジェクトでない値のプロパティを読み取ろうとした場合</member>
+       <member>配列でない値のインデックスにアクセスしようとした場合</member>
+       <member>配列を文字列に変換しようとした場合</member>
+       <member>リソースを配列のキーとして使おうとした場合</member>
+       <member>null や bool 値や float の値を文字列オフセットとして使おうとした場合</member>
+       <member>境界を超えて文字列のオフセットを読み取ろうとした場合</member>
+       <member>文字列のオフセットに空文字列を割り当てようとした場合</member>
       </simplelist>
       <!-- RFC: https://wiki.php.net/rfc/engine_warnings -->
      </para>
@@ -343,33 +347,40 @@ function test(int $arg = null) {}
     </listitem>
     <listitem>
      <para>
-      Unexpected characters in source files (such as NUL bytes outside of strings) will now result in a
-      <classname>ParseError</classname> exception instead of a compile warning.
+      ソースファイル中に(文字列の範囲外のNUL バイトのような)
+      想定外の文字が含まれていた場合、
+      コンパイル時に警告を出す代わりに、
+      <classname>ParseError</classname> がスローされるようになりました。
      </para>
     </listitem>
     <listitem>
      <para>
-      Uncaught exceptions now go through "clean shutdown", which means that destructors will be called
-      after an uncaught exception.
+      例外がキャッチされなかった場合、
+      "クリーンなシャットダウン" が行われます。
+      これは、例外がキャッチされなかった後、
+      デストラクタが呼ばれるということです。
      </para>
     </listitem>
     <listitem>
      <para>
-      The compile time fatal error "Only variables can be passed by reference" has been delayed until
-      runtime, and converted into an "Argument cannot be passed by reference"
-      <classname>Error</classname> exception.
+      コンパイル時の致命的なエラー
+      "Only variables can be passed by reference" は、
+      実行時まで遅延され、
+      "Argument cannot be passed by reference"
+      という <classname>Error</classname> 例外に変換されるようになりました。
      </para>
     </listitem>
     <listitem>
      <para>
-      Some "Only variables should be passed by reference" notices have been converted to "Argument
-      cannot be passed by reference" exception.
+      "Only variables should be passed by reference" という警告は、
+      "Argument cannot be passed by reference"
+      という例外に変換されるようになりました。
      </para>
     </listitem>
     <listitem>
      <para>
-      The generated name for anonymous classes has changed. It will now include the name of the first
-      parent or interface:
+      無名クラスのために生成される名前が変更されました。
+      最初の親クラスやインターフェイスの名前が含まれるようになっています:
      </para>
      <para>
       <programlisting role="php">
@@ -386,13 +397,14 @@ new class {};
       </programlisting>
      </para>
      <para>
-      The name shown above is still followed by a NUL byte and a unique suffix.
+      上で示した名前の後に、NULバイトやユニークなサフィックスが続きます。
      </para>
     </listitem>
     <listitem>
      <para>
-      Non-absolute trait method references in trait alias adaptations are now required to be
-      unambiguous:
+      トレイトのエイリアス調整において、
+      クラス名を指定していないメソッド参照は、
+      曖昧でないことが必須になりました:
      </para>
      <para>
       <programlisting role="php">
@@ -409,16 +421,21 @@ class X {
       </programlisting>
      </para>
      <para>
-      If both <code>T1::func()</code> and <code>T2::func()</code> exist, this code was previously
-      silently accepted, and func was assumed to refer to <code>T1::func</code>. Now it will generate a
-      fatal error instead, and either <code>T1::func</code> or <code>T2::func</code> needs to be
-      written explicitly.
+      <code>T1::func()</code> と <code>T2::func()</code>
+      が両方存在している場合、
+      PHP 8.0.0 より前のバージョンでは、
+      このコードは黙って動作し、func は
+      <code>T1::func</code> を参照するものと想定されていました。
+      PHP 8.0.0 からは、このコードは致命的なエラーが発生します。
+      <code>T1::func</code> または <code>T2::func</code> 
+      を明示的に書く必要があります。
      </para>
     </listitem>
     <listitem>
      <para>
-      The signature of abstract methods defined in traits is now checked against the implementing class
-      method:
+      トレイトで定義される抽象メソッドのシグナチャは
+      それぞ実装するクラスのメソッド側で、
+      一致しているかがチェックされるようになりました:
      </para>
      <para>
       <programlisting role="php">
@@ -431,7 +448,7 @@ trait MyTrait {
 class MyClass {
     use MyTrait;
 
-    // Error, because of return type mismatch.
+    // エラー。戻り値の型が一致しません。
     private function neededByTrait(): int { return 42; }
 }
 ?>
@@ -455,25 +472,31 @@ class MyClass {
     </listitem>
     <listitem>
      <para>
-      The arithmetic and bitwise operators <literal>+</literal>, <literal>-</literal>,
-      <literal>*</literal>, <literal>/</literal>, <literal>**</literal>, <literal>%</literal>,
-      <literal>&lt;&lt;</literal>, <literal>&gt;&gt;</literal>, <literal>&amp;</literal>,
-      <literal>|</literal>, <literal>^</literal>, <literal>~</literal>, <literal>++</literal>,
-      <literal>--</literal> will now consistently throw a <classname>TypeError</classname> when one of
-      the operands is an &array;, &resource; or non-overloaded &object;. The only exception to this is
-      the array <literal>+</literal> array merge operation, which remains supported.
+      算術演算子とビット演算子
+      <literal>+</literal>, <literal>-</literal>,
+      <literal>*</literal>, <literal>/</literal>,
+      <literal>**</literal>, <literal>%</literal>,
+      <literal>&lt;&lt;</literal>, <literal>&gt;&gt;</literal>,
+      <literal>&amp;</literal>,
+      <literal>|</literal>, <literal>^</literal>,
+      <literal>~</literal>, <literal>++</literal>,
+      <literal>--</literal> は、オペランドのひとつが配列だったり、
+      &resource; だったり、オーバーロードされた &object; でない場合に
+      一貫して
+      <classname>TypeError</classname> をスローするようになりました。
+      これに対する唯一の例外は、配列と配列を
+      <literal>+</literal> でマージする操作で、
+      これはまだサポートされています。
       <!-- RFC: https://wiki.php.net/rfc/arithmetic_operator_type_checks -->
      </para>
     </listitem>
     <listitem>
      <para>
-      Float to string casting will now always behave locale-independently.
       float 型から文字列型へのキャストは、
       ロケールに依存しないように常に振る舞うようになります。
-
      </para>
      <para>
-      <programlisting>
+      <programlisting role="php">
 <![CDATA[
 <?php
 setlocale(LC_ALL, "de_DE");
@@ -486,8 +509,9 @@ echo $f, "\n";
       </programlisting>
      </para>
      <para>
-      See <function>printf</function>, <function>number_format</function> and
-      <methodname>NumberFormatter</methodname> for ways to customize number formatting.
+      数値のフォーマットをカスタマイズする方法については、
+      <function>printf</function>, <function>number_format</function> 関数
+      および <methodname>NumberFormatter</methodname> メソッドを参照して下さい。
       <!-- RFC: https://wiki.php.net/rfc/locale_independent_float_to_string -->
      </para>
     </listitem>
@@ -497,7 +521,7 @@ echo $f, "\n";
       オフセットを指定してアクセスするための波括弧のサポートが削除されました。
      </para>
      <para>
-      <programlisting>
+      <programlisting role="php">
 <![CDATA[
 <?php
 // 以下ではなく:
@@ -521,17 +545,22 @@ $array["key"];
     </listitem>
     <listitem>
      <para>
-      If an object constructor <function>exit</function>s, the object destructor will no longer be
-      called. This matches the behavior when the constructor throws.
+      オブジェクトのコンストラクタで
+      <function>exit</function> が呼び出された場合、
+      オブジェクトのデストラクタはコールされなくなりました。
+      これは、コンストラクタが例外を投げたときの振る舞いと一致します。
      </para>
     </listitem>
     <listitem>
      <para>
-      Namespaced names can no longer contain whitespace: While <code>Foo\Bar</code> will be recognized
-      as a namespaced name, <code>Foo \ Bar</code> will not. Conversely, reserved keywords are now
-      permitted as namespace segments, which may also change the interpretation of code:
-      <code>new\x</code> is now the same as <code>constant('new\x')</code>, not
-      <code>new \x()</code>.
+      名前空間に含まれる名前には、
+      ホワイトスペースを含めることができなくなりました。
+      つまり、<code>Foo\Bar</code> は名前空間の名前として認識されますが
+      <code>Foo \ Bar</code> は認識されなくなったということです。
+      逆に、予約語のキーワードは名前空間の一部として許されるようになりました。
+      これによって、コードの解釈が変わるかもしれません。
+      <code>new\x</code> は <code>constant('new\x')</code> と同じですが、
+      <code>new \x()</code> とは異なります。
       <!-- RFC: https://wiki.php.net/rfc/namespaced_names_as_token -->
      </para>
     </listitem>
@@ -543,50 +572,62 @@ $array["key"];
     </listitem>
     <listitem>
      <para>
-      <function>debug_backtrace</function> and <methodname>Exception::getTrace</methodname> will no
-      longer provide references to arguments. It will not be possible to change function arguments
-      through the backtrace.
+      <function>debug_backtrace</function> と
+      <methodname>Exception::getTrace</methodname> メソッド
+      は、引数にリファレンスを取らなくなりました。
+      これにより、バックトレースを通じて、関数の引数を変更できなくなります。
      </para>
     </listitem>
     <listitem>
      <para>
-      Numeric string handling has been altered to be more intuitive and less error-prone. Trailing
-      whitespace is now allowed in numeric strings for consistency with how leading whitespace is
-      treated. This mostly affects:
+      数値文字列の扱いが、より直感的で間違いにくいものに変更されました。
+      ホワイトスペースが前に付いている場合の扱いと一貫性を持たせるため、
+      数値文字列の後にホワイトスペースを付けることが許されるようになりました。
+      これがもっとも影響するのは以下です:
      </para>
      <para>
       <simplelist>
-       <member>The <function>is_numeric</function> function</member>
-       <member>String-to-string comparisons</member>
-       <member>Type declarations</member>
-       <member>Increment and decrement operations</member>
+       <member><function>is_numeric</function> 関数</member>
+       <member>文字列同士の比較</member>
+       <member>型宣言</member>
+       <member>インクリメントとデクリメント演算</member>
       </simplelist>
      </para>
      <para>
-      The concept of a "leading-numeric string" has been mostly dropped; the cases where this remains
-      exist in order to ease migration. Strings which emitted an <constant>E_NOTICE</constant> "A non
-      well-formed numeric value encountered" will now emit an <constant>E_WARNING</constant> "A
-      non-numeric value encountered" and all strings which emitted an <constant>E_WARNING</constant> "A
-      non-numeric value encountered" will now throw a
-      <classname>TypeError</classname>. This mostly affects:
+      "数値が始めに来る文字列" の概念は殆どなくなっています;
+      このケースは、移行を容易にするために存在しています。
+
+      "A non well-formed numeric value encountered" という
+      <constant>E_NOTICE</constant> が発生する文字列
+      は、"A non-numeric value encountered" という
+      <constant>E_WARNING</constant> が発生するようになっています。
+      そして、"A non-numeric value encountered" という
+      <constant>E_WARNING</constant> が発生していた全ての文字列は、
+      <classname>TypeError</classname> が発生するようになりました。
+
+      これが最も影響するのは、以下の場合です:
      </para>
      <para>
       <simplelist>
-       <member>Arithmetic operations</member>
-       <member>Bitwise operations</member>
+       <member>代数演算</member>
+       <member>ビット演算</member>
       </simplelist>
      </para>
      <para>
-      This <constant>E_WARNING</constant> to <classname>TypeError</classname> change also affects the
-      <constant>E_WARNING</constant> "Illegal string offset 'string'" for illegal string offsets. The
-      behavior of explicit casts to int/float from strings has not been changed.
+      この <constant>E_WARNING</constant> から
+      <classname>TypeError</classname> への変更は、
+      不正な文字列オフセットの場合に発生する
+      "Illegal string offset 'string'" という <constant>E_WARNING</constant>
+      にも影響します。
+      文字列から int/float に明示的にキャストする場合の振る舞いは変更されていません
       <!-- RFC: https://wiki.php.net/rfc/saner-numeric-strings -->
      </para>
     </listitem>
     <listitem>
      <para>
-      Magic Methods will now have their arguments and return types checked if they have them declared.
-      The signatures should match the following list:
+      マジックメソッドは引数と戻り値の型を持ち、
+      宣言された場合はチェックが行われるようになりました。
+      シグナチャは次の一覧と一致させるべきです:
      </para>
      <para>
       <simplelist>
@@ -610,16 +651,20 @@ $array["key"];
     </listitem>
     <listitem>
      <para>
-      <function>call_user_func_array</function> array keys will now be interpreted as parameter names,
-      instead of being silently ignored.
+      <function>call_user_func_array</function> 関数に渡される
+      配列のキーは、引数名として解釈されるようになりました。
+      これより前のバージョンでは、静かに無視されていました。
      </para>
     </listitem>
     <listitem>
      <para>
-      Declaring a function called <literal>assert()</literal> inside a namespace is
-      no longer allowed, and issues <constant>E_COMPILE_ERROR</constant>.
-      The <function>assert</function> function is subject to special handling by the engine,
-      which may lead to inconsistent behavior when defining a namespaced function with the same name.
+      名前空間の内部で <literal>assert()</literal> と呼ばれる関数を宣言する
+      ことは許されなくなり、
+      <constant>E_COMPILE_ERROR</constant> が発生するようになりました。
+      <function>assert</function> 関数は
+      PHP エンジンによって特別扱いを受けることになっているので、
+      名前空間の内部で同じ名前が定義されていると、
+      動作が一貫しなくなる原因になるからです。
      </para>
     </listitem>
    </itemizedlist>
@@ -630,154 +675,187 @@ $array["key"];
   <title>リソースからオブジェクトへの移行</title>
 
   <para>
-   Several &resource;s have been migrated to &object;s.
-   Return value checks using <function>is_resource</function> should be replaced with checks for &false;.
+   いくつかの &resource; が、&object; に移行しました。
+   <function>is_resource</function> 関数を使って戻り値をチェックしているコードは、
+   &false; を返すことをチェックするコードに置き換えるべきです。
   </para>
   <itemizedlist>
     <listitem>
      <para>
-      <function>curl_init</function> will now return a <classname>CurlHandle</classname> object rather
-      than a &resource;. The <function>curl_close</function> function no longer has an effect,
-      instead the <classname>CurlHandle</classname> instance is automatically destroyed if it is no
-      longer referenced.
+      <function>curl_init</function> 関数は
+      &resource; ではなく、<classname>CurlHandle</classname>
+      オブジェクトを返すようになりました。
+      <function>curl_close</function> 関数はもはや意味をなしません。
+      <classname>CurlHandle</classname> インスタンスは、
+      参照されなくなった場合に、自動的に破棄されます。
      </para>
     </listitem>
     <listitem>
      <para>
-      <function>curl_multi_init</function> will now return a <classname>CurlMultiHandle</classname>
-      object rather than a &resource;. The <function>curl_multi_close</function> function no
-      longer has an effect, instead the <classname>CurlMultiHandle</classname> instance is
-      automatically destroyed if it is no longer referenced.
+      <function>curl_multi_init</function> 関数は
+      &resource; ではなく、<classname>CurlMultiHandle</classname>
+      オブジェクトを返すようになりました。
+      <function>curl_multi_close</function> 関数はもはや意味をなしません。
+      <classname>CurlMultiHandle</classname> インスタンスは、
+      参照されなくなった場合に、自動的に破棄されます。
      </para>
     </listitem>
     <listitem>
      <para>
-      <function>curl_share_init</function> will now return a <classname>CurlShareHandle</classname>
-      object rather than a &resource;. The <function>curl_share_close</function> function no
-      longer has an effect, instead the <classname>CurlShareHandle</classname> instance is
-      automatically destroyed if it is no longer referenced.
+      <function>curl_share_init</function> 関数は
+      &resource; ではなく、<classname>CurlShareHandle</classname>
+      オブジェクトを返すようになりました。
+      <function>curl_share_close</function> 関数はもはや意味をなしません。
+      <classname>CurlShareHandle</classname> インスタンスは、
+      参照されなくなった場合に、自動的に破棄されます。
      </para>
     </listitem>
    <listitem>
     <para>
-     <function>enchant_broker_init</function> will now return an <classname>EnchantBroker</classname>
-     object rather than a &resource;.
+     <function>enchant_broker_init</function> 関数は
+     &resource; ではなく、<classname>EnchantBroker</classname>
+     オブジェクトを返すようになりました。
     </para>
    </listitem>
    <listitem>
     <para>
-     <function>enchant_broker_request_dict</function> and
-     <function>enchant_broker_request_pwl_dict</function> will now return an
-     <classname>EnchantDictionary</classname> object rather than a &resource;.
+     <function>enchant_broker_request_dict</function> と
+     <function>enchant_broker_request_pwl_dict</function> 関数は
+     &resource; ではなく、<classname>EnchantDictionary</classname> 
+     オブジェクトを返すようになりました。
     </para>
    </listitem>
    <listitem>
     <para>
-     The GD extension now uses <classname>GdImage</classname> objects as the underlying data structure
-     for images, rather than &resource;s.
-     The <function>imagedestroy</function> function no longer has an effect; instead the
-     <classname>GdImage</classname> instance is automatically destroyed if it is no longer referenced.
+     GD 拡張機能は 画像の基本的なデータ構造として
+     &resource; ではなく、<classname>GdImage</classname> 
+     オブジェクトを使うようになりました。
+     <function>imagedestroy</function> 関数はもはや意味をなしません。
+     <classname>GdImage</classname> インスタンスは、
+     参照されなくなった場合に、自動的に破棄されます。
     </para>
    </listitem>
    <listitem>
     <para>
-     <function>openssl_x509_read</function> and <function>openssl_csr_sign</function> will now return
-     an <classname>OpenSSLCertificate</classname> object rather than a &resource;.
-     The <function>openssl_x509_free</function> function is deprecated and no longer has an effect,
-     instead the <classname>OpenSSLCertificate</classname> instance is automatically destroyed if it
-     is no longer referenced.
+     <function>openssl_x509_read</function> と
+     <function>openssl_csr_sign</function> 関数は
+     &resource; ではなく、<classname>OpenSSLCertificate</classname> 
+     オブジェクトを返すようになりました。
+     <function>openssl_x509_free</function> 関数は非推奨となり、
+     もはや意味をなしません。
+     <classname>OpenSSLCertificate</classname> インスタンスは、
+     参照されなくなった場合に、自動的に破棄されます。
     </para>
    </listitem>
    <listitem>
     <para>
-     <function>openssl_csr_new</function> will now return an
-     <classname>OpenSSLCertificateSigningRequest</classname> object rather than a &resource;.
+     <function>openssl_csr_new</function> 関数は
+     &resource; ではなく、<classname>OpenSSLCertificateSigningRequest</classname> 
+     オブジェクトを返すようになりました。
     </para>
    </listitem>
    <listitem>
     <para>
-     <function>openssl_pkey_new</function> will now return an
-     <classname>OpenSSLAsymmetricKey</classname> object rather than a &resource;.
-     The <function>openssl_pkey_free</function> function is deprecated and no longer has an effect,
-     instead the <classname>OpenSSLAsymmetricKey</classname> instance is automatically destroyed if it
-     is no longer referenced.
+     <function>openssl_pkey_new</function> 関数は
+     &resource; ではなく、<classname>OpenSSLAsymmetricKey</classname> 
+     オブジェクトを返すようになりました。
+     <function>openssl_pkey_free</function> 関数は非推奨となり、
+     もはや意味をなしません。
+     <classname>OpenSSLAsymmetricKey</classname> インスタンスは、
+     参照されなくなった場合に、自動的に破棄されます。
     </para>
    </listitem>
    <listitem>
      <para>
-      <function>shmop_open</function> will now return a <classname>Shmop</classname> object rather than
-      a &resource;. The <function>shmop_close</function> function no longer has an effect, and is
-      deprecated; instead the <classname>Shmop</classname> instance is automatically destroyed if it is
-      no longer referenced.
+      <function>shmop_open</function> 関数は
+      &resource; ではなく、<classname>Shmop</classname> 
+      オブジェクトを返すようになりました。
+      <function>shmop_close</function> 関数は非推奨となり、
+      もはや意味をなしません。
+      <classname>Shmop</classname> インスタンスは、
+      参照されなくなった場合に、自動的に破棄されます。
      </para>
     </listitem>
    <listitem>
     <para>
      <function>socket_create</function>, <function>socket_create_listen</function>,
      <function>socket_accept</function>, <function>socket_import_stream</function>,
-     <function>socket_addrinfo_connect</function>, <function>socket_addrinfo_bind</function>, and
-     <function>socket_wsaprotocol_info_import</function> will now return a
-     <classname>Socket</classname> object rather than a &resource;.
-     <function>socket_addrinfo_lookup</function> will now return an array of
-     <classname>AddressInfo</classname> objects rather than &resource;s.
+     <function>socket_addrinfo_connect</function>, <function>socket_addrinfo_bind</function>,
+     <function>socket_wsaprotocol_info_import</function> 関数は
+     &resource; ではなく、<classname>Socket</classname> 
+     オブジェクトを返すようになりました。
+     <function>socket_addrinfo_lookup</function> 関数は
+     &resource; ではなく、<classname>AddressInfo</classname> 
+     オブジェクトを返すようになりました。
     </para>
    </listitem>
    <listitem>
     <para>
-     <function>msg_get_queue</function> will now return an <classname>SysvMessageQueue</classname>
-     object rather than a &resource;.
+     <function>msg_get_queue</function> 関数は
+     &resource; ではなく、<classname>SysvMessageQueue</classname> 
+     オブジェクトを返すようになりました。
     </para>
    </listitem>
    <listitem>
     <para>
-     <function>sem_get</function> will now return an <classname>SysvSemaphore</classname> object
-     rather than a &resource;.
+     <function>sem_get</function> 関数は
+     &resource; ではなく、<classname>SysvSemaphore</classname> 
+     オブジェクトを返すようになりました。
     </para>
    </listitem>
    <listitem>
     <para>
-     <function>shm_attach</function> will now return an <classname>SysvSharedMemory</classname> object
-     rather than a &resource;.
+     <function>shm_attach</function> 関数は
+     &resource; ではなく、<classname>SysvSharedMemory</classname> 
+     オブジェクトを返すようになりました。
     </para>
    </listitem>
    <listitem>
     <para>
-     <function>xml_parser_create</function> and <function>xml_parser_create_ns</function> will now
-     return an <classname>XmlParser</classname> object rather than a &resource;. The
-     <function>xml_parser_free</function> function no longer has an effect, instead the XmlParser
-     instance is automatically destroyed if it is no longer referenced.
+     <function>xml_parser_create</function> と
+     <function>xml_parser_create_ns</function> 関数は
+     &resource; ではなく、<classname>XmlParser</classname> 
+     オブジェクトを返すようになりました。
+     <function>xml_parser_free</function> 関数はもはや意味をなしません。
+     XmlParser インスタンスは、
+     参照されなくなった場合に、自動的に破棄されます。
     </para>
    </listitem>
    <listitem>
     <para>
-     The <link linkend="ref.xmlwriter">XMLWriter functions</link> now accept and return, respectively,
-     <classname>XMLWriter</classname> objects instead of &resource;s.
+     <link linkend="ref.xmlwriter">XMLWriter 関数</link> は
+     &resource; ではなく、<classname>XMLWriter</classname>
+     オブジェクトを受け入れ、返すようになりました。
     </para>
    </listitem>
    <listitem>
     <para>
-     <function>inflate_init</function> will now return an <classname>InflateContext</classname> object
-     rather than a &resource;.
+     <function>inflate_init</function> 関数は
+     &resource; ではなく、<classname>InflateContext</classname> 
+     オブジェクトを返すようになりました。
     </para>
    </listitem>
    <listitem>
     <para>
-     <function>deflate_init</function> will now return a <classname>DeflateContext</classname> object
-     rather than a &resource;.
+     <function>deflate_init</function> 関数は
+     &resource; ではなく、<classname>DeflateContext</classname> 
+     オブジェクトを返すようになりました。
     </para>
    </listitem>
   </itemizedlist>
  </sect2>
 
  <sect2 xml:id="migration80.incompatible.com">
-  <title>COM and .Net (Windows)</title>
+  <title>COM および .Net (Windows)</title>
 
   <para>
-   The ability to import case-insensitive constants from type libraries has been removed.
-   The second argument to <function>com_load_typelib</function> may no longer be false;
-   <link linkend="ini.com.autoregister-casesensitive">com.autoregister_casesensitive</link>
-   may no longer be disabled; case-insensitive markers in
-   <link linkend="ini.com.typelib-file">com.typelib_file</link> are ignored.
+   タイプライブラリ から
+   大文字小文字を区別せずに定数をインポートする機能は削除されました。
+   <function>com_load_typelib</function> 関数の第二引数は
+   もはや &false; ではありません。
+   <link linkend="ini.com.autoregister-casesensitive">com.autoregister_casesensitive</link> はもはや無効ではなくなりました。
+   つまり、<link linkend="ini.com.typelib-file">com.typelib_file</link>
+   の #case_insensitive マーカーは無視されます。
   </para>
  </sect2>
 
@@ -785,18 +863,23 @@ $array["key"];
   <title>CURL</title>
 
   <para>
-   <constant>CURLOPT_POSTFIELDS</constant> no longer accepts objects as arrays. To
-   interpret an object as an array, perform an explicit <code>(array)</code> cast. The
-   same applies to other options accepting arrays as well.
+   <constant>CURLOPT_POSTFIELDS</constant> は、
+   オブジェクトを配列として受け入れなくなりました。
+   オブジェクトを配列として解釈させるためには、
+   明示的に <code>(array)</code> キャストを行って下さい。
+   配列を受け入れる他のオプションにも、同じことが当てはまります。
   </para>
  </sect2>
 
  <sect2 xml:id="migration80.incompatible.datetime">
-  <title>Date and Time</title>
+  <title>日付と時刻</title>
 
   <para>
-   <function>mktime</function> and <function>gmmktime</function> now require at least one
-   argument. <function>time</function> can be used to get the current timestamp.
+   <function>mktime</function> と
+   <function>gmmktime</function> 関数は
+   少なくともひとつ引数が必要になりました。
+   現在のタイムスタンプを取得する用途には
+   <function>time</function> 関数が使えます。
   </para>
  </sect2>
 
@@ -804,9 +887,9 @@ $array["key"];
   <title>DOM</title>
 
   <para>
-   Unimplemented classes from the DOM extension that had no behavior and contained test
-   data have been removed. These classes have also been removed in the latest version of
-   the DOM standard:
+   DOM 拡張機能で実装されておらず、振る舞いも持たず、
+   テストデータもないクラスが削除されました。
+   これらのクラスは、最新のDOM標準からも削除されています:
   </para>
   <para>
    <simplelist>
@@ -829,8 +912,10 @@ $array["key"];
   <itemizedlist>
    <listitem>
     <para>
-     <function>enchant_broker_list_dicts</function>, <function>enchant_broker_describe</function> and
-     <function>enchant_dict_suggest</function> will now return an empty array instead of &null;.
+     <function>enchant_broker_list_dicts</function>,
+     <function>enchant_broker_describe</function>,
+     <function>enchant_dict_suggest</function> 関数は、
+     &null; ではなく、空の配列を返すようになりました。
     </para>
    </listitem>
   </itemizedlist>
@@ -840,28 +925,30 @@ $array["key"];
   <title>Exif</title>
 
   <para>
-   <function>read_exif_data</function> has been removed; <function>exif_read_data</function>
-   should be used instead.
+   <function>read_exif_data</function> 関数は削除されました。
+   <function>exif_read_data</function> 関数を代わりに使うべきです。
   </para>
  </sect2>
 
  <sect2 xml:id="migration80.incompatible.filter">
-  <title>Filter</title>
+  <title>フィルタ</title>
 
   <itemizedlist>
    <listitem>
     <para>
-     The <constant>FILTER_FLAG_SCHEME_REQUIRED</constant> and
-     <constant>FILTER_FLAG_HOST_REQUIRED</constant> flags for the
-     <constant>FILTER_VALIDATE_URL</constant> filter have been removed. The <literal>scheme</literal>
-     and <literal>host</literal> are (and have been) always required.
+     <constant>FILTER_VALIDATE_URL</constant>  フラグのための定数
+     <constant>FILTER_FLAG_SCHEME_REQUIRED</constant> と
+     <constant>FILTER_FLAG_HOST_REQUIRED</constant> が削除されました。
+     <literal>scheme</literal>
+     と <literal>host</literal> は（かつてもそうでしたが) 常に必須です。
     </para>
    </listitem>
    <listitem>
     <para>
-     The <constant>INPUT_REQUEST</constant> and <constant>INPUT_SESSION</constant> source for
-     <function>filter_input</function> etc. have been removed. These were never implemented and their
-     use always generated a warning.
+     <function>filter_input</function> 関数などで使われている定数
+     <constant>INPUT_REQUEST</constant> と <constant>INPUT_SESSION</constant>
+     は削除されました。
+     これらは実装されたことがなく、使うと常に警告が発生していました。
     </para> 
    </listitem>
   </itemizedlist>
@@ -873,21 +960,24 @@ $array["key"];
   <itemizedlist>
    <listitem>
     <para>
-     The deprecated functions <function>image2wbmp</function> has been removed.
+     推奨されなくなっていた <function>image2wbmp</function> 関数は削除されました。 
      <!-- RFC: https://wiki.php.net/rfc/image2wbmp -->
     </para>
    </listitem>
    <listitem>
     <para>
-     The deprecated functions <function>png2wbmp</function> and <function>jpeg2wbmp</function> have
-     been removed.
+     推奨されなくなっていた関数
+     <function>png2wbmp</function> と <function>jpeg2wbmp</function>
+     が削除されました。
      <!-- RFC: https://wiki.php.net/rfc/deprecate-png-jpeg-2wbmp -->
     </para>
    </listitem>
    <listitem>
     <para>
-     The default <parameter>mode</parameter> parameter of <function>imagecropauto</function> no longer
-     accepts <literal>-1</literal>. <constant>IMG_CROP_DEFAULT</constant> should be used instead.
+     <function>imagecropauto</function> 関数の
+     <parameter>mode</parameter> 引数のデフォルトは
+     <literal>-1</literal> ではなくなりました。
+     <constant>IMG_CROP_DEFAULT</constant> を代わりに使うべきです。
     </para>
    </listitem>
    <listitem>
@@ -902,8 +992,9 @@ $array["key"];
   <title>GMP</title>
 
   <para>
-   <function>gmp_random</function> has been removed. One of <function>gmp_random_range</function> or
-   <function>gmp_random_bits</function> should be used instead.
+   <function>gmp_random</function> 関数は削除されました。
+   <function>gmp_random_range</function> や
+   <function>gmp_random_bits</function> 関数を代わりに使うべきです。
   </para>
  </sect2>
 
@@ -911,8 +1002,9 @@ $array["key"];
   <title>Iconv</title>
 
   <para>
-   iconv implementations which do not properly set <varname>errno</varname> in case of errors are no
-   longer supported.
+   エラーが発生した時に
+   <varname>errno</varname> を適切に設定していなかった
+   iconv の実装はもはやサポートされなくなりました。
   </para>
  </sect2>
 
@@ -922,32 +1014,34 @@ $array["key"];
   <itemizedlist>
    <listitem>
     <para>
-     The unused <parameter>default_host</parameter> argument of <function>imap_headerinfo</function>
-     has been removed.
+     <function>imap_headerinfo</function> 関数で
+     未使用になっていた <parameter>default_host</parameter> 引数が削除されました。
     </para>
    </listitem>
    <listitem>
     <para>
-     The <function>imap_header</function> function which is an alias of
-     <function>imap_headerinfo</function> has been removed.
+     <function>imap_headerinfo</function> 関数のエイリアスだった
+     <function>imap_header</function> 関数は削除されました。
     </para>
    </listitem>
   </itemizedlist>
  </sect2>
 
  <sect2 xml:id="migration80.incompatible.intl">
-  <title>Internationalization Functions</title>
+  <title>国際化関数</title>
 
   <itemizedlist>
    <listitem>
     <para>
-     The deprecated constant <constant>INTL_IDNA_VARIANT_2003</constant> has been removed.
+     推奨されなくなっていた定数
+     <constant>INTL_IDNA_VARIANT_2003</constant> が削除されました。
      <!-- RFC: https://wiki.php.net/rfc/deprecate-and-remove-intl_idna_variant_2003 -->
     </para>
    </listitem>
    <listitem>
    <para>
-    The deprecated <constant>Normalizer::NONE</constant> constant has been removed.
+    推奨されなくなっていた定数
+    <constant>Normalizer::NONE</constant> が削除されました。
    </para>
    </listitem>
   </itemizedlist>
@@ -959,44 +1053,50 @@ $array["key"];
   <itemizedlist>
    <listitem>
    <para>
-    The deprecated functions <function>ldap_sort</function>,
-    <function>ldap_control_paged_result</function> and
-    <function>ldap_control_paged_result_response</function> have been removed.
+    推奨されなくなっていた関数
+    <function>ldap_sort</function>,
+    <function>ldap_control_paged_result</function>,
+    <function>ldap_control_paged_result_response</function> は削除されました。
    </para>
   </listitem>
   <listitem>
    <para>
-    The interface of <function>ldap_set_rebind_proc</function> has changed; the
-    <parameter>callback</parameter> parameter does not accept empty strings anymore; &null; should be
-    used instead.
+    <function>ldap_set_rebind_proc</function> のインターフェイスが変更されました。
+    <parameter>callback</parameter> 引数は空文字列を受け入れなくなりました。
+    &null; を代わりに使うべきです。
    </para>
    </listitem>
   </itemizedlist>
  </sect2>
 
  <sect2 xml:id="migration80.incompatible.mbstring">
-  <title>MBString</title>
+  <title>マルチバイト文字列</title>
 
   <itemizedlist>
    <listitem>
     <para>
-     The <link linkend="ini.mbstring.func-overload">mbstring.func_overload</link> directive has been
-     removed. The related <constant>MB_OVERLOAD_MAIL</constant>,
-     <constant>MB_OVERLOAD_STRING</constant>, and <constant>MB_OVERLOAD_REGEX</constant> constants
-     have also been removed. Finally, the <literal>"func_overload"</literal> and
-     <literal>"func_overload_list"</literal> entries in <function>mb_get_info</function> have been
-     removed.
+     INI ディレクティブ
+     <link linkend="ini.mbstring.func-overload">mbstring.func_overload</link>
+     は削除されました。
+     関連する定数
+     <constant>MB_OVERLOAD_MAIL</constant>,
+     <constant>MB_OVERLOAD_STRING</constant>,
+     <constant>MB_OVERLOAD_REGEX</constant> も削除されています。
+     <function>mb_get_info</function> 関数の
+     <literal>"func_overload"</literal> と
+     <literal>"func_overload_list"</literal> エントリも削除されています。
     </para>
    </listitem>
    <listitem>
     <para>
-     <function>mb_parse_str</function> can no longer be used without specifying a result array.
+     <function>mb_parse_str</function> は、
+     結果の配列を指定しないと使えなくなりました。
     </para>
    </listitem>
    <listitem>
     <para>
-     A number of deprecated mbregex aliases have been removed. See the following
-     list for which functions should be used instead:
+     たくさんの mbregex の関数エイリアスが削除されました。
+     どの関数を代わりに使うべきなのかは、以下の一覧を参照して下さい:
     </para>
     <para>
      <simplelist>
@@ -1019,53 +1119,65 @@ $array["key"];
    </listitem>
    <listitem>
     <para>
-     The <literal>e</literal> modifier for <function>mb_ereg_replace</function> has been removed.
-     <function>mb_ereg_replace_callback</function> should be used instead.
+     <function>mb_ereg_replace</function> 関数の
+     <literal>e</literal> 修正子が削除されました。
+     <function>mb_ereg_replace_callback</function> 関数を代わりに使って下さい。
     </para>
    </listitem>
    <listitem>
     <para>
-     A non-string pattern argument to <function>mb_ereg_replace</function> will now be interpreted as
-     a string instead of an ASCII codepoint. The previous behavior may be restored with an explicit
-     call to <function>chr</function>.
+     <function>mb_ereg_replace</function> 関数に文字列でないパターン引数を渡すと、
+     ASCII コードポイントではなく、文字列として解釈されるようになりました。
+     以前のバージョンの振る舞いは、
+     明示的に <function>chr</function> 関数を呼び出すことで復元できます。
     </para>
    </listitem>
    <listitem>
     <para>
-     The <parameter>needle</parameter> argument for <function>mb_strpos</function>,
+     <function>mb_strpos</function>,
      <function>mb_strrpos</function>, <function>mb_stripos</function>,
      <function>mb_strripos</function>, <function>mb_strstr</function>,
-     <function>mb_stristr</function>, <function>mb_strrchr</function> and
-     <function>mb_strrichr</function> can now be empty.
+     <function>mb_stristr</function>, <function>mb_strrchr</function>,
+     <function>mb_strrichr</function> 関数の
+     <parameter>needle</parameter> 引数は、空に出来るようになりました。
     </para>
    </listitem>
    <listitem>
     <para>
-     The <parameter>is_hex</parameter> parameter, which was not used internally, has been removed from
-     <function>mb_decode_numericentity</function>.
+     <function>mb_decode_numericentity</function>
+     関数で内部的に使われていなかった
+     引数 <parameter>is_hex</parameter> は削除されました。
     </para>
    </listitem>
    <listitem>
     <para>
-     The legacy behavior of passing the encoding as the third argument instead of an offset for the
-     <function>mb_strrpos</function> function has been removed; an explicit <literal>0</literal>
-     offset with the encoding should be provided as the fourth argument instead.
+     <function>mb_strrpos</function> 関数の第三引数に、
+     オフセットではなくエンコーディングを渡していた古い振る舞いは削除されました。
+     明示的にオフセットに
+     <literal>0</literal> を渡し、
+     第四引数にエンコーディングを渡す方法を代わりに使うべきです。
     </para>
    </listitem>
    <listitem>
     <para>
-     The <literal>ISO_8859-*</literal> character encoding aliases have been replaced by
-     <literal>ISO8859-*</literal> aliases for better interoperability with the iconv extension. The
-     mbregex ISO 8859 aliases with underscores (<literal>ISO_8859_*</literal> and
-     <literal>ISO8859_*</literal>) have also been removed.
+     文字エンコーディング <literal>ISO_8859-*</literal> のエイリアスは
+     <literal>ISO8859-*</literal> に置き換えられました。
+     これは、iconv 拡張機能と相互運用性を向上させるためです。
+     アンダースコア付きの mbregex の ISO 8859 aliases
+     (<literal>ISO_8859_*</literal> と <literal>ISO8859_*</literal>)
+     も削除されています。
     </para>
    </listitem>
    <listitem>
     <para>
-     <function>mb_ereg</function> and <function>mb_eregi</function> will now return boolean &true; on
-     a successfuly match. Previously they returned integer <literal>1</literal> if
-     <parameter>matches</parameter> was not passed, or <code>max(1, strlen($matches[0]))</code> if
-     <parameter>matches</parameter> was passed.
+     <function>mb_ereg</function> と
+     <function>mb_eregi</function> 関数は、
+     マッチに成功した場合に &true;  を返すようになりました。
+     これより前のバージョンでは、
+     <parameter>matches</parameter> が渡されなかった場合に
+     整数 <literal>1</literal> が返されていました。
+     <parameter>matches</parameter> が渡された場合には
+     <code>max(1, strlen($matches[0]))</code> が返されていました。
     </para>
    </listitem>
   </itemizedlist>
@@ -1077,20 +1189,23 @@ $array["key"];
   <itemizedlist>
    <listitem>
     <para>
-     The <classname>OCI-Lob</classname> class is now called <classname>OCILob</classname>, and the
-     <classname>OCI-Collection</classname> class is now called <classname>OCICollection</classname>
-     for name compliance enforced by PHP 8 arginfo type annotation tooling.
+     <classname>OCI-Lob</classname> クラスは
+     <classname>OCILob</classname> と呼ばれるようになり、
+     <classname>OCI-Collection</classname> クラスは
+     <classname>OCICollection</classname> と呼ばれるようになりました。
+     これは、PHP 8 の arginfo 型アノテーションツールの
+     名前に関する規約で強制されたものです。
     </para>
    </listitem>
    <listitem>
     <para>
-     Several alias functions have been marked as deprecated.
+     いくつかの関数エイリアスが推奨されなくなりました。
     </para>
    </listitem>
    <listitem>
     <para>
-     <function>oci_internal_debug</function> and its alias <function>ociinternaldebug</function> have
-     been removed.
+     <function>oci_internal_debug</function> 関数と
+     そのエイリアス <function>ociinternaldebug</function> は削除されました。
     </para>
    </listitem>
   </itemizedlist>
@@ -1102,13 +1217,14 @@ $array["key"];
   <itemizedlist>
    <listitem>
     <para>
-     <function>odbc_connect</function> no longer reuses connections.
+     <function>odbc_connect</function> 関数は
+     接続を使い回さなくなりました。
     </para>
    </listitem>
    <listitem>
     <para>
-     The unused <parameter>flags</parameter> parameter of <function>odbc_exec</function> has been
-     removed.
+     <function>odbc_exec</function> 関数で使われていなかった
+     <parameter>flags</parameter> 引数が削除されました。
     </para>
    </listitem>
   </itemizedlist>
@@ -1134,8 +1250,10 @@ $array["key"];
   <title>正規表現 (Perl互換)</title>
 
   <para>
-   When passing invalid escape sequences they are no longer interpreted as literals. This behavior
-   previously required the <literal>X</literal> modifier – which is now ignored.
+   不正なエスケープシーケンスを渡した場合、
+   もはやリテラルと解釈されなくなりました。
+   リテラルと解釈する振る舞いは <literal>X</literal> 修正子で必須でしたが、
+   無視されるようになっています。
   </para>
  </sect2>
 
@@ -1180,21 +1298,25 @@ $array["key"];
   <itemizedlist>
    <listitem>
     <para>
-     The deprecated <function>pg_connect</function> syntax using multiple parameters instead of a
-     connection string is no longer supported.
+     <function>pg_connect</function> 関数で
+     推奨されなくなっていた、
+     接続文字列の代わりに複数の引数を受け入れる文法は
+     もはやサポートされなくなりました。
     </para>
    </listitem>
    <listitem>
     <para>
-     The deprecated <function>pg_lo_import</function> and <function>pg_lo_export</function> signature
-     that passes the connection as the last argument is no longer supported. The connection should be
-     passed as first argument instead.
+     推奨されなくなっていた
+     <function>pg_lo_import</function> と
+     <function>pg_lo_export</function> 関数の、
+     最後の引数で接続を渡すシグナチャはサポートされなくなりました。
+     代わりに、接続は最初の引数で渡すべきです。
     </para>
    </listitem>
    <listitem>
     <para>
-     <function>pg_fetch_all</function> will now return an empty array instead of &false; for result
-     sets with zero rows.
+     <function>pg_fetch_all</function> 関数
+     は 結果セットの行が0行の場合に、&false; ではなくからの配列を返すようになりました。
     </para>
    </listitem>
   </itemizedlist>
@@ -1309,8 +1431,10 @@ $array["key"];
    </listitem>
    <listitem>
     <para>
-     <methodname>SplHeap::compare</methodname> now specifies a method signature. Inheriting classes
-     implementing this method will now have to use a compatible method signature.
+     <methodname>SplHeap::compare</methodname> 
+     はメソッドシグナチャを指定するようになりました。
+     このメソッドを実装する継承先のクラスは、
+     互換性のあるメソッドシグナチャを持たなければなりません。
     </para>
    </listitem>
    <listitem>
@@ -1331,16 +1455,25 @@ $array["key"];
    </listitem>
    <listitem>
     <para>
-     <classname>SplFixedArray</classname> is now an <interfacename>IteratorAggregate</interfacename>
-     and not an <interfacename>Iterator</interfacename>.
-     <methodname>SplFixedArray::rewind</methodname>, <methodname>SplFixedArray::current</methodname>,
-     <methodname>SplFixedArray::key</methodname>, <methodname>SplFixedArray::next</methodname>, and
-     <methodname>SplFixedArray::valid</methodname> have been removed. In their place,
-     <methodname>SplFixedArray::getIterator</methodname> has been added. Any code which uses explicit
-     iteration over SplFixedArray must now obtain an
-     <interfacename>Iterator</interfacename> through
-     <methodname>SplFixedArray::getIterator</methodname>. This means that
-     <classname>SplFixedArray</classname> is now safe to use in nested loops.
+     <classname>SplFixedArray</classname> クラスは
+     <interfacename>Iterator</interfacename> ではなく
+     <interfacename>IteratorAggregate</interfacename> を実装しました。
+
+     <methodname>SplFixedArray::rewind</methodname>,
+     <methodname>SplFixedArray::current</methodname>,
+     <methodname>SplFixedArray::key</methodname>,
+     <methodname>SplFixedArray::next</methodname>,
+     <methodname>SplFixedArray::valid</methodname> は削除されました。
+
+     代わりとして、<methodname>SplFixedArray::getIterator</methodname>
+     が追加されました。
+
+     SplFixedArray を通じて明示的にイテレーションを行うあらゆるコードは、
+     <methodname>SplFixedArray::getIterator</methodname> メソッドを使い
+     <interfacename>Iterator</interfacename> を取得しなければなりません。
+
+     これは、<classname>SplFixedArray</classname>
+     がネストされたループ中で安全に使えるようになったということです。
     </para>
    </listitem>
   </itemizedlist>
@@ -1352,12 +1485,16 @@ $array["key"];
   <itemizedlist>
    <listitem>
     <para>
-     <function>assert</function> will no longer evaluate string arguments, instead they will be
-     treated like any other argument. <code>assert($a == $b)</code> should be used instead of
-     <code>assert('$a == $b')</code>. The <link
-     linkend="ini.assert.quiet-eval">assert.quiet_eval</link> ini directive and the
-     <constant>ASSERT_QUIET_EVAL</constant> constant have also been removed, as they would no longer
-     have any effect.
+     <function>assert</function> 関数は
+     文字列の引数を評価しなくなりました。
+     代わりに、他の引数と同じように扱われます。
+     <code>assert('$a == $b')</code> ではなく
+     <code>assert($a == $b)</code> を使うべきです。
+
+     INI ディレクティブ <link
+     linkend="ini.assert.quiet-eval">assert.quiet_eval</link> と
+     定数 <constant>ASSERT_QUIET_EVAL</constant> も削除されました。
+     なぜなら、もはや何の効果も無いからです。
     </para>
    </listitem>
    <listitem>
@@ -1373,50 +1510,71 @@ $array["key"];
    </listitem>
    <listitem>
     <para>
-     The <parameter>needle</parameter> argument of <function>strpos</function>,
-     <function>strrpos</function>, <function>stripos</function>, <function>strripos</function>,
-     <function>strstr</function>, <function>strchr</function>, <function>strrchr</function>, and
-     <function>stristr</function> will now always be interpreted as a string. Previously non-string
-     needles were interpreted as an ASCII code point. An explicit call to <function>chr</function> can
-     be used to restore the previous behavior.
+     <function>strpos</function>,
+     <function>strrpos</function>,
+     <function>stripos</function>,
+     <function>strripos</function>,
+     <function>strstr</function>,
+     <function>strchr</function>,
+     <function>strrchr</function>,
+     <function>stristr</function> 関数の
+     <parameter>needle</parameter>
+     引数は常に文字列として解釈されるようになりました。
+     これより前のバージョンでは、
+     文字列でない引数は ASCII コードポイントと解釈されていました。
+     <function>chr</function> 関数を明示的に呼ぶことで、
+     以前の振る舞いを復元できます。
     </para>
    </listitem>
    <listitem>
     <para>
-     The <parameter>needle</parameter> argument for <function>strpos</function>,
-     <function>strrpos</function>, <function>stripos</function>, <function>strripos</function>,
-     <function>strstr</function>, <function>stristr</function> and <function>strrchr</function> can
-     now be empty.
+     <function>strpos</function>,
+     <function>strrpos</function>,
+     <function>stripos</function>,
+     <function>strripos</function>,
+     <function>strstr</function>,
+     <function>stristr</function>,
+     <function>strrchr</function> 関数の
+     <parameter>needle</parameter> 引数は、空に出来るようになりました。
     </para>
    </listitem>
    <listitem>
     <para>
-     The <parameter>length</parameter> argument for <function>substr</function>,
-     <function>substr_count</function>, <function>substr_compare</function>, and
-     <function>iconv_substr</function> can now be &null;. &null; values will behave as if no length
-     argument was provided and will therefore return the remainder of the string instead of an empty
-     string.
+     <function>substr</function>,
+     <function>substr_count</function>,
+     <function>substr_compare</function>,
+     <function>iconv_substr</function> 関数の
+     <parameter>length</parameter> 引数は &null; も指定できるようになりました。
+     &null; を指定した場合、
+     length 引数が指定されなかったことと同じように振る舞います。
+     よって、この場合、空文字列ではなく、残りの文字列を返します。
     </para>
    </listitem>
    <listitem>
     <para>
-     The <parameter>length</parameter> argument for <function>array_splice</function> can now be
-     &null;. &null; values will behave identically to omitting the argument, thus removing everything
-     from the <parameter>offset</parameter> to the end of the array.
+     <function>array_splice</function> 関数の
+     <parameter>length</parameter> 引数は &null; も指定できるようになりました。
+     &null; を指定した場合、引数を省略した場合と同じ振る舞いをします。
+     よって、<parameter>offset</parameter>
+     から配列の最後までの全ての要素を削除する動きになります。
     </para>
    </listitem>
    <listitem>
     <para>
-     The <parameter>args</parameter> argument of <function>vsprintf</function>,
-     <function>vfprintf</function>, and <function>vprintf</function> must now be an array. Previously
-     any type was accepted.
+     <function>vsprintf</function>,
+     <function>vfprintf</function>,
+     <function>vprintf</function> 関数の
+     <parameter>args</parameter> 引数は、配列であることが必須になりました。
+     これより前のバージョンでは、あらゆる型の値を受け入れていました。
     </para>
    </listitem>
    <listitem>
     <para>
-     The <literal>'salt'</literal> option of <function>password_hash</function> is no longer
-     supported. If the <literal>'salt'</literal> option is used a warning is generated, the provided
-     salt is ignored, and a generated salt is used instead.
+     <function>password_hash</function> 関数の
+     <literal>'salt'</literal> オプションはサポートされなくなりました。
+     <literal>'salt'</literal> オプションを使うと警告が生成され、
+     指定された salt は無視されます。
+     そして生成された salt が代わりに使われます。
     </para>
    </listitem>
    <listitem>
@@ -1471,41 +1629,58 @@ $array["key"];
    </listitem>
    <listitem>
     <para>
-     <function>var_dump</function> and <function>debug_zval_dump</function> will now print
-     floating-point numbers using <link linkend="ini.serialize-precision">serialize_precision</link>
-     rather than <link linkend="ini.precision">precision</link>. In a default configuration, this
-     means that floating-point numbers are now printed with full accuracy by these debugging
-     functions.
+     <function>var_dump</function> と
+     <function>debug_zval_dump</function> 関数は
+     INIディレクティブ <link linkend="ini.precision">precision</link>
+     ではなく
+     <link linkend="ini.serialize-precision">serialize_precision</link>
+     を使って浮動小数点を印字するようになりました。
+     デフォルトの設定では、浮動小数点はこのデバッグ関数によって
+     全精度で印字されるようになるということです。
     </para>
    </listitem>
    <listitem>
     <para>
-     If the array returned by <link linkend="object.sleep">__sleep()</link> contains non-existing
-     properties, these are now silently ignored. Previously, such properties would have been
-     serialized as if they had the value &null;.
+     <link linkend="object.sleep">__sleep()</link> が返す
+     配列に存在しないプロパティが含まれていた場合、
+     静かに無視されるようになりました。
+     これより前のバージョンでは、
+     そうしたプロパティは値 &null; を持つかのようにシリアライズされていました。 
     </para>
    </listitem>
    <listitem>
     <para>
-     The default locale on startup is now always <literal>"C"</literal>. No locales are inherited from
-     the environment by default. Previously, <constant>LC_ALL</constant> was set to
-     <literal>"C"</literal>, while <constant>LC_CTYPE</constant> was inherited from the environment.
-     However, some functions did not respect the inherited locale without an explicit
-     <function>setlocale</function> call. An explicit <function>setlocale</function> call is now
-     always required if a locale component should be changed from the default.
+     デフォルトの起動時のロケールは、常に
+     <literal>"C"</literal> になりました。
+     デフォルトでは、どのロケールからも環境を継承しません。
+     これより前のバージョンでは、
+     <constant>LC_ALL</constant> は
+     <literal>"C"</literal> に設定されていましたが、
+     <constant>LC_CTYPE</constant> は環境から情報を継承していました。
+     しかしながら、関数によっては、明示的に
+     <function>setlocale</function> を呼び出さないと
+     継承した環境を尊重しないものもあります。
+     ロケールをデフォルトから変えるためには、
+     <function>setlocale</function> 関数を明示的に呼ぶことが常に必須になりました。
     </para>
    </listitem>
    <listitem>
     <para>
-     The deprecated DES fallback in <function>crypt</function> has been removed. If an unknown salt
-     format is passed to <function>crypt</function>, the function will fail with <literal>*0</literal>
-     instead of falling back to a weak DES hash now.
+     非推奨になっていた
+     <function>crypt</function> 関数が
+     DES にフォールバックする振る舞いが削除されました。
+     不明な salt フォーマットを <function>crypt</function> 関数に渡すと、
+     弱い DES ハッシュにフォールバックするのではなく、
+     <literal>*0</literal> という値になり、失敗するようになります。
     </para>
    </listitem>
    <listitem>
     <para>
-     Specifying out of range rounds for SHA256/SHA512 <function>crypt</function> will now fail with
-     <literal>*0</literal> instead of clamping to the closest limit. This matches glibc behavior.
+     <function>crypt</function> 関数に、
+     SHA256/SHA512 の範囲外の round を指定すると、
+     最も近い境界値に切り詰めるのではなく、
+     <literal>*0</literal> という値になり、失敗するようになりました。
+     これは、glibc の振る舞いと一致します。
     </para>
    </listitem>
    <listitem>
@@ -1515,18 +1690,27 @@ $array["key"];
    </listitem>
    <listitem>
     <para>
-     Any functions accepting callbacks that are not explicitly specified to accept parameters by
-     reference will now warn if a callback with reference parameters is used. Examples include
-     <function>array_filter</function> and <function>array_reduce</function>. This was already the
-     case for most, but not all, functions previously.
+     コールバックを受け入れるあらゆる関数のうち、
+     リファレンスの引数を受け入れるように明示的に指定して「いない」
+     ものに対し、
+     リファレンスを使ったコールバックを渡すと警告が発生するようになりました。
+     例としては、
+     <function>array_filter</function> や
+     <function>array_reduce</function> 関数があります。
+     これらでほとんどの関数の例を示していますが、全てではありません。
     </para>
    </listitem>
    <listitem>
     <para>
-     The HTTP stream wrapper as used by functions like <function>file_get_contents</function>
-     now advertises HTTP/1.1 rather than HTTP/1.0 by default. This does not change the behavior of the
-     client, but may cause servers to respond differently. To retain the old behavior, set the
-     <literal>'protocol_version'</literal> stream context option, e.g.
+     <function>file_get_contents</function> 関数のように、
+     関数が使うHTTPストリームラッパーは、
+     デフォルトで HTTP/1.0 ではなく、
+     HTTP/1.1 を指定するようになりました。
+     これによって、クライアントの振る舞いが変わるわけではありませんが、
+     サーバが異なるレスポンスを返す可能性があります。
+     古い振る舞いをさせるには、
+     以下のようにして <literal>'protocol_version'</literal>
+     ストリームコンテキストオプションを設定して下さい。
     </para>
     <para>
      <programlisting role="php">
@@ -1611,19 +1795,28 @@ echo file_get_contents('http://example.org', false, $ctx);
   <itemizedlist>
    <listitem>
     <para>
-     <literal>T_COMMENT</literal> tokens will no longer include a trailing newline. The newline will
-     instead be part of a following <literal>T_WHITESPACE</literal> token. It should be noted that
-     <literal>T_COMMENT</literal> is not always followed by whitespace, it may also be followed by
-     <literal>T_CLOSE_TAG</literal> or end-of-file.
+     <literal>T_COMMENT</literal> トークンは最後の改行文字を含まなくなりました。
+     改行文字はその後に続く
+     <literal>T_WHITESPACE</literal> トークンに含まれるようになります。
+     注意すべきなのは、
+     <literal>T_COMMENT</literal> の後にホワイトスペースが続くとは限らないことです。
+     <literal>T_CLOSE_TAG</literal> やファイルの終端が続く場合もありえます。
     </para>
    </listitem>
    <listitem>
     <para>
-     Namespaced names are now represented using the <literal>T_NAME_QUALIFIED</literal>
-     (<code>Foo\Bar</code>), <literal>T_NAME_FULLY_QUALIFIED</literal> (<code>\Foo\Bar</code>) and
-     <literal>T_NAME_RELATIVE</literal> (<code>namespace\Foo\Bar</code>) tokens.
-     <literal>T_NS_SEPARATOR</literal> is only used for standalone namespace separators, and only
-     syntactially valid in conjunction with group use declarations.
+     名前空間の中にある名前は、
+     <literal>T_NAME_QUALIFIED</literal>
+     (<code>Foo\Bar</code>),
+     <literal>T_NAME_FULLY_QUALIFIED</literal>
+     (<code>\Foo\Bar</code>),
+     <literal>T_NAME_RELATIVE</literal>
+     (<code>namespace\Foo\Bar</code>) 
+     トークンを使って表現されるようになりました。
+
+     <literal>T_NS_SEPARATOR</literal> トークンは
+     単独の名前空間の区切り文字としてだけ使われます。
+     そして、グループ化されたuse宣言と一緒に使った場合にだけ文法的に合法です。
      <!-- RFC: https://wiki.php.net/rfc/namespaced_names_as_token -->
     </para>
    </listitem>
