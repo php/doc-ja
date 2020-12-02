@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 5fcbcd6b56477034278a2199a8819635f3a0d9b9 Maintainer: satoruyoshida Status: ready -->
+<!-- EN-Revision: 8b3444158bfc5892e6830648d5429d50bf9f8a2a Maintainer: satoruyoshida Status: ready -->
 <!-- CREDITS: hirokawa, shimooka, mumumu -->
 <section xml:id="oci8.installation">
  &reftitle.install;
@@ -11,11 +11,6 @@
  <para>
   OCI8 を構成する前に前述の <link linkend="oci8.requirements">要件</link> 節に
   目を通してください。 
- </para>
- <para>
-  OCI8 エクステンションを有効にするには、オプション
-  <option role="configure">--with-oci8</option>
-  とともに PHP を構成します。
  </para>
  <para>
   Web サーバーを開始する前に、一般的に OCI8 はいくつかの Oracle 環境変数（下記参照）を
@@ -32,10 +27,10 @@
  </para>
 </section>
 <section>
- <title>OCI8 を PECL からインストール</title>
+ <title>OCI8 を PECL から(pecl コマンド経由で) インストールする</title>
  <para xmlns:xlink="http://www.w3.org/1999/xlink">
   OCI8 拡張機能は、
-  <link xlink:href="&url.pecl.package;oci8">PECL</link> を使えば
+  <link xlink:href="&url.pecl.package;oci8">PECL</link> リポジトリを使えば
   既存の PHP のインストールに追加できます。
  </para>
  <para>
@@ -59,7 +54,7 @@ pear config-set http_proxy http://my-proxy.example.com:80/
    </listitem>
    <listitem>
     <para>
-     Run
+     以下を実行します。
     </para>
     <para>
      <informalexample>
@@ -73,25 +68,67 @@ pecl install oci8
     <para>
      PHP 7 以降では、<literal>pecl install oci8-2.2.0</literal> とします。
     </para>
-    <!-- to be translated -->
+   </listitem>
+   <listitem>
     <para>
      プロンプトが出たら、
      <literal>$ORACLE_HOME</literal> または、
      <literal>instantclient,/path/to/instant/client/lib</literal> を入力して下さい。
     </para>
     <para>
-     注意: <literal>$ORACLE_HOME</literal> というテキストそのものを入力しないで下さい。
-     なぜなら展開されないからです。
-     代わりに、Oracle のホームディレクトリの実際のパスを入力するようにして下さい。
+       注意: <literal>$ORACLE_HOME</literal> という値を入力しないで下さい。
+       <literal>pecl</literal> はそれを展開しないからです。
+       代わりに、展開済みのパスを入力するようにして下さい。
+       たとえば、<literal>/opt/oracle/product/19c/dbhome_1</literal>
+       や <literal>instantclient,/Users/myname/Downloads/instantclient_19_8</literal> のようなものです。
+    </para>
+   </listitem>
+   <listitem>
+    <para>
+     <literal>oci8_dtrace_gen.h: No such file or directory</literal> というエラーが発生した場合、
+     PHP が <link linkend="features.dtrace">DTrace</link> を有効にしてビルドされているということです。
+     この場合、以下のようにしてインストールして下さい:
+    </para>
+   <para>
+    <informalexample>
+     <screen>
+<![CDATA[
+$ export PHP_DTRACE=yes
+$ pecl install oci8
+]]>
+     </screen>
+    </informalexample>
+   </para>    
+   </listitem>   
+   <listitem>
+    <para>
+      &php.ini; ファイルを編集し、以下の一行を追加して下さい。
+    </para>
+    <para>
+      <informalexample>
+        <screen>
+          <![CDATA[
+extension=oci8.so
+]]>
+        </screen>
+      </informalexample>
+    </para>
+    <para>
+      &php.ini; のディレクティブ
+      <link linkend="ini.extension-dir">extension_dir</link> が
+      <filename>oci8.so</filename> をインストールしたディレクトリを差しているかを確認して下さい。
     </para>
    </listitem>
   </itemizedlist>
  </para>
- <para>
-  <literal>pecl</literal> コマンドが利用できず、
-  手動インストールを行う場合、
-  PECL OCI8 のパッケージ、たとえば
-  <filename>oci8-3.0.0.tgz</filename> をダウンロードします。
+</section>
+<section>
+ <title>OCI8 を PECL から(phpize 経由で) インストールする</title>
+ <para xmlns:xlink="http://www.w3.org/1999/xlink">
+  <literal>pecl</literal> コマンドが利用できない場合に、
+  OCI8 を既存の PHP のインストールに追加するには、
+  <link xlink:href="&url.pecl.package;oci8">PECL</link> OCI8 パッケージを手動でダウンロードして下さい。
+  たとえば、<filename>oci8-3.0.0.tgz</filename> をダウンロードします。
  </para>
  <para>
   <itemizedlist>
@@ -165,28 +202,47 @@ make install
      </informalexample>
     </para>
    </listitem>
-  </itemizedlist>
- </para>
- <para>
-  自動、または手動インストールの後、&php.ini;
-  を編集し、次の行を追加します:
- </para>
- <para>
-  <informalexample>
-   <screen>
+   <listitem>
+    <para>
+     <literal>oci8_dtrace_gen.h: No such file or directory</literal> というエラーが発生した場合、
+     PHP が <link linkend="features.dtrace">DTrace</link> を有効にしてビルドされているということです。
+     この場合、以下のようにして環境変数を設定してから、
+     <literal>configure</literal> と <literal>make</literal> を再実行して下さい。
+    </para>
+    <para>
+     <informalexample>
+      <screen>
+<![CDATA[
+$ export PHP_DTRACE=yes
+]]>
+     </screen>
+    </informalexample>
+   </para>    
+   </listitem>
+   <listitem>
+    <para>
+      &php.ini; ファイルを編集し、以下の一行を追加して下さい。
+    </para>
+    <para>
+      <informalexample>
+        <screen>
 <![CDATA[
 extension=oci8.so
 ]]>
-   </screen>
-  </informalexample>
- </para>
- <para>
-  <filename>oci8.so</filename> がインストールされたディレクトリが
-  &php.ini; の <link linkend="ini.extension-dir">extension_dir</link> に設定されていることを確認して下さい。
+        </screen>
+      </informalexample>
+    </para>
+    <para>
+      &php.ini; のディレクティブ
+      <link linkend="ini.extension-dir">extension_dir</link> が
+      <filename>oci8.so</filename> をインストールしたディレクトリを差しているかを確認して下さい。
+    </para>
+   </listitem>
+  </itemizedlist>
  </para>
 </section>
 <section>
- <title>OCI8 を共有ライブラリとしてインストールする</title>
+ <title>PHP をビルドする際に、OCI8 を共有ライブラリとしてインストールする</title>
  <para>
   PHP をソースコードからビルドしている場合、
   OCI8 を共有ライブラリとしてビルドするために
@@ -202,10 +258,10 @@ extension=oci8.so
   <itemizedlist>
    <listitem>
     <para>
-     If using the free <link xmlns="http://docbook.org/ns/docbook"
+     無料の <link xmlns="http://docbook.org/ns/docbook"
      xmlns:xlink="http://www.w3.org/1999/xlink"
      xlink:href="&url.oracle.instant.client;">Oracle Instant
-     Client</link> libraries, then do:
+     Client</link> ライブラリを使っている場合は、以下のようにします:
     </para>
     <para>
      <informalexample>
@@ -299,7 +355,7 @@ extension=oci8.so
  </para>
 </section>
 <section>
- <title>OCI8 を静的リンクしてインストールする</title>
+ <title>PHP をビルドする際、OCI8 を静的リンクしてインストールする</title>
  <para>
   PHP をソースコードからビルドしている場合、
   以下の configure オプションを使って、
@@ -347,7 +403,12 @@ extension=oci8.so
  </para>
 </section>
 <section>
- <title>Windows で OCI8 をインストール</title>
+ <title>Windows で OCI8 をインストールする</title>
+ <para xmlns:xlink="http://www.w3.org/1999/xlink">
+  OCI8 拡張機能は、
+  <link xlink:href="&url.pecl.package;oci8">PECL</link> リポジトリのDLLや、
+  インストールされた PHP の <literal>ext</literal> ディレクトリにあるライブラリを使うことで追加出来ます。
+ </para>
  <para>
   Oracle 12<emphasis>c</emphasis> (以降) のライブラリを使う場合、
   &php.ini; の
@@ -366,7 +427,7 @@ extension=oci8.so
  </para>
 </section>
 <section>
- <title>Oracle 環境を設定</title>
+ <title>Oracle の実行環境を設定する</title>
  <para>
   このエクステンションを使用する前に、 Web デーモンのユーザーのために Oracle の環境変数が
   適切に設定されたか確認してください。
