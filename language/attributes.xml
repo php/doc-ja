@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: e095023e408c8cb6378ae16bb6870343a3946919 Maintainer: mumumu Status: working -->
+<!-- EN-Revision: 0cd5feb518a84d172e9d87c8d72b8ebe37097ef5 Maintainer: mumumu Status: ready -->
 
  <chapter xml:id="language.attributes" xmlns="http://docbook.org/ns/docbook">
   <title>アトリビュート</title>
@@ -9,9 +9,9 @@
    <?phpdoc print-version-for="attributes"?>
 
    <para>
-    アトリビュートは、構造化された、
-    コンピューターが解析できるメタデータの情報を、
-    コードの宣言時に埋め込むことを可能にします。
+    アトリビュートを使うと、
+    コンピューターが解析できる構造化されたメタデータの情報を、
+    コードの宣言時に埋め込むことができます。
     つまり、クラス、メソッド、関数、プロパティ、定数にアトリビュートを指定することができます。
     アトリビュートで定義されたメタデータは、
     実行時に <link linkend="book.reflection">リフレクションAPI</link> を使って調べることが出来ます。
@@ -21,31 +21,31 @@
    </para>
 
    <para>
-    
-    With attributes the generic implementation of a
-    feature and its concrete use in an application can be decoupled. In a way it is
-    comparable to interfaces and their implementations. But where
-    interfaces and implementations are about code, attributes are about
-    annotating extra information and configuration. Interfaces can
-    be implemented by classes, yet attributes can also be declared
-    on methods, functions, parameters, properties and class constants.
-    As such they are more flexible than interfaces.
+    アトリビュートを使うと、機能の抽象的な実装と、アプリケーションでの具体的な利用を分離できます。
+    この点でアトリビュートは、インターフェイスとその実装と比較できます。
+    インターフェイスとその実装はコードに関する情報ですが、
+    アトリビュートはコードの追加情報と設定に注釈を付けるものです。
+    インターフェイスはクラスによって実装できますが、
+    アトリビュートはメソッドや関数、引数、プロパティ、クラス定数で宣言できます。
+    よって、アトリビュートはインターフェイスより柔軟です。
    </para>
 
     <para>
-     A simple example of attribute usage is to convert an interface
-     that has optional methods to use attributes. Lets assume an
-     <literal>ActionHandler</literal>
-      interface representing an operation in an application, where some
-      implementations of an action handler require setup and others do not. Instead of requiring all classes
-      that implement <literal>ActionHandler</literal> to implement
-       a method <literal>setUp()</literal>,
-        we use an attribute that can be used instead. One benefit
-        of this approach is that we can use the attribute several times.
+     アトリビュートの使い方の簡単な例として、
+     必須でないメソッドを持つインターフェイスを、
+     アトリビュートを使うように変換するコードを示します。
+     アプリケーションの操作を表現する <literal>ActionHandler</literal> があるとします。
+     この <literal>ActionHandler</literal> の実装は、セットアップが必須なものもありますが、
+     そうでないものもあります。
+     <literal>ActionHandler</literal> を実装する全てのクラスで
+     <literal>setUp()</literal> メソッドを必須とする代わりに、
+     アトリビュートを使うようにしてみましょう。
+     このアプローチの利点のひとつは、
+     アトリビュートを複数回使えることです。
     </para>
 
    <example>
-    <title>Implementing optional methods of an interface with Attributes</title>
+    <title>アトリビュートを使い、インターフェイスのオプションのメソッドを実装する</title>
      <programlisting role="php">
 <![CDATA[
 <?php
@@ -86,7 +86,7 @@ function executeAction(ActionHandler $actionHandler) {
       $reflection = new ReflectionObject($actionHandler);
 
       foreach ($reflection->getMethods() as $method) {
-          $attributes = $reflection->getAttributes(SetUp::class)
+          $attributes = $method->getAttributes(SetUp::class);
 
           if (count($attributes) > 0) {
               $methodName = $method->getName();
@@ -109,28 +109,31 @@ executeAction($copyAction);
   </sect1>
 
   <sect1 xml:id="language.attributes.syntax">
-   <title>Attribute syntax</title>
+   <title>アトリビュートの文法</title>
 
    <para>
-    There are several parts to the attributes syntax. First, attribute
-    declaration are always enclosed with a starting
-    <literal>#[</literal> and a corresponding ending
-    <literal>]</literal>. Inside, one or many attributes are listed,
-    seperated by comma. The attribute name is an unqualified, qualified
-    or fully-qualified name as described in <link linkend="language.namespaces.basics">Using Namespaces Basics</link>.
-    Arguments to the attribute are optional, but are enclosed in the usual parenthesis <literal>()</literal>.
-    Arguments to attributes can only be literal values or constant expressions. Both positional and
-    named arguments syntax can be used.
+    アトリビュートの文法は、複数の部分からなります。
+    まず最初に、アトリビュートの宣言は常に <literal>#[</literal> で始まり、
+    それに対応する <literal>]</literal> で囲みます。
+    その内部では、ひとつ以上のアトリビュートが並び、それぞれをカンマで区切ります。
+    アトリビュートの名前は、
+    <link linkend="language.namespaces.basics">名前空間の基礎</link> で説明している
+    非修飾名、修飾名、完全修飾名が指定できます。
+    アトリビュートの引数はオプションですが、
+    括弧 <literal>()</literal> で囲みます。
+    アトリビュートの引数はリテラル値か、定数式のみが指定できます。
+    位置を指定した引数と、名前付き引数の両方が使えます。
    </para>
 
    <para>
-    Attribute names and their arguments are resolved to a class and the arguments are passed to its constructor,
-    when an instance of the attribute is requested through the Reflection API. As such
-    a class should be introduced for each attribute.
+    アトリビュートの名前と引数は、
+    アトリビュートのインスタンスがリフレクションAPIから要求された際、
+    クラスとそのコンストラクタに渡す引数として解決されます。
+    よって、それぞれのアトリビュート毎にクラスが存在するはずです。
    </para>
 
    <example>
-    <title>Attribute Syntax</title>
+    <title>アトリビュートの文法</title>
 
     <programlisting role="php">
 <![CDATA[
@@ -181,24 +184,30 @@ class AnotherThing
 
 
   <sect1 xml:id="language.attributes.reflection">
-   <title>Reading Attributes with the Reflection API</title>
+   <title>リフレクションAPI を使ってアトリビュートを読み取る</title>
 
    <para>
-    To access attributes from classes, methods, functions, parameters, properties and class constants,
-    the Reflection API provides the method <function>getAttributes</function> on each of the corresponding
-    Reflection objects. This method returns an array of <classname>ReflectionAttribute</classname> instances
-    that can be queried for attribute name, arguments and to instantiate an instance of the represented attribute.
+    クラス、メソッド、関数、引数、プロパティ、クラス定数からアトリビュートにアクセスするために、
+    リフレクションAPI は対応するリフレクションオブジェクトに
+    <function>getAttributes</function> メソッドを提供しています。
+    このメソッドを使うと、
+    アトリビュートの名前や引数で問い合わせを行うことができ、
+    アトリビュートを表現するクラスをインスタンス化させることができます。
+    このメソッドは、<classname>ReflectionAttribute</classname> のインスタンスの配列を返します。
    </para>
 
    <para>
-    This separation of reflected attribute representation from actual instance increases control of the programmer
-    to handle errors regarding missing attribute classes, mistyped or missing arguments. Only after
-    calling <function>newInstance</function>, objects of the attribute class are instantiated and the correct matching of arguments
-    is validated, not earlier.
+    リフレクションされたアトリビュートの表現と、
+    実際のインスタンスを分離することで、
+    アトリビュートのクラスが存在しなかったり、
+    タイピングミスや引数の不足に関するエラーをプログラマが制御しやすくなります。
+    <function>newInstance</function> を呼び出した後のみ、
+    アトリビュートクラスのオブジェクトはインスタンス化でき、
+    引数が合っているかを検証できます。これ以前のタイミングでは出来ません。
    </para>
 
    <example>
-    <title>Reading Attributes using Reflection API</title>
+    <title>リフレクションAPIを使い、アトリビュートを読み取る</title>
 
     <programlisting role="php">
 <![CDATA[
@@ -248,13 +257,13 @@ object(MyAttribute)#3 (1) {
    </example>
 
    <para>
-    Instead of iterating all attributes on the reflection instance, only those
-    of a particular attribute class can be
-    retrieved by passing the searched attribute class name as argument.
+    アトリビュートクラスの名前を渡すことで、
+    リフレクションインスタンスの全てのアトリビュートをループさせる代わりに、
+    特定のアトリビュートのクラスだけを取得することができます。
    </para>
 
    <example>
-    <title>Reading Specific Attributes using Reflection API</title>
+    <title>リフレクションAPIを使い、特定のアトリビュートを読み取る</title>
 
     <programlisting role="php">
 <![CDATA[
@@ -277,16 +286,18 @@ dumpAttributeData(new ReflectionClass(Thing::class));
   </sect1>
 
   <sect1 xml:id="language.attributes.classes">
-   <title>Declaring Attribute Classes</title>
+   <title>アトリビュートクラスを宣言する</title>
 
    <para>
-    While not strictly required it is recommended to create an actual class for every attribute.
-    In the most simple case only an empty class is needed with the <literal>#[Attribute]</literal> attribute declared
-    that can be imported from the global namespace with a use statement.
+    厳密に必須ではありませんが、
+    アトリビュート毎にクラスを作成することを推奨します。
+    もっとも簡単な場合、
+    グローバル名前空間からuse文でインポートできる
+    アトリビュート <literal>#[Attribute]</literal> を宣言した空のクラスだけが必要です。
    </para>
 
   <example>
-   <title>Using target specification to restrict where attributes can be used</title>
+   <title>アトリビュートを使える場所を限定するために、ターゲットとなるクラスを作る</title>
 
    <programlisting role="php">
 <![CDATA[
@@ -305,12 +316,17 @@ class MyAttribute
   </example>
 
   <para>
+   アトリビュートを割り当てられる場所を制限するために、
+   <literal>#[Attribute]</literal> 宣言の第一引数にビットマスクを渡すことができます。
+
+   <!--
    To restrict the type of declaration an attribute can be assigned to, a bitmask can be passed as the first
    argument to the <literal>#[Attribute]</literal> declaration.
+   -->
   </para>
 
   <example>
-   <title>Simple Attribute Class</title>
+   <title>単純なアトリビュートクラスの例</title>
 
    <programlisting role="php">
 <![CDATA[
@@ -328,18 +344,27 @@ class MyAttribute
     </programlisting>
 
     <para>
-     Declaring <classname>MyAttribute</classname> on another type will now throw an exception during
-     the call to <function>ReflectionAttribute::newInstance</function>
+     <classname>MyAttribute</classname> を別の型で宣言すると、
+     <function>ReflectionAttribute::newInstance</function> の呼び出し時に例外がスローされます。
     </para>
    </example>
 
    <para>
-    By default an attribute can only be used once per declaration. If the attribute should be repeatable on declarations it must
+    デフォルトでは、アトリビュートは一度宣言したら一度だけ使うことが出来ます。
+    アトリビュートを宣言時に繰り返し使えるようにする場合、
+    <literal>#[Attribute]</literal> の宣言時に、ビットマスクで指定しなければいけません。
+
+
+    <!--
+    By default an attribute can only be used once per declaration.
+    If the attribute should be repeatable on declarations
+    it must
     be specified as part of the bitmask to the <literal>#[Attribute]</literal> declaration.
+    -->
    </para>
 
    <example>
-    <title>Using IS_REPEATBLE to allow attribute on a declaration multiple times</title>
+    <title>宣言時にアトリビュートを複数回使えるように、IS_REPEATBLE を使う</title>
 
     <programlisting role="php">
 <![CDATA[
