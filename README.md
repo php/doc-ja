@@ -1,6 +1,6 @@
 # PHPマニュアル 日本語版 mirror
 
-このリポジトリは、PHPマニュアル 日本語版のソースとなる docbook を github 上に mirror したものです。
+このリポジトリは、[PHPマニュアル 日本語版](https://www.php.net/manual/ja/) のソースとなる docbook を github 上に mirror したものです。
 この mirror の upstream は以下に置かれています。
 
 http://git.php.net/?p=doc/ja.git
@@ -9,7 +9,8 @@ http://git.php.net/?p=doc/ja.git
 
 ## PHP マニュアルに間違いを見つけたら？
 
-PHP マニュアルに間違いを見つけた場合、メンテナンスの担当者(メンテナ) へ報告すると修正されます。
+PHP マニュアルに間違いを見つけた場合、メンテナンスの担当者(メンテナ) へ報告すると修正されます。  
+
 メンテナへ報告する方法は複数ありますが、ここでは github 上で Pull Request を送る方法を示します。
 
 - A) たとえば、以下のページで間違いを見つけたとします。
