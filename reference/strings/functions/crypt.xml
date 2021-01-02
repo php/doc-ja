@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 7f569e1f175adf1fbd0e462eba8d6bc82214c939 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: b2a1cefc64b35e4704b730776c51436b45142791 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: shimooka,mumumu -->
 <refentry xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://docbook.org/ns/docbook" xml:id="function.crypt">
  <refnamediv>
@@ -22,12 +22,12 @@
   <para>
    <function>crypt</function> 文字列のハッシュを返します。
    Unix 標準の <abbrev>DES</abbrev> ベースのアルゴリズムか、
-   あるいはシステム上で使えるその他のアルゴリズムを使用します。
+   代替のアルゴリズムを使用します。
   </para>
   <para>
    <parameter>salt</parameter> パラメータは必須ではありませんが、これを省略すると
    <function>crypt</function> が作るハッシュが弱いものになってしまいます。
-   PHP 5.6 以降は、このパラメータを省略した場合に E_NOTICE が発生するようになりました。
+   このパラメータを省略した場合には、E_NOTICE が発生します。
    十分に強いソルトを指定して、セキュリティを確保しましょう。
   </para>
   <para>
@@ -36,11 +36,7 @@
    <function>password_hash</function> を使うことを推奨します。
   </para>
   <para>
-   複数のハッシュ方式をサポートしているオペレーティングシステムもあります。
-   実際、標準の DES ベースのアルゴリズムを MD5 ベースのものに置き換えることもあります。
    ハッシュ方式は、salt 引数によって決まります。
-   PHP 5.3 より前のバージョンでは、PHP のインストール時に、
-   システムの crypt() 関数から使用できるアルゴリズムを判別します。
    salt を省略した場合は、標準の 2 文字 (DES) の salt を自動生成します。
    あるいは、MD5 crypt() が使えれば 12 文字 (MD5) の salt を自動生成します。
    PHP の定数 <constant>CRYPT_SALT_LENGTH</constant> には、
@@ -54,9 +50,7 @@
    同じ salt を使う限り同じ結果となります。
   </para>
   <simpara>
-   crypt() が複数のハッシュ方式をサポートしているシステムでは、
-   その方式が使用可能かどうかによって次の定数群が
-   0 か 1 に設定されます。
+   以下のハッシュ形式がサポートされています:
   </simpara>
   <itemizedlist>
    <listitem>
@@ -91,13 +85,11 @@
      これは Blowfish ベースのハッシュアルゴリズムで使います。
      この値は 04 から 31 までの範囲でなければならず、
      それ以外の値の場合は crypt() は失敗します。
-     5.3.7 までのバージョンの PHP では、salt のプレフィックスとして "$2a$"
-     だけしか使えませんでした。PHP 5.3.7 で新たなプレフィックスが導入され、
-     Blowfish の実装にあったセキュリティ上の弱点に対応しました。
+     "$2x$" ハッシュは潜在的に弱いハッシュです。
+     "$2a$" ハッシュはこれと互換性があり、この弱点を軽減します。
+     新しくハッシュを生成する場合は、"$2y$" を使うべきです。
      セキュリティ修正の対応の詳細については
      <link xlink:href="&url.crypt.blowfish;">この文書</link> を参照ください。
-     簡単にまとめると、PHP 5.3.7 以降しか使わないのなら
-     "$2a$" ではなく "$2y$" を使うべきだということです。
     </simpara>
    </listitem>
    <listitem>
@@ -121,12 +113,6 @@
     </simpara>
    </listitem>
   </itemizedlist>
-  <note>
-   <para>
-    PHP 5.3.0 以降、PHP 自身にもそれぞれの実装が含まれるようになりました。
-    システム側でそのアルゴリズムがサポートされていない場合にこの実装を使用します。
-   </para>
-  </note>
  </refsect1>
 
  <refsect1 role="parameters">
@@ -171,7 +157,7 @@
     パスワードを検証するときの文字列比較関数は、
     タイミング攻撃に対して脆弱ではないものでなければいけません。
     これをもちいて、<function>crypt</function> の出力と既知のハッシュとを比較します。
-    PHP 5.6 以降には、このために使える <function>hash_equals</function> 関数が追加されました。
+    この比較を行うために、<function>hash_equals</function> 関数が使えます。
    </simpara>
   </warning>
  </refsect1>
@@ -184,7 +170,9 @@
     <programlisting role="php">
 <![CDATA[
 <?php
-$hashed_password = crypt('mypassword'); // saltを自動的に生成させます
+// saltを自動的に生成させます; お勧めできません
+$hashed_password = crypt('mypassword');
+
 
 /* 異なったハッシュアルゴリズムが使用された際の問題を避けるために
    crypt()の結果全体をパスワード比較用のsaltとして渡す必要があります。
@@ -207,7 +195,7 @@ if (hash_equals($hashed_password, crypt($user_input, $hashed_password))) {
 // パスワードを設定します
 $password = 'mypassword';
 
-// ハッシュを取得します。salt は自動生成させます
+// ハッシュを取得します。salt は自動生成させます; お勧めできません
 $hash = crypt($password);
 ?>
 ]]>
@@ -223,29 +211,24 @@ $hash = crypt($password);
 /* これらの salt はあくまでも一例として示したものであり、実際のコードにそのまま使ってはいけません。
    別の、適切な形式の salt を生成して各パスワードに使いましょう。
 */
-if (CRYPT_STD_DES == 1) {
-    echo 'Standard DES: ' . crypt('rasmuslerdorf', 'rl') . "\n";
-}
-
-if (CRYPT_EXT_DES == 1) {
-    echo 'Extended DES: ' . crypt('rasmuslerdorf', '_J9..rasm') . "\n";
-}
-
-if (CRYPT_MD5 == 1) {
-    echo 'MD5:          ' . crypt('rasmuslerdorf', '$1$rasmusle$') . "\n";
-}
-
-if (CRYPT_BLOWFISH == 1) {
-    echo 'Blowfish:     ' . crypt('rasmuslerdorf', '$2a$07$usesomesillystringforsalt$') . "\n";
-}
-
-if (CRYPT_SHA256 == 1) {
-    echo 'SHA-256:      ' . crypt('rasmuslerdorf', '$5$rounds=5000$usesomesillystringforsalt$') . "\n";
-}
-
-if (CRYPT_SHA512 == 1) {
-    echo 'SHA-512:      ' . crypt('rasmuslerdorf', '$6$rounds=5000$usesomesillystringforsalt$') . "\n";
-}
+echo 'Standard DES: ',
+    crypt('rasmuslerdorf', 'rl'),
+    "\n";
+echo 'Extended DES: ',
+    crypt('rasmuslerdorf', '_J9..rasm'),
+    "\n";
+echo 'MD5:          ',
+    crypt('rasmuslerdorf', '$1$rasmusle$'),
+    "\n";
+echo 'Blowfish:     ',
+    crypt('rasmuslerdorf', '$2a$07$usesomesillystringforsalt$'),
+    "\n";
+echo 'SHA-256:      ',
+    crypt('rasmuslerdorf', '$5$rounds=5000$usesomesillystringforsalt$'),
+    "\n";
+echo 'SHA-512:      ',
+    crypt('rasmuslerdorf', '$6$rounds=5000$usesomesillystringforsalt$'),
+    "\n";
 ?>
 ]]>
     </programlisting>
@@ -255,7 +238,7 @@ if (CRYPT_SHA512 == 1) {
 Standard DES: rl.3StKT.4T8M
 Extended DES: _J9..rasmBYk8r9AiWNc
 MD5:          $1$rasmusle$rISCgZzpwk3UhDidwXvin0
-Blowfish:     $2a$07$usesomesillystringfore2uDLvp1Ii2e./U9C8sBjqp8I90dH6hi
+Blowfish:     $2y$07$usesomesillystringfore2uDLvp1Ii2e./U9C8sBjqp8I90dH6hi
 SHA-256:      $5$rounds=5000$usesomesillystri$KqJWpanXZHKq2BOB43TSaYhEWsQ1Lr5QNyPCDH/Tp.6
 SHA-512:      $6$rounds=5000$usesomesillystri$D4IrlXatmP7rx3P3InaxBeoomnAihCKRVQP22JZ6EY47Wc6BkroIuUUBOov1i.S5KPgErtP/EN5mcO.ChWQW21
 ]]>
@@ -281,7 +264,6 @@ SHA-512:      $6$rounds=5000$usesomesillystri$D4IrlXatmP7rx3P3InaxBeoomnAihCKRVQ
     <member><function>hash_equals</function></member>
     <member><function>password_hash</function></member>
     <member><function>md5</function></member>
-    <member><link linkend="ref.mcrypt">mcrypt</link> 拡張モジュール</member>
     <member>暗号化関数についての Unix man ページ</member>
    </simplelist>
   </para>
