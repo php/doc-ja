@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 86e6094e86b84a51d00ab217ac50ce8dde33d82a Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 1ae5ae975a3b0cf1e1e64401b24010511b6dba4d Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi,mumumu -->
 <appendix xml:id="openssl.constants" xmlns="http://docbook.org/ns/docbook">
  &reftitle.constants;
@@ -285,6 +285,110 @@
         <row xml:id="constant.pkcs7-nosigs">
          <entry><constant>PKCS7_NOSIGS</constant></entry>
          <entry>メッセージにサインや認証を試みません。</entry>
+        </row>
+       </tbody>
+      </tgroup>
+     </table>
+   </para>
+  </section>
+
+  <section xml:id="openssl.cms.flags">
+   <title><acronym>CMS</acronym> (暗号メッセージシンタックス) 関連のフラグ/定数</title>
+   <para>
+    CMS 関連の関数は、以下のうちひとつ以上の値をビットフィールドを使って指定することで、フラグを利用します。
+    <table>
+     <title><acronym>CMS</acronym> 関連の定数</title>
+      <tgroup cols="2">
+       <thead>
+        <row>
+         <entry>定数</entry>
+         <entry>説明</entry>
+        </row>
+       </thead>
+       <tbody>
+        <row xml:id="constant.openssl-cms-text">
+         <entry><constant>OPENSSL_CMS_TEXT</constant></entry>
+         <entry>
+          暗号化済み/署名済み のメッセージに対して text/plain のヘッダを追加します。
+          復号化 または 検証する際に、これらのヘッダは出力から削除されます -
+          もし 複号化済み/検証済み メッセージの MIMEタイプ が text/plain
+          でない場合、エラーが発生します。
+         </entry>
+        </row>
+        <row xml:id="constant.openssl-cms-binary">
+         <entry><constant>OPENSSL_CMS_BINARY</constant></entry>
+         <entry>
+          通常、入力されるメッセージは
+          行末を <literal>CR</literal> と <literal>LF</literal> として用いる
+          "canonical" フォーマットに変換されます:
+          これは、CMS の仕様です。
+          このオプションが指定されると、変換は行われません。
+          これは、
+          CMS フォーマットではない可能性があるバイナリデータを扱うのに便利です。
+         </entry>
+        </row>
+        <row xml:id="constant.openssl-cms-nointern">
+         <entry><constant>OPENSSL_CMS_NOINTERN</constant></entry>
+         <entry>
+          メッセージを検証する際、
+          通常は(もしあれば)メッセージに含まれる証明書を
+          署名に用いた証明書として探します。
+          このオプションを使うと、
+          <function>openssl_cms_verify</function> 関数の
+          <parameter>untrusted_certificates_filename</parameter>
+          引数で指定した証明書だけを検証に使うようになります。
+          ここで証明書を指定しても、
+          それは信頼されない証明書のまま引き続き使われます。
+         </entry>
+        </row>
+        <row xml:id="constant.openssl-cms-noverify">
+         <entry><constant>OPENSSL_CMS_NOVERIFY</constant></entry>
+         <entry>
+          署名されたメッセージの、署名者の証明書を検証しません。
+         </entry>
+        </row>
+        <row xml:id="constant.openssl-cms-nocerts">
+         <entry><constant>OPENSSL_CMS_NOCERTS</constant></entry>
+         <entry>
+          メッセージに署名する場合、
+          通常は署名者の証明書がメッセージに付加されます -
+          このオプションを使うと、その証明書を除去できます。
+          証明書を除去すると、署名済みのメッセージのサイズが減りますが、
+          (たとえば、<function>openssl_cms_verify</function>
+          関数に <parameter>untrusted_certificates_filename</parameter>
+          を使って渡すなどして)
+          検証する側が署名者の証明書をローカルに持っておく必要があります。
+         </entry>
+        </row>
+        <row xml:id="constant.openssl-cms-noattr">
+         <entry><constant>OPENSSL_CMS_NOATTR</constant></entry>
+         <entry>
+          通常、メッセージが署名済みの場合、
+          署名した時刻やサポートされている共通鍵アルゴリズムの情報が含まれる、
+          一連の属性情報が付加されます。
+          このオプションを使うと、その属性を含めないようにすることができます。
+         </entry>
+        </row>
+        <row xml:id="constant.openssl-cms-detached">
+         <entry><constant>OPENSSL_CMS_DETACHED</constant></entry>
+         <entry>
+          メッセージに署名する際、
+          MIMEタイプ <literal>"multipart/signed"</literal> を使って、
+          平文で署名します。
+          これは、<function>openssl_cms_sign</function>
+          で何も <parameter>flags</parameter>
+          を指定しなかったときのデフォルトの動作です。
+          このオプションを無効にした場合、メッセージは
+          opaque 署名を使って署名されます。
+          これは、メールがリレーされる際の変換を防ぐ一方で、
+          S/MIME をサポートしていないエージェントでは読めなくなります。
+         </entry>
+        </row>
+        <row xml:id="constant.openssl-cms-nosigs">
+         <entry><constant>OPENSSL_CMS_NOSIGS</constant></entry>
+         <entry>
+          メッセージの署名を検証しません。
+         </entry>
         </row>
        </tbody>
       </tgroup>
@@ -585,6 +689,41 @@
          が指定された場合、パディングは行われないので、
          暗号化または復号化されるデータの総量はブロックサイズの倍数でなければなりません。
          そうでない場合、エラーが発生します。
+        </simpara>
+      </listitem>
+    </varlistentry>
+    <varlistentry xml:id="constant.openssl-encoding-smime">
+      <term>
+        <constant>OPENSSL_ENCODING_SMIME</constant>
+        (<type>int</type>)
+      </term>
+      <listitem>
+        <simpara>
+         エンコーディングが S/MIME 形式であることを示します。
+        </simpara>
+      </listitem>
+    </varlistentry>
+    <varlistentry xml:id="constant.openssl-encoding-der">
+      <term>
+        <constant>OPENSSL_ENCODING_DER</constant>
+        (<type>int</type>)
+      </term>
+      <listitem>
+        <simpara>
+         エンコーディングが DER (Distinguished Encoding Rules)
+         形式であることを示します。
+        </simpara>
+      </listitem>
+    </varlistentry>
+    <varlistentry xml:id="constant.openssl-encoding-pem">
+      <term>
+        <constant>OPENSSL_ENCODING_PEM</constant>
+        (<type>int</type>)
+      </term>
+      <listitem>
+        <simpara>
+         エンコーディングが PEM (Privacy-Enhanced Mail)
+         形式であることを示します。
         </simpara>
       </listitem>
     </varlistentry>
