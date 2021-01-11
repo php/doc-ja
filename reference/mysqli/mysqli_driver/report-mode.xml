@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 97986d5b11545e52b498c8d2f4cd88844d427390 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 2bd21ff7be5615b10b5133fe896e0befd13df15c Maintainer: takagi Status: ready -->
 <!-- Credits: mumumu -->
 <refentry xml:id="mysqli-driver.report-mode" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>mysqli_driver::$report_mode</refname>
   <refname>mysqli_report</refname>
-  <refpurpose>内部のレポート機能を有効あるいは無効にする</refpurpose>
+  <refpurpose>mysqli のエラー報告モードを設定する</refpurpose>
  </refnamediv>
 
  <refsect1 role="description">
@@ -21,9 +21,14 @@
    <methodparam><type>int</type><parameter>flags</parameter></methodparam>
   </methodsynopsis>
   <para>
-   開発中やテスト時に、クエリを改善するために便利な関数です。
-   指定するフラグに応じて、
-   mysqli の関数呼び出しのエラーやインデックスを使わない (あるいは不適切なインデックスを使う) クエリなどをレポートします。
+   フラグに応じて、mysqli のエラー報告モードを設定します。
+   例外をスローするモードや、警告を発生させるモード、エラーを報告しないモードを設定できます。
+   <constant>MYSQLI_REPORT_ALL</constant> や
+   <constant>MYSQLI_REPORT_INDEX</constant> に設定すると、
+   インデックスを使わない(または、インデックスの使い方が良くない) クエリも報告します。
+  </para>
+  <para>
+   デフォルトはの設定は <constant>MYSQLI_REPORT_OFF</constant> です。
   </para>
  </refsect1>
 
@@ -80,7 +85,7 @@
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
-   &return.success;
+   &true; を返します。
   </para>
  </refsect1>
 
@@ -92,35 +97,22 @@
 <![CDATA[
 <?php
 
-$mysqli = new mysqli("localhost", "my_user", "my_password", "world");
-
-/* 接続をチェックします */
-if (mysqli_connect_errno()) {
-    printf("Connect failed: %s\n", mysqli_connect_error());
-    exit();
-}
-
-/* レポート機能を有効にします */
+/* レポートを有効にします。 */
 $driver = new mysqli_driver();
 $driver->report_mode = MYSQLI_REPORT_ALL;
 
 try {
+    /* 接続が失敗すると, mysqli_sql_exception がスローされます。*/
+    $mysqli = new mysqli("localhost", "my_user", "my_password", "my_db");
 
-    /* このクエリはエラーのレポートを出すはずです */
+    /* このクエリは、エラーを報告するはずです。 */
     $result = $mysqli->query("SELECT Name FROM Nonexistingtable WHERE population > 50000");
 
-    /* このクエリは不適切なインデックスのレポートを出すはずです */
+    /* このクエリは、カラムがインデックスを持っていた場合、エラーを報告するはずです。*/
     $result = $mysqli->query("SELECT Name FROM City WHERE population > 50000");
-
-    $result->close();
-
-    $mysqli->close();
-
 } catch (mysqli_sql_exception $e) {
-
-    echo $e->__toString();
+    error_log($e->__toString());
 }
-?>
 ]]>
    </programlisting>
   </example>
@@ -129,27 +121,46 @@ try {
    <programlisting role="php">
 <![CDATA[
 <?php
-/* レポート機能を有効にします */
+
+/* activate reporting */
 mysqli_report(MYSQLI_REPORT_ALL);
 
-$link = mysqli_connect("localhost", "my_user", "my_password", "world");
+try {
+    $link = mysqli_connect("localhost", "my_user", "my_password", "my_db");
 
-/* 接続をチェックします */
-if (mysqli_connect_errno()) {
-    printf("Connect failed: %s\n", mysqli_connect_error());
-    exit();
+    /* このクエリは、エラーを報告するはずです。 */
+    $result = mysqli_query($link, "SELECT Name FROM Nonexistingtable WHERE population > 50000");
+
+    /* このクエリは、カラムがインデックスを持っていた場合、エラーを報告するはずです。*/
+    $result = mysqli_query($link, "SELECT Name FROM City WHERE population > 50000");
+} catch (mysqli_sql_exception $e) {
+    error_log($e->__toString());
 }
+]]>
+   </programlisting>
+  </example>
+  <example>
+   <title>Error reporting except bad index errors</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
 
-/* このクエリはエラーのレポートを出すはずです */
-$result = mysqli_query("SELECT Name FROM Nonexistingtable WHERE population > 50000");
+/* activate reporting */
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
-/* このクエリは不適切なインデックスのレポートを出すはずです */
-$result = mysqli_query("SELECT Name FROM City WHERE population > 50000");
+try {
+    /* 接続が失敗すると, mysqli_sql_exception がスローされます。*/
+    $mysqli = new mysqli("localhost", "my_user", "my_password", "my_db");
+    $mysqli = new mysqli("localhost", "my_user", "my_password", "my_db");
 
-mysqli_free_result($result);
+    /* このクエリは、エラーを報告するはずです。 */
+    $result = $mysqli->query("SELECT Name FROM Nonexistingtable WHERE population > 50000");
 
-mysqli_close($link);
-?>
+    /* このクエリは、インデックスが使えなかったとしても、一切エラーを報告しません */
+    $result = $mysqli->query("SELECT Name FROM City WHERE population > 50000");
+} catch (mysqli_sql_exception $e) {
+    error_log($e->__toString());
+}
 ]]>
    </programlisting>
   </example>
@@ -159,8 +170,6 @@ mysqli_close($link);
   &reftitle.seealso;
   <para>
    <simplelist>
-    <member><function>mysqli_debug</function></member>
-    <member><function>mysqli_dump_debug_info</function></member>
     <member><classname>mysqli_sql_exception</classname></member>
     <member><function>set_exception_handler</function></member>
     <member><function>error_reporting</function></member>
