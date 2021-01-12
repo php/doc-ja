@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: b95d28e6ec86e4a71e012737d36ebdc1cf009180 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: be526864c9777106cd78a517628847b60743e2d4 Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa,mumumu -->
 <refentry xml:id="mysqli.construct" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -55,8 +55,10 @@
      <listitem>
       <para>
        ホスト名または IP アドレスです。この引数に &null; または "localhost" を渡すと
-       ローカルホストとみなされます。もし可能な場合、TCP/IP プロトコルの代わりに
+       ローカルホストとみなされます。可能な場合は、TCP/IP プロトコルの代わりに
        パイプが使用されます。
+       ホスト名とポートが一緒に指定された場合は、TCP/IP プロトコルが使われます。
+       例: <literal>localhost:3308</literal>.
       </para>
       <para>
        ホストの前に <literal>p:</literal> をつけると、持続的な接続を開きます。
@@ -123,8 +125,26 @@
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
-   MySQL サーバーへの接続を表すオブジェクトを返します。
-   &return.falseforfailure;
+   <methodname>mysqli::__construct</methodname>
+   は、成功、失敗に関わらず、MySQL サーバへの接続を表すオブジェクトを常に返します。
+  </para>
+  <para>
+   <function>mysqli_connect</function> は、
+   MySQL サーバへの接続を表すオブジェクトを返します。
+   &return.falseforfailure;.
+  </para>
+  <para>
+   <methodname>mysqli::connect</methodname> は、成功した場合に &null; を返します。
+   &return.falseforfailure;.
+  </para>
+ </refsect1>
+
+ <refsect1 role="errors">
+  &reftitle.errors;
+  <para>
+   <constant>MYSQLI_REPORT_STRICT</constant> が有効になっており、
+   かつ、データベースへの接続が失敗した場合は、
+   <classname>mysqli_sql_exception</classname> がスローされます。
   </para>
  </refsect1>
 
@@ -136,79 +156,103 @@
    <programlisting role="php">
 <![CDATA[
 <?php
+
+/* You should enable error reporting for mysqli before attempting to make a connection */
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+
 $mysqli = new mysqli('localhost', 'my_user', 'my_password', 'my_db');
 
-/*
- * これは "公式な" オブジェクト指向のやりかたですが、
- * PHP 5.2.9 および 5.3.0 より前のバージョンでは $connect_error は動作していませんでした
- */
-if ($mysqli->connect_error) {
-    die('Connect Error (' . $mysqli->connect_errno . ') '
-            . $mysqli->connect_error);
-}
+/* Set the desired charset after establishing a connection */
+$mysqli->set_charset('utf8mb4');
 
-/*
- * PHP 5.2.9 および 5.3.0 より前のバージョンとの互換性を保ちたい場合は
- * $connect_error のかわりにこのようにします
- */
-if (mysqli_connect_error()) {
-    die('Connect Error (' . mysqli_connect_errno() . ') '
-            . mysqli_connect_error());
-}
-
-echo 'Success... ' . $mysqli->host_info . "\n";
-
-$mysqli->close();
-?>
-]]>
-   </programlisting>
-   <para>&style.oop;で mysqli クラスを継承する例</para>
-   <programlisting role="php">
-<![CDATA[
-<?php
-
-class foo_mysqli extends mysqli {
-    public function __construct($host, $user, $pass, $db) {
-        parent::__construct($host, $user, $pass, $db);
-
-        if (mysqli_connect_error()) {
-            die('Connect Error (' . mysqli_connect_errno() . ') '
-                    . mysqli_connect_error());
-        }
-    }
-}
-
-$db = new foo_mysqli('localhost', 'my_user', 'my_password', 'my_db');
-
-echo 'Success... ' . $db->host_info . "\n";
-
-$db->close();
-?>
+printf("Success... %s\n", $mysqli->host_info);
 ]]>
    </programlisting>
    <para>&style.procedural;</para>
    <programlisting role="php">
 <![CDATA[
 <?php
-$link = mysqli_connect('localhost', 'my_user', 'my_password', 'my_db');
 
-if (!$link) {
-    die('Connect Error (' . mysqli_connect_errno() . ') '
-            . mysqli_connect_error());
-}
+/* You should enable error reporting for mysqli before attempting to make a connection */
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
-echo 'Success... ' . mysqli_get_host_info($link) . "\n";
+$mysqli = mysqli_connect('localhost', 'my_user', 'my_password', 'my_db');
 
-mysqli_close($link);
-?>
+/* Set the desired charset after establishing a connection */
+mysqli_set_charset($mysqli, 'utf8mb4');
+
+printf("Success... %s\n", mysqli_get_host_info($mysqli));
 ]]>
    </programlisting>
-   &examples.outputs;
+   &examples.outputs.similar;
    <screen>
 <![CDATA[
-Success... MySQL host info: localhost via TCP/IP
+Success... localhost via TCP/IP
 ]]>
    </screen>
+  </example>
+  <example>
+   <title>mysqli クラスを拡張する</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+class FooMysqli extends mysqli {
+    public function __construct($host, $user, $pass, $db, $port, $socket, $charset) {
+        mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+        parent::__construct($host, $user, $pass, $db, $port, $socket);
+        $this->set_charset($charset);
+    }
+}
+
+$db = new FooMysqli('localhost', 'my_user', 'my_password', 'my_db', 3306, null, 'utf8mb4');
+]]>
+   </programlisting>
+  </example>
+  <example>
+   <title>手動によるエラーハンドリング</title>
+   <para>
+    エラーの報告機能が無効になっている場合、
+    開発者がエラーのチェックとエラー処理を行う必要があります。
+   </para>
+   <para>&style.oop;</para>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+error_reporting(0);
+mysqli_report(MYSQLI_REPORT_OFF);
+$mysqli = new mysqli('localhost', 'my_user', 'my_password', 'my_db');
+if ($mysqli->connect_errno) {
+    throw new RuntimeException('mysqli connection error: ' . $mysqli->connect_error);
+}
+
+/* Set the desired charset after establishing a connection */
+$mysqli->set_charset('utf8mb4');
+if ($mysqli->errno) {
+    throw new RuntimeException('mysqli error: ' . $mysqli->error);
+}
+]]>
+   </programlisting>
+   <para>&style.procedural;</para>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+error_reporting(0);
+mysqli_report(MYSQLI_REPORT_OFF);
+$mysqli = mysqli_connect('localhost', 'my_user', 'my_password', 'my_db');
+if (mysqli_connect_errno()) {
+    throw new RuntimeException('mysqli connection error: ' . mysqli_connect_error());
+}
+
+/* Set the desired charset after establishing a connection */
+mysqli_set_charset($mysqli, 'utf8mb4');
+if (mysqli_errno($mysqli)) {
+    throw new RuntimeException('mysqli error: ' . mysqli_error($mysqli));
+}
+]]>
+   </programlisting>
   </example>
  </refsect1>
 
@@ -217,7 +261,7 @@ Success... MySQL host info: localhost via TCP/IP
   &mysqli.charset.note;
   <note>
    <para>
-    オブジェクト指向の構文に関する注意:
+    &style.oop; に関する注意:
     接続に失敗した場合にもオブジェクトが返されます。
     接続が失敗したかどうかを確かめるには、先ほどの例のように
     <function>mysqli_connect_error</function> 関数あるいは <link 
