@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 4528db2d91279a8f120bacfd84e48f7e2281d923 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: a9edd62d087ab1eb6292c795b7256e14ff9f1234 Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa,mumumu -->
 
 <sect1 xml:id="language.oop5.basic" xmlns="http://docbook.org/ns/docbook">
@@ -49,29 +49,20 @@ class SimpleClass
     </programlisting>
    </example>
    <para>
-    メソッドがオブジェクトコンテキストからコールされる場合は、
+    メソッドがオブジェクトのコンテキストからコールされる場合は、
     疑似変数 <varname>$this</varname> が利用可能です。
-    <varname>$this</varname> は、呼び出し元オブジェクト
-    (通常は、メソッドが属するオブジェクトですが、
-    メソッドが第二のオブジェクトのオブジェクトの
-    コンテキストから <link linkend="language.oop5.static">スタティックに</link>
-    コールされる場合には、別のオブジェクトとなる場合もあります)
-    への参照です。
-    PHP 7.0.0 以降は、スタティックではないメソッドを非互換のコンテキストでスタティックに呼び出すと、
-    そのメソッド内では $this が未定義の状態になります。
-    スタティックではないメソッドの、非互換なコンテキストにおけるスタティック呼び出しは PHP 5.6.0 で非推奨になりました。
-    PHP 7.0.0 ではさらに、コンテキストの互換・非互換にかかわらず、
-    スタティックではないメソッドのスタティック呼び出し全般が非推奨となりました。
-    PHP 5.6.0 より前のバージョンでも、これらは既に strict 通知が出ていたものです。
+    <varname>$this</varname> は、呼び出し元オブジェクトへのリファレンスです。
    </para>
-   <para>
+   <warning>
+    <para>
+     静的でないメソッドを static にコールすると、
+     <classname>Error</classname> がスローされます。
+     PHP 8.0.0 より前のバージョンでは、推奨されない警告が発生し、
+     <varname>$this</varname> が未定義になっていました。
+    </para>
     <example xml:id="language.oop5.basic.class.this">
      <title><varname>$this</varname> 疑似変数の例</title>
-     <simpara>
-      この例は、error_reporting が無効になっていることを前提としています。
-      これが有効になっている場合、PHP のバージョンによって deprecated や strict の通知が出るでしょう。
-     </simpara>
-    <programlisting role="php">
+     <programlisting role="php">
 <![CDATA[
 <?php
 class A
@@ -107,28 +98,38 @@ $b->bar();
 B::bar();
 ?>
 ]]>
-    </programlisting>
-     &example.outputs.5;
-    <screen>
-<![CDATA[
-$this is defined (A)
-$this is not defined.
-$this is defined (B)
-$this is not defined.
-]]>
-    </screen>
+     </programlisting>
      &example.outputs.7;
      <screen>
 <![CDATA[
 $this is defined (A)
+
+Deprecated: Non-static method A::foo() should not be called statically in %s  on line 27
 $this is not defined.
+
+Deprecated: Non-static method A::foo() should not be called statically in %s  on line 20
 $this is not defined.
+
+Deprecated: Non-static method B::bar() should not be called statically in %s  on line 32
+
+Deprecated: Non-static method A::foo() should not be called statically in %s  on line 20
 $this is not defined.
 ]]>
      </screen>
+     &example.outputs.8;
+     <screen>
+<![CDATA[
+$this is defined (A)
+
+Fatal error: Uncaught Error: Non-static method A::foo() cannot be called statically in %s :27
+Stack trace:
+#0 {main}
+  thrown in %s  on line 27
+]]>
+     </screen>
     </example>
-  </para>
- </sect2>
+   </warning>
+  </sect2>
 
  <sect2 xml:id="language.oop5.basic.new">
   <title>new</title>
@@ -215,7 +216,7 @@ object(SimpleClass)#1 (1) {
     </screen>
    </example>
    <para>
-    PHP 5.3.0 以降では、オブジェクトのインスタンスを作成する別の方法が新たに導入されました。
+    複数のやり方で、オブジェクトのインスタンスを作ることが出来ます:
    </para>
    <example>
     <title>新しいオブジェクトの作成</title>
@@ -256,7 +257,7 @@ bool(true)
    </example>
 
    <para>
-    PHP 5.4.0 以降では、新しく作成したオブジェクトのメンバーに、作成したその式の中でもアクセスできるようになりました。
+    新しく作成したオブジェクトのメンバーに、作成したその式の中でもアクセスすることができます。
    </para>
    <example>
     <title>新しく作成したオブジェクトのメンバーへのアクセス</title>
@@ -321,7 +322,7 @@ method
     これはつまり、プロパティに <link linkend="functions.anonymous">無名関数</link>
     を代入した場合に、その関数は直接呼び出せないということです。
     その場合は、たとえば事前にプロパティを変数に代入しておく必要があります。
-    PHP 7.0.0 からは、括弧で囲むことでプロパティを直接呼び出せるようになりました。
+    括弧で囲むと、プロパティを直接呼び出すこともできます。
    </para>
    <example>
     <title>プロパティに格納した無名関数の呼び出し</title>
@@ -341,11 +342,6 @@ class Foo
 
 $obj = new Foo();
 
-// PHP 5.3.0 以降
-$func = $obj->bar;
-echo $func(), PHP_EOL;
-
-// PHP 7.0.0 以降では、このようにすることもできます
 echo ($obj->bar)(), PHP_EOL;
 ]]>
     </programlisting>
@@ -359,14 +355,17 @@ echo ($obj->bar)(), PHP_EOL;
   </sect2>
 
  <sect2 xml:id="language.oop5.basic.extends">
+   <!-- TODO Example about class constant redefinition -->
+   <!-- TODO Split into it's own page? -->
   <title>extends</title>
   <para>
-   クラスは、宣言部に <literal>extends</literal> キーワードを含めることで、他のクラスのメソッドと
-   プロパティを継承することができます。多重継承を行うことはできず、クラスが継承できるベース
+   クラスは、宣言部に <literal>extends</literal> キーワードを含めることで、
+   他のクラスの定数や、メソッド、
+   およびプロパティを継承することができます。多重継承を行うことはできず、クラスが継承できるベース
    クラスは一つだけです。
   </para>
   <para>
-    継承されたメソッドやプロパティをオーバーライドするには、
+    継承された定数やメソッド、プロパティをオーバーライドするには、
     親クラスで定義されているのと同じ名前でそれを再宣言します。
     しかし、親クラスでそのメソッドが
     <link linkend="language.oop5.final">final</link>
@@ -376,6 +375,7 @@ echo ($obj->bar)(), PHP_EOL;
     で参照します。
   </para>
    <para>
+    <!-- TODO rewrite this for PHP 7 and 8 -->
     メソッドをオーバーライドするときには、パラメータのシグネチャも同じでなければなりません。
     もし違っていれば、PHP は <constant>E_STRICT</constant>
     レベルのエラーとなります。ただしコンストラクタは例外で、
