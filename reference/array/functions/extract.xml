@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: cd943f94a013b74df8765ab8e1a620a916a64a85 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 4a7ddddc27271967b616ad3400cfbe2a9b48212b Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa,shimooka -->
 <refentry xml:id="function.extract" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -220,100 +220,14 @@ blue, large, sphere, medium
     <function>extract</function> をユーザー入力
     (<varname>$_GET</varname> や <varname>$_FILES</varname> など)
     のような信頼できないデータについて使用しないでください。
-    もし行う場合、例えば
-    <link linkend="security.globals">register_globals</link>
-    を信頼しているような古いコードを一時的に実行したい場合、
-    <constant>EXTR_SKIP</constant> のような
-    <parameter>flags</parameter>
+    もし行う場合、
+    <constant>EXTR_SKIP</constant> のような <parameter>flags</parameter>
     の値が上書きされていないことを確認してください。そして
     <link linkend="ini">&php.ini;</link> の
     <link linkend="ini.variables-order">variables_order</link>
     で定義されたものと同じ順で展開すべきであることに留意してください。
    </para>
   </warning>
-  <note>
-   <para>
-    <link linkend="security.globals">register_globals</link> が on の状態で
-    <varname>$_FILES</varname> に対して
-    <function>extract</function> を実行して
-    <constant>EXTR_SKIP</constant> を指定すると、
-    その結果に驚くことでしょう。
-   </para>
-   <warning>
-    <para>
-     これは決しておすすめする方法ではなく、
-     単にドキュメントとしての完全性を求めてここに書いているだけです。
-     <link linkend="security.globals">register_globals</link>
-     を使ったり、<varname>$_FILES</varname> のような信頼できないデータに対して
-     <function>extract</function> を使ったりすることは非推奨となっています。
-     先に説明したようにセキュリティ上のリスクがあるからです。
-     もしこの問題に遭遇したならば、
-     まずいコーディング作法を少なくともふたつ使っているということになります。
-    </para>
-   </warning>
-   <programlisting role="php">
-<![CDATA[
-<?php
-
-/* $testfile にはアップロードされたファイルの名前が入っており、
-   register_globals が on であるものとします */
-
-var_dump($testfile);
-extract($_FILES, EXTR_SKIP);
-var_dump($testfile);
-var_dump($testfile['tmp_name']);
-
-?>
-]]>
-   </programlisting>
-   <simpara>
-    おそらくこんな結果になることを期待しているでしょう。
-   </simpara>
-   <screen>
-<![CDATA[
-string(14) "/tmp/phpgCCPX8"
-array(5) {
-  ["name"]=>
-  string(10) "somefile.txt"
-  ["type"]=>
-  string(24) "application/octet-stream"
-  ["tmp_name"]=>
-  string(14) "/tmp/phpgCCPX8"
-  ["error"]=>
-  int(0)
-  ["size"]=>
-  int(4208)
-}
-string(14) "/tmp/phpgCCPX8"
-]]>
-   </screen>
-   <simpara>
-    しかし、実際にはこのようになります。
-   </simpara>
-   <screen>
-<![CDATA[
-string(14) "/tmp/phpgCCPX8"
-string(14) "/tmp/phpgCCPX8"
-string(1) "/"
-]]>
-   </screen>
-   <para>
-    これは、<link linkend="security.globals">register_globals</link>
-    が on の場合は <function>extract</function>
-    がコールされた時点で既にグローバルスコープに
-    <varname>$testfile</varname> が存在するからです。
-    そして <constant>EXTR_SKIP</constant> が指定されているので、
-    <varname>$testfile</varname> が
-    <constant>$_FILES</constant> 配列の内容で上書きされることはありません。
-    <varname>$testfile</varname> はそのまま文字列として残るわけです。
-    <link linkend="language.types.string.substr">
-    文字列は配列構文を使ってもアクセスでき</link>、
-    非数値の文字列 <literal>tmp_name</literal> は
-    <literal>0</literal> と解釈されるので、PHP は
-    <varname>$testfile['tmp_name']</varname> を
-    <varname>$testfile[0]</varname> とみなします。
-   </para>
-  </note>
  </refsect1>
  <refsect1 role="seealso">
   &reftitle.seealso;
