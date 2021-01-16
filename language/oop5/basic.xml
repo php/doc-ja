@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: a9edd62d087ab1eb6292c795b7256e14ff9f1234 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 4317fec7555dd42621f88162cc5068092e5c5cfb Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa,mumumu -->
 
 <sect1 xml:id="language.oop5.basic" xmlns="http://docbook.org/ns/docbook">
@@ -374,13 +374,6 @@ echo ($obj->bar)(), PHP_EOL;
     <link linkend="language.oop5.paamayim-nekudotayim">parent::</link>
     で参照します。
   </para>
-   <para>
-    <!-- TODO rewrite this for PHP 7 and 8 -->
-    メソッドをオーバーライドするときには、パラメータのシグネチャも同じでなければなりません。
-    もし違っていれば、PHP は <constant>E_STRICT</constant>
-    レベルのエラーとなります。ただしコンストラクタは例外で、
-    異なるパラメータでオーバーライドすることができます。
-   </para>
   <example>
    <title>簡単なクラスの継承</title>
    <programlisting role="php">
@@ -409,6 +402,161 @@ a default value
 ]]>
    </screen>
   </example>
+
+   <sect3 xml:id="language.oop.lsp">
+    <title>シグネチャの互換性に関するルール</title>
+    <para>
+     メソッドをオーバーライドするときは、
+     子クラスのシグネチャが親クラスのそれと互換性がなければいけません。
+     互換性が壊れた場合、致命的なエラーが発生します。
+     PHP 8.0.0 より前のバージョンでは、
+     互換性が壊れた場合に、<constant>E_WARNING</constant> レベルの警告が発生していました。
+     <link linkend="language.oop5.variance">共変性と反変性</link>
+     の規則を守っている場合は、シグネチャに互換性があります。
+     必須の引数をオプションにした場合も、互換性があります。
+     また、新しい引数をオプションにしている場合も、互換性があります。
+     これは、リスコフの置換原則(Liskov Substitution Principle)、
+     略して LSP として知られています。
+     但し、<link linkend="language.oop5.decon.constructor">コンストラクタ</link>
+     と <literal>private</literal> メソッドについては、
+     この規則の例外で、
+     オーバライドしたシグネチャにミスマッチがあっても致命的なエラーにはなりません。
+    </para>
+    <example>
+     <title>互換性がある子クラスのメソッド</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+class Base
+{
+    public function foo(int $a) {
+        echo "Valid\n";
+    }
+}
+class Extend1 extends Base
+{
+    function foo(int $a = 5)
+    {
+        parent::foo($a);
+    }
+}
+class Extend2 extends Base
+{
+    function foo(int $a, $b = 5)
+    {
+        parent::foo($a);
+    }
+}
+$extended1 = new Extend1();
+$extended1->foo();
+$extended2 = new Extend2();
+$extended2->foo(1);
+]]>
+     </programlisting>
+     &example.outputs;
+     <screen>
+<![CDATA[
+Valid
+Valid
+]]>
+     </screen>
+    </example>
+
+    <para>
+     次の例は、引数を削除した子クラスのメソッドや、
+     オプションの引数を必須にしたりすることが、親クラスのメソッドと互換性がなくなることを示しています。
+    </para>
+    <example>
+     <title>子クラスのメソッドで引数を削除すると致命的なエラーになる</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+class Base
+{
+    public function foo(int $a = 5) {
+        echo "Valid\n";
+    }
+}
+class Extend extends Base
+{
+    function foo()
+    {
+        parent::foo(1);
+    }
+}
+]]>
+     </programlisting>
+     &example.outputs.8.similar;
+     <screen>
+<![CDATA[
+Fatal error: Declaration of Extend::foo() must be compatible with Base::foo(int $a = 5) in /in/evtlq on line 13
+]]>
+     </screen>
+    </example>
+    <example>
+     <title>子クラスのメソッドで、オプションの引数を必須にすると致命的なエラーになる</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+class Base
+{
+    public function foo(int $a = 5) {
+        echo "Valid\n";
+    }
+}
+class Extend extends Base
+{
+    function foo(int $a)
+    {
+        parent::foo($a);
+    }
+}
+]]>
+     </programlisting>
+     &example.outputs.8.similar;
+     <screen>
+<![CDATA[
+Fatal error: Declaration of Extend::foo(int $a) must be compatible with Base::foo(int $a = 5) in /in/qJXVC on line 13
+]]>
+     </screen>
+    </example>
+
+    <warning>
+     <para>
+      メソッドの引数の名前を子クラスで変更しても、
+      シグネチャ上は非互換になりません。
+      しかし、こうしてしまうと
+      <link linkend="functions.named-arguments">名前付き引数</link>
+      を使った時に実行時エラーになるので、おすすめできません。
+     </para>
+     <example>
+      <title>子クラスで引数の名前を変更し、かつ名前付き引数を使うとエラーになる</title>
+      <programlisting role="php">
+<![CDATA[
+<?php
+class A {
+    public function test($foo, $bar) {}
+}
+class B extends A {
+    public function test($a, $b) {}
+}
+$obj = new B;
+// A::test() の規約に従って引数を渡す
+$obj->test(foo: "foo", bar: "bar"); // エラー発生!
+]]>
+      </programlisting>
+      &example.outputs.similar;
+      <screen>
+<![CDATA[
+Fatal error: Uncaught Error: Unknown named parameter $foo in /in/XaaeN:14
+Stack trace:
+#0 {main}
+  thrown in /in/XaaeN on line 14
+]]>
+      </screen>
+     </example>
+    </warning>
+   </sect3>
  </sect2>
 
   <sect2 xml:id="language.oop5.basic.class.class">
