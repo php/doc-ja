@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 40d440e3fd0ce3418c42375129a1f363ba623833 Maintainer: mumumu Status: ready -->
+<!-- EN-Revision: e64ea89bbe0bd2cc28d48adfb3723f9ed5720fd1 Maintainer: mumumu Status: ready -->
 
 <refentry xml:id="soapclient.construct" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -16,11 +16,232 @@
    <methodparam choice="opt"><type>array</type><parameter>options</parameter><initializer>[]</initializer></methodparam>
   </constructorsynopsis>
   <para>
-   &info.function.alias; <methodname>SoapClient::SoapClient</methodname>
+   このコンストラクタは、<literal>WSDL</literal> モードもしくは
+   <literal>非 WSDL</literal> モードで <classname>SoapClient</classname>
+   オブジェクトを生成します。
+  </para>
+ </refsect1>
+
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <para>
+   <variablelist>
+    <varlistentry>
+     <term><parameter>wsdl</parameter></term>
+     <listitem>
+      <para>
+       <literal>WSDL</literal> ファイルの URI もしくは
+       <literal>非 WSDL</literal> モードの場合 &null;
+      </para>
+      <note>
+       <para>
+        開発中は、WSDL のキャッシュを &php.ini; の
+        <literal>soap.wsdl_cache_ttl</literal> で無効にしておくとよいでしょう。
+        そうしないと、WSDL を変更しても
+        <literal>soap.wsdl_cache_ttl</literal> で設定した時間が経過するまで
+        それが反映されなくなります。
+       </para>
+      </note>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>options</parameter></term>
+     <listitem>
+      <para>
+       オプションの配列。もし WSDL モードで動作させる場合、
+       このパラメータはオプションです。非 WSDL モードで動作させる場合、
+       <literal>location</literal> と <literal>uri</literal>
+       オプションを指定する必要があります。ここで、
+       <literal>location</literal> はリクエストの送り先である SOAP サーバーの URL、
+       <literal>uri</literal> は SOAP サービスのターゲット名前空間です。
+      </para>
+      <para>
+       <literal>style</literal> および <literal>use</literal>
+       オプション は非 WSDL モードでのみ動作します。
+       WSDL モードでは、これらは WSDL ファイルで指定されます。
+      </para>
+      <para>
+       <literal>soap_version</literal> オプションは、
+       <constant>SOAP_1_1</constant> あるいは <constant>SOAP_1_2</constant>
+       のどちらかを指定しなければいけません。それぞれ SOAP 1.1、SOAP 1.2 を表します。
+       省略した場合は 1.1 を使います。
+      </para>
+      <para>
+       HTTP 認証用として、<literal>login</literal> および
+       <literal>password</literal> オプションが使用可能です。
+       プロキシサーバー経由で HTTP 接続を確立する場合は、
+       <literal>proxy_host</literal>,
+       <literal>proxy_port</literal>, <literal>proxy_login</literal>
+       および <literal>proxy_password</literal>
+       の各オプションを使用してください。
+       HTTPS クライアント証明書による認証には
+       <literal>local_cert</literal> と <literal>passphrase</literal>
+       を使用します。認証情報は <literal>authentication</literal> 
+       オプションで指定します。認証方式は
+       <constant>SOAP_AUTHENTICATION_BASIC</constant> (デフォルト) あるいは
+       <constant>SOAP_AUTHENTICATION_DIGEST</constant> のいずれかとなります。
+      </para>
+      <para>
+       <literal>compression</literal> オプションにより、
+       HTTP SOAP リクエストやレスポンスの圧縮を行うことができます。
+      </para>
+      <para>
+       <literal>encoding</literal>
+       オプションは内部的な文字エンコーディングを定義します。
+       このオプションは SOAP リクエストのエンコーディング (常に utf-8)
+       を変更しませんが、その中の文字列を変換します。
+      </para>
+      <para>
+       <literal>trace</literal> オプションはリクエストのトレースを有効にします。
+       失敗したときにバックトレースが可能となります。
+       デフォルトは &false; です。
+      </para>
+      <para>
+       <literal>classmap</literal> オプションは WSDL 型を PHP
+       クラスにマッピングするために使用可能です。
+       このオプションには、キーとしてWSDL 型、値として PHP
+       クラスの名前を持つ配列を指定する必要があります。
+      </para>
+      <para>
+       boolean のオプション <literal>trace</literal> を設定すると、
+       <link linkend="soapclient.getlastrequest">
+       SoapClient->__getLastRequest</link>、
+      <link linkend="soapclient.getlastrequestheaders">
+       SoapClient->__getLastRequestHeaders</link>、
+       <link linkend="soapclient.getlastresponse">
+       SoapClient->__getLastResponse</link> および
+       <link linkend="soapclient.getlastresponseheaders">
+       SoapClient->__getLastResponseHeaders</link>
+       といったメソッドが使用できるようになります。
+      </para>
+      <para>
+       <literal>exceptions</literal> オプションは boolean 値で、soap のエラー時に
+       <link linkend="soapfault.construct">
+       SoapFault</link> 型の例外をスローさせるかどうかを設定します。
+      </para>
+      <para>
+       <literal>connection_timeout</literal> オプションは、SOAP
+       サービスに接続する際のタイムアウト秒数を指定します。
+       これを使用しても、レスポンスが遅いサービスのタイムアウトを定義することはできません。
+       サービスのコールが完了するまでの待ち時間を制限するには、設定項目
+       <link linkend="ini.default-socket-timeout">default_socket_timeout</link>
+       を使用します。
+      </para>
+      <para>
+       <literal>typemap</literal> オプションは、型マッピングの配列です。
+       この配列のキーは <literal>type_name</literal>、
+       <literal>type_ns</literal> (名前空間 URI)、<literal>from_xml</literal>
+       (引数として文字列をひとつ受け取るコールバック) そして <literal>to_xml</literal>
+       (引数としてオブジェクトをひとつ受け取るコールバック) です。
+      </para>
+      <para>
+       <literal>cache_wsdl</literal> オプションは
+       <constant>WSDL_CACHE_NONE</constant>、
+       <constant>WSDL_CACHE_DISK</constant>、
+       <constant>WSDL_CACHE_MEMORY</constant> あるいは
+       <constant>WSDL_CACHE_BOTH</constant> のいずれかです。
+      </para>
+      <para>
+       <literal>user_agent</literal> オプションは、
+       <literal>User-Agent</literal> ヘッダで使用する文字列を指定します。
+      </para>
+      <para>
+       <literal>stream_context</literal> オプションは、
+       <link linkend="context">context</link> 用のリソースです。
+      </para>
+      <para>
+       <literal>features</literal> オプションは
+       <constant>SOAP_SINGLE_ELEMENT_ARRAYS</constant>、
+       <constant>SOAP_USE_XSI_ARRAY_TYPE</constant>、
+       <constant>SOAP_WAIT_ONE_WAY_CALLS</constant> のビットマスクです。
+      </para>
+      <para>
+       <literal>keep_alive</literal> オプションは boolean 値で、
+       <literal>Connection: Keep-Alive</literal> ヘッダーと
+       <literal>Connection: close</literal> ヘッダーのどちらを送信するかを決めます。
+      </para>
+      <para>
+       <literal>ssl_method</literal> オプションは
+       <constant>SOAP_SSL_METHOD_TLS</constant> か
+       <constant>SOAP_SSL_METHOD_SSLv2</constant>、
+       <constant>SOAP_SSL_METHOD_SSLv3</constant>、あるいは
+       <constant>SOAP_SSL_METHOD_SSLv23</constant> のいずれかです。
+      </para>
+     </listitem>
+    </varlistentry>
+   </variablelist>
+  </para>
+ </refsect1>
+
+ <refsect1 role="errors">
+  &reftitle.errors;
+  <para>
+   <methodname>SoapClient::__construct</methodname> は、 
+   非 WSDL モードで <literal>location</literal> や
+   <literal>uri</literal> オプションを指定しなかったときに
+   <constant>E_ERROR</constant> エラーとなります。
+  </para>
+  <para>
+   <parameter>wsdl</parameter> URI が読み込めなかった場合に
+   <classname>SoapFault</classname> をスローします。
+  </para>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title><function>SoapClient::__construct</function> の例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+$client = new SoapClient("some.wsdl");
+
+$client = new SoapClient("some.wsdl", array('soap_version'   => SOAP_1_2));
+
+$client = new SoapClient("some.wsdl", array('login'          => "some_name",
+                                            'password'       => "some_password"));
+
+$client = new SoapClient("some.wsdl", array('proxy_host'     => "localhost",
+                                            'proxy_port'     => 8080));
+
+$client = new SoapClient("some.wsdl", array('proxy_host'     => "localhost",
+                                            'proxy_port'     => 8080,
+                                            'proxy_login'    => "some_name",
+                                            'proxy_password' => "some_password"));
+
+$client = new SoapClient("some.wsdl", array('local_cert'     => "cert_key.pem"));
+
+$client = new SoapClient(null, array('location' => "http://localhost/soap.php",
+                                     'uri'      => "http://test-uri/"));
+
+$client = new SoapClient(null, array('location' => "http://localhost/soap.php",
+                                     'uri'      => "http://test-uri/",
+                                     'style'    => SOAP_DOCUMENT,
+                                     'use'      => SOAP_LITERAL));
+
+$client = new SoapClient("some.wsdl",
+  array('compression' => SOAP_COMPRESSION_ACCEPT | SOAP_COMPRESSION_GZIP));
+
+$client = new SoapClient("some.wsdl", array('encoding'=>'ISO-8859-1'));
+
+class MyBook {
+    public $title;
+    public $author;
+}
+
+$client = new SoapClient("books.wsdl", array('classmap' => array('book' => "MyBook")));
+
+?>
+]]>
+    </programlisting>
+   </example>
   </para>
  </refsect1>
 
 </refentry>
+
 <!-- Keep this comment at the end of the file
 Local variables:
 mode: sgml
