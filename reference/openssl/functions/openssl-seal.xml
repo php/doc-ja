@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: e41806c30bf6975e452c0d4ce35ab0984c2fa68c Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: d1e3ea622e5d4f542cd36eca59a9f22aa0142633 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi,mumumu -->
-<refentry xmlns="http://docbook.org/ns/docbook" xml:id="function.openssl-seal">
+<refentry xml:id="function.openssl-seal" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>openssl_seal</refname>
   <refpurpose>データをシール(暗号化)する</refpurpose>
@@ -11,19 +11,21 @@
  <refsect1 role="description">
   &reftitle.description;
   <methodsynopsis>
-   <type>int</type><methodname>openssl_seal</methodname>
+   <type class="union"><type>int</type><type>false</type></type><methodname>openssl_seal</methodname>
    <methodparam><type>string</type><parameter>data</parameter></methodparam>
    <methodparam><type>string</type><parameter role="reference">sealed_data</parameter></methodparam>
-   <methodparam><type>array</type><parameter role="reference">env_keys</parameter></methodparam>
-   <methodparam><type>array</type><parameter>pub_key_ids</parameter></methodparam>
-   <methodparam choice="opt"><type>string</type><parameter>method</parameter><initializer>"RC4"</initializer></methodparam>
-   <methodparam choice="opt"><type>string</type><parameter role="reference">iv</parameter></methodparam>
+   <methodparam><type>array</type><parameter role="reference">encrypted_keys</parameter></methodparam>
+   <methodparam><type>array</type><parameter>public_key</parameter></methodparam>
+   <methodparam><type>string</type><parameter>cipher_algo</parameter></methodparam>
+   <methodparam choice="opt"><type>string</type><parameter role="reference">iv</parameter><initializer>&null;</initializer></methodparam>
   </methodsynopsis>
   <para>
    <function>openssl_seal</function> は、ランダムに生成された秘密鍵
-   および指定した <parameter>method</parameter> を使用して <parameter>data</parameter> をシール(暗号化)
-   します。このキーは、<parameter>pub_key_ids</parameter> を ID とする
-   公開鍵で暗号化されます。これは、暗号化されたデータを複数の受信者に
+   および指定した <parameter>cipher_algo</parameter> を使用して <parameter>data</parameter> をシール(暗号化)
+   します。このキーは、<parameter>public_key</parameter> を ID とする
+   公開鍵で暗号化されます。
+   それぞれの暗号化されたキーは <parameter>encrypted_keys</parameter> で返されます。
+   これは、暗号化されたデータを複数の受信者に
    送信できることを意味します（この際、各受信者は送信側に公開鍵を
    提供します）。各受信者は、暗号化されたデータとその受信者の
    公開鍵で暗号化されたエンベロープキーを受け取る必要があります。
@@ -51,7 +53,7 @@
      </listitem>
     </varlistentry>
     <varlistentry>
-     <term><parameter>env_keys</parameter></term>
+     <term><parameter>encrypted_keys</parameter></term>
      <listitem>
       <para>
        暗号化したキーの配列。
@@ -59,15 +61,16 @@
      </listitem>
     </varlistentry>
     <varlistentry>
-     <term><parameter>pub_key_ids</parameter></term>
+     <term><parameter>public_key</parameter></term>
      <listitem>
       <para>
-       公開鍵リソース ID の配列。
+       公開鍵を含んだ <classname>OpenSSLAsymmetricKey</classname> 
+       クラスのインスタンスの配列。
       </para>
      </listitem>
     </varlistentry>
     <varlistentry>
-     <term><parameter>method</parameter></term>
+     <term><parameter>cipher_algo</parameter></term>
      <listitem>
       <para>
        暗号化方式
@@ -98,8 +101,45 @@
    成功時にシール(暗号化)されたデータの長さ、エラー時に &false;
    を返します。成功時には、暗号化されたデータが
    <parameter>sealed_data</parameter> に、エンベロープキーが
-   <parameter>env_keys</parameter> に返されます。
+   <parameter>encrypted_keys</parameter> に返されます。
   </para>
+ </refsect1>
+
+ <refsect1 role="changelog">
+  &reftitle.changelog;
+  <informaltable>
+   <tgroup cols="2">
+    <thead>
+     <row>
+      <entry>&Version;</entry>
+      <entry>&Description;</entry>
+     </row>
+    </thead>
+    <tbody>
+     <row>
+      <entry>8.0.0</entry>
+      <entry>
+       <parameter>public_key</parameter> は、
+       <classname>OpenSSLAsymmetricKey</classname> クラスのインスタンスの配列を受け入れるようになりました。
+       これより前のバージョンでは、
+       <literal>OpenSSL key</literal> 型のリソースの配列を受け入れていました。
+      </entry>
+     </row>
+     <row>
+      <entry>8.0.0</entry>
+      <entry>
+       <parameter>cipher_algo</parameter> は、オプションではなくなりました。
+      </entry>
+     </row>
+     <row>
+      <entry>8.0.0</entry>
+      <entry>
+       <parameter>iv</parameter> は、nullable になりました。
+      </entry>
+     </row>
+    </tbody>
+   </tgroup>
+  </informaltable>
  </refsect1>
 
  <refsect1 role="examples">
@@ -148,7 +188,6 @@ openssl_free_key($pk2);
  </refsect1>
 
 </refentry>
-
 <!-- Keep this comment at the end of the file
 Local variables:
 mode: sgml

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 86e6094e86b84a51d00ab217ac50ce8dde33d82a Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: d1e3ea622e5d4f542cd36eca59a9f22aa0142633 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi,mumumu -->
-<refentry xmlns="http://docbook.org/ns/docbook" xml:id="function.openssl-csr-new">
+<refentry xml:id="function.openssl-csr-new" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>openssl_csr_new</refname>
   <refpurpose>CSR を作成する</refpurpose>
@@ -11,15 +11,15 @@
  <refsect1 role="description">
   &reftitle.description;
   <methodsynopsis>
-   <type>mixed</type><methodname>openssl_csr_new</methodname>
-   <methodparam><type>array</type><parameter>dn</parameter></methodparam>
-   <methodparam><type>resource</type><parameter role="reference">privkey</parameter></methodparam>
-   <methodparam choice="opt"><type>array</type><parameter>configargs</parameter></methodparam>
-   <methodparam choice="opt"><type>array</type><parameter>extraattribs</parameter></methodparam>
+   <type class="union"><type>OpenSSLCertificateSigningRequest</type><type>false</type></type><methodname>openssl_csr_new</methodname>
+   <methodparam><type>array</type><parameter>distinguished_names</parameter></methodparam>
+   <methodparam><type>OpenSSLAsymmetricKey</type><parameter role="reference">private_key</parameter></methodparam>
+   <methodparam choice="opt"><type class="union"><type>array</type><type>null</type></type><parameter>options</parameter><initializer>&null;</initializer></methodparam>
+   <methodparam choice="opt"><type class="union"><type>array</type><type>null</type></type><parameter>extra_attributes</parameter><initializer>&null;</initializer></methodparam>
   </methodsynopsis>
   <para>
    <function>openssl_csr_new</function> は、新しい CSR (Certificate Signing Request)
-   を <parameter>dn</parameter> の情報に基づいて作成します。
+   を <parameter>distinguished_names</parameter> の情報に基づいて作成します。
   </para>
   &note.openssl.cnf;
  </refsect1>
@@ -29,7 +29,7 @@
   <para>
    <variablelist>
     <varlistentry>
-     <term><parameter>dn</parameter></term>
+     <term><parameter>distinguished_names</parameter></term>
      <listitem>
       <para>
        証明書で使用される識別名、またはsubjectフィールド。
@@ -37,32 +37,32 @@
      </listitem>
     </varlistentry>
     <varlistentry>
-     <term><parameter>privkey</parameter></term>
+     <term><parameter>private_key</parameter></term>
      <listitem>
       <para>
-       <parameter>privkey</parameter> には、事前に <function>openssl_pkey_new</function>
+       <parameter>private_key</parameter> には、事前に <function>openssl_pkey_new</function>
        （あるいはその他の openssl_pkey 系の関数）で作成した秘密鍵を設定します。
        これに対応する公開鍵が、CSR への署名に使用されます。
       </para>
      </listitem>
     </varlistentry>
     <varlistentry>
-     <term><parameter>configargs</parameter></term>
+     <term><parameter>options</parameter></term>
      <listitem>
       <para>
        デフォルトでは、システムの <literal>openssl.conf</literal> の設定に
-       したがってリクエストが初期化されます。<parameter>configargs</parameter>
+       したがってリクエストが初期化されます。<parameter>options</parameter>
        のキー <literal>config_section_section</literal> を設定することで、この
        デフォルト項目を変更することが可能です。また、キー <literal>config</literal>
        に別の openssl 設定ファイルを指定することで別の設定を使用することも可能です。
-       もし <parameter>configargs</parameter> に以下の表のキーが存在すれば、それらは
+       もし <parameter>options</parameter> に以下の表のキーが存在すれば、それらは
        <literal>openssl.conf</literal> の対応する項目と同じ働きをします。
        <table>
         <title>設定の上書き</title>
         <tgroup cols="3">
          <thead>
           <row>
-           <entry><parameter>configargs</parameter> のキー</entry>
+           <entry><parameter>options</parameter> のキー</entry>
            <entry>型</entry>
            <entry><literal>openssl.conf</literal> で同等の意味を持つ項目</entry>
            <entry>説明</entry>
@@ -145,12 +145,12 @@
      </listitem>
     </varlistentry>
     <varlistentry>
-     <term><parameter>extraattribs</parameter></term>
+     <term><parameter>extra_attributes</parameter></term>
      <listitem>
       <para>
-       <parameter>extraattribs</parameter> は、CSR に関する追加の設定情報を
-       設定するために使用します。<parameter>dn</parameter> および
-       <parameter>extraattribs</parameter> はどちらも連想配列で、それらの
+       <parameter>extra_attributes</parameter> は、CSR に関する追加の設定情報を
+       設定するために使用します。<parameter>distinguished_names</parameter> および
+       <parameter>extra_attributes</parameter> はどちらも連想配列で、それらの
        キーが OID に変換されたうえでリクエストの関連する部分に適用されます。
       </para>
      </listitem>
@@ -179,9 +179,27 @@
     </thead>
     <tbody>
      <row>
+      <entry>8.0.0</entry>
+      <entry>
+       成功した場合に、この関数は
+       <classname>OpenSSLCertificateSigningRequest</classname> クラスのインスタンスを返すようになりました。
+       これより前のバージョンでは、
+       <literal>OpenSSL X.509 CSR</literal> 型のリソースが返されていました。
+      </entry>
+     </row>
+     <row>
+      <entry>8.0.0</entry>
+      <entry>
+       <parameter>private_key</parameter> は、
+       <classname>OpenSSLAsymmetricKey</classname> クラスのインスタンを受け入れるようになりました。
+       これより前のバージョンでは、
+       <literal>OpenSSL key</literal> 型のリソースを受け入れていました。
+      </entry>
+     </row>
+     <row>
       <entry>7.1.0</entry>
       <entry>
-       <parameter>configargs</parameter> が、新たに <literal>curve_name</literal> をサポートしました。
+       <parameter>options</parameter> が、新たに <literal>curve_name</literal> をサポートしました。
       </entry>
      </row>
     </tbody>
@@ -278,7 +296,6 @@ openssl_pkey_export_to_file($private_key, 'ecc-private.key');
  </refsect1>
 
 </refentry>
-
 <!-- Keep this comment at the end of the file
 Local variables:
 mode: sgml

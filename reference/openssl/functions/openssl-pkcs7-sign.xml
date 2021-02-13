@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 904d0aeccde44f12b8e87e326febc091bf3466f9 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: d1e3ea622e5d4f542cd36eca59a9f22aa0142633 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi,mumumu -->
-<refentry xmlns="http://docbook.org/ns/docbook" xml:id="function.openssl-pkcs7-sign">
+<refentry xml:id="function.openssl-pkcs7-sign" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>openssl_pkcs7_sign</refname>
   <refpurpose>S/MIME メッセージに署名する</refpurpose>
@@ -12,18 +12,18 @@
   &reftitle.description;
   <methodsynopsis>
    <type>bool</type><methodname>openssl_pkcs7_sign</methodname>
-   <methodparam><type>string</type><parameter>infilename</parameter></methodparam>
-   <methodparam><type>string</type><parameter>outfilename</parameter></methodparam>
-   <methodparam><type>mixed</type><parameter>signcert</parameter></methodparam>
-   <methodparam><type>mixed</type><parameter>privkey</parameter></methodparam>
-   <methodparam><type>array</type><parameter>headers</parameter></methodparam>
-   <methodparam choice="opt"><type>int</type><parameter>flags</parameter><initializer>PKCS7_DETACHED</initializer></methodparam>
-   <methodparam choice="opt"><type>string</type><parameter>extracerts</parameter></methodparam>
+   <methodparam><type>string</type><parameter>input_filename</parameter></methodparam>
+   <methodparam><type>string</type><parameter>output_filename</parameter></methodparam>
+   <methodparam><type class="union"><type>OpenSSLCertificate</type><type>string</type></type><parameter>certificate</parameter></methodparam>
+   <methodparam><type class="union"><type>OpenSSLAsymmetricKey</type><type>OpenSSLCertificate</type><type>array</type><type>string</type></type><parameter>private_key</parameter></methodparam>
+   <methodparam><type class="union"><type>array</type><type>null</type></type><parameter>headers</parameter></methodparam>
+   <methodparam choice="opt"><type>int</type><parameter>flags</parameter><initializer><constant>PKCS7_DETACHED</constant></initializer></methodparam>
+   <methodparam choice="opt"><type class="union"><type>string</type><type>null</type></type><parameter>untrusted_certificates_filename</parameter><initializer>&null;</initializer></methodparam>
   </methodsynopsis>
   <para>
    <function>openssl_pkcs7_sign</function> は
-   <parameter>infilename</parameter> という名前のファイルの内容を取得し、
-   パラメータ <parameter>signcert</parameter> と <parameter>privkey</parameter>で
+   <parameter>input_filename</parameter> という名前のファイルの内容を取得し、
+   パラメータ <parameter>certificate</parameter> と <parameter>private_key</parameter>で
    指定した証明書とそれに対応する秘密鍵を用いて署名します。
   </para>
  </refsect1>
@@ -33,7 +33,7 @@
   <para>
    <variablelist>
     <varlistentry>
-     <term><parameter>infilename</parameter></term>
+     <term><parameter>input_filename</parameter></term>
      <listitem>
       <para>
         デジタル署名したい入力ファイル
@@ -41,7 +41,7 @@
      </listitem>
     </varlistentry>
     <varlistentry>
-     <term><parameter>outfilename</parameter></term>
+     <term><parameter>output_filename</parameter></term>
      <listitem>
       <para>
         デジタル署名が書き出されるファイル
@@ -49,7 +49,7 @@
      </listitem>
     </varlistentry>
     <varlistentry>
-     <term><parameter>signcert</parameter></term>
+     <term><parameter>certificate</parameter></term>
      <listitem>
       <para>
         The X.509 certificate used to digitally sign infilename.
@@ -62,10 +62,10 @@
      </listitem>
     </varlistentry>
     <varlistentry>
-     <term><parameter>privkey</parameter></term>
+     <term><parameter>private_key</parameter></term>
      <listitem>
       <para>
-       <parameter>privkey</parameter> は、signcert に対応する秘密鍵です。
+       <parameter>private_key</parameter> は、signcert に対応する秘密鍵です。
        有効な値のリストは、
        <link linkend="openssl.certparams">公開鍵/秘密鍵 のパラメータ</link> を参照してください。
       </para>
@@ -92,10 +92,10 @@
      </listitem>
     </varlistentry>
     <varlistentry>
-     <term><parameter>extracerts</parameter></term>
+     <term><parameter>untrusted_certificates_filename</parameter></term>
      <listitem>
       <para>
-       <parameter>extracerts</parameter> には、
+       <parameter>untrusted_certificates_filename</parameter> には、
        署名に含めるための他の一連の証明書を記述したファイル名を指定します。
        これは、例えば送信者が使用した証明書を受信者が検証しやすくするために使用することが可能です。
       </para>
@@ -110,6 +110,42 @@
   <para>
    &return.success;
   </para>
+ </refsect1>
+
+ <refsect1 role="changelog">
+  &reftitle.changelog;
+  <informaltable>
+   <tgroup cols="2">
+    <thead>
+     <row>
+      <entry>&Version;</entry>
+      <entry>&Description;</entry>
+     </row>
+    </thead>
+    <tbody>
+     <row>
+      <entry>8.0.0</entry>
+      <entry>
+       <parameter>certificate</parameter> は、
+       <classname>OpenSSLCertificate</classname> クラスのインスタンスを受け入れるようになりました。
+       これより前のバージョンでは、
+       <literal>OpenSSL X.509 CSR</literal> 型のリソースを受け入れていました。
+      </entry>
+     </row>
+     <row>
+      <entry>8.0.0</entry>
+      <entry>
+       <parameter>private_key</parameter> は、
+       <classname>OpenSSLAsymmetricKey</classname> または
+       <classname>OpenSSLCertificate</classname> クラスのインスタンスを受け入れるようになりました。
+       これより前のバージョンでは、
+       <literal>OpenSSL key</literal> または
+       <literal>OpenSSL X.509 CSR</literal> 型のリソースを受け入れていました。
+      </entry>
+     </row>
+    </tbody>
+   </tgroup>
+  </informaltable>
  </refsect1>
 
  <refsect1 role="examples">
@@ -149,7 +185,6 @@ if (openssl_pkcs7_sign("msg.txt", "signed.txt", "file://mycert.pem",
  </refsect1>
 
 </refentry>
-
 <!-- Keep this comment at the end of the file
 Local variables:
 mode: sgml
