@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: e41806c30bf6975e452c0d4ce35ab0984c2fa68c Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: c7d18f5a16306694c33a5170b35457c13e39fc92 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi -->
-<refentry xmlns="http://docbook.org/ns/docbook" xml:id="function.openssl-csr-sign">
+<refentry xml:id="function.openssl-csr-sign" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>openssl_csr_sign</refname>
   <refpurpose>CSRに他の証明書（あるいは自分自身）で署名して証明書を作成する</refpurpose>
@@ -11,17 +11,17 @@
  <refsect1 role="description">
   &reftitle.description;
   <methodsynopsis>
-   <type>resource</type><methodname>openssl_csr_sign</methodname>
-   <methodparam><type>mixed</type><parameter>csr</parameter></methodparam>
-   <methodparam><type>mixed</type><parameter>cacert</parameter></methodparam>
-   <methodparam><type>mixed</type><parameter>priv_key</parameter></methodparam>
+   <type class="union"><type>OpenSSLCertificate</type><type>false</type></type><methodname>openssl_csr_sign</methodname>
+   <methodparam><type class="union"><type>OpenSSLCertificateSigningRequest</type><type>string</type></type><parameter>csr</parameter></methodparam>
+   <methodparam><type class="union"><type>OpenSSLCertificate</type><type>string</type><type>null</type></type><parameter>ca_certificate</parameter></methodparam>
+   <methodparam><type class="union"><type>OpenSSLAsymmetricKey</type><type>OpenSSLCertificate</type><type>array</type><type>string</type></type><parameter>private_key</parameter></methodparam>
    <methodparam><type>int</type><parameter>days</parameter></methodparam>
-   <methodparam choice="opt"><type>array</type><parameter>configargs</parameter></methodparam>
+   <methodparam choice="opt"><type class="union"><type>array</type><type>null</type></type><parameter>options</parameter><initializer>&null;</initializer></methodparam>
    <methodparam choice="opt"><type>int</type><parameter>serial</parameter><initializer>0</initializer></methodparam>
   </methodsynopsis>
   <para>
    <function>openssl_csr_sign</function> は、
-   指定した CSR を用いて x509 証明書リソースを作成します。
+   指定した CSR を用いて x509 証明書を作成します。
   </para>
   &note.openssl.cnf;
  </refsect1>
@@ -41,20 +41,20 @@
      </listitem>
     </varlistentry>
     <varlistentry>
-     <term><parameter>cacert</parameter></term>
+     <term><parameter>ca_certificate</parameter></term>
      <listitem>
       <para>
-       作成された証明書は <parameter>cacert</parameter> で署名されます。
-       <parameter>cacert</parameter> が &null; の場合は、自己署名の証明書となります。
+       作成された証明書は <parameter>ca_certificate</parameter> で署名されます。
+       <parameter>ca_certificate</parameter> が &null; の場合は、自己署名の証明書となります。
       </para>
      </listitem>
     </varlistentry>
     <varlistentry>
-     <term><parameter>priv_key</parameter></term>
+     <term><parameter>private_key</parameter></term>
      <listitem>
       <para>
-       <parameter>priv_key</parameter> は
-       <parameter>cacert</parameter> に対応する秘密鍵です。
+       <parameter>private_key</parameter> は
+       <parameter>ca_certificate</parameter> に対応する秘密鍵です。
       </para>
      </listitem>
     </varlistentry>
@@ -67,11 +67,11 @@
      </listitem>
     </varlistentry>
     <varlistentry>
-     <term><parameter>configargs</parameter></term>
+     <term><parameter>options</parameter></term>
      <listitem>
       <para>
-       <parameter>configargs</parameter> で証明書の詳細設定が可能です。
-       <parameter>configargs</parameter> についての詳細な情報は
+       <parameter>options</parameter> で証明書の詳細設定が可能です。
+       <parameter>options</parameter> についての詳細な情報は
        <function>openssl_csr_new</function> を参照ください。
       </para>
      </listitem>
@@ -92,8 +92,63 @@
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
-   成功した場合に x509 証明書リソース、失敗した場合に &false; を返します。
+   成功した場合に <classname>OpenSSLCertificate</classname> オブジェクト。
+   失敗した場合に &false; を返します。
   </para>
+ </refsect1>
+
+ <refsect1 role="changelog">
+  &reftitle.changelog;
+  <informaltable>
+   <tgroup cols="2">
+    <thead>
+     <row>
+      <entry>&Version;</entry>
+      <entry>&Description;</entry>
+     </row>
+    </thead>
+    <tbody>
+     <row>
+      <entry>8.0.0</entry>
+      <entry>
+       成功した場合に、この関数は
+       <classname>OpenSSLCertificate</classname> クラスのインスタンスを返すようになりました。
+       これより前のバージョンでは、
+       <literal>OpenSSL X.509</literal> 型のリソースを返していました。
+      </entry>
+     </row>
+     <row>
+      <entry>8.0.0</entry>
+      <entry>
+       <parameter>csr</parameter> は、
+       <classname>OpenSSLCertificateSigningRequest</classname> のインスタンスを受け入れるようになりました。
+       これより前のバージョンでは、
+       <literal>OpenSSL X.509 CSR</literal> 型のリソースを受け入れていました。
+      </entry>
+     </row>
+     <row>
+      <entry>8.0.0</entry>
+      <entry>
+       <parameter>ca_certificate</parameter> は、
+       <classname>OpenSSLCertificate</classname> クラスのインスタンスを受け入れるようになりました。
+       これより前のバージョンでは、
+       <literal>OpenSSL X.509</literal> 型のリソースを受け入れていました。
+      </entry>
+     </row>
+     <row>
+      <entry>8.0.0</entry>
+      <entry>
+       <parameter>private_key</parameter> は、
+       <classname>OpenSSLAsymmetricKey</classname> または
+       <classname>OpenSSLCertificate</classname> クラスのインスタンスを受け入れるようになりました。
+       これより前のバージョンでは、
+       <literal>OpenSSL key</literal> または
+       <literal>OpenSSL X.509</literal> 型のリソースを受け入れていました。
+      </entry>
+     </row>
+    </tbody>
+   </tgroup>
+  </informaltable>
  </refsect1>
 
  <refsect1 role="examples">
@@ -138,7 +193,6 @@ while (($e = openssl_error_string()) !== false) {
  </refsect1>
 
 </refentry>
-
 <!-- Keep this comment at the end of the file
 Local variables:
 mode: sgml
