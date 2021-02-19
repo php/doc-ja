@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 783fbc2001b129f5f8956937e15e253969b8765c Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 12b1d4704ea448b55ec155619be1e50c0e67e9f9 Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa,mumumu -->
  <chapter xml:id="language.operators" xmlns="http://docbook.org/ns/docbook">
   <title>演算子</title>
@@ -1828,17 +1828,42 @@ echo $foo ?? $bar ?? $baz ?? $qux; // 出力は 1 です
   <sect1 xml:id="language.operators.errorcontrol">
    <title>エラー制御演算子</title>
    <simpara>
-    PHP はエラー制御演算子(@)をサポートしています。PHP の式の前に付けた場合、
+    PHP はエラー制御演算子(<literal>@</literal>)をサポートしています。
+    PHP の式の前に付けた場合、
     その式により生成されたエラーメッセージは無視されます。
    </simpara>
-   <simpara>
+   <para>
     <function>set_error_handler</function> で自作のエラーハンドラを設定した場合は
     エラー制御演算子があってもそのエラーハンドラがコールされます。
-    しかし、自作のエラーハンドラの中で <function>error_reporting</function>
-    をコールすれば、@ つきの式で生成されたエラーの場合は返り値が 0
-    になるのでこの値で区別することができます。
-    自作のエラーハンドラの中ではこの方法による区別を行うべきです。
-   </simpara>
+    その場合、自作のエラーハンドラの中で <function>error_reporting</function>
+    をコールし、<literal>@</literal>
+    演算子が使われているかを次のようにして確認すべきです。
+
+    <informalexample>
+     <programlisting role="php">
+<![CDATA[
+<?php
+function my_error_handler($err_no, $err_msg, $filename, $linenum) {
+    if (!(error_reporting() & $err_no)) {
+        return false; // Silenced
+    }
+    // ...
+}
+?>
+]]>
+     </programlisting>
+    </informalexample>
+   </para>
+
+   <warning>
+    <para>
+     PHP 8.0.0 より前のバージョンでは、
+     カスタムのエラーハンドラで渡されるエラーレベルは、
+     エラーメッセージが無視されている場合常に <literal>0</literal> でした。
+     このことは、PHP 8.0.0 以降は当てはまりません。
+    </para>
+   </warning>
+
    <simpara>
     式によって生成されたあらゆるエラーメッセージは
     <function>error_get_last</function> 関数が返す配列要素
@@ -1865,22 +1890,26 @@ $value = @$cache[$key];
    </para>
    <note>
     <simpara>
-     @演算子は、<link linkend="language.expressions">式</link>
-     でのみ動作します。基本的なルールは次のようになります。
-     値を得ることができるものの場合、@ 演算子を前に付けることが可能です。
-     例えば、変数、関数、<function>include</function> コール、定数等の
-     前にこの演算子をつけることが可能です。関数またはクラスの定義や
+     <literal>@</literal> 演算子は、
+     <link linkend="language.expressions">式</link>
+     に対してのみ動作します。基本的なルールは次のようになります。
+     値を得ることができるものの場合、
+     <literal>@</literal> 演算子を前に付けることが可能です。
+     例えば、変数、関数、いくつかの言語構造(例: <function>include</function>)
+     のコールなどの前に、この演算子をつけることが可能です。
+     関数またはクラスの定義、
      <literal>if</literal> や &foreach; 等のような
-     条件構造の前にこの演算子を付けることはできません。
+     条件構造の前には、この演算子を付けることはできません。
     </simpara>
    </note>
    <warning>
     <para>
-     現在、エラー制御演算子プレフィックス"@"は、スクリプトの実行を
-     終了するような致命的なエラーの出力さえ抑圧します。このため、ある関数の
-     エラー出力を抑制するために "@" を使用した場合、その関数が
-     利用できなかったり、ミスタイプがあった場合でも、原因を示すことなく
-     その場所でスクリプトは終了してしまいます。
+     PHP 8.0.0 より前のバージョンでは、
+     スクリプトの実行を停止させるような致命的なエラーであっても
+     <literal>@</literal> 演算子で抑止することが可能でした。
+     たとえば、存在しなかったり、ミスタイプされていたり、
+     利用できない関数コールの前に <literal>@</literal> 演算子を付けると、
+     原因を示すことなく、その場所でスクリプトは終了してしまいます。
     </para>
    </warning>
   
