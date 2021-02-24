@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 96c9d88bad9a7d7d44bfb7f26c226df7ee9ddf26 Maintainer: hirokawa Status: ready -->
-<!-- CREDITS: takagi -->
+<!-- EN-Revision: 3e08a8aae657492bdcdc7c550099ddf072042fa9 Maintainer: hirokawa Status: ready -->
+<!-- CREDITS: takagi,mumumu -->
  <chapter xml:id="faq.misc" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
   <title>その他の質問</title>
   <titleabbrev>その他の質問</titleabbrev>
@@ -79,128 +79,6 @@
       tar 形式のファイルは <link xlink:href="&url.winzip;">WinZip</link>
       といったアーカイバで扱うことができます。
       </para>
-    </answer>
-   </qandaentry>
-
-   <qandaentry xml:id="faq.misc.arguments.references">
-    <question>
-     <para>
-      <function>asort</function> の定義のように、引数の横に &amp; が
-      ついているのはどういう意味ですか?
-     </para>
-    </question>
-    <answer>
-     <para>
-      その引数が
-      <link linkend="language.references.pass">参照渡し</link> であり、
-      ドキュメントに書かれているとおり、関数内でそれが変更される可能性が
-      あることを示します。変数のみをこの方法で渡すことができ、関数を
-      コールする際に &amp; を渡す必要はありません（これは
-      <link linkend="ini.allow-call-time-pass-reference">廃止予定</link>
-      の方法です）。
-     </para>
-    </answer>
-   </qandaentry>
-   
-   <qandaentry xml:id="faq.misc.registerglobals">
-    <question>
-     <para>
-      私はどのように <literal>register_globals</literal> を扱うべきですか?
-     </para>
-    </question>
-    <answer>
-     <para>
-      <literal>register_globals</literal> とセキュリティの関連については、
-      <link linkend="security.globals">Using register_globals</link>
-      を参照ください。
-     </para>
-     <para>
-      <literal>register_globals</literal> が On であることに依存するよりも、
-      <link linkend="language.variables.superglobals">スーパーグローバル</link>
-      の使用を推奨します。
-     </para>
-     <para>
-      <literal>register_globals</literal> が Off になっている共有ホスト上で
-      古いアプリケーションを動かす必要があり、アプリケーションがこの設定を
-      On にすることを要求している場合、
-      あるいはこの機能が On になっているホスティングサーバー上でセキュリティの
-      リスクを抑えたい場合など、PHP でこれらの設定を逆転させる必要が出てきます。
-      いちばんいい方法は PHP の設定を変更できないか確認してみることですが、
-      もしそれができない場合には、このような方法を使用することができます。
-     </para>
-     <para>
-      <example>
-       <title>Register Globals をエミュレートする</title>
-        <para>
-        これは register_globals On をエミュレートします。
-        <link linkend="ini.variables-order">variables_order</link>
-        ディレクティブを変更している場合は、それに応じて
-        <varname>$superglobals</varname> を変更してください。
-       </para>
-       <programlisting role="php">
-<![CDATA[
-<?php
-// register_globals on をエミュレートする
-if (!ini_get('register_globals')) {
-    $superglobals = array($_SERVER, $_ENV,
-        $_FILES, $_COOKIE, $_POST, $_GET);
-    if (isset($_SESSION)) {
-        array_unshift($superglobals, $_SESSION);
-    }
-    foreach ($superglobals as $superglobal) {
-        extract($superglobal, EXTR_SKIP);
-    }
-}
-?>
-]]>
-       </programlisting>
-       <para>
-        これは register_globals Off をエミュレートします。
-        注意してほしいのは、このコードはスクリプト内のいちばん最初に
-        コールされる必要があるということです。ただし、
-        セッションを開始するために <function>session_start</function>
-        を使用する場合は、その後にコールする必要があります。
-       </para>
-       <programlisting role="php">
-<![CDATA[
-<?php
-// register_globals off をエミュレートする
-function unregister_GLOBALS()
-{
-    if (!ini_get('register_globals')) {
-        return;
-    }
-
-    // よりよいエラーメッセージのために、これを変更するとよいでしょう
-    if (isset($_REQUEST['GLOBALS']) || isset($_FILES['GLOBALS'])) {
-        die('GLOBALS overwrite attempt detected');
-    }
-
-    // unset すべきでない変数群
-    $noUnset = array('GLOBALS',  '_GET',
-                     '_POST',    '_COOKIE',
-                     '_REQUEST', '_SERVER',
-                     '_ENV',     '_FILES');
-
-    $input = array_merge($_GET,    $_POST,
-                         $_COOKIE, $_SERVER,
-                         $_ENV,    $_FILES,
-                         isset($_SESSION) && is_array($_SESSION) ? $_SESSION : array());
-    
-    foreach ($input as $k => $v) {
-        if (!in_array($k, $noUnset) && isset($GLOBALS[$k])) {
-            unset($GLOBALS[$k]);
-        }
-    }
-}
-
-unregister_GLOBALS();
-
-?>
-]]>
-       </programlisting>
-      </example>
-     </para>
     </answer>
    </qandaentry>
   </qandaset>
