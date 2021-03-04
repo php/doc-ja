@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 0c9c2dd669fe9395eaa73d487fbd160f9057429a Maintainer: shimooka Status: ready -->
+<!-- EN-Revision: d08d2e887fdc229f16748df96450c9b68c9a3076 Maintainer: shimooka Status: ready -->
 <refentry xml:id="function.debug-zval-dump" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
   <refname>debug_zval_dump</refname>
-  <refpurpose>内部的な Zend の値を表す文字列をダンプする</refpurpose>
+  <refpurpose>内部的な zval を表す文字列をダンプする</refpurpose>
  </refnamediv>
  <refsect1 role="description">
   &reftitle.description;
@@ -14,7 +14,8 @@
    <methodparam rep="repeat"><type>mixed</type><parameter>values</parameter></methodparam>
   </methodsynopsis>
   <para>
-   内部的な Zend の値を表す文字列をダンプします。
+   内部的な zval (Zend の値) を表す文字列表現をダンプします。
+   これは Zend Engine や PHP 拡張機能の実装の詳細をデバッグしたり、理解したりするのに役立ちます。
   </para>
  </refsect1>
  <refsect1 role="parameters">
@@ -25,7 +26,7 @@
      <term><parameter>value</parameter></term>
      <listitem>
       <para>
-       ダンプする変数。
+       ダンプする変数または値。
       </para>
      </listitem>
     </varlistentry>
@@ -33,11 +34,10 @@
      <term><parameter>values</parameter></term>
      <listitem>
       <para>
-       ダンプする追加の変数。
+       ダンプする追加の変数または値。
       </para>
      </listitem>
     </varlistentry>
-
    </variablelist>
   </para>
  </refsect1>
@@ -55,37 +55,62 @@
     <programlisting role="php">
 <![CDATA[
 <?php
-$var1 = 'Hello World';
-$var2 = '';
+$var1 = 'Hello';
+$var1 .= ' World';
+$var2 = $var1;
 
-$var2 =& $var1;
-
-debug_zval_dump(&$var1);
+debug_zval_dump($var1);
 ?>
 ]]>
     </programlisting>
     &example.outputs;
     <screen>
 <![CDATA[
-&string(11) "Hello World" refcount(3)
+string(11) "Hello World" refcount(3)
 ]]>
     </screen>
    </example>
   </para>
   <note>
-   <title><literal>refcount</literal> に注意</title>
+   <title><literal>refcount</literal> を理解する</title>
    <para>
-    この関数によって返される <literal>refcount</literal> の値は、
-    特定の状況下では自明ではありません。例えば、とある開発者は上記の例で
-    <literal>refcount</literal> は <literal>2</literal>
-    を示すと予想したかも知れません。
-    実際に <function>debug_zval_dump</function> がコールされるとき、
-    3 番目の参照が生成されます。
+    Zend Engine の実装の詳細を理解していないと、
+    この関数が表示する <literal>refcount</literal> の値に驚くかもしれません。
    </para>
    <para>
-    この動作は、変数が <function>debug_zval_dump</function>
-    に参照渡しされない場合、よりその度合いを増します。
-    例えば、上記の例を僅かに修正したバージョンを考えてみます。
+    Zend Engine は、リファレンスカウントを以下の2つの用途で使います:
+   </para>
+   <para>
+    <simplelist>
+     <member>
+      "コピーオンライト" と呼ばれるテクニックを使ってメモリを最適化し、
+      値が同じ複数の値を保持する複数の変数を、メモリ上の同じコピーを指すようにします。
+      この場合、変数の値が変更された時に、
+      その変数は新しいメモリ上のコピーの値を指すようになります。
+      そして、その変数のリファレンスカウントは1になります。
+     </member>
+     <member>
+      リファレンス渡しされたり、リファレンスが代入されている値(
+      <link linkend="language.references">リファレンスの説明</link> も参照して下さい)
+      を追跡する用途にも使います。
+      この用途のリファレンスカウントは、
+      現在の値を指しているものとは別の、リファレンス用の zval に保存されています。
+      この追加の zval は、現状
+      <function>debug_zval_dump</function> では見えません。
+     </member>
+    </simplelist>
+   </para>
+   <para>
+    <function>debug_zval_dump</function> は、値渡しされた通常の引数を入力として受け取るので、
+    コピーオンライトのテクニックを使います: つまり、データをコピーせず、
+    関数呼び出しが行われている間、リファレンスカウントをひとつ増やします。
+    関数が受け取った引数を変更すると、データのコピーが行われます。
+    コピーを行わないと、呼び出しスコープの中でリファレンスカウントがひとつ増えてしまうからです。
+   </para>
+   <para>
+    渡す引数によっては、<function>debug_zval_dump</function>
+    はリファレンスが割り当てられている変数を表示しません。
+    この動きを示すために、上の例をちょっと変更した例を考えてみましょう:
    </para>
    <para>
     <example>
@@ -93,40 +118,11 @@ debug_zval_dump(&$var1);
      <programlisting role="php">
 <![CDATA[
 <?php
-$var1 = 'Hello World';
-$var2 = '';
-
+$var1 = 'Hello';
+$var1 .= ' World';
+// Point three variables as references to the same value
 $var2 =& $var1;
-
-debug_zval_dump($var1); // この時、参照で渡されない
-?>
-]]>
-     </programlisting>
-     &example.outputs;
-     <screen>
-<![CDATA[
-string(11) "Hello World" refcount(1)
-]]>
-     </screen>
-    </example>
-   </para>
-   <para>
-    なぜ <literal>refcount(1)</literal> でしょうか?
-    なぜなら関数がコールされるとき、 <literal>$var1</literal>
-    のコピーが作成されるためです。
-   </para>
-   <para>
-    この関数は、<literal>refcount</literal> が <literal>1</literal>
-    の変数が渡される (コピーもしくは値渡し) とき、<emphasis>より</emphasis>
-    まぎらわしくなります。
-   </para>
-   <para>
-    <example>
-     <title/>
-     <programlisting role="php">
-<![CDATA[
-<?php
-$var1 = 'Hello World';
+$var3 =& $var1;
 
 debug_zval_dump($var1);
 ?>
@@ -141,24 +137,21 @@ string(11) "Hello World" refcount(2)
     </example>
    </para>
    <para>
-    ここで <literal>refcount</literal> の <literal>2</literal>
-    は自明ではありません。特に上記の例を考える場合はそうです。
-    では、何が起こっているのでしょうか ?
+    <varname>$var1</varname>, <varname>$var2</varname>,
+    <varname>$var3</varname> はリファレンスで結びついていますが、
+    <emphasis>値</emphasis> だけが <function>debug_zval_dump</function> に渡されます。
+    この値は、リファレンスの設定に一度使われ、
+    <function>debug_zval_dump</function> の中で一度使われます。
+    よって、リファレンスカウントは2になります。
    </para>
    <para>
-    <function>debug_zval_dump</function> の引数として使用される前の <literal>$var1</literal> のように、
-    変数に単一の参照がある場合、PHP のエンジンは関数に渡される方法を最適化します。
-    内部的に、PHP は <literal>$var1</literal> を参照のように扱います
-    （この関数のスコープによって <literal>refcount</literal> が増加されます）。
-    ただし、渡された参照がたまたま書き込まれる場合は注意が必要です。
-    書き込みの時点でのみコピーが作成されます。これは "copy on write" として知られます。
-   </para>
-   <para>
-    そのため、もし <function>debug_zval_dump</function> がたまたま
-    その単一の（および、そうではない）パラメータに書き込みをおこなった場合、コピーが作成されます。
-    その時までパラメータは参照のままであるため、関数呼び出しのスコープによって
-    <literal>refcount</literal> が <literal>2</literal>
-    にインクリメントされる原因になります。
+    データ型によっては、Zend Engine 内で最適化が行われてしまうため、
+    ユーザはさらに混乱してしまいます。
+    整数のように "コピーオンライト" を行わないデータ型の変数では、
+    リファレンスカウントを全く表示しません。
+    別の場合、このリファレンスカウントの値は、
+    内部的に使われる追加のコピーの値を表示する場合もあります。
+    たとえば、文字列リテラルや配列が、命令セットの一部として保存されているような場合です。
    </para>
   </note>
  </refsect1>
@@ -168,8 +161,8 @@ string(11) "Hello World" refcount(2)
    <simplelist>
     <member><function>var_dump</function></member>
     <member><function>debug_backtrace</function></member>
-    <member><link linkend="language.references">リファレンスの説明</link></member>
-    <member><link xlink:href="&url.derick.references;">リファレンスの説明 (Derick Rethans による)</link></member>
+    <member><link linkend="language.references">参照の説明</link></member>
+    <member><link xlink:href="&url.derick.references;">References Explained (by Derick Rethans)</link></member>
    </simplelist>
   </para>
  </refsect1>
