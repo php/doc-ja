@@ -1,12 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: a9edd62d087ab1eb6292c795b7256e14ff9f1234 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 9ee9eccf455188ab6eb352194eb6f9eb99e15606 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: shimooka,mumumu -->
 
 <sect1 xml:id="language.oop5.magic" xmlns="http://docbook.org/ns/docbook">
  <title>マジックメソッド</title>
  <para>
-    以下の関数名
+   マジックメソッドは、
+   ある動作がオブジェクトに対して行われた場合に、
+   PHP のデフォルトの動作を上書きする特別なメソッドです。
+  </para>
+  <caution>
+   <simpara>
+    <literal>__</literal> で始まる全てのメソッドは、
+    PHP によって予約されています。
+    よって、PHP の動作を上書きするのでなければ、
+    このようなメソッド名を使うことは推奨されません。
+   </simpara>
+  </caution>
+  <para>
+   以下の関数名は、マジックメソッドと見なされます:
+   <!-- Should be an itemized list ? -->
    <link linkend="object.construct">__construct()</link>,
    <link linkend="object.destruct">__destruct()</link>,
    <link linkend="object.call">__call()</link>,
@@ -22,29 +36,37 @@
    <link linkend="object.tostring">__toString()</link>,
    <link linkend="object.invoke">__invoke()</link>,
    <link linkend="object.set-state">__set_state()</link>,
-   <link linkend="object.clone">__clone()</link> および
+   <link linkend="object.clone">__clone()</link>,
    <link linkend="object.debuginfo">__debugInfo()</link>
-  は、PHP クラスにおける特殊関数の名前です。
-  これらの関数に関連する特別な機能を使用する場合を除き、
-  クラス内にこれらの名前を有する関数を作成してはいけません。
  </para>
 
- <note>
-  <simpara>
-   全てのマジックメソッドは 
-   <literal>public</literal> として宣言されていなければ
-   <emphasis>なりません</emphasis> 
-  </simpara>
- </note>
-
- <caution>
-  <simpara>
-   PHP は、__ で始まる関数名を特殊関数として予約しています。
-   このページに記載されているような特殊な機能を必要としない限り、
-   関数名を __ で始めないことを推奨します。
-  </simpara>
- </caution>
-
+  <warning>
+   <!-- See for a code example of this behaviour: https://3v4l.org/Bov34 -->
+   <simpara>
+    <link linkend="object.construct">__construct()</link>,
+    <link linkend="object.destruct">__destruct()</link>,
+    <link linkend="object.clone">__clone()</link> を除く全てのマジックメソッドは、
+    <literal>public</literal> として宣言しなければいけません。
+    そうしないと、
+    <constant>E_WARNING</constant> レベルの警告が発生します。
+    PHP 8.0.0 より前のバージョンでは、
+    <link linkend="object.sleep">__sleep()</link>,
+    <link linkend="object.wakeup">__wakeup()</link>,
+    <link linkend="object.serialize">__serialize()</link>,
+    <link linkend="object.unserialize">__unserialize()</link>,
+    <link linkend="object.set-state">__set_state()</link> については、エラーは発生していませんでした。
+   </simpara>
+  </warning>
+  <warning>
+   <para>
+    マジックメソッドの定義で型宣言が使われている場合、
+    それらは、このマニュアルで説明しているシグネチャと同じでなければいけません。
+    そうでない場合、致命的なエラーが発生します。
+    PHP 8.0.0 より前のバージョンでは、
+    エラーは全く発生していませんでした。
+   </para>
+  </warning>
+ 
  <sect2 xml:id="language.oop5.magic.sleep">
    <title>
     <link linkend="object.sleep">__sleep()</link> と
@@ -75,8 +97,7 @@
      <link linkend="object.sleep">__sleep()</link> で、親クラスの private
      プロパティの名前を返すことはできません。
      そうしようとすると <constant>E_NOTICE</constant> レベルのエラーとなります。
-     この場合は、かわりに <classname>Serializable</classname>
-     インターフェイスを使います。
+     この場合は、<link linkend="object.serialize">__serialize()</link> を代わりに使って下さい。
     </para>
    </note>
   <para>
@@ -250,10 +271,24 @@ class Connection
    <link linkend="object.tostring">__toString()</link> メソッドにより、
    クラスが文字列に変換される際の動作を決めることができます。たとえば
    <literal>echo $obj;</literal> としたときに何を表示させるかといったことです。
-   このメソッドは文字列を返さなければなりません。それ以外の場合は
-   <constant>E_RECOVERABLE_ERROR</constant>
-   レベルの致命的なエラーが発生します。
   </para>
+  <warning>
+   <para>
+    PHP 8.0.0 以降では、戻り値は PHP で標準的な型のセマンティクスに従います。
+    つまり、<link linkend="language.types.declarations.strict">厳密な型付け</link>
+    が無効になっている場合、可能であれば文字列型に強制されます。
+   </para>
+   <para>
+    PHP 7.4 では、戻り値は文字列でなければいけません。
+    そうでない場合、<classname>Error</classname> がスローされます。
+   </para>
+   <para>
+    PHP 7.4.0 より前のバージョンでは、
+    戻り値は文字列でなければいけません。
+    そうでない場合、<constant>E_RECOVERABLE_ERROR</constant> が発生します。
+   </para>
+  </warning>
+
    <warning>
     <simpara>
      PHP 7.4.0 より前のバージョンでは、<link linkend="object.tostring">__toString()</link> メソッド内から例外を投げることはできません。そうした場合、致命的なエラーが発生します。
@@ -344,7 +379,7 @@ bool(true)
    </para>
    <para>
     このメソッドの唯一のパラメータは、エクスポートされたプロパティを
-    <literal>array('property' => value, ...)</literal> の形式で保持する配列です。
+    <literal>['property' => value, ...]</literal> の形式で保持する配列です。
    </para>
    <example>
     <title><link linkend="object.set-state">__set_state()</link> の使用法</title>
@@ -370,18 +405,20 @@ $a = new A;
 $a->var1 = 5;
 $a->var2 = 'foo';
 
-eval('$b = ' . var_export($a, true) . ';'); // $b = A::__set_state(array(
-                                            //    'var1' => 5,
-                                            //    'var2' => 'foo',
-                                            // ));
+$b = var_export($a, true);
 var_dump($b);
-
+eval('$c = ' . $b . ';');
+var_dump($c);
 ?>
 ]]>
     </programlisting>
     &example.outputs;
     <screen>
 <![CDATA[
+string(60) "A::__set_state(array(
+   'var1' => 5,
+   'var2' => 'foo',
+))"
 object(A)#2 (2) {
   ["var1"]=>
   int(5)
