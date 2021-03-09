@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 46319b5952750bc2a5e030c0a216023b551b60c1 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 0a4dd74391b71c6837685b1864c9d5142c2725ee Maintainer: takagi Status: ready -->
 <!-- Credits: mumumu -->
 <refentry xml:id="mysqli.prepare" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>mysqli::prepare</refname>
   <refname>mysqli_prepare</refname>
-  <refpurpose>実行するための SQL ステートメントを準備する</refpurpose>
+  <refpurpose>実行するための SQL文 を準備する</refpurpose>
  </refnamediv>
 
  <refsect1 role="description">
@@ -23,14 +23,16 @@
    <methodparam><type>string</type><parameter>query</parameter></methodparam>
   </methodsynopsis>
   <para>
-   SQL クエリを準備し、後でそのステートメントを操作するために使用する
+   SQL文を準備し、後でそれを操作するために使用する
    ステートメントハンドルを返します。
-   クエリは、単一の SQL 文である必要があります。
+   クエリは、単一の SQL文である必要があります。
   </para>
   <para>
-   パラメータマーカは、ステートメントの実行や行の取得の前に
-   <function>mysqli_stmt_bind_param</function>
-   や <function>mysqli_stmt_bind_result</function> を使用して
+   SQL文のテンプレートには、ゼロ個以上のパラメータマーカ
+   (<literal>?</literal>) を含めることができます。
+   パラメータマーカは、プレースホルダとも呼ばれています。
+   パラメータマーカは、SQL文を実行する前に
+   <function>mysqli_stmt_bind_param</function> を使用して
    アプリケーション変数にバインドする必要があります。
   </para>
  </refsect1>
@@ -45,17 +47,11 @@
      <listitem>
       <para>
        クエリを表す文字列。
+       単一のSQL文である必要があります。
       </para>
-      <note>
-       <para>
-        ステートメントの最後にセミコロンや <literal>\g</literal>
-        を追加してはいけません。
-       </para>
-      </note>
       <para>
-       <parameter>query</parameter> にはひとつまたは複数のパラメータを
-       含めることが可能です。そのためには、適切な位置にクエスチョンマーク
-       (<literal>?</literal>) を埋め込みます。
+       SQL文には、ゼロ個以上のパラメータマーカを含めることができますます。
+       パラメータマーカはクエスチョンマーク(<literal>?</literal>) を適切な位置に置くこと埋め込みます。
       </para>
       <note>
        <para>
@@ -71,8 +67,6 @@
         (等号 <literal>=</literal> のような)
         二項演算子の両側にパラメータを指定したりすることはできません。
         後者の制限は、パラメータの型が判断できなくなることによるものです。
-        また、パラメータのマーカを <literal>NULL</literal> と比較して
-        <literal>? IS NULL</literal> のようにすることもできません。
         一般に、パラメータが使用可能なのはデータ操作言語 (DML)
         ステートメントであり、データ定義言語 (DDL)
         ステートメントでは使用できません。
@@ -100,80 +94,56 @@
    <programlisting role="php">
 <![CDATA[
 <?php
-$mysqli = new mysqli("localhost", "my_user", "my_password", "world");
 
-/* 接続状況をチェックします */
-if (mysqli_connect_errno()) {
-    printf("Connect failed: %s\n", mysqli_connect_error());
-    exit();
-}
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+$mysqli = new mysqli("localhost", "my_user", "my_password", "world");
 
 $city = "Amersfoort";
 
-/* プリペアドステートメントを作成します */
-if ($stmt = $mysqli->prepare("SELECT District FROM City WHERE Name=?")) {
+/* プリペアドステートメントを作成します。*/
+$stmt = $mysqli->prepare("SELECT District FROM City WHERE Name=?");
 
-    /* マーカにパラメータをバインドします */
-    $stmt->bind_param("s", $city);
+/* マーカにパラメータをバインドします */
+$stmt->bind_param("s", $city);
 
-    /* クエリを実行します */
-    $stmt->execute();
+/* クエリを実行します */
+$stmt->execute();
 
-    /* 結果変数をバインドします */
-    $stmt->bind_result($district);
+/* 結果変数をバインドします */
+$stmt->bind_result($district);
 
-    /* 値を取得します */
-    $stmt->fetch();
+/* 値を取得します */
+$stmt->fetch();
 
-    printf("%s is in district %s\n", $city, $district);
-
-    /* ステートメントを閉じます */
-    $stmt->close();
-}
-
-/* 接続を閉じます */
-$mysqli->close();
-?>
+printf("%s is in district %s\n", $city, $district);
 ]]>
    </programlisting>
    <para>&style.procedural;</para>
    <programlisting role="php">
 <![CDATA[
 <?php
-$link = mysqli_connect("localhost", "my_user", "my_password", "world");
 
-/* 接続状況をチェックします */
-if (mysqli_connect_errno()) {
-    printf("Connect failed: %s\n", mysqli_connect_error());
-    exit();
-}
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+$link = mysqli_connect("localhost", "my_user", "my_password", "world");
 
 $city = "Amersfoort";
 
 /* プリペアドステートメントを作成します */
-if ($stmt = mysqli_prepare($link, "SELECT District FROM City WHERE Name=?")) {
+$stmt = mysqli_prepare($link, "SELECT District FROM City WHERE Name=?");
 
-    /* マーカにパラメータをバインドします */
-    mysqli_stmt_bind_param($stmt, "s", $city);
+/* マーカにパラメータをバインドします */
+mysqli_stmt_bind_param($stmt, "s", $city);
 
-    /* クエリを実行します */
-    mysqli_stmt_execute($stmt);
+/* クエリを実行します */
+mysqli_stmt_execute($stmt);
 
-    /* 結果変数をバインドします */
-    mysqli_stmt_bind_result($stmt, $district);
+/* 結果変数をバインドします */
+mysqli_stmt_bind_result($stmt, $district);
 
-    /* 値を取得します */
-    mysqli_stmt_fetch($stmt);
+/* 値を取得します */
+mysqli_stmt_fetch($stmt);
 
-    printf("%s is in district %s\n", $city, $district);
-
-    /* ステートメントを閉じます */
-    mysqli_stmt_close($stmt);
-}
-
-/* 接続を閉じます */
-mysqli_close($link);
-?>
+printf("%s is in district %s\n", $city, $district);
 ]]>
    </programlisting>
    &examples.outputs;
@@ -193,6 +163,7 @@ Amersfoort is in district Utrecht
     <member><function>mysqli_stmt_fetch</function></member>
     <member><function>mysqli_stmt_bind_param</function></member>
     <member><function>mysqli_stmt_bind_result</function></member>
+    <member><function>mysqli_stmt_get_result</function></member>
     <member><function>mysqli_stmt_close</function></member>
    </simplelist>
   </para>

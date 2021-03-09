@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: ac2f69b3d07ae6a4e89a742918b01881b7381bf4 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 0a4dd74391b71c6837685b1864c9d5142c2725ee Maintainer: takagi Status: ready -->
 <!-- Credits: mumumu -->
 <refentry xml:id="mysqli-stmt.execute" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>mysqli_stmt::execute</refname>
   <refname>mysqli_stmt_execute</refname>
-  <refpurpose>プリペアドクエリを実行する</refpurpose>
+  <refpurpose>プリペアドステートメントを実行する</refpurpose>
  </refnamediv>
 
  <refsect1 role="description">
@@ -22,23 +22,19 @@
    <methodparam><type>mysqli_stmt</type><parameter>stmt</parameter></methodparam>
   </methodsynopsis>
   <para>
-   事前に <function>mysqli_prepare</function> 関数で用意されたクエリを実行します。
-   パラメータマーカが存在する場合、その内容は自動的に適切なデータに置き換えられます。
+   事前に準備したSQL文を実行します。
+   SQL文は実行する前に、正常に準備されていなければいけません。
+   準備は、<function>mysqli_prepare</function> または
+   <function>mysqli_stmt_prepare</function> を実行するか、
+   <methodname>mysqli_stmt::__construct</methodname> に第二引数を渡すことで行います。
   </para>
   <para>
-   ステートメントが <literal>UPDATE</literal>、<literal>DELETE</literal>
+   SQL文が <literal>UPDATE</literal>、<literal>DELETE</literal>
    あるいは <literal>INSERT</literal> であった場合、
    変更された行の総数は <function>mysqli_stmt_affected_rows</function>
    関数を使用することで取得可能です。同様に、クエリが結果セットを返す場合は
    <function>mysqli_stmt_fetch</function> 関数を使用できます。
   </para>
-  <note>
-   <para>
-    <function>mysqli_stmt_execute</function> を使用した際には、
-    他のクエリを実行する前に <function>mysqli_stmt_fetch</function>
-    関数を使用する必要があります。
-   </para>
-  </note>
  </refsect1>
 
  <refsect1 role="parameters">
@@ -60,59 +56,46 @@
  <refsect1 role="examples">
   &reftitle.examples;
   <example>
-   <title>&style.oop;</title>
+   <title><methodname>mysqli_stmt::execute</methodname> の例</title>
+   <para>&style.oop;</para>
    <programlisting role="php">
 <![CDATA[
 <?php
-$mysqli = new mysqli("localhost", "my_user", "my_password", "world");
 
-/* 接続状況をチェックします */
-if (mysqli_connect_errno()) {
-    printf("Connect failed: %s\n", mysqli_connect_error());
-    exit();
-}
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+$mysqli = new mysqli("localhost", "my_user", "my_password", "world");
 
 $mysqli->query("CREATE TABLE myCity LIKE City");
 
-/* insert ステートメントを準備します */
-$query = "INSERT INTO myCity (Name, CountryCode, District) VALUES (?,?,?)";
-$stmt = $mysqli->prepare($query);
+/* insert 文を準備します */
+$stmt = $mysqli->prepare("INSERT INTO myCity (Name, CountryCode, District) VALUES (?,?,?)");
 
+/* 変数をパラメータにバインドします */
 $stmt->bind_param("sss", $val1, $val2, $val3);
 
 $val1 = 'Stuttgart';
 $val2 = 'DEU';
 $val3 = 'Baden-Wuerttemberg';
 
-/* ステートメントを実行します */
+/* SQL文を実行します */
 $stmt->execute();
 
 $val1 = 'Bordeaux';
 $val2 = 'FRA';
 $val3 = 'Aquitaine';
 
-/* ステートメントを実行します */
+/* SQL文を実行します */
 $stmt->execute();
 
-/* ステートメントを閉じます */
-$stmt->close();
-
-/* myCity からすべての行を取得します */
+/* myCity テーブルから全ての行を取得します */
 $query = "SELECT Name, CountryCode, District FROM myCity";
-if ($result = $mysqli->query($query)) {
-    while ($row = $result->fetch_row()) {
-        printf("%s (%s,%s)\n", $row[0], $row[1], $row[2]);
-    }
-    /* 結果セットを開放します */
-    $result->close();
+$result = $mysqli->query($query);
+while ($row = $result->fetch_row()) {
+    printf("%s (%s,%s)\n", $row[0], $row[1], $row[2]);
 }
 
 /* テーブルを削除します */
 $mysqli->query("DROP TABLE myCity");
-
-/* 接続を閉じます */    
-$mysqli->close();
-?>
 ]]>
    </programlisting>
   </example>
@@ -121,55 +104,41 @@ $mysqli->close();
    <programlisting role="php">
 <![CDATA[
 <?php
-$link = mysqli_connect("localhost", "my_user", "my_password", "world");
 
-/* 接続状況をチェックします */
-if (mysqli_connect_errno()) {
-    printf("Connect failed: %s\n", mysqli_connect_error());
-    exit();
-}
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+$link = mysqli_connect("localhost", "my_user", "my_password", "world");
 
 mysqli_query($link, "CREATE TABLE myCity LIKE City");
 
-/* insert ステートメントを準備します */
-$query = "INSERT INTO myCity (Name, CountryCode, District) VALUES (?,?,?)";
-$stmt = mysqli_prepare($link, $query);
+/* insert 文を準備します */
+$stmt = mysqli_prepare($link, "INSERT INTO myCity (Name, CountryCode, District) VALUES (?,?,?)");
 
+/* 変数をパラメータにバインドします */
 mysqli_stmt_bind_param($stmt, "sss", $val1, $val2, $val3);
 
 $val1 = 'Stuttgart';
 $val2 = 'DEU';
 $val3 = 'Baden-Wuerttemberg';
 
-/* ステートメントを実行します */
+/* SQL文を実行します */
 mysqli_stmt_execute($stmt);
 
 $val1 = 'Bordeaux';
 $val2 = 'FRA';
 $val3 = 'Aquitaine';
 
-/* ステートメントを実行します */
+/* SQL文を実行します */
 mysqli_stmt_execute($stmt);
 
-/* ステートメントを閉じます */
-mysqli_stmt_close($stmt);
-
-/* myCity からすべての行を取得します */
+/* myCity テーブルから全ての行を取得します */
 $query = "SELECT Name, CountryCode, District FROM myCity";
-if ($result = mysqli_query($link, $query)) {
-    while ($row = mysqli_fetch_row($result)) {
-        printf("%s (%s,%s)\n", $row[0], $row[1], $row[2]);
-    }
-    /* 結果セットを開放します */
-    mysqli_free_result($result);
+$result = mysqli_query($link, $query);
+while ($row = mysqli_fetch_row($result)) {
+    printf("%s (%s,%s)\n", $row[0], $row[1], $row[2]);
 }
 
 /* テーブルを削除します */
 mysqli_query($link, "DROP TABLE myCity");
-
-/* 接続を閉じます */    
-mysqli_close($link);
-?>
 ]]>
      </programlisting>
      &examples.outputs;
