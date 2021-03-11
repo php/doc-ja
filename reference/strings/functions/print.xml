@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 3d974bf87ef32d933ca1d40828711a8da4b594f1 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: eea9c73ba47da81155ed5baa979dd2a085c3b874 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: shimooka,mumumu -->
 <refentry xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://docbook.org/ns/docbook" xml:id="function.print">
  <refnamediv>
@@ -12,18 +12,19 @@
   &reftitle.description;
   <methodsynopsis>
    <type>int</type><methodname>print</methodname>
-   <methodparam><type>string</type><parameter>arg</parameter></methodparam>
+   <methodparam><type>string</type><parameter>expression</parameter></methodparam>
   </methodsynopsis>
   <para>
-   <parameter>arg</parameter> を出力します。
+   <parameter>expression</parameter> を出力します。
   </para>
   <para>
-   <literal>print</literal>は実際には関数ではありません
-   (言語構造です)。このため、引数を括弧で括る必要はありません。
+   <literal>print</literal>は実際には関数ではなく、
+   言語構造です。
+   引数は、<literal>print</literal> の後に文字列として評価される式を指定し、括弧で括る必要はありません。
   </para>
   <para>
    <literal>echo</literal> との主な違いは、
-   <literal>print</literal> が単一の引数のみ受け付け、常に 1 を返すことです。
+   <literal>print</literal> が単一の引数のみ受け付け、常に <literal>1</literal> を返すことです。
   </para>
  </refsect1>
 
@@ -32,10 +33,15 @@
   <para>
    <variablelist>
     <varlistentry>
-     <term><parameter>arg</parameter></term>
+     <term><parameter>expression</parameter></term>
      <listitem>
       <para>
-       入力データ。
+       出力する文字列として評価される式。
+       文字列として評価できない値は、
+       強制的に文字列に変換されます。
+       これは、
+       <link linkend="language.types.declarations.strict">
+       <literal>strict_types</literal> ディレクティブ</link> が有効になっていても同じです。
       </para>
      </listitem>
     </varlistentry>
@@ -58,41 +64,36 @@
     <programlisting role="php">
 <![CDATA[
 <?php
-print("Hello World");
+print "print に括弧は不要です";
 
-print "print() also works without parentheses.";
+// 改行やスペースは付加されません; 以下は、"helloworld" を一行で出力します
+print "hello";
+print "world";
 
-print "This spans
+print "This string spans
 multiple lines. The newlines will be
 output as well";
 
-print "This spans\nmultiple lines. The newlines will be\noutput as well.";
+print "This string spans\nmultiple lines. The newlines will be\noutput as well.";
 
-print "escaping characters is done \"Like this\".";
+// 引数は文字列を生成するあらゆる式を指定することができます。
+$foo = "example";
+print "foo is $foo"; // foo is example
 
-// print文の中で変数を使用することが可能です。
-$foo = "foobar";
-$bar = "barbaz";
+$fruits = ["lemon", "orange", "banana"];
+print implode(" and ", $fruits); // lemon and orange and banana
 
-print "foo is $foo"; // foo is foobar
+// 文字列でない値は、文字列に強制されます。たとえ declare(strict_types=1) が使われていても同じです。
+print 6 * 7; // 42
 
-// 配列も使用可能です。
-$bar = array("value" => "foo");
+// print は戻り値があるため、式の中で使うことができます。
+// 以下は "hello world" を出力します。
+if ( print "hello" ) {
+    echo " world";
+}
 
-print "this is {$bar['value']} !"; // this is foo !
-
-// シングルクオートを使用すると値ではなく変数名が出力されます。
-print 'foo is $foo'; // foo is $foo
-
-// 他の文字を使用しない場合、変数だけを出力することが可能です。
-print $foo;          // foobar
-
-print <<<END
-This uses the "here document" syntax to output
-multiple lines with $variable interpolation. Note
-that the here document terminator must appear on a
-line with just a semicolon no extra whitespace!
-END;
+// 以下は "true" を出力します。
+( 1 === 1 ) ? print 'true' : print 'false';
 ?>
 ]]>
     </programlisting>
@@ -102,6 +103,83 @@ END;
 
  <refsect1 role="notes">
   &reftitle.notes;
+
+  <note>
+   <title>括弧を使う</title>
+   <para>
+    <literal>print</literal>の引数を括弧で囲んで渡しても文法エラーにはなりませんが、
+    通常の関数コールのような文法に見えてしまいます。
+    しかし、これは誤解を招く恐れがあります。
+    なぜなら、括弧は実際には出力を構成する式の一部であり、
+    <literal>print</literal> の文法の一部ではないからです。
+   </para>
+   <para>
+    <example>
+     <title/>
+     <programlisting role="php">
+<![CDATA[
+<?php
+print "hello";
+// "hello" を出力します。
+
+print("hello");
+// 同じく"hello" を出力します。なぜなら ("hello") は正しい式だからです。
+
+print(1 + 2) * 3;
+// "9" を出力します; 括弧によって 1+2 が先に評価され、3*3がその次に評価されます。
+// print 文は、式の評価結果全体をひとつの引数とみなします。
+
+if ( print("hello") && false ) {
+    print " - inside if";
+}
+else {
+    print " - inside else";
+}
+// " - inside if" を出力します。
+// ("hello") && false という式が最初に評価され、
+// 評価された false が空文字列 "" に強制的に変換され、print に渡され、1を返します。
+// よって、if ブロックの内部のコードが実行されます。
+?>
+]]>
+     </programlisting>
+    </example>
+   </para>
+
+   <para>
+    <literal>print</literal> を大きな式で使う場合、
+    意図した結果を得るためには、キーワードと引数を括弧で囲む必要があるかもしれません:
+   </para>
+
+   <para>
+    <example>
+     <title/>
+     <programlisting role="php">
+<![CDATA[
+<?php
+if ( (print "hello") && false ) {
+    print " - inside if";
+}
+else {
+    print " - inside else";
+}
+// "hello - inside else" を出力します。
+// 直前の例と異なり、(print "hello") が最初に評価され、
+// "hello" を出力した後、print が1を返します。
+// 1 && false は false なので、else ブロックの中身が実行されます。
+
+print "hello " && print "world";
+// "world1"; を出力します。print "world" が先に評価され、
+// "hello " && 1 が次に評価され、左辺の print に渡されます。
+
+(print "hello ") && (print "world");
+// "hello world" を出力します; 括弧が print を && より前に評価させているからです。
+?>
+]]>
+     </programlisting>
+    </example>
+   </para>
+  </note>
+
   &note.language-construct;
  </refsect1>
 
@@ -112,7 +190,7 @@ END;
     <member><function>echo</function></member>
     <member><function>printf</function></member>
     <member><function>flush</function></member>
-    <member><link linkend="language.types.string.syntax.heredoc">ヒアドキュメント構文</link></member>
+    <member><link linkend="language.types.string">文字列リテラルの指定方法</link></member>
    </simplelist>
   </para>
  </refsect1>

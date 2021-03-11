@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 9e0f03ac354d797d1d16c0fcc1663e5e170f2727 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: ede9d209f64d4cd71bf22fcfaed14c6fc269523c Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: shimooka,mumumu -->
 <refentry xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://docbook.org/ns/docbook" xml:id="function.echo">
  <refnamediv>
@@ -12,26 +12,24 @@
   &reftitle.description;
   <methodsynopsis>
    <type>void</type><methodname>echo</methodname>
-   <methodparam><type>string</type><parameter>arg</parameter></methodparam>
-   <methodparam rep="repeat"><type>string</type><parameter>args</parameter></methodparam>
+   <methodparam rep="repeat"><type>string</type><parameter>expressions</parameter></methodparam>
   </methodsynopsis>
   <simpara>
-   すべてのパラメータを出力します。末尾に改行を付加することはありません。
+   ひとつ以上の(文字列として評価される)式を出力します。末尾に改行やスペースを付加することはありません。
   </simpara>
   <para>
-   <literal>echo</literal> は実際には関数ではありません
-   (言語構造です)。このため、使用する際に括弧は必要ありません。
-   (いくつかの他の言語構造と異なり) <literal>echo</literal>
-   は関数のように動作しません。そのため、
-   関数のコンテキスト中では常に使用することができません。
-   加えて、複数のパラメータを指定して <literal>echo</literal>
-   をコールしたい場合、括弧の中にパラメータを記述してはいけません。
+   <literal>echo</literal> は実際には関数ではなく、言語構造です。
+   <literal>echo</literal> キーワードの後に続く引数は、
+   コンマで区切られた(文字列として評価される)式のリストであり、括弧で括る必要はありません。
+   他の言語構造と異なり <literal>echo</literal>
+   には戻り値がありません。そのため、
+   式のコンテクストでは使うことができません。
   </para>
   <para>
    <literal>echo</literal> には、開始タグの直後に等号を付ける短縮構文もあります。
-   この短縮構文は、PHP 5.4.0 より前のバージョンでは設定オプション<link
+   この短縮構文は、設定オプション<link
     linkend="ini.short-open-tag">short_open_tag</link>
-   が有効な場合しか使えません。
+   が無効な場合しか使えません。
    <informalexample>
     <programlisting role="php">
 <![CDATA[
@@ -51,17 +49,13 @@ I have <?=$foo?> foo.
   <para>
    <variablelist>
     <varlistentry>
-     <term><parameter>arg</parameter></term>
+     <term><parameter>expressions</parameter></term>
      <listitem>
       <para>
-       出力したいパラメータ。
-      </para>
-     </listitem>
-    </varlistentry>
-    <varlistentry>
-     <term><parameter>args</parameter></term>
-     <listitem>
-      <para>
+       出力したいひとつ以上の文字列として評価される式。
+       コンマで区切ります。
+       文字列として評価されない値を渡した場合、文字列に強制的に変換されます。
+       これは、<link linkend="language.types.declarations.strict"><literal>strict_types</literal> ディレクティブ</link> が有効になっていても同じです。
       </para>
      </listitem>
     </varlistentry>
@@ -84,22 +78,45 @@ I have <?=$foo?> foo.
     <programlisting role="php">
 <![CDATA[
 <?php
-echo "Hello World";
+echo "echo does not require parentheses.";
 
-// 複数の文字列をそれぞれ別の引数として渡しても、
-// すべて連結してひとつの引数として渡してもかまいません
-echo 'This ', 'string ', 'was ', 'made ', 'with multiple parameters.', chr(10);
+// 文字列は、複数の引数として個別に渡すこともできますし、
+// 連結し、ひとつの引数として渡すこともできます。
+echo 'This ', 'string ', 'was ', 'made ', 'with multiple parameters.', "\n";
 echo 'This ' . 'string ' . 'was ' . 'made ' . 'with concatenation.' . "\n";
 
-// echo は関数のように動作しないので、以下のコードは正しくありません
+// 改行やスペースが付加されることはありません; 以下は、"helloworld" を一行で出力します。
+echo "hello";
+echo "world";
+
+// 上と同じです。
+echo "hello", "world";
+
+echo "This string spans
+multiple lines. The newlines will be
+output as well";
+
+echo "This string spans\nmultiple lines. The newlines will be\noutput as well.";
+
+// 引数は文字列を生成するあらゆる式を指定することができます。
+$foo = "example";
+echo "foo is $foo"; // foo is example
+
+$fruits = ["lemon", "orange", "banana"];
+echo implode(" and ", $fruits); // lemon and orange and banana
+
+// 文字列でない値は、文字列に強制されます。たとえ declare(strict_types=1) が使われていても同じです。
+echo 6 * 7; // 42
+
+// echo は式として振る舞わないので、以下のコードは正しくありません。
 ($some_var) ? echo 'true' : echo 'false';
 
-// しかし、次の例は動作します
+// しかし、以下の例は動作します:
 ($some_var) ? print 'true' : print 'false'; // print も言語構造ですが、
-                                            // 関数のように動作します。なので、
-                                            // このコンテキスト中で使用できます
+                                            // これは正しい式であり、1を返します。
+                                            // よって、式のコンテクストで使うことが出来ます。
 
-echo $some_var ? 'true': 'false'; // 命令を変更
+echo $some_var ? 'true': 'false'; // 式を最初に評価し、echo  に渡します。
 ?>
 ]]>
     </programlisting>
@@ -110,30 +127,81 @@ echo $some_var ? 'true': 'false'; // 命令を変更
  <refsect1 role="notes">
   &reftitle.notes;
   &note.language-construct;
+
+  <note>
+   <title>括弧を使う</title>
+   <para>
+    <literal>echo</literal> に対して引数をひとつだけ括弧で囲んで渡しても文法エラーにはなりませんが、
+    通常の関数コールのような文法に見えてしまいます。
+    しかし、これは誤解を招く恐れがあります。
+    なぜなら、括弧は実際には出力を構成する式の一部であり、
+    <literal>echo</literal> の文法の一部ではないからです。
+   </para>
+   <para>
+    <example>
+     <title/>
+     <programlisting role="php">
+     <![CDATA[
+<?php
+echo "hello";
+// "hello" を出力します。
+
+echo("hello");
+// 同じく"hello" を出力します。なぜなら ("hello") は正しい式だからです。
+
+echo(1 + 2) * 3;
+// "9" を出力します; 括弧によって 1+2 が先に評価され、3*3がその次に評価されます。
+// echo 文は、式の評価結果全体をひとつの引数とみなします。
+
+echo "hello", " world";
+// "hello world" を出力します。
+
+echo("hello"), (" world");
+// "hello world" を出力します; 括弧は個々の式の一部です。
+
+echo("hello", " world");
+// Parse Error をスローします。なぜなら、 ("hello", " world") は正しい式ではないからです。
+?>
+]]>
+    </programlisting>
+   </example>
+  </para>
+  </note>
+ 
   <tip>
    <para>
-    複数の文字列をひとつに連結せずそのまま
-    <function>echo</function> に渡す利点は、PHP におけるピリオド演算子の優先順位にあります。
-    複数の引数として渡す場合は、優先順位を考慮して括弧で囲んだりする必要はありません。
+    複数の引数を<literal>echo</literal> に渡すことで、
+    PHP におけるピリオド演算子の優先順位が高いことによる複雑な挙動を避けることができます。
+    たとえば、ピリオド演算子は三項演算子より演算子が高くなっています。さらにPHP 8.0.0 より前のバージョンでは、加算および減算演算子と優先順位が同じでした:
    </para>
    <programlisting role="php">
-<![CDATA[
+    <![CDATA[
 <?php
-echo "Sum: ", 1 + 2;
-echo "Hello ", isset($name) ? $name : "John Doe", "!";
+// 以下の例では、'Hello ' . isset($name) という式が先に評価されます。
+// そして、常にこれは true と評価されるので、echo への引数は常に $name になります。
+echo 'Hello ' . isset($name) ? $name : 'John Doe' . '!';
+
+// 上の例を意図した振る舞いにしようとするなら、以下のように追加の括弧が必要です。
+echo 'Hello ' . (isset($name) ? $name : 'John Doe') . '!';
+
+// PHP 8.0.0 より前のバージョンでは、以下は "Sum: 3" ではなく、"2" を出力していました。
+echo 'Sum: ' . 1 + 2;
+
+// 繰り返しますが、括弧を追加することで、意図通りの評価順序を保証できます。
+echo 'Sum: ' . (1 + 2);
 ]]>
    </programlisting>
-
    <para>
-    連結を使う場合は、ピリオド演算子の優先順位が加算演算子とは同じで、
-    三項演算子よりも高いことに注意する必要があります。
-    そのため、以下のような場合に期待どおりの動きをさせるためには括弧が必要になります。
+    複数の引数を渡した場合、
+    優先順位を強制するための括弧は不要です。
+    なぜなら、それぞれの文字列表現は別のものだからです:
    </para>
    <programlisting role="php">
 <![CDATA[
 <?php
-echo 'Sum: ' . (1 + 2);
-echo 'Hello ' . (isset($name) ? $name : 'John Doe') . '!';
+echo "Hello ", isset($name) ? $name : "John Doe", "!";
+
+echo "Sum: ", 1 + 2;
 ]]>
    </programlisting>
   </tip>
@@ -146,7 +214,7 @@ echo 'Hello ' . (isset($name) ? $name : 'John Doe') . '!';
     <member><function>print</function></member>
     <member><function>printf</function></member>
     <member><function>flush</function></member>
-    <member><link linkend="language.types.string.syntax.heredoc">ヒアドキュメント構文</link></member>
+    <member><link linkend="language.types.string">文字列リテラルを指定する方法</link></member>
    </simplelist>
   </para>
  </refsect1>
