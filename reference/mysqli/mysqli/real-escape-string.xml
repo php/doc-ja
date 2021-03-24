@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 7e5d0d1bb69180c9de1992edf9613215c975fa57 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: df1072f8d2a3157534cb61d3734864c1f4852808 Maintainer: takagi Status: ready -->
 <!-- Credits: mumumu -->
 <refentry xml:id="mysqli.real-escape-string" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>mysqli::real_escape_string</refname>
-  <refname>mysqli::escape_string</refname>
   <refname>mysqli_real_escape_string</refname>
   <refpurpose>接続の現在の文字セットを考慮して、SQL 文で使用する文字列の特殊文字をエスケープする</refpurpose>
  </refnamediv>
@@ -13,10 +12,6 @@
  <refsect1 role="description">
   &reftitle.description;
   <para>&style.oop;</para>
-  <methodsynopsis role="oop">
-   <modifier>public</modifier> <type>string</type><methodname>mysqli::escape_string</methodname>
-   <methodparam><type>string</type><parameter>string</parameter></methodparam>
-  </methodsynopsis>
   <methodsynopsis role="oop">
    <modifier>public</modifier> <type>string</type><methodname>mysqli::real_escape_string</methodname>
    <methodparam><type>string</type><parameter>string</parameter></methodparam>
@@ -74,14 +69,6 @@
   </para>
  </refsect1>
 
- <refsect1 role="errors">
-  &reftitle.errors;
-  <para>
-   有効な MySQLi 接続を渡さずにこの関数を実行すると &null; が返され、
-   <constant>E_WARNING</constant> レベルのエラーが発生します。
-  </para>
- </refsect1>
-
  <refsect1 role="examples">
   &reftitle.examples;
   <example>
@@ -90,89 +77,53 @@
    <programlisting role="php">
 <![CDATA[
 <?php
+
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $mysqli = new mysqli("localhost", "my_user", "my_password", "world");
 
-/* 接続状況をチェックします */
-if (mysqli_connect_errno()) {
-    printf("Connect failed: %s\n", mysqli_connect_error());
-    exit();
-}
+$city = "'s-Hertogenbosch";
 
-$mysqli->query("CREATE TEMPORARY TABLE myCity LIKE City");
+/* $city はエスケープされ、クエリは動作します。*/
+$query = sprintf("SELECT CountryCode FROM City WHERE name='%s'",
+	$mysqli->real_escape_string($city));
+$result = $mysqli->query($query);
+printf("Select returned %d rows.\n", $result->num_rows);
 
-$city = "'s Hertogenbosch";
-
-/* このクエリは失敗します。なぜなら $city をエスケープしていないからです */
-if (!$mysqli->query("INSERT into myCity (Name) VALUES ('$city')")) {
-    printf("Error: %s\n", $mysqli->sqlstate);
-}
-
-$city = $mysqli->real_escape_string($city);
-
-/* $city をエスケープしたので、このクエリは正しく動作します */
-if ($mysqli->query("INSERT into myCity (Name) VALUES ('$city')")) {
-    printf("%d Row inserted.\n", $mysqli->affected_rows);
-}
-
-$mysqli->close();
-?>
+/* このクエリは失敗します。なぜなら、$city をエスケープしていないからです */
+$query = sprintf("SELECT CountryCode FROM City WHERE name='%s'", $city);
+$result = $mysqli->query($query);
 ]]>
    </programlisting>
    <para>&style.procedural;</para>
    <programlisting role="php">
 <![CDATA[
 <?php
-$link = mysqli_connect("localhost", "my_user", "my_password", "world");
 
-/* 接続状況をチェックします */
-if (mysqli_connect_errno()) {
-    printf("Connect failed: %s\n", mysqli_connect_error());
-    exit();
-}
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+$mysqli = mysqli_connect("localhost", "my_user", "my_password", "world");
 
-mysqli_query($link, "CREATE TEMPORARY TABLE myCity LIKE City");
+$city = "'s-Hertogenbosch";
 
-$city = "'s Hertogenbosch";
+/* $city はエスケープされ、クエリは動作します。*/
+$query = sprintf("SELECT CountryCode FROM City WHERE name='%s'",
+	mysqli_real_escape_string($mysqli, $city));
+$result = mysqli_query($mysqli, $query);
+printf("Select returned %d rows.\n", mysqli_num_rows($result));
 
-/* このクエリは失敗します。なぜなら $city をエスケープしていないからです */
-if (!mysqli_query($link, "INSERT into myCity (Name) VALUES ('$city')")) {
-    printf("Error: %s\n", mysqli_sqlstate($link));
-}
-
-$city = mysqli_real_escape_string($link, $city);
-
-/* $city をエスケープしたので、このクエリは正しく動作します */
-if (mysqli_query($link, "INSERT into myCity (Name) VALUES ('$city')")) {
-    printf("%d Row inserted.\n", mysqli_affected_rows($link));
-}
-
-mysqli_close($link);
-?>
+/* このクエリは失敗します。なぜなら、$city をエスケープしていないからです */
+$query = sprintf("SELECT CountryCode FROM City WHERE name='%s'", $city);
+$result = mysqli_query($mysqli, $query);
 ]]>
    </programlisting>
-   &examples.outputs;
+   &examples.outputs.similar;
    <screen>
 <![CDATA[
-Error: 42000
-1 Row inserted.
+Select returned 1 rows.
+
+Fatal error: Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 's-Hertogenbosch'' at line 1 in...
 ]]>
    </screen>
   </example>
- </refsect1>
-
- <refsect1 role="notes">
-  &reftitle.notes;
-  <note>
-   <para>
-    これまでに <function>mysql_real_escape_string</function> をよく使っていた人は、
-    <function>mysqli_real_escape_string</function> の引数が
-    <function>mysql_real_escape_string</function> とは違うことに注意しましょう。
-    <function>mysqli_real_escape_string</function> の最初の引数は
-    <parameter>mysql</parameter> であり、
-    <function>mysql_real_escape_string</function>
-    のようにエスケープしたい文字列を最初に書くのではなくなりました。
-   </para>
-  </note>
  </refsect1>
 
  <refsect1 role="seealso">
@@ -180,7 +131,6 @@ Error: 42000
   <para>
    <simplelist>
     <member><function>mysqli_set_charset</function></member>
-    <member><function>mysqli_character_set_name</function></member>
    </simplelist>
   </para>
  </refsect1>
