@@ -1,11 +1,6 @@
-# PHPマニュアル 日本語版 mirror
+# PHPマニュアル 日本語版
 
-このリポジトリは、[PHPマニュアル 日本語版](https://www.php.net/manual/ja/) のソースとなる docbook を github 上に mirror したものです。
-この mirror の upstream は以下に置かれています。
-
-http://git.php.net/?p=doc/ja.git
-
-このリポジトリは Pull Request を受け付けるためだけに存在しています。
+このリポジトリは、[PHPマニュアル 日本語版](https://www.php.net/manual/ja/) のソースとなる docbook を管理するリポジトリです。
 
 ## PHP マニュアルに間違いを見つけたら？
 
@@ -31,24 +26,6 @@ PHP マニュアルに間違いを見つけた場合、メンテナンスの担�
 
 ## メンテナ向けの注意
 
-PHP マニュアルのコミット権限を持つメンテナであっても、このリポジトリに直接 write することは出来ません。
-github で pull request を受け付けた場合、以下の手順で upstream となる git.php.net にpush するようにお願いします。
+元々 PHP Manual の docbook は git.php.net で管理されていましたが、[php-src](https://github.com/php/php-src) にバックドアを仕込むコミットがなされた事案が発生したことから、2021/03/29 より、github で直接管理されることになりました。
 
-- pull request URL に ".patch" を付け足す
-  * 例: https://github.com/php/doc-en/pull/293.patch
-    - ここでは、英語版のマニュアルに対する、実在の Pull Request を例にしています。
-- 上記の patch をダウンロードする
-  * wget https://patch-diff.githubusercontent.com/raw/php/doc-en/pull/293.patch
-- patch をローカルで適用する
-  * git am 293.patch
-- コミットメッセージに、自動クローズのメッセージを付記してコミットする
-  * git commit --am
-  * コミットメッセージに "Closes php/doc-en#293" を含める
-- git.php.net に push する
-  * git push origin master
-  * 上記のコミットメッセージが github にミラーされ、Pull Request も閉じられる
-
-このフローを面倒だと思った人もいるでしょう。これは [php-src](https://github.com/php/php-src) 向けの現状のメンテナンスフローと同じです。
-php-src では、複数のブランチから複雑なマージや rebase を経てメンテナンスが行われているため、上記でも問題になっていません。
-
-PHP マニュアルの場合は、php-src よりももう少し緩い、自動化されたフローが検討されています。
+そのため、git.php.net にミラーするための特別な作法も不要になっています。github でソースコードを管理する作法で、もろもろ作業頂いて問題ありません。
