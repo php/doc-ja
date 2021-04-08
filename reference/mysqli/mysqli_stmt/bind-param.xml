@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 40667918dcff1d5c9f7ecdc88b5caca24ba0686c Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 5c3589b9b8175cb5d60729a7a6af51ebb74fb246 Maintainer: takagi Status: ready -->
 <!-- Credits: mumumu -->
 <refentry xml:id="mysqli-stmt.bind-param" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -27,9 +27,10 @@
    <methodparam rep="repeat"><type>mixed</type><parameter role="reference">vars</parameter></methodparam>
   </methodsynopsis>
   <para>
-   変数を、SQL ステートメントのパラメータマーカにバインドします。
-   この変数は、<function>mysqli_prepare</function>
-   に渡されたものです。
+   <function>mysqli_prepare</function>
+   や <function>mysqli_stmt_prepare</function>
+   で準備された、
+   SQLステートメントのパラメータマーカに変数をバインドします。
   </para>
   <note>
    <para>
@@ -117,17 +118,14 @@
  <refsect1 role="examples">
   &reftitle.examples;
   <example>
-   <title>&style.oop;</title>
+   <title><methodname>mysqli_stmt::bind_param</methodname> の例</title>
+   <para>&style.oop;</para>
    <programlisting role="php">
 <![CDATA[
 <?php
-$mysqli = new mysqli('localhost', 'my_user', 'my_password', 'world');
 
-/* 接続状況をチェックします */
-if (mysqli_connect_errno()) {
-    printf("Connect failed: %s\n", mysqli_connect_error());
-    exit();
-}
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+$mysqli = new mysqli('localhost', 'my_user', 'my_password', 'world');
 
 $stmt = $mysqli->prepare("INSERT INTO CountryLanguage VALUES (?, ?, ?, ?)");
 $stmt->bind_param('sssd', $code, $language, $official, $percent);
@@ -137,36 +135,22 @@ $language = 'Bavarian';
 $official = "F";
 $percent = 11.2;
 
-/* プリペアドステートメントを実行します */
 $stmt->execute();
 
-printf("%d Row inserted.\n", $stmt->affected_rows);
+printf("%d row inserted.\n", $stmt->affected_rows);
 
-/* ステートメントと接続を閉じます */
-$stmt->close();
-
-/* CountryLanguage テーブルをクリアします */
+/* CountryLanguage テーブルを削除します */
 $mysqli->query("DELETE FROM CountryLanguage WHERE Language='Bavarian'");
-printf("%d Row deleted.\n", $mysqli->affected_rows);
-
-/* 接続を閉じます */
-$mysqli->close();
-?>
+printf("%d row deleted.\n", $mysqli->affected_rows);
 ]]>
    </programlisting>
-  </example>
-  <example>
-   <title>&style.procedural;</title>
+   <para>&style.procedural;</para>
    <programlisting role="php">
 <![CDATA[
 <?php
-$link = mysqli_connect('localhost', 'my_user', 'my_password', 'world');
 
-/* 接続状況をチェックします */
-if (!$link) {
-    printf("Connect failed: %s\n", mysqli_connect_error());
-    exit();
-}
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+$link = mysqli_connect('localhost', 'my_user', 'my_password', 'world');
 
 $stmt = mysqli_prepare($link, "INSERT INTO CountryLanguage VALUES (?, ?, ?, ?)");
 mysqli_stmt_bind_param($stmt, 'sssd', $code, $language, $official, $percent);
@@ -176,28 +160,50 @@ $language = 'Bavarian';
 $official = "F";
 $percent = 11.2;
 
-/* プリペアドステートメントを実行します */
 mysqli_stmt_execute($stmt);
 
-printf("%d Row inserted.\n", mysqli_stmt_affected_rows($stmt));
+printf("%d row inserted.\n", mysqli_stmt_affected_rows($stmt));
 
-/* ステートメントと接続を閉じます */
-mysqli_stmt_close($stmt);
-
-/* CountryLanguage テーブルをクリアします */
+/* CountryLanguage テーブルを削除します */
 mysqli_query($link, "DELETE FROM CountryLanguage WHERE Language='Bavarian'");
-printf("%d Row deleted.\n", mysqli_affected_rows($link));
-
-/* 接続を閉じます */
-mysqli_close($link);
-?>
+printf("%d row deleted.\n", mysqli_affected_rows($link));
 ]]>
    </programlisting>
    &examples.outputs;
    <screen>
 <![CDATA[
-1 Row inserted.
-1 Row deleted.
+1 row inserted.
+1 row deleted.
+]]>
+   </screen>
+  </example>
+  <example>
+   <title>引数を渡すために <literal>...</literal> を使う</title>
+   <para>
+    可変長の引数を渡すために、
+    <literal>...</literal> 演算子を使うことができます。
+    たとえば <literal>WHERE IN</literal> 条件で使えます。
+   </para>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+$mysqli = new mysqli('localhost', 'my_user', 'my_password', 'world');
+
+$stmt = $mysqli->prepare("SELECT Language FROM CountryLanguage WHERE CountryCode IN (?, ?)");
+/* Using ... to provide arguments */
+$stmt->bind_param('ss', ...['DEU', 'POL']);
+$stmt->execute();
+$stmt->store_result();
+
+printf("%d rows found.\n", $stmt->num_rows());
+]]>
+   </programlisting>
+   &examples.outputs;
+   <screen>
+<![CDATA[
+10 rows found.
 ]]>
    </screen>
   </example>
