@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 02177b182ecd8ee5eb32dc4373c81b278de719d5 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: b23076d969c72107482caa49fd5b8118eecc7712 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi,mumumu -->
 <refentry xml:id="function.mb-detect-encoding" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
   <refname>mb_detect_encoding</refname>
   <refpurpose>文字エンコーディングを検出する</refpurpose>
  </refnamediv>
-   
+
  <refsect1 role="description">
   &reftitle.description;
   <methodsynopsis>
@@ -17,7 +17,24 @@
    <methodparam choice="opt"><type>bool</type><parameter>strict</parameter><initializer>&false;</initializer></methodparam>
   </methodsynopsis>
   <para>
-   文字列 <parameter>string</parameter> の文字エンコーディングを検出します。
+   エンコーディングの候補の一覧から、
+   文字列 <parameter>string</parameter>
+   のもっとも可能性が高い文字エンコーディングを検出します。
+  </para>
+  <para>
+   追加の情報なしに、
+   意図した文字エンコーディングを自動で検出する行為は、
+   全く役に立ちません。
+   これは、暗号化された文字列を鍵なしにデコードする行為に似ています。
+   "Content-Type" HTTP ヘッダのような、
+   データを転送された際に付いてくる情報や、
+   保存された文字エンコーディングに関する指示を指定することが常に望ましいです。
+  </para>
+  <para>
+   この関数は、全ての文字列が正しいバイト配列とは限らない
+   マルチバイト文字列を指定するともっとも役に立ちます。
+   入力となる文字列に誤ったバイトが含まれていた場合、
+   そのエンコーディングは採用されず、次のものを試します。
   </para>
  </refsect1>
 
@@ -29,7 +46,7 @@
      <term><parameter>string</parameter></term>
      <listitem>
       <para>
-       検出する文字列。
+       調べる対象の文字列。
       </para>
      </listitem>
     </varlistentry>
@@ -37,12 +54,18 @@
      <term><parameter>encodings</parameter></term>
      <listitem>
       <para>
-       <parameter>encodings</parameter> は文字エンコーディングのリストで、
-       エンコーディング検出の順番を配列またはカンマ区切りのリストで指定します。
+       文字エンコーディングの一覧を試す順番に指定します。
+       このリストは、文字列の配列または、
+       カンマ区切りのリストで指定できます。
       </para>
       <para>
        <parameter>encodings</parameter> が省略された場合、
-       detect_order が使用されます。
+       または &null; の場合、
+       現在の detect_order 
+       (<link linkend="ini.mbstring.detect-order">
+       mbstring.detect_order</link> 設定オプション
+       または <function>mb_detect_order</function> で設定したもの)
+       を使います。
       </para>
      </listitem>
     </varlistentry>
@@ -50,9 +73,18 @@
      <term><parameter>strict</parameter></term>
      <listitem>
       <para>
-       <parameter>strict</parameter> は、
-       厳格なエンコーディング検出を行うかどうかを指定します。
-       デフォルトは &false; です。
+       <parameter>encodings</parameter> で指定された
+       文字エンコーディングのリストの全てに対して、
+       不正と判定された場合の振る舞いを指定します。
+       <parameter>strict</parameter> が &false; の場合、
+       もっとも近いと判定された文字エンコーディングが返されます。
+       <parameter>strict</parameter> を &true; にした場合、
+       &false; が返されます。
+      </para>
+      <para>
+       <parameter>strict</parameter> のデフォルト値は
+       <link linkend="ini.mbstring.strict-detection">
+       mbstring.strict_detection</link> 設定オプションで指定できます。
       </para>
      </listitem>
     </varlistentry>
@@ -64,7 +96,7 @@
   &reftitle.returnvalues;
   <para>
    検出した文字エンコーディングを返します。
-   指定した文字列からエンコーディングを検出できなかった場合は &false; を返します。
+   指定したエンコーディングの全てに対して、不正と判定された場合は &false; を返します。
   </para>
  </refsect1>
 
@@ -76,23 +108,109 @@
     <programlisting role="php">
 <![CDATA[
 <?php
-/* 現在のdetect_orderで文字エンコーディングを検出 */
+// 現在のdetect_orderで文字エンコーディングを検出
 echo mb_detect_encoding($str);
 
-/* "auto" は mbstring.language の設定を使って展開されます */
+// "auto" は mbstring.language の設定を使って展開されます
 echo mb_detect_encoding($str, "auto");
 
-/* 文字エンコーディングをカンマ区切りのリストで指定することで、encodings 引数を指定 */
+// 文字エンコーディングをカンマ区切りのリストで指定することで、encodings 引数を指定
 echo mb_detect_encoding($str, "JIS, eucjp-win, sjis-win");
 
-/* encodings 引数を指定するために配列を使用 */
-$ary[] = "ASCII";
-$ary[] = "JIS";
-$ary[] = "EUC-JP";
-echo mb_detect_encoding($str, $ary);
+// encodings 引数を配列で指定
+$encodings = [
+  "ASCII",
+  "JIS",
+  "EUC-JP"
+];
+echo mb_detect_encoding($str, $encodings);
 ?>
 ]]>
     </programlisting>
+   </example>
+  </para>
+  <para>
+   <example>
+    <title><parameter>strict</parameter> パラメーターの効果</title>
+    <programlisting role="php">
+     <![CDATA[
+<?php
+// 'áéóú' は ISO-8859-1 でエンコードされています
+$str = "\xE1\xE9\xF3\xFA";
+
+// この文字列は、ASCII または UTF-8 的には正しくありませんが、
+// UTF-8 がもっとも近いと判定されます
+var_dump(mb_detect_encoding($str, ['ASCII', 'UTF-8'], false));
+var_dump(mb_detect_encoding($str, ['ASCII', 'UTF-8'], true));
+
+// 正しいエンコーディングが見つかった場合、
+// strice パラメータを指定しても結果は変わりません
+var_dump(mb_detect_encoding($str, ['ASCII', 'UTF-8', 'ISO-8859-1'], false));
+var_dump(mb_detect_encoding($str, ['ASCII', 'UTF-8', 'ISO-8859-1'], true));
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+string(5) "UTF-8"
+bool(false)
+string(10) "ISO-8859-1"
+string(10) "ISO-8859-1"
+]]>
+    </screen>
+   </example>
+  </para>
+  <para>
+   場合に寄っては、同じバイト配列が、
+   複数の文字エンコーディング的に正しいかもしれませんが、
+   どの解釈が意図されたものなのかを知ることは不可能です。
+   たとえば、
+   バイト配列 "\xC4\xA2" は、
+   以下のように解釈できます:
+  </para>
+  <para>
+   <simplelist>
+    <member>
+     "Ä¢" (U+00C4 LATIN CAPITAL LETTER A WITH DIAERESIS のあとに、U+00A2 CENT SIGN が続いたもの)
+     これらは、ISO-8859-1, ISO-8859-15, Windows-1252
+     でエンコードされたものと解釈できます。
+    </member>
+    <member>
+     "ФЂ" (U+0424 CYRILLIC CAPITAL LETTER EF のあとに、 U+0402 CYRILLIC CAPITAL LETTER
+     DJE が続いたもの)
+     これは、ISO-8859-5 でエンコードされたものと解釈できます。
+    </member>
+    <member>
+     "Ģ" (U+0122 LATIN CAPITAL LETTER G WITH CEDILLA)
+     これは、UTF-8 でエンコードされたものと解釈できます。
+    </member>
+   </simplelist>
+  </para>
+  <para>
+   <example>
+    <title>複数のエンコーディングと一致した場合の効果</title>
+    <programlisting role="php">
+     <![CDATA[
+<?php
+$str = "\xC4\xA2";
+
+// 3つ全てのエンコーディングに照らして正しい文字列なので、
+// 最初のひとつが返されます。
+var_dump(mb_detect_encoding($str, ['UTF-8', 'ISO-8859-1', 'ISO-8859-5']));
+var_dump(mb_detect_encoding($str, ['ISO-8859-1', 'ISO-8859-5', 'UTF-8']));
+var_dump(mb_detect_encoding($str, ['ISO-8859-5', 'UTF-8', 'ISO-8859-1']));
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+string(5) "UTF-8"
+string(10) "ISO-8859-1"
+string(10) "ISO-8859-5"
+]]>
+    </screen>
    </example>
   </para>
  </refsect1>
