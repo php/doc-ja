@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 7e5d0d1bb69180c9de1992edf9613215c975fa57 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: e994a8d5be2529d508f6ee45fb53ca60502a7c9e Maintainer: takagi Status: ready -->
 <!-- Credits: mumumu -->
 <refentry xml:id="mysqli-stmt.num-rows" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>mysqli_stmt::$num_rows</refname>
   <refname>mysqli_stmt::num_rows</refname>
   <refname>mysqli_stmt_num_rows</refname>
-  <refpurpose>ステートメントの結果セットの行数を返す</refpurpose>
+  <refpurpose>サーバから取得した結果セットの行数を返す</refpurpose>
  </refnamediv>
 
  <refsect1 role="description">
@@ -24,14 +24,14 @@
    <methodparam><type>mysqli_stmt</type><parameter>statement</parameter></methodparam>
   </methodsynopsis>
   <para>
-   結果セットの行の数を返します。<function>mysqli_stmt_num_rows</function>
-   が使用できるかどうかは、<function>mysqli_stmt_store_result</function>
-   を用いて結果をステートメントハンドルにバッファリングしているかどうかに
-   依存します。
+   ステートメントハンドルにバッファリングされた
+   結果セットの行数を返します。この関数は、
+   <function>mysqli_stmt_store_result</function>
+   を用いて結果全体をステートメントハンドルにバッファリングした後に使えます。
   </para>
   <para>
-   <function>mysqli_stmt_store_result</function> を使用した場合は、
-   すぐに <function>mysqli_stmt_num_rows</function> をコールできます。
+   全ての行をサーバから取得していない場合、
+   この関数は <literal>0</literal> を返します。
   </para>
  </refsect1>
 
@@ -47,7 +47,10 @@
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
-   結果セットの行数を表す整数値を返します。
+   バッファリングされた行数を整数値で返します。
+   アンバッファリングモードでは、
+   全ての行をサーバから取得していない場合、
+   <literal>0</literal> を返します。
   </para>
  </refsect1>
 
@@ -58,33 +61,18 @@
    <programlisting role="php">
 <![CDATA[
 <?php
-/* 接続をオープンします */
+
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $mysqli = new mysqli("localhost", "my_user", "my_password", "world");
 
-/* 接続状況をチェックします */ 
-if (mysqli_connect_errno()) {
-    printf("Connect failed: %s\n", mysqli_connect_error());
-    exit();
-}
-
 $query = "SELECT Name, CountryCode FROM City ORDER BY Name LIMIT 20";
-if ($stmt = $mysqli->prepare($query)) {
+$stmt = $mysqli->prepare($query);
+$stmt->execute();
 
-    /* クエリを実行します */
-    $stmt->execute();
+/* 内部バッファに結果を格納します */
+$stmt->store_result();
 
-    /* 結果を格納します */
-    $stmt->store_result();
-
-    printf("Number of rows: %d.\n", $stmt->num_rows);
-
-    /* ステートメントを閉じます */
-    $stmt->close();
-}
-
-/* 接続を閉じます */
-$mysqli->close();
-?>
+printf("Number of rows: %d.\n", $stmt->num_rows);
 ]]>
    </programlisting>
   </example>
@@ -93,33 +81,18 @@ $mysqli->close();
    <programlisting role="php">
 <![CDATA[
 <?php
-/* 接続をオープンします */
+
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $link = mysqli_connect("localhost", "my_user", "my_password", "world");
 
-/* 接続状況をチェックします */ 
-if (mysqli_connect_errno()) {
-    printf("Connect failed: %s\n", mysqli_connect_error());
-    exit();
-}
-
 $query = "SELECT Name, CountryCode FROM City ORDER BY Name LIMIT 20";
-if ($stmt = mysqli_prepare($link, $query)) {
+$stmt = mysqli_prepare($link, $query);
+mysqli_stmt_execute($stmt);
 
-    /* クエリを実行します */
-    mysqli_stmt_execute($stmt);
+/* 内部バッファに結果を格納します */
+mysqli_stmt_store_result($stmt);
 
-    /* 結果を格納します */
-    mysqli_stmt_store_result($stmt);
-
-    printf("Number of rows: %d.\n", mysqli_stmt_num_rows($stmt));
-
-    /* ステートメントを閉じます */
-    mysqli_stmt_close($stmt);
-}
-
-/* 接続を閉じます */
-mysqli_close($link);
-?>
+printf("Number of rows: %d.\n", mysqli_stmt_num_rows($stmt));
 ]]>
    </programlisting>
    &examples.outputs;
@@ -135,9 +108,9 @@ Number of rows: 20.
   &reftitle.seealso;
   <para>
    <simplelist>
+    <member><function>mysqli_stmt_store_result</function></member>
     <member><function>mysqli_stmt_affected_rows</function></member>
     <member><function>mysqli_prepare</function></member>
-    <member><function>mysqli_stmt_store_result</function></member>
    </simplelist>
   </para>
  </refsect1>
