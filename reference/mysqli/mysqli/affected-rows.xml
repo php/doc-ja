@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 7e5d0d1bb69180c9de1992edf9613215c975fa57 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: cdd4a9f3a6a2b1fb18f0660829cbab1af7e9a701 Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa -->
 <refentry xml:id="mysqli.affected-rows" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -24,7 +24,7 @@
    <literal>DELETE</literal> クエリにより変更された行の数を返します。
   </para>
   <para>
-   SELECT 文の場合は、<function>mysqli_affected_rows</function> は
+   SELECT 文の場合は、
    <function>mysqli_num_rows</function> と同じように動作します。
   </para>
  </refsect1>
@@ -42,9 +42,11 @@
   &reftitle.returnvalues;
   <para>
    正の整数が返された場合、それは変更された行数かあるいは取得された行数を
-   示します。ゼロが返された場合、それは UPDATE 文でレコードが更新されなかったか
+   示します。ゼロが返された場合、それは <literal>UPDATE</literal> 文でレコードが更新されなかったか
    <literal>WHERE</literal> 条件に当てはまる行がなかった、またはクエリが実行されなかったことを
-   示します。-1 は、クエリがエラーを返したことを示します。
+   示します。<literal>-1</literal> は、クエリがエラーを返したか、
+   <function>mysqli_affected_rows</function> がバッファリングされていない
+   <literal>SELECT</literal> に対してコールされたことを示します。
   </para>
   <note>
    <para>
@@ -62,13 +64,9 @@
    <programlisting role="php">
 <![CDATA[
 <?php
-$mysqli = new mysqli("localhost", "my_user", "my_password", "world");
 
-/* 接続状況をチェックします */
-if (mysqli_connect_errno()) {
-    printf("Connect failed: %s\n", mysqli_connect_error());
-    exit();
-}
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+$mysqli = new mysqli("localhost", "my_user", "my_password", "world");
 
 /* 行を挿入します */
 $mysqli->query("CREATE TABLE Language SELECT * from CountryLanguage");
@@ -84,30 +82,21 @@ printf("Affected rows (UPDATE): %d\n", $mysqli->affected_rows);
 $mysqli->query("DELETE FROM Language WHERE Percentage < 50");
 printf("Affected rows (DELETE): %d\n", $mysqli->affected_rows);
 
-/* すべての行を選択します */
+/* 全件選択します。 */
 $result = $mysqli->query("SELECT CountryCode FROM Language");
 printf("Affected rows (SELECT): %d\n", $mysqli->affected_rows);
 
-$result->close();
-
-/* Language テーブルを削除します */
+/* Language テーブルを削除します。 */
 $mysqli->query("DROP TABLE Language");
-
-/* 接続を閉じます */
-$mysqli->close();
-?>
 ]]>
    </programlisting>
    <para>&style.procedural;</para>
    <programlisting role="php">
 <![CDATA[
 <?php
-$link = mysqli_connect("localhost", "my_user", "my_password", "world");
 
-if (!$link) {
-    printf("Can't connect to localhost. Error: %s\n", mysqli_connect_error());
-    exit();
-}
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+$link = mysqli_connect("localhost", "my_user", "my_password", "world");
 
 /* 行を挿入します */
 mysqli_query($link, "CREATE TABLE Language SELECT * from CountryLanguage");
@@ -123,18 +112,12 @@ printf("Affected rows (UPDATE): %d\n", mysqli_affected_rows($link));
 mysqli_query($link, "DELETE FROM Language WHERE Percentage < 50");
 printf("Affected rows (DELETE): %d\n", mysqli_affected_rows($link));
 
-/* すべての行を選択します */
+/* 全件選択します。 */
 $result = mysqli_query($link, "SELECT CountryCode FROM Language");
 printf("Affected rows (SELECT): %d\n", mysqli_affected_rows($link));
 
-mysqli_free_result($result);
-
-/* Language テーブルを削除します */
+/* Language テーブルを削除します。 */
 mysqli_query($link, "DROP TABLE Language");
-
-/* 接続を閉じます */
-mysqli_close($link);
-?>
 ]]>
    </programlisting>
    &examples.outputs;
