@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: aab33d644359aba597e810e2fc0c0caa0d347c9c Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 184f3f7bd45643cb80f828d0bb001991ec3a5fad Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa,shimooka,mumumu -->
 <refentry xmlns="http://docbook.org/ns/docbook" xml:id="function.session-set-save-handler" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -288,7 +288,6 @@
      自作のセッションハンドラ: 完全なコードは <classname>SessionHandlerInterface</classname> を参照
     </title>
     <para>
-     このコードは、PHP 5.4.0 以降のバージョンで動作します。
      ここでは実行するところだけを示します。完全な例は、上でリンクしている
      <classname>SessionHandlerInterface</classname> のページを参照ください。
     </para>
@@ -313,94 +312,6 @@ session_start();
 ]]>
     </programlisting>
    </example>
-   <example>
-    <title>セッション保存ハンドラでオブジェクトを使う例</title>
-    <para>
-     このコードは、PHP 5.4.0 より前のバージョンで動作します。
-    </para>
-    <para>
-     この例では、ファイルベースのセッションストレージをつくります。これは
-     PHP のデフォルトのセッション保存ハンドラである <parameter>files</parameter>
-     と似たものです。この例をさらに拡張すれば、
-     PHP がサポートするお好みのデータベースを使ってセッションを保存させるようにするのも簡単です。
-    </para>
-    <para>
-     シャットダウン関数 <function>session_write_close</function> を、
-     <function>register_shutdown_function</function> を使って追加登録していることに注目しましょう。
-     PHP 5.4.0 より前のバージョンでオブジェクトをセッション保存ハンドラとして使うときには、この方法をおすすめします。
-    </para>
-    <programlisting role="php">
-<![CDATA[
-<?php
-class FileSessionHandler
-{
-    private $savePath;
-
-    function open($savePath, $sessionName)
-    {
-        $this->savePath = $savePath;
-        if (!is_dir($this->savePath)) {
-            mkdir($this->savePath, 0777);
-        }
-
-        return true;
-    }
-
-    function close()
-    {
-        return true;
-    }
-
-    function read($id)
-    {
-        return (string)@file_get_contents("$this->savePath/sess_$id");
-    }
-
-    function write($id, $data)
-    {
-        return file_put_contents("$this->savePath/sess_$id", $data) === false ? false : true;
-    }
-
-    function destroy($id)
-    {
-        $file = "$this->savePath/sess_$id";
-        if (file_exists($file)) {
-            unlink($file);
-        }
-
-        return true;
-    }
-
-    function gc($maxlifetime)
-    {
-        foreach (glob("$this->savePath/sess_*") as $file) {
-            if (filemtime($file) + $maxlifetime < time() && file_exists($file)) {
-                unlink($file);
-            }
-        }
-
-        return true;
-    }
-}
-
-$handler = new FileSessionHandler();
-session_set_save_handler(
-    array($handler, 'open'),
-    array($handler, 'close'),
-    array($handler, 'read'),
-    array($handler, 'write'),
-    array($handler, 'destroy'),
-    array($handler, 'gc')
-    );
-
-// これは、オブジェクトを保存ハンドラとして使ったときの予期せぬ副作用を防ぎます
-register_shutdown_function('session_write_close');
-
-session_start();
-// $_SESSION への値の設定や格納されている値の取得を進めます
-]]>
-    </programlisting>
-   </example>
   </para>
  </refsect1>
 
@@ -408,25 +319,7 @@ session_start();
   &reftitle.notes;
   <warning>
    <para>
-    オブジェクトをセッション保存ハンドラとして使うときには、
-    シャットダウン関数を PHP に登録しておくことが重要です。
-    これで、PHP スクリプトの終了時に内部的にオブジェクトを破棄する処理による副作用や、
-    <parameter>write</parameter> および <parameter>close</parameter>
-    がコールされてしまうことを防げます。
-    一般的には、<parameter>'session_write_close'</parameter> を
-    <function>register_shutdown_function</function> 関数で登録しなければなりません。
-   </para>
-   <para>
-    PHP 5.4.0 以降では <function>session_register_shutdown</function>
-    を使えます。あるいは <function>session_set_save_handler</function>
-    をオブジェクト指向のメソッドとして実行するときに 'register shutdown'
-    フラグを使い、<classname>SessionHandlerInterface</classname>
-    を実装したインスタンスを渡すという方法もあります。
-   </para>
-  </warning>
-  <warning>
-   <para>
-    PHP 5.0.5 以降、<parameter>write</parameter> ハンドラおよび
+    <parameter>write</parameter> ハンドラおよび
     <parameter>close</parameter> ハンドラはオブジェクトが破棄されたあとにコールされます。
     そのため、これらのハンドラでオブジェクトを使ったり例外をスローしたりすることはできません。
     例外をキャッチできないのでその情報をトレースすることもできず、
@@ -459,7 +352,7 @@ session_start();
      設定ディレクティブ <link linkend="ini.session.serialize-handler">session.serialize_handler</link>
     </member>
     <member><function>register_shutdown_function</function></member>
-    <member><function>session_register_shutdown</function> (PHP 5.4.0 以降)</member>
+    <member><function>session_register_shutdown</function></member>
     <member>
      手続き型の完全なリファレンス実装は
      <link xlink:href="&url.session-save-handler;">save_handler.inc</link> を参照してください。
