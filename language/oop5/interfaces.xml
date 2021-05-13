@@ -1,32 +1,65 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 9ee9eccf455188ab6eb352194eb6f9eb99e15606 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: c045b64078ef641d32b04d2e8f0c4dda7c92aab6 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: shimooka,takagi,mumumu -->
 
 <sect1 xml:id="language.oop5.interfaces" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>オブジェクト インターフェイス</title>
  <para>
-  オブジェクトインターフェイスにより、あるクラスが実装する必要があるメソッドの
-  種類を、これらのメソッドの実装を定義することなく、指定するコードを作成できる
-  ようになります。
+  オブジェクト インターフェイスを使うと、
+  メソッドの実装を定義せずに、
+  クラスが実装する必要があるメソッドを指定するコードを作成できます。
+  インターフェイス は クラス や トレイト と名前空間を共有するので、
+  それらと同じ名前を使ってはいけません。
  </para>
  <para>
   インターフェイスは通常のクラスと同様に定義することができますが、
   キーワード <literal>class</literal> のかわりに <literal>interface</literal>
-  を用います。またメソッドの実装は全く定義されません。
+  を用います。またメソッドの実装は全く定義しません。
  </para>
  <para>
-  インターフェイス内で宣言される全てのメソッドはpublicである必要があります。
+  インターフェイス内で宣言される全てのメソッドは public である必要があります。
   これは、インターフェイスの特性によります。
  </para>
-
+ <para>
+   インターフェイスには、ふたつの互いを補完する役割があります。
+  </para>
+  <simplelist>
+   <member>
+    同じインターフェイスを実装していることで、
+    開発者が交換可能な異なるクラスを作成できるようにします。
+    同じインターフェイスを持つクラスによくある例として、
+    複数のデータベースにアクセスするサービスや
+    決済のゲートウェイ、
+    異なるキャッシュ戦略が挙げられます。
+    実装が異なっていても、
+    それを使うコードに変更を加えることなく、それらを交換することができます。
+   </member>
+   <member>
+    メソッドや関数が、インターフェイスを満たす引数を受け付け、
+    操作できるようにします。
+    オブジェクトが何をするのかや、
+    どう実装されているのかを気にする必要はありません。
+    振る舞いの重要性を説明するために、
+    <literal>Iterable</literal> や
+    <literal>Cacheable</literal>、
+    <literal>Renderable</literal> のような名前が付けられることがよくあります。
+   </member>
+  </simplelist>
+  <para>
+   インターフェイスは、
+   <link linkend="language.oop5.magic">マジックメソッド</link>
+   を宣言しても問題ありません。
+ </para>
  <note>
   <para>
    <link
-  linkend="language.oop5.decon.constructor">コンストラクタ</link> のような
-   <link linkend="language.oop5.magic">マジックメソッド</link>
-   をインターフェイスで宣言できることに注意して下さい。
-   これはたとえばファクトリで使う場合など、コンテクストによっては役に立ちます。
+  linkend="language.oop5.decon.constructor">コンストラクタ</link>
+   をインターフェイスで宣言できますが、全くおすすめできません。
+   そうしてしまうと、
+   インターフェイスを実装するクラスの柔軟性が大きく損なわれる上、
+   コンストラクタには継承ルールが適用されないため、
+   一貫しない、予期せぬ結果を生む可能性があるからです。
   </para>
  </note>
 
@@ -46,6 +79,18 @@
      但し、両方のインターフェイスのメソッド宣言が同一な場合に限ります。
     </para>
    </warning>
+   <warning>
+    <para>
+     インターフェイスを実装するクラスでは、
+     インターフェイス内の名前とは異なる名前を
+     メソッドの引数に使うことができます。
+     しかし、PHP 8.0 以降では
+     <link linkend="functions.named-arguments">名前付き引数</link>
+     がサポートされています。
+     これは、メソッドをコールする側がインターフェイス内の名前に依存する可能性があるということです。
+     そうした理由から、開発者は実装されるインターフェイスと同じ引数名を使うことを強く推奨します。
+    </para>
+   </warning>
    <note>
     <para>
      クラスと同様、インターフェイスも
@@ -57,7 +102,8 @@
     <para>
      インターフェイスを実装したクラスでは、
      <link linkend="language.oop.lsp">シグネチャの互換性に関するルール</link>
-     を守った形でメソッドを宣言しなければいけません。
+     を守った形で、
+     インターフェイス内の全てのメソッドを宣言しなければいけません。
      </para>
     </note>
   </sect2>
@@ -80,7 +126,7 @@
 <?php
 
 // インターフェイス 'iTemplate' を宣言する
-interface iTemplate
+interface Template
 {
     public function setVariable($name, $var);
     public function getHtml($template);
@@ -88,32 +134,32 @@ interface iTemplate
 
 // インターフェイスを実装する。
 // これは動作します。
-class Template implements iTemplate
+class WorkingTemplate implements Template
 {
-    private $vars = array();
-
+    private $vars = [];
+  
     public function setVariable($name, $var)
     {
         $this->vars[$name] = $var;
     }
-
+  
     public function getHtml($template)
     {
         foreach($this->vars as $name => $value) {
             $template = str_replace('{' . $name . '}', $value, $template);
         }
-
+ 
         return $template;
     }
 }
 
 // これは動作しません。
 // Fatal error: Class BadTemplate contains 1 abstract methods
-// and must therefore be declared abstract (iTemplate::getHtml)
-class BadTemplate implements iTemplate
+// and must therefore be declared abstract (Template::getHtml)
+class BadTemplate implements Template
 {
-    private $vars = array();
-
+    private $vars = [];
+  
     public function setVariable($name, $var)
     {
         $this->vars[$name] = $var;
@@ -128,18 +174,18 @@ class BadTemplate implements iTemplate
      <programlisting role="php">
 <![CDATA[
 <?php
-interface a
+interface A
 {
     public function foo();
 }
 
-interface b extends a
+interface B extends A
 {
     public function baz(Baz $baz);
 }
 
-// これは動作します
-class c implements b
+// これは動作します。
+class C implements B
 {
     public function foo()
     {
@@ -150,8 +196,8 @@ class c implements b
     }
 }
 
-// これは動作せず、fatal error となります
-class d implements b
+// これは動作せず、fatal error となります。
+class D implements B
 {
     public function foo()
     {
@@ -170,22 +216,22 @@ class d implements b
      <programlisting role="php">
 <![CDATA[
 <?php
-interface a
+interface A
 {
     public function foo();
 }
 
-interface b
+interface B
 {
     public function bar();
 }
 
-interface c extends a, b
+interface C extends A, B
 {
     public function baz();
 }
 
-class d implements c
+class D implements C
 {
     public function foo()
     {
@@ -208,20 +254,83 @@ class d implements c
      <programlisting role="php">
 <![CDATA[
 <?php
-interface a
+interface A
 {
-    const b = 'Interface constant';
+    const B = 'Interface constant';
 }
 
-// Interface constant と表示します
-echo a::b;
+// Interface constant と表示します。
+echo A::B;
 
 
-// しかし、これは動作しません。定数のオーバーライドが
-// できないからです。
-class b implements a
+// これは動作しません。定数をオーバーライドできないからです。
+class B implements A
 {
-    const b = 'Class constant';
+    const B = 'Class constant';
+}
+?>
+]]>
+     </programlisting>
+   </example>
+   <example xml:id="language.oop5.interfaces.examples.ex5">
+    <title>抽象クラスとインターフェイス</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+interface A
+{
+    public function foo(string $s): string;
+
+    public function bar(int $i): int;
+}
+
+// 抽象クラスは、インターフェイスの一部のみを実装しても構いません。
+// 抽象クラスを継承したクラスは、未実装の残りのメソッドを実装しなければなりません。
+abstract class B implements A
+{
+    pubic function foo(string $s): string
+    {
+        return $s . PHP_EOL;
+    }
+}
+
+class C extends B
+{
+    public function bar(int $i): int
+    {
+        return $i * 2;
+    }
+}
+?>
+]]>
+     </programlisting>
+   </example>
+   <example xml:id="language.oop5.interfaces.examples.ex6">
+    <title>継承と実装を同時に行う</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+
+class One
+{
+    /* ... */
+}
+
+interface Usable
+{
+    /* ... */
+}
+
+interface Updatable
+{
+    /* ... */
+}
+
+// ここでは、キーワードの順番が重要です。
+// 'extends' を始めに置かなければいけません。
+class Two extends One implements Usable, Updatable
+{
+    /* ... */
 }
 ?>
 ]]>
