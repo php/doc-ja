@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 7e5d0d1bb69180c9de1992edf9613215c975fa57 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 20fb8a52f450a5c68b7ffe334f70acad1b4b42fd Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa,mumumu -->
 <refentry xml:id="mysqli.close" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -24,7 +24,13 @@
   <para>
    既に開いているデータベース接続を閉じます。
   </para>
-  &mysql.close.connections.result.sets;
+  <para>
+   既に開いている、持続的でない MySQL 接続と、
+   結果セットはオブジェクトが破棄されるとすぐに閉じられます。
+   既に開いている接続と結果セットを明示的に閉じるのはオプションですが、
+   データベースから結果を取得した後、大量に処理が残っている場合、
+   データベースに関する処理を全て実行し終わったらすぐに接続を閉じるのが望ましいです。
+  </para>
  </refsect1>
 
  <refsect1 role="parameters">
@@ -45,9 +51,38 @@
 
  <refsect1 role="examples">
   &reftitle.examples;
-  <para>
-   <function>mysqli_connect</function> を参照ください。
-  </para>
+
+  <example>
+   <title><methodname>mysqli::close</methodname> example</title>
+   <para>&style.oop;</para>
+   <programlisting role="php">
+<![CDATA[
+<?php
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+$mysqli = new mysqli("localhost", "my_user", "my_password", "world");
+$result = $mysqli->query("SELECT Name, CountryCode FROM City ORDER BY ID LIMIT 3");
+/* 不要になったらすぐに、接続を閉じます */
+$mysqli->close();
+foreach ($result as $row) {
+    /* データベースから取得したデータを処理します */
+}
+]]>
+   </programlisting>
+   <para>&style.procedural;</para>
+   <programlisting role="php">
+<![CDATA[
+<?php
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+$mysqli = mysqli_connect("localhost", "my_user", "my_password", "world");
+$result = mysqli_query($mysqli, "SELECT Name, CountryCode FROM City ORDER BY ID LIMIT 3");
+/* 不要になったらすぐに、接続を閉じます */
+mysqli_close($mysqli);
+foreach ($result as $row) {
+    /* データベースから取得したデータを処理します */
+}
+]]>
+   </programlisting>
+  </example>
  </refsect1>
 
  <refsect1 role="notes">
