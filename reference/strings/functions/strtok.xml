@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 2f4863e1f6066a7bc7802164a8f46cd46b067132 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: f1def1dea90866604da2ed230a2941778dd05802 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: shimooka,mumumu -->
 <refentry xml:id="function.strtok" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -35,6 +35,26 @@
    初期化するために再度 <parameter>string</parameter> 引数を指定して strtok をコールします。
    文字列は、<parameter>token</parameter> の文字のどれかが見つかった場合はトークンに分割されます。
   </para>
+  <note>
+   <para>
+    この関数は、<function>explode</function>
+    関数に慣れている人が期待する動きとは、
+    ちょっと異なる振る舞いをします。
+    まず、<parameter>token</parameter> の
+    ふたつ以上の連続する文字が文字列に含まれていた場合、
+    その連続する文字は、単一の区切り文字として扱われます。
+    また、文字列の最初と最後に存在する <parameter>token</parameter>
+    は無視されてしまいます。
+    たとえば、文字列が <literal>";aaa;;bbb;"</literal> の場合、
+    <parameter>token</parameter> に
+    <literal>";"</literal> を指定して <function>strtok</function> を
+    連続してコールすると、
+    "aaa" と "bbb" を返し、最後に &false; を返します。
+    結果として、文字列はふたつにしか分割されません。
+    一方で <literal>explode(";", $string)</literal>
+    は 5つの要素からなる配列を返します。
+   </para>
+  </note>
  </refsect1>
 
  <refsect1 role="parameters">
@@ -107,6 +127,34 @@ var_dump($first_token, $second_token);
 <![CDATA[
     string(9) "something"
     bool(false)
+
+]]>
+    </screen>
+   </example>
+  </para>
+  <para>
+   <example>
+    <title><function>strtok</function> と <function>explode</function> の違い</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$string = ";aaa;;bbb;";
+$parts = [];
+$tok = strtok($string, ";");
+while ($tok !== false) {
+    $parts[] = $tok;
+    $tok = strtok(";");
+}
+echo json_encode($parts),"\n";
+$parts = explode(";", $string);
+echo json_encode($parts),"\n";
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+["aaa","bbb"]
+["","aaa","","bbb",""]
 ]]>
     </screen>
    </example>
