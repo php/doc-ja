@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- $Revision$ -->
-<!-- EN-Revision: c9c158137b0f4658c29faef4043472dc74896d0c Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 4a3d3cf1f65662905206e3222793e918a174c1c5 Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa,shimooka,mumumu -->
 <refentry xml:id="pdo.query" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>PDO::query</refname>
   <refpurpose>
-   SQL ステートメントを実行し、結果セットを PDOStatement オブジェクトとして返す
+   プレースホルダを指定せずに、SQL ステートメントを準備して実行する
   </refpurpose>
  </refnamediv>
  <refsect1 role="description">
@@ -41,8 +41,8 @@
 
   <para>
    <function>PDO::query</function> は、一回の関数コールの中で
-   SQL ステートメントを実行し、このステートメントにより返された
-   結果セット (ある場合) を PDOStatement オブジェクトとして返します。
+   SQL ステートメントを準備して実行し、
+   結果を PDOStatement オブジェクトとして返します。
   </para>
   <para>
    複数回発行する必要があるステートメントの場合、
@@ -68,6 +68,16 @@
    </para>
   </note>
 
+  <note>
+   <para>
+    <parameter>query</parameter>
+    にプレースホルダーが含まれている場合、
+    <function>PDO::prepare</function> を使って準備し、
+    <function>PDOStatement::execute</function>
+    を別に実行しなければいけません。
+   </para>
+  </note>
+
  </refsect1>
  <refsect1 role="parameters">
   &reftitle.parameters;
@@ -80,9 +90,17 @@
         準備、発行する SQL ステートメント。
        </para>
        <para>
-        クエリ内のデータは <link
-        linkend="pdo.quote">適切にエスケープ</link>
-        する必要があります。
+        SQL にプレースホルダーが含まれている場合、
+        <function>PDO::prepare</function> と
+        <function>PDOStatement::execute</function>
+        を代わりに使う必要があります。
+        それとは別のやり方として、
+        <function>PDO::query</function> を呼び出す前に、
+        <function>PDO::quote</function>
+        を使って適切にフォーマットしたデータを使って
+        SQL文を手動で準備することができます。
+        但し、<function>PDO::quote</function>
+        は、ドライバがサポートしている場合に限り使えます。
        </para>
       </listitem>
      </varlistentry>
@@ -92,8 +110,8 @@
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
-    <function>PDO::query</function> は、PDOStatement オブジェクトを返します。
-    失敗した場合は &false; を返します。
+    PDOStatement オブジェクトを返します。
+    &return.falseforfailure;
   </para>
  </refsect1>
 
@@ -101,12 +119,7 @@
   &reftitle.examples;
   <para>
    <example>
-    <title>PDO::query の例</title>
-    <para>
-     <function>PDO::query</function> の優れた機能は、
-     実行に成功したSELECTステートメントにより返されたレコードセットで
-     反復処理が可能であることです。
-    </para>
+    <title>プレースホルダーがないSQLを、<function>PDO::query</function> で実行できます</title>
     <programlisting role="php">
 <![CDATA[
 <?php
