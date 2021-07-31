@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: f9c4a68ef4f89e51e6d9b905ad3ddb6492386dd3 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: d042804100d34f5389fe122b0e1cd41087fd94ba Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa,mumumu -->
 <refentry xml:id="function.array-map" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -23,6 +23,8 @@
    適用後の要素を含む &array; を返します。
    <parameter>callback</parameter> 関数が受け付けるパラメータの数は、
    <function>array_map</function> に渡される配列の数に一致している必要があります。
+   それより配列の数が多かった場合、溢れた分は無視されます。
+   少なかった場合、<classname>ArgumentCountError</classname> がスローされます。
   </para>
  </refsect1>
 
@@ -121,11 +123,16 @@ Array
     <programlisting role="php">
 <![CDATA[
 <?php
-$func = function($value) {
+$func = function(int $value): int {
     return $value * 2;
 };
 
 print_r(array_map($func, range(1, 5)));
+
+// PHP 7.4.0 以降は、以下の書き方も出来ます:
+
+print_r(array_map(fn($value): int => $value * 2, range(1, 5)));
+
 ?>
 ]]>
     </programlisting>
@@ -149,12 +156,12 @@ Array
     <programlisting role="php">
 <![CDATA[
 <?php
-function show_Spanish($n, $m)
+function show_Spanish(int $n, string $m): string
 {
     return "The number {$n} is called {$m} in Spanish";
 }
 
-function map_Spanish($n, $m)
+function map_Spanish(int $n, string $m): array
 {
     return [$n => $m];
 }
@@ -371,6 +378,45 @@ array(1) {
     string(5) "value"
   }
 }
+]]>
+    </screen>
+   </example>
+   <example>
+    <title><function>array_map</function> と連想配列</title>
+    <para>
+     <function>array_map</function> は、配列のキーを入力として直接サポートしていませんが、
+     <function>array_keys</function> を使うと、配列のキーを入力とした動きをシミュレートできます。
+    </para>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$arr = [
+    'v1' => 'First release',
+    'v2' => 'Second release',
+    'v3' => 'Third release',
+];
+
+// Note: 7.4.0 より前のバージョンでは、無名関数を使うにはもっと長い書き方を使う必要があります
+$callback = fn(string $k, string $v): string => "$k was the $v";
+
+$result = array_map($callback, array_keys($arr), array_values($arr));
+
+var_dump($result);
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+array(3) {
+  [0]=>
+  string(24) "v1 was the First release"
+  [1]=>
+  string(25) "v2 was the Second release"
+  [2]=>
+  string(24) "v3 was the Third release"
+}
+
 ]]>
     </screen>
    </example>
