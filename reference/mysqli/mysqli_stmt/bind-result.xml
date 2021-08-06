@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 50a0ec797b58718bcfd036ee5bd4188cf0c44815 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 48f0bac7fd58fb65e7a74293551a80db722a4dce Maintainer: takagi Status: ready -->
 <!-- Credits: mumumu -->
 <refentry xml:id="mysqli-stmt.bind-result" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -33,20 +33,35 @@
    サーバー プロトコルはバインドされたカラムのデータを
    <parameter>var</parameter>/<parameter>vars</parameter> に格納します。
   </para>
+  <para>
+   結果セットが一部取得された後であっても、
+   カラムはいつでもバインドしたり、再バインドしたりできます。
+   新しいバインドは、
+   <function>mysqli_stmt_fetch</function>
+   が次回コールされた時に効力を発揮します。
+  </para>
   <note>
    <para>
     すべてのカラムを、<function>mysqli_stmt_execute</function>
     をコールしてから <function>mysqli_stmt_fetch</function>
     をコールするまでの間に
-    バインドしておく必要があることに注意しましょう。カラムの型に
-    応じて、バインド変数の型も対応する PHP の型に自動的に変換されます。
-   </para>
-   <para>
-    カラムのバインドや再バインドはいつでも可能で、たとえ結果セットを途中まで
-    取得した後であっても可能です。新しくバインドした内容が効力を発揮するのは、
-    次に <function>mysqli_stmt_fetch</function> がコールされたときからです。
+    バインドしておく必要があることに注意しましょう。
    </para>
   </note>
+  <note>
+   <para>
+    カラムの型に応じて、
+    バインド変数の型も対応する PHP の型に自動的に変換されます。
+   </para>
+  </note>
+  <tip>
+   <para>
+    この関数は、結果が単一の値の場合に役立つものです。
+    反復可能な結果セットを取得したり、
+    行をオブジェクトや配列で取得したい場合は、
+    <function>mysqli_stmt_get_result</function> を使って下さい。
+   </para>
+  </tip>
  </refsect1>
 
  <refsect1 role="parameters">
@@ -88,32 +103,21 @@
    <programlisting role="php">
 <![CDATA[
 <?php
+
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $mysqli = new mysqli("localhost", "my_user", "my_password", "world");
 
-if (mysqli_connect_errno()) {
-    printf("Connect failed: %s\n", mysqli_connect_error());
-    exit();
-}
-
 /* ステートメントを準備します */
-if ($stmt = $mysqli->prepare("SELECT Code, Name FROM Country ORDER BY Name LIMIT 5")) {
-    $stmt->execute();
+$stmt = $mysqli->prepare("SELECT Code, Name FROM Country ORDER BY Name LIMIT 5");
+$stmt->execute();
 
-    /* プリペアドステートメントに変数をバインドします */
-    $stmt->bind_result($col1, $col2);
+/* 変数をプリペアドステートメントにバインドします */
+$stmt->bind_result($col1, $col2);
 
-    /* 値を取得します */
-    while ($stmt->fetch()) {
-        printf("%s %s\n", $col1, $col2);
-    }
-
-    /* ステートメントを閉じます */
-    $stmt->close();
+/* 値を取得します */
+while ($stmt->fetch()) {
+    printf("%s %s\n", $col1, $col2);
 }
-/* 接続を閉じます */
-$mysqli->close();
-
-?>
 ]]>
    </programlisting>
   </example>
@@ -122,36 +126,24 @@ $mysqli->close();
    <programlisting role="php">
 <![CDATA[
 <?php
+
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $link = mysqli_connect("localhost", "my_user", "my_password", "world");
 
-/* 接続状況をチェックします */
-if (!$link) {
-    printf("Connect failed: %s\n", mysqli_connect_error());
-    exit();
-}
-
 /* ステートメントを準備します */
-if ($stmt = mysqli_prepare($link, "SELECT Code, Name FROM Country ORDER BY Name LIMIT 5")) {
-    mysqli_stmt_execute($stmt);
+$stmt = mysqli_prepare($link, "SELECT Code, Name FROM Country ORDER BY Name LIMIT 5");
+mysqli_stmt_execute($stmt);
 
-    /* プリペアドステートメントに変数をバインドします */
-    mysqli_stmt_bind_result($stmt, $col1, $col2);
+/* 変数をプリペアドステートメントにバインドします */
+mysqli_stmt_bind_result($stmt, $col1, $col2);
 
-    /* 値を取得します */
-    while (mysqli_stmt_fetch($stmt)) {
-        printf("%s %s\n", $col1, $col2);
-    }
-
-    /* ステートメントを閉じます */
-    mysqli_stmt_close($stmt);
+/* 値を取得します */
+while (mysqli_stmt_fetch($stmt)) {
+    printf("%s %s\n", $col1, $col2);
 }
-
-/* 接続を閉じます */
-mysqli_close($link);
-?>
 ]]>
    </programlisting>
-   &examples.outputs;
+   &examples.outputs.similar;
    <screen>
 <![CDATA[
 AFG Afghanistan
@@ -174,9 +166,6 @@ AND Andorra
     <member><function>mysqli_stmt_fetch</function></member>
     <member><function>mysqli_prepare</function></member>
     <member><function>mysqli_stmt_prepare</function></member>
-    <member><function>mysqli_stmt_init</function></member>
-    <member><function>mysqli_stmt_errno</function></member>
-    <member><function>mysqli_stmt_error</function></member>
    </simplelist>
   </para>
  </refsect1>
