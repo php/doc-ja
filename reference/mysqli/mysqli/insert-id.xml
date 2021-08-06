@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 7e5d0d1bb69180c9de1992edf9613215c975fa57 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 05ccabd6b1d2b3ab3aaabdffd5d9da285313af88 Maintainer: takagi Status: ready -->
 <!-- Credits: mumumu -->
 <refentry xml:id="mysqli.insert-id" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>mysqli::$insert_id</refname>
   <refname>mysqli_insert_id</refname>
-  <refpurpose>直近のクエリで使用した自動生成の ID を返す</refpurpose>
+  <refpurpose>直近のクエリの AUTO_INCREMENT カラムで生成した値を返す</refpurpose>
  </refnamediv>
 
  <refsect1 role="description">
@@ -19,19 +19,32 @@
    <methodparam><type>mysqli</type><parameter>mysql</parameter></methodparam>
   </methodsynopsis>
   <para>
-   <function>mysqli_insert_id</function> 関数は、AUTO_INCREMENT 属性を
-   持つカラムがあるテーブル上でのクエリ (通常は INSERT) により生成された ID を返します。
-   この接続を介して INSERT 文または UPDATE 文が送信されなかった場合、あるいは
-   変更されたテーブルに AUTO_INCREMENT 属性を持つカラムがなかった場合は
-   この関数はゼロを返します。
+   <literal>AUTO_INCREMENT</literal>
+   属性を持つカラムがあるテーブル上での
+   <literal>INSERT</literal> や <literal>UPDATE</literal>
+   クエリが生成したIDを返します。
+   <literal>INSERT</literal> 文が複数の行を変更する場合、
+   最初に自動生成された値を返します。
   </para>
-  <note>
-   <para>
-    LAST_INSERT_ID() 関数を使用して INSERT あるいは UPDATE ステートメントを
-    実行すると、<function>mysqli_insert_id</function> 関数の返す値も
-    変更されます。
-   </para>
-  </note>
+  <para>
+   MySQL 関数 <literal>LAST_INSERT_ID()</literal>
+   を使って
+   <literal>INSERT</literal> や <literal>UPDATE</literal>
+   を実行すると、
+   <function>mysqli_insert_id</function> が返す値も変更されます。
+   <literal>AUTO_INCREMENT</literal>
+   の値を生成するために
+   <literal>LAST_INSERT_ID(expr)</literal> を使った場合、
+   生成された <literal>AUTO_INCREMENT</literal> の値ではなく、
+   最後の <literal>expr</literal> の値を返します。
+  </para>
+  <para>
+   直前のクエリが
+   <literal>AUTO_INCREMENT</literal> の値を変更しなかった場合は、
+   <literal>0</literal> を返します。
+   クエリが値を生成した直後に、
+   <methodname>mysqli_insert_id</methodname> をコールする必要があります。
+  </para>
  </refsect1>
 
  <refsect1 role="parameters">
@@ -51,10 +64,14 @@
    クエリが <literal>AUTO_INCREMENT</literal> の値を更新しなかった場合は
    ゼロを返します。
   </para>
+  <para>
+   現在の接続を使って発行されたクエリだけが、戻り値に影響します。
+   他の接続やクライアントが発行したクエリからは影響を受けません。
+  </para>
   <note>
    <para>
-    もし数値が int の最大値をこえた場合、<function>mysqli_insert_id</function>
-    は文字列で結果を返します。
+    もし数値が int の最大値をこえた場合、
+    文字列で結果を返します。
    </para>
   </note>
  </refsect1>
@@ -67,60 +84,44 @@
    <programlisting role="php">
 <![CDATA[
 <?php
-$mysqli = new mysqli("localhost", "my_user", "my_password", "world");
 
-/* 接続状況をチェックします */
-if (mysqli_connect_errno()) {
-    printf("Connect failed: %s\n", mysqli_connect_error());
-    exit();
-}
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+$mysqli = new mysqli("localhost", "my_user", "my_password", "world");
 
 $mysqli->query("CREATE TABLE myCity LIKE City");
 
 $query = "INSERT INTO myCity VALUES (NULL, 'Stuttgart', 'DEU', 'Stuttgart', 617000)";
 $mysqli->query($query);
 
-printf ("New Record has id %d.\n", $mysqli->insert_id);
+printf("New record has ID %d.\n", $mysqli->insert_id);
 
-/* テーブルを削除します */
+/* drop table */
 $mysqli->query("DROP TABLE myCity");
-
-/* 接続を閉じます */
-$mysqli->close();
-?>
 ]]>
    </programlisting>
    <para>&style.procedural;</para>
    <programlisting role="php">
 <![CDATA[
 <?php
-$link = mysqli_connect("localhost", "my_user", "my_password", "world");
 
-/* 接続状況をチェックします */
-if (mysqli_connect_errno()) {
-    printf("Connect failed: %s\n", mysqli_connect_error());
-    exit();
-}
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+$link = mysqli_connect("localhost", "my_user", "my_password", "world");
 
 mysqli_query($link, "CREATE TABLE myCity LIKE City");
 
 $query = "INSERT INTO myCity VALUES (NULL, 'Stuttgart', 'DEU', 'Stuttgart', 617000)";
 mysqli_query($link, $query);
 
-printf ("New Record has id %d.\n", mysqli_insert_id($link));
+printf("New record has ID %d.\n", mysqli_insert_id($link));
 
-/* テーブルを削除します */
+/* drop table */
 mysqli_query($link, "DROP TABLE myCity");
-
-/* 接続を閉じます */
-mysqli_close($link);
-?>
 ]]>
    </programlisting>
    &examples.outputs;
    <screen>
 <![CDATA[
-New Record has id 1.
+New record has ID 1.
 ]]>
    </screen>
   </example>
