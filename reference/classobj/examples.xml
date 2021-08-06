@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 62d53f70bd8d83c2b5abf2b6d39b53657a2f41ae Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 6f11457f11d91834e1240c3351d8c4e289371b6d Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa -->
 
 
@@ -8,62 +8,66 @@
  &reftitle.examples;
  <para>
   この例では、まず基底クラスおよびそのクラスの派生クラスを定義します。
-  基底クラスは食用か否か、色とかいった、一般的な野菜を記述します。
+  基底クラスは食用かどうか、色とかいった、一般的な野菜を記述します。
   サブクラス <varname>Spinach</varname> は、
   その野菜の料理法と調理済であるかどうかの情報を追加します。
  </para>
  <para>
   <example>
-   <title>classes.inc</title>
+   <title>クラスの定義</title>
+   <para><varname>Vegetable</varname></para>
    <programlisting role="php">
 <![CDATA[
 <?php
 
-// メンバープロパティとメソッドを有する基底クラス
 class Vegetable {
+    public $edible;
 
-   var $edible;
-   var $color;
+    public $color;
 
-   function __construct($edible, $color="green")
-   {
-       $this->edible = $edible;
-       $this->color = $color;
-   }
+    public function __construct($edible, $color = "green")
+    {
+        $this->edible = $edible;
+        $this->color = $color;
+    }
 
-   function is_edible() 
-   {
-       return $this->edible;
-   }
+    public function isEdible()
+    {
+        return $this->edible;
+    }
 
-   function what_color() 
-   {
-       return $this->color;
-   }
-   
-} // クラスVegetableの終り
+    public function getColor()
+    {
+        return $this->color;
+    }
+}
 
-// 基底クラスを拡張する
+?>
+]]>
+   </programlisting>
+   <para><varname>Spinach</varname></para>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
 class Spinach extends Vegetable {
+    public $cooked = false;
 
-   var $cooked = false;
+    public function __construct()
+    {
+        parent::__construct(true, "green");
+    }
 
-   function __construct()
-   {
-       parent::__construct(true, "green");
-   }
+    public function cook()
+    {
+        $this->cooked = true;
+    }
 
-   function cook_it() 
-   {
-       $this->cooked = true;
-   }
-
-   function is_cooked() 
-   {
-       return $this->cooked;
-   }
-   
-} // クラスSpinachの終り
+    public function isCooked()
+    {
+        return $this->cooked;
+    }
+}
 
 ?>
 ]]>
@@ -81,78 +85,88 @@ class Spinach extends Vegetable {
    <title>test_script.php</title>
    <programlisting role="php">
 <![CDATA[
-<pre>
 <?php
 
-include "classes.inc";
+// クラスを読み込むためにオートローダーを登録する
+spl_autoload_register();
 
-// ユーティリティ関数
-
-function print_vars($obj) 
+function printProperties($obj)
 {
-foreach (get_object_vars($obj) as $prop => $val) {
-    echo "\t$prop = $val\n";
-}
+    foreach (get_object_vars($obj) as $prop => $val) {
+        echo "\t$prop = $val\n";
+    }
 }
 
-function print_methods($obj) 
+function printMethods($obj)
 {
-$arr = get_class_methods(get_class($obj));
-foreach ($arr as $method) {
-    echo "\tfunction $method()\n";
-}
+    $arr = get_class_methods(get_class($obj));
+    foreach ($arr as $method) {
+        echo "\tfunction $method()\n";
+    }
 }
 
-function class_parentage($obj, $class) 
+function objectBelongsTo($obj, $class)
 {
-if (is_subclass_of($GLOBALS[$obj], $class)) {
-    echo "Object $obj belongs to class " . get_class($GLOBALS[$obj]);
-    echo ", a subclass of $class\n";
-} else {
-    echo "Object $obj does not belong to a subclass of $class\n";
-}
+    if (is_subclass_of($obj, $class)) {
+        echo "Object belongs to class " . get_class($obj);
+        echo ", a subclass of $class\n";
+    } else {
+        echo "Object does not belong to a subclass of $class\n";
+    }
 }
 
-// 二つのオブジェクトのインスタンスを作成
-
+// 2つのオブジェクトをインスタンス化する
 $veggie = new Vegetable(true, "blue");
 $leafy = new Spinach();
 
-// オブジェクトに関する情報を出力
+// オブジェクトの情報を出力
 echo "veggie: CLASS " . get_class($veggie) . "\n";
 echo "leafy: CLASS " . get_class($leafy);
 echo ", PARENT " . get_parent_class($leafy) . "\n";
 
-// veggieのプロパティを表示
+// 変数 veggie のプロパティを表示
 echo "\nveggie: Properties\n";
-print_vars($veggie);
+printProperties($veggie);
 
-// そしてleafyのメソッドを表示
+// 変数 leafy のメソッドも表示
 echo "\nleafy: Methods\n";
-print_methods($leafy);
+printMethods($leafy);
 
 echo "\nParentage:\n";
-class_parentage("leafy", "Spinach");
-class_parentage("leafy", "Vegetable");
+objectBelongsTo($leafy, Spinach::class);
+objectBelongsTo($leafy, Vegetable::class);
+
 ?>
-</pre>
 ]]>
    </programlisting>
-   <para>
-    注意すべき大事な点ですが、上記の例ではオブジェクト
-    <varname>$leafy</varname>は
-    <classname>Vegetable</classname>のサブクラスであるクラス
-    <classname>Spinach</classname>のインスタンスであり、
-    このスクリプトの最後の部分は以下のような出力となります。
-   </para>
+   &examples.outputs;
    <screen>
 <![CDATA[
-   [...]
+veggie: CLASS Vegetable
+leafy: CLASS Spinach, PARENT Vegetable
+
+veggie: Properties
+        edible = 1
+        color = blue
+
+leafy: Methods
+        function __construct()
+        function cook()
+        function isCooked()
+        function isEdible()
+        function getColor()
+
 Parentage:
-Object leafy does not belong to a subclass of Spinach
-Object leafy belongs to class spinach, a subclass of Vegetable
+Object does not belong to a subclass of Spinach
+Object belongs to class Spinach, a subclass of Vegetable
 ]]>
    </screen>
+   <para>
+    注意すべき大事な点ですが、上記の例ではオブジェクト
+    <varname>$leafy</varname> は
+    <classname>Vegetable</classname> のサブクラスであるクラス
+    <classname>Spinach</classname> のインスタンスです。
+   </para>
   </example>
  </para>
 </appendix>
