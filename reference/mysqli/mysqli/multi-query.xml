@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 3d34df408450460dcfb98e749bc14600059f6f73 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 22eb6b0686ff2e259687cd7927e0cad1c4cf2eb6 Maintainer: takagi Status: ready -->
 <!-- Credits: mumumu -->
 <refentry xml:id="mysqli.multi-query" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>mysqli::multi_query</refname>
   <refname>mysqli_multi_query</refname>
-  <refpurpose>データベース上でクエリを実行する</refpurpose>
+  <refpurpose>データベース上でひとつ以上のクエリを実行する</refpurpose>
  </refnamediv>
 
  <refsect1 role="description">
@@ -26,12 +26,57 @@
    セミコロンで連結されたひとつまたは複数のクエリを実行します。
   </para>
   <para>
-   最初のクエリの結果セットを取得するには、
-   <function>mysqli_use_result</function> あるいは <function>mysqli_store_result</function>
-   を使用します。その他のクエリの結果は、
-   <function>mysqli_more_results</function> および <function>mysqli_next_result</function>
-   を使用して取得します。
+   ひとつの呼び出し中に、クエリはデータベースに非同期に送信されますが、
+   データベースはそれらを順番に実行します。
+   <methodname>mysqli_multi_query</methodname>
+   は PHP に制御を戻す前に、最初のクエリの実行が完了するのを待ちます。
+   MySQLサーバはその後、次のクエリを順番に実行していきます。
+   次の結果セットの準備が出来ると、
+   MySQL は PHP 側が <function>mysqli_next_result</function>
+   を実行するのを待ちます。
   </para>
+  <para>
+   複数のクエリを処理するために、
+   <link linkend="control-structures.do.while">do-while ループ</link>
+   を使うことを推奨します。
+   全てのクエリの実行が完了し、結果を PHP が取得するまで、
+   接続はビジー状態になります。
+   次のクエリを順番に実行するには、
+   <function>mysqli_next_result</function> を使います。
+   次の結果セットの準備ができていない場合、
+   mysqli は MySQLサーバからの応答を待ちます。
+   更に結果セットがあるかどうかを調べるには
+   <function>mysqli_more_results</function> を使います。
+  </para>
+  <para>
+   <literal>SELECT, SHOW, DESCRIBE</literal>
+   や
+   <literal>EXPLAIN</literal> のように
+   結果セットを生成するクエリについては、
+   結果セットを取得するために
+   <function>mysqli_use_result</function> や
+   <function>mysqli_store_result</function> が使えます。
+   結果セットを生成しないクエリについては、
+   影響した行数のような情報を取得するために、
+   同じ関数が使えます。
+  </para>
+  <tip>
+   <para>
+    ストアドプロシージャを実行するために
+    <literal>CALL</literal> を実行すると、
+    複数の結果セットが生じる場合があります。
+    ストアドプロシージャに
+    <literal>SELECT</literal> が含まれている場合、
+    結果セットは実行されるプロシージャが生成する順番で返されます。
+    一般的には、呼び出し側はどの程度の量、
+    結果セットが返されるかはわからないので、
+    複数の結果を取得する準備をしておかなければいけません。
+    プロシージャの最終的な実行結果は、結果ステータスです。
+    結果ステータスには、結果セットが存在しないことも含みます。
+    この結果ステータスは、プロシージャが成功したか、
+    エラーが発生したかを示します。
+   </para>
+  </tip>
  </refsect1>
 
  <refsect1 role="parameters">
@@ -43,7 +88,8 @@
      <term><parameter>query</parameter></term>
      <listitem>
       <para>
-       クエリを表す文字列。
+       実行されるクエリを含む文字列。
+       複数のクエリの場合、セミコロンで区切らなければいけません。
       </para>
       &mysqli.sqlinjection.warning;
      </listitem>
@@ -69,74 +115,54 @@
    <programlisting role="php">
 <![CDATA[
 <?php
+
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $mysqli = new mysqli("localhost", "my_user", "my_password", "world");
 
-/* 接続状況をチェックします */
-if (mysqli_connect_errno()) {
-    printf("Connect failed: %s\n", mysqli_connect_error());
-    exit();
-}
-
-$query  = "SELECT CURRENT_USER();";
+$query = "SELECT CURRENT_USER();";
 $query .= "SELECT Name FROM City ORDER BY ID LIMIT 20, 5";
 
-/* マルチクエリを実行します */
-if ($mysqli->multi_query($query)) {
-    do {
-        /* 最初の結果セットを格納します */
-        if ($result = $mysqli->store_result()) {
-            while ($row = $result->fetch_row()) {
-                printf("%s\n", $row[0]);
-            }
-            $result->free();
+/* 複数のクエリを実行します */
+$mysqli->multi_query($query);
+do {
+    /* PHP 側に結果セットを保存します */
+    if ($result = $mysqli->store_result()) {
+        while ($row = $result->fetch_row()) {
+            printf("%s\n", $row[0]);
         }
-        /* 区切り線を表示します */
-        if ($mysqli->more_results()) {
-            printf("-----------------\n");
-        }
-    } while ($mysqli->next_result());
-}
-
-/* 接続を閉じます */
-$mysqli->close();
-?>
+    }
+    /* 区切り線を出力します */
+    if ($mysqli->more_results()) {
+        printf("-----------------\n");
+    }
+} while ($mysqli->next_result());
 ]]>
    </programlisting>
    <para>&style.procedural;</para>
    <programlisting role="php">
 <![CDATA[
 <?php
+
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $link = mysqli_connect("localhost", "my_user", "my_password", "world");
 
-/* 接続状況をチェックします */
-if (mysqli_connect_errno()) {
-    printf("Connect failed: %s\n", mysqli_connect_error());
-    exit();
-}
-
-$query  = "SELECT CURRENT_USER();";
+$query = "SELECT CURRENT_USER();";
 $query .= "SELECT Name FROM City ORDER BY ID LIMIT 20, 5";
 
-/* マルチクエリを実行します */
-if (mysqli_multi_query($link, $query)) {
-    do {
-        /* 最初の結果セットを格納します */
-        if ($result = mysqli_store_result($link)) {
-            while ($row = mysqli_fetch_row($result)) {
-                printf("%s\n", $row[0]);
-            }
-            mysqli_free_result($result);
+/* 複数のクエリを実行します */
+mysqli_multi_query($link, $query);
+do {
+    /* PHP 側に結果セットを保存します */
+    if ($result = mysqli_store_result($link)) {
+        while ($row = mysqli_fetch_row($result)) {
+            printf("%s\n", $row[0]);
         }
-        /* 区切り線を表示します */
-        if (mysqli_more_results($link)) {
-            printf("-----------------\n");
-        }
-    } while (mysqli_next_result($link));
-}
-
-/* 接続を閉じます */
-mysqli_close($link);
-?>
+    }
+    /* 区切り線を出力します */
+    if (mysqli_more_results($link)) {
+        printf("-----------------\n");
+    }
+} while (mysqli_next_result($link));
 ]]>
    </programlisting>
    &examples.outputs.similar;
