@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 35af8187d0ca49b354a55f613ac5d62f5741f402 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 2513f792fc0d34e2e8543591099bbf5b92961f8c Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa,shimooka,mumumu -->
 <sect1 xml:id="language.types.string">
  <title>文字列</title>
@@ -208,22 +208,209 @@ echo 'Variables do not $expand $either';
     文字列を区切る別の方法としてヒアドキュメント構文 ("&lt;&lt;&lt;")
     があります。この場合、ある ID (と、それに続けて改行文字)
     を <literal>&lt;&lt;&lt;</literal>
-    の後に指定し、文字列を置いた後で、同じ ID を括りを閉じるために置きます。
+    の後に指定し、文字列を置いた後で、
+    同じ ID (終端ID) を括りを閉じるために置きます。
    </simpara>
 
    <simpara>
-    終端 ID は、その行の最初のカラムから始めなければ <emphasis>いけません</emphasis>。
-    使用するラベルは、PHP の他のラベルと同様の命名規則に従う必要があります。
+    終端ID は、スペースまたはタブでインデントできます。
+    その場合、インデントされた部分は文字列の全ての行から取り除かれます。
+    PHP 7.3.0 より前のバージョンでは、
+    終端ID はその行の最初のカラムから始めなければ
+    <emphasis>いけませんでした</emphasis>。
+   </simpara>
+
+   <simpara>
+    また、終端ID は、PHP の他のラベルと同様の命名規則に従う必要があります。
     つまり、英数字およびアンダースコアのみを含み、
     数字でない文字またはアンダースコアで始まる必要があります。
    </simpara>
-   
+
+   <example>
+    <title>PHP 7.3.0 以降での、基本的なヒアドキュメントの使い方</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+// 終端IDをインデントしない場合
+echo <<<END
+      a
+     b
+    c
+\n
+END;
+// 終端IDを4つのスペースでインデントする場合
+echo <<<END
+      a
+     b
+    c
+    END;
+]]>
+    </programlisting>
+    &example.outputs.73;
+    <screen>
+<![CDATA[
+      a
+     b
+    c
+  a
+ b
+c
+]]>
+    </screen>
+   </example>
+
+   <simpara>
+    終端ID が、文字列のいずれかの行より奥にインデントされている場合、
+    <classname>ParseError</classname> がスローされます。
+   </simpara>
+
+   <example>
+    <title>終端ID は 文字列本体よりも奥にインデントしてはいけない</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+echo <<<END
+  a
+ b
+c
+   END;
+]]>
+    </programlisting>
+    &example.outputs.73;
+    <screen>
+<![CDATA[
+PHP Parse error:  Invalid body indentation level (expecting an indentation level of at least 3) in example.php on line 4
+]]>
+    </screen>
+   </example>
+
+   <simpara>
+    終端ID をインデントする場合、
+    インデントに使う文字として、タブまたはスペースが使えます。
+    しかし、終端ID、および (終端ID までの)文字列の本体どちらであっても、
+    インデントする際にタブとスペースを混ぜては
+    <emphasis>いけません</emphasis>。
+    混ぜた場合、
+    <classname>ParseError</classname> がスローされます。
+
+    インデントに使う文字に制限があるのは、
+    タブとスペースを混ぜてしまうと可読性が損なわれるためです。
+   </simpara>
+
+   <example>
+    <title>文字列本体 や 終端ID のインデントに違う文字を使う</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+// 以下のコードはいずれも動作しません。
+// 文字列本体(スペース) と 終端ID(タブ) とで、異なる文字でインデントする
+{
+	echo <<<END
+	 a
+		END;
+}
+// 文字列本体に、タブとスペースを混ぜてインデントする
+{
+    echo <<<END
+    	a
+     END;
+}
+// 終端IDのインデントに、スペースとタブを混ぜる
+{
+	echo <<<END
+		  a
+		 END;
+}
+]]>
+    </programlisting>
+    &example.outputs.73;
+    <screen>
+<![CDATA[
+PHP Parse error:  Invalid indentation - tabs and spaces cannot be mixed in example.php line 8
+]]>
+    </screen>
+   </example>
+
+   <simpara>
+    文字列本体の後に置かれる 終端ID の後に、
+    セミコロンや改行を続ける必要はありません。
+    たとえば、次のようなコードが PHP 7.3.0 以降で動作します:
+   </simpara>
+
+   <example>
+    <title>終端ID の後に式を継続する</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$values = [<<<END
+a
+  b
+    c
+END, 'd e f'];
+var_dump($values);
+]]>
+    </programlisting>
+    &example.outputs.73;
+    <screen>
+<![CDATA[
+array(2) {
+  [0] =>
+  string(11) "a
+  b
+    c"
+  [1] =>
+  string(5) "d e f"
+}
+]]>
+    </screen>
+   </example>
+
    <warning>
     <simpara>
-     非常に重要なことですが、終端 ID がある行には、セミコロン
-     (<literal>;</literal>) 以外の他の文字が含まれていてはならないことに注意しましょう。
+     終端ID が行のはじめに見つかった場合、
+     それが別の単語の一部かどうかにかかわらず、
+     それが終端IDと見なされ、
+     <classname>ParseError</classname> が起きる可能性があります。
+    </simpara>
+
+    <example>
+     <title>文字列本体に終端IDが含まれると、ParseError が起きがち</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+$values = [<<<END
+a
+b
+END ING
+END, 'd e f'];
+]]>
+     </programlisting>
+     &example.outputs.73;
+    <screen>
+<![CDATA[
+PHP Parse error:  syntax error, unexpected identifier "ING", expecting "]" in example.php on line 6
+]]>
+     </screen>
+    </example>
+
+    <simpara>
+     この問題を避けるために、
+     次のようなシンプルなルールに従っておくと安全です:
+     <emphasis>
+     文字列本体に出現するテキストを、終端ID として採用しない
+     </emphasis>
+    </simpara>
+
+   </warning>
+
+   <warning>
+    <simpara>
+     PHP 7.3.0 より前のバージョンで注意すべき非常に重要な点は、
+     終端 ID がある行には、セミコロン
+     (<literal>;</literal>)
+     以外の他の文字が含まれていてはいけなかったことです。
      これは、特に ID はインデントしてはならないということ、
-     セミコロンの前に空白やタブを付けてはいけないことを意味します。
+     セミコロンの前に空白やタブを付けてはいけないことを意味していました。
      終端 ID の前の最初の文字は、使用するオペレーティングシステムで定義された
      改行である必要があることにも注意を要します。
      これは、UNIX システムでは macOS を含め <literal>\n</literal> となります。
@@ -238,7 +425,7 @@ echo 'Variables do not $expand $either';
     </simpara>
 
     <example>
-     <title>間違った例</title>
+     <title>PHP 7.3.0 より前のバージョンでの間違った例</title>
      <programlisting role="php">
       <!-- This is an INVALID example -->
 <![CDATA[
@@ -254,7 +441,7 @@ bar
      </programlisting>
     </example>
     <example>
-     <title>有効な例</title>
+     <title>PHP 7.3.0 より前のバージョンでも有効な例</title>
      <programlisting role="php">
       <!-- This is a VALID example -->
 <![CDATA[
