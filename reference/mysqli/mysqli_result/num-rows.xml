@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 7e5d0d1bb69180c9de1992edf9613215c975fa57 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: b1fc217c5f6483ae9f37917881bc697f82c0643e Maintainer: takagi Status: ready -->
 <refentry xml:id="mysqli-result.num-rows" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>mysqli_result::$num_rows</refname>
   <refname>mysqli_num_rows</refname>
-  <refpurpose>結果の行数を取得する</refpurpose>
+  <refpurpose>結果セットの行数を取得する</refpurpose>
  </refnamediv>
 
  <refsect1 role="description">
@@ -21,10 +21,10 @@
    結果セットの行数を返します。
   </para>
   <para>
-   <function>mysqli_num_rows</function> が使用可能かどうかは、
-   結果セットをバッファに格納しているかどうかに依存します。結果セットを
-   バッファに格納していない場合、すべての行を取得し終えるまで
-   <function>mysqli_num_rows</function> は正確な行数を返しません。
+   <function>mysqli_num_rows</function> の振る舞いは、
+   結果セットをバッファに格納しているかどうかに依存します。
+   この関数は、結果セットをバッファに格納していない場合、
+   全ての行をサーバから取得していない限り <literal>0</literal> を返します。
   </para>
  </refsect1>
 
@@ -40,7 +40,9 @@
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
-   結果セットの行数を返します。
+   取得した行の数を数値で返します。
+   結果セットをバッファしないモードの場合、
+   全ての行をサーバから取得していない限り <literal>0</literal> を返します。
   </para>
   <note>
    <para>
@@ -56,28 +58,16 @@
    <programlisting role="php">
 <![CDATA[
 <?php
+
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $mysqli = new mysqli("localhost", "my_user", "my_password", "world");
 
-/* 接続状況をチェックします */
-if (mysqli_connect_errno()) {
-    printf("Connect failed: %s\n", mysqli_connect_error());
-    exit();
-}
+$result = $mysqli->query("SELECT Code, Name FROM Country ORDER BY Name");
 
-if ($result = $mysqli->query("SELECT Code, Name FROM Country ORDER BY Name")) {
+/* 結果セットの行数を取得します */
+$row_cnt = $result->num_rows;
 
-    /* 結果セットの行数を調べます */
-    $row_cnt = $result->num_rows;
-
-    printf("Result set has %d rows.\n", $row_cnt);
-
-    /* 結果セットを閉じます */
-    $result->close();
-}
-
-/* 接続を閉じます */
-$mysqli->close();
-?>
+printf("Result set has %d rows.\n", $row_cnt);
 ]]>
    </programlisting>
   </example>
@@ -86,28 +76,16 @@ $mysqli->close();
    <programlisting role="php">
 <![CDATA[
 <?php
+
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $link = mysqli_connect("localhost", "my_user", "my_password", "world");
 
-/* 接続状況をチェックします */
-if (mysqli_connect_errno()) {
-    printf("Connect failed: %s\n", mysqli_connect_error());
-    exit();
-}
+$result = mysqli_query($link, "SELECT Code, Name FROM Country ORDER BY Name");
 
-if ($result = mysqli_query($link, "SELECT Code, Name FROM Country ORDER BY Name")) {
+/* 結果セットの行数を取得します */
+$row_cnt = mysqli_num_rows($result);
 
-    /* 結果セットの行数を調べます */
-    $row_cnt = mysqli_num_rows($result);
-
-    printf("Result set has %d rows.\n", $row_cnt);
-
-    /* 結果セットを閉じます */
-    mysqli_free_result($result);
-}
-
-/* 接続を閉じます */
-mysqli_close($link);
-?>
+printf("Result set has %d rows.\n", $row_cnt);
 ]]>
    </programlisting>
    &examples.outputs;
@@ -127,8 +105,21 @@ Result set has 239 rows.
     <member><function>mysqli_store_result</function></member>
     <member><function>mysqli_use_result</function></member>
     <member><function>mysqli_query</function></member>
+    <member><function>mysqli_stmt_num_rows</function></member>
    </simplelist>
   </para>
+ </refsect1>
+
+ <refsect1 role="notes">
+  &reftitle.notes;
+  <note>
+   <para>
+    <function>mysqli_stmt_num_rows</function> と異なり、
+    この関数にはオブジェクト指向のメソッドがありません。
+    オブジェクト志向のやり方の場合、getter のプロパティ
+    (mysqli_result::$num_rows) を使って下さい。
+   </para>
+  </note>
  </refsect1>
 
 </refentry>
