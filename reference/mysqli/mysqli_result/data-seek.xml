@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: d68e83b719028bb068785cccc3205c23be530564 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 67c340d029add04675cd4b399f18ad390f485a7b Maintainer: takagi Status: ready -->
 <!-- Credits: mumumu -->
 <refentry xml:id="mysqli-result.data-seek" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -56,73 +56,46 @@
  <refsect1 role="examples">
   &reftitle.examples;
   <example>
-   <title>&style.oop;</title>
+   <title><methodname>mysqli::data_seek</methodname> の例</title>
+   <para>&style.oop;</para>
    <programlisting role="php">
 <![CDATA[
 <?php
-/* 接続をオープンします */
+
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $mysqli = new mysqli("localhost", "my_user", "my_password", "world");
 
-/* 接続状況をチェックします */ 
-if (mysqli_connect_errno()) {
-    printf("Connect failed: %s\n", mysqli_connect_error());
-    exit();
-}
-
 $query = "SELECT Name, CountryCode FROM City ORDER BY Name";
-if ($result = $mysqli->query($query)) {
+$result = $mysqli->query($query);
 
-    /* 行番号 400 に移動します */
-    $result->data_seek(399);
+/* 401 番目の行にシークします */
+$result->data_seek(400);
 
-    /* 行を取得します */
-    $row = $result->fetch_row();
+/* 1行取得します */
+$row = $result->fetch_row();
 
-    printf ("City: %s  Countrycode: %s\n", $row[0], $row[1]);
-
-    /* 結果セットを開放します */
-    $result->close();
-}
-
-/* 接続を閉じます */
-$mysqli->close();
-?>
+printf("City: %s  Countrycode: %s\n", $row[0], $row[1]);
 ]]>
    </programlisting>
-  </example>
-  <example>
-   <title>&style.procedural;</title>
+   <para>&style.procedural;</para>
    <programlisting role="php">
 <![CDATA[
 <?php
-/* 接続を開きます */
-$link = mysqli_connect("localhost", "my_user", "my_password", "world");
 
-/* 接続状況をチェックします */ 
-if (!$link) {
-    printf("Connect failed: %s\n", mysqli_connect_error());
-    exit();
-}
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+$link = mysqli_connect("localhost", "my_user", "my_password", "world");
 
 $query = "SELECT Name, CountryCode FROM City ORDER BY Name";
 
-if ($result = mysqli_query($link, $query)) {
+$result = mysqli_query($link, $query);
 
-    /* 行番号 400 に移動します */
-    mysqli_data_seek($result, 399);
+/* 401 番目の行にシークします */
+mysqli_data_seek($result, 400);
 
-    /* 行を取得します */
-    $row = mysqli_fetch_row($result);
+/* 1行取得します */
+$row = mysqli_fetch_row($result);
 
-    printf ("City: %s  Countrycode: %s\n", $row[0], $row[1]);
-
-    /* 結果セットを開放します */
-    mysqli_free_result($result);
-}
-
-/* 接続を閉じます */
-mysqli_close($link);
-?>
+printf ("City: %s  Countrycode: %s\n", $row[0], $row[1]);
 ]]>
    </programlisting>
    &examples.outputs;
@@ -132,15 +105,72 @@ City: Benin City  Countrycode: NGA
 ]]>
    </screen>
   </example>
+
+  <example>
+   <title>繰り返し処理を行う際に、結果セットのポインタを調整する</title>
+   <para>
+    この関数は、
+    結果セットに対して処理を繰り返す時にカスタムの順序に並び替えたり、
+    結果セット全体に複数回処理を繰り返す時に、
+    結果セットを巻き戻すのに便利です。
+   </para>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+$mysqli = new mysqli("localhost", "my_user", "my_password", "world");
+
+$query = "SELECT Name, CountryCode FROM City ORDER BY Name LIMIT 15,4";
+$result = $mysqli->query($query);
+
+/* 結果セットを逆順に処理します */
+for ($row_no = $result->num_rows - 1; $row_no >= 0; $row_no--) {
+    $result->data_seek($row_no);
+
+    /* 1行取得します */
+    $row = $result->fetch_row();
+
+    printf("City: %s  Countrycode: %s\n", $row[0], $row[1]);
+}
+
+/* 結果セットの最初にポインタをリセットします */
+$result->data_seek(0);
+
+print "\n";
+
+/* 同じ結果セットを再度処理します */
+while ($row = $result->fetch_row()) {
+    printf("City: %s  Countrycode: %s\n", $row[0], $row[1]);
+}
+]]>
+   </programlisting>
+   &examples.outputs;
+   <screen>
+<![CDATA[
+City: Acmbaro  Countrycode: MEX
+City: Abuja  Countrycode: NGA
+City: Abu Dhabi  Countrycode: ARE
+City: Abottabad  Countrycode: PAK
+
+City: Abottabad  Countrycode: PAK
+City: Abu Dhabi  Countrycode: ARE
+City: Abuja  Countrycode: NGA
+City: Acmbaro  Countrycode: MEX
+]]>
+   </screen>
+  </example>
  </refsect1>
 
  <refsect1 role="notes">
   &reftitle.notes;
   <note>
    <para>
-    この関数は、<function>mysqli_store_result</function> あるいは
-    <function>mysqli_query</function> によって取得した、
-    バッファに格納されている結果に対してのみ使用可能です。
+    この関数は、<function>mysqli_store_result</function>、
+    <function>mysqli_query</function>、
+    <function>mysqli_stmt_get_result</function>
+    によって取得した、
+    バッファリングされた結果に対してのみ使えます。
    </para>
   </note>
  </refsect1>
