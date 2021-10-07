@@ -53,7 +53,7 @@ PHPマニュアル は XHTML や Windows の標準的なヘルプ形式である
 
 PhD を使えばHTML形式のビルドは行えるようになっていますが、chm 形式については、それをビルドするのに Windows マシンの助けが必要です。PHP マニュアル のビルド方法については、以下に纏めておいたので参考にしてください。
 
-[PHPマニュアル のビルド方法](https://github.com/php/doc-ja/blob/master/RREADME_Building_HOWTO.md)
+[PHPマニュアル のビルド方法](https://github.com/php/doc-ja/blob/master/README_Building_HOWTO.md)
 
 ## PHPマニュアル のコミット権限を得るには？
 
@@ -68,4 +68,4 @@ PHPマニュアルのコミット権限を得るには、[php.net のページ�
 PHPマニュアルのコミット権限を得たら、DocBook を直接編集し、リポジトリにコミットすることが出来ます。  
 具体的な方法は、以下を参照して下さい。
 
-[メンテナ向け: PHPマニュアル のメンテナンス方法](https://github.com/php/doc-ja/blob/master/README_Building_HOWTO.md)
+[メンテナ向け: PHPマニュアル のメンテナンス方法](https://github.com/php/doc-ja/blob/master/README_Maintain_HOWTO.md)
