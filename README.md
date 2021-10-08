@@ -42,6 +42,11 @@ PHP マニュアルに間違いや問題を見つけた場合、メンテナン�
 
 ## メンテナに興味がある人へ
 
+PHP マニュアルのメンテナは、以下を行うお仕事です。
+
+* [英語版のコミット](https://github.com/php/doc-en/commits/master) を翻訳し、日本語版に反映させる
+* このリポジトリの Pull Request や issue に対応する
+
 PHP マニュアルのメンテナンスに興味がある方は、[PHP マニュアル 日本語版について](https://github.com/php/doc-ja/blob/master/README_About_ThisManual.md) をお読み頂き、必要なアクションを取って下さい。
 
 ## メンテナ向けの注意
