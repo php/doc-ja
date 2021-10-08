@@ -92,7 +92,3 @@ chm 形式のファイルは LZX 形式で圧縮されており、Linux や Mac 
 
 (\*1) Windows 10 および、Windows Server 2016 で確認している  
 (\*2) 実は、この手順で chm を生成すると、chm の検索が機能しない。きちんと機能させるためには、DBCSFix.exe というアジア系言語のためのバッチを適用し、適切なロケールで HTML Help Compiler を起動して生成する必要がある。これらをWindowsのビルド環境で手当するのは少し大変なので、そこまで手当した生成物が欲しい場合は、[php.net から取得](http://www.php.net/download-docs.php) したほうが良い。詳細を知りたい場合は、[バッチプログラムのソースコード](http://svn.php.net/viewvc/phpdoc/doc-base/trunk/scripts/build-chms.php?revision=333535&view=markup) を読んでみよう
-
-## ライセンス
-
-この文書は、パブリックドメインに置かれています。
