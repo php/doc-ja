@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 8a7c2e03689cc5edf0dfb6710c9d3fe0b450849f Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 3ef3e56c80f7ae6b6a7291b7eb57dc6250b50801 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: shimooka,mumumu -->
 
 <refentry xml:id="function.count" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>count</refname>
-  <refpurpose>変数に含まれるすべての要素、
-  あるいはオブジェクトに含まれる何かの数を数える</refpurpose>
+  <refpurpose>配列または <interfacename>Countable</interfacename> オブジェクトに含まれるすべての要素の数を数える</refpurpose>
  </refnamediv>
 
  <refsect1 role="description">
@@ -18,20 +17,11 @@
    <methodparam choice="opt"><type>int</type><parameter>mode</parameter><initializer><constant>COUNT_NORMAL</constant></initializer></methodparam>
   </methodsynopsis>
   <para>
-   変数に含まれるすべての要素、
-   あるいはオブジェクトに含まれる何かの数を数えます。
-  </para>
-  <para>
-   オブジェクトに対して、もし <link linkend="ref.spl">SPL</link>
-   がインストールされている場合、インターフェイス
-   <classname>Countable</classname> を実装することで <function>count</function>
-   にフックすることができます。このインターフェイスには 1 つのメソッド
-   <methodname>Countable::count</methodname> があり、<function>count</function>
-   関数に対する値を返します。
-  </para>
-  <para>
-   配列の実装やPHPでの使用法に関する詳細な説明については、マニュアルの
-   <link linkend="language.types.array">配列</link>のセクションを参照ください。
+   配列の場合は、配列の全ての要素を数えます。
+   <interfacename>Countable</interfacename>
+   インターフェイスを実装したオブジェクトの場合は、
+   <methodname>Countable::count</methodname>
+   の戻り値を返します。
   </para>
  </refsect1>
 
@@ -43,7 +33,8 @@
      <term><parameter>value</parameter></term>
      <listitem>
       <para>
-       配列あるいは <classname>Countable</classname> オブジェクト。
+       配列あるいは <interfacename>Countable</interfacename>
+       オブジェクト。
       </para>
      </listitem>
     </varlistentry>
@@ -72,11 +63,14 @@
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
+   <parameter>value</parameter> の要素の数を返します。
+   PHP 8.0.0 より前のバージョンでは、
+   パラメータが配列でもなく
+   <interfacename>Countable</interfacename> インターフェイスを
+   実装したオブジェクトでもない場合、<literal>1</literal> が返されていました。
    <parameter>value</parameter> に含まれる要素の数を返します。
-   もしパラメータが配列でもなく <classname>Countable</classname> インターフェイスを
-   実装したオブジェクトでもない場合、<literal>1</literal> が返されます。
    ひとつ例外があり、<parameter>value</parameter> が &null; の場合、
-   <literal>0</literal> が返されます。
+   <literal>0</literal> が返されていました。
   </para>
  </refsect1>
 
@@ -113,7 +107,7 @@
  <refsect1 role="examples">
   &reftitle.examples;
   <para>
-   <example>
+   <example xml:id="count.example.basic">
     <title><function>count</function> の例</title>
     <programlisting role="php">
 <![CDATA[
@@ -140,7 +134,7 @@ int(3)
    </example>
   </para>
   <para>
-   <example>
+   <example xml:id="count.example.badexample">
     <title>Countable|array でない値を渡した場合の <function>count</function>  の例 (悪い例です - 真似しないでね！)</title>
     <programlisting role="php">
 <![CDATA[
@@ -187,7 +181,7 @@ Fatal error: Uncaught TypeError: count(): Argument #1 ($var) must be of type Cou
    </example>
   </para>
   <para>
-   <example>
+   <example xml:id="count.example.recursive">
     <title>再帰的な <function>count</function> の例</title>
     <programlisting role="php">
 <![CDATA[
@@ -195,15 +189,53 @@ Fatal error: Uncaught TypeError: count(): Argument #1 ($var) must be of type Cou
 $food = array('fruits' => array('orange', 'banana', 'apple'),
               'veggie' => array('carrot', 'collard', 'pea'));
 
-// 再帰的なカウント
-echo count($food, COUNT_RECURSIVE); // output 8
+// recursive count
+var_dump(count($food, COUNT_RECURSIVE));
 
-// 通常のカウント
-echo count($food); // output 2
+// normal count
+var_dump(count($food));
 
 ?>
 ]]>
     </programlisting>
+    &example.outputs;
+    <screen role="php">
+<![CDATA[
+int(8)
+int(2)
+]]>
+    </screen>
+   </example>
+  </para>
+  <para>
+   <example xml:id="count.example.countable">
+    <title><interfacename>Countable</interfacename> オブジェクトの例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+class CountOfMethods implements Countable
+{
+    private function someMethod()
+    {
+    }
+
+    public function count(): int
+    {
+        return count(get_class_methods($this));
+    }
+}
+
+$obj = new CountOfMethods();
+var_dump(count($obj));
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen role="php">
+<![CDATA[
+int(2)
+]]>
+    </screen>
    </example>
   </para>
  </refsect1>
@@ -217,6 +249,7 @@ echo count($food); // output 2
     <member><function>empty</function></member>
     <member><function>strlen</function></member>
     <member><function>is_countable</function></member>
+    <member><link linkend="language.types.array">Arrays</link></member>
    </simplelist>
   </para>
  </refsect1>
