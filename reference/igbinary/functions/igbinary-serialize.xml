@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision$ -->
+<!-- EN-Revision: aa19c140e6be8b9c324c32ace850dfc2911891a2 Maintainer: mumumu Status: ready -->
+<refentry xml:id="function.igbinary-serialize" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <refnamediv>
+  <refname>igbinary_serialize</refname>
+  <refpurpose>コンパクト、かつ保存可能な値のバイナリ表現を生成する</refpurpose>
+ </refnamediv>
+
+ <refsect1 role="description">
+  &reftitle.description;
+  <methodsynopsis>
+   <type class="union"><type>string</type><type>false</type></type><methodname>igbinary_serialize</methodname>
+   <methodparam><type>mixed</type><parameter>value</parameter></methodparam>
+  </methodsynopsis>
+  <para>
+   値の保存可能なバイナリ表現を生成します。
+  </para>
+  <para>
+   これは、値の型と構造を失うことなく、
+   PHP の値を渡したり、保存したりする際に役立ちます。
+  </para>
+  <para>
+   シリアライズ済みの PHP の文字列を再度 PHP の値に戻すには、
+   <function>igbinary_unserialize</function> が使えます。
+  </para>
+ </refsect1>
+
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <variablelist>
+   <varlistentry>
+    <term><parameter>value</parameter></term>
+    <listitem>
+      <para>
+       シリアライズする値。
+       <function>igbinary_serialize</function>
+       は、<type>resource</type> 型やいくつかの
+       <type>object</type> 型を除いた、全ての型を扱えます
+       (下記を参照下さい)。
+       自分自身への参照を含む配列であっても、
+       <function>igbinary_serialize</function>
+       でシリアライズできます。
+       シリアライズされる配列やオブジェクトにおける循環参照も保存されます。
+       それ以外の参照は失われます。
+      </para>
+      <para>
+       オブジェクトをシリアライズする場合、
+       igbinary はメンバ関数
+       <link linkend="object.serialize">__serialize()</link>
+       または
+       <link linkend="object.sleep">__sleep()</link> 
+       をシリアライズする前にコールしようとします。
+       これにより、オブジェクトはシリアライズされる直前に
+       最終的なクリーンアップ処理などを行えます。
+       同じように、
+       <function>igbinary_unserialize</function>
+       でオブジェクトを復元する際にも、
+       <link linkend="object.unserialize">__unserialize()</link>
+       または
+       <link linkend="object.wakeup">__wakeup()</link>
+       メンバ関数がコールされます。
+      </para>
+      <note>
+       <para>
+        オブジェクトの private なメンバは、
+        メンバの名前の前にクラス名が付加されます。
+        protected なメンバは、
+        メンバ名の前に <literal>'*'</literal> 
+        が付加されます。
+        これらの先頭に付けられた値は、
+        シリアライズ/デシリアライズ 双方の側で、
+        null バイトとして扱われます。
+       </para>
+      </note>
+     </listitem>
+   </varlistentry>
+  </variablelist>
+ </refsect1>
+
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <para>
+   任意の場所で保存できる 
+   <parameter>value</parameter> のバイナリストリーム表現を含む、
+   文字列を返します。
+  </para>
+  <para>
+   ここで返される値は、バイト値を含みうるバイナリ文字列であり、
+   そういうものとして扱う必要があります。
+   たとえば、<function>igbinary_serialize</function> 
+   の出力は、データベースでは一般的に 
+   <literal>CHAR</literal> や <literal>TEXT</literal> ではなく、
+   <literal>BLOB</literal> フィールドに保存する必要があります。
+  </para>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title><function>igbinary_serialize</function> の例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$ser = igbinary_serialize(['test', 'test']);
+echo urlencode($ser), "\n";
+var_export(igbinary_unserialize($ser));
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+%00%00%00%02%14%02%06%00%11%04test%06%01%0E%00
+array (
+  0 => 'test',
+  1 => 'test',
+)
+]]>
+    </screen>
+   </example>
+  </para>
+ </refsect1>
+
+ <refsect1 role="notes">
+  &reftitle.notes;
+  <note>
+   <para>
+    多くの組み込みの PHP オブジェクトは、
+    シリアライズできないことに注意して下さい。
+    しかし、<interfacename>Serializable</interfacename> インターフェイスや、
+    <link linkend="object.serialize">__serialize()</link>/<link linkend="object.unserialize">__unserialize()</link>、
+    マジックメソッド <link linkend="object.sleep">__sleep()</link>/<link linkend="object.wakeup">__wakeup()</link>  を実装したオブジェクトは、
+    シリアライズ可能です。
+    内部クラスがこれらの要件を満たさない場合、
+    どんなシリアライザであっても信頼できるやり方でシリアライズできません。
+   </para>
+   <para>
+    上記のルールには、歴史的な例外が存在します。
+    内部オブジェクトによっては、
+    それらのインターフェイスやマジックメソッドがなくても、
+    シリアライズできるものがありました。
+   </para>
+  </note>
+ </refsect1>
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <para>
+   <simplelist>
+    <member><function>serialize</function></member>
+    <member><function>igbinary_unserialize</function></member>
+    <member><function>var_export</function></member>
+    <member><function>json_encode</function></member>
+    <member><link linkend="language.oop5.serialization">オブジェクトのシリアライズ</link></member>
+    <member><link linkend="object.sleep">__sleep()</link></member>
+    <member><link linkend="object.wakeup">__wakeup()</link></member>
+    <member><link linkend="object.serialize">__serialize()</link></member>
+    <member><link linkend="object.unserialize">__unserialize()</link></member>
+   </simplelist>
+  </para>
+ </refsect1>
+
+</refentry>
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"~/.phpdoc/manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->

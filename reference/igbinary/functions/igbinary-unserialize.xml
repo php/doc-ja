@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision$ -->
+<!-- EN-Revision: aa19c140e6be8b9c324c32ace850dfc2911891a2 Maintainer: mumumu Status: ready -->
+<refentry xml:id="function.igbinary-unserialize" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <refnamediv>
+  <refname>igbinary_unserialize</refname>
+  <refpurpose>
+   <function>igbinary_serialize</function> によって保存されたバイナリ表現から、PHP の値を復元する
+  </refpurpose>
+ </refnamediv>
+
+ <refsect1 role="description">
+  &reftitle.description;
+  <methodsynopsis>
+   <type>mixed</type><methodname>igbinary_unserialize</methodname>
+   <methodparam><type>string</type><parameter>str</parameter></methodparam>
+  </methodsynopsis>
+  <simpara>
+   <function>igbinary_unserialize</function> は、
+   <function>igbinary_serialize</function>
+   によってシリアライズされた単一の値をとり、
+   それを PHP の変数に戻します。
+  </simpara>
+  <warning>
+   <para>
+    信頼できないユーザーからの入力をそのまま
+    <function>igbinary_unserialize</function> に渡してはいけません。
+    アンシリアライズの時には、
+    オブジェクトのインスタンス生成やオートローディングなどで
+    コードが実行されることがあり、
+    悪意のあるユーザーがこれを悪用するかもしれないからです。
+    シリアル化したデータをユーザーに渡す必要がある場合は、
+    安全で標準的なデータ交換フォーマットである
+    JSON などを使うようにしましょう。
+    <function>json_decode</function> および <function>json_encode</function>
+    を利用します。
+   </para>
+   <para>
+    外部で保存されたシリアライズ済みデータを復元する場合、
+    データの検証に <function>hash_hmac</function> 関数が使えます。
+    重要なのは、そのデータを改ざんした者がいないことを保証することです。
+   </para>
+  </warning>
+  <warning>
+   <para>
+    igbinary のシリアライズフォーマットでは、
+    同じ値に対する異なるリファレンスを区別できる方法がありません。
+    指定された値に対する全ての PHP のリファレンスは、
+    アンシリアライズされる際に、
+    同じリファレンスのグループの一部として扱われます。
+    これは、シリアライズされる際に
+    異なるリファレンスのグループの一部であったとしても同じです。
+   </para>
+  </warning>
+ </refsect1>
+
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <variablelist>
+   <varlistentry>
+    <term><parameter>str</parameter></term>
+    <listitem>
+     <para>
+      <function>igbinary_serialize</function>
+      が生成したシリアライズ済みの値。
+     </para>
+     <para>
+       もしアンシリアライズする変数がオブジェクトの場合、
+       オブジェクトが無事再作成された後、igbinary は自動的にメンバ関数
+       <link linkend="object.unserialize">__unserialize()</link> または <link linkend="object.wakeup">__wakeup()</link>
+       (存在していれば) をコールしようとします。
+     </para>
+     <para>
+      <note>
+       <title>unserialize_callback_func ディレクティブ</title>
+       <para>
+         コールバック関数を設定することが可能です。(不完全な
+         <type>object</type> "__PHP_Incomplete_Class"を得ることを防ぐため)
+         コールバック関数は、アンシリアライズする際に未定義のクラスをインスタ
+         ンス化する必要がある場合にコールされます。
+         <link linkend="ini.unserialize-callback-func">unserialize_callback_func</link> を定義するためには、
+         &php.ini;, <function>ini_set</function>, &htaccess; を使用し
+         てください。未定義のクラスをインスタンス化する度に、コールバック関
+         数がコールされます。この機能を無効とするには、
+         単純にこの設定を空にしてください。
+       </para>
+      </note>
+     </para>
+    </listitem>
+   </varlistentry>
+  </variablelist>
+ </refsect1>
+
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <para>
+   変換済の値を返します。
+   値の型は、
+   <type>bool</type>,
+   <type>int</type>, <type>float</type>, <type>string</type>,
+   <type>array</type>, <type>object</type>, <type>null</type> があり得ます。
+  </para>
+  <para>
+   渡された文字列が unserialize できない場合、
+   &false; が返されると共に、
+   <constant>E_NOTICE</constant>
+   または <constant>E_WARNING</constant> が発生します。
+  </para>
+ </refsect1>
+
+ <refsect1 role="errors">
+  &reftitle.errors;
+  <para>
+   アンシリアライズ ハンドラの中で、オブジェクトが
+   <classname>Throwable</classname> をスローする可能性があります。
+  </para>
+ </refsect1>
+
+ <refsect1 role="notes">
+  &reftitle.notes;
+  <warning>
+   <para>
+    エラーが発生したり、
+    &null; や &false; をシリアライズしたものを
+    unserialize しようとした場合、
+    &null; または &false; を返します。
+    この特殊ケースについては、
+    <parameter>str</parameter> を
+    <code>igbinary_serialize(null)</code> や
+    <code>igbinary_serialize(false)</code> と比較したり、
+    発生した <constant>E_NOTICE</constant>
+    をキャッチすることで扱えます。
+   </para>
+  </warning>
+ </refsect1>
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <para>
+   <simplelist>
+    <member><function>unserialize</function></member>
+    <member><function>json_encode</function></member>
+    <member><function>json_decode</function></member>
+    <member><function>hash_hmac</function></member>
+    <member><function>igbinary_serialize</function></member>
+    <member><link linkend="language.oop5.autoload">クラスのオートローディング</link></member>
+    <member><link linkend="ini.unserialize-callback-func">unserialize_callback_func</link></member>
+    <member><link linkend="object.wakeup">__wakeup()</link></member>
+    <member><link linkend="object.serialize">__serialize()</link></member>
+    <member><link linkend="object.unserialize">__unserialize()</link></member>
+   </simplelist>
+  </para>
+ </refsect1>
+</refentry>
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"~/.phpdoc/manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
