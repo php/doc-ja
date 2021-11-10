@@ -1,7 +1,7 @@
-# PHP マニュアルに関する問題の報告方法
+# PHP マニュアルの改善方法
 
 PHP マニュアルに興味を持って頂き、ありがとうございます。  
-問題を見つけた場合、以下に示す方法で報告をお願いします。
+改善方法は複数あります。以下に示す方法で対応をお願いします。
 
 ## Pull Request を送る場合
 
@@ -34,3 +34,33 @@ PHP マニュアルに興味を持って頂き、ありがとうございます�
     - ドキュメント化されていない機能がある、など
   * その他、日本語版で修正されていない問題があるものの、修正方法がわからないもの
 - Pull Request と同じく、日本語で報告しても全く問題ありません。
+
+## 未訳部分の翻訳を追加する場合
+
+メンテナが inactive になったり、[master になっている英語版](https://github.com/php/doc-en) の更新ペースに追いつけなくなったり、需要を掴みきれていない等の理由で、日本語で読みたい部分が大量に未翻訳だったりするかもしれません。
+
+それが一定の量にのぼる場合は、以下のやり方で未訳部分の翻訳を纏めて Pull Request するのが良いと思います。
+
+- A) たとえば、FFI のマニュアルを翻訳したいとします
+  * https://www.php.net/manual/en/book.ffi.php
+- B) 未翻訳部分の docbook を、英語版のリポジトリで検索して特定する
+  * 上記のページの一部分を github の検索窓に入力すると、大体どこらへんを翻訳したらよいかがわかるはずです
+    - 例: https://github.com/php/doc-en/search?q=ffi
+  * PECL 拡張モジュールの場合は、[/reference 以下](https://github.com/php/doc-en/tree/master/reference) のどこかになるはずです
+- C) このリポジトリをforkし、以下のやり方で英語版から未訳ファイルを追加する
+
+```
+$ mkdir phpdoc-ja
+$ cd phpdoc-ja
+$ git clone https://github.com/php/doc-en.git en
+$ git clone https://github.com/[you]/[your-forked-doc-ja].git ja
+$ tree -d -L 1
+.
+├── en
+└── ja
+$ cp -R en/reference/ffi ja/reference/
+```
+
+- D) ja/reference/ffi/ 以下を翻訳して push し、このリポジトリに対して Pull Request を送る
+  * [英語版の Revision 情報を追加しなければいけないという作法](https://github.com/php/doc-ja/blob/master/README_Maintain_HOWTO.md#%E6%9C%AA%E8%A8%B3%E3%81%AE%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%92%E6%97%A5%E6%9C%AC%E8%AA%9E%E7%89%88%E3%81%AB%E8%BF%BD%E5%8A%A0%E3%81%99%E3%82%8B%E6%96%B9%E6%B3%95) はありますが、Pull Request を送る段階では必須ではないと思います
+    - メンテナがおそらく、後から追加してくれるでしょう
