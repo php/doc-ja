@@ -6,7 +6,7 @@
 
 PHP マニュアルに間違いや問題を見つけた場合、メンテナンスの担当者(メンテナ) へ報告すると、修正などの対応が行われます。  
 
-[メンテナへ報告する方法は複数あります](https://github.com/php/doc-ja/blob/master/README_About_ThisManual.md#php-%E3%83%9E%E3%83%8B%E3%83%A5%E3%82%A2%E3%83%AB-%E3%81%AB%E9%96%93%E9%81%95%E3%81%84%E3%82%92%E8%A6%8B%E3%81%A4%E3%81%91%E3%81%9F%E3%82%89)が、github で報告する場合、以下に示す方法に従い、Pull Request を送るか、issue で報告するかの対応をお願いします。
+[メンテナへ報告する方法は複数あります](https://github.com/php/doc-ja/blob/master/README_About_ThisManual.md#php-%E3%83%9E%E3%83%8B%E3%83%A5%E3%82%A2%E3%83%AB-%E3%81%AB%E9%96%93%E9%81%95%E3%81%84%E3%82%92%E8%A6%8B%E3%81%A4%E3%81%91%E3%81%9F%E3%82%89)が、github で報告する場合、Pull Request を送るか、issue で報告するかの対応をお願いします。
 
 詳細は [CONTRIBUTING.md](https://github.com/php/doc-ja/blob/master/CONTRIBUTING.md) を参照して下さい。
 
