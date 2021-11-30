@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: cb0630b14901459c0bf1556e7d68f1b4c0d3796e Maintainer: takagi Status: ready -->
+<!-- EN-Revision: a7f535a32ba19f7e8236b9d87f3d84552c5f9b64 Maintainer: takagi Status: ready -->
 
 <phpdoc:varentry xmlns:phpdoc="http://php.net/ns/phpdoc" xml:id="reserved.variables.globals" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -45,6 +45,28 @@ $foo in current scope: local variable
     </screen>
    </example>
   </para>
+  <warning>
+   <para>
+    PHP 8.1.0 以降、<varname>$GLOBALS</varname> 配列全体を書き換える操作はサポートされなくなりました:
+    <example xml:id="variable.globals.entire_write_error">
+     <title><varname>$GLOBALS</varname> 配列全体を書き換える操作はエラーになる</title>
+     <programlisting role="php">
+ <![CDATA[
+ <?php
+ // 以下は、コンパイル時にエラーが発生します:
+ $GLOBALS = [];
+ $GLOBALS += [];
+ $GLOBALS =& $x;
+ $x =& $GLOBALS;
+ unset($GLOBALS);
+ array_pop($GLOBALS);
+ // ...上記以外の、$GLOBALS 全体に対するあらゆる書き込み/読み書き操作も同様です
+ ?>
+ ]]>
+     </programlisting>
+    </example>
+   </para>
+  </warning>
  </refsect1>
  
  <refsect1 role="notes">
@@ -55,6 +77,36 @@ $foo in current scope: local variable
    <para>
     他の<link linkend="language.variables.superglobals">スーパーグローバル</link>
     とは異なり、<varname>$GLOBALS</varname> は PHP で常に使用可能です。
+   </para>
+  </note>
+  <note>
+   <para>
+    PHP 8.1.0 以降、<varname>$GLOBALS</varname> はグローバルなシンボルテーブルの、読み取り専用のコピーになりました。つまり、グローバル変数は <varname>$GLOBALS</varname> のコピーを通じて書き換えられなくなったということです。
+    それより前のバージョンでは、
+    <varname>$GLOBALS</varname> 配列は値渡しの振る舞いの例外とされ、そのコピーを通じてグローバル変数の書き換えができていました。
+     <informalexample>
+     <programlisting role="php">
+<![CDATA[
+<?php
+// PHP 8.1.0 より前の振る舞い
+$a = 1;
+$globals = $GLOBALS; // 建前上は値渡しのコピー
+$globals['a'] = 2;
+var_dump($a); // int(2)
+
+// PHP 8.1.0 以降の振る舞い
+// 以下のようにしても、$a の値は変更されません。以前の振る舞いは、値渡しのセマンティクスに違反していました。
+$globals = $GLOBALS;
+$globals['a'] = 1;
+
+// 以前の振る舞いを復元するには、$GLOBALS 配列のコピーを走査し、個別のキーと値を $GLOBALS 配列に書き戻すようにして下さい。
+foreach ($globals as $key => $value) {
+    $GLOBALS[$key] = $value;
+}
+?>
+]]>
+     </programlisting>
+    </informalexample>
    </para>
   </note>
  </refsect1>
