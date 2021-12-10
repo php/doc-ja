@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: a0ae28d3bc85f927c22649ebd9a590b921534b7d Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 92673cc45aefdb6085b332cb381675825926a519 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: shimooka,takagi,mumumu -->
  <chapter xml:id="features.file-upload" xmlns="http://docbook.org/ns/docbook">
   <title>ファイルアップロードの処理</title>
@@ -134,6 +134,17 @@
        <para>
         このファイルアップロードに関する
         <link linkend="features.file-upload.errors">エラーコード</link>
+       </para>
+      </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term><varname>$_FILES['userfile']['full_path']</varname></term>
+      <listitem>
+       <para>
+        ブラウザからアップロードされたファイルのフルパス。
+        この値は必ずしも実際のディレクトリ構造を反映していないため、
+        信用できません。
+        PHP 8.1.0 以降で利用可能です。
        </para>
       </listitem>
      </varlistentry>
@@ -473,6 +484,49 @@ foreach ($_FILES["pictures"]["error"] as $key => $error) {
      これを超える数のファイルをアップロードしてしまわないようにしましょう。
     </simpara>
    </warning>
+   <para>
+    <example>
+     <title>ディレクトリ全体をアップロードする</title>
+     <simpara>
+      HTML のファイルアップロードフィールド中に、
+      <literal>webkitdirectory</literal> 属性を指定することで
+      ディレクトリ全体をアップロードすることができます。
+      この機能はほとんどのモダンなブラウザでサポートされています。
+     </simpara>
+     <simpara>
+      <literal>full_path</literal> の情報を使うと、
+      相対パスを保存することもできますし、
+      サーバ上で同じディレクトリを再構築することもできます。
+     </simpara>
+     <programlisting role="html">
+<![CDATA[
+<form action="file-upload.php" method="post" enctype="multipart/form-data">
+  Send this directory:<br />
+  <input name="userfile[]" type="file" webkitdirectory multiple />
+  <input type="submit" value="Send files" />
+</form>
+]]>
+     </programlisting>
+    </example>
+
+    <warning>
+     <simpara>
+      <literal>webkitdirectory</literal> 属性は標準ではありませんし、
+      標準化の過程にも入っていません。
+      この属性を Web 上の本番環境で使わないで下さい:
+      なぜなら、この属性を全ユーザーが使えるとは限らないからです。
+      また、この属性はクライアントの実装に非互換がある可能性もありますし、
+      振る舞いが将来変更される可能性もあります。
+     </simpara>
+     <simpara>
+      PHP は ブラウザ/ユーザーエージェントから送られてきた相対パスの情報をパースし、
+      その情報を <varname>$_FILES</varname> 配列に渡すことだけを行います。
+      <literal>full_path</literal> 配列中の値が、
+      実際のディレクトリ構造を含んでいるという保証はありません。
+      よって、PHP アプリケーションはこの情報を信用してはいけません。
+     </simpara>
+    </warning>
+   </para>
   </sect1>
 
   <sect1 xml:id="features.file-upload.put-method">
