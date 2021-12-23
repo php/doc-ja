@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 9d2b858bca85edbeebb83f05a1cd2e87cf90127d Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: ea62fb83196997032641b50fe44420305466195e Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: shimooka -->
 <refentry xmlns="http://docbook.org/ns/docbook" xml:id="function.fwrite">
  <refnamediv>
@@ -11,14 +11,14 @@
  <refsect1 role="description">
   &reftitle.description;
   <methodsynopsis>
-   <type>int</type><methodname>fwrite</methodname>
-   <methodparam><type>resource</type><parameter>handle</parameter></methodparam>
-   <methodparam><type>string</type><parameter>string</parameter></methodparam>
-   <methodparam choice="opt"><type>int</type><parameter>length</parameter></methodparam>
+   <type class="union"><type>int</type><type>false</type></type><methodname>fwrite</methodname>
+   <methodparam><type>resource</type><parameter>stream</parameter></methodparam>
+   <methodparam><type>string</type><parameter>data</parameter></methodparam>
+   <methodparam choice="opt"><type class="union"><type>int</type><type>null</type></type><parameter>length</parameter><initializer>&null;</initializer></methodparam>
   </methodsynopsis>
   <simpara>
-   <function>fwrite</function>は<parameter>string</parameter>の内容を
-   <parameter>handle</parameter>が指しているファイル・ストリームに書き込みます。
+   <function>fwrite</function>は<parameter>data</parameter>の内容を
+   <parameter>stream</parameter>が指しているファイル・ストリームに書き込みます。
   </simpara>
  </refsect1>
 
@@ -27,13 +27,13 @@
   <para>
    <variablelist>
     <varlistentry>
-     <term><parameter>handle</parameter></term>
+     <term><parameter>stream</parameter></term>
      <listitem>
       &fs.file.pointer;
      </listitem>
     </varlistentry>
     <varlistentry>
-     <term><parameter>string</parameter></term>
+     <term><parameter>data</parameter></term>
      <listitem>
       <para>
        書き込む文字列。
@@ -44,9 +44,9 @@
      <term><parameter>length</parameter></term>
      <listitem>
       <para>
-       <parameter>length</parameter>パラメータが与えられている場合、
+       <parameter>length</parameter>パラメータが数値の場合、
        <parameter>length</parameter>バイト数分の書き込みが完了したか、
-       <parameter>string</parameter>が終わりに達したかのいずれか早い方の
+       <parameter>data</parameter>が終わりに達したかのいずれか早い方の
        事象により書き込みは中止されます。
       </para>
      </listitem>
@@ -61,6 +61,28 @@
    <function>fwrite</function> は、
    書き込んだバイト数、またはエラー時に &false; を返します。
   </simpara>
+ </refsect1>
+
+ <refsect1 role="changelog">
+  &reftitle.changelog;
+  <informaltable>
+   <tgroup cols="2">
+    <thead>
+     <row>
+      <entry>&Version;</entry>
+      <entry>&Description;</entry>
+     </row>
+    </thead>
+    <tbody>
+     <row>
+      <entry>8.0.0</entry>
+      <entry>
+       <parameter>length</parameter> は、nullable になりました。
+      </entry>
+     </row>
+    </tbody>
+   </tgroup>
+  </informaltable>
  </refsect1>
 
  <refsect1 role="examples">
@@ -80,20 +102,20 @@ if (is_writable($filename)) {
     // この例では$filenameを追加モードでオープンします。
     // ファイルポインタはファイルの終端になりますので
     // そこがfwrite()で$somecontentが追加される位置になります。
-    if (!$handle = fopen($filename, 'a')) {
+    if (!$fp = fopen($filename, 'a')) {
          echo "Cannot open file ($filename)";
          exit;
     }
 
     // オープンしたファイルに$somecontentを書き込みます
-    if (fwrite($handle, $somecontent) === FALSE) {
+    if (fwrite($fp, $somecontent) === FALSE) {
         echo "Cannot write to file ($filename)";
         exit;
     }
 
     echo "Success, wrote ($somecontent) to file ($filename)";
 
-    fclose($handle);
+    fclose($fp);
 
 } else {
     echo "The file $filename is not writable";
@@ -139,9 +161,9 @@ function fwrite_stream($fp, $string) {
   <note>
    <para>
     <function>fopen</function> を使用して追記モードでオープンした
-    <parameter>handle</parameter> の場合、
+    <parameter>stream</parameter> の場合、
     <function>fwrite</function> はアトミックになります
-    (ただし、一部のプラットフォームにおいて <parameter>string</parameter>
+    (ただし、一部のプラットフォームにおいて <parameter>data</parameter>
     がファイルシステムのブロックサイズを超えない場合、
     そしてローカルファイルシステム上のファイルである場合に限ります)。
     アトミックであるとは、つまり <function>fwrite</function>
