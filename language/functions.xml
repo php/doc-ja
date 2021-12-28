@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 0b005cfe4e7075d8f7c7472545eaee2b7f38526e Maintainer: takagi Status: working -->
+<!-- EN-Revision: 5c2678e02f0eb135946799eed02d884de1bcf4ad Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa,mumumu -->
  <chapter xml:id="language.functions" xmlns="http://docbook.org/ns/docbook">
   <title>関数</title>
@@ -1511,15 +1511,22 @@ var_export($x);  // 1 を出力
    <title>First class callable syntax</title>
 
    <para>
-    The first class callable syntax is introduced as of PHP 8.1.0, as a way of creating <link linkend="functions.anonymous">anonymous functions</link> from <link linkend="language.types.callable">callable</link>.
-    It supersedes existing callable syntax using strings and arrays.
-    The advantage of this syntax is that it is accessible to static analysis, and uses the scope at the point where the callable is acquired.
+    First class callable syntax とは、PHP 8.1.0 で追加された、
+    <link linkend="language.types.callable">callable</link>
+    から <link linkend="functions.anonymous">無名関数</link> を生成する記法です。
+    この記法は、
+    文字列や配列を使って callable を生成する方法を置き換えるものです。
+    この記法の利点は、callable の静的解析を行いやすくなることに加え、
+    無名関数のスコープが、callable を生成した時点のスコープになることです。
    </para>
 
    <para>
-    <code>CallableExpr(...)</code> syntax is used to create a <classname>Closure</classname> object from callable. <code>CallableExpr</code> accepts any expression that can be directly called in the PHP grammar:
+    <code>CallableExpr(...)</code> という記法で、
+    callable から <classname>Closure</classname> を生成します。
+    <code>CallableExpr</code> には、
+    PHP の文法上直接コールできるあらゆる式が使えます:
     <example>
-     <title>Simple first class callable syntax</title>
+     <title>First class callable syntax の簡単な例</title>
      <programlisting role="php">
 <![CDATA[
 <?php
@@ -1537,13 +1544,13 @@ $staticmethodStr = 'staticmethod';
 
 
 $f1 = strlen(...);
-$f2 = $obj(...);  // invokable object
+$f2 = $obj(...);  // 呼び出し可能オブジェクト
 $f3 = $obj->method(...);
 $f4 = $obj->$methodStr(...);
 $f5 = Foo::staticmethod(...);
 $f6 = $classStr::$staticmethodStr(...);
 
-// traditional callable using string, array
+// 文字列や配列を使った、古い記法
 $f7 = 'strlen'(...);
 $f8 = [$obj, 'method'](...);
 $f9 = [Foo::class, 'staticmethod'](...);
@@ -1555,15 +1562,19 @@ $f9 = [Foo::class, 'staticmethod'](...);
 
    <note>
     <para>
-      The <code>...</code> is part of the syntax, and not an omission.
+     <code>...</code> は文法の一部であり、省略形ではありません。
     </para>
    </note>
 
    <para>
-    <code>CallableExpr</code> has the same semantics as <methodname>Closure::fromCallable</methodname>.
-    That is, unlike callable using strings and arrays, <code>CallableExpr(...)</code> respects the scope at the point where it is created:
+    この記法の動作は、
+    <methodname>Closure::fromCallable</methodname>
+    の仕様に従います。
+    つまり、文字列や配列から callable を作るやり方とは異なり、
+    <code>CallableExpr(...)</code> のスコープは、
+    それを生成した時点でのスコープになります:
     <example>
-     <title>Scope comparison of <code>CallableExpr(...)</code> and traditional callable</title>
+     <title>古い callable の生成方法と、<code>CallableExpr(...)</code> の比較</title>
      <programlisting role="php">
 <![CDATA[
 <?php
@@ -1582,12 +1593,13 @@ $foo = new Foo;
 $privateMethod = $foo->getPrivateMethod();
 $privateMethod();
 // Fatal error: Call to private method Foo::privateMethod() from global scope
-// This is because call is performed outside from Foo and visibility will be checked from this point.
+// 上記がエラーになるのは、呼び出しが Foo の外部から行われ、
+// アクセス権のチェックもこの時点から行われるためです。
 
 class Foo1 {
     public function getPrivateMethod() {
-        // Uses the scope where the callable is acquired.
-        return $this->privateMethod(...); // identical to Closure::fromCallable([$this, 'privateMethod']);
+        // 下記は、callable を生成した時点のスコープになります。
+        return $this->privateMethod(...); // Closure::fromCallable([$this, 'privateMethod']); と同等です。
     }
 
     private function privateMethod() {
@@ -1607,13 +1619,18 @@ $privateMethod();  // Foo1::privateMethod
 
    <note>
     <para>
-     Object creation by this syntax (e.g <code>new Foo(...)</code>) is not supported, because <code>new Foo()</code> syntax is not considered a call.
+     この記法を使ってオブジェクトを生成する操作
+     (例: <code>new Foo(...)</code>)
+     はサポートされていません。
+     なぜなら、<code>new Foo()</code>
+     は、呼び出しとは見なされないからです。
     </para>
    </note>
 
    <note>
     <para>
-     The first-class callable syntax cannot be combined with the nullsafe operator. Both of the following result in a compile-time error:
+     この記法は、<link linkend="language.oop5.basic.nullsafe">nullsafe 演算子</link> と組み合わせて使うことはできません。
+     以下のコードは、いずれもコンパイルエラーになります:
      <example>
       <programlisting role="php">
 <![CDATA[
