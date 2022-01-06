@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 9dd74f527dc164165dee7f19058bec75a901e770 Maintainer: mumumu Status: ready -->
+<!-- EN-Revision: 7d9aa6352ebb52dd9703df3c7fd4d359ae09e614 Maintainer: mumumu Status: ready -->
 
 <sect1 xml:id="language.types.declarations">
  <title>型宣言</title>
@@ -167,7 +167,7 @@ Stack trace:
 
   <para>
    <type>mixed</type> 型は、
-   以下の <link linkend="language.types.declarations.union">union 型</link> と同等です。
+   以下の <link linkend="language.types.declarations.composite.union">union 型</link> と同等です。
    <type class="union">
     <type>object</type><type>resource</type><type>array</type><type>string</type>
     <type>int</type><type>float</type><type>bool</type><type>null</type>
@@ -385,86 +385,158 @@ NULL
   </note>
  </sect2>
 
- <sect2 xml:id="language.types.declarations.union">
-  <title>union 型</title>
+ <sect2 xml:id="language.types.declarations.composite">
+  <title>複合型</title>
   <para>
-   型を union として宣言すると、ひとつではなく、
-   複数の異なる型を値として受け入れることができます。
-   union 型は、<literal>T1|T2|...</literal> という文法を使って指定します。
-   union 型は、PHP 8.0.0 以降で利用可能です。
+   単一の型を組み合わせて、複合型にすることができます。
+   PHP では、以下のやり方で型を組み合わせることができます:
   </para>
 
-  <sect3 xml:id="language.types.declarations.union.nullable">
-   <title>Nullを受け入れる union 型</title>
+  <itemizedlist>
+   <listitem>
+    <simpara>
+     単一の型の集合を表す union型。
+     PHP 8.0.0 以降で利用可能です。
+    </simpara>
+   </listitem>
+   <listitem>
+    <simpara>
+     クラス/インターフェイス として宣言された型の制約を、
+     複数同時に満たす 交差型。
+     PHP 8.1.0 以降で利用可能です。
+    </simpara>
+   </listitem>
+  </itemizedlist>
+
+  <caution>
+   <simpara>
+    交差型 を union型 と組み合わせて使うことはできません。
+   </simpara>
+  </caution>
+
+  <sect3 xml:id="language.types.declarations.composite.union">
+   <title>union 型</title>
    <para>
-    <literal>null</literal> 型も union 型の一部としてサポートされています。
-    null を受け入れる union を作るために、
-    <literal>T1|T2|null</literal> のような指定をすることができます。
-    既にある <literal>?T</literal> 記法は、
-    よくある <literal>T|null</literal> の短縮記法と考えられます。
+    型を union として宣言すると、ひとつではなく、
+    複数の異なる型を値として受け入れることができます。
+    union 型は、<literal>T1|T2|...</literal> という文法を使って指定します。
+    union 型は、PHP 8.0.0 以降で利用可能です。
    </para>
 
-   <caution>
-    <simpara>
-     <literal>null</literal> は、単独の、独立した型として使うことは出来ません。
-    </simpara>
-   </caution>
+   <sect4 xml:id="language.types.declarations.composite.union.nullable">
+    <title>Nullを受け入れる union 型</title>
+    <para>
+     <literal>null</literal> 型も union 型の一部としてサポートされています。
+     null を受け入れる union を作るために、
+     <literal>T1|T2|null</literal> のような指定をすることができます。
+     既にある <literal>?T</literal> 記法は、
+     よくある <literal>T|null</literal> の短縮記法と考えられます。
+    </para>
+
+    <caution>
+     <simpara>
+      <literal>null</literal> は、単独の、独立した型として使うことは出来ません。
+     </simpara>
+    </caution>
+   </sect4>
+
+   <sect4 xml:id="language.types.declarations.composite.union.false">
+    <title>false 疑似型</title>
+    <para>
+     <literal>false</literal> リテラルの型が、union の一部としてサポートされています。
+     歴史的な理由で、多くの内部関数が失敗時に <literal>null</literal>
+     ではなく <literal>false</literal>  を返しているためです。
+     <function>strpos</function> 関数は、このような関数の典型例です。
+    </para>
+
+    <caution>
+     <simpara>
+      <literal>false</literal> 疑似型は、単独の、独立した型
+      (単独な null を許容する型としても)
+      として使うことは出来ません。
+      したがって、<literal>false</literal>, <literal>false|null</literal>,
+      <literal>?false</literal> はいずれも許されません。
+     </simpara>
+    </caution>
+    <caution>
+     <simpara>
+      <literal>true</literal> リテラルの型は存在 <emphasis>しません</emphasis>
+     </simpara>
+    </caution>
+   </sect4>
   </sect3>
 
-  <sect3 xml:id="language.types.declarations.union.false">
-   <title>false 疑似型</title>
+  <sect3 xml:id="language.types.declarations.composite.intersection">
+   <title>交差型</title>
    <para>
-    <literal>false</literal> リテラルの型が、union の一部としてサポートされています。
-    歴史的な理由で、多くの内部関数が失敗時に <literal>null</literal>
-    ではなく <literal>false</literal>  を返しているためです。
-    <function>strpos</function> 関数は、このような関数の典型例です。
+    型を 交差型 として宣言すると、
+    クラス/インターフェイス として宣言された型を
+    (単一ではなく)複数すべて満たす値を受け入れることができます。
+    交差型は、<literal>T1&amp;T2&amp;...</literal> という文法を使って指定します。
+    交差型は、PHP 8.1.0 以降で利用可能です。
    </para>
-
-   <caution>
-    <simpara>
-     <literal>false</literal> 疑似型は、単独の、独立した型
-     (単独な null を許容する型としても)
-     として使うことは出来ません。
-     したがって、<literal>false</literal>, <literal>false|null</literal>,
-     <literal>?false</literal> はいずれも許されません。
-    </simpara>
-   </caution>
-
-   <caution>
-    <simpara>
-     <literal>true</literal> リテラルの型は存在 <emphasis>しません</emphasis>
-    </simpara>
-   </caution>
   </sect3>
 
-  <sect3 xml:id="language.types.declarations.union.redundant">
+  <sect3 xml:id="language.types.declarations.composite.redundant">
    <title>重複した冗長な型</title>
    <para>
-    union 型の宣言に関する単純なバグを見つけるため、
+    複合型の宣言に関する単純なバグを見つけるため、
     クラスの読み込みを行わずに検出できる冗長な型はコンパイル時にエラーになります。
     たとえば、以下のような場合です:
+
     <itemizedlist>
      <listitem>
       <simpara>
        名前が解決された型は、一度しか現れることができません。
-       <literal>int|string|INT</literal> のような型はエラーになります。
+       <literal>int|string|INT</literal> や
+       <literal>Countable&amp;Traversable&amp;COUNTABLE</literal>
+       のような型はエラーになります。
       </simpara>
      </listitem>
      <listitem>
       <simpara>
-       <type>bool</type> 型が使われている場合、<type>false</type> 疑似型は追加で使えません。
+       <type>mixed</type>  型を複合型で使うとエラーになります。
       </simpara>
      </listitem>
      <listitem>
-      <simpara>
-       <type>object</type> 型が使われている場合、クラスの型は追加で使えません。
-      </simpara>
+      <simpara>union 型に適用される制限:</simpara>
+      <itemizedlist>
+       <listitem>
+        <simpara>
+         <type>bool</type> 型が使われている場合、<type>false</type> 疑似型は追加で使えません。
+        </simpara>
+       </listitem>
+       <listitem>
+        <simpara>
+         <type>object</type> 型が使われている場合、クラスの型は追加で使えません。
+        </simpara>
+       </listitem>
+       <listitem>
+        <simpara>
+         <type>iterable</type> 型が使われている場合、 <type>array</type>
+         と <classname>Traversable</classname> は追加で使えません。
+        </simpara>
+       </listitem>
+      </itemizedlist>
      </listitem>
      <listitem>
-      <simpara>
-       <type>iterable</type> 型が使われている場合、 <type>array</type>
-       と <classname>Traversable</classname> は追加で使えません。
-      </simpara>
+      <simpara>交差型に適用される制限:</simpara>
+      <itemizedlist>
+       <listitem>
+        <simpara>
+         クラス/インターフェイス として宣言されていない型を、
+         交差型で使うとエラーになります。
+        </simpara>
+       </listitem>
+       <listitem>
+        <simpara>
+         <type>self</type>,
+         <type>parent</type>,
+         <type>static</type>
+         のいずれかを、交差型で使うとエラーになります。
+        </simpara>
+       </listitem>
+      </itemizedlist>
      </listitem>
     </itemizedlist>
    </para>
@@ -487,25 +559,29 @@ NULL
     <literal>A|B</literal> は
     <literal>A</literal> のみに縮めることができますが、
     正しい union 型です。
+
     <informalexample>
      <programlisting role="php">
 <![CDATA[
 <?php
 function foo(): int|INT {} // 許されません
 function foo(): bool|false {} // 許されません
+function foo(): int&Traversable {} // 許されません
+function foo(): self&Traversable {} // 許されません
 
 use A as B;
 function foo(): A|B {} // 許されません ("use" は名前解決の一部です)
+function foo(): A&B {} // 許されません ("use" は名前解決の一部です)
 
 class_alias('X', 'Y');
 function foo(): X|Y {} // 問題ありません (冗長かどうかは、実行時にだけわかります)
+function foo(): X&Y {} // 問題ありません (冗長かどうかは、実行時にだけわかります)
 ?>
 ]]>
      </programlisting>
     </informalexample>
    </para>
   </sect3>
-
  </sect2>
 
  <sect2 xml:id="language.types.declarations.return-only">
