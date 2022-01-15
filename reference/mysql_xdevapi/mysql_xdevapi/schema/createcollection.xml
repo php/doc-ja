@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 730ae1c76c5312b00b284d36fe42436e1cdbcae2 Maintainer: mumumu Status: ready -->
+<!-- EN-Revision: 06cd4fdff7ed6962955f5bc9fbe7c6a30517979e Maintainer: mumumu Status: ready -->
 
 <refentry xml:id="mysql-xdevapi-schema.createcollection" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -29,7 +29,15 @@
     <term><parameter>name</parameter></term>
     <listitem>
      <para>
-      
+      コレクションの名前。
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term><parameter>validate</parameter></term>
+    <listitem>
+     <para>
+      バリデーションの定義を JSON オブジェクトとして指定します。
      </para>
     </listitem>
    </varlistentry>
@@ -39,8 +47,30 @@
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
-   
+   コレクションオブジェクトを返します。
   </para>
+ </refsect1>
+
+ <refsect1 role="changelog">
+    &reftitle.changelog;
+    <informaltable xml:id="mysql-xdevapi-schema.createcollection.changelog">
+     <tgroup cols="2">
+      <thead>
+       <row>
+        <entry>&Version;</entry>
+        <entry>&Description;</entry>
+       </row>
+      </thead>
+      <tbody>
+       <row>
+        <entry>8.0.20</entry>
+        <entry>
+         オプションの validate 引数が追加されました。
+        </entry>
+       </row>
+      </tbody>
+     </tgroup>
+    </informaltable>
  </refsect1>
 
  <refsect1 role="examples">
@@ -83,6 +113,38 @@ Array
 ]]>
    </screen>
   </example>
+  <example>
+    <title>Schema::createCollection に validate 引数を渡す例</title>
+    <programlisting role="php">
+ <![CDATA[
+ <?php
+ $collection = $schema->createCollection("mycollection", '{
+	"validation": {
+		"level": "strict",
+		"schema": {
+			"id": "http://json-schema.org/geo",
+			"description": "A geographical coordinate",
+			"type": "object",
+			"properties": {
+				"latitude": {
+					"type": "number"
+				},
+				"longitude": {
+					"type": "number"
+				}
+			},
+			"required": ["latitude", "longitude"]
+		}
+	}
+}');
+// Succeeds
+$collection->add('{"latitude": 10, "longitude": 20}')->execute();
+
+// Fails, invalid types (not numbers)
+$collection->add('{"latitude": "lat", "longitude": "long"}')->execute();
+]]>
+    </programlisting>
+   </example>
  </refsect1>
 
 </refentry>
