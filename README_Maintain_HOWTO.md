@@ -23,9 +23,11 @@ PHPマニュアルのメンテナであれば、以下は最低限購読すべ�
       * GitHub 経由のコミットや、それにまつわるコメントなどもこのMLに forward されるので、英語版マニュアルの GitHub は watch する必要は現状ありません
   * Documentation bugs (&lt;doc-bugs at lists.php.net&gt;)
     - doc-bugs-subscribe at lists.php.net にメールを出せば購読できます
-  * GitHub の 日本語版マニュアルの Watch
-    - メンテナであれば、https://github.com/php/doc-ja の `All Activity` を Watch するのが望ましいです。
-      * そうすることで、日本語版マニュアルに関する活動をすべてウォッチできます。
+
+- GitHub の 日本語版マニュアルの Watch
+  * メンテナであれば、https://github.com/php/doc-ja の `All Activity` を Watch するのが望ましいです。
+    - そうすることで、日本語版マニュアルに関する活動をすべてウォッチできます。
+
 - phpdoc ja ML
   * [http://ml.php.gr.jp/mailman/listinfo/php-doc](http://ml.php.gr.jp/mailman/listinfo/php-doc)
     - 日本語のメーリングリストです
