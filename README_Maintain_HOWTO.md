@@ -10,7 +10,7 @@ PHPマニュアルのコミット権限を得たい方は、[こちらをまず�
 まずは PHPマニュアル をビルドする環境を整えなければ始まりません。
 それを整える方法は [PHPマニュアル のビルド方法](https://github.com/php/doc-ja/blob/master/README_Building_HOWTO.md) を参照して下さい。
 
-## 購読すべきメーリングリスト
+## 購読すべきメーリングリストやリポジトリ
 
 PHPマニュアルのメンテナであれば、以下は最低限購読すべきです。  
 これらは、PHPマニュアル の更新のタイミングや、ドキュメントに関する議論の動向をウォッチするために必要です。
@@ -20,14 +20,16 @@ PHPマニュアルのメンテナであれば、以下は最低限購読すべ�
     - phpdoc-subscribe at lists.php.net にメールを出せば購読できます
   * Documentation changes and commits (&lt;doc-cvs at lists.php.net&gt;)
     - doc-cvs-subscribe at lists.php.net にメールを出せば購読できます
+      * GitHub 経由のコミットや、それにまつわるコメントなどもこのMLに forward されるので、英語版マニュアルの GitHub は watch する必要は現状ありません
   * Documentation bugs (&lt;doc-bugs at lists.php.net&gt;)
     - doc-bugs-subscribe at lists.php.net にメールを出せば購読できます
-  * 日本語の変更ログとコミット (&lt;doc-ja at lists.php.net&gt;)
-    - doc-ja-subscribe at lists.php.net にメールを出せば購読できます
+  * GitHub の 日本語版マニュアルの Watch
+    - メンテナであれば、https://github.com/php/doc-ja の `All Activity` を Watch するのが望ましいです。
+      * そうすることで、日本語版マニュアルに関する活動をすべてウォッチできます。
 - phpdoc ja ML
   * [http://ml.php.gr.jp/mailman/listinfo/php-doc](http://ml.php.gr.jp/mailman/listinfo/php-doc)
     - 日本語のメーリングリストです
-    - バグ報告を受け付けています
+    - バグ報告を受け付けていますが、過疎っています...
 
 ## PHPマニュアルの構造
 
