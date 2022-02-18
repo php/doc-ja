@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 5c2678e02f0eb135946799eed02d884de1bcf4ad Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 0bafd5454e7c54de5b9e455f997bec3ecf89cfdb Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa,mumumu -->
  <chapter xml:id="language.functions" xmlns="http://docbook.org/ns/docbook">
   <title>関数</title>
@@ -232,29 +232,6 @@ function takes_many_args(
 ]]>
     </programlisting>
    </example>
-   <para>
-    PHP 8.0.0 以降では、オプションの引数の後に、
-    必須の引数を続けて宣言することは、
-    推奨されなくなります。
-    一般的には、デフォルト値を削除することで解決できます。
-    このルールの唯一の例外は、<code>Type $param = null</code> と書かれた引数です。
-    null をデフォルトにすることは、型が暗黙のうちに nullable であることを示しています。
-    この書き方はまだ許可されていますが、明示的に nullable 型を使うことを推奨します。
-   </para>
-   <example>
-    <title>オプションの引数の後に、必須の引数を続けて宣言する</title>
-    <programlisting role="php">
-<![CDATA[
-<?php
-function foo($a = [], $b) {} // PHP 8.0.0 より前
-function foo($a, $b) {}      // PHP 8.0.0 以後
-
-function bar(A $a = null, $b) {} // PHP 8.0.0 でもまだ許可されています
-function bar(?A $a, $b) {}       // お勧めの書き方
-?>
-]]>
-    </programlisting>
-   </example>
 
    <sect2 xml:id="functions.arguments.by-reference">
     <title>引数のリファレンス渡し</title>
@@ -296,12 +273,15 @@ echo $str;    // 出力は 'This is a string, and something extra.' となりま
     <title>デフォルト引数値</title>
     
     <para>
-     関数は、スカラー引数に関して次のように C++ スタイルのデフォルト値を
-     定義することができます。
+     関数は、変数に代入する記法に似たやり方で、
+     デフォルト値を引数に定義することができます。
+     デフォルト値は引数が指定されなかった場合に使われますが、
+     &null; を渡した場合はデフォルト値を代入
+     <emphasis>しない</emphasis> ことに特に注意して下さい。
     </para>
     <para>
      <example>
-      <title>関数におけるデフォルトパラメータの使用法</title>
+      <title>関数におけるデフォルト引数の使用法</title>
       <programlisting role="php">
 <![CDATA[
 <?php
@@ -326,8 +306,11 @@ Making a cup of espresso.
      </example>
     </para>
     <para>
-     PHPでは、配列および特殊な型 &null; をデフォルト値とすることも可能です。
-     例えば、
+     デフォルト引数の値には、スカラー値、
+     配列、および特殊な型 &null; を指定できます。
+     PHP 8.1.0 以降では、
+     <link linkend="language.oop5.basic.new">new ClassName()</link>
+     記法を使ってオブジェクトも指定できます。
     </para>
     <para>
      <example>
@@ -341,22 +324,48 @@ function makecoffee($types = array("cappuccino"), $coffeeMaker = NULL)
     return "Making a cup of ".join(", ", $types)." with $device.\n";
 }
 echo makecoffee();
-echo makecoffee(array("cappuccino", "lavazza"), "teapot");
+echo makecoffee(array("cappuccino", "lavazza"), "teapot");?>
+]]>
+      </programlisting>
+     </example>
+    </para>
+    <para>
+     <example>
+      <title>オブジェクトをデフォルト値として使用する(PHP 8.1.0 以降)</title>
+      <programlisting role="php">
+<![CDATA[
+<?php
+class DefaultCoffeeMaker {
+    public function brew() {
+        return 'Making coffee.';
+    }
+}
+class FancyCoffeeMaker {
+    public function brew() {
+        return 'Crafting a beautiful coffee just for you.';
+    }
+}
+function makecoffee($coffeeMaker = new DefaultCoffeeMaker)
+{
+    return $coffeeMaker->brew();
+}
+echo makecoffee();
+echo makecoffee(new FancyCoffeeMaker);
 ?>
 ]]>
       </programlisting>
      </example>
-    
     </para>
     <simpara>
      デフォルト値は、定数式である必要があり、
      (例えば) 変数やクラスのメンバーであってはなりません。
     </simpara>
     <para>
-     引数のデフォルト値を使用する際には、デフォルト値を有する引数はデ
-     フォルト値がない引数の右側に全てある必要があることに注意して下さ
-     い。そうでない場合、意図したような動作が行われません。次の簡単な
-     コードを見てみましょう。
+     デフォルト値を有する引数は、
+     デフォルト値がない引数の右側に全てある必要があることに注意して下さい。
+     そうでない場合、デフォルト値を指定していても、
+     呼び出し時に省略できません。
+     次の簡単なコードを見てみましょう。
     </para>
     <para>
      <example>
@@ -364,21 +373,20 @@ echo makecoffee(array("cappuccino", "lavazza"), "teapot");
       <programlisting role="php">
 <![CDATA[
 <?php
-function makeyogurt($type = "acidophilus", $flavour)
+function makeyogurt($container = "bowl", $flavour)
 {
-    return "Making a bowl of $type $flavour.\n";
+    return "Making a $container of $flavour yogurt.\n";
 }
  
-echo makeyogurt("raspberry");   // 期待通りには動作しません。
+echo makeyogurt("raspberry"); // $container に "raspberry" を指定します。$flavour ではありません。
 ?>
 ]]>
       </programlisting>
       &example.outputs;
       <screen>
 <![CDATA[
-Warning: Missing argument 2 in call to makeyogurt() in 
-/usr/local/etc/httpd/htdocs/phptest/functest.html on line 41
-Making a bowl of raspberry .
+Fatal error: Uncaught ArgumentCountError: Too few arguments
+ to function makeyogurt(), 1 passed in example.php on line 42
 ]]>
       </screen>
      </example>
@@ -392,23 +400,90 @@ Making a bowl of raspberry .
       <programlisting role="php">
 <![CDATA[
 <?php
-function makeyogurt($flavour, $type = "acidophilus")
+function makeyogurt($flavour, $container = "bowl")
 {
-    return "Making a bowl of $type $flavour.\n";
+    return "Making a $container of $flavour yogurt.\n";
 }
  
-echo makeyogurt("raspberry");   // 期待通り動作します
+echo makeyogurt("raspberry"); // $flavour に "raspberry" を指定します。
 ?>
 ]]>
       </programlisting>
       &example.outputs;
       <screen>
 <![CDATA[
-Making a bowl of acidophilus raspberry.
+Making a bowl of raspberry yogurt.
 ]]>
       </screen>
      </example>
     </para>
+    <para>
+     PHP 8.0.0 以降では、
+     デフォルト値を指定した引数を複数スキップするために、
+     <link linkend="functions.named-arguments">名前付き引数</link>
+     が使えます。
+    </para>
+    <para>
+     <example>
+      <title>関数の引数のデフォルト値の 正しい使用法</title>
+      <programlisting role="php">
+<![CDATA[
+<?php
+function makeyogurt($container = "bowl", $flavour = "raspberry", $style = "Greek")
+{
+    return "Making a $container of $flavour $style yogurt.\n";
+}
+
+echo makeyogurt(style: "natural");
+?>
+]]>
+      </programlisting>
+      &example.outputs;
+      <screen>
+<![CDATA[
+Making a bowl of raspberry natural yogurt.
+]]>
+      </screen>
+     </example>
+    </para>
+    <para>
+     PHP 8.0.0 以降では、
+     デフォルト値を指定した引数の後に、
+     必須の引数を宣言することは <emphasis>推奨されません</emphasis>。
+     なぜなら、そのデフォルト値は絶対に使われないからです。
+     これは、デフォルト値を削除することで解決できます。
+     このルールの唯一の例外は、
+     <code>Type $param = null</code> と書かれた引数です。
+     &null; をデフォルトにすることは、
+     型が暗黙のうちに nullable であることを示しています。
+     この書き方はまだ許可されていますが、
+     以下のようにして 明示的に
+     <link linkend="language.types.declarations.nullable">nullable 型</link>
+     を使うことを推奨します:
+     <example>
+      <title>デフォルト値を指定した引数は、必須の引数の後に宣言する</title>
+      <programlisting role="php">
+<![CDATA[
+ <?php
+ function foo($a = [], $b) {} // デフォルト値が使われないため、PHP 8.0.0 以降は推奨されません
+ function foo($a, $b) {}      // 上のコードと機能的には同じですが、推奨されない警告は発生しません。
+
+ function bar(A $a = null, $b) {} // まだ許可されています。$a は必須ですが、nullable です。
+ function bar(?A $a, $b) {}       // 推奨される書き方です。
+ ?>
+ ]]>
+      </programlisting>
+     </example>
+    </para>
+    <note>
+     <simpara>
+      PHP 7.1.0 以降では、
+      デフォルト値を指定しないで引数を省略すると、
+      <classname>ArgumentCountError</classname>
+      がスローされるようになりました。
+      これより前のバージョンでは、警告が発生していました。
+     </simpara>
+    </note>
     <note>
      <simpara>
       リファレンス渡しの引数にもデフォルト値を指定できます。
@@ -604,7 +679,7 @@ echo sum(1, 2, 3, 4);
     <example>
      <title>名前付き引数の文法</title>
      <programlisting role="php">
-      <![CDATA[
+<![CDATA[
 <?php
 myFunction(paramName: $value);
 array_foobar(array: $value);
@@ -619,7 +694,7 @@ function_name($variableStoringParamName: $value);
     <example>
      <title>位置を指定した引数と、名前付き引数</title>
      <programlisting role="php">
-      <![CDATA[
+<![CDATA[
 <?php
 // 位置を指定した引数の場合:
 array_fill(0, 100, 50);
@@ -638,7 +713,7 @@ array_fill(start_index: 0, count: 100, value: 50);
     <example>
      <title>上と同じ例を、引数の順番を変えて渡す</title>
      <programlisting role="php">
-      <![CDATA[
+<![CDATA[
 <?php
 array_fill(value: 50, count: 100, start_index: 0);
 ?>
@@ -656,7 +731,7 @@ array_fill(value: 50, count: 100, start_index: 0);
     <example>
      <title>位置を指定した引数と、名前付き引数を組み合わせる</title>
      <programlisting role="php">
-      <![CDATA[
+<![CDATA[
 <?php
 htmlspecialchars($string, double_encode: false);
 // 上記は、以下と同等です。
@@ -671,9 +746,9 @@ htmlspecialchars($string, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML401, 'UTF-8', fa
     </para>
 
     <example>
-     <title>同じ引数を複数回渡すと、Error 例外が発生する</title>
+     <title>同じ引数を複数回渡すと、Error がスローされる</title>
      <programlisting role="php">
-      <![CDATA[
+<![CDATA[
 <?php
 function foo($param) { ... }
 

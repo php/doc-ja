@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 9c21d93b4c2659081f995fcf63b7b7133b753f84 Maintainer: mumumu Status: ready -->
+<!-- EN-Revision: 0bafd5454e7c54de5b9e455f997bec3ecf89cfdb Maintainer: mumumu Status: ready -->
 <sect1 xml:id="migration81.incompatible" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>下位互換性のない変更点</title>
 
@@ -58,6 +58,69 @@ var_dump(B::counter()); // int(4), 以前のバージョンでは int(2)
 
     これは、メソッド中の static 変数が、
     static プロパティと同じ振る舞いをするようになったということです。
+   </para>
+  </sect3>
+
+  <sect3 xml:id="migration81.incompatible.core.optional-before-required">
+   <title>必須の引数の前に、デフォルト値を持つ引数を指定した場合</title>
+
+   <para>
+    必須の引数の前に、
+    <link linkend="functions.arguments.default">デフォルト値を持つ引数</link>
+    を指定した場合、
+    デフォルト値を持つ引数は常に必須の引数として扱われるようになりました。
+    これは、
+    <link linkend="functions.named-arguments">名前付き引数</link>
+    を使って関数を呼び出した場合でも同様です。
+    PHP 8.0.0 以降、かつ 8.1.0 より前のバージョンでは、
+    以下のコードは推奨されない警告を発生させていましたが、
+    呼び出しは成功していました。
+    PHP 8.1.0 以降では、
+    <classname>ArgumentCountError</classname>
+    がスローされるようになっています。
+    位置を指定して呼び出した場合でも、同じエラーがスローされます。
+    <informalexample>
+     <programlisting role="php">
+<![CDATA[
+<?php
+function makeyogurt($container = "bowl", $flavour)
+{
+    return "Making a $container of $flavour yogurt.\n";
+}
+try
+{
+    echo makeyogurt(flavour: "raspberry");
+}
+catch (Error $e)
+{
+    echo get_class($e), ' - ', $e->getMessage(), "\n";
+}
+?>
+]]>
+     </programlisting>
+     &example.outputs.80;
+     <screen>
+<![CDATA[
+Deprecated: Required parameter container
+ in example.php on line 3
+Making a bowl of raspberry yogurt.
+]]>
+     </screen>
+     &example.outputs.81;
+     <screen>
+<![CDATA[
+Deprecated: Optional parameter $container declared before required parameter
+ $flavour is implicitly treated as a required parameter in example.php on line 3
+ArgumentCountError - makeyogurt(): Argument #1 ($container) not passed
+]]>
+     </screen>
+    </informalexample>
+   </para>
+   <para>
+    但し、必須の引数の前であっても、
+    <link linkend="language.types.declarations.nullable">Null を許容する型</link> を指定するために、
+    引数にデフォルト値 &null; を指定できることに注意して下さい。
+    その場合でも、その引数は必須であることには変わりありません。
    </para>
   </sect3>
 
