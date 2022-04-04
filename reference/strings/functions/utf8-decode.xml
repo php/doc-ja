@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 0c9c2dd669fe9395eaa73d487fbd160f9057429a Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 99d758bd259fa80c2828cf8cc250984cb683ee8f Maintainer: hirokawa Status: ready -->
 <!-- Credits: mumumu -->
 <refentry xml:id="function.utf8-decode" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>utf8_decode</refname> 
   <refpurpose>
-   UTF-8 エンコードされた ISO-8859-1 文字列をシングルバイトの ISO-8859-1 に変換する
+   UTF-8 エンコードされた文字列を、ISO-8859-1 に変換し、表現できない文字を置換する
   </refpurpose>
  </refnamediv>
  
@@ -21,7 +21,7 @@
    エンコードから <literal>ISO-8859-1</literal> へ変換します。
    有効な <literal>UTF-8</literal> ではない文字列バイト、
    および <literal>ISO-8859-1</literal> に存在しない <literal>UTF-8</literal> の文字
-   (つまり、<literal>U+00FF</literal> 以降の文字) は、
+   (つまり、<literal>U+00FF</literal> 以降のコードポイント) は、
    <literal>?</literal> に置き換えられます。
   </para>
   <note>
@@ -62,6 +62,40 @@
   </para>
  </refsect1>
 
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <example>
+   <title>Basic examples</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+// Convert the string 'Zoë' from UTF-8 to ISO 8859-1
+$utf8_string = "\x5A\x6F\xC3\xAB";
+$iso8859_1_string = utf8_decode($utf8_string);
+echo bin2hex($iso8859_1_string), "\n";
+// Invalid UTF-8 sequences are replaced with '?'
+$invalid_utf8_string = "\xC3";
+$iso8859_1_string = utf8_decode($invalid_utf8_string);
+var_dump($iso8859_1_string);
+// Characters which don't exist in ISO 8859-1, such as
+// '€' (Euro Sign) are also replaced with '?'
+$utf8_string = "\xE2\x82\xAC";
+$iso8859_1_string = utf8_decode($utf8_string);
+var_dump($iso8859_1_string);
+?>
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+5a6feb
+string(1) "?"
+string(1) "?"
+]]>
+   </screen>
+  </example>
+ </refsect1>
+
  <refsect1 role="changelog">
   &reftitle.changelog;
   <para>
@@ -77,8 +111,9 @@
       <row>
        <entry>7.2.0</entry>
        <entry>
-        この関数は PHP のコアに移動しました。
-        よって、XML拡張機能でこの関数のために必要とされていた条件は撤廃されました。
+        この関数は、XML拡張機能から PHP のコアに移動しました。
+        これより前のバージョンでは、
+        この関数は XML拡張機能 をインストールしていた場合にのみ利用可能でした。
        </entry>
       </row>
      </tbody>
@@ -91,10 +126,10 @@
   &reftitle.seealso;
   <para>
    <simplelist>
-    <member><function>utf8_encode</function> - 逆の変換を行う</member>
-    <member><function>mb_convert_encoding</function> - UTF-8, ISO-8859-1, Windows-1252 を含めた、様々な文字エンコーディング間の変換を行う</member>
-    <member><function>iconv</function> - 様々な文字エンコーディング間の変換を行う</member>
-    <member><function>recode_string</function> - 様々な文字エンコーディング間の変換を行う</member>
+    <member><function>utf8_encode</function></member>
+    <member><function>mb_convert_encoding</function></member>
+    <member><methodname>UConverter::transcode</methodname></member>
+    <member><function>iconv</function></member>
    </simplelist>
   </para>
  </refsect1>

@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: c9893954e17ec13bf66f54433e72c8af026406cf Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 99d758bd259fa80c2828cf8cc250984cb683ee8f Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi,mumumu -->
 <refentry xml:id="function.mb-convert-encoding" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
   <refname>mb_convert_encoding</refname>
-  <refpurpose>文字エンコーディングを変換する</refpurpose>
+  <refpurpose>ある文字エンコーディングの文字列を、別の文字エンコーディングに変換する</refpurpose>
  </refnamediv>
    
  <refsect1 role="description">
@@ -18,7 +18,7 @@
   </methodsynopsis>
   <para>
    文字列 <parameter>string</parameter> の文字エンコーディングを、
-   オプションで指定した <parameter>from_encoding</parameter> から
+   <parameter>from_encoding</parameter> または現在の内部エンコーディングから
    <parameter>to_encoding</parameter> に変換します。
    <parameter>string</parameter> が配列の場合、それに含まれる全ての文字列型の値が再帰的に変換されます。
   </para>
@@ -40,7 +40,7 @@
      <term><parameter>to_encoding</parameter></term>
      <listitem>
       <para>
-       <parameter>string</parameter> の変換後の文字エンコーディング。
+       変換したい文字エンコーディング。
       </para>
      </listitem>
     </varlistentry>
@@ -48,13 +48,26 @@
      <term><parameter>from_encoding</parameter></term>
      <listitem>
       <para>
-       変換前の文字エンコーディング名を指定します。
-       これは、配列またはカンマ区切りの文字列とすることが可能です。
-       <parameter>from_encoding</parameter>
-       を指定しなかった場合は、内部文字エンコーディングを使用します。
-       <!-- link to internal encoding info -->
+       <parameter>string</parameter> を解釈するのに使われている
+       現在の文字エンコーディング。
+       配列またはカンマ区切りの文字列とすることで、
+       複数のエンコーディングを指定できます。
+       この場合、正しいエンコーディングを
+       <function>mb_detect_encoding</function>
+       と同じアルゴリズムで推測します。
       </para>
       <para>
+       <parameter>from_encoding</parameter> が &null; だったり、
+       指定されなかった場合は、
+       <link linkend="ini.mbstring.internal-encoding">mbstring.internal_encoding setting</link> が設定されていた場合、それを使います。
+       設定されていない場合は、
+       <link linkend="ini.default-charset">default_charset setting</link>
+       を使います。
+      </para>
+      <para>
+       <parameter>to_encoding</parameter>
+       や <parameter>from_encoding</parameter>
+       に指定できる値は、
        <link linkend="mbstring.supported-encodings">
        サポートされる文字エンコーディング</link>を参照ください。
       </para>
@@ -145,7 +158,7 @@ $str = mb_convert_encoding($str, "UTF-7", "EUC-JP");
 /* JIS, eucjp-win, sjis-winの順番で自動検出し、UCS-2LEに変換 */
 $str = mb_convert_encoding($str, "UCS-2LE", "JIS, eucjp-win, sjis-win");
 
-/* "auto" は、"ASCII,JIS,UTF-8,EUC-JP,SJIS" に展開される */
+/* mbstring.language が "Japanese" の場合 "auto" は、"ASCII,JIS,UTF-8,EUC-JP,SJIS" に展開される */
 $str = mb_convert_encoding($str, "EUC-JP", "auto");
 ?>
 ]]>
@@ -159,6 +172,8 @@ $str = mb_convert_encoding($str, "EUC-JP", "auto");
   <para>
    <simplelist>
     <member><function>mb_detect_order</function></member>
+    <member><methodname>UConverter::transcode</methodname></member>
+    <member><function>iconv</function></member>
    </simplelist>
   </para>
  </refsect1>
