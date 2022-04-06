@@ -5,7 +5,7 @@
 <refentry xml:id="function.create-function" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>create_function</refname>
-  <refpurpose>匿名関数 (ラムダ形式) を作成する</refpurpose>
+  <refpurpose>文字列のコードを評価し、動的に関数を作成する</refpurpose>
  </refnamediv>
 
  <refsynopsisdiv>
@@ -20,13 +20,15 @@
    <methodparam><type>string</type><parameter>code</parameter></methodparam>
   </methodsynopsis>
   <para>
-   指定したパラメータにより匿名関数を作成し、その関数のユニークな名前を返します。
+   指定したパラメータにより動的に関数を作成し、その関数のユニークな名前を返します。
   </para>
   <caution>
    <para>
     この関数は、内部的に <function>eval</function> を実行しているので、
     <function>eval</function> と同様にセキュリティ上のリスクがあります。
     さらに、パフォーマンスやメモリ使用効率の面でも問題があります。
+    なぜなら、この関数で作成された関数はグローバルに存在し、
+    解放できないからです。
    </para>
    <para>
     この関数ではなく、ネイティブの
@@ -37,17 +39,16 @@
  <refsect1 role="parameters">
   &reftitle.parameters;
   <para>
-   通常、<parameter>args</parameter>には、シングルクオートで括った文字列を
-   指定し、<parameter>code</parameter> の場合も同様に指定することが推奨されます。
-   シングルクオートで括った文字列を使用する理由は、パース時に変数名を保護するためです。
-   ダブルクオートを使用した場合には、<literal>\$avar</literal>のように変数名を
-   エスケープする必要があります。
+   通常、<parameter>args</parameter>には、<link linkend="language.types.string.syntax.single">シングルクオートで括った文字列</link> を
+   指定することが推奨されます。
+   <link linkend="language.types.string.syntax.double">ダブルクオート</link> を使用した場合には、<literal>\$somevar</literal>のように変数名を
+   注意深くエスケープする必要があります。
    <variablelist>
     <varlistentry>
      <term><parameter>args</parameter></term>
      <listitem>
       <para>
-       関数の引数。
+       関数の引数を、カンマ区切りの文字列で指定します。
       </para>
      </listitem>
     </varlistentry>
@@ -66,7 +67,13 @@
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
-   一意な関数名を表す文字列、あるいはエラー時に &false; を返します。
+   一意な関数名を表す文字列を返します。
+   &return.falseforfailure;。
+   返される名前には、
+   印字できない文字(<literal>"\0"</literal>)
+   が含まれているので注意して下さい。
+   よって、この名前を出力したり、
+   他の文字列に組み込む場合は特別な注意を払うべきです。
   </para>
  </refsect1>
 
@@ -74,35 +81,49 @@
   &reftitle.examples;
   <para>
    <example>
+
     <title>
-     <function>create_function</function> による匿名関数の作成
+     <function>create_function</function> や無名関数を使い、動的に関数を作成する
     </title>
     <para>
-     この関数を使用すると、(たとえば) 実行時に取得した情報をもとにして関数を作成できます。
+     (たとえば) 実行時に取得した情報をもとにして関数を作成するために、動的に作成した関数が使えます。まず <function>create_function</function> を使ってみます:
     </para>
     <programlisting role="php">
 <![CDATA[
 <?php
 $newfunc = create_function('$a,$b', 'return "ln($a) + ln($b) = " . log($a * $b);');
-echo "新しい匿名関数: $newfunc\n";
 echo $newfunc(2, M_E) . "\n";
-// 出力
-// 新しい匿名関数: lambda_1
-// ln(2) + ln(2.718281828459) = 1.6931471805599
 ?>
 ]]>
     </programlisting>
+    <para>
+     同じコードは、<link linkend="functions.anonymous">無名関数</link> でも実現できます。コードや引数は、文字列に含まれていない点に注意して下さい:
+    </para>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$newfunc = function($a,$b) { return "ln($a) + ln($b) = " . log($a * $b); };
+echo $newfunc(2, M_E) . "\n";
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+ln(2) + ln(2.718281828459) = 1.6931471805599
+]]>
+    </screen>
    </example>
-  </para>
-  <para>
-   もしくは、パラメータリストに一連の処理を行うことができる
-   一般的なハンドラ関数を定義できます。
   </para>
   <para>
    <example>
     <title>
-     <function>create_function</function> による一般的な処理関数の作成
+     <function>create_function</function> や無名関数を使い、一般的な処理を行う関数を作成する
     </title>
+    <para>
+     もしくは、パラメータリストに一連の処理を行うことができる
+   一般的なハンドラ関数を定義できます:
+    </para>
     <programlisting role="php">
 <![CDATA[
 <?php
@@ -114,29 +135,68 @@ function process($var1, $var2, $farr)
 }
 
 // 数学関数群を作成します
-$f1 = 'if ($a >=0) {return "b*a^2 = ".$b*sqrt($a);} else {return false;}';
-$f2 = "return \"min(b^2+a, a^2,b) = \".min(\$a*\$a+\$b,\$b*\$b+\$a);";
-$f3 = 'if ($a > 0 && $b != 0) {return "ln(a)/b = ".log($a)/$b; } else { return false; }';
 $farr = array(
     create_function('$x,$y', 'return "some trig: ".(sin($x) + $x*cos($y));'),
     create_function('$x,$y', 'return "a hypotenuse: ".sqrt($x*$x + $y*$y);'),
-    create_function('$a,$b', $f1),
-    create_function('$a,$b', $f2),
-    create_function('$a,$b', $f3)
-    );
+    create_function('$a,$b', 'if ($a >=0) {return "b*a^2 = ".$b*sqrt($a);} else {return false;}'),
+    create_function('$a,$b', "return \"min(b^2+a, a^2,b) = \".min(\$a*\$a+\$b,\$b*\$b+\$a);"),
+    create_function('$a,$b', 'if ($a > 0 && $b != 0) {return "ln(a)/b = ".log($a)/$b; } else { return false; }')
+);
 
-echo "\n無名関数群の最初の配列を使用します\n";
-echo "パラメータ: 2.3445, M_PI\n";
+echo "\nUsing the first array of dynamic functions\n";
+echo "parameters: 2.3445, M_PI\n";
 process(2.3445, M_PI, $farr);
 
 // 文字列処理関数群を作成します
 $garr = array(
     create_function('$b,$a', 'if (strncmp($a, $b, 3) == 0) return "** \"$a\" '.
-    'and \"$b\"\n** Look the same to me! (looking at the first 3 chars)";'),
-    create_function('$a,$b', '; return "CRCs: " . crc32($a) . ", ".crc32($b);'),
-    create_function('$a,$b', '; return "similar(a,b) = " . similar_text($a, $b, &$p) . "($p%)";')
-    );
-echo "\n無名関数群の二番目の配列を使用します\n";
+        'and \"$b\"\n** Look the same to me! (looking at the first 3 chars)";'),
+    create_function('$a,$b', 'return "CRCs: " . crc32($a) . ", ".crc32($b);'),
+    create_function('$a,$b', 'return "similar(a,b) = " . similar_text($a, $b, $p) . "($p%)";')
+);
+echo "\nUsing the second array of dynamic functions\n";
+process("Twas brilling and the slithy toves", "Twas the night", $garr);
+?>
+]]>
+    </programlisting>
+    <para>
+     ここでも、
+     同じことが
+     <link linkend="functions.anonymous">無名関数</link> で実現できます。
+     変数名をエスケープする必要がないことに注意して下さい。
+     なぜなら、文字列に埋め込まれていないからです。
+    </para>
+    <programlisting role="php">
+<![CDATA[
+<?php
+function process($var1, $var2, $farr)
+{
+    foreach ($farr as $f) {
+        echo $f($var1, $var2) . "\n";
+    }
+}
+
+// 数学関数群を作成します
+$farr = array(
+    function($x,$y) { return "some trig: ".(sin($x) + $x*cos($y)); },
+    function($x,$y) { return "a hypotenuse: ".sqrt($x*$x + $y*$y); },
+    function($a,$b) { if ($a >=0) {return "b*a^2 = ".$b*sqrt($a);} else {return false;} },
+    function($a,$b) { return "min(b^2+a, a^2,b) = " . min($a*$a+$b, $b*$b+$a); },
+    function($a,$b) { if ($a > 0 && $b != 0) {return "ln(a)/b = ".log($a)/$b; } else { return false; } }
+);
+
+echo "\nUsing the first array of dynamic functions\n";
+echo "parameters: 2.3445, M_PI\n";
+process(2.3445, M_PI, $farr);
+
+// 文字列処理関数群を作成します
+$garr = array(
+    function($b,$a) { if (strncmp($a, $b, 3) == 0) return "** \"$a\" " .
+        "and \"$b\"\n** Look the same to me! (looking at the first 3 chars)"; },
+    function($a,$b) { return "CRCs: " . crc32($a) . ", ".crc32($b); },
+    function($a,$b) { return "similar(a,b) = " . similar_text($a, $b, $p) . "($p%)"; }
+);
+echo "\nUsing the second array of dynamic functions\n";
 process("Twas brilling and the slithy toves", "Twas the night", $garr);
 ?>
 ]]>
@@ -144,37 +204,47 @@ process("Twas brilling and the slithy toves", "Twas the night", $garr);
     &example.outputs;
     <screen>
 <![CDATA[
-無名関数群の最初の配列を使用します
-パラメータ: 2.3445, M_PI
+Using the first array of dynamic functions
+parameters: 2.3445, M_PI
 some trig: -1.6291725057799
 a hypotenuse: 3.9199852871011
 b*a^2 = 4.8103313314525
 min(b^2+a, a^2,b) = 8.6382729035898
 ln(a)/b = 0.27122299212594
 
-無名関数群の二番目の配列を使用します
+Using the second array of dynamic functions
 ** "Twas the night" and "Twas brilling and the slithy toves"
 ** Look the same to me! (looking at the first 3 chars)
-CRCs: -725381282, 342550513
+CRCs: 3569586014, 342550513
 similar(a,b) = 11(45.833333333333%)
 ]]>
     </screen>
    </example>
   </para>
   <para>
-   ラムダ形式の (匿名の) 関数の最も一般的な使用法は、
-   コールバック関数を作成することでしょう。たとえば
-   <function>array_walk</function> あるいは <function>usort</function>
-   などで使用します。
-  </para>
-  <para>
    <example>
-    <title>コールバック関数としての匿名関数の使用法</title>
+    <title>動的な関数をコールバック関数として使う</title>
+    <para>
+     おそらく、動的な関数のもっとも一般的な用途は、コールバックに渡すことでしょう。
+     たとえば <function>array_walk</function> あるいは <function>usort</function> などで使用します。
+    </para>
     <programlisting role="php">
 <![CDATA[
 <?php
 $av = array("the ", "a ", "that ", "this ");
 array_walk($av, create_function('&$v,$k', '$v = $v . "mango";'));
+print_r($av);
+?>
+]]>
+    </programlisting>
+    <para>
+     <link linkend="functions.anonymous">無名関数</link> を使うと、下記のようになります:
+    </para>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$av = array("the ", "a ", "that ", "this ");
+array_walk($av, function(&$v,$k) { $v = $v . "mango"; });
 print_r($av);
 ?>
 ]]>
@@ -192,46 +262,47 @@ Array
 ]]>
     </screen>
     <para>
-     文字列の配列が、短い順に並べ替えられます。
+     <function>create_function</function> を使い、文字列を長いものから短いものに並べます:
     </para>
     <programlisting role="php">
 <![CDATA[
 <?php
-
-$sv = array("small", "larger", "a big string", "it is a string thing");
+$sv = array("small", "a big string", "larger", "it is a string thing");
+echo "Original:\n";
 print_r($sv);
-
+echo "Sorted:\n";
+usort($sv, create_function('$a,$b','return strlen($b) - strlen($a);'));
+print_r($sv);
+?>
+]]>
+    </programlisting>
+    <para>
+     <link linkend="functions.anonymous">無名関数</link> を使うと、下記のようになります:
+    </para>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$sv = array("small", "a big string", "larger", "it is a string thing");
+echo "Original:\n";
+print_r($sv);
+echo "Sorted:\n";
+usort($sv, function($a,$b) { return strlen($b) - strlen($a); });
+print_r($sv);
 ?>
 ]]>
     </programlisting>
     &example.outputs;
     <screen>
 <![CDATA[
+Original:
 Array
 (
   [0] => small
-  [1] => larger
-  [2] => a big string
+  [1] => a big string
+  [2] => larger
   [3] => it is a string thing
 )
-]]>
-    </screen>
-    <para>
-     長い順に並べ替えます。
-    </para>
-    <programlisting role="php">
-<![CDATA[
-<?php
-
-usort($sv, create_function('$a,$b','return strlen($b) - strlen($a);'));
-print_r($sv);
-
-?>
-]]>
-    </programlisting>
-    &example.outputs;
-    <screen>
-<![CDATA[
+Sorted:
 Array
 (
   [0] => it is a string thing
