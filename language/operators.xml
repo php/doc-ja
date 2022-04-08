@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 87b582706267d69006a8aaaed3b5eda2ccf99c92 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: c653d5a2b9b3a2671ca017c9f7ab6976fa8d148d Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa,mumumu -->
  <chapter xml:id="language.operators" xmlns="http://docbook.org/ns/docbook">
   <title>演算子</title>
@@ -791,9 +791,9 @@ Parse error: syntax error, unexpected 'new' (T_NEW) in …
      &reftitle.seealso;
      <para>
       <simplelist>
-       <member><link linkend="language.operators.arithmetic">arithmetic operators</link></member>
-       <member><link linkend="language.operators.bitwise">bitwise operators</link></member>
-       <member><link linkend="language.operators.comparison.coalesce">null coalescing operator</link></member>
+       <member><link linkend="language.operators.arithmetic">算術演算子</link></member>
+       <member><link linkend="language.operators.bitwise">ビット演算子</link></member>
+       <member><link linkend="language.operators.comparison.coalesce">Null 合体演算子</link></member>
       </simplelist>
      </para>
    </sect2>
@@ -1713,7 +1713,7 @@ echo $a <=> $b; // 1
 
    <para>
     <example>
-     <title>Boolean/null comparison</title>
+     <title>Boolean/null の比較</title>
      <programlisting role="php">
 <![CDATA[
 <?php
@@ -1729,14 +1729,13 @@ var_dump(min(-100, -10, NULL, 10, 100)); // NULL - (bool)NULL < (bool)-100 is FA
     </example>
    </para>
 
-
    <para>
     <example>
      <title>一般的な配列の比較</title>
      <programlisting role="php">
 <![CDATA[
 <?php
-// 標準の比較演算子を用いて、配列はこのように比較されます
+// 標準の比較演算子や、宇宙船演算子を用いて、配列はこのように比較されます
 function standard_array_compare($op1, $op2)
 {
     if (count($op1) < count($op2)) {
@@ -1746,7 +1745,7 @@ function standard_array_compare($op1, $op2)
     }
     foreach ($op1 as $key => $val) {
         if (!array_key_exists($key, $op2)) {
-            return null; // uncomparable
+            return 1;
         } elseif ($val < $op2[$key]) {
             return -1;
         } elseif ($val > $op2[$key]) {
@@ -1773,6 +1772,20 @@ function standard_array_compare($op1, $op2)
      詳細な情報は <type>float</type> のドキュメントを参照ください。
     </para>
    </warning>
+
+   <note>
+    <simpara>
+     PHP における型の相互変換の動作は、
+     異なる型同士を比較する時には必ずしも自明でないことに注意して下さい。
+     整数型 と boolean を比較したり、
+     整数型 を 文字列 と比較する場合は特にそうです。
+     よって一般的には、
+     <literal>==</literal> や <literal>!=</literal>
+     ではなく
+     <literal>===</literal> と <literal>!==</literal>
+     を使う方がほとんどの場合は好ましいです。
+    </simpara>
+   </note>
 
    <sect2 role="seealso">
     &reftitle.seealso;
@@ -1804,7 +1817,6 @@ if (empty($_POST['action'])) {
 } else {
     $action = $_POST['action'];
 }
-
 ?>
 ]]>
       </programlisting>
@@ -1820,6 +1832,7 @@ if (empty($_POST['action'])) {
      式 <literal>expr1 ?: expr3</literal> の結果は、<replaceable>expr1</replaceable> が
      &true; と同等の場合は <replaceable>expr1</replaceable>、
      それ以外の場合は <replaceable>expr3</replaceable> となります。
+     この場合、<replaceable>expr1</replaceable> は一度だけ評価されます。
     </para>
     <note>
      <simpara>
@@ -1863,12 +1876,34 @@ echo ((true ? 'true' : false) ? 't' : 'f');
       </example>
      </para>
     </note>
+    <note>
+     <para>
+      一方で、三項演算子の短縮形の挙動は安定しており、
+      理にかなった動作をします。
+      これは、&false; と評価されない最初の引数を評価します。
+      但し、未定義の値については未だ警告が出るので注意して下さい。
+      <example>
+       <title>三項演算子の短縮形</title>
+       <programlisting role="php">
+<![CDATA[
+<?php
+echo 0 ?: 1 ?: 2 ?: 3, PHP_EOL; //1
+echo 0 ?: 0 ?: 2 ?: 3, PHP_EOL; //2
+echo 0 ?: 0 ?: 0 ?: 3, PHP_EOL; //3
+?>
+
+]]>
+       </programlisting>
+      </example>
+     </para>
+    </note>
    </sect2>
    
    <sect2 xml:id="language.operators.comparison.coalesce">
     <title>Null 合体演算子</title>
     <para>
-     "??" 演算子 (null 合体演算子) を使うことが出来ます。
+     別の便利な短縮形式の演算子として、
+     "??" 演算子 (Null 合体演算子) を使うことが出来ます。
      <example>
       <title>デフォルト値の代入</title>
       <programlisting role="php">
@@ -1883,7 +1918,6 @@ if (isset($_POST['action'])) {
 } else {
     $action = 'default';
 }
-
 ?>
 ]]>
       </programlisting>
@@ -1904,6 +1938,24 @@ if (isset($_POST['action'])) {
       参照返しの関数で <literal>return $foo ?? $bar;</literal> のように書いてもうまく動かずに、
       警告が発生します。
      </simpara>
+    </note>
+
+    <note>
+     <para>
+      Null 合体演算子の優先順位は低いです。
+      (文字列結合や、算術演算子のような)
+      他の演算子と組み合わせる場合には、おそらくカッコが必要になるでしょう。
+     </para>
+     <programlisting role="php">
+<![CDATA[
+<?php
+// $name が未定義の場合、警告が発生します。
+print 'Mr. ' . $name ?? 'Anonymous';
+// "Mr. Anonymous" と出力
+print 'Mr. ' . ($name ?? 'Anonymous');
+?>
+]]>
+     </programlisting>
     </note>
     <note>
      <para>
