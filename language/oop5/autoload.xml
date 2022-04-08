@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 9ee9eccf455188ab6eb352194eb6f9eb99e15606 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: fca50d321ce57036f3786f278887abe58cd41de8 Maintainer: hirokawa Status: ready -->
 <!-- Credits: mumumu -->
 
  <sect1 xml:id="language.oop5.autoload" xmlns="http://docbook.org/ns/docbook">
@@ -18,7 +18,10 @@
   オートローダーを登録すれば、PHPがエラーで止まる前にクラスをロードする最後の
   チャンスが与えられます。
  </para>
-
+ <para>
+   クラスに類似した言語構造は、同じやり方でオートロードできます。
+   これには、クラス、インターフェイス、トレイト、列挙型が含まれます。
+ </para>
  <caution>
   <para>
    PHP 8.0.0 より前のバージョンでは、
@@ -30,6 +33,18 @@
    PHP 8.0.0 で削除されました。
   </para>
  </caution>
+ <note>
+   <para>
+    複数のオートローダーを複数回登録するために、
+    <function>spl_autoload_register</function>
+    を複数回コールしても構いません。
+    但し、オートロードを行う関数から例外がスローされると、
+    オートロードのプロセスが中断され、
+    後続のオートロード関数の実行ができなくなります。
+    よって、オートロード関数から例外をスローすることは、
+    全くお勧めできません。
+   </para>
+ </note>
  <para>
   <example>
    <title>オートロードの例</title>
@@ -76,66 +91,6 @@ Fatal error: Interface 'ITest' not found in ...
 ?>
 ]]>
     </programlisting>
-   </example>
-   <example>
-    <title>例外処理つきのオートロード</title>
-    <para>
-     この例は、例外をスローして try/catch ブロックの動きを示します。
-    </para>
-    <programlisting role="php">
-<![CDATA[
-<?php
-spl_autoload_register(function ($name) {
-    echo "Want to load $name.\n";
-    throw new Exception("Unable to load $name.");
-});
-
-try {
-    $obj = new NonLoadableClass();
-} catch (Exception $e) {
-    echo $e->getMessage(), "\n";
-}
-?>
-]]>
-    </programlisting>
-    &example.outputs;
-    <screen>
-<![CDATA[
-Want to load NonLoadableClass.
-Unable to load NonLoadableClass.
-]]>
-    </screen>
-   </example>
-   <example>
-    <title>例外処理つきのオートロード - 独自の例外が見つからない場合</title>
-    <para>
-     この例では、ロードできない独自の例外クラスをスローします。
-    </para>
-    <programlisting role="php">
-<![CDATA[
-<?php
-spl_autoload_register(function ($name) {
-    echo "Want to load $name.\n";
-    throw new MissingException("Unable to load $name.");
-});
-
-try {
-    $obj = new NonLoadableClass();
-} catch (Exception $e) {
-    echo $e->getMessage(), "\n";
-}
-?>
-]]>
-    </programlisting>
-    &example.outputs;
-    <screen>
-<![CDATA[
-Want to load NonLoadableClass.
-Want to load MissingException.
-
-Fatal error: Class 'MissingException' not found in testMissingException.php on line 4
-]]>
-    </screen>
    </example>
   </para>
 
