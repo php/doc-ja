@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: e64ea89bbe0bd2cc28d48adfb3723f9ed5720fd1 Maintainer: mumumu Status: ready -->
+<!-- EN-Revision: 6105da168f7d377a7b122b83e25ddac6b5dd2191 Maintainer: mumumu Status: ready -->
 
 <refentry xml:id="soapclient.construct" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -16,8 +16,8 @@
    <methodparam choice="opt"><type>array</type><parameter>options</parameter><initializer>[]</initializer></methodparam>
   </constructorsynopsis>
   <para>
-   このコンストラクタは、<literal>WSDL</literal> モードもしくは
-   <literal>非 WSDL</literal> モードで <classname>SoapClient</classname>
+   SOAP サービスに接続するための
+   <classname>SoapClient</classname>
    オブジェクトを生成します。
   </para>
  </refsect1>
@@ -30,16 +30,20 @@
      <term><parameter>wsdl</parameter></term>
      <listitem>
       <para>
-       <literal>WSDL</literal> ファイルの URI もしくは
-       <literal>非 WSDL</literal> モードの場合 &null;
+       サービスを記述した WSDL ファイルまたは URI。
+       これは自動的にクライアントを設定します。
+       指定されない場合、クライアントは 非WSDL モードで動作します。
       </para>
       <note>
        <para>
-        開発中は、WSDL のキャッシュを &php.ini; の
-        <literal>soap.wsdl_cache_ttl</literal> で無効にしておくとよいでしょう。
-        そうしないと、WSDL を変更しても
-        <literal>soap.wsdl_cache_ttl</literal> で設定した時間が経過するまで
-        それが反映されなくなります。
+        デフォルトでは、
+        WSDL ファイルはパフォーマンスのためキャッシュされます。
+        このキャッシュ機能を無効にしたり、設定を変更する場合は、
+        <link linkend="soap.configuration.list">SOAP &ConfigureOptions;</link>
+        や
+        <link linkend="soapclient.construct.options.cache-wsdl">
+        <literal>cache_wsdl</literal> オプション</link>
+        を参照下さい。
        </para>
       </note>
      </listitem>
@@ -48,124 +52,636 @@
      <term><parameter>options</parameter></term>
      <listitem>
       <para>
-       オプションの配列。もし WSDL モードで動作させる場合、
-       このパラメータはオプションです。非 WSDL モードで動作させる場合、
-       <literal>location</literal> と <literal>uri</literal>
-       オプションを指定する必要があります。ここで、
-       <literal>location</literal> はリクエストの送り先である SOAP サーバーの URL、
-       <literal>uri</literal> は SOAP サービスのターゲット名前空間です。
-      </para>
-      <para>
-       <literal>style</literal> および <literal>use</literal>
-       オプション は非 WSDL モードでのみ動作します。
-       WSDL モードでは、これらは WSDL ファイルで指定されます。
-      </para>
-      <para>
-       <literal>soap_version</literal> オプションは、
-       <constant>SOAP_1_1</constant> あるいは <constant>SOAP_1_2</constant>
-       のどちらかを指定しなければいけません。それぞれ SOAP 1.1、SOAP 1.2 を表します。
-       省略した場合は 1.1 を使います。
-      </para>
-      <para>
-       HTTP 認証用として、<literal>login</literal> および
-       <literal>password</literal> オプションが使用可能です。
-       プロキシサーバー経由で HTTP 接続を確立する場合は、
-       <literal>proxy_host</literal>,
-       <literal>proxy_port</literal>, <literal>proxy_login</literal>
-       および <literal>proxy_password</literal>
-       の各オプションを使用してください。
-       HTTPS クライアント証明書による認証には
-       <literal>local_cert</literal> と <literal>passphrase</literal>
-       を使用します。認証情報は <literal>authentication</literal> 
-       オプションで指定します。認証方式は
-       <constant>SOAP_AUTHENTICATION_BASIC</constant> (デフォルト) あるいは
-       <constant>SOAP_AUTHENTICATION_DIGEST</constant> のいずれかとなります。
-      </para>
-      <para>
-       <literal>compression</literal> オプションにより、
-       HTTP SOAP リクエストやレスポンスの圧縮を行うことができます。
-      </para>
-      <para>
-       <literal>encoding</literal>
-       オプションは内部的な文字エンコーディングを定義します。
-       このオプションは SOAP リクエストのエンコーディング (常に utf-8)
-       を変更しませんが、その中の文字列を変換します。
-      </para>
-      <para>
-       <literal>trace</literal> オプションはリクエストのトレースを有効にします。
-       失敗したときにバックトレースが可能となります。
-       デフォルトは &false; です。
-      </para>
-      <para>
-       <literal>classmap</literal> オプションは WSDL 型を PHP
-       クラスにマッピングするために使用可能です。
-       このオプションには、キーとしてWSDL 型、値として PHP
-       クラスの名前を持つ配列を指定する必要があります。
-      </para>
-      <para>
-       boolean のオプション <literal>trace</literal> を設定すると、
-       <link linkend="soapclient.getlastrequest">
-       SoapClient->__getLastRequest</link>、
-      <link linkend="soapclient.getlastrequestheaders">
-       SoapClient->__getLastRequestHeaders</link>、
-       <link linkend="soapclient.getlastresponse">
-       SoapClient->__getLastResponse</link> および
-       <link linkend="soapclient.getlastresponseheaders">
-       SoapClient->__getLastResponseHeaders</link>
-       といったメソッドが使用できるようになります。
-      </para>
-      <para>
-       <literal>exceptions</literal> オプションは boolean 値で、soap のエラー時に
-       <link linkend="soapfault.construct">
-       SoapFault</link> 型の例外をスローさせるかどうかを設定します。
-      </para>
-      <para>
-       <literal>connection_timeout</literal> オプションは、SOAP
-       サービスに接続する際のタイムアウト秒数を指定します。
-       これを使用しても、レスポンスが遅いサービスのタイムアウトを定義することはできません。
-       サービスのコールが完了するまでの待ち時間を制限するには、設定項目
-       <link linkend="ini.default-socket-timeout">default_socket_timeout</link>
-       を使用します。
-      </para>
-      <para>
-       <literal>typemap</literal> オプションは、型マッピングの配列です。
-       この配列のキーは <literal>type_name</literal>、
-       <literal>type_ns</literal> (名前空間 URI)、<literal>from_xml</literal>
-       (引数として文字列をひとつ受け取るコールバック) そして <literal>to_xml</literal>
-       (引数としてオブジェクトをひとつ受け取るコールバック) です。
-      </para>
-      <para>
-       <literal>cache_wsdl</literal> オプションは
-       <constant>WSDL_CACHE_NONE</constant>、
-       <constant>WSDL_CACHE_DISK</constant>、
-       <constant>WSDL_CACHE_MEMORY</constant> あるいは
-       <constant>WSDL_CACHE_BOTH</constant> のいずれかです。
-      </para>
-      <para>
-       <literal>user_agent</literal> オプションは、
-       <literal>User-Agent</literal> ヘッダで使用する文字列を指定します。
-      </para>
-      <para>
-       <literal>stream_context</literal> オプションは、
-       <link linkend="context">context</link> 用のリソースです。
-      </para>
-      <para>
-       <literal>features</literal> オプションは
-       <constant>SOAP_SINGLE_ELEMENT_ARRAYS</constant>、
-       <constant>SOAP_USE_XSI_ARRAY_TYPE</constant>、
-       <constant>SOAP_WAIT_ONE_WAY_CALLS</constant> のビットマスクです。
-      </para>
-      <para>
-       <literal>keep_alive</literal> オプションは boolean 値で、
-       <literal>Connection: Keep-Alive</literal> ヘッダーと
-       <literal>Connection: close</literal> ヘッダーのどちらを送信するかを決めます。
-      </para>
-      <para>
-       <literal>ssl_method</literal> オプションは
-       <constant>SOAP_SSL_METHOD_TLS</constant> か
-       <constant>SOAP_SSL_METHOD_SSLv2</constant>、
-       <constant>SOAP_SSL_METHOD_SSLv3</constant>、あるいは
-       <constant>SOAP_SSL_METHOD_SSLv23</constant> のいずれかです。
+       SOAP クライアントに指定する追加オプションを連想配列で指定します。
+       <parameter>wsdl</parameter> が指定された場合、
+       このパラメータはオプションです。
+       指定されない場合、
+       <literal>location</literal> と<literal>url</literal>
+       オプションを指定する必要があります。
+       <variablelist>
+        <varlistentry xml:id="soapclient.construct.options.location">
+         <term>
+          <parameter>location</parameter>
+          <type>string</type>
+         </term>
+         <listitem>
+          <para>
+           リクエストを送信する SOAP サーバのURL
+          </para>
+          <para>
+           <parameter>wsdl</parameter> パラメータが指定されない場合、
+           必須です。
+           <parameter>wsdl</parameter> と
+           <literal>location</literal> が指定された場合、
+           <literal>location</literal> オプションは
+           WSDL ファイルで指定されたあらゆる location を上書きします。
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry xml:id="soapclient.construct.options.uri">
+         <term>
+          <parameter>uri</parameter>
+          <type>string</type>
+         </term>
+         <listitem>
+          <para>
+           SOAP サービスのターゲット名前空間です。
+          </para>
+          <para>
+           <parameter>wsdl</parameter>
+           が指定されていない場合、このパラメータは必須です。
+           そうでない場合、この値は無視されます。
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry xml:id="soapclient.construct.options.style">
+         <term>
+          <parameter>style</parameter>
+          <type>int</type>
+         </term>
+         <listitem>
+          <para>
+           <constant>SOAP_RPC</constant> と
+           <constant>SOAP_DOCUMENT</constant> を使うと、
+           このクライアントで使うバインディングスタイルを指定します。
+           <constant>SOAP_RPC</constant> は
+           RPCスタイルのバインディングを指定します。
+           この場合の SOAP リクエストのボディには、
+           関数コールの標準エンコーディングが含まれます。
+           <constant>SOAP_DOCUMENT</constant>  は
+           ドキュメントスタイルのバインディングを指定します。
+           この場合の SOAP リクエストのボディには、
+           サービス定義を記した XML ドキュメントが含まれます。
+          </para>
+          <para>
+           <parameter>wsdl</parameter>  が指定された場合、
+           このオプションは無視され、
+           スタイルは WDSL ファイルから読み込まれます。
+          </para>
+          <para>
+           このオプションと
+           <parameter>wsdl</parameter> パラメータ
+           を両方指定しなかった場合、
+           RPCスタイルを使います。
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry xml:id="soapclient.construct.options.use">
+         <term>
+          <parameter>use</parameter>
+          <type>int</type>
+         </term>
+         <listitem>
+          <para>
+           <constant>SOAP_ENCODED</constant> や
+           <constant>SOAP_LITERAL</constant> を使うと、
+           このクライアントで使うエンコーディングスタイルを指定します。
+           <constant>SOAP_ENCODED</constant> は、
+           SOAP 仕様で定義された型を使い、エンコーディングを指定します。
+           <constant>SOAP_LITERAL</constant> は、
+           サービスで定義されたスキームを使い、
+           エンコーディングを指定します。
+          </para>
+          <para>
+           <parameter>wsdl</parameter>  が指定された場合、
+           このオプションは無視され、
+           エンコーディングは WDSL ファイルから読み込まれます。
+          </para>
+          <para>
+           このオプションと
+           <parameter>wsdl</parameter> パラメータ
+           を両方指定しなかった場合、
+           "encoded" スタイルを使います。
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry xml:id="soapclient.construct.options.soap-version">
+         <term>
+          <parameter>soap_version</parameter>
+          <type>int</type>
+         </term>
+         <listitem>
+          <para>
+           使用する SOAP プロトコルのバージョンを指定します:
+           SOAP 1.1 の場合は <constant>SOAP_1_1</constant> を指定します。
+           SOAP 1.2 の場合は <constant>SOAP_1_2</constant> を指定します。
+          </para>
+          <para>
+           省略した場合は、SOAP 1.1 を使います。
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry xml:id="soapclient.construct.options.authentication">
+         <term>
+          <parameter>authentication</parameter>
+          <type>int</type>
+         </term>
+         <listitem>
+          <para>
+           HTTP 認証をリクエスト時に使う際の、
+           認証方法を指定します。
+           <constant>SOAP_AUTHENTICATION_BASIC</constant>
+           と <constant>SOAP_AUTHENTICATION_DIGEST</constant>
+           が指定できます。
+          </para>
+          <para>
+           省略された場合、
+           かつ <literal>login</literal> オプションが指定されると
+           Basic 認証を使います。
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry xml:id="soapclient.construct.options.login">
+         <term>
+          <parameter>login</parameter>
+          <type>string</type>
+         </term>
+         <listitem>
+          <para>
+           Basic 認証と、Digest 認証で使うユーザー名を指定します。
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry xml:id="soapclient.construct.options.password">
+         <term>
+          <parameter>password</parameter>
+          <type>string</type>
+         </term>
+         <listitem>
+          <para>
+           Basic 認証と、Digest 認証で使うパスワードを指定します。
+          </para>
+          <para>
+           HTTPS クライアント認証で使う
+           <literal>passphrase</literal> と混同しないようにして下さい。
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry xml:id="soapclient.construct.options.local-cert">
+         <term>
+          <parameter>local_cert</parameter>
+          <type>string</type>
+         </term>
+         <listitem>
+          <para>
+           HTTPS 認証で使うクライアント証明書のパス。
+           証明書ファイルは、
+           証明書と秘密鍵が両方入った状態で、
+           PEMエンコードされている必要があります。
+          </para>
+          <para>
+           このファイルには、発行者のチェインも含めることができます。
+           それらを含める場合、クライアント証明書の後に置く必要があります。
+          </para>
+          <para>
+           <link linkend="soapclient.construct.options.stream-context">
+           <parameter>stream_context</parameter></link>
+           でも設定できます。
+           この場合、秘密鍵のファイルは別に指定できます。
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry xml:id="soapclient.construct.options.passphrase">
+         <term>
+          <parameter>passphrase</parameter>
+          <type>string</type>
+         </term>
+         <listitem>
+          <para>
+           <literal>local_cert</literal> 
+           オプションで指定したクライアント証明書のための
+           パスフレーズ。
+          </para>
+          <para>
+           Basic 認証や Digest 認証で使う
+           <literal>password</literal> と混同しないようにして下さい。
+          </para>
+          <para>
+           <link linkend="soapclient.construct.options.stream-context">
+           <parameter>stream_context</parameter></link>
+           でも設定できます。
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry xml:id="soapclient.construct.options.proxy-host">
+         <term>
+          <parameter>proxy_host</parameter>
+          <type>string</type>
+         </term>
+         <listitem>
+          <para>
+           HTTPリクエスト時に使う、
+           プロキシサーバとして用いるホスト名を指定します。
+          </para>
+          <para>
+           <literal>proxy_port</literal>
+           オプションも指定する必要があります。
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry xml:id="soapclient.construct.options.proxy-port">
+         <term>
+          <parameter>proxy_port</parameter>
+          <type>int</type>
+         </term>
+         <listitem>
+          <para>
+           <literal>proxy_host</literal>
+           で指定したプロキシサーバに接続する際に使うポート番号。
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry xml:id="soapclient.construct.options.proxy-login">
+         <term>
+          <parameter>proxy_login</parameter>
+          <type>string</type>
+         </term>
+         <listitem>
+          <para>
+           <literal>proxy_host</literal>
+           で指定したプロキシサーバに接続する際に、
+           Basic 認証で用いるオプションのユーザー名
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry xml:id="soapclient.construct.options.proxy-password">
+         <term>
+          <parameter>proxy_password</parameter>
+          <type>string</type>
+         </term>
+         <listitem>
+          <para>
+           <literal>proxy_host</literal>
+           で指定したプロキシサーバに接続する際に、
+           Basic 認証で用いるオプションのパスワード
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry xml:id="soapclient.construct.options.compression">
+         <term>
+          <parameter>compression</parameter>
+          <type>int</type>
+         </term>
+         <listitem>
+          <para>
+           SOAP リクエストとレスポンスの圧縮を有効にします。
+          </para>
+          <para>
+           この値は、3つの値を ビット演算のOR で指定します:
+           オプションの <constant>SOAP_COMPRESSION_ACCEPT</constant>
+           は、"Accept-Encoding" ヘッダを指定します。
+           <constant>SOAP_COMPRESSION_GZIP</constant>
+           や <constant>SOAP_COMPRESSION_DEFLATE</constant>
+           は、使用する圧縮アルゴリズムと、
+           リクエストで使う圧縮レベルを 1 から 9 の間の数値で指定します。
+           たとえば、双方向の gzip 圧縮を最高の圧縮レベルで行う場合は、
+           <literal>SOAP_COMPRESSION_ACCEPT | SOAP_COMPRESSION_GZIP | 9</literal>
+           を指定します。
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry xml:id="soapclient.construct.options.encoding">
+         <term>
+          <parameter>encoding</parameter>
+          <type>string</type>
+         </term>
+         <listitem>
+          <para>
+           内部的な文字エンコーディングを指定します。
+           リクエストはここで指定されたエンコーディングから、
+           常に UTF-8 に変換して送られ、
+           レスポンスはこのエンコーディングに変換されます。
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry xml:id="soapclient.construct.options.trace">
+         <term>
+          <parameter>trace</parameter>
+          <type>bool</type>
+         </term>
+         <listitem>
+          <para>
+           リクエストやレスポンスのキャプチャを行います。
+           キャプチャした情報は
+           <methodname>SoapClient::getLastRequest</methodname>,
+           <methodname>SoapClient::getLastRequestHeaders</methodname>,
+           <methodname>SoapClient::getLastResponse</methodname>,
+           <methodname>SoapClient::getLastResponseHeaders</methodname>
+           を使ってアクセスできます。
+          </para>
+          <para>
+           省略した場合のデフォルト値は &false; です。
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry xml:id="soapclient.construct.options.classmap">
+         <term>
+          <parameter>classmap</parameter>
+          <type>array</type>
+         </term>
+         <listitem>
+          <para>
+           WSDL 型を PHP クラスにマッピングするために使用可能です。
+           このオプションには、キーとしてWSDL 型、
+           値として PHP クラスの名前を持つ配列を指定する必要があります。
+           型の名前は、
+           要素の(タグ)名前と一致させる必要はないことに注意して下さい。
+          </para>
+          <para>
+           指定するクラス名は、常に
+           <link linkend="language.namespaces">名前空間</link>
+           で完全修飾されているべきですし、
+           <literal>\</literal> で始まってはいけません。
+           正しい名前は、
+           <link linkend="language.oop5.basic.class.class">::class</link>
+           を使えば生成できます。
+          </para>
+          <para>
+           クラスのインスタンスを生成する場合、
+           コンストラクタはコールされず、
+           個別のプロパティに対して
+           マジックメソッド
+           <link linkend="object.set">__set()</link> と
+           <link linkend="object.get">__get()</link> が
+           コールされる点にも注意して下さい。
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry xml:id="soapclient.construct.options.typemap">
+         <term>
+          <parameter>typemap</parameter>
+          <type>array</type>
+         </term>
+         <listitem>
+          <para>
+           ユーザー定義のコールバック関数を使って、
+           型マッピングを定義します。
+           型マッピングは配列で定義され、
+           キーは
+           <literal>type_name</literal> (XML 要素型を指定した文字列)、
+           <literal>type_ns</literal> (名前空間URI を指定した文字列)、
+           <literal>from_xml</literal> (文字列を受け取り、
+           オブジェクトを返す <type>callable</type>)、
+           <literal>to_xml</literal> (オブジェクトをひとつ受け取り、
+           文字列を返す <type>callable</type>) です。
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry xml:id="soapclient.construct.options.exceptions">
+         <term>
+          <parameter>exceptions</parameter>
+          <type>bool</type>
+         </term>
+         <listitem>
+          <para>
+           エラーが起きた際に、 
+           <classname>SoapFault</classname>
+           をスローするかどうかを指定します。
+          </para>
+          <para>
+           デフォルトは &true; です。
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry xml:id="soapclient.construct.options.connection-timeout">
+         <term>
+          <parameter>connection_timeout</parameter>
+          <type>int</type>
+         </term>
+         <listitem>
+          <para>
+           SOAP サービスに接続する際のタイムアウト秒数を指定します。
+           これを使用しても、
+           レスポンスが遅いサービスのタイムアウトを定義することはできません。
+           サービスのコールが完了するまでの待ち時間を制限するには、
+           <link linkend="ini.default-socket-timeout">default_socket_timeout</link>
+           が使えます。
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry xml:id="soapclient.construct.options.cache-wsdl">
+         <term>
+          <parameter>cache_wsdl</parameter>
+          <type>int</type>
+         </term>
+         <listitem>
+          <para>
+           <parameter>wsdl</parameter> を指定した場合、
+           かつ
+           <link linkend="ini.soap.wsdl-cache-enabled">soap.wsdl_cache_enabled</link> が有効になっている場合に、
+           このオプションはキャッシュのタイプを指定します。
+           <constant>WSDL_CACHE_NONE</constant>,
+           <constant>WSDL_CACHE_DISK</constant>,
+           <constant>WSDL_CACHE_MEMORY</constant>,
+           <constant>WSDL_CACHE_BOTH</constant> のいずれかが指定できます。
+          </para>
+          <para>
+           ふたつのタイプのキャッシュが利用できます。
+           WSDL を現在のプロセスのメモリにキャッシュする
+           インメモリのキャッシュと、
+           WSDL をディスク上にキャッシュし、
+           全てのプロセスと共有するディスクキャッシュがあります。
+           ディスクキャッシュで使うディレクトリは
+           <link linkend="ini.soap.wsdl-cache-dir">soap.wsdl_cache_dir</link>
+           で指定できます。
+           どちらのタイプのキャッシュでも、
+           <link linkend="ini.soap.wsdl-cache-ttl">soap.wsdl_cache_ttl</link>
+           で指定した寿命があります。
+           インメモリキャッシュの場合、
+           <link linkend="ini.soap.wsdl-cache-limit">soap.wsdl_cache_limit</link>
+           でキャッシュエントリの数の最大値も指定できます。
+          </para>
+          <para>
+           この値を指定しない場合、
+           <link linkend="ini.soap.wsdl-cache">
+           soap.wsdl_cache</link> オプションの値を使います。
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry xml:id="soapclient.construct.options.user-agent">
+         <term>
+          <parameter>user_agent</parameter>
+          <type>string</type>
+         </term>
+         <listitem>
+          <para>
+           リクエストをする際に
+           <literal>User-Agent</literal> で使う値。
+          </para>
+          <para>
+           <link linkend="soapclient.construct.options.stream-context">
+           <parameter>stream_context</parameter></link>
+           でも指定できます。
+          </para>
+          <para>
+           この値を指定しない場合、
+           <literal>"PHP-SOAP/"</literal> の後に、
+           <constant>PHP_VERSION</constant> の値を付けたものを使います。
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry xml:id="soapclient.construct.options.stream-context">
+         <term>
+          <parameter>stream_context</parameter>
+          <type>resource</type>
+         </term>
+         <listitem>
+          <para>
+           追加のオプションを設定できる
+           <link linkend="context">stream context</link>。
+           これは
+           <function>stream_context_create</function> で生成できます。
+          </para>
+          <para>
+           このコンテキストには、
+           <link linkend="context.socket">socket context options</link>,
+           <link linkend="context.ssl">SSL context options</link>,
+           <link linkend="context.http">HTTP context options</link> が含まれます:
+           <literal>content_type</literal>, <literal>header</literal>,
+           <literal>max_redirects</literal>, <literal>protocol_version</literal>,
+           <literal>user_agent</literal> が設定できます。
+          </para>
+          <para>
+           <literal>'header'</literal> コンテキストオプションで指定された場合、以下のHTTPヘッダは自動生成され、無視されることに注意して下さい:
+           <literal>host</literal>, <literal>connection</literal>,
+           <literal>user-agent</literal>, <literal>content-length</literal>,
+           <literal>content-type</literal>, <literal>cookie</literal>,
+           <literal>authorization</literal>, <literal>proxy-authorization</literal>
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry xml:id="soapclient.construct.options.features">
+         <term>
+          <parameter>features</parameter>
+          <type>int</type>
+         </term>
+         <listitem>
+          <para>
+           以下の機能を有効にするための、ひとつ以上のビットマスク:
+           <variablelist>
+            <varlistentry>
+             <term>
+              <constant>SOAP_SINGLE_ELEMENT_ARRAYS</constant>
+             </term>
+             <listitem>
+              <para>
+               レスポンスを配列にデコードする際には、
+               特定の親要素の中で要素名が一度または複数回現れるかをデフォルトで自動検知します。
+               一度しか現れない要素については、
+               オブジェクトのプロパティを通じてコンテンツに直接アクセスできます。
+               複数回現れる要素については、
+               プロパティには配列が含まれ、
+               マッチする要素の内容の配列が入ります。
+              </para>
+              <para>
+               <constant>SOAP_SINGLE_ELEMENT_ARRAYS</constant>
+               が有効になった場合、
+               一度しか現れない要素は要素数がひとつの配列になります。
+               これは全ての要素と一貫性を保つためです。
+               これは、レスポンスにスキーマを含んでいるWSDLを使っている場合にのみ意味があります。具体的には、以下の例を参照して下さい。
+              </para>
+             </listitem>
+            </varlistentry>
+            <varlistentry>
+             <term>
+              <constant>SOAP_USE_XSI_ARRAY_TYPE</constant>
+             </term>
+             <listitem>
+              <para>
+               <link linkend="soapclient.construct.options.use"><literal>use</literal>
+               オプション</link> を使ったり、
+               WSDL プロパティを <literal>encoded</literal>
+               に設定した場合に、
+               配列の型をスキーマ特有のそれにするのではなく、
+               <literal>SOAP-ENC:Array</literal> にします。
+              </para>
+             </listitem>
+            </varlistentry>
+            <varlistentry>
+             <term>
+              <constant>SOAP_WAIT_ONE_WAY_CALLS</constant>
+             </term>
+             <listitem>
+              <para>
+               WDSL が一方向のリクエストを指定していた場合であっても、
+               レスポンスを待つ。
+              </para>
+             </listitem>
+            </varlistentry>
+           </variablelist>
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry xml:id="soapclient.construct.options.keep-alive">
+         <term>
+          <parameter>keep_alive</parameter>
+          <type>bool</type>
+         </term>
+         <listitem>
+          <para>
+           <literal>Connection: Keep-Alive</literal> ヘッダや
+           <literal>Connection: close</literal>
+           を送信するかどうかを boolean で指定します。
+          </para>
+          <para>
+           デフォルトは &true; です。
+          </para>
+         </listitem>
+        </varlistentry>
+        <varlistentry xml:id="soapclient.construct.options.ssl-method">
+         <term>
+          <parameter>ssl_method</parameter>
+          <type>string</type>
+         </term>
+         <listitem>
+          <para>
+           セキュアな HTTP 接続で用いる、
+           SSL または TLS のバージョンを指定します。
+           <constant>SOAP_SSL_METHOD_SSLv2</constant>
+           や <constant>SOAP_SSL_METHOD_SSLv3</constant>
+           を指定すると、
+           それぞれ SSL 2、 SSL 3 を強制的に使います。
+           <constant>SOAP_SSL_METHOD_SSLv23</constant>
+           を指定しても意味がありません。
+           これは後方互換のためだけに存在しています。
+           PHP 7.2 以降では、
+           <constant>SOAP_SSL_METHOD_TLS</constant>
+           を指定しても同様に意味がありません。
+           これより前のバージョンでは、
+           この定数を指定すると TLS 1.0 を強制的に使っていました。
+          </para>
+          <para>
+           SSL バージョン 2 と 3 はセキュアでないとみなされています。
+           よってインストール済みの OpenSSL
+           ライブラリではサポートされていない可能性があることに注意しましょう。
+          </para>
+          <para>
+           このオプションは
+           PHP 8.1.0 以降では <emphasis>推奨されません</emphasis>。
+           個別の TLS のバージョンを指定できる、
+           より柔軟性に富んだ代替があります。
+           <link linkend="soapclient.construct.options.stream-context">
+           <parameter>stream_context</parameter></link> オプションを
+           'crypto_method'
+           コンテキストパラメータと一緒に使うようにして下さい。
+           <example>
+            <title>TLS 1.3 だけを指定する</title>
+            <programlisting role="php">
+<![CDATA[
+<?php
+$context = stream_context_create([
+    'ssl' => [
+        'crypto_method' => STREAM_CRYPTO_METHOD_TLSv1_3_CLIENT
+     ]
+];
+$client = new SoapClient("some.wsdl", ['context' => $context]);
+]]>
+            </programlisting>
+           </example>
+          </para>
+         </listitem>
+        </varlistentry>
+       </variablelist>
       </para>
      </listitem>
     </varlistentry>
@@ -191,7 +707,9 @@
   &reftitle.examples;
   <para>
    <example>
-    <title><function>SoapClient::__construct</function> の例</title>
+    <title>
+     <methodname>SoapClient::__construct</methodname> の例
+    </title>
     <programlisting role="php">
 <![CDATA[
 <?php
@@ -222,7 +740,7 @@ $client = new SoapClient(null, array('location' => "http://localhost/soap.php",
                                      'use'      => SOAP_LITERAL));
 
 $client = new SoapClient("some.wsdl",
-  array('compression' => SOAP_COMPRESSION_ACCEPT | SOAP_COMPRESSION_GZIP));
+  array('compression' => SOAP_COMPRESSION_ACCEPT | SOAP_COMPRESSION_GZIP | 9));
 
 $client = new SoapClient("some.wsdl", array('encoding'=>'ISO-8859-1'));
 
@@ -233,9 +751,84 @@ class MyBook {
 
 $client = new SoapClient("books.wsdl", array('classmap' => array('book' => "MyBook")));
 
+$typemap = array(
+    array("type_ns"  => "http://schemas.example.com",
+         "type_name" => "book",
+         "from_xml"  => "unserialize_book",
+         "to_xml"    => "serialize_book")
+);
+$client = new SoapClient("books.wsdl", array('typemap' => $typemap));
+
 ?>
 ]]>
     </programlisting>
+   </example>
+  </para>
+
+  <para>
+   <example>
+    <title><constant>SOAP_SINGLE_ELEMENT_ARRAYS</constant> の機能を使う</title>
+    <programlisting role="php">
+<![CDATA[
+/* Assuming a response like this, and an appropriate WSDL:
+<?xml version="1.0" encoding="UTF-8"?>
+<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns="urn:example">
+    <SOAP-ENV:Body>
+        <response>
+            <collection>
+                <item>Single</item>
+            </collection>
+            <collection>
+                <item>First</item>
+                <item>Second</item>
+            </collection>
+        </response>
+    </SOAP-ENV:Body>
+</SOAP-ENV:Envelope>
+*/
+
+echo "Default:\n";
+
+$client = new TestSoapClient(__DIR__ . '/temp.wsdl');
+$response = $client->exampleRequest();
+var_dump( $response->collection[0]->item );
+var_dump( $response->collection[1]->item );
+
+echo "\nWith SOAP_SINGLE_ELEMENT_ARRAYS:\n";
+
+$client = new TestSoapClient(__DIR__ . '/temp.wsdl', ['features' => SOAP_SINGLE_ELEMENT_ARRAYS]);
+$response = $client->exampleRequest();
+var_dump( $response->collection[0]->item );
+var_dump( $response->collection[1]->item );
+]]>
+    </programlisting>
+
+    &example.outputs;
+
+    <screen>
+<![CDATA[
+Default:
+string(6) "Single"
+array(2) {
+  [0] =>
+  string(5) "First"
+  [1] =>
+  string(6) "Second"
+}
+
+With SOAP_SINGLE_ELEMENT_ARRAYS:
+array(1) {
+  [0] =>
+  string(6) "Single"
+}
+array(2) {
+  [0] =>
+  string(5) "First"
+  [1] =>
+  string(6) "Second"
+}
+]]>
+    </screen>
    </example>
   </para>
  </refsect1>
