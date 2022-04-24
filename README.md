@@ -10,6 +10,14 @@ PHP マニュアルに間違いや問題を見つけた場合、メンテナン�
 
 詳細は [CONTRIBUTING.md](https://github.com/php/doc-ja/blob/master/CONTRIBUTING.md#php-%E3%83%9E%E3%83%8B%E3%83%A5%E3%82%A2%E3%83%AB%E3%81%AE%E6%94%B9%E5%96%84%E6%96%B9%E6%B3%95) を参照して下さい。
 
+## PHP 5 以前のマニュアルをお求めの方へ
+
+現在のPHPマニュアルには、PHP 7 以降で維持されている言語仕様や拡張機能、Changelog がドキュメント化されています。つまり、PHP 5 以前のそれは含まれていません。
+
+古い PHP の仕様を参照する必要がある方は、以下にアーカイブがありますので御利用下さい。
+
+- [PHP 5 マニュアルアーカイブ 2020/09/26版](https://github.com/php/doc-ja/releases/tag/phpdoc-ja-php5-archive-20200926)
+
 ## 翻訳を追加したい人へ
 
 PHP マニュアルの翻訳は、言語機能と、PHP に同梱されている拡張機能以外については基本メンテナンスしない方針です。
