@@ -24,9 +24,3 @@ PHP マニュアルのメンテナは、以下を行います。
 * このリポジトリの Pull Request や issue に対応する
 
 PHP マニュアルのメンテナンスに興味がある方は、[PHP マニュアル 日本語版について](https://github.com/php/doc-ja/blob/master/README_About_ThisManual.md) をお読み頂き、必要なアクションを取って下さい。
-
-## メンテナ向けの注意
-
-元々 PHP Manual の docbook は git.php.net で管理されていましたが、[php-src](https://github.com/php/php-src) にバックドアを仕込むコミットがなされた事案が発生したことから、2021/03/29 より、github で直接管理されることになりました。
-
-そのため、git.php.net にミラーするための特別な作法も不要になっています。github でソースコードを管理する作法で、もろもろ作業頂いて問題ありません。
