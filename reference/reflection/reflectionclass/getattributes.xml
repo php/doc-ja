@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: b0b19b66183b28cebc1ffbcf1e2b8763f9d9c7b3 Maintainer: mumumu Status: ready -->
+<!-- EN-Revision: 8d2b545eef87d52bdbe07cdac53a22910c077967 Maintainer: mumumu Status: ready -->
 <refentry xml:id="reflectionclass.getattributes" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
   <refname>ReflectionClass::getAttributes</refname>
@@ -19,8 +19,6 @@
    <type>ReflectionAttribute</type> の配列として返します。
   </para>
 
-  &warn.undocumented.func;
-
  </refsect1>
 
  <refsect1 role="parameters">
@@ -30,7 +28,9 @@
     <term><parameter>name</parameter></term>
     <listitem>
      <para>
-
+      指定したクラス名にマッチするアトリビュートの、
+      <classname>ReflectionAttribute</classname>
+      のみを含むようにフィルタします。
      </para>
     </listitem>
    </varlistentry>
@@ -38,7 +38,19 @@
     <term><parameter>flags</parameter></term>
     <listitem>
      <para>
-
+      <parameter>name</parameter> が指定されていた場合に、
+      結果をどうフィルタするかを決めるフラグ。
+     </para>
+     <para>
+      デフォルトは <literal>0</literal> です。
+      この場合、アトリビュートのクラス名が
+      <parameter>name</parameter> であるものだけを返します。
+     </para>
+     <para>
+      他の利用可能なオプションは、
+      <constant>ReflectionAttribute::IS_INSTANCEOF</constant> です。
+      この場合、フィルタリングに
+      <literal>instanceof</literal> を使います。
      </para>
     </listitem>
    </varlistentry>
@@ -50,6 +62,122 @@
   <para>
    アトリビュートの配列を、
    <classname>ReflectionAttribute</classname> オブジェクトの配列として返します。
+  </para>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title>基本的な使用法</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+#[Attribute]
+class Fruit {
+}
+
+#[Attribute]
+class Red {
+}
+
+#[Fruit]
+#[Red]
+class Apple {
+}
+
+$class = new ReflectionClass('Apple');
+$attributes = $class->getAttributes();
+print_r(array_map(fn($attribute) => $attribute->getName(), $attributes));
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+Array
+(
+    [0] => Fruit
+    [1] => Red
+)
+]]>
+    </screen>
+   </example>
+  </para>
+  <para>
+   <example>
+    <title>クラス名で結果をフィルタする</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+#[Attribute]
+class Fruit {
+}
+
+#[Attribute]
+class Red {
+}
+
+#[Fruit]
+#[Red]
+class Apple {
+}
+
+$class = new ReflectionClass('Apple');
+$attributes = $class->getAttributes('Fruit');
+print_r(array_map(fn($attribute) => $attribute->getName(), $attributes));
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+Array
+(
+    [0] => Fruit
+)
+]]>
+    </screen>
+   </example>
+  </para>
+  <para>
+   <example>
+    <title>クラス名、かつ継承も考慮して結果をフィルタする</title>
+    <programlisting role="php">
+     <![CDATA[
+<?php
+interface Color {
+}
+
+#[Attribute]
+class Fruit {
+}
+
+#[Attribute]
+class Red implements Colour {
+}
+
+#[Fruit]
+#[Red]
+class Apple {
+}
+
+$class = new ReflectionClass('Apple');
+$attributes = $class->getAttributes('Colour', ReflectionAttribute::IS_INSTANCEOF);
+print_r(array_map(fn($attribute) => $attribute->getName(), $attributes));
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+Array
+(
+    [0] => Red
+)
+]]>
+    </screen>
+   </example>
   </para>
  </refsect1>
 
