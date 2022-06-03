@@ -13,6 +13,28 @@
    <type>array</type><methodname>date_parse</methodname>
    <methodparam><type>string</type><parameter>datetime</parameter></methodparam>
   </methodsynopsis>
+  <para>
+   <function>date_parse</function> は、
+   <function>strtotime</function> や
+   <function>DateTimeImmutable::__construct</function>
+   と同じルールに従って
+   <parameter>datetime</parameter> をパースします。
+   Unixタイムスタンプ (<function>strtotime</function> の場合)
+   や <classname>DateTimeImmutable</classname>
+   (<function>DateTimeImmutable::__construct</function> の場合)
+   を返す代わりに、指定した <parameter>datetime</parameter>
+   から検知できた情報を連想配列として返します。
+  </para>
+  <para>
+   あるグループの要素に関する情報が見つからなかった場合、
+   そうした情報は &false; に設定されたり、存在しない状態になります。
+   <parameter>datetime</parameter> に指定する文字列から、
+   同等のタイムスタンプや <classname>DateTimeImmutable</classname>
+   オブジェクトを構築する必要がある場合、
+   より多くのフィールドを &false; でない値に設定できます。
+   そうしたことが起こる場合については、
+   以下に示す例を参照ください。
+  </para>
  </refsect1>
 
  <refsect1 role="parameters">
@@ -76,83 +98,241 @@
   &reftitle.examples;
   <para>
    <example>
-    <title><function>date_parse</function> の例</title>
+    <title><parameter>datetime</parameter> に包括的な情報を指定した <function>date_parse</function> の例</title>
     <programlisting role="php">
 <![CDATA[
 <?php
-print_r(date_parse("2006-12-12 10:00:00.5"));
+var_dump(date_parse("2006-12-12 10:00:00.5"));
 ?>
 ]]>
     </programlisting>
     &example.outputs;
     <screen>
 <![CDATA[
-Array
-(
-    [year] => 2006
-    [month] => 12
-    [day] => 12
-    [hour] => 10
-    [minute] => 0
-    [second] => 0
-    [fraction] => 0.5
-    [warning_count] => 0
-    [warnings] => Array()
-    [error_count] => 0
-    [errors] => Array()
-    [is_localtime] => 
-)
+array(12) {
+  'year' => int(2006)
+  'month' => int(12)
+  'day' => int(12)
+  'hour' => int(10)
+  'minute' => int(0)
+  'second' => int(0)
+  'fraction' => double(0.5)
+  'warning_count' => int(0)
+  'warnings' => array(0) {
+  }
+  'error_count' => int(0)
+  'errors' => array(0) {
+  }
+  'is_localtime' => bool(false)
+}
 ]]>
     </screen>
    </example>
   </para>
+
   <para>
-   <link linkend="datetime.formats.relative">相対的な書式</link> は
-   絶対的な書式のパース結果に影響を及ぼさず、別途
-   "relative" 要素にまとめられます。
+   タイムゾーン情報が含まれた
+   <parameter>datetime</parameter> がパースされた場合にのみ、
+   タイムゾーンの要素が含まれるようになります。
+   この場合、<literal>zone_type</literal> 要素が常に存在し、
+   値によっては少し多くの要素が含まれます。
    <example>
-    <title><function>date_parse</function> での相対的な書式の使用例</title>
+    <title>タイムゾーンの省略形を与えた場合の <function>date_parse</function> の例</title>
     <programlisting role="php">
 <![CDATA[
 <?php
-print_r(date_parse("2006-12-12 10:00:00.5 +1 week +1 hour"));
+var_dump(date_parse("June 2nd, 2022, 10:28:17 BST"));
 ?>
 ]]>
     </programlisting>
     &example.outputs;
     <screen>
 <![CDATA[
-Array
-(
-    [year] => 2006
-    [month] => 12
-    [day] => 12
-    [hour] => 10
-    [minute] => 0
-    [second] => 0
-    [fraction] => 0.5
-    [warning_count] => 0
-    [warnings] => Array
-        (
-        )
+array(16) {
+  'year' => int(2022)
+  'month' => int(6)
+  'day' => int(2)
+  'hour' => int(10)
+  'minute' => int(28)
+  'second' => int(17)
+  'fraction' => double(0)
+  'warning_count' => int(0)
+  'warnings' => array(0) {
+  }
+  'error_count' => int(0)
+  'errors' => array(0) {
+  }
+  'is_localtime' => bool(true)
+  'zone_type' => int(2)
+  'zone' => int(0)
+  'is_dst' => bool(true)
+  'tz_abbr' => string(3) "BST"
+}]]>
+    </screen>
+   </example>
+   <example>
+    <title>タイムゾーン情報を与えた <function>date_parse</function> の例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+var_dump(date_parse("June 2nd, 2022, 10:28:17 Europe/London"));
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+array(14) {
+  'year' => int(2022)
+  'month' => int(6)
+  'day' => int(2)
+  'hour' => int(10)
+  'minute' => int(28)
+  'second' => int(17)
+  'fraction' => double(0)
+  'warning_count' => int(0)
+  'warnings' => array(0) {
+  }
+  'error_count' => int(0)
+  'errors' => array(0) {
+  }
+  'is_localtime' => bool(true)
+  'zone_type' => int(3)
+  'tz_id' => string(13) "Europe/London"
+}]]>
+    </screen>
+   </example>
+  </para>
 
-    [error_count] => 0
-    [errors] => Array
-        (
-        )
+  <para>
+   さらに最低限の文字列を <parameter>datetime</parameter>
+   に与えてパースさせた場合、
+   情報量はさらに少なくなります。以下の例では、
+   全ての時刻に関する情報が &false; になります。
+   <example>
+    <title>最低限の文字列だけを与えた <function>date_parse</function> の例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+var_dump(date_parse("June 2nd, 2022"));
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+array(12) {
+  'year' => int(2022)
+  'month' => int(6)
+  'day' => int(2)
+  'hour' => bool(false)
+  'minute' => bool(false)
+  'second' => bool(false)
+  'fraction' => bool(false)
+  'warning_count' => int(0)
+  'warnings' => array(0) {
+  }
+  'error_count' => int(0)
+  'errors' => array(0) {
+  }
+  'is_localtime' => bool(false)
+}]]>
+    </screen>
+   </example>
+  </para>
 
-    [is_localtime] =>
-    [relative] => Array
-        (
-            [year] => 0
-            [month] => 0
-            [day] => 7
-            [hour] => 1
-            [minute] => 0
-            [second] => 0
-        )
+  <para>
+    <link linkend="datetime.formats.relative">相対的な書式</link> は
+    絶対的な書式のパース結果に影響を及ぼさず、別途
+    "relative" 要素にまとめられます。
+   <example>
+    <title>"relative" フォーマットを使った <function>date_parse</function> の例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+var_dump(date_parse("2006-12-12 10:00:00.5 +1 week +1 hour"));
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+array(13) {
+  'year' => int(2006)
+  'month' => int(12)
+  'day' => int(12)
+  'hour' => int(10)
+  'minute' => int(0)
+  'second' => int(0)
+  'fraction' => double(0.5)
+  'warning_count' => int(0)
+  'warnings' => array(0) {
+  }
+  'error_count' => int(0)
+  'errors' => array(0) {
+  }
+  'is_localtime' => bool(false)
+  'relative' =>
+  array(6) {
+    'year' => int(0)
+    'month' => int(0)
+    'day' => int(7)
+    'hour' => int(1)
+    'minute' => int(0)
+    'second' => int(0)
+  }
+}]]>
+    </screen>
+   </example>
+  </para>
 
-)]]>
+  <para>
+   <literal>Thursday</literal> のように、
+   語句によっては、文字列の時刻の部分に <literal>0</literal>
+   を設定するものがあります。
+   <literal>Thursday</literal> を
+   <function>DateTimeImmutable::__construct</function>
+   に与えた場合、hour, minute, second は
+   <literal>0</literal> に設定されます。
+   以下の例では、year の要素は &false; に設定されます。
+   <example>
+    <title><function>date_parse</function> の副作用</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+var_dump(date_parse("Thursday, June 2nd"));
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+array(13) {
+  'year' => bool(false)
+  'month' => int(6)
+  'day' => int(2)
+  'hour' => int(0)
+  'minute' => int(0)
+  'second' => int(0)
+  'fraction' => double(0)
+  'warning_count' => int(0)
+  'warnings' => array(0) {
+  }
+  'error_count' => int(0)
+  'errors' => array(0) {
+  }
+  'is_localtime' => bool(false)
+  'relative' =>
+  array(7) {
+    'year' => int(0)
+    'month' => int(0)
+    'day' => int(0)
+    'hour' => int(0)
+    'minute' => int(0)
+    'second' => int(0)
+    'weekday' => int(4)
+  }
+}]]>
     </screen>
    </example>
   </para>
@@ -162,6 +342,7 @@ Array
   &reftitle.seealso;
   <para>
    <simplelist>
+    <member>指定されたフォーマットに従って <parameter>datetime</parameter> をパースする <function>DateTimeImmutable::parseFromFormat</function></member>
     <member><function>checkdate</function></member>
     <member><function>getdate</function></member>
    </simplelist>
