@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: d836dea93eeac2383cd4bd7dc09229a1e5652c58 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 48e99212ad659f3aa5e0202e0194f9f13612c024 Maintainer: takagi Status: working -->
 <!-- CREDITS: hnw,mumumu -->
 <chapter xml:id="datetime.formats" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>サポートする日付と時刻の書式</title>
@@ -8,7 +8,7 @@
  <para>
   この節では
   <classname>DateTimeImmutable</classname>, <classname>DateTime</classname>,
-  <function>date_create</function>, <function>date_create_immutable</function>,
+ <function>date_create_immutable</function>, <function>date_create</function>, <function>date_parse</function>
   および <function>strtotime</function> が解釈可能な全ての書式について説明します。
   これらの書式はセクションごとにグループ分けされています。
   たいていの場合、一つの日付・時刻文字列の中でホワイトスペース、
@@ -20,6 +20,103 @@
   ダブルクォートで囲まれたフォーマットは大文字小文字を同一視しません
   (<literal>"T"</literal> は <literal>T</literal> としか書けません)。
  </para>
+
+ <para>
+  A general set of rules should be taken into account.
+ </para>
+	<orderedlist>
+		<listitem>
+			<simpara>
+				The parser, allows for each unit (year, month, day, hour, minute, second)
+				the full range of values. For a year that's just 4 digits, for a month
+				that's 0-12, day is 0-31 and for hour and minute it's 0-59.
+			</simpara>
+		</listitem>
+		<listitem>
+			<simpara>
+				60 is allowed for seconds, as sometimes date strings with that
+				leapsecond do show up. But PHP implements Unix time where "60" is not
+				a valid second number and hence it overflows.
+			</simpara>
+		</listitem>
+		<listitem>
+			<simpara>
+    <function>strtotime</function> returns false if any number is outside of
+    the ranges, and <function>DateTimeImmutable::__construct</function> throws
+    an exception.
+			</simpara>
+		</listitem>
+		<listitem>
+			<simpara>
+				If a string contains a date, all time elements are reset to 0.
+			</simpara>
+		</listitem>
+		<listitem>
+			<simpara>
+				All less-significant time elements are reset to 0 if any part of a time is
+				present in the given string.
+			</simpara>
+		</listitem>
+		<listitem>
+			<simpara>
+				The parser is dumb, and doesn't do any checks to make it faster (and
+				more generic).
+			</simpara>
+		</listitem>
+		<listitem>
+			<para>
+				There is an additional check if you pass in an invalid date:
+    <example>
+     <programlisting role="php">
+<![CDATA[
+<?php
+$res = date_parse("2015-09-31");
+var_dump($res["warnings"]);
+?>
+]]>
+     </programlisting>
+     &example.outputs;
+     <screen>
+<![CDATA[
+array(1) {
+  [11] =>
+  string(27) "The parsed date was invalid"
+}
+]]>
+     </screen>
+    </example>
+			</para>
+		</listitem>
+		<listitem>
+			<para>
+				It is already possible to handle the edge cases, but then you need to use
+    <function>DateTimeImmutable::createFromFormat</function>, and
+				supply the right format.
+    <example>
+     <programlisting role="php">
+<![CDATA[
+<?php
+$res = DateImmutable::createFromFormat("Y-m-d", "2015-09-34");
+var_dump($res);
+]]>
+     </programlisting>
+     &example.outputs;
+     <screen>
+<![CDATA[
+class DateTime#1 (3) {
+  public $date =>
+  string(26) "2015-10-04 17:24:43.000000"
+  public $timezone_type =>
+  int(3)
+  public $timezone =>
+  string(13) "Europe/London"
+}
+]]>
+     </screen>
+    </example>
+			</para>
+		</listitem>
+	</orderedlist>
 
  <!--Time Formats: {{{-->
  <sect1 xml:id="datetime.formats.time">
@@ -187,8 +284,11 @@
   
   <para>
    このページでは、
-   <function>strtotime</function> や <classname>DateTime</classname> そして
-   <function>date_create</function> のパーサーが理解する、
+   <classname>DateTimeImmutable</classname>, <classname>DateTime</classname>,
+   <function>date_create</function>,
+   <function>date_create_immutable</function> および
+   <function>strtotime</function>
+   のパーサーが理解する、
    さまざまな日付フォーマットを説明します。
   </para>
 
@@ -465,8 +565,10 @@
 
   <para>
    このページでは、
-   <function>strtotime</function> や <classname>DateTime</classname> そして
-   <function>date_create</function> のパーサーが理解する、
+   <classname>DateTimeImmutable</classname>, <classname>DateTime</classname>,
+   <function>date_create</function>,
+   <function>date_create_immutable</function> および
+   <function>strtotime</function>  のパーサーが理解する、
    さまざまな日付/時刻 複合フォーマットを説明します。
   </para>
 
@@ -560,6 +662,72 @@
       <entry><literal>YY</literal></entry>
       <entry>[0-9]{4}</entry>
       <entry>"2000", "2008", "1978"</entry>
+     </row>
+    </tbody>
+   </tgroup>
+  </table>
+
+  <table>
+   <title>Standards Formats</title>
+   <tgroup cols="2">
+    <thead>
+     <row>
+      <entry>Description</entry>
+      <entry>Examples</entry>
+     </row>
+    </thead>
+    <tbody>
+     <row>
+      <entry>ATOM</entry>
+      <entry>"2022-06-02T16:58:35+00:00"</entry>
+     </row>
+     <row>
+      <entry>COOKIE</entry>
+      <entry>"Thursday, 02-Jun-2022 16:58:35 UTC"</entry>
+     </row>
+     <row>
+      <entry>ISO8601</entry>
+      <entry>"2022-06-02T16:58:35+0000"</entry>
+     </row>
+     <row>
+      <entry><link xlink:href="&url.rfc;822">RFC 822</link></entry>
+      <entry>"Thu, 02 Jun 22 16:58:35 +0000"</entry>
+     </row>
+     <row>
+      <entry><link xlink:href="&url.rfc;850">RFC 850</link></entry>
+      <entry>"Thursday, 02-Jun-22 16:58:35 UTC"</entry>
+     </row>
+     <row>
+      <entry><link xlink:href="&url.rfc;1036">RFC 1036</link></entry>
+      <entry>"Thu, 02 Jun 22 16:58:35 +0000"</entry>
+     </row>
+     <row>
+      <entry><link xlink:href="&url.rfc;1123">RFC 1123</link></entry>
+      <entry>"Thu, 02 Jun 2022 16:58:35 +0000"</entry>
+     </row>
+     <row>
+      <entry><link xlink:href="&url.rfc;2822">RFC 2822</link></entry>
+      <entry>"Thu, 02 Jun 2022 16:58:35 +0000"</entry>
+     </row>
+     <row>
+      <entry><link xlink:href="&url.rfc;3339">RFC 3339</link></entry>
+      <entry>"2022-06-02T16:58:35+00:00"</entry>
+     </row>
+     <row>
+      <entry><link xlink:href="&url.rfc;3339">RFC 3339</link> Extended</entry>
+      <entry>"2022-06-02T16:58:35.698+00:00"</entry>
+     </row>
+     <row>
+      <entry><link xlink:href="&url.rfc;7231">RFC 7231</link></entry>
+      <entry>"Thu, 02 Jun 2022 16:58:35 GMT"</entry>
+     </row>
+     <row>
+      <entry>RSS</entry>
+      <entry>"Thu, 02 Jun 2022 16:58:35 +0000"</entry>
+     </row>
+     <row>
+      <entry>W3C</entry>
+      <entry>"2022-06-02T16:58:35+00:00"</entry>
      </row>
     </tbody>
    </tgroup>
@@ -670,8 +838,11 @@
   <title>相対的な書式</title>
   <para>
    このページでは、
-   <function>strtotime</function> や <classname>DateTime</classname> そして
-   <function>date_create</function> のパーサーが理解する、
+   <classname>DateTimeImmutable</classname>,
+   <classname>DateTime</classname>,
+   <function>date_create</function>,
+   <function>date_create_immutable</function>, そして
+   <function>strtotime</function> のパーサーが理解する、
    さまざまな相対日付/時刻フォーマットを説明します。
   </para>
 
@@ -841,6 +1012,14 @@
     2つ目の方は "2008-07-24 00:00" となります。
     このような結果になる理由は、
     これら5つの記述が現在時刻に直接影響するためです。
+   </para>
+   <para>
+    Keywords such as "first day of" depend on the context in which the
+    relative format string is used. If used with a static method or function,
+    the referent is the current system timestamp. However, if used in
+    <function>DateTime::modify</function> or
+    <function>DateTimeImmutable::modify</function>, the referent is the object
+    on which the modify() method is called.
    </para>
   </note>
 
