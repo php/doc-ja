@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: e5373bc7610639edca743a5d190e78e6cf41b42f Maintainer: takagi Status: ready -->
+<!-- EN-Revision: dab41534c60aee794bfba84e22d5dfef343cb38f Maintainer: takagi Status: ready -->
 <!-- Credits: mumumu -->
 
 <refentry xml:id="datetimeimmutable.createfromformat" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
@@ -51,6 +51,17 @@
       を使って年が既にパースされた後に使わなければなりません。
      </para>
      <para>
+      数値の解釈に使われる文字については、広範な値が許されています。
+      これには、論理的に許される範囲以上のものも含みます。
+      たとえば、<literal>d</literal> (ある月における何番目の日か) の場合、
+      <literal>00</literal> から <literal>99</literal>
+      までの値が許されています。これに対する唯一の制約は、桁数のみです。
+      範囲外の値が指定された場合、
+      日付/時刻のパーサーのオーバーフローの仕組みが使われます。
+      オーバーフローのふるまいについては、
+      後にいくつかのサンプルを示します。
+     </para>
+     <para>
       <table>
        <title><parameter>format</parameter> パラメータに渡せる文字</title>
        <tgroup cols="3">
@@ -73,6 +84,10 @@
           <entry>
            <literal>01</literal> から <literal>31</literal> あるいは
            <literal>1</literal> から <literal>31</literal>
+           (その月の日数分以上の2桁の数値も指定可能ですが、
+           その月はオーバーフローします。
+           たとえば January において 33 を指定した場合、
+           February 2nd という意味になります)
           </entry>
          </row>
          <row>
@@ -80,7 +95,10 @@
           <entry>曜日を表す文字列</entry>
           <entry>
            <literal>Mon</literal> から <literal>Sun</literal> あるいは
-           <literal>Sunday</literal> から <literal>Saturday</literal>
+           <literal>Sunday</literal> から <literal>Saturday</literal>。
+           指定された曜日が、パースされた(またはデフォルトの)日付と異なっていた場合、
+           指定された曜日の <emphasis>次の</emphasis>
+           日にオーバーフローします。詳細は後に示すサンプルを参照ください。
           </entry>
          </row>
          <row>
@@ -98,7 +116,14 @@
             <literal>Y</literal> または <literal>y</literal>
             の後に続けて置かなければいけません。
           </entry>
-          <entry><literal>0</literal> から <literal>365</literal></entry>
+          <entry>
+           <literal>0</literal> から <literal>365</literal>
+           (1年の日数分以上の3桁の数値も指定可能ですが、
+           その年はオーバーフローします。
+           たとえば 2022年において <literal>366</literal>
+           を指定した場合は、
+           January 2nd, 2023 という意味になります)
+          </entry>
          </row>
          <row>
           <entry align="center"><emphasis>月</emphasis></entry>
@@ -119,6 +144,10 @@
           <entry>
            <literal>01</literal> から <literal>12</literal> あるいは
            <literal>1</literal> から <literal>12</literal>
+           (12 以上の2桁の数値も指定可能ですが、
+           その年についてはオーバーフローします。
+           たとえば <literal>13</literal> の場合は、
+           翌年の1月という意味になります)
           </entry>
          </row>
          <row>
@@ -160,6 +189,10 @@
           <entry>
            <literal>1</literal> から <literal>12</literal> あるいは
            <literal>01</literal> から <literal>12</literal>
+           (12 以上の2桁の数値も指定可能ですが、
+           日の指定がオーバーフローします。
+           たとえば <literal>14</literal> の場合は、
+           次の午前/午後の <literal>02</literal> 時という意味になります)
           </entry>
          </row>
          <row>
@@ -177,12 +210,24 @@
          <row>
           <entry><literal>i</literal></entry>
           <entry>分。先頭のゼロを含む</entry>
-          <entry><literal>00</literal> から <literal>59</literal></entry>
+          <entry>
+           <literal>00</literal> から <literal>59</literal>
+           (59 以上の2桁の数値も指定可能ですが、
+           次の1時間にオーバーフローします。
+           たとえば <literal>66</literal> の場合は、
+           次の1時間の <literal>:06</literal> という意味になります)
+          </entry>
          </row>
          <row>
           <entry><literal>s</literal></entry>
           <entry>秒。先頭のゼロを含む</entry>
-          <entry><literal>00</literal> から <literal>59</literal></entry>
+          <entry>
+           <literal>00</literal> から <literal>59</literal>
+           (59 以上の2桁の数値も指定可能ですが、
+           次の分にオーバーフローします。
+           たとえば <literal>90</literal> の場合は、
+           次の分の <literal>:30</literal> という意味になります)
+          </entry>
          </row>
          <row>
           <entry><literal>v</literal></entry>
@@ -462,6 +507,131 @@ echo DateTimeImmutable::createFromFormat('H\h i\m s\s','23h 15m 03s')->format('H
 ]]>
    </screen>
   </example>
+
+  <example>
+   <title>オーバーフローした際のふるまい</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+echo DateTimeImmutable::createFromFormat('Y-m-d H:i:s', '2021-17-35 16:60:97')->format(DateTimeImmutable::RFC2822);
+?>
+]]>
+   </programlisting>
+   &example.outputs.similar;
+   <screen>
+<![CDATA[
+Sat, 04 Jun 2022 17:01:37 +0000
+]]>
+   </screen>
+   <para>
+    上の結果は奇妙に見えますが、正しい動作です。
+    なぜなら、以下のようなオーバーフローが発生しているからです:
+   </para>
+   <orderedlist>
+    <listitem>
+     <simpara>
+      <literal>97</literal> 秒は <literal>1</literal> 分オーバーフローしており、<literal>37</literal> 秒が残ります。
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <literal>61</literal> 分は <literal>1</literal> 時間オーバーフローしており、<literal>1</literal> 分が残ります。
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <literal>35</literal> 日は、<literal>1</literal> ヶ月分オーバーフローしており、<literal>4</literal> 日が残ります。
+      どれだけの日が残るかは月に依存します。
+      なぜなら、すべての月が同じ日数を持つとは限らないからです。
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <literal>18</literal> ヶ月は、<literal>1</literal> 年分オーバーフローしており、<literal>6</literal> ヶ月が残ります。
+     </simpara>
+    </listitem>
+   </orderedlist>
+  </example>
+
+  <example>
+   <title>曜日がオーバーフローした場合のふるまい</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+$d = DateTime::createFromFormat(DateTimeInterface::RFC1123, 'Mon, 3 Aug 2020 25:00:00 +0000');
+echo $d->format(DateTime::RFC1123), "\n";
+?>
+]]>
+   </programlisting>
+   &example.outputs.similar;
+   <screen>
+<![CDATA[
+Mon, 10 Aug 2020 01:00:00 +0000
+]]>
+   </screen>
+   <para>
+    上の結果は奇妙に見えますが、正しい動作です。
+    なぜなら、以下のようなオーバーフローが発生しているからです:
+   </para>
+   <orderedlist>
+    <listitem>
+     <simpara>
+      <literal>3 Aug 2020 25:00:00</literal> はオーバーフローしており、<literal>(Tue) 4 Aug
+      2020 01:00</literal> となります。
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <literal>Mon</literal> が適用されます。
+      これは、日付が <literal>Mon, 10 Aug 2020 01:00:00</literal> まで進むからです。
+      <literal>Mon</literal> のような相対的なキーワード指定については、
+      <link linkend="datetime.formats.relative">相対的な書式</link> で説明されています。
+     </simpara>
+    </listitem>
+   </orderedlist>
+  </example>
+
+  <para>
+   日付のオーバーフローを検出するために、
+   <methodname>DateTimeImmutable::getLastErrors</methodname> 
+   が使えます。
+   このメソッドの結果には、オーバーフローが発生した場合に警告が含まれます。
+  </para>
+  <example>
+   <title>オーバーフローした日付を検出する</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+$d = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', '2021-17-35 16:60:97');
+echo $d->format(DateTimeImmutable::RFC2822), "\n\n";
+
+var_dump(DateTimeImmutable::GetLastErrors());
+?>
+]]>
+   </programlisting>
+   &example.outputs.similar;
+   <screen>
+<![CDATA[
+Sat, 04 Jun 2022 17:01:37 +0000
+
+array(4) {
+  'warning_count' =>
+  int(2)
+  'warnings' =>
+  array(1) {
+    [19] =>
+    string(27) "The parsed date was invalid"
+  }
+  'error_count' =>
+  int(0)
+  'errors' =>
+  array(0) {
+  }
+}
+]]>
+   </screen>
+  </example>
+
  </refsect1>
 
  <refsect1 role="seealso">
