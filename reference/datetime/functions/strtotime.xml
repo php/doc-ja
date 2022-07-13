@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: f5bd78b3c2c48b8702bc1547a08a9ad592047c1c Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 26cf98b63af3d5dd9793055596d2996851e65ffe Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa,shimooka,mumumu -->
 <refentry xml:id="function.strtotime" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -21,6 +21,9 @@
    その書式を Unix タイムスタンプ (1970 年 1 月 1 日 00:00:00 UTC からの経過秒数) に変換しようとします。
    <parameter>baseTimestamp</parameter> が指定された場合は、そのタイムスタンプを基準とした相対時刻のタイムスタンプに変換します。
    <parameter>baseTimestamp</parameter> が指定されていない場合は、現在時刻を基準とした相対時刻のタイムスタンプに変換します。
+   パースされる日付を含む文字列の書式は、
+   <link linkend="datetime.formats">サポートする日付と時刻の書式</link> で定義されており、考慮すべき微妙な点がいくつかあります。
+   サポートする日付と時刻の書式について、読んでおくことを強く推奨します。
   </simpara>
   <warning>
    <para>
@@ -141,6 +144,21 @@ if (($timestamp = strtotime($str)) === false) {
   &reftitle.notes;
   <note>
    <para>
+    "相対的な" 日付とは、
+    日付/時刻の一部の情報が与えられていないということでもあります。
+    与えられていない情報は <parameter>baseTimestamp</parameter>
+    から取得されます。
+    つまり、2022年5月31日 (31st of May 2022) に
+    <code>strtotime('February')</code> を実行すると、
+    <literal>31 February 2022</literal> と解釈されて日付がオーバーフローし、
+    <literal>3 March</literal> になります(うるう年の場合、<literal>2 March</literal> になります)。
+    <code>strtotime('1 February')</code> や
+    <code>strtotime('first day of February')</code>
+    を使うことで、この問題は回避できます。
+   </para>
+  </note>
+  <note>
+   <para>
     年を 2 桁の数値で指定した場合、その値が 00-69 なら 2000-2069 に、
     70-99 なら 1970-1999 にそれぞれ変換されます。
     32 ビットシステム上での相違点 (2038-01-19 03:14:07
@@ -156,24 +174,6 @@ if (($timestamp = strtotime($str)) === false) {
    <para>
     64 ビット版の PHP では、タイムスタンプの有効範囲は事実上無制限です。
     というのも、64 ビットでは過去側も未来側も約 2930 億年を表せるからです。
-   </para>
-  </note>
-  <note>
-   <para>
-    <literal>m/d/y</literal> あるいは <literal>d-m-y</literal>
-    といった書式の曖昧さを解決する際には、区切り文字を利用します。スラッシュ
-    (<literal>/</literal>) で区切られている場合はアメリカ風の
-    <literal>m/d/y</literal> とみなし、ダッシュ
-    (<literal>-</literal>) あるいはドット (<literal>.</literal>)
-    で区切られている場合はヨーロッパ風の
-    <literal>d-m-y</literal> であるとみなします。
-    しかし、年を二桁で表して区切り文字がダッシュ (<literal>-</literal>) である場合は、
-    <literal>y-m-d</literal> であるとみなします。
-   </para>
-   <para>
-    このような曖昧さを避けるためにも、ISO 8601 形式
-    (<literal>YYYY-MM-DD</literal>) を使うか、可能であれば
-    <methodname>DateTime::createFromFormat</methodname> を使うことを推奨します。
    </para>
   </note>
   <note>
