@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 926842882dbed9c74ab7b951e78db96d42ee43ea Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 2b06b9d84c3c1b957596334a923b05f985a6a1a0 Maintainer: takagi Status: ready -->
 <!-- Credits: mumumu -->
 <refentry xml:id="domdocument.registernodeclass" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -140,33 +140,44 @@ text in child
     <para>
      自作の <classname>DOMDocument</classname> インスタンスを作成すると、
      <varname>ownerDocument</varname> プロパティが作成元のクラスを指すようになります。
-     つまり <classname>DOMDocument</classname> の
-     <function>DOMDocument::registerNodeClass</function> を使う必要はない
-     (実際、使えない) ということです。
+     しかし、そのクラスへの参照が全て削除されると、
+     そのクラスは削除され、新しい <classname>DOMDocument</classname>
+     が代わりに作成されます。よって、
+     <function>DOMDocument::registerNodeClass</function> を、
+     <classname>DOMDocument</classname> と一緒に使うことができます。
     </para>
     <programlisting role="php">
 <![CDATA[
 <?php
-class myDOMDocument extends DOMDocument {
+class MyDOMDocument extends DOMDocument {
 }
 
-class myOtherDOMDocument extends DOMDocument {
+class MyOtherDOMDocument extends DOMDocument {
 }
 
 // XML から myDOMDocument を作成します
-$doc = new myDOMDocument;
+$doc = new MyDOMDocument;
 $doc->loadXML("<root><element><child>text in child</child></element></root>");
 
 $child = $doc->getElementsByTagName("child")->item(0);
 
 // このノードの現在のオーナーは myDOMDocument です
 var_dump(get_class($child->ownerDocument));
+// MyDOMDocument を破棄します
+unset($doc);
+// そして新しい DOMDocument が作成されます
+var_dump(get_class($child->ownerDocument));
 
-// ノードを myDOMDocument からインポートします
-$newdoc = new myOtherDOMDocument;
+// MyDOMDocument からノードを import します
+$newdoc = new MyOtherDOMDocument;
 $child = $newdoc->importNode($child);
 
-// ノードの新しいオーナーは myOtherDOMDocument に変わりました
+// カスタムの DOMDocument を登録します
+$newdoc->registerNodeClass("DOMDocument", "MyOtherDOMDocument");
+
+var_dump(get_class($child->ownerDocument));
+unset($doc);
+// 新しい MyOtherDOMDocument を作成します
 var_dump(get_class($child->ownerDocument));
 ?>
 ]]>
@@ -174,8 +185,10 @@ var_dump(get_class($child->ownerDocument));
     &example.outputs;
     <screen role="xml">
 <![CDATA[
-string(13) "myDOMDocument"
-string(18) "myOtherDOMDocument"
+string(13) "MyDOMDocument"
+string(11) "DOMDocument"
+string(18) "MyOtherDOMDocument"
+string(18) "MyOtherDOMDocument"
 ]]>
     </screen>
    </example>
