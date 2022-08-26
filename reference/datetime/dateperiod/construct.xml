@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: e2c7b3635d5353c05c248c29038bf9d5b7133d6e Maintainer: takagi Status: ready -->
+<!-- EN-Revision: c249f3bc56fcdb3ea3f64b1fa0c4fd96a7dcd5a4 Maintainer: takagi Status: ready -->
 <!-- Credits: mumumu -->
 
 <refentry xml:id="dateperiod.construct" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
@@ -33,6 +33,21 @@
   <para>
    新しい DatePeriod オブジェクトを作成します。
   </para>
+  <para>
+   <classname>DatePeriod</classname> オブジェクトは、
+   たくさんの <classname>DateTimeImmutable</classname>
+   や <classname>DateTime</classname> を生成するイテレータとして使えます。
+   パラメータ <parameter>start</parameter>,
+   <parameter>interval</parameter>,
+   <parameter>end</parameter>, および <parameter>recurrences</parameter>
+   の数を指定できます。
+  </para>
+  <para>
+   返されるオブジェクトのクラスは、
+   <parameter>start</parameter> の祖先になるオブジェクトで、
+   <classname>DateTimeImmutable</classname> や
+   <classname>DateTime</classname> に等しくなります。
+  </para>
  </refsect1>
 
  <refsect1 role="parameters">
@@ -43,7 +58,8 @@
      <term><parameter>start</parameter></term>
      <listitem>
       <para>
-       期間の開始日。
+       期間の開始日。デフォルトでは、
+       結果セットに含まれています。
       </para>
      </listitem>
     </varlistentry>
@@ -60,6 +76,8 @@
      <listitem>
       <para>
        反復回数。
+       返される結果の数は、この値よりひとつ大きくなります。
+       なぜなら、デフォルトでは結果セットに開始日が含まれているからです。
        <literal>0</literal> より大きな値でなければいけません。
       </para>
      </listitem>
@@ -69,6 +87,7 @@
      <listitem>
       <para>
        期間の終了日。
+       デフォルトでは、結果セットから除外されています。
       </para>
      </listitem>
     </varlistentry>
@@ -87,8 +106,15 @@
      <term><parameter>options</parameter></term>
      <listitem>
       <para>
-       <constant>DatePeriod::EXCLUDE_START_DATE</constant> を指定すれば、
-       開始日を期間内の発生日から除外できます。
+       開始日と終了日に関する振る舞いを制御するビットフィールド
+      </para>
+      <para>
+       <constant>DatePeriod::EXCLUDE_START_DATE</constant>
+       を指定すると、開始日を期間内の発生日から除外できます。
+      </para>
+      <para>
+       <constant>DatePeriod::INCLUDE_END_DATE</constant>
+       を指定すると、終了日を期間内の発生日から除外できます。
       </para>
      </listitem>
     </varlistentry>
@@ -108,6 +134,13 @@
       </row>
      </thead>
      <tbody>
+      <row>
+       <entry>8.2.0</entry>
+       <entry>
+        定数 <constant>DatePeriod::INCLUDE_END_DATE</constant>
+        が追加されました。
+       </entry>
+      </row>
       <row>
        <entry>7.2.19, 7.3.6, 7.4.0</entry>
        <entry>
@@ -188,6 +221,43 @@ foreach ($period as $date) {
 2012-07-15
 2012-07-22
 2012-07-29
+]]>
+    </screen>
+   </example>
+  </para>
+  <para>
+   <example>
+    <title>一年間に含まれる、月の最後の木曜日を全て表示する、DatePeriod の例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$begin = new DateTime('2021-12-31');
+$end = new DateTime('2022-12-31 23:59:59');
+
+$interval = DateInterval::createFromDateString('last thursday of next month');
+$period = new DatePeriod($begin, $interval, $end, DatePeriod::EXCLUDE_START_DATE);
+
+foreach ($period as $dt) {
+    echo $dt->format('l Y-m-d'), "\n";
+}
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+Thursday 2022-01-27
+Thursday 2022-02-24
+Thursday 2022-03-31
+Thursday 2022-04-28
+Thursday 2022-05-26
+Thursday 2022-06-30
+Thursday 2022-07-28
+Thursday 2022-08-25
+Thursday 2022-09-29
+Thursday 2022-10-27
+Thursday 2022-11-24
+Thursday 2022-12-29
 ]]>
     </screen>
    </example>
