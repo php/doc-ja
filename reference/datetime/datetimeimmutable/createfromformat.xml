@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 1a9ee818e554e116b4721d432c6d671e14281ea0 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: cd6c0433a8a64d507e0cf3728ac8d3e1d58b4346 Maintainer: takagi Status: ready -->
 <!-- Credits: mumumu -->
 
 <refentry xml:id="datetimeimmutable.createfromformat" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
@@ -69,6 +69,13 @@
       日付/時刻のパーサーのオーバーフローの仕組みが使われます。
       オーバーフローのふるまいについては、
       後にいくつかのサンプルを示します。
+     </para>
+     <para>
+      フォーマット文字に従ってパースされるデータは、
+      貪欲に行われます。
+      つまり、そのフォーマットが許している最大の長さまで読み進めます。
+      これによって、次のフォーマット文字に十分な文字数が <parameter>datetime</parameter> にもう残っていないことがありえます。
+      このことが引き起こす問題については、このページのサンプルでも触れます。
      </para>
      <para>
       <table>
@@ -656,6 +663,69 @@ array(4) {
 }
 ]]>
    </screen>
+  </example>
+
+  <example>
+   <title>貪欲なパースの振る舞い</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+print_r(date_parse_from_format('Gis', '60101'));
+?>
+]]>
+   </programlisting>
+   &example.outputs.similar;
+   <screen>
+<![CDATA[
+Array
+(
+    [year] =>
+    [month] =>
+    [day] =>
+    [hour] => 60
+    [minute] => 10
+    [second] => 0
+    [fraction] => 0
+    [warning_count] => 1
+    [warnings] => Array
+        (
+            [5] => The parsed time was invalid
+        )
+
+    [error_count] => 1
+    [errors] => Array
+        (
+            [4] => A two digit second could not be found
+        )
+
+    [is_localtime] =>
+)
+]]>
+   </screen>
+   <para>
+    フォーマット文字 <literal>G</literal> は、
+    24時間制での時間をパースします。
+    先頭のゼロを含んでいても、含まなくてもパースを行います。
+    このフォーマットは、1桁か2桁の数値が必要ですが、
+    2桁の数値が存在するので、ここでは貪欲に <literal>60</literal> を読み込みます。
+   </para>
+   <para>
+    その後に続く <literal>i</literal> と <literal>s</literal>
+    フォーマット文字は、両方2桁の数値が必要です。
+    つまり、<literal>10</literal> が (フォーマット文字 <literal>i</literal> の) 分として渡されるので、
+    (フォーマット文字 <literal>s</literal> の) 秒としてパースする十分な桁数が残っていません。
+   </para>
+   <para>
+    配列の <literal>errors</literal> キーの内容が、
+    この問題を説明しています。
+   </para>
+   <para>
+    さらに、24時間制の時は、
+    <literal>0</literal>-<literal>24</literal> の範囲であるため、
+    <literal>60</literal> は範囲外の値です。
+    よって、<literal>warnings</literal> キーに、
+    指定された時間が正しくない旨の警告が含まれています。
+   </para>
   </example>
 
  </refsect1>
