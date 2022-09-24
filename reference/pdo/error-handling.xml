@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: eae19eb5fe0f5bebcbce382ea7a505cedeb5a883 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 2310448005c14c0b296239ffacca1df44b2b2f6b Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa,shimooka -->
 
 <chapter xml:id="pdo.error-handling" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
@@ -89,16 +89,23 @@ $dsn = 'mysql:dbname=testdb;host=127.0.0.1';
 $user = 'dbuser';
 $password = 'dbpass';
 
-try {
-    $dbh = new PDO($dsn, $user, $password);
-    $dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    echo 'Connection failed: ' . $e->getMessage();
-}
+$dbh = new PDO($dsn, $user, $password);
+$dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-?>
+// (テーブルが存在しない場合) PDOException がスローされます
+$dbh->query("SELECT wrongcolumn FROM wrongtable");
 ]]>
    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+Fatal error: Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'testdb.wrongtable' doesn't exist in /tmp/pdo_test.php:10
+Stack trace:
+#0 /tmp/pdo_test.php(10): PDO->query('SELECT wrongcol...')
+#1 {main}
+  thrown in /tmp/pdo_test.php on line 10
+]]>
+    </screen>
   </example>
  </para>
  <note>
@@ -106,7 +113,7 @@ try {
    <methodname>PDO::__construct</methodname> は、接続に失敗した場合は常に
    <classname>PDOException</classname> をスローします。
    これは、現在設定されている <constant>PDO::ATTR_ERRMODE</constant>
-   が何であっても同じです。例外を処理しないと、fatal エラーとなります。
+   が何であっても同じです。
   </para>
  </note>
  <para>
@@ -119,27 +126,17 @@ $dsn = 'mysql:dbname=test;host=127.0.0.1';
 $user = 'googleguy';
 $password = 'googleguy';
 
-/*
-    ERRMODE を WARNING にした場合でも、コンストラクタを try/catch で囲むのは有効です。
-    接続に失敗した場合、ERRMODE が何であろうが PDO::__construct が PDOException をスローするからです。
-*/
-try {
-    $dbh = new PDO($dsn, $user, $password, array(PDO::ATTR_ERRMODE => PDO::ERRMODE_WARNING));
-} catch (PDOException $e) {
-    echo 'Connection failed: ' . $e->getMessage();
-    exit;
-}
+$dbh = new PDO($dsn, $user, $password, array(PDO::ATTR_ERRMODE => PDO::ERRMODE_WARNING));
 
-// このテーブルが存在しないとして、このコードを実行すると E_WARNING レベルのエラーになります。例外にはなりません。
+// (テーブルが存在しない場合) 例外をスローする代わりに、E_WARNING レベルのエラーが発生します
 $dbh->query("SELECT wrongcolumn FROM wrongtable");
-?>
 ]]>
    </programlisting>
     &example.outputs;
     <screen>
 <![CDATA[
 Warning: PDO::query(): SQLSTATE[42S02]: Base table or view not found: 1146 Table 'test.wrongtable' doesn't exist in
-/tmp/pdo_test.php on line 18
+/tmp/pdo_test.php on line 9
 ]]>
     </screen>
   </example>
