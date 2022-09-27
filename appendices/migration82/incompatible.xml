@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 65716f4761484e314ee86fa23493f00f7823ace1 Maintainer: mumumu Status: working -->
+<!-- EN-Revision: 65716f4761484e314ee86fa23493f00f7823ace1 Maintainer: mumumu Status: ready -->
 <sect1 xml:id="migration82.incompatible" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>下位互換性のない変更点</title>
 
@@ -8,13 +8,15 @@
   <title>Date</title>
 
   <para>
-   <methodname>DateTime::createFromImmutable</methodname> now has a tentative
-   return type of <type>static</type>, previously it was <type>DateTime</type>.
+   <methodname>DateTime::createFromImmutable</methodname> の仮(とりあえず)の戻り値の型が、
+   <type>static</type> になりました。
+   これより前のバージョンでは、<type>DateTime</type> でした。
   </para>
 
   <para>
-   <methodname>DateTimeImmutable::createFromMutable</methodname> now has a tentative
-   return type of <type>static</type>, previously it was <type>DateTimeImmutable</type>.
+   <methodname>DateTimeImmutable::createFromMutable</methodname> の仮の戻り値の型が、
+   <type>static</type> になりました。
+   これより前のバージョンでは、<type>DateTimeImmutable</type> でした。
   </para>
  </sect2>
 
@@ -22,12 +24,14 @@
   <title>ODBC</title>
 
   <para>
-   The ODBC extension now escapes the username and password for the case when
-   both a connection string and username/password are passed, and the string
-   must be appended to. Before, user values containing values needing escaping
-   could have created a malformed connection string, or injected values from
-   user-provided data. The escaping rules should be identical to the .NET BCL
-   DbConnectionOptions behaviour.
+   ODBC 拡張機能は、ユーザー名/パスワードと接続文字列が両方渡された場合に、
+   ユーザー名とパスワードをエスケープするようになりました。そして、
+   エスケープ済みのものを接続文字列と結合することが必須になりました。
+   これより前のバージョンでは、
+   エスケープする必要がある値が含まれたユーザー指定の文字列によって悪意ある接続文字列を生成されたり、
+   ユーザー指定の文字列を値に注入されてしまう可能性がありました。
+   このエスケープのルールは .NET BCL の DbConnectionOptions の振る舞いと同じです。
+   <!-- https://github.com/php/php-src/commit/2920a266364aef84df82cbb2b01b573705fa57ec -->
   </para>
  </sect2>
 
@@ -35,21 +39,21 @@
   <title>PDO_ODBC</title>
 
   <para>
-   The PDO_ODBC extension also escapes the username and password when a
-   connection string is passed. See the <link linkend="migration82.incompatible.odbc">change to the ODBC extension</link> for
-   further details.
+   PDO_ODBC 拡張機能は、接続文字列を渡した場合にユーザー名とパスワードをエスケープするようになりました。
+   詳細は <link linkend="migration82.incompatible.odbc">ODBC の変更点</link> を参照ください。
   </para>
  </sect2>
 
  <sect2 xml:id="migration82.incompatible.standard">
-  <title>Standard</title>
+  <title>標準ライブラリ</title>
 
   <para>
-   <function>glob</function> now returns an empty &array; if all paths are
-   restricted by <link linkend="ini.open-basedir">open_basedir</link>.
-   Previously it returned &false;.
-   Moreover, a warning is now emitted even if only some paths are restricted by
-   <link linkend="ini.open-basedir">open_basedir</link>.
+   <function>glob</function> は、
+   すべてのパスが <link linkend="ini.open-basedir">open_basedir</link> によって制限されている場合に、
+   空の配列を返すようになりました。
+   これより前のバージョンでは、&false; を返していました。
+   さらに、パスの一部が <link linkend="ini.open-basedir">open_basedir</link> によって制限されている場合でも、
+   警告が発生するようになっています。
   </para>
 
   <para>
@@ -61,23 +65,23 @@
    <function>lcfirst</function>,
    <function>ucfirst</function>,
    <function>ucwords</function>,
-   and <function>str_ireplace</function> are no longer locale-sensitive.
-   They now perform ASCII case conversion, as if the locale were "C".
-   Localized versions of these functions are available in the <link linkend="book.mbstring">MBString extension</link>.
-   Moreover, <function>array_change_key_case</function>, and sorting with
-   <constant>SORT_FLAG_CASE</constant> now also use ASCII case conversion.
+   <function>str_ireplace</function> は、ロケールに依存しなくなりました。
+   これらは、ロケールが "C" であったかのように ASCII のケース変換を行います。
+   これらの関数のロケール対応版は、<link linkend="book.mbstring">マルチバイト文字列</link> 関数で使えます。
+   さらに、<function>array_change_key_case</function> 関数を使った場合や、
+   <constant>SORT_FLAG_CASE</constant> を使ってソートを行った場合も、ASCII のケース変換を行います。
   </para>
 
   <para>
-   <function>str_split</function> returns an empty &array; for an empty &string; now.
-   Previously it returned an array with a single empty string entry.
-   <function>mb_str_split</function> is not affected by this change as it was
-   already behaving like that.
+   <function>str_split</function> は、空文字列を渡した場合に、空の配列を返すようになりました。
+   これより前のバージョンでは、空文字列の要素が一つ入った配列を返していました。
+   <function>mb_str_split</function> は、既に空の配列を返すため、影響を受けません。
   </para>
 
   <para>
-   <function>ksort</function> and <function>krsort</function> now do numeric string
-   comparison under <constant>SORT_REGULAR</constant> using the standard PHP 8 rules now.
+   <function>ksort</function> と <function>krsort</function> は、
+   <constant>SORT_REGULAR</constant> を使って数値文字列の比較を行う際に、
+   PHP 8 で標準になっているルールを使うようになりました。
   </para>
  </sect2>
 
@@ -85,7 +89,7 @@
   <title>Standard PHP Library (SPL)</title>
 
   <para>
-   The following methods now enforce their signature:
+   以下のメソッドは、シグネチャを強制するようになりました:
    <simplelist>
     <member><methodname>SplFileInfo::_bad_state_ex</methodname></member>
     <member><methodname>SplFileObject::getCsvControl</methodname></member>
@@ -97,22 +101,24 @@
   </para>
 
   <para>
-   <methodname>SplFileObject::hasChildren</methodname> now has a tentative
-   return type of <type>false</type>, previously it was <type>bool</type>.
+   <methodname>SplFileObject::hasChildren</methodname> の仮の戻り値の型が、
+   <type>false</type> になりました。
+   これより前のバージョンでは、<type>bool</type> でした。
   </para>
 
   <para>
-   <methodname>SplFileObject::getChildren</methodname> now has a tentative
-   return type of <type>null</type>, previously it was
-   <type class="union"><type>RecursiveIterator</type><type>null</type></type>.
+   <methodname>SplFileObject::getChildren</methodname> の仮の戻り値の型が、
+   <type>null</type> になりました。
+   これより前のバージョンでは、<type class="union"><type>RecursiveIterator</type><type>null</type></type> でした。
   </para>
 
   <para>
-   <classname>GlobIterator</classname> now returns an empty &array; if all
-   paths are restricted by <link linkend="ini.open-basedir">open_basedir</link>.
-   Previously it returned &false;.
-   Moreover, a warning is now emitted even if only some paths are restricted by
-   <link linkend="ini.open-basedir">open_basedir</link>.
+   <classname>GlobIterator</classname> は、
+   すべてのパスが <link linkend="ini.open-basedir">open_basedir</link> によって制限されている場合に、
+   空の配列を返すようになりました。
+   これより前のバージョンでは、&false; を返していました。
+   さらに、パスの一部が <link linkend="ini.open-basedir">open_basedir</link> によって制限されている場合でも、
+   警告が発生するようになっています。
   </para>
  </sect2>
 
