@@ -16,3 +16,6 @@
 - unserialize
   * アンシリアライズ ( [#21](https://github.com/php/doc-ja/issues/21) )
     - 「デシリアライズ」や「アンマーシャリング」にはしない
+- nullable
+  * nullable のままにする。訳さない。
+    - null を受け入れる何か、という意味だが、PHP マニュアル日本語版では「訳さない」で統一。
