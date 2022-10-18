@@ -19,3 +19,9 @@
 - nullable
   * nullable のままにする。訳さない。
     - null を受け入れる何か、という意味だが、PHP マニュアル日本語版では「訳さない」で統一。
+- serialize
+  * シリアライズ / シリアル化
+    - 「マーシャリング」にはしないこと
+- メソッドや変数に付ける static
+  * static メソッド / static 変数 とする ( [#45](https://github.com/php/doc-ja/issues/45 ), [#46](https://github.com/php/doc-ja/issues/46) )
+    - 静的変数や静的メソッドなどとはしない
