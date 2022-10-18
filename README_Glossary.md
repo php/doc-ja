@@ -11,6 +11,7 @@
 - coercive mode
   * 自動変換モード
     - strict モードと対になるモード
+    - strict モードの対比の文脈で、coercive を「強制する」と訳さない
 - language construct
   * 言語構造
 - unserialize
