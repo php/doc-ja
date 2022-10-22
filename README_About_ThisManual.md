@@ -25,7 +25,7 @@ PHPマニュアルは 長らく [Subversion](http://subversion.apache.org/) で�
 
 修正内容はコードで語りたい、という方は、github がお勧めです。2020年12月末から、PHPマニュアル は git で管理されるようになり、github 経由でもバグ報告を行うことが可能になりました。
 
-報告のやり方は、 [github の README.md](https://github.com/php/doc-ja/blob/master/README.md) を参照して下さい。  
+報告のやり方は、 [github の CONTRIBUTING.md](https://github.com/php/doc-ja/blob/master/CONTRIBUTING.md) を参照して下さい。  
 リポジトリそのものは、下記にあります。
 
 https://github.com/php/doc-ja
@@ -42,10 +42,7 @@ https://github.com/php/doc-ja
 
 [日本 PHP ユーザー会](http://www.php.gr.jp) では [php-doc ML](http://ml.php.gr.jp/mailman/listinfo/php-doc) というメーリングリストをホストしており、ここを通じて PHPマニュアルに関する問い合わせや間違いの指摘などを受け付けています。ここで頂く多くの情報が、PHP マニュアル 日本語版の質の向上に大きく寄与していることは言うまでもありませんし、初期の頃からの多くの方々の協力によって現在のマニュアルは存在し、かつ維持されています。
 
-### 4. bugs.php.net
-
-[PHP のバグトラッカー](http://bugs.php.net/) で Documentation Problem と記して英語でバグ報告をするのもアリです。
-とはいえ、インターフェイスが英語で、英語版のメンテナも見ているものなので、英語で報告するのが望ましいのが弱点です。
+但し、現在は過疎っているのであまりお勧めできません...
 
 ## PHP マニュアル の様々なフォーマット
 
