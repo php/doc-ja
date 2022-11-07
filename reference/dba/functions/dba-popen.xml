@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: b95d28e6ec86e4a71e012737d36ebdc1cf009180 Maintainer: hirokawa Status: ready -->
-<!-- CREDITS: takagi -->
+<!-- EN-Revision: 9264401165d31437c4afd80ec936f775ae23d367 Maintainer: mumumu Status: ready -->
 <refentry xml:id="function.dba-popen" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>dba_popen</refname>
@@ -13,8 +12,10 @@
    <type class="union"><type>resource</type><type>false</type></type><methodname>dba_popen</methodname>
    <methodparam><type>string</type><parameter>path</parameter></methodparam>
    <methodparam><type>string</type><parameter>mode</parameter></methodparam>
-   <methodparam choice="opt"><type>string</type><parameter>handler</parameter></methodparam>
-   <methodparam rep="repeat"><type>mixed</type><parameter>args</parameter></methodparam>
+   <methodparam choice="opt"><type class="union"><type>string</type><type>null</type></type><parameter>handler</parameter><initializer>&null;</initializer></methodparam>
+   <methodparam choice="opt"><type>int</type><parameter>permission</parameter><initializer>0644</initializer></methodparam>
+   <methodparam choice="opt"><type>int</type><parameter>map_size</parameter><initializer>0</initializer></methodparam>
+   <methodparam choice="opt"><type class="union"><type>int</type><type>null</type></type><parameter>flags</parameter><initializer>&null;</initializer></methodparam>
   </methodsynopsis>
   <para>
    <function>dba_popen</function> は、<parameter>handler</parameter>
@@ -22,6 +23,7 @@
    に持続的なデータベースインスタンスを確立します。
   </para>
  </refsect1>
+
  <refsect1 role="parameters">
   &reftitle.parameters;
   <para>
@@ -54,46 +56,110 @@
        <link linkend="dba.requirements">ハンドラ</link>の名前。
        <function>dba_popen</function> に指定したすべてのオプションが
        渡され、その機能を用いることができます。
+       <parameter>handler</parameter> が &null; の場合、
+       デフォルトのハンドラが使われます。
       </para>
      </listitem>
     </varlistentry>
     <varlistentry>
-     <term><parameter>args</parameter></term>
+     <term><parameter>permission</parameter></term>
      <listitem>
       <para>
-       ドライバに渡すオプションの文字列の引数
-      </para>
-      <para>
-       <literal>cdb</literal>, <literal>cdb_make</literal>, <literal>flatfile</literal>,
-       <literal>inifile</literal>, <literal>qdbm</literal> および <literal>tcadb</literal> ドライバは
-       追加の引数をサポートしていません。
+       ドライバに渡されるオプションの整数パラメータ。
+       <function>chmod</function> の
+       <parameter>permissions</parameter> を同じ意味です。
+       デフォルトは <literal>0644</literal> です。
       </para>
       <para>
        <literal>db1</literal>, <literal>db2</literal>, <literal>db3</literal>,
        <literal>db4</literal>, <literal>dbm</literal>, <literal>gdbm</literal>,
-       および <literal>ndbm</literal> ドライバは
-       追加の引数 <literal>$filemode</literal> をサポートします。
-       これは、<function>chmod</function> の <literal>$mode</literal> と同じ意味です。
-       デフォルトは <literal>0644</literal> です。
+       <literal>ndbm</literal>, <literal>lmdb</literal>ドライバが
+       <parameter>permission</parameter> パラメータをサポートしています。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>map_size</parameter></term>
+     <listitem>
+      <para>
+       ドライバに渡されるオプションの整数パラメータ。
+       OS のページサイズの倍数を指定すべきです。
+       ゼロを指定すると、デフォルトのマップサイズが使われます。
       </para>
       <para>
-       <literal>lmdb</literal> ドライバは追加の引数をふたつサポートします。
-       最初の引数は <literal>$filemode</literal> (上の説明を見て下さい) で、
-       ふたつめは OS のページサイズを指定する <literal>$mapsize</literal> で、
-       デフォルト値を使うには0を指定します。
-       <literal>$mapsize</literal> は PHP 7.3.14 と 7.4.2 以降でサポートされています。
+       <literal>lmdb</literal> ドライバだけが
+       <parameter>map_size</parameter> パラメータを受け入れます。
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>flags</parameter></term>
+     <listitem>
+      <para>
+       データベースドライバに渡すフラグ。
+       現状、LMDB ドライバだけが
+       <constant>DBA_LMDB_USE_SUB_DIR</constant> と
+       <constant>DBA_LMDB_NO_SUB_DIR</constant> をサポートしています。
       </para>
      </listitem>
     </varlistentry>
    </variablelist>
   </para>
  </refsect1>
+
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
-   成功した場合に正のハンドル、&return.falseforfailure;。
+   成功した場合に正のハンドルを返します。
+   &return.falseforfailure;。
   </para>
  </refsect1>
+
+ <refsect1 role="errors">
+  &reftitle.errors;
+  <para>
+   <parameter>handler</parameter>
+   に &null; が指定されているのにデフォルトのハンドラが存在しない場合、
+   <constant>E_WARNING</constant> レベルのエラーが発生し、
+   &false; が返されます。
+  </para>
+ </refsect1>
+
+ <refsect1 role="changelog">
+  &reftitle.changelog;
+  <informaltable>
+   <tgroup cols="2">
+    <thead>
+     <row>
+      <entry>&Version;</entry>
+      <entry>&Description;</entry>
+     </row>
+    </thead>
+    <tbody>
+     <row>
+      <entry>8.2.0</entry>
+      <entry>
+       <parameter>flags</parameter> が追加されました。
+      </entry>
+     </row>
+     <row>
+      <entry>8.1.0</entry>
+      <entry>
+       <parameter>handler</parameter> は、nullable になりました。
+      </entry>
+     </row>
+     <row>
+      <entry>7.3.14, 7.4.2</entry>
+      <entry>
+       <literal>lmdb</literal> ドライバは、
+       <parameter>map_size</parameter> パラメータを追加でサポートしました。
+      </entry>
+     </row>
+    </tbody>
+   </tgroup>
+  </informaltable>
+ </refsect1>
+
  <refsect1 role="seealso">
   &reftitle.seealso;
   <para>
@@ -104,7 +170,6 @@
   </para>
  </refsect1>
 </refentry>
-
 <!-- Keep this comment at the end of the file
 Local variables:
 mode: sgml
