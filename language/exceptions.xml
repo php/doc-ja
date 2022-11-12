@@ -1,237 +1,57 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 2e8ef0a1bd98243cb2c6c5c627a195bb53a7a440 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 491a7cc9cddf1e20cda76b16226d0bc020402476 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi,mumumu -->
 
-<chapter xml:id="language.exceptions" xmlns="http://docbook.org/ns/docbook">
+<chapter xml:id="language.exceptions" xmlns:phd="http://www.php.net/ns/phd">
+ <!-- we use our own DTD instead of xmlns="http://docbook.org/ns/docbook" so that we can use
+ <sect1 phd:chunk="false"> -->
  <title>例外(exceptions)</title>
-   
- <sect1 xml:id="language.exceptions.extending">
-  <title>例外を拡張する</title>
   <para>
-   組み込みの Exception クラスを拡張することで、例外クラスをユーザーが
-   定義することが可能です。以下のメンバーおよびプロパティは、
-   組み込みの Exception クラスから派生した子クラスの中でアクセス可能です。
+   PHP は、他のプログラミング言語に似た例外モデルを持っています。
+   PHP 内で例外が投げられ (&throw; され)、それが
+   捕捉され (&catch; され) ます。発生した例外を
+   捕捉するには、コードを &try; ブロックで囲みます。
+   各 &try; ブロックには、対応する &catch;
+   ブロックあるいは &finally; ブロックが存在する必要があります。
   </para>
-  <example>
-   <title>例外クラスを構築する</title>
-   <programlisting role="php">
-<![CDATA[
-<?php
-class Exception implements Throwable
-{
-    protected $message = 'Unknown exception';   // exception message
-    private   $string;                          // __toString cache
-    protected $code = 0;                        // user defined exception code
-    protected $file;                            // source filename of exception
-    protected $line;                            // source line of exception
-    private   $trace;                           // backtrace
-    private   $previous;                        // previous exception if nested exception
-
-    public function __construct($message = '', $code = 0, Throwable $previous = null);
-
-    final private function __clone();           // Inhibits cloning of exceptions.
-
-    final public  function getMessage();        // message of exception
-    final public  function getCode();           // code of exception
-    final public  function getFile();           // source filename
-    final public  function getLine();           // source line
-    final public  function getTrace();          // an array of the backtrace()
-    final public  function getPrevious();       // previous exception
-    final public  function getTraceAsString();  // formatted string of trace
-
-    // Overrideable
-    public function __toString();               // formatted string for display
-}
-?>
-]]>
-   </programlisting>
-  </example>
   <para>
-   クラスが、組み込みの Exception クラスを拡張し、
-   <link linkend="language.oop5.decon">コンストラクタ</link>を再定義した場合、
-   全ての利用可能なデータが正しく代入されることを保証するために
-   <link linkend="language.oop5.paamayim-nekudotayim">
-    parent::__construct()</link> もコールすることが強く推奨されます。
-   <link linkend="language.oop5.magic">__toString()</link> メソッドは、
-   オブジェクトが文字列として表された際に独自の出力を行うために
-   上書きすることができます。
+   例外がスローされ、現在の関数スコープに &catch; ブロックがなかった場合、
+   その例外は、マッチする &catch;
+   ブロックが見つかるまで関数のコールスタックを "遡って" いきます。
+   その途中で見つかった全ての &finally; ブロックが実行されます。
+   グローバルスコープに遡るまで全てのコールスタックを探しても、
+   マッチする &catch; ブロックが見つからない場合は、
+   グローバルな例外ハンドラが設定されていない限り fatal error となり、
+   プログラムが終了します。
   </para>
-   <note>
-    <para>
-     例外を複製することはできません。Exception を <link
-     linkend="language.oop5.cloning">clone</link> しようとすると
-     致命的な <constant>E_ERROR</constant> エラーが発生します。
-    </para>
-   </note>
-  <example>
-   <title>例外クラスの拡張</title>
-   <programlisting role="php">
-<![CDATA[
-<?php
-/**
- * カスタム例外クラスを定義する
- */
-class MyException extends Exception
-{
-    // 例外を再定義し、メッセージをオプションではなくする
-    public function __construct($message, $code = 0, Throwable $previous = null) {
-        // なんらかのコード
-    
-        // 全てを正しく確実に代入する
-        parent::__construct($message, $code, $previous);
-    }
+  <para>
+   スローされるオブジェクトは、
+   <interfacename>Throwable</interfacename> のインスタンスでなければなりません。
+   それ以外のオブジェクトをスローしようとすると
+   PHP の fatal error が発生します。
+  </para>
+  <para>
+   PHP 8.0.0 以降では、&throw; キーワードは式として扱えるようになり、
+   様々なコンテクストで使えるようになりました。
+   これより前のバージョンでは、&throw; は文であり、
+   それが現れる行でだけでしか使えませんでした。
+  </para>
 
-    // オブジェクトの文字列表現を独自に定義する
-    public function __toString() {
-        return __CLASS__ . ": [{$this->code}]: {$this->message}\n";
-    }
-
-    public function customFunction() {
-        echo "A Custom function for this type of exception\n";
-    }
-}
-
-
-/**
- * 例外をテストするためのクラスを作成
- */
-class TestException
-{
-    public $var;
-
-    const THROW_NONE    = 0;
-    const THROW_CUSTOM  = 1;
-    const THROW_DEFAULT = 2;
-
-    function __construct($avalue = self::THROW_NONE) {
-
-        switch ($avalue) {
-            case self::THROW_CUSTOM:
-                // カスタム例外を投げる
-                throw new MyException('1 is an invalid parameter', 5);
-                break;
-
-            case self::THROW_DEFAULT:
-                // デフォルト例外を投げる
-                throw new Exception('2 is not allowed as a parameter', 6);
-                break;
-
-            default: 
-                // 例外なし。オブジェクトが生成される
-                $this->var = $avalue;
-                break;
-        }
-    }
-}
-
-
-// 例1
-try {
-    $o = new TestException(TestException::THROW_CUSTOM);
-} catch (MyException $e) {      // Will be caught
-    echo "Caught my exception\n", $e;
-    $e->customFunction();
-} catch (Exception $e) {        // Skipped
-    echo "Caught Default Exception\n", $e;
-}
-
-// 実行を継続する
-var_dump($o); // Null
-echo "\n\n";
-
-
-// 例2
-try {
-    $o = new TestException(TestException::THROW_DEFAULT);
-} catch (MyException $e) {      // この型にはマッチしない
-    echo "Caught my exception\n", $e;
-    $e->customFunction();
-} catch (Exception $e) {        // キャッチされる
-    echo "Caught Default Exception\n", $e;
-}
-
-// 実行を継続する
-var_dump($o); // Null
-echo "\n\n";
-
-
-// 例3
-try {
-    $o = new TestException(TestException::THROW_CUSTOM);
-} catch (Exception $e) {        // キャッチされる
-    echo "Default Exception caught\n", $e;
-}
-
-// 実行を継続する
-var_dump($o); // Null
-echo "\n\n";
-
-
-// 例4
-try {
-    $o = new TestException();
-} catch (Exception $e) {        // スキップされる、例外なし
-    echo "Default Exception caught\n", $e;
-}
-
-// 実行を継続する
-var_dump($o); // TestException
-echo "\n\n";
-?>
-]]>
-    </programlisting>
-   </example>
-  </sect1>
-
-  <simplesect xml:id="language.exceptions.introduction">
-   <para>
-    PHP は、他のプログラミング言語に似た例外モデルを有しています。
-    PHP 内で例外が投げられ (&throw; され)、それが
-    捕捉され (&catch; され) ます。発生した例外を
-    捕捉するには、コードを &try; ブロックで囲みます。
-    各 &try; ブロックには、対応する &catch;
-    ブロックあるいは &finally; ブロックが存在する必要があります。
-   </para>
-   <para>
-    例外がスローされ、現在の関数スコープに &catch; ブロックがなかった場合、
-    その例外は、マッチする &catch;
-    ブロックが見つかるまで関数のコールスタックを "遡って" いきます。
-    その途中で見つかった全ての &finally; ブロックが実行されます。
-    グローバルスコープに遡るまで全てのコールスタックを探しても、
-    マッチする &catch; ブロックが見つからない場合は、
-    グローバルな例外ハンドラが設定されていない限り Fatal Error となり、
-    プログラムが終了します。
-   </para>
-   <para>
-    スローされるオブジェクトは、<classname>Exception</classname> クラスあるいは
-    <classname>Exception</classname> のサブクラスのインスタンスでなければなりません。
-    それ以外のオブジェクトをスローしようとすると
-    PHP の Fatal Error が発生します。
-   </para>
-   <para>
-    PHP 8.0.0 以降では、&throw; キーワードは式として扱えるようになり、
-    様々なコンテクストで使えるようになりました。
-    これより前のバージョンでは、&throw; は文であり、
-    それが現れる行でだけでしか使えませんでした。
-   </para>
-
-  </simplesect>
-
-  <simplesect xml:id="language.exceptions.catch">
+  <sect1 phd:chunk="false" xml:id="language.exceptions.catch">
    <title><literal>catch</literal></title>
    <para>
     &catch; ブロックは、スローされた例外にどのように反応するかを定義します。
     &catch; ブロックは、扱えるひとつ以上の例外またはエラー型を定義します。
     そして、オプションで例外を代入できる変数も定義できます。
-    (PHP 8.0.0 より前のバージョンでは、この変数定義は必須です)
+    (PHP 8.0.0 より前のバージョンでは、この変数定義は必須でした)
     スローされた例外またはエラーにマッチする最初の &catch;
     ブロックが、そのオブジェクトを処理します。
    </para>
    <para>
     さまざまな型の例外を捕捉するために
     複数の &catch; ブロックを使用することができます。
-    通常の実行時 (&try; ブロック内で例外が投げられなかった
+    通常の実行時 (&try; ブロック内で例外がスローされなかった
     場合) は、&catch;
     ブロック内は処理されず、それ以降から処理が続けられます。
     &catch; ブロックの中から例外を &throw; する
@@ -239,11 +59,11 @@ echo "\n\n";
     &throw; し直さない場合、その &catch; ブロックの後から処理が続けられます。
    </para>
    <para>
-    例外が投げられた場合、その命令に続くコードは実行されず、
+    例外がスローされた場合、その命令に続くコードは実行されず、
     PHP は最初にマッチする &catch; ブロックを探します。
     例外が捕捉されない場合、PHP は "<literal>Uncaught Exception ...</literal>"
     というメッセージとともに
-    致命的なエラー(fatal error)を発行します。
+    致命的なエラー(fatal error)を発生させます。
     ただし、<function>set_exception_handler</function> でハンドラが
     定義されている場合を除きます。
    </para>
@@ -255,7 +75,19 @@ echo "\n\n";
    <para>
     PHP 8.0.0 以降では、キャッチされた例外に対応する変数はオプションになりました。
     指定されない場合、&catch; ブロックは実行されるものの、
-    投げられたオブジェクトへアクセスすることは出来ません。
+    スローされたオブジェクトへアクセスすることは出来ません。
+   </para>
+  </sect1>
+
+  <sect1 phd:chunk="false" xml:id="language.exceptions.finally">
+   <title><literal>finally</literal></title>
+   <para>
+    &catch; ブロックの後、または &catch; ブロックの代わりに、
+    &finally; ブロックも指定できます。
+    &finally; ブロックの中に書いたコードは、
+    &try; および &catch; ブロックの後で、
+    かつ通常のコードの実行が再開される前に常に実行されます。
+    例外がスローされたかどうかは関係ありません。
    </para>
    <para>
     &finally; ブロックと &return; 文の間には注意すべき相互作用があります。
@@ -266,20 +98,10 @@ echo "\n\n";
     さらに、&finally; ブロックにも &return; 文が存在した場合は、
     &finally; ブロックから値が返されます。
    </para>
-  </simplesect>
-  <simplesect xml:id="language.exceptions.finally">
-   <title><literal>finally</literal></title>
-   <para>
-    &catch; ブロックの後に
-    &finally; ブロックも指定できます。
-    &finally; ブロックの中に書いたコードは、
-    &try; および &catch; ブロックの後で常に実行されます。
-    例外がスローされたかどうかは関係ありません。
-   </para>
-  </simplesect>
+  </sect1>
 
- <simplesect xml:id="language.exceptions.exception-handler">
-  <title><literal>グローバルな例外ハンドラ</literal></title>
+ <sect1 phd:chunk="false" xml:id="language.exceptions.exception-handler">
+  <title>グローバルな例外ハンドラ</title>
   <para>
    例外がグローバルスコープにまで遡った場合、
    設定されていれば、グローバルな例外ハンドラがそれをキャッチすることができます。
@@ -288,15 +110,15 @@ echo "\n\n";
    <function>set_exception_handler</function> 関数で設定できます。
    その効果は、プログラム全体を &try;-&catch; ブロックで囲むことと同じです。
   </para>
- </simplesect>
+ </sect1>
 
- <simplesect xml:id="language.exceptions.notes">
+ <sect1 phd:chunk="false" xml:id="language.exceptions.notes">
    &reftitle.notes;
 
    <note>
     <para>
      PHP の内部関数の多くは
-     <link linkend="ini.error-reporting">エラー報告</link>
+     <link linkend="ini.error-reporting">エラー報告(error_reporting)</link>
      を使っており、例外を使っているのは新しい
      <link linkend="language.oop5">オブジェクト指向</link>
      の拡張モジュールのみです。
@@ -322,22 +144,22 @@ set_error_handler('exceptions_error_handler');
    <tip>
     <para>
      <link linkend="intro.spl">Standard PHP Library (SPL)</link>
-     には<link linkend="spl.exceptions">組み込みの例外</link>が数多く用意されています。
+     には <link linkend="spl.exceptions">組み込みの例外</link> が数多く用意されています。
     </para>
    </tip>
-  </simplesect>
+ </sect1>
 
-  <simplesect xml:id="language.exceptions.examples">
+  <sect1 phd:chunk="false" xml:id="language.exceptions.examples">
    &reftitle.examples;
 
    <example>
-    <title>例外を投げるには</title>
+    <title>例外をスローする</title>
     <programlisting role="php">
 <![CDATA[
 <?php
 function inverse($x) {
     if (!$x) {
-        throw new Exception('ゼロによる除算。');
+        throw new Exception('Division by zero.');
     }
     return 1/$x;
 }
@@ -346,10 +168,10 @@ try {
     echo inverse(5) . "\n";
     echo inverse(0) . "\n";
 } catch (Exception $e) {
-    echo '捕捉した例外: ',  $e->getMessage(), "\n";
+    echo 'Caught exception: ',  $e->getMessage(), "\n";
 }
 
-// 実行は継続される
+// Continue execution
 echo "Hello World\n";
 ?>
 ]]>
@@ -358,19 +180,20 @@ echo "Hello World\n";
     <screen>
 <![CDATA[
 0.2
-捕捉した例外: ゼロによる除算。
+Caught exception: Division by zero.
 Hello World
 ]]>
     </screen>
    </example>
    <example>
     <title>例外処理での &finally; ブロック</title>
+   
     <programlisting role="php">
 <![CDATA[
 <?php
 function inverse($x) {
     if (!$x) {
-        throw new Exception('ゼロによる除算。');
+        throw new Exception('Division by zero.');
     }
     return 1/$x;
 }
@@ -378,7 +201,7 @@ function inverse($x) {
 try {
     echo inverse(5) . "\n";
 } catch (Exception $e) {
-    echo '捕捉した例外: ',  $e->getMessage(), "\n";
+    echo 'Caught exception: ',  $e->getMessage(), "\n";
 } finally {
     echo "First finally.\n";
 }
@@ -386,12 +209,12 @@ try {
 try {
     echo inverse(0) . "\n";
 } catch (Exception $e) {
-    echo '捕捉した例外: ',  $e->getMessage(), "\n";
+    echo 'Caught exception: ',  $e->getMessage(), "\n";
 } finally {
     echo "Second finally.\n";
 }
 
-// 処理を続行します
+// Continue execution
 echo "Hello World\n";
 ?>
 ]]>
@@ -401,7 +224,7 @@ echo "Hello World\n";
 <![CDATA[
 0.2
 First finally.
-捕捉した例外: ゼロによる除算。
+Caught exception: Division by zero.
 Second finally.
 Hello World
 ]]>
@@ -448,7 +271,7 @@ class Test {
             try {
                 throw new MyException('foo!');
             } catch (MyException $e) {
-                // 改めてスロー
+                // rethrow it
                 throw $e;
             }
         } catch (Exception $e) {
@@ -547,7 +370,185 @@ try {
 ]]>
     </programlisting>
    </example>
-  </simplesect>
+  </sect1>
+
+ <sect1 xml:id="language.exceptions.extending">
+  <title>例外を拡張する</title>
+  <para>
+   組み込みの Exception クラスを拡張することで、例外クラスをユーザーが
+   定義することが可能です。以下のメンバーおよびプロパティは、
+   組み込みの Exception クラスから派生した子クラスの中でアクセス可能です。
+  </para>
+  <example>
+   <title>組み込みの例外クラス</title>
+   <programlisting role="php">
+    <![CDATA[
+<?php
+class Exception implements Throwable
+{
+    protected $message = 'Unknown exception';   // exception message
+    private   $string;                          // __toString cache
+    protected $code = 0;                        // user defined exception code
+    protected $file;                            // source filename of exception
+    protected $line;                            // source line of exception
+    private   $trace;                           // backtrace
+    private   $previous;                        // previous exception if nested exception
+
+    public function __construct($message = '', $code = 0, Throwable $previous = null);
+
+    final private function __clone();           // Inhibits cloning of exceptions.
+
+    final public  function getMessage();        // message of exception
+    final public  function getCode();           // code of exception
+    final public  function getFile();           // source filename
+    final public  function getLine();           // source line
+    final public  function getTrace();          // an array of the backtrace()
+    final public  function getPrevious();       // previous exception
+    final public  function getTraceAsString();  // formatted string of trace
+
+    // Overrideable
+    public function __toString();               // formatted string for display
+}
+?>
+]]>
+   </programlisting>
+  </example>
+  <para>
+   クラスが、組み込みの Exception クラスを拡張し、
+   <link linkend="language.oop5.decon">コンストラクタ</link>を再定義した場合、
+   全ての利用可能なデータが正しく代入されることを保証するために
+   <link linkend="language.oop5.paamayim-nekudotayim">
+    parent::__construct()</link> もコールすることが強く推奨されます。
+   <link linkend="language.oop5.magic">__toString()</link> メソッドは、
+   オブジェクトが文字列として表された際に独自の出力を行うために
+   上書きすることができます。
+  </para>
+  <note>
+   <para>
+    例外を複製することはできません。Exception を <link
+    linkend="language.oop5.cloning">clone</link> しようとすると
+    致命的な <constant>E_ERROR</constant> エラーが発生します。
+   </para>
+  </note>
+  <example>
+   <title>例外クラスを拡張する</title>
+   <programlisting role="php">
+    <![CDATA[
+<?php
+/**
+ * Define a custom exception class
+ */
+class MyException extends Exception
+{
+    // Redefine the exception so message isn't optional
+    public function __construct($message, $code = 0, Throwable $previous = null) {
+        // some code
+
+        // make sure everything is assigned properly
+        parent::__construct($message, $code, $previous);
+    }
+
+    // custom string representation of object
+    public function __toString() {
+        return __CLASS__ . ": [{$this->code}]: {$this->message}\n";
+    }
+
+    public function customFunction() {
+        echo "A custom function for this type of exception\n";
+    }
+}
+
+
+/**
+ * Create a class to test the exception
+ */
+class TestException
+{
+    public $var;
+
+    const THROW_NONE    = 0;
+    const THROW_CUSTOM  = 1;
+    const THROW_DEFAULT = 2;
+
+    function __construct($avalue = self::THROW_NONE) {
+
+        switch ($avalue) {
+            case self::THROW_CUSTOM:
+                // throw custom exception
+                throw new MyException('1 is an invalid parameter', 5);
+                break;
+
+            case self::THROW_DEFAULT:
+                // throw default one.
+                throw new Exception('2 is not allowed as a parameter', 6);
+                break;
+
+            default:
+                // No exception, object will be created.
+                $this->var = $avalue;
+                break;
+        }
+    }
+}
+
+
+// Example 1
+try {
+    $o = new TestException(TestException::THROW_CUSTOM);
+} catch (MyException $e) {      // Will be caught
+    echo "Caught my exception\n", $e;
+    $e->customFunction();
+} catch (Exception $e) {        // Skipped
+    echo "Caught Default Exception\n", $e;
+}
+
+// Continue execution
+var_dump($o); // Null
+echo "\n\n";
+
+
+// Example 2
+try {
+    $o = new TestException(TestException::THROW_DEFAULT);
+} catch (MyException $e) {      // Doesn't match this type
+    echo "Caught my exception\n", $e;
+    $e->customFunction();
+} catch (Exception $e) {        // Will be caught
+    echo "Caught Default Exception\n", $e;
+}
+
+// Continue execution
+var_dump($o); // Null
+echo "\n\n";
+
+
+// Example 3
+try {
+    $o = new TestException(TestException::THROW_CUSTOM);
+} catch (Exception $e) {        // Will be caught
+    echo "Default Exception caught\n", $e;
+}
+
+// Continue execution
+var_dump($o); // Null
+echo "\n\n";
+
+
+// Example 4
+try {
+    $o = new TestException();
+} catch (Exception $e) {        // Skipped, no exception
+    echo "Default Exception caught\n", $e;
+}
+
+// Continue execution
+var_dump($o); // TestException
+echo "\n\n";
+?>
+]]>
+   </programlisting>
+  </example>
+ </sect1>
 
  </chapter>
  
