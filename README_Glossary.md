@@ -33,6 +33,10 @@
 - userland
   * 関数の文脈では、「PHP でユーザーが使える」関数
     - ユーザーに公開されている関数、ということ
+- Standard
+  * 移行ガイドの文脈での Standard は「標準ライブラリ」で統一する
+    - php-src で言うところの ext/standard に入っている関数全てを指す
+    - Standard PHP Librady (SPL) は別にあるが、「標準ライブラリ」でいいことにする
 - throw Exception
   * 例外をスローする
     - 例外を「投げる」とはしない
