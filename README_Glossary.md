@@ -41,3 +41,15 @@
   * 例外をスローする
     - 例外を「投げる」とはしない
     - Throwable を throw するという文脈ではすべてこれに統一する
+- parameters / arguments
+  * パラメータ / 引数
+    - 以下の2つは明示的に区別されるべきである
+      * 「関数やメソッドを呼び出す時に渡す arguments(引数)」
+      * 「関数やメソッドに渡すべき値の仕様としての parameters(パラメータ)」は区別されるべき
+
+```php
+// $parameters はパラメータ
+function test($parameters = array()) {}
+// [1234] は引数
+test([1234]);
+```
