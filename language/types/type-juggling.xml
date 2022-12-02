@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: f32703dce3d941dd6add101551a6c9f126d8eaa0 Maintainer: mumumu Status: ready -->
+<!-- EN-Revision: 854be2fbf0779efbe5d78ccd2229814fe0a31365 Maintainer: mumumu Status: ready -->
 <sect1 xml:id="language.types.type-juggling">
  <title>型の相互変換</title>
 
@@ -89,6 +89,10 @@
 
   <simpara>
    値は文字列として解釈されます。
+   文字列として解釈できない場合、
+   <classname>TypeError</classname> がスローされます。
+   PHP 7.4.0 より前のバージョンでは、
+   <constant>E_RECOVERABLE_ERROR</constant> が発生していました。
   </simpara>
  </sect2>
 
@@ -144,7 +148,7 @@
   </simpara>
  </sect2>
 
- <sect2>
+ <sect2 xml:id="language.types.type-juggling.function">
   <title>関数のコンテクスト</title>
 
   <simpara>
@@ -153,9 +157,27 @@
   </simpara>
 
   <para>
-   型の自動変換(coercive) モードが有効な場合(デフォルト) には、
-   スカラー型の値だけが別のスカラー型に変換される可能性があります。
-   単一の型が宣言されている場合の振る舞いは、以下のとおりです:
+   このコンテクストでは、値はその型の値でなければなりません。
+   これにはふたつ例外があります。
+   ひとつめは値の型が <type>int</type> で、
+   宣言されている型が <type>float</type> の場合、
+   整数が浮動小数点に変換されることです。
+   ふたつめは値と宣言されている型が
+   <emphasis>スカラー型</emphasis> で、
+   かつ型の自動変換モードが有効な場合(デフォルト)、
+   スカラー型の値だけが別のスカラー型に変換される可能性があることです。
+   この振る舞いに関する詳細は、以下を参照ください:
+  </para>
+
+  <warning>
+   <simpara>
+    <link linkend="functions.internal">内部関数</link> は、&null; を自動的にスカラー型に変換します。
+    この振る舞いは PHP 8.1.0 以降は <emphasis>推奨されなくなっています</emphasis>。
+   </simpara>
+  </warning>
+
+  <sect3 xml:id="language.types.type-juggling.function.simple">
+   <title>単一の型宣言における、型の自動変換</title>
    <itemizedlist>
     <listitem>
      <simpara>
@@ -178,17 +200,94 @@
      </simpara>
     </listitem>
    </itemizedlist>
+  </sect3>
 
-   型が union として宣言されている場合については、
-   <link linkend="language.types.declarations.union.coercive">union 型と型の自動変換</link> を参照ください。
-  </para>
+  <sect3 xml:id="language.types.type-juggling.function.union">
+   <title>union 型と型の自動変換</title>
+   <para>
+    <literal>strict_types</literal> が有効になっていない場合、
+    スカラー型の宣言は、限られた暗黙の型変換が行われます。
+    値の正確な型が union の一部に指定されていない場合、
+    次の順に対象となる型が選択されます:
 
-  <warning>
-   <simpara>
-    <link linkend="functions.internal">内部関数</link> は、&null; を自動的にスカラー型に変換します。
-    この振る舞いは PHP 8.1.0 以降は <emphasis>推奨されなくなっています</emphasis>。
-   </simpara>
-  </warning>
+    <orderedlist>
+     <listitem>
+      <simpara>
+       <type>int</type>
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       <type>float</type>
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       <type>string</type>
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       <type>bool</type>
+      </simpara>
+     </listitem>
+    </orderedlist>
+
+    正確な型が union の中に存在するか、
+    値が PHP の既存の型チェックのセマンティクスによって型変換できる場合、
+    その型が選択されます。
+    そうでない場合、次の型を試そうとします。
+   </para>
+
+   <caution>
+    <para>
+     例外として、値が文字列で、int と float が union に含まれていた場合、
+     型は既存の "数値形式の文字列" を解釈するセマンティクスによって決まります。
+     たとえば、<literal>"42"</literal> の場合、
+     <type>int</type> が選ばれますし、
+     <literal>"42.0"</literal> の場合、<type>float</type> が選ばれます。
+    </para>
+   </caution>
+
+   <note>
+    <para>
+     上のリストに入っていない型については、
+     暗黙の型変換が行われる対象ではありません。
+     特に、暗黙のうちに
+     <literal>null</literal> や <literal>false</literal>
+     に変換されることはありません。
+    </para>
+   </note>
+
+   <example>
+    <title>union の型のひとつに変換される例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+// int|string
+42    --> 42          // 正確に型が一致
+"42"  --> "42"        // 正確に型が一致
+new ObjectWithToString --> "Result of __toString()"
+                      // オブジェクトは int と互換性がないので、文字列にフォールバック
+42.0  --> 42          // float は int と互換性がある
+42.1  --> 42          // float は int と互換性がある
+1e100 --> "1.0E+100"  // int には大きすぎる float なので、文字列にフォールバック
+INF   --> "INF"       // int には大きすぎる float なので、文字列にフォールバック
+true  --> 1           // bool は int と互換性がある
+[]    --> TypeError   // 配列はint, string と互換性はない。
+// int|float|bool
+"45"    --> 45        // int の数値形式の文字列
+"45.0"  --> 45.0      // float の数値形式の文字列
+"45X"   --> true      // 数値形式の文字列ではない。boolにフォールバック
+""      --> false     // 数値形式の文字列ではない。boolにフォールバック
+"X"     --> true      // 数値形式の文字列ではない。boolにフォールバック
+[]      --> TypeError // 配列はint, float, bool と互換性はない。
+?>
+]]>
+    </programlisting>
+   </example>
+  </sect3>
+
  </sect2>
 
  <sect2 xml:id="language.types.typecasting">
