@@ -53,3 +53,6 @@ function test($parameters = array()) {}
 // [1234] は引数
 test([1234]);
 ```
+
+- server
+  * 「サーバー」と伸ばす。「サーバ」としない ( [#69](https://github.com/php/doc-ja/issues/69) )
