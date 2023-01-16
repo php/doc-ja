@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 5e2031dc70157464c05c1c1e00b3201604a025f1 Maintainer: mumumu Status: ready -->
+<!-- EN-Revision: 43756e54fb34ece9b83559ccdde98864b9c3fb5c Maintainer: mumumu Status: ready -->
 <refentry xml:id="random-engine.generate" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
   <refname>Random\Engine::generate</refname>
@@ -103,16 +103,48 @@
    <programlisting role="php">
 <![CDATA[
 <?php
+/**
+ * 65536 を法とする LCG(Linear Congruential Generator, 線形合同法)を実装し、
+ * 61 を掛けて 17 を足し、8ビットの整数を返します。
+ *
+ * 注意: このエンジンはデモの用途のみに適した実装です。
+ *       LCG は一般的に、低い品質のランダムな値しか生成しませんし、
+ *       ここで示す実装は、16ビットというとても短い周期しか持っていません。
+ *       これは、殆どの現実の用途を満たさないものです。
+ */
+final class LinearCongruentialGenerator implements \Random\Engine
+{
+    private int $state;
 
-/* ... */
+    public function __construct(?int $seed = null)
+    {
+        if ($seed === null) {
+            $seed = random_int(0, 0xffff);
+        }
 
+        $this->state = $seed & 0xffff;
+    }
+
+    public function generate(): string
+    {
+        $this->state = (61 * $this->state + 17) & 0xffff;
+
+        return pack('C', $this->state >> 8);
+    }
+}
+
+$r = new \Random\Randomizer(
+    new LinearCongruentialGenerator(seed: 1)
+);
+
+echo "Lucky Number: ", $r->getInt(0, 99), "\n";
 ?>
 ]]>
    </programlisting>
-   &example.outputs.similar;
+   &example.outputs;
    <screen>
 <![CDATA[
-...
+Lucky Number: 4
 ]]>
    </screen>
   </example>
