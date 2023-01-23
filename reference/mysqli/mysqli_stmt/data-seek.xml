@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 035c126c0393fe154bac46e2c3c489ebadce48a5 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 51c34024efa35d5691825b3e61037ffe61c46d20 Maintainer: takagi Status: ready -->
 <!-- Credits: mumumu -->
 <refentry xml:id="mysqli-stmt.data-seek" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>mysqli_stmt::data_seek</refname>
   <refname>mysqli_stmt_data_seek</refname>
-  <refpurpose>ステートメントの結果セットの任意の行に移動する</refpurpose>
+  <refpurpose>バッファリングされた結果中の、任意の行にポインタを移動する</refpurpose>
  </refnamediv>
 
  <refsect1 role="description">
@@ -23,10 +23,11 @@
    <methodparam><type>int</type><parameter>offset</parameter></methodparam>
   </methodsynopsis>
   <para>
-   ステートメントの結果セット内で、
-   任意の位置に結果ポインタを移動します。
+   この関数は、バッファリングされた結果セットのポインタを、
+   <parameter>offset</parameter> で指定した任意の行に移動させます。
   </para>
   <para>
+   この関数は、バッファリング済みの内部結果セットに対してのみ動作します。
    <function>mysqli_stmt_store_result</function> は、
    <function>mysqli_stmt_data_seek</function> より前にコールしなければなりません。
   </para>
@@ -64,42 +65,24 @@
    <programlisting role="php">
 <![CDATA[
 <?php
-/* 接続をオープンします */
+
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $mysqli = new mysqli("localhost", "my_user", "my_password", "world");
 
-/* 接続状況をチェックします */ 
-if (mysqli_connect_errno()) {
-    printf("Connect failed: %s\n", mysqli_connect_error());
-    exit();
-}
-
 $query = "SELECT Name, CountryCode FROM City ORDER BY Name";
-if ($stmt = $mysqli->prepare($query)) {
+$stmt = $mysqli->prepare($query);
+$stmt->execute();
 
-    /* クエリを実行します */
-    $stmt->execute();
+$stmt->bind_result($name, $code);
 
-    /* 結果変数をバインドします */
-    $stmt->bind_result($name, $code);
+$stmt->store_result();
 
-    /* 結果を取得します */
-    $stmt->store_result();
+/* 行番号 400 に移動します */
+$stmt->data_seek(399);
 
-    /* 行番号 400 に移動します */
-    $stmt->data_seek(399);
+$stmt->fetch();
 
-    /* 値を取得します */
-    $stmt->fetch();
-
-    printf ("City: %s  Countrycode: %s\n", $name, $code);
-
-    /* ステートメントを閉じます */
-    $stmt->close();
-}
-
-/* 接続を閉じます */
-$mysqli->close();
-?>
+printf("City: %s  Countrycode: %s\n", $name, $code);
 ]]>
    </programlisting>
   </example>
@@ -108,42 +91,25 @@ $mysqli->close();
    <programlisting role="php">
 <![CDATA[
 <?php
-/* 接続をオープンします */
+
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $link = mysqli_connect("localhost", "my_user", "my_password", "world");
 
-/* 接続状況をチェックします */ 
-if (mysqli_connect_errno()) {
-    printf("Connect failed: %s\n", mysqli_connect_error());
-    exit();
-}
-
 $query = "SELECT Name, CountryCode FROM City ORDER BY Name";
-if ($stmt = mysqli_prepare($link, $query)) {
+$stmt = mysqli_prepare($link, $query);
 
-    /* クエリを実行します */
-    mysqli_stmt_execute($stmt);
+mysqli_stmt_execute($stmt);
 
-    /* 結果変数をバインドします */
-    mysqli_stmt_bind_result($stmt, $name, $code);
+mysqli_stmt_bind_result($stmt, $name, $code);
 
-    /* 結果を取得します */
-    mysqli_stmt_store_result($stmt);
+mysqli_stmt_store_result($stmt);
 
-    /* 行番号 400 に移動します */
-    mysqli_stmt_data_seek($stmt, 399);
+/* 行番号 400 に移動します */
+mysqli_stmt_data_seek($stmt, 399);
 
-    /* 値を取得します */
-    mysqli_stmt_fetch($stmt);
+mysqli_stmt_fetch($stmt);
 
-    printf ("City: %s  Countrycode: %s\n", $name, $code);
-
-    /* ステートメントを閉じます */
-    mysqli_stmt_close($stmt);
-}
-
-/* 接続を閉じます */
-mysqli_close($link);
-?>
+printf("City: %s  Countrycode: %s\n", $name, $code);
 ]]>
    </programlisting>
    &examples.outputs;
@@ -160,6 +126,9 @@ City: Benin City  Countrycode: NGA
   <para>
    <simplelist>
     <member><function>mysqli_prepare</function></member>
+    <member><function>mysqli_stmt_store_result</function></member>
+    <member><function>mysqli_stmt_num_rows</function></member>
+    <member><function>mysqli_data_seek</function></member>
    </simplelist>
   </para>
  </refsect1>
