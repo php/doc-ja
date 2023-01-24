@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 5e2031dc70157464c05c1c1e00b3201604a025f1 Maintainer: mumumu Status: ready -->
+<!-- EN-Revision: f5b15841e613d09971de3652a8d25da4438cb4a2 Maintainer: mumumu Status: ready -->
 <refentry xml:id="random-engine-xoshiro256starstar.jumplong" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
   <refname>Random\Engine\Xoshiro256StarStar::jumpLong</refname>
@@ -33,8 +33,8 @@
    と組み合わせることができます。
    そうすることで、このメソッドが生成した
    2<superscript>64</superscript> 回数分のシーケンスを、
-   2<superscript>64</superscript> の値をそれぞれ持つ
-   2<superscript>128</superscript> 回分のシーケンスに分割できます。
+   2<superscript>128</superscript> の値をそれぞれ持つ
+   2<superscript>64</superscript> 回分のシーケンスに分割できます。
   </para>
  </refsect1>
 
@@ -57,16 +57,41 @@
    <programlisting role="php">
 <![CDATA[
 <?php
+$blueprintRng = new \Random\Engine\Xoshiro256StarStar(0);
 
-/* ... */
+// 親となるエンジンは、それぞれ 値 2**192 のチャンクを持ちます
+$parent1 = clone $blueprintRng;
+$blueprintRng->jumpLong();
 
+$parent2 = clone $blueprintRng;
+$blueprintRng->jumpLong();
+
+// 子となるエンジンは、親のエンジンが持つ値 2**192 のチャンク
+// から取得した、値 2**128 のチャンクをそれぞれ持ちます
+$child1a = clone $parent1;
+$parent1->jump();
+$child1b = clone $parent1;
+$parent1->jump();
+
+$child2a = clone $parent2;
+$parent2->jump();
+$child2b = clone $parent2;
+$parent2->jump();
+
+echo "Child 1A: ", bin2hex( $child1a->generate() ), "\n";
+echo "Child 1B: ", bin2hex( $child1b->generate() ), "\n";
+echo "Child 2A: ", bin2hex( $child2a->generate() ), "\n";
+echo "Child 2B: ", bin2hex( $child2b->generate() ), "\n";
 ?>
 ]]>
    </programlisting>
-   &example.outputs.similar;
+   &example.outputs;
    <screen>
 <![CDATA[
-...
+Child 1A: b4f275cb365fec99
+Child 1B: 2cd646c8ed156237
+Child 2A: eb3729a722a504e7
+Child 2B: d4208dc85bdd6dc3
 ]]>
    </screen>
   </example>
