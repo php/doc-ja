@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 63b99082ef83eade08151f8cb528246fded81db9 Maintainer: takagi Status: working -->
+<!-- EN-Revision: a6aae95b01713b065acd0e6ca7bc4cfdeefdfc39 Maintainer: takagi Status: working -->
 <!-- Credits: hirokawa,haruki,shimooka,mumumu -->
 
 <!ENTITY installation.enabled.disable 'この拡張モジュールはデフォルトで有効になっています。無効にしたい場合は、次のオプションを指定してコンパイルします。'>
@@ -2692,6 +2692,616 @@ xmlns="http://docbook.org/ns/docbook"><simpara xmlns="http://docbook.org/ns/docb
 <!ENTITY trader.arg.slow.limit 'Lower limit use in the adaptive algorithm. Valid range from 0.01 to 0.99.'>
 
 <!-- Mongo -->
+<!ENTITY mongo.setreadpreference.parameters '<variablelist xmlns="http://docbook.org/ns/docbook"><varlistentry><term><parameter>read_preference</parameter></term><listitem><para>The read preference mode: <constant>MongoClient::RP_PRIMARY</constant>, <constant>MongoClient::RP_PRIMARY_PREFERRED</constant>, <constant>MongoClient::RP_SECONDARY</constant>, <constant>MongoClient::RP_SECONDARY_PREFERRED</constant>, or <constant>MongoClient::RP_NEAREST</constant>.</para></listitem></varlistentry><varlistentry><term><parameter>tags</parameter></term><listitem><para>An array of zero or more tag sets, where each tag set is itself an array of criteria used to match tags on replica set members.</para></listitem></varlistentry></variablelist>'>
+<!ENTITY mongo.setreadpreference.returnvalues '<para xmlns="http://docbook.org/ns/docbook">Returns &true; on success, or &false; otherwise.</para>'>
+<!ENTITY mongo.setreadpreference.errors '<para xmlns="http://docbook.org/ns/docbook">Emits <constant>E_WARNING</constant> if either parameter is invalid, or if one or more tag sets are provided with the <constant>MongoClient::RP_PRIMARY</constant> read preference mode.</para>'>
+<!ENTITY mongo.getreadpreference.returnvalues '<para xmlns="http://docbook.org/ns/docbook">This function returns an array describing the read preference. The array contains the values <literal>type</literal> for the string read preference mode (corresponding to the <classname>MongoClient</classname> constants), and <literal>tagsets</literal> containing a list of all tag set criteria. If no tag sets were specified, <literal>tagsets</literal> will not be present in the array.</para>'>
+<!ENTITY mongo.setwriteconcern.parameters '<variablelist xmlns="http://docbook.org/ns/docbook"><varlistentry><term><parameter>w</parameter></term><listitem><para>The write concern. This may be an integer denoting the number of servers required to acknowledge the write, or a string mode (e.g. "majority").</para></listitem></varlistentry><varlistentry><term><parameter>wtimeout</parameter></term><listitem><para>The maximum number of milliseconds to wait for the server to satisfy the write concern.</para></listitem></varlistentry></variablelist>'>
+<!ENTITY mongo.setwriteconcern.returnvalues '<para xmlns="http://docbook.org/ns/docbook">Returns &true; on success, or &false; otherwise.</para>'>
+<!ENTITY mongo.setwriteconcern.errors '<para xmlns="http://docbook.org/ns/docbook">Emits <constant>E_WARNING</constant> if the <literal>w</literal> parameter is not an integer or string value.</para>'>
+<!ENTITY mongo.getwriteconcern.returnvalues '<para xmlns="http://docbook.org/ns/docbook">This function returns an array describing the write concern. The array contains the values <literal>w</literal> for an integer acknowledgement level or string mode, and <literal>wtimeout</literal> denoting the maximum number of milliseconds to wait for the server to satisfy the write concern.</para>'>
+<!ENTITY mongo.command.parameters.maxtimems '<listitem xmlns="http://docbook.org/ns/docbook"><para><literal>"maxTimeMS"</literal></para><para>Specifies a cumulative time limit in milliseconds for processing the operation on the server (does not include idle time). If the operation is not completed by the server within the timeout period, a <classname>MongoExecutionTimeoutException</classname> will be thrown.</para></listitem>'>
+<!ENTITY mongo.index.parameters.background '<listitem xmlns="http://docbook.org/ns/docbook"><para><literal>"background"</literal></para><para>Builds the index in the background so that building an index does <emphasis>not</emphasis> block other database activities. Specify &true; to build in the background. The default value is &false;.</para><warning xmlns="http://docbook.org/ns/docbook"><para>Prior to MongoDB 2.6.0, index builds on secondaries were executed as foreground operations, irrespective of this option. See <link xlink:href="&url.mongodb.dochub.indexes.rs;" xmlns:xlink="http://www.w3.org/1999/xlink">Building Indexes with Replica Sets</link> for more information.</para></warning></listitem>'>
+<!ENTITY mongo.index.parameters.dropdups '<listitem xmlns="http://docbook.org/ns/docbook"><para><literal>"dropDups"</literal></para><para>Specify &true; to force creation of a unique index where the collection may contain duplicate values for a key. MongoDB will index the first occurrence of a key and delete all subsequent documents from the collection that contain a duplicate value for that key. The default value is &false;.</para><warning xmlns="http://docbook.org/ns/docbook"><para><literal>"dropDups"</literal> may delete data from your database. Use with extreme caution.</para></warning><note xmlns="http://docbook.org/ns/docbook"><para>This option is not supported on MongoDB 2.8+. Index creation will fail if the collection contains duplicate values.</para></note></listitem>'>
+<!ENTITY mongo.index.parameters.expireafterseconds '<listitem xmlns="http://docbook.org/ns/docbook"><para><literal>"expireAfterSeconds"</literal></para><para>The value of this option should specify the number of seconds after which a document should be considered expired and automatically removed from the collection. This option is only compatible with single-field indexes where the field will contain <classname>MongoDate</classname> values.</para><note xmlns="http://docbook.org/ns/docbook"><para>This feature is available in MongoDB 2.2+. See <link xlink:href="&url.mongodb.docs.expire_data;" xmlns:xlink="http://www.w3.org/1999/xlink">Expire Data from Collections by Setting TTL</link> for more information.</para></note></listitem>'>
+<!ENTITY mongo.index.parameters.name '<listitem xmlns="http://docbook.org/ns/docbook"><para><literal>"name"</literal></para><para>A optional name that uniquely identifies the index.</para><note xmlns="http://docbook.org/ns/docbook"><para>By default, the driver will generate an index name based on the index&apos;s field(s) and ordering or type. For example, a compound index <literal>array("x" => 1, "y" => -1)</literal> would be named <literal>"x_1_y_-1"</literal> and a geospatial index <literal>array("loc" => "2dsphere")</literal> would be named <literal>"loc_2dsphere"</literal>. For indexes with many fields, it is possible that the generated name might exceed MongoDB&apos;s <link xlink:href="&url.mongodb.docs.limits;#Index-Name-Length" xmlns:xlink="http://www.w3.org/1999/xlink">limit for index names</link>. The <literal>"name"</literal> option may be used in that case to supply a shorter name.</para></note></listitem>'>
+<!ENTITY mongo.index.parameters.sparse '<listitem xmlns="http://docbook.org/ns/docbook"><para><literal>"sparse"</literal></para><para>Specify &true; to create a sparse index, which only indexes documents containing a specified field. The default value is &false;.</para></listitem>'>
+<!ENTITY mongo.index.parameters.unique '<listitem xmlns="http://docbook.org/ns/docbook"><para><literal>"unique"</literal></para><para>Specify &true; to create a unique index. The default value is &false;. This option applies only to ascending/descending indexes.</para><note xmlns="http://docbook.org/ns/docbook"><para>When MongoDB indexes a field, if a document does not have a value for the field, a &null; value is indexed. If multiple documents do not contain a field, a unique index will reject all but the first of those documents. The <literal>"sparse"</literal> option may be used to overcome this, since it will prevent documents without the field from being indexed.</para></note></listitem>'>
+<!ENTITY mongo.listcollections.note '<note xmlns="http://docbook.org/ns/docbook"><simpara>This method will use the <link xlink:href="&url.mongodb.docs.command;listCollections" xmlns:xlink="http://www.w3.org/1999/xlink">listCollections</link> database command when communicating with MongoDB 2.8+. For previous database versions, the method will query the special <literal>system.namespaces</literal> collection.</simpara></note>'>
+<!ENTITY mongo.listcollections.parameters.filter '<listitem xmlns="http://docbook.org/ns/docbook"><para><literal>"filter"</literal></para><para>Optional query criteria. If provided, this criteria will be used to filter the collections included in the result.</para><para>Relevant fields that may be queried include <literal>"name"</literal> (collection name as a string, without the database name prefix) and <literal>"options" (object containing options used to create the collection).</literal>.</para><note><simpara>MongoDB 2.6 and earlier versions require the <literal>"name"</literal> criteria, if specified, to be a string value (i.e. equality match). This is because the driver must prefix the value with the database name in order to query the <literal>system.namespaces</literal> collection. Later versions of MongoDB do not have this limitation, as the driver will use the listCollections command.</simpara></note></listitem>'>
+<!ENTITY mongo.listcollections.parameters.includesystemcollections '<listitem xmlns="http://docbook.org/ns/docbook"><para><literal>"includeSystemCollections"</literal></para><para>Boolean, defaults to &false;. Determines whether system collections should be included in the result.</para></listitem>'>
+<!ENTITY mongo.writes.parameters.writeconcern '<listitem xmlns="http://docbook.org/ns/docbook"><para><literal>"w"</literal></para><para>See <link linkend="mongo.writeconcerns">Write Concerns</link>. The default value for <classname>MongoClient</classname> is <literal>1</literal>.</para></listitem>'>
+<!ENTITY mongo.writes.parameters.writeconcerntimeout '<listitem xmlns="http://docbook.org/ns/docbook"><para><literal>"wtimeout"</literal></para><para>Deprecated alias for <literal>"wTimeoutMS"</literal>.</para></listitem>'>
+<!ENTITY mongo.writes.parameters.writeconcerntimeoutms '<listitem xmlns="http://docbook.org/ns/docbook"><para><literal>"wTimeoutMS"</literal></para><para>This option specifies the time limit, in milliseconds, for <link linkend="mongo.writeconcerns">write concern</link> acknowledgement. It is only applicable when <literal>"w"</literal> is greater than <literal>1</literal>, as the timeout pertains to replication. If the write concern is not satisfied within the time limit, a <classname>MongoCursorException</classname> will be thrown. A value of <literal>0</literal> may be specified to block indefinitely. The default value for <classname>MongoClient</classname> is <literal>10000</literal> (ten seconds).</para></listitem>'>
+<!ENTITY mongo.writes.parameters.fsync '<listitem xmlns="http://docbook.org/ns/docbook"><para><literal>"fsync"</literal></para><para>Boolean, defaults to &false;. If journaling is enabled, it works exactly like <literal>"j"</literal>. If journaling is not enabled, the write operation blocks until it is synced to database files on disk. If &true;, an acknowledged insert is implied and this option will override setting <literal>"w"</literal> to <literal>0</literal>.</para><note><simpara>If journaling is enabled, users are strongly encouraged to use the <literal>"j"</literal> option instead of <literal>"fsync"</literal>. Do not use <literal>"fsync"</literal> and <literal>"j"</literal> simultaneously, as that will result in an error.</simpara></note></listitem>'>
+<!ENTITY mongo.writes.parameters.sockettimeoutms '<listitem xmlns="http://docbook.org/ns/docbook"><para><literal>"socketTimeoutMS"</literal></para><para>This option specifies the time limit, in milliseconds, for socket communication. If the server does not respond within the timeout period, a <classname>MongoCursorTimeoutException</classname> will be thrown and there will be no way to determine if the server actually handled the write or not. A value of <literal>-1</literal> may be specified to block indefinitely. The default value for <classname>MongoClient</classname> is <literal>30000</literal> (30 seconds).</para></listitem>'>
+<!ENTITY mongo.writes.parameters.journal '<listitem xmlns="http://docbook.org/ns/docbook"><para><literal>"j"</literal></para><para>Boolean, defaults to &false;. Forces the write operation to block until it is synced to the journal on disk. If &true;, an acknowledged write is implied and this option will override setting <literal>"w"</literal> to <literal>0</literal>.</para><note><simpara>If this option is used and journaling is disabled, MongoDB 2.6+ will raise an error and the write will fail; older server versions will simply ignore the option.</simpara></note></listitem>'>
+<!ENTITY mongo.writes.parameters.safe '<listitem xmlns="http://docbook.org/ns/docbook"><para><literal>"safe"</literal></para><para>Deprecated. Please use the <link linkend="mongo.writeconcerns">write concern</link> <literal>"w"</literal> option.</para></listitem>'>
+<!ENTITY mongo.writes.parameters.timeout '<listitem xmlns="http://docbook.org/ns/docbook"><para><literal>"timeout"</literal></para><para>Deprecated alias for <literal>"socketTimeoutMS"</literal>.</para></listitem>'>
+<!ENTITY mongo.errors.exceptions.writeconcern '<para xmlns="http://docbook.org/ns/docbook">Throws <classname>MongoCursorException</classname> if the <literal>"w"</literal> option is set and the write fails.</para><para xmlns="http://docbook.org/ns/docbook">Throws <classname>MongoCursorTimeoutException</classname> if the <literal>"w"</literal> option is set to a value greater than one and the operation takes longer than <varname>MongoCursor::$timeout</varname> milliseconds to complete.  This does not kill the operation on the server, it is a client-side timeout. The operation in <varname>MongoCollection::$wtimeout</varname> is milliseconds.</para>'>
+<!ENTITY mongo.errors.deprecated '<para xmlns="http://docbook.org/ns/docbook">Issues <constant>E_DEPRECATED</constant> warning</para>'>
+<!ENTITY mongo.gridfs.store.metadata.note '<note xmlns="http://docbook.org/ns/docbook"><para>These fields may also overwrite those that would be created automatically by the driver, as described in the MongoDB core documentation for the <link xlink:href="&url.mongodb.docs.gridfs;#the-files-collection" xmlns:xlink="http://www.w3.org/1999/xlink">files collection</link>. Some practical use cases for this behavior would be to specify a custom <literal>chunkSize</literal> or <literal>_id</literal> for the file.</para></note>'>
+<!ENTITY mongo.gridfs.store.return '<para xmlns="http://docbook.org/ns/docbook">Returns the <literal>_id</literal> of the saved file document. This will be a generated <classname>MongoId</classname> unless an <literal>_id</literal> was explicitly specified in the <parameter>metadata</parameter> parameter.</para>'>
+<!ENTITY mongo.mongowritebatch.writeoptions.description '<listitem xmlns="http://docbook.org/ns/docbook"><para>An array of Write Options.<informaltable><thead><row><entry>key</entry><entry>value meaning</entry></row></thead><tbody><row><entry>w (int|string)</entry><entry><link linkend="mongo.writeconcerns">Write concern</link> value</entry></row><row><entry>wtimeout (int)</entry><entry><link linkend="mongo.writeconcerns">Maximum time to wait for replication</link></entry></row><row><entry>ordered</entry><entry>Determines if MongoDB must apply this batch in order. Ordered writes execute serially (i.e. one at a time) and execution will stop after the first error. Unordered writes may execute in parallel and execution will not stop after the first error. Defaults to &true;</entry></row><row><entry>j (bool)</entry><entry>Wait for journaling on the primary. This value is discouraged, use WriteConcern instead</entry></row><row><entry>fsync (bool)</entry><entry>Wait for fsync on the primary. This value is discouraged, use WriteConcern instead</entry></row></tbody></informaltable></para></listitem>'>
+<!ENTITY mongo.mongowritebatch.collection.description '<listitem xmlns="http://docbook.org/ns/docbook"><para>The <classname>MongoCollection</classname> to execute the batch on. Its <link linkend="mongo.writeconcerns">write concern</link> will be copied and used as the default write concern if none is given as <parameter>$write_options</parameter> or during <methodname>MongoWriteBatch::execute</methodname>.</para></listitem>'>
+<!ENTITY mongo.context.server ' <varlistentry xmlns="http://docbook.org/ns/docbook"> <term> <parameter>server</parameter> </term> <listitem> <para> An array containing the basic information about the server that was picked. <informaltable> <tgroup cols="2"> <thead> <row> <entry>key</entry> <entry>value</entry> </row> </thead> <tbody> <row> <entry>hash</entry> <entry>server hash, example: <literal>localhost:27017;-;X;56052</literal></entry> </row> <row> <entry>type</entry> <entry>Node type (primary/secondary/mongos/arbiter): <literal>2</literal></entry> </row> <row> <entry>max_bson_size</entry> <entry>The maximum BSON Size over the wire this node accepts: <literal>16777216</literal></entry> </row> <row> <entry>max_message_size</entry> <entry>The maximum Message Size over the wire this node accepts: <literal>48000000</literal></entry> </row> <row> <entry>request_id</entry> <entry>The request identifier for this message: <literal>42</literal></entry> </row> </tbody> </tgroup> </informaltable> </para> </listitem> </varlistentry>'>
+<!ENTITY mongo.context.writeoptions '<varlistentry xmlns="http://docbook.org/ns/docbook"> <term> <parameter>writeOptions</parameter> </term> <listitem> <para> <informaltable> <tgroup cols="2"> <thead> <row> <entry>key</entry> <entry>value</entry> </row> </thead> <tbody> <row> <entry>ordered</entry> <entry>boolean, if the operation (in case of batch operation) must be executed sequentually (ordered=true)</entry> </row> <row> <entry>writeConcern</entry> <entry>An array of writeConcern options (see below)</entry> </row> </tbody> </tgroup> </informaltable> <table> <title>writeConcern array values</title> <tgroup cols="2"> <thead> <row> <entry>key</entry> <entry>value</entry> </row> </thead> <tbody> <row> <entry>fsync</entry> <entry>boolean, force flushing to disk before returning</entry> </row> <row> <entry>j</entry> <entry>boolean, force journal write before returning</entry> </row> <row> <entry>wtimeout</entry> <entry>integer, milliseconds, maximum time the primary is allowed to wait to verify replication</entry> </row> <row> <entry>w</entry> <entry>integer=server count, or string=replication-tag</entry> </row> </tbody> </tgroup> </table> </para> </listitem> </varlistentry>'>
+<!ENTITY mongo.context.protocoloptions ' <varlistentry xmlns="http://docbook.org/ns/docbook"> <term> <parameter>protocolOptions</parameter> </term> <listitem> <para> <informaltable> <tgroup cols="2"> <thead> <row> <entry>key</entry> <entry>value</entry> </row> </thead> <tbody> <row> <entry>message_length</entry> <entry>The total size (in bytes) of the encoded message being sent over the wire</entry> </row> <row> <entry>request_id</entry> <entry>The request identifier for this message: <literal>42</literal></entry> </row> <row> <entry>namespace</entry> <entry>The MongoDB namespace used for the protocol message <literal>dbname.collectionname</literal></entry> </row> </tbody> </tgroup> </informaltable> </para> </listitem> </varlistentry>'>
+<!ENTITY mongo.alternative.class.note '<para
+xmlns="http://docbook.org/ns/docbook">This extension that defines this class
+is deprecated. Instead, the <link linkend="set.mongodb">MongoDB</link> extension should be used.
+Alternatives to this class include:</para>'>
+<!ENTITY mongo.noalternative.class.note '<para
+xmlns="http://docbook.org/ns/docbook">This extension that defines this class
+is deprecated. Instead, the <link linkend="set.mongodb">MongoDB</link> extension should be used.
+There is no equivalent for this class in the new extension.</para>'>
+<!ENTITY mongo.alternative.method.note '<para
+xmlns="http://docbook.org/ns/docbook">This extension that defines this method
+is deprecated. Instead, the <link linkend="set.mongodb">MongoDB</link> extension should be used.
+Alternatives to this method include:</para>'>
+<!ENTITY mongo.noalternative.method.note '<para
+xmlns="http://docbook.org/ns/docbook">This extension that defines this method
+is deprecated. Instead, the <link linkend="set.mongodb">MongoDB</link> extension should be used.
+There is no equivalent for this method in the new extension.</para>'>
+<!ENTITY mongo.alternative.phplib.note '<para
+xmlns="http://docbook.org/ns/docbook">This extension that defines this method
+is deprecated. Instead, the <link linkend="set.mongodb">MongoDB</link> extension should be used.
+There is no equivalent for this method in the new extension, but there is an
+alternative in the <link linkend="mongodb.overview">PHP library</link>:</para>'>
+
+<!ENTITY mongo.deprecated.note '<para
+xmlns="http://docbook.org/ns/docbook">This extension is deprecated. Instead,
+the <link linkend="set.mongodb">MongoDB</link> extension should be
+used.</para>'>
+
+<!-- mongodb -->
+<!ENTITY mongodb.changelog.tentative-return-types '
+       <row xmlns="http://docbook.org/ns/docbook">
+        <entry>PECL mongodb 1.15.0</entry>
+        <entry>
+         Return types for methods are declared as tentative on PHP 8.0 and newer,
+         triggering deprecation notices in code that implements this interface
+         without declaring the appropriate return types. The <code>#[ReturnTypeWillChange]</code>
+         attribute can be added to silence the deprecation notice.
+        </entry>
+       </row>
+'>
+
+<!ENTITY mongodb.option.collation '
+         <row xmlns="http://docbook.org/ns/docbook">
+          <entry>collation</entry>
+          <entry><type class="union"><type>array</type><type>object</type></type></entry>
+          <entry>
+           <para>
+            <link xlink:href="&url.mongodb.docs.collation;" xmlns:xlink="http://www.w3.org/1999/xlink">Collation</link> allows users to specify language-specific rules for string comparison, such as rules for lettercase and accent marks. When specifying collation, the <literal>"locale"</literal> field is mandatory; all other collation fields are optional. For descriptions of the fields, see <link xlink:href="&url.mongodb.docs.collation;#collation-document" xmlns:xlink="http://www.w3.org/1999/xlink">Collation Document</link>.
+           </para>
+           <para>
+            If the collation is unspecified but the collection has a default collation, the operation uses the collation specified for the collection. If no collation is specified for the collection or for the operation, MongoDB uses the simple binary comparison used in prior versions for string comparisons.
+           </para>
+           <para>
+            This option is available in MongoDB 3.4+ and will result in an exception at execution time if specified for an older server version.
+           </para>
+          </entry>
+         </row>
+'>
+<!ENTITY mongodb.option.let '
+         <row xmlns="http://docbook.org/ns/docbook">
+          <entry>let</entry>
+          <entry><type class="union"><type>array</type><type>object</type></type></entry>
+          <entry>
+           <para>
+            Map of parameter names and values. Values must be constant or closed expressions that do not reference document fields. Parameters can then be accessed as variables in an aggregate expression context (e.g. <literal>$$var</literal>).
+           </para>
+           <para>
+            This option is available in MongoDB 5.0+ and will result in an exception at execution time if specified for an older server version.
+           </para>
+          </entry>
+         </row>
+'>
+<!ENTITY mongodb.option.encryption.keyVaultClient '
+         <row xmlns="http://docbook.org/ns/docbook">
+          <entry>keyVaultClient</entry>
+          <entry><classname>MongoDB\Driver\Manager</classname></entry>
+          <entry>The Manager used to route data key queries to a separate MongoDB cluster. By default, the current Manager and cluster is used.</entry>
+         </row>
+'>
+<!ENTITY mongodb.option.encryption.keyVaultNamespace '
+         <row xmlns="http://docbook.org/ns/docbook">
+          <entry>keyVaultNamespace</entry>
+          <entry><type>string</type></entry>
+          <entry>A fully qualified namespace (e.g. <literal>"databaseName.collectionName"</literal>) denoting the collection that contains all data keys used for encryption and decryption.</entry>
+         </row>
+'>
+<!ENTITY mongodb.option.encryption.kmsProviders '
+         <row xmlns="http://docbook.org/ns/docbook">
+          <entry>kmsProviders</entry>
+          <entry><type>array</type></entry>
+          <entry>
+           <para>
+            A document containing the configuration for one or more KMS providers, which are used to encrypt data keys. Supported providers include <literal>"aws"</literal>, <literal>"azure"</literal>, <literal>"gcp"</literal>, <literal>"kmip"</literal>, and <literal>"local"</literal> and at least one must be specified.
+           </para>
+           <para>
+            The format for <literal>"aws"</literal> is as follows:
+           </para>
+           <programlisting role="javascript">
+<![CDATA[
+aws: {
+    accessKeyId: <string>,
+    secretAccessKey: <string>,
+    sessionToken: <optional string>
+}
+]]>
+           </programlisting>
+           <para>
+            The format for <literal>"azure"</literal> is as follows:
+           </para>
+           <programlisting role="javascript">
+<![CDATA[
+azure: {
+    tenantId: <string>,
+    clientId: <string>,
+    clientSecret: <string>,
+    identityPlatformEndpoint: <optional string> // Defaults to "login.microsoftonline.com"
+}
+]]>
+           </programlisting>
+           <para>
+            The format for <literal>"gcp"</literal> is as follows:
+           </para>
+           <programlisting role="javascript">
+<![CDATA[
+gcp: {
+    email: <string>,
+    privateKey: <base64 string>|<MongoDB\BSON\Binary>,
+    endpoint: <optional string> // Defaults to "oauth2.googleapis.com"
+}
+]]>
+           </programlisting>
+           <para>
+            The format for <literal>"kmip"</literal> is as follows:
+           </para>
+           <programlisting role="javascript">
+<![CDATA[
+kmip: {
+    endpoint: <string>
+}
+]]>
+           </programlisting>
+           <para>
+            The format for <literal>"local"</literal> is as follows:
+           </para>
+           <programlisting role="javascript">
+<![CDATA[
+local: {
+    // 96-byte master key used to encrypt/decrypt data keys
+    key: <base64 string>|<MongoDB\BSON\Binary>
+}
+]]>
+           </programlisting>
+          </entry>
+         </row>
+'>
+<!ENTITY mongodb.option.encryption.masterKey-options-by-provider '
+  <para xmlns="http://docbook.org/ns/docbook">
+   <table>
+    <title><literal>"aws"</literal> provider options</title>
+    <tgroup cols="3">
+     <thead>
+      <row>
+       <entry>Option</entry>
+       <entry>Type</entry>
+       <entry>Description</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry>region</entry>
+       <entry>string</entry>
+       <entry>Required.</entry>
+      </row>
+      <row>
+       <entry>key</entry>
+       <entry>string</entry>
+       <entry>Required. The Amazon Resource Name (ARN) to the AWS customer master key (CMK).</entry>
+      </row>
+      <row>
+       <entry>endpoint</entry>
+       <entry>string</entry>
+       <entry>Optional. An alternate host identifier to send KMS requests to. May include port number.</entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </table>
+  </para>
+  <para xmlns="http://docbook.org/ns/docbook">
+   <table>
+    <title><literal>"azure"</literal> provider options</title>
+    <tgroup cols="3">
+     <thead>
+      <row>
+       <entry>Option</entry>
+       <entry>Type</entry>
+       <entry>Description</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry>keyVaultEndpoint</entry>
+       <entry>string</entry>
+       <entry>Required. Host with optional port (e.g. "example.vault.azure.net").</entry>
+      </row>
+      <row>
+       <entry>keyName</entry>
+       <entry>string</entry>
+       <entry>Required.</entry>
+      </row>
+      <row>
+       <entry>keyVersion</entry>
+       <entry>string</entry>
+       <entry>Optional. A specific version of the named key. Defaults to using the key&apos;s primary version.</entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </table>
+  </para>
+  <para xmlns="http://docbook.org/ns/docbook">
+   <table>
+    <title><literal>"gcp"</literal> provider options</title>
+    <tgroup cols="3">
+     <thead>
+      <row>
+       <entry>Option</entry>
+       <entry>Type</entry>
+       <entry>Description</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry>projectId</entry>
+       <entry>string</entry>
+       <entry>Required.</entry>
+      </row>
+      <row>
+       <entry>location</entry>
+       <entry>string</entry>
+       <entry>Required.</entry>
+      </row>
+      <row>
+       <entry>keyRing</entry>
+       <entry>string</entry>
+       <entry>Required.</entry>
+      </row>
+      <row>
+       <entry>keyName</entry>
+       <entry>string</entry>
+       <entry>Required.</entry>
+      </row>
+      <row>
+       <entry>keyVersion</entry>
+       <entry>string</entry>
+       <entry>Optional. A specific version of the named key. Defaults to using the key&apos;s primary version.</entry>
+      </row>
+      <row>
+       <entry>endpoint</entry>
+       <entry>string</entry>
+       <entry>Optional. Host with optional port. Defaults to "cloudkms.googleapis.com".</entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </table>
+  </para>
+  <para xmlns="http://docbook.org/ns/docbook">
+   <table>
+    <title><literal>"kmip"</literal> provider options</title>
+    <tgroup cols="3">
+     <thead>
+      <row>
+       <entry>Option</entry>
+       <entry>Type</entry>
+       <entry>Description</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry>keyId</entry>
+       <entry>string</entry>
+       <entry>Optional. Unique identifier to a 96-byte KMIP secret data managed object. If unspecified, the driver creates a random 96-byte KMIP secret data managed object.</entry>
+      </row>
+      <row>
+       <entry>endpoint</entry>
+       <entry>string</entry>
+       <entry>Optional. Host with optional port.</entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </table>
+  </para>
+'>
+<!ENTITY mongodb.option.encryption.tlsOptions '
+         <row xmlns="http://docbook.org/ns/docbook">
+          <entry>tlsOptions</entry>
+          <entry><type>array</type></entry>
+          <entry>
+           <para>
+            A document containing the TLS configuration for one or more KMS providers. Supported providers include <literal>"aws"</literal>, <literal>"azure"</literal>, <literal>"gcp"</literal>, and <literal>"kmip"</literal>. All providers support the following options:
+           </para>
+           <programlisting role="javascript">
+<![CDATA[
+<provider>: {
+    tlsCaFile: <optional string>,
+    tlsCertificateKeyFile: <optional string>,
+    tlsCertificateKeyFilePassword: <optional string>,
+    tlsDisableOCSPEndpointCheck: <optional bool>
+}
+]]>
+           </programlisting>
+          </entry>
+         </row>
+'>
+<!ENTITY mongodb.option.maxCommitTimeMS '
+         <row xmlns="http://docbook.org/ns/docbook">
+          <entry>maxCommitTimeMS</entry>
+          <entry>integer</entry>
+          <entry>
+           <para>
+            The maximum amount of time in milliseconds to allow a single
+            <literal>commitTransaction</literal> command to run.
+           </para>
+           <para>
+            If specified, <literal>maxCommitTimeMS</literal> must be a signed
+            32-bit integer greater than or equal to zero.
+           </para>
+          </entry>
+         </row>
+'>
+<!ENTITY mongodb.option.readConcern '
+         <row xmlns="http://docbook.org/ns/docbook">
+          <entry>readConcern</entry>
+          <entry><classname>MongoDB\Driver\ReadConcern</classname></entry>
+          <entry>
+           <para>
+            A read concern to apply to the operation.
+           </para>
+           <para>
+            This option is available in MongoDB 3.2+ and will result in an
+            exception at execution time if specified for an older server
+            version.
+           </para>
+          </entry>
+         </row>
+'>
+<!ENTITY mongodb.option.readPreference '
+         <row xmlns="http://docbook.org/ns/docbook">
+          <entry>readPreference</entry>
+          <entry><classname>MongoDB\Driver\ReadPreference</classname></entry>
+          <entry>
+           <para>
+            A read preference to use for selecting a server for the operation.
+           </para>
+          </entry>
+         </row>
+'>
+<!ENTITY mongodb.option.session '
+         <row xmlns="http://docbook.org/ns/docbook">
+          <entry>session</entry>
+          <entry><classname>MongoDB\Driver\Session</classname></entry>
+          <entry>
+           <para>
+            A session to associate with the operation.
+           </para>
+          </entry>
+         </row>
+'>
+<!ENTITY mongodb.option.transactionReadWriteConcern '
+     <warning xmlns="http://docbook.org/ns/docbook">
+      <para>
+       If you are using a <literal>"session"</literal> which has a transaction
+       in progress, you cannot specify a <literal>"readConcern"</literal> or
+       <literal>"writeConcern"</literal> option. This will result in an
+       <classname>MongoDB\Driver\Exception\InvalidArgumentException</classname>
+       being thrown. Instead, you should set these two options when you create
+       the transaction with
+       <methodname>MongoDB\Driver\Session::startTransaction</methodname>.
+      </para>
+     </warning>
+'>
+<!ENTITY mongodb.option.writeConcern '
+         <row xmlns="http://docbook.org/ns/docbook">
+          <entry>writeConcern</entry>
+          <entry><classname>MongoDB\Driver\WriteConcern</classname></entry>
+          <entry>
+           <para>
+            A write concern to apply to the operation.
+           </para>
+          </entry>
+         </row>
+'>
+<!ENTITY mongodb.parameter.namespace '
+   <varlistentry xmlns="http://docbook.org/ns/docbook">
+    <term><parameter>namespace</parameter> (<type>string</type>)</term>
+    <listitem>
+     <para>
+      A fully qualified namespace (e.g. <literal>"databaseName.collectionName"</literal>).
+     </para>
+    </listitem>
+   </varlistentry>
+'>
+<!ENTITY mongodb.parameter.db '
+   <varlistentry xmlns="http://docbook.org/ns/docbook">
+    <term><parameter>db</parameter> (<type>string</type>)</term>
+    <listitem>
+     <para>
+      The name of the database on which to execute the command.
+     </para>
+    </listitem>
+   </varlistentry>
+'>
+<!ENTITY mongodb.parameter.bulkwrite '
+   <varlistentry xmlns="http://docbook.org/ns/docbook">
+    <term><parameter>bulk</parameter> (<classname>MongoDB\Driver\BulkWrite</classname>)</term>
+    <listitem>
+     <para>
+      The write(s) to execute.
+     </para>
+    </listitem>
+   </varlistentry>
+'>
+<!ENTITY mongodb.parameter.command '
+   <varlistentry xmlns="http://docbook.org/ns/docbook">
+    <term><parameter>command</parameter> (<classname>MongoDB\Driver\Command</classname>)</term>
+    <listitem>
+     <para>
+      The command to execute.
+     </para>
+    </listitem>
+   </varlistentry>
+'>
+<!ENTITY mongodb.parameter.query '
+   <varlistentry xmlns="http://docbook.org/ns/docbook">
+    <term><parameter>query</parameter> (<classname>MongoDB\Driver\Query</classname>)</term>
+    <listitem>
+     <para>
+      The query to execute.
+     </para>
+    </listitem>
+   </varlistentry>
+'>
+<!ENTITY mongodb.parameter.typeMap '
+   <varlistentry xmlns="http://docbook.org/ns/docbook">
+    <term><parameter>typeMap</parameter> (<type>array</type>)</term>
+    <listitem>
+     <para>
+      <link linkend="mongodb.persistence.typemaps">Type map configuration</link>.
+     </para>
+    </listitem>
+   </varlistentry>
+'>
+<!ENTITY mongodb.parameter.filter '
+   <varlistentry xmlns="http://docbook.org/ns/docbook">
+    <term><parameter>filter</parameter> (<type class="union"><type>array</type><type>object</type></type>)</term>
+    <listitem>
+     <para>
+      The <link xlink:href="&url.mongodb.docs;tutorial/query-documents/" xmlns:xlink="http://www.w3.org/1999/xlink">query predicate</link>.
+      An empty predicate will match all documents in the collection.
+     </para>
+     <note>
+      <simpara>
+       When evaluating query criteria, MongoDB compares types and values according to its own <link xlink:href="&url.mongodb.docs;reference/bson-type-comparison-order/" xmlns:xlink="http://www.w3.org/1999/xlink">comparison rules for BSON types</link>, which differs from PHP&apos;s <link linkend="types.comparisons">comparison</link> and <link linkend="language.types.type-juggling">type juggling</link> rules. When matching a special BSON type the query criteria should use the respective <link linkend="book.bson">BSON class</link> (e.g. use <classname>MongoDB\BSON\ObjectId</classname> to match an <link xlink:href="&url.mongodb.docs.objectid;" xmlns:xlink="http://www.w3.org/1999/xlink">ObjectId</link>).
+      </simpara>
+     </note>
+    </listitem>
+   </varlistentry>
+'>
+<!ENTITY mongodb.returns.cursor '<para xmlns="http://docbook.org/ns/docbook">Returns <classname>MongoDB\Driver\Cursor</classname> on success.</para>'>
+<!ENTITY mongodb.returns.writeresult '<para xmlns="http://docbook.org/ns/docbook">Returns <classname>MongoDB\Driver\WriteResult</classname> on success.</para>'>
+<!ENTITY mongodb.throws.std '&mongodb.throws.argumentparsing;&mongodb.throws.connection;&mongodb.throws.authentication;'>
+<!ENTITY mongodb.throws.session-readwriteconcern '<member xmlns="http://docbook.org/ns/docbook">Throws <classname>MongoDB\Driver\Exception\InvalidArgumentException</classname> if the <literal>"session"</literal> option is used with an associated transaction in combination with a <literal>"readConcern"</literal> or <literal>"writeConcern"</literal> option.</member>'>
+<!ENTITY mongodb.throws.session-unacknowledged '<member xmlns="http://docbook.org/ns/docbook">Throws <classname>MongoDB\Driver\Exception\InvalidArgumentException</classname> if the <literal>"session"</literal> option is used in combination with an unacknowledged write concern.</member>'>
+<!ENTITY mongodb.throws.bulkwriteexception '<member xmlns="http://docbook.org/ns/docbook">Throws <classname>MongoDB\Driver\Exception\BulkWriteException</classname> on any write failure (e.g. write error, failure to apply a write concern)</member>'>
+<!ENTITY mongodb.throws.argumentparsing '<member xmlns="http://docbook.org/ns/docbook">Throws <classname>MongoDB\Driver\Exception\InvalidArgumentException</classname> on argument parsing errors.</member>'>
+<!ENTITY mongodb.throws.authentication '<member xmlns="http://docbook.org/ns/docbook">Throws <classname>MongoDB\Driver\Exception\AuthenticationException</classname> if authentication is needed and fails.</member>'>
+<!ENTITY mongodb.throws.connection '<member xmlns="http://docbook.org/ns/docbook">Throws <classname>MongoDB\Driver\Exception\ConnectionException</classname> if connection to the server fails (for reasons other than authentication).</member>'>
+<!ENTITY mongodb.throws.bson.unexpected '<member xmlns="http://docbook.org/ns/docbook">Throws <classname>MongoDB\Driver\Exception\UnexpectedValueException</classname> if the input did not contain exactly one BSON document. Possible reasons include, but are not limited to, invalid BSON, extra data (after reading one BSON document), or an unexpected <link xlink:href="&url.mongodb.libbson;" xmlns:xlink="http://www.w3.org/1999/xlink">libbson</link> error.</member>'>
+
+<!ENTITY mongodb.note.queryable-encryption-preview '
+   <note xmlns="http://docbook.org/ns/docbook">
+    <simpara>
+     Queryable Encryption is in public preview and available for evaluation
+     purposes. It is not yet recommended for production deployments as breaking
+     changes may be introduced. See the <link xlink:href="https://www.mongodb.com/blog/post/mongodb-releases-queryable-encryption-preview/" xmlns:xlink="http://www.w3.org/1999/xlink">Queryable Encryption Preview</link> blog post for more information.
+    </simpara>
+   </note>
+'>
+
+<!ENTITY mongodb.note.decimal128 '
+   <note xmlns="http://docbook.org/ns/docbook">
+    <simpara>
+     <classname>MongoDB\BSON\Decimal128</classname> is only compatible with
+     MongoDB 3.4+. Attempting to use the BSON type with an earlier version of
+     MongoDB will result in an error.
+    </simpara>
+   </note>
+'>
+<!ENTITY mongodb.note.extended-json '
+  <note xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+   <simpara>
+    The output is consistent with the <function>MongoDB\BSON\toJSON</function>
+    function, which uses the driver-specific legacy extended JSON format. This
+    does not necessarily match the
+    <link xlink:href="&url.mongodb.specs.extendedjson;#relaxed-extended-json-example">relaxed</link>
+    or <link xlink:href="&url.mongodb.specs.extendedjson;#canonical-extended-json-example">canonical</link>
+    extended JSON representations used by
+    <function>MongoDB\BSON\toRelaxedExtendedJSON</function> and
+    <function>MongoDB\BSON\toCanonicalExtendedJSON</function>, respectively.
+   </simpara>
+  </note>
+'>
+<!ENTITY mongodb.note.forking '
+   <note xmlns="http://docbook.org/ns/docbook">
+    <simpara>
+     On Unix platforms, the MongoDB driver is sensitive to scripts that use the
+     fork() system call without also calling exec(). Users are advised not to
+     re-use <classname>MongoDB\Driver\Manager</classname> instances in a forked
+     child process.
+    </simpara>
+   </note>
+'>
+
+<!ENTITY mongodb.note.uint32 '
+  <note xmlns="http://docbook.org/ns/docbook">
+   <simpara>
+    Because PHP&apos;s integer type is signed, some values returned by this
+    method may appear as negative integers on 32-bit platforms. The
+    <literal>"&#37;u"</literal> formatter of <function>sprintf</function> may be
+    used to obtain a string representation of the unsigned decimal value.
+   </simpara>
+  </note>
+'>
+
+<!ENTITY mongodb.note.server.readpreference '
+  <note xmlns="http://docbook.org/ns/docbook">
+   <simpara>
+    The <literal>"readPreference"</literal> option does not control the server
+    to which the driver issues the operation; it will always be executed on
+    this server object. Instead, it may be used when issuing the operation to a
+    secondary (from a replica set connection, not standalone) or mongos node to
+    ensure that the driver sets the wire protocol accordingly or adds the read
+    preference to the operation, respectively.
+   </simpara>
+  </note>
+'>
+
+<!ENTITY mongodb.note.server.write '
+  <note xmlns="http://docbook.org/ns/docbook">
+   <simpara>
+    It is the caller&apos;s responsibility to ensure that the server is capable
+    of executing the write operation. For example, executing a write operation
+    on a secondary (excluding its "local" database) will fail.
+   </simpara>
+  </note>
+'>
+
+<!ENTITY mongodb.warning.duplicate-keys '
+   <warning xmlns="http://docbook.org/ns/docbook">
+    <simpara>
+     BSON documents can technically contain duplicate keys because documents are
+     stored as a list of key-value pairs; however, applications should refrain
+     from generating documents with duplicate keys as server and driver behavior
+     may be undefined. Since PHP objects and arrays cannot have duplicate keys,
+     data could also be lost when decoding a BSON document with duplicate keys.
+    </simpara>
+   </warning>
+'>
+
+<!-- Radius -->
+<!ENTITY radius.request.required '<note xmlns="http://docbook.org/ns/docbook"><para>A request must be created via <function>radius_create_request</function> before this function can be called.</para></note>'>
+<!ENTITY radius.parameter.attribute-type '<varlistentry xmlns="http://docbook.org/ns/docbook"><term><parameter>type</parameter></term><listitem><para>The attribute type.</para></listitem></varlistentry>'>
+<!ENTITY radius.parameter.handle '<varlistentry xmlns="http://docbook.org/ns/docbook"><term><parameter>radius_handle</parameter></term><listitem><para>The RADIUS resource.</para></listitem></varlistentry>'>
+<!ENTITY radius.parameter.options '<varlistentry xmlns="http://docbook.org/ns/docbook"><term><parameter>options</parameter></term><listitem><para>A bitmask of the attribute options. The available options include <link linkend="constant.radius-option-tagged"><constant>RADIUS_OPTION_TAGGED</constant></link> and <link linkend="constant.radius-option-salt"><constant>RADIUS_OPTION_SALT</constant></link>.</para></listitem></varlistentry>'>
+<!ENTITY radius.parameter.tag '<varlistentry xmlns="http://docbook.org/ns/docbook"><term><parameter>tag</parameter></term><listitem><para>The attribute tag. This parameter is ignored unless the <link linkend="constant.radius-option-tagged"><constant>RADIUS_OPTION_TAGGED</constant></link> option is set.</para></listitem></varlistentry>'>
+<!ENTITY radius.parameter.vendor '<varlistentry xmlns="http://docbook.org/ns/docbook"><term><parameter>vendor</parameter></term><listitem><para>The vendor ID.</para></listitem></varlistentry>'>
+
+
 <!ENTITY mongo.setreadpreference.parameters '<variablelist xmlns="http://docbook.org/ns/docbook"><varlistentry><term><parameter>read_preference</parameter></term><listitem><para>読み込みの優先モード。<constant>MongoClient::RP_PRIMARY</constant>、<constant>MongoClient::RP_PRIMARY_PREFERRED</constant>、<constant>MongoClient::RP_SECONDARY</constant>、<constant>MongoClient::RP_SECONDARY_PREFERRED</constant> あるいは <constant>MongoClient::RP_NEAREST</constant> のいずれか。</para></listitem></varlistentry><varlistentry><term><parameter>tags</parameter></term><listitem><para>ゼロ個以上のタグセットの配列。各タグセット自体も配列で、レプリカセットのメンバーのタグにマッチさせる条件として使います。</para></listitem></varlistentry></variablelist>'>
 <!ENTITY mongo.setreadpreference.returnvalues '<para xmlns="http://docbook.org/ns/docbook">成功した場合に &true;、それ以外の場合に &false; を返します。</para>'>
 <!ENTITY mongo.setreadpreference.errors '<para xmlns="http://docbook.org/ns/docbook">パラメータが無効な場合、あるいは優先読み込みモードが <constant>MongoClient::RP_PRIMARY</constant> のときにタグセットを指定した場合に <constant>E_WARNING</constant> が発生します。</para>'>
@@ -2783,19 +3393,13 @@ xmlns="http://docbook.org/ns/docbook">この拡張モジュールは非推奨で
           <entry><type class="union"><type>array</type><type>object</type></type></entry>
           <entry>
            <para>
-             <link xlink:href="&url.mongodb.docs.collation;" xmlns:xlink="http://www.w3.org/1999/xlink">Collation</link>
-             は、文字列比較の際の言語固有のルールを指定するものです。たとえば、大文字小文字やアクセント記号の扱いを指定できます。
-             collation を指定するときには <literal>"locale"</literal> フィールドが必須となります。それ以外の collation フィールドはすべて任意指定です。
-             各フィールドについての説明は <link xlink:href="&url.mongodb.docs.collation;#collation-document" xmlns:xlink="http://www.w3.org/1999/xlink">Collation のドキュメント</link>
-             を参照ください。
+            <link xlink:href="&url.mongodb.docs.collation;" xmlns:xlink="http://www.w3.org/1999/xlink">Collation</link> allows users to specify language-specific rules for string comparison, such as rules for lettercase and accent marks. When specifying collation, the <literal>"locale"</literal> field is mandatory; all other collation fields are optional. For descriptions of the fields, see <link xlink:href="&url.mongodb.docs.collation;#collation-document" xmlns:xlink="http://www.w3.org/1999/xlink">Collation Document</link>.
            </para>
            <para>
-            collation が未指定で collection のデフォルトの collation が設定されている場合は、コレクションが持っている collation を用いて操作を実行します。
-            コレクションや操作にも collation が指定されていない場合は、MongoDB は単純にバイナリ比較を行います。
-            これは、今までのバージョンでの文字列比較と同じ方法です。
+            If the collation is unspecified but the collection has a default collation, the operation uses the collation specified for the collection. If no collation is specified for the collection or for the operation, MongoDB uses the simple binary comparison used in prior versions for string comparisons.
            </para>
            <para>
-            このオプションは MongoDB 3.4 以降で使用可能です。それより前のバージョンのサーバー上で指定すると、実行時に例外が発生します。
+            This option is available in MongoDB 3.4+ and will result in an exception at execution time if specified for an older server version.
            </para>
           </entry>
          </row>
@@ -2834,7 +3438,7 @@ xmlns="http://docbook.org/ns/docbook">この拡張モジュールは非推奨で
           <entry><type>array</type></entry>
           <entry>
            <para>
-            A document containing the configuration for one or more KMS providers, which are used to encrypt data keys. Currently <literal>"aws"</literal>, <literal>"azure"</literal>, <literal>"gcp"</literal>, and <literal>"local"</literal> are supported and at least one must be specified.
+            A document containing the configuration for one or more KMS providers, which are used to encrypt data keys. Supported providers include <literal>"aws"</literal>, <literal>"azure"</literal>, <literal>"gcp"</literal>, <literal>"kmip"</literal>, and <literal>"local"</literal> and at least one must be specified.
            </para>
            <para>
             The format for <literal>"aws"</literal> is as follows:
@@ -2858,7 +3462,6 @@ azure: {
     clientId: <string>,
     clientSecret: <string>,
     identityPlatformEndpoint: <optional string> // Defaults to "login.microsoftonline.com"
-
 }
 ]]>
            </programlisting>
@@ -2867,11 +3470,20 @@ azure: {
            </para>
            <programlisting role="javascript">
 <![CDATA[
-aws: {
+gcp: {
     email: <string>,
     privateKey: <base64 string>|<MongoDB\BSON\Binary>,
     endpoint: <optional string> // Defaults to "oauth2.googleapis.com"
-
+}
+]]>
+           </programlisting>
+           <para>
+            The format for <literal>"kmip"</literal> is as follows:
+           </para>
+           <programlisting role="javascript">
+<![CDATA[
+kmip: {
+    endpoint: <string>
 }
 ]]>
            </programlisting>
@@ -2889,25 +3501,179 @@ local: {
           </entry>
          </row>
 '>
-<!-- to be translated -->
+<!ENTITY mongodb.option.encryption.masterKey-options-by-provider '
+  <para xmlns="http://docbook.org/ns/docbook">
+   <table>
+    <title><literal>"aws"</literal> provider options</title>
+    <tgroup cols="3">
+     <thead>
+      <row>
+       <entry>Option</entry>
+       <entry>Type</entry>
+       <entry>Description</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry>region</entry>
+       <entry>string</entry>
+       <entry>Required.</entry>
+      </row>
+      <row>
+       <entry>key</entry>
+       <entry>string</entry>
+       <entry>Required. The Amazon Resource Name (ARN) to the AWS customer master key (CMK).</entry>
+      </row>
+      <row>
+       <entry>endpoint</entry>
+       <entry>string</entry>
+       <entry>Optional. An alternate host identifier to send KMS requests to. May include port number.</entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </table>
+  </para>
+  <para xmlns="http://docbook.org/ns/docbook">
+   <table>
+    <title><literal>"azure"</literal> provider options</title>
+    <tgroup cols="3">
+     <thead>
+      <row>
+       <entry>Option</entry>
+       <entry>Type</entry>
+       <entry>Description</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry>keyVaultEndpoint</entry>
+       <entry>string</entry>
+       <entry>Required. Host with optional port (e.g. "example.vault.azure.net").</entry>
+      </row>
+      <row>
+       <entry>keyName</entry>
+       <entry>string</entry>
+       <entry>Required.</entry>
+      </row>
+      <row>
+       <entry>keyVersion</entry>
+       <entry>string</entry>
+       <entry>Optional. A specific version of the named key. Defaults to using the key&apos;s primary version.</entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </table>
+  </para>
+  <para xmlns="http://docbook.org/ns/docbook">
+   <table>
+    <title><literal>"gcp"</literal> provider options</title>
+    <tgroup cols="3">
+     <thead>
+      <row>
+       <entry>Option</entry>
+       <entry>Type</entry>
+       <entry>Description</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry>projectId</entry>
+       <entry>string</entry>
+       <entry>Required.</entry>
+      </row>
+      <row>
+       <entry>location</entry>
+       <entry>string</entry>
+       <entry>Required.</entry>
+      </row>
+      <row>
+       <entry>keyRing</entry>
+       <entry>string</entry>
+       <entry>Required.</entry>
+      </row>
+      <row>
+       <entry>keyName</entry>
+       <entry>string</entry>
+       <entry>Required.</entry>
+      </row>
+      <row>
+       <entry>keyVersion</entry>
+       <entry>string</entry>
+       <entry>Optional. A specific version of the named key. Defaults to using the key&apos;s primary version.</entry>
+      </row>
+      <row>
+       <entry>endpoint</entry>
+       <entry>string</entry>
+       <entry>Optional. Host with optional port. Defaults to "cloudkms.googleapis.com".</entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </table>
+  </para>
+  <para xmlns="http://docbook.org/ns/docbook">
+   <table>
+    <title><literal>"kmip"</literal> provider options</title>
+    <tgroup cols="3">
+     <thead>
+      <row>
+       <entry>Option</entry>
+       <entry>Type</entry>
+       <entry>Description</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry>keyId</entry>
+       <entry>string</entry>
+       <entry>Optional. Unique identifier to a 96-byte KMIP secret data managed object. If unspecified, the driver creates a random 96-byte KMIP secret data managed object.</entry>
+      </row>
+      <row>
+       <entry>endpoint</entry>
+       <entry>string</entry>
+       <entry>Optional. Host with optional port.</entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </table>
+  </para>
+'>
+<!ENTITY mongodb.option.encryption.tlsOptions '
+         <row xmlns="http://docbook.org/ns/docbook">
+          <entry>tlsOptions</entry>
+          <entry><type>array</type></entry>
+          <entry>
+           <para>
+            A document containing the TLS configuration for one or more KMS providers. Supported providers include <literal>"aws"</literal>, <literal>"azure"</literal>, <literal>"gcp"</literal>, and <literal>"kmip"</literal>. All providers support the following options:
+           </para>
+           <programlisting role="javascript">
+<![CDATA[
+<provider>: {
+    tlsCaFile: <optional string>,
+    tlsCertificateKeyFile: <optional string>,
+    tlsCertificateKeyFilePassword: <optional string>,
+    tlsDisableOCSPEndpointCheck: <optional bool>
+}
+]]>
+           </programlisting>
+          </entry>
+         </row>
+'>
 <!ENTITY mongodb.option.maxCommitTimeMS '
          <row xmlns="http://docbook.org/ns/docbook">
           <entry>maxCommitTimeMS</entry>
           <entry>integer</entry>
           <entry>
            <para>
-            <literal>commitTransaction</literal>
-            コマンドが実行できる最大の時間をミリ秒単位で指定します
+            The maximum amount of time in milliseconds to allow a single
+            <literal>commitTransaction</literal> command to run.
            </para>
            <para>
-            指定する場合、
-            <literal>maxCommitTimeMS</literal> は、符号付き32bit
-            の整数より大きいか、0でなければなりません
+            If specified, <literal>maxCommitTimeMS</literal> must be a signed
+            32-bit integer greater than or equal to zero.
            </para>
           </entry>
          </row>
 '>
-<!-- to be translated -->
 <!ENTITY mongodb.option.readConcern '
          <row xmlns="http://docbook.org/ns/docbook">
           <entry>readConcern</entry>
@@ -2946,7 +3712,6 @@ local: {
           </entry>
          </row>
 '>
-<!-- to be translated -->
 <!ENTITY mongodb.option.transactionReadWriteConcern '
      <warning xmlns="http://docbook.org/ns/docbook">
       <para>
@@ -2971,13 +3736,12 @@ local: {
           </entry>
          </row>
 '>
-
 <!ENTITY mongodb.parameter.namespace '
    <varlistentry xmlns="http://docbook.org/ns/docbook">
     <term><parameter>namespace</parameter> (<type>string</type>)</term>
     <listitem>
      <para>
-      完全修飾形式の名前空間 (<literal>"databaseName.collectionName"</literal>)。
+      A fully qualified namespace (e.g. <literal>"databaseName.collectionName"</literal>).
      </para>
     </listitem>
    </varlistentry>
@@ -2987,7 +3751,7 @@ local: {
     <term><parameter>db</parameter> (<type>string</type>)</term>
     <listitem>
      <para>
-      コマンドを実行するデータベースの名前。
+      The name of the database on which to execute the command.
      </para>
     </listitem>
    </varlistentry>
@@ -2997,7 +3761,7 @@ local: {
     <term><parameter>bulk</parameter> (<classname>MongoDB\Driver\BulkWrite</classname>)</term>
     <listitem>
      <para>
-      実行する書き込み。
+      The write(s) to execute.
      </para>
     </listitem>
    </varlistentry>
@@ -3007,7 +3771,7 @@ local: {
     <term><parameter>command</parameter> (<classname>MongoDB\Driver\Command</classname>)</term>
     <listitem>
      <para>
-      実行するコマンド。
+      The command to execute.
      </para>
     </listitem>
    </varlistentry>
@@ -3017,7 +3781,7 @@ local: {
     <term><parameter>query</parameter> (<classname>MongoDB\Driver\Query</classname>)</term>
     <listitem>
      <para>
-      実行するクエリ。
+      The query to execute.
      </para>
     </listitem>
    </varlistentry>
@@ -3027,20 +3791,18 @@ local: {
     <term><parameter>typeMap</parameter> (<type>array</type>)</term>
     <listitem>
      <para>
-      <link linkend="mongodb.persistence.typemaps">型マップの設定</link>。
+      <link linkend="mongodb.persistence.typemaps">Type map configuration</link>.
      </para>
     </listitem>
    </varlistentry>
 '>
-
-<!-- to be translated -->
 <!ENTITY mongodb.parameter.filter '
    <varlistentry xmlns="http://docbook.org/ns/docbook">
     <term><parameter>filter</parameter> (<type class="union"><type>array</type><type>object</type></type>)</term>
     <listitem>
      <para>
-      <link xlink:href="&url.mongodb.docs;tutorial/query-documents/" xmlns:xlink="http://www.w3.org/1999/xlink">クエリ述語</link>。
-      空の述語を指定すると、コレクション内のすべてのドキュメントにマッチします。
+      The <link xlink:href="&url.mongodb.docs;tutorial/query-documents/" xmlns:xlink="http://www.w3.org/1999/xlink">query predicate</link>.
+      An empty predicate will match all documents in the collection.
      </para>
      <note>
       <simpara>
@@ -3050,20 +3812,15 @@ local: {
     </listitem>
    </varlistentry>
 '>
-<!ENTITY mongodb.returns.cursor '<para xmlns="http://docbook.org/ns/docbook">成功した場合に <classname>MongoDB\Driver\Cursor</classname> を返します。</para>'>
-<!ENTITY mongodb.returns.writeresult '<para xmlns="http://docbook.org/ns/docbook">成功した場合に <classname>MongoDB\Driver\WriteResult</classname> を返します。</para>'>
+<!ENTITY mongodb.returns.cursor '<para xmlns="http://docbook.org/ns/docbook">Returns <classname>MongoDB\Driver\Cursor</classname> on success.</para>'>
+<!ENTITY mongodb.returns.writeresult '<para xmlns="http://docbook.org/ns/docbook">Returns <classname>MongoDB\Driver\WriteResult</classname> on success.</para>'>
 <!ENTITY mongodb.throws.std '&mongodb.throws.argumentparsing;&mongodb.throws.connection;&mongodb.throws.authentication;'>
-
-<!-- to be translated -->
 <!ENTITY mongodb.throws.session-readwriteconcern '<member xmlns="http://docbook.org/ns/docbook">Throws <classname>MongoDB\Driver\Exception\InvalidArgumentException</classname> if the <literal>"session"</literal> option is used with an associated transaction in combination with a <literal>"readConcern"</literal> or <literal>"writeConcern"</literal> option.</member>'>
 <!ENTITY mongodb.throws.session-unacknowledged '<member xmlns="http://docbook.org/ns/docbook">Throws <classname>MongoDB\Driver\Exception\InvalidArgumentException</classname> if the <literal>"session"</literal> option is used in combination with an unacknowledged write concern.</member>'>
-
-<!ENTITY mongodb.throws.bulkwriteexception '<member xmlns="http://docbook.org/ns/docbook">書き込みが失敗した場合 (書き込み先の適用に失敗した場合など) に <classname>MongoDB\Driver\Exception\BulkWriteException</classname> をスローします。</member>'>
-<!ENTITY mongodb.throws.argumentparsing '<member xmlns="http://docbook.org/ns/docbook">引数のパースに失敗した場合に <classname>MongoDB\Driver\Exception\InvalidArgumentException</classname> をスローします。</member>'>
-<!ENTITY mongodb.throws.authentication '<member xmlns="http://docbook.org/ns/docbook">認証が必要な場面で認証に失敗した場合に <classname>MongoDB\Driver\Exception\AuthenticationException</classname> をスローします。</member>'>
-<!ENTITY mongodb.throws.connection '<member xmlns="http://docbook.org/ns/docbook">サーバーへの接続が認証以外の理由で失敗した場合に <classname>MongoDB\Driver\Exception\ConnectionException</classname> をスローします。</member>'>
-
-<!-- to be translated -->
+<!ENTITY mongodb.throws.bulkwriteexception '<member xmlns="http://docbook.org/ns/docbook">Throws <classname>MongoDB\Driver\Exception\BulkWriteException</classname> on any write failure (e.g. write error, failure to apply a write concern)</member>'>
+<!ENTITY mongodb.throws.argumentparsing '<member xmlns="http://docbook.org/ns/docbook">Throws <classname>MongoDB\Driver\Exception\InvalidArgumentException</classname> on argument parsing errors.</member>'>
+<!ENTITY mongodb.throws.authentication '<member xmlns="http://docbook.org/ns/docbook">Throws <classname>MongoDB\Driver\Exception\AuthenticationException</classname> if authentication is needed and fails.</member>'>
+<!ENTITY mongodb.throws.connection '<member xmlns="http://docbook.org/ns/docbook">Throws <classname>MongoDB\Driver\Exception\ConnectionException</classname> if connection to the server fails (for reasons other than authentication).</member>'>
 <!ENTITY mongodb.throws.bson.unexpected '<member xmlns="http://docbook.org/ns/docbook">Throws <classname>MongoDB\Driver\Exception\UnexpectedValueException</classname> if the input did not contain exactly one BSON document. Possible reasons include, but are not limited to, invalid BSON, extra data (after reading one BSON document), or an unexpected <link xlink:href="&url.mongodb.libbson;" xmlns:xlink="http://www.w3.org/1999/xlink">libbson</link> error.</member>'>
 
 <!ENTITY mongodb.note.queryable-encryption-preview '
@@ -3079,13 +3836,12 @@ local: {
 <!ENTITY mongodb.note.decimal128 '
    <note xmlns="http://docbook.org/ns/docbook">
     <simpara>
-     <classname>MongoDB\BSON\Decimal128</classname> は、
-     MongoDB 3.4 以降でしか使えません。それより前のバージョンの MongoDB の
-     BSON 型でこれを使おうとすると、エラーが発生します。
+     <classname>MongoDB\BSON\Decimal128</classname> is only compatible with
+     MongoDB 3.4+. Attempting to use the BSON type with an earlier version of
+     MongoDB will result in an error.
     </simpara>
    </note>
 '>
-<!-- to be translated -->
 <!ENTITY mongodb.note.extended-json '
   <note xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
    <simpara>
@@ -3103,15 +3859,14 @@ local: {
 <!ENTITY mongodb.note.forking '
    <note xmlns="http://docbook.org/ns/docbook">
     <simpara>
-     Unix プラットフォームの MongoDB ドライバーは、
-     exec() システムコールを呼ばすに fork() システムコールを使っているスクリプトの影響を受けます。
-     <classname>MongoDB\Driver\Manager</classname> のインスタンスを、
-     フォークした子プロセスで再利用しないことをおすすめします。
+     On Unix platforms, the MongoDB driver is sensitive to scripts that use the
+     fork() system call without also calling exec(). Users are advised not to
+     re-use <classname>MongoDB\Driver\Manager</classname> instances in a forked
+     child process.
     </simpara>
    </note>
 '>
 
-<!-- to be translated -->
 <!ENTITY mongodb.note.uint32 '
   <note xmlns="http://docbook.org/ns/docbook">
    <simpara>
@@ -3121,7 +3876,8 @@ local: {
     used to obtain a string representation of the unsigned decimal value.
    </simpara>
   </note>
-'> 
+'>
+
 <!ENTITY mongodb.note.server.readpreference '
   <note xmlns="http://docbook.org/ns/docbook">
    <simpara>
@@ -3133,7 +3889,8 @@ local: {
     preference to the operation, respectively.
    </simpara>
   </note>
-'> 
+'>
+
 <!ENTITY mongodb.note.server.write '
   <note xmlns="http://docbook.org/ns/docbook">
    <simpara>
@@ -3142,7 +3899,7 @@ local: {
     on a secondary (excluding its "local" database) will fail.
    </simpara>
   </note>
-'> 
+'>
 
 <!ENTITY mongodb.warning.duplicate-keys '
    <warning xmlns="http://docbook.org/ns/docbook">
