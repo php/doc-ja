@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: fa6c0138655159c9a360fbbf0364ac0f38274abd Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 5f7a949cfc6f43d481d3a9513f9ee19db9afe21d Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa,shimooka,mumumu -->
 
   <chapter xml:id="security.database" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
@@ -138,37 +138,34 @@ if ($row && password_verify($password, $row['pwd'])) {
    <sect1 xml:id="security.database.sql-injection">
     <title>SQLインジェクション</title>
     <simpara>
-     多くの開発者はSQLクエリがどのように改竄されるかということを余り気にかけておらず、またSQLクエリは信用できるものと考えているようです。
-     実際にはSQLクエリはアクセス制限を回避することが可能で、従って
-     通常の認証や権限のチェックを無視することができます。
-     
-    時には、 OSレベルのコマンドを実行できてしまうこともあります。
-    </simpara>
-    <simpara>
-     ダイレクトSQLコマンドインジェクション(SQLコマンドの直接実行)という手法は、攻撃者がSQLコマンドを生成もしくは既存のコマンドを変更することで隠蔽すべきデータを公開したり、重要なデータを書き換えたり、データベースホストで危険なシステムレベルのコマンドを実行したりするものの事です。
-     
-     この手法は、ユーザーからの入力をスタティックなパラメータと組み合わせて
-     SQLクエリを生成するアプリケーションにおいて使用されます。以下の例は不幸なことに実際の事例に基づいたものです。
+     SQLインジェクションは、
+     攻撃者が動的なSQLクエリを組み立てる責任があるアプリケーションコードの欠陥を突く手法です。
+     攻撃者は、アプリケーションの権限が必要な部分にアクセスでき、
+     データベースからすべての情報を引き出し、既存のデータを改ざんしたり、
+     危険なシステムレベルのコマンドをデータベースのホスト上で実行できてしまいます。
+     こうした脆弱性は、開発者が任意の入力をSQL文に結合したり、挿入したりすることで発生します。
     </simpara>
     <para>
-     入力のチェックを怠っており、スーパーユーザーもしくはデータベース作成権限を持つユーザー以外のユーザーでデータベースに接続していないために、攻撃者はデータベースにスーパーユーザーを作成することが出来ます。
      <example>
       <title>
        表示するデータを分割し ... そしてスーパーユーザーを作成します。(PostgreSQLの例)
       </title>
+      <simpara>
+       以下の例では、ユーザーからの入力が直接SQLクエリに挿入されているため、
+       攻撃者がデータベースの superuser アカウントを取得できてしまいます。
+      </simpara>
       <programlisting role="php">
 <![CDATA[
-$offset = $argv[0]; // 入力チェックが行われていません！
+$offset = $_GET['offset']; // 入力チェックが行われていません！
 $query  = "SELECT id, name FROM products ORDER BY name LIMIT 20 OFFSET $offset;";
 $result = pg_query($conn, $query);
 ]]>
       </programlisting>
      </example>
-      通常のユーザーは、<varname>$offset</varname>が<acronym>URL</acronym>に埋め込まれている
+      通常のユーザーは、<varname>$offset</varname> が <acronym>URL</acronym> に埋め込まれている
       '次へ'または'前へ'リンクをクリックします。スクリプトは、受け取った
-      <varname>$offset</varname>が数字であることを期待します。しかしながら、
-      攻撃者は<function>urlencode</function>された以下のような<acronym>URL</acronym>を追加
-      することで攻撃を試みます。
+      <varname>$offset</varname> が数字であることを期待します。しかしながら、
+      以下のような値を <acronym>URL</acronym> に追加して攻撃を試みるとどうなるでしょうか？
       <informalexample>
        <programlisting>
 <![CDATA[
@@ -181,7 +178,7 @@ insert into pg_shadow(usename,usesysid,usesuper,usecatupd,passwd)
        </programlisting>
       </informalexample>
       このようなことが行われると、スクリプトは攻撃者にスーパーユーザー権限での
-      アクセスを提供してしまいます。<literal>0;</literal>が正しいオフセット
+      アクセスを提供してしまいます。<literal>0;</literal>が正しいオフセットを
       指していると同時に、クエリをそこで終端させていることに気をつけてください。
     </para>
     <note>
@@ -193,16 +190,16 @@ insert into pg_shadow(usename,usesysid,usesuper,usecatupd,passwd)
     </note>
     <para>
     パスワードを取得する恐るべき手段に、サイトの検索結果のページを欺く
-    というものがあります。攻撃する者が必要とするものは、投稿された変数
+    というものがあります。攻撃者が必要な作業は、投稿された変数
     の中でSQL命令で使用される際に正しく扱われていないものがあるかどう
-    かを確かめるだけです。これらのフィルタは、通常、
-    <literal>SELECT</literal>文の<literal>WHERE, ORDER BY,
-    LIMIT</literal>及び<literal>OFFSET</literal>句をカスタマイズするた
+    かを確かめることだけです。これらのフィルタは、通常、
+    <literal>SELECT</literal> 文の <literal>WHERE, ORDER BY,
+    LIMIT</literal> 及び <literal>OFFSET</literal> 句をカスタマイズするた
     めに前に置かれる形で設定されます。使用するデータベースが
     <literal>UNION</literal>構造をサポートしている場合、
     攻撃者は元のクエリに任意のテーブルからパスワードのリストを取得する
     クエリを追加しようとするかもしれません。
-    暗号化されたパスワードフィールドを使用することが強く推奨されます。
+    パスワードそのものではなく、セキュアなハッシュ化されたパスワードだけを保存することを強く推奨します。
      <example>
       <title>
       記事...そして(全てのデータベースサーバーの)いくつかのパスワード
@@ -227,18 +224,10 @@ union select '1', concat(uname||'-'||passwd) as name, '1971-01-01', '0' from use
 ]]>
       </programlisting>
      </informalexample>
-     (<literal>'</literal>及び<literal>--</literal>を使用する)
-     このクエリが<varname>$query</varname>で使用される変数の１つに代入
-     された場合、この悪意のあるクエリが実行されることになります。
     </para>
     <para>
-     SQL UPDATE もデータベースを攻撃するために使用されます。これらのク
-     エリも切捨てたり新しいクエリを元のクエリに追加することによる攻撃
-     を受けます。しかし、攻撃者は<literal>SET</literal>句を使用する可
-     能性があります。この場合、クエリを成功させるためにいくつかのスキー
-     マ情報を保有する必要があります。これは、フォームの変数名や総当た
-     り法により調べることができます。パスワードまたはユーザー名を保存す
-     るフィールド用の命名記法はそう多くはありません。
+     <literal>UPDATE</literal> や <literal>INSERT</literal> 文も、
+     データベースを攻撃するために使用されます。
      <example>
      <title>
      パスワードのリセットから ... (全てのデータベースサーバーで)より多
@@ -250,7 +239,7 @@ $query = "UPDATE usertable SET pwd='$pwd' WHERE uid='$uid';";
 ]]>
       </programlisting>
      </example>
-     しかし、もし悪意のあるユーザーが管理者のパスワードを変更するために
+     もし悪意のあるユーザーが管理者のパスワードを変更するために
      値 <literal>' or uid like'%admin%</literal> を
      <varname>$uid</varname> に代入するか、または、より多くの権限を得
      るために、単純に<varname>$pwd</varname> に
@@ -273,12 +262,26 @@ $query = "UPDATE usertable SET pwd='hehehe', trusted=100, admin='yes' WHERE
       </programlisting>
      </informalexample>
     </para>
+    <simpara>
+     攻撃者がデータベースの構造に関して最低限の知識を持っていないと攻撃は成功しないのが明らかです。
+     しかし、その手の情報はたいてい、とても簡単に入手できます。
+     たとえば、コードの一部がオープンソースソフトウェアの一部のため、
+     公開されている可能性があります。
+     こうした情報は、クローズドソースの場合でも漏洩する可能性があります -
+     エンコードされたり、難読化されたり、コンパイルされていてもです。 -
+     さらに、自作のコードであっても、エラーメッセージを表示することで漏れてしまう可能性があるのです。
+     他の方法としては、ありがちなテーブルやカラムの名前を使うことが挙げられます。
+     たとえば、'id', 'username', 'password' カラムを持つ 'users' テーブルを使うログインフォームが挙げられます。
+    </simpara>
     <para>
-    恐ろしい例として、いくつかのデータベースホストのオペレーティン
-    グシステムレベルのコマンドがアクセス可能となる方法を示します。
      <example>
      <title>データベースホストのオペレーティングシステムを攻撃する
      (MSSQLサーバー)</title>
+      <simpara>
+       恐ろしい例として、
+       いくつかのデータベースホストで、
+       オペレーティングシステムレベルのコマンドがアクセスできる方法を示します。
+      </simpara>
       <programlisting role="php">
 <![CDATA[
 $query  = "SELECT * FROM products WHERE id LIKE '%$prod%'";
@@ -300,23 +303,22 @@ $result = mssql_query($query);
 ]]>
       </programlisting>
      </informalexample>
-     MSSQLサーバー−は、新規ユーザーをローカルアカウント用データベースに追
+     MSSQLサーバーは、新規ユーザーをローカルアカウント用データベースに追
      加するコマンドを含むSQL命令をバッチ実行します。
      このアプリケーションが<literal>sa</literal>で実行され、
-     MSSQLSERVERサービスが充分な権限で実行されている場合、攻撃者は
+     MSSQLSERVERサービスが充分な権限で実行されていた場合、攻撃者は
      このマシンにアクセスする権限を有することになります。
     </para>
     <note>
      <para>
-     上記のいくつかの例は、データベースサーバーの種類に依存しています。
-      これは、他の製品に対して同様な攻撃ができないことを意味するもので
-      はありません。使用しているデータベースが他の手段で攻撃可能である
-      可能性もあります。
+      上記の例は、データベースサーバーの種類に依存しています。
+      しかし、他の製品に対して同様な攻撃ができないことを意味するもので
+      はありません。使用しているデータベースが他の手段で攻撃できる可能性もあります。
      </para>
     </note>
     <para>
      <mediaobject>
-      <alt>SQL インジェクションで発生する問題の例</alt>
+      <alt>SQL インジェクションで発生する面白い問題の例</alt>
       <imageobject>
        <imagedata fileref="ja/security/figures/xkcd-bobby-tables.png" format="PNG"/>
       </imageobject>
@@ -326,106 +328,108 @@ $result = mssql_query($query);
 
     <sect2 xml:id="security.database.avoiding">
      <title>回避策</title>
-     <simpara>
-      攻撃者がデータベースの構造に関して最低限の知識を持っていないと攻撃は成功しないということは明らかですが、
-      その手の情報はたいてい、簡単に入手できます。
-      たとえば、オープンソースやその他一般に公開されているソフトウェアパッケージをデフォルトの設定で使っていれば、
-      データベースの情報は完全に公開されているので誰でも知ることができます。
-      クローズドソースのコードであってもこの手の情報は漏れることがあります。
-      たとえ何らかの難読化処理が行われていたとしても。
-      さらに、自作のコードだとしても、
-      画面に表示されるエラーメッセージなどから情報が漏れることがあります。
-      それ以外にも、ありがちなテーブル名やカラム名などは攻撃の対象となります。
-      たとえば、ログインフォームで使っているテーブル名が 'users'
-      で、その中に 'id'、'username'、'password' といったカラムがある場合などです。
-     </simpara>
-     <simpara>
-     これらの攻撃は、セキュリティを考慮して書かれていないコードを攻撃
-     する方法です。特にクライアント側から入力されるあらゆる種類の入力
-     を決して信用しないでください。これは、selectボックスやhidden input
-     フィールド、Cookieの場合も同様です。最初の例は、このような欠点の
-     ないクエリが破滅をもたらしうることを示すものです。
-     </simpara>
-
-     <itemizedlist>
-      <listitem>
-       <simpara>
-       データベースにスーパーユーザーまたはデータベースの所有者として接続しないでください。
-     非常に制限された権限を有するカスタマイズされたユーザーを常に使用してください。
-       </simpara>
-      </listitem>
-      <listitem>
-       <simpara>
-        プリペアドステートメントとバインド変数を使いましょう。
-        <link linkend="pdo.prepared-statements">PDO</link> や
-        <link linkend="mysqli.quickstart.prepared-statements">MySQLi</link>
-        で使えるし、その他のライブラリでも提供されている機能です。
-       </simpara>
-      </listitem>
-      <listitem>
-       <simpara>
-       指定された入力が期待するデータ型であることを確認してください。
-       <acronym>PHP</acronym>は、多くの種類の入力検証用関数を有しており、
-        <link linkend="ref.var">変数関連の関数</link>や
-        <link linkend="ref.ctype">文字型関数</link>にある簡単な関数
-        (例: それぞれ、<function>is_numeric</function>,
-       <function>ctype_digit</function>) や、
-        <link linkend="ref.pcre">Perl互換の正規表現</link>のサポートま
-       であります。
-       </simpara>
-      </listitem>
-      <listitem>
-       <para>
-       アプリケーションが、数値入力を期待している場合、データを
-       <function>is_numeric</function>で検証するか、
-       <function>settype</function>により暗黙の型変換を行うか、
-       <function>sprintf</function>により数値表現を使用することを検討
-       してみてください。
-        <example>
-         <title>ページング用のクエリを構築するためのより安全な方法</title>
-         <programlisting role="php">
+     <para>
+      SQLインジェクションを回避するおすすめの方法は、
+      すべてのデータをプリペアドステートメント経由でバインドすることです。
+      パラメータ化されたクエリは、
+      SQLインジェクションをすべて防ぐのに十分ではありませんが、
+      SQL文への入力を与える一番簡単かつ安全な方法です。
+      <literal>WHERE</literal>,
+      <literal>SET</literal>, <literal>VALUES</literal>
+      句に与えるすべての動的なデータリテラルは、
+      すべてプレースホルダーで置き換えなければいけません。
+      すべての実データは実行中にバインドされ、SQL マンドとは別に送信されます。
+     </para>
+     <para>
+      パラメータのバインドは、データに対してのみ使えます。
+      SQLクエリの他の動的な部分については、
+      許される値の既知の値でフィルタしなければいけません。
+     </para>
+     <para>
+      <example>
+      <title>PDO のプリペアドステートメントを使い、SQLインジェクションを回避する</title>
+       <programlisting role="php">
 <![CDATA[
-settype($order, 'integer');
-$query  = "SELECT id, name FROM products ORDER BY name LIMIT 20 OFFSET $offset;";
-
-// フォーマット文字列の%dに注意してください。%sを使用しても意味がありません。
-$query = sprintf("SELECT id, name FROM products ORDER BY name LIMIT 20 OFFSET %d;",
-                 $offset);
+<?php
+// SQL の動的な部分は、期待する値になるように検証されています
+$sortingOrder = $_GET['sortingOrder'] === 'DESC' ? 'DESC' : 'ASC';
+$productId = $_GET['productId'];
+// SQL はプレースホルダを使って準備します。
+$stmt = $pdo->prepare("SELECT * FROM products WHERE id LIKE ? ORDER BY price {$sortingOrder}");
+// 値は LIKE ワイルドカードを使って与えられます
+$stmt->execute(["%{$productId}%"]);
+?>
 ]]>
-         </programlisting>
-        </example>
-       </para>
-      </listitem>
-      <listitem>
-       <simpara>
-       データベースがバインド変数をサポートしていない場合は、
-       データベースに渡される数値以外のユーザー入力を
-       データベース固有の文字列エスケープ関数
-       (<function>mysql_real_escape_string</function>,
-        <function>sqlite_escape_string</function> など)
-       でクオートしてください。
-        <function>addslashes</function> のような汎用関数が使える場面は非常に限られています
-        (MySQL をシングルバイト文字セットで使っていて、かつ
-        <varname>NO_BACKSLASH_ESCAPES</varname> を無効にしている場合など)。
-        なので、<function>addslashes</function> などの関数を使ってはいけません。
-      </simpara>
-     </listitem>
-     <listitem>
-      <simpara>
-       データベース固有の情報、特にスキーマに関する情報は出力してはい
-       けません。<link linkend="security.errors">エラー出力</link>およ
-       び<link linkend="ref.errorfunc">エラー処理およびログ関数</link>
-       も参照ください。
-      </simpara>
-     </listitem>
-     <listitem>
-      <simpara>
-       ユーザーがテーブルまたはビューに直接アクセスできないように、
-       データアクセスを抽象化することを目的としてストアドプロシージャ
-       及び事前に定義したカーソルを使用することもできますが、このソリューションには、副作用があります。
-      </simpara>
-     </listitem>
-    </itemizedlist>
+       </programlisting>
+      </example>
+     </para>
+
+     <simpara>
+      プリペアドステートメントは
+      <link linkend="pdo.prepared-statements">PDO</link> や
+      <link linkend="mysqli.quickstart.prepared-statements">MySQLi</link>、
+      そして他のデータベースライブラリでも使えます。
+     </simpara>
+
+     <simpara>
+      SQLインジェクションによる攻撃は、
+      セキュリティを考慮して書かれていないコードを攻撃する方法です。
+      特にクライアント側から入力されるあらゆる種類の入力を決して信用しないでください。これは、select ボックス や hidden input フィールド、Cookie の場合も同様です。最初に示した例は、簡単なクエリが破滅をもたらしうることを示しています。
+     </simpara>
+
+     <para>
+      攻撃を防ぐ戦略として、以下に示すいくつかのコーディングプラクティスに従うことが挙げられます:
+      <itemizedlist>
+       <listitem>
+        <simpara>
+         データベースにスーパーユーザーまたはデータベースの所有者として接続しないでください。
+         非常に制限された権限を有するカスタマイズされたユーザーを常に使用してください。
+        </simpara>
+       </listitem>
+       <listitem>
+        <simpara>
+         指定された入力が期待するデータ型であることを確認してください。
+         <acronym>PHP</acronym>は、
+         多くの種類の入力検証用関数を有しており、
+         <link linkend="ref.var">変数関連の関数</link> や
+         <link linkend="ref.ctype">文字型関数</link> にある簡単な関数
+         (例: それぞれ、<function>is_numeric</function>, <function>ctype_digit</function>) や、<link linkend="ref.pcre">Perl互換の正規表現</link>のサポートまであります。
+        </simpara>
+       </listitem>
+       <listitem>
+        <simpara>
+         アプリケーションが数値入力を期待している場合、
+         <function>ctype_digit</function> を使ってデータを検証するか、
+         <function>settype</function> で暗黙の型変換を行うか、
+         <function>sprintf</function> で数値表現を使用することを検討してみてください。
+        </simpara>
+       </listitem>
+       <listitem>
+        <simpara>
+         データベースがバインド変数をサポートしていない場合は、
+         データベースに渡される数値以外のユーザー入力を
+         データベース固有の文字列エスケープ関数
+         (e.g.
+         <function>mysql_real_escape_string</function>,
+         <function>sqlite_escape_string</function> など)
+         を使ってクォートしてください。
+         <function>addslashes</function> のような汎用関数が使える場面は、
+         とても限定された環境に限られます。
+         (MySQL をシングルバイト文字セットで使っていて、かつ <varname>NO_BACKSLASH_ESCAPES</varname> を無効にしている場合など)
+         よって、この関数は使わないほうが良いです。
+        </simpara>
+       </listitem>
+       <listitem>
+        <simpara>
+         正しい手段でも、そうでなくても、データベース固有の情報、特にスキーマに関する情報は出力してはいけません。
+         <link
+         linkend="security.errors">エラー出力</link> および <link
+         linkend="ref.errorfunc">エラー処理およびログ関数</link>
+         も参照ください。
+        </simpara>
+       </listitem>
+      </itemizedlist>
+     </para>
 
     <simpara>
      これらのケースにおいて、スクリプトまたはサポートされている場合はデータベース自体でクエリのログをとることが有益です。
