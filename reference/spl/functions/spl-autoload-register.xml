@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 60809ebcf7d0c261b2f00e093e4fab70326ffc7b Maintainer: takagi Status: ready -->
+<!-- EN-Revision: a7f7a21fb973015c98ab3e9b9bb2d2d118f73291 Maintainer: takagi Status: ready -->
 <!-- CREDITS: shimooka,mumumu -->
 <refentry xml:id="function.spl-autoload-register" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -48,8 +48,11 @@
       </para>
       <methodsynopsis>
        <type>void</type><methodname><replaceable>callback</replaceable></methodname>
-       <methodparam><type>string</type><parameter>class_name</parameter></methodparam>
+       <methodparam><type>string</type><parameter>class</parameter></methodparam>
       </methodsynopsis>
+      <para>
+       <parameter>class</parameter> には、完全修飾子を示す、先頭のバックスラッシュが付くことはありません。
+      </para>
      </listitem>
     </varlistentry>
     <varlistentry>
@@ -144,8 +147,8 @@ spl_autoload_register(function ($class) {
 namespace Foobar;
 
 class Foo {
-    static public function test($name) {
-        print '[['. $name .']]';
+    static public function test($class) {
+        print '[['. $class .']]';
     }
 }
 
@@ -161,6 +164,34 @@ new InexistentClass;
 <![CDATA[
 [[Foobar\InexistentClass]]
 Fatal error: Class 'Foobar\InexistentClass' not found in ...
+]]>
+    </screen>
+   </example>
+   <example>
+    <title>識別子には先頭のバックスラッシュが付かない</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+spl_autoload_register(static function ($class) {
+    var_dump($class);
+});
+
+class_exists('RelativeName');
+class_exists('RelativeName\\WithNamespace');
+class_exists('\\AbsoluteName');
+class_exists('\\AbsoluteName\\WithNamespace');
+
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+string(12) "RelativeName"
+string(26) "RelativeName\WithNamespace"
+string(12) "AbsoluteName"
+string(26) "AbsoluteName\WithNamespace"
 ]]>
     </screen>
    </example>
