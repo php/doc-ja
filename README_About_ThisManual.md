@@ -36,7 +36,7 @@ https://github.com/php/doc-ja
 
 メンテナが時々つぶやいたりもしていますし、間違いの指摘や、これを翻訳して欲しい！などの要望も日本語で可能です。
 
-参加方法は [Slackin](https://slackin-phpusers-ja.herokuapp.com/) から join するか、[日本語で PHP の話をする Slack のグループを作ったよ](https://www.msng.info/archives/2016/02/phpusers-ja-on-slack.php) を参照して下さい。
+参加方法は [Slackの更新招待リンク](https://join.slack.com/t/phpusers-ja/shared_invite/zt-1sve5o635-KLGDr5KRUrUYHbiq_sMR_A) から join するか、[日本語で PHP の話をする Slack のグループを作ったよ](https://www.msng.info/archives/2016/02/phpusers-ja-on-slack.php) を参照して下さい。
 
 ### 3. 日本PHPユーザー会 の ML
 
