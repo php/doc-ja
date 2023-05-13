@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 383a659e1f0f7aa3330b31a095a1e927611d4c71 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 968c2bc60de3e93d7f38be0b9d2d1b9685a16ea7 Maintainer: takagi Status: ready -->
 <!-- Credits: mumumu -->
 <chapter xml:id="mysqlinfo.concepts" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>コンセプト</title>
@@ -35,18 +35,23 @@
   </note>
   
   <para>
-   非バッファクエリは、クエリを実行してリソースを返しますが、
-   その時点ではまだデータが MySQL サーバー上にあって取得待ちになっています。
+   非バッファクエリは、クエリを実行してMySQLサーバからデータを取得するのを待ちます。
    PHP 側でのメモリ消費が少なくなりますが、サーバーへの負荷は高くなります。
    サーバー上の結果セットからすべての結果を取得するまで、
    同じ接続上で別のクエリを実行することはできません。
    非バッファクエリは「結果を使う」クエリとも呼ばれます。
+   結果セットから全ての行が取得されると、
+   結果セットは削除されるので再度ループさせることはできません。
   </para>
 
   <para>
-   こういった特性を考慮すると、バッファクエリを使うのは、
-   結果セットの量が限られている場合や事前に結果の行数を知りたい場合だけにとどめるべきでしょう。
-   結果が大量に返ってくることが想定できる場合は、非バッファモードを使わないといけません。
+   こういった特性を考慮すると、非バッファクエリを使うのは、
+   結果セットの量が巨大な場合や、順番に結果を処理する場合だけに留めるべきでしょう。
+   非バッファクエリには、たくさんの落とし穴があり、
+   そのため使い方が難しいです。
+   たとえば、結果セットの行数が最後の行を取得するまで不明な点が挙げられます。
+   バッファクエリは使い方が簡単で、
+   結果セットをより柔軟に処理できます。
   </para>
   
   <!-- @TODO
@@ -67,12 +72,10 @@
 <![CDATA[
 <?php
 $mysqli  = new mysqli("localhost", "my_user", "my_password", "world");
-$uresult = $mysqli->query("SELECT Name FROM City", MYSQLI_USE_RESULT);
+$unbufferedResult = $mysqli->query("SELECT Name FROM City", MYSQLI_USE_RESULT);
 
-if ($uresult) {
-   while ($row = $uresult->fetch_assoc()) {
-       echo $row['Name'] . PHP_EOL;
-   }
+foreach ($unbufferedResult as $row) {
+    echo $row['Name'] . PHP_EOL;
 }
 ?>
 ]]>
@@ -84,20 +87,17 @@ if ($uresult) {
    <programlisting role="php">
 <![CDATA[
 <?php
-$pdo = new PDO("mysql:host=localhost;dbname=world", 'my_user', 'my_pass');
+$pdo = new PDO("mysql:host=localhost;dbname=world", 'my_user', 'my_password');
 $pdo->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
 
-$uresult = $pdo->query("SELECT Name FROM City");
-if ($uresult) {
-   while ($row = $uresult->fetch(PDO::FETCH_ASSOC)) {
-       echo $row['Name'] . PHP_EOL;
-   }
+$unbufferedResult = $pdo->query("SELECT Name FROM City");
+foreach ($unbufferedResult as $row) {
+    echo $row['Name'] . PHP_EOL;
 }
 ?>
 ]]>
    </programlisting>
   </example>
-
  </section>
 
  <section xml:id="mysqlinfo.concepts.charset">
