@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: b6f10b97e0d9405144b6100110e935af24161ab6 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: b676d0b9c968ebb0b7429835f2f6bd364275eed1 Maintainer: hirokawa Status: ready -->
 <!-- Credits: mumumu -->
 <refentry xml:id="function.utf8-encode" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -11,7 +11,7 @@
  <refsynopsisdiv>
   &warn.deprecated.function-8-2-0;
  </refsynopsisdiv>
- 
+
  <refsect1 role="description">
   &reftitle.description;
   <methodsynopsis>
@@ -123,6 +123,88 @@ echo bin2hex($utf8_string), "\n";
 ]]>
    </screen>
   </example>
+ </refsect1>
+
+ <refsect1 role="notes">
+  &reftitle.notes;
+  <note>
+   <title>この関数は推奨されません。代替については下記のとおりです。</title>
+   <para>
+    この関数は、PHP 8.2.0 以降は <emphasis>推奨されなくなり</emphasis>、
+    将来のバージョンで削除される予定です。
+    この関数を使っているコードをチェックし、適切な代替に置き換えるべきです。
+   </para>
+   <para>
+    この関数と似た機能は、
+    <function>mb_convert_encoding</function> で実現できます。
+    この関数は、ISO-8859-1 と、多くの他の文字エンコーディングをサポートしています。
+    <informalexample>
+     <programlisting role="php">
+ <![CDATA[
+<?php
+$iso8859_1_string = "\xEB"; // 'ë' (e with diaeresis) in ISO-8859-1
+$utf8_string = mb_convert_encoding($iso8859_1_string, 'UTF-8', 'ISO-8859-1');
+echo bin2hex($utf8_string), "\n";
+
+$iso8859_7_string = "\xEB"; // the same string in ISO-8859-7 represents 'λ' (Greek lower-case lambda)
+$utf8_string = mb_convert_encoding($iso8859_7_string, 'UTF-8', 'ISO-8859-7');
+echo bin2hex($utf8_string), "\n";
+
+$windows_1252_string = "\x80"; // '€' (Euro sign) in Windows-1252, but not in ISO-8859-1
+$utf8_string = mb_convert_encoding($windows_1252_string, 'UTF-8', 'Windows-1252');
+echo bin2hex($utf8_string), "\n";
+?>
+]]>
+     </programlisting>
+     &example.outputs;
+     <screen>
+<![CDATA[
+c3ab
+cebb
+e282ac
+]]>
+     </screen>
+    </informalexample>
+   </para>
+   <para>
+    他の代替として、インストールされている拡張機能に依存した関数ですが、
+    <methodname>UConverter::transcode</methodname> と <function>iconv</function>
+    が挙げられます。
+   </para>
+   <para>
+    次のコードは、いずれも同じ結果を返します:
+    <informalexample>
+     <programlisting role="php">
+<![CDATA[
+<?php
+$iso8859_1_string = "\x5A\x6F\xEB"; // 'Zoë' in ISO-8859-1
+
+$utf8_string = utf8_encode($iso8859_1_string);
+echo bin2hex($utf8_string), "\n";
+
+$utf8_string = mb_convert_encoding($iso8859_1_string, 'UTF-8', 'ISO-8859-1');
+echo bin2hex($utf8_string), "\n";
+
+$utf8_string = UConverter::transcode($iso8859_1_string, 'UTF8', 'ISO-8859-1');
+echo bin2hex($utf8_string), "\n";
+
+$utf8_string = iconv('ISO-8859-1', 'UTF-8', $iso8859_1_string);
+echo bin2hex($utf8_string), "\n";
+?>
+]]>
+     </programlisting>
+     &example.outputs;
+     <screen>
+<![CDATA[
+5a6fc3ab
+5a6fc3ab
+5a6fc3ab
+5a6fc3ab
+]]>
+     </screen>
+    </informalexample>
+   </para>
+  </note>
  </refsect1>
 
  <refsect1 role="seealso">

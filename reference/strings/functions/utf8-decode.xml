@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: b6f10b97e0d9405144b6100110e935af24161ab6 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: b676d0b9c968ebb0b7429835f2f6bd364275eed1 Maintainer: hirokawa Status: ready -->
 <!-- Credits: mumumu -->
 <refentry xml:id="function.utf8-decode" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -13,7 +13,7 @@
  <refsynopsisdiv>
   &warn.deprecated.function-8-2-0;
  </refsynopsisdiv>
- 
+
  <refsect1 role="description">
   &reftitle.description;
   <methodsynopsis>
@@ -130,6 +130,111 @@ string(1) "?"
 ]]>
    </screen>
   </example>
+ </refsect1>
+
+ <refsect1 role="notes">
+  &reftitle.notes;
+  <note>
+   <title>この関数は推奨されません。代替については下記のとおりです。</title>
+   <para>
+    この関数は、PHP 8.2.0 以降は推奨されなくなり、
+    将来のバージョンで削除される予定です。
+    この関数を使っているコードをチェックし、適切な代替に置き換えるべきです。
+   </para>
+   <para>
+    この関数と似た機能は、
+    <function>mb_convert_encoding</function> で実現できます。
+    この関数は、ISO-8859-1 と、多くの他の文字エンコーディングをサポートしています。
+    <informalexample>
+     <programlisting role="php">
+<![CDATA[
+<?php
+$utf8_string = "\xC3\xAB"; // 'ë' (e with diaeresis) in UTF-8
+$iso8859_1_string = mb_convert_encoding($utf8_string, 'ISO-8859-1', 'UTF-8');
+echo bin2hex($iso8859_1_string), "\n";
+
+$utf8_string = "\xCE\xBB"; // 'λ' (Greek lower-case lambda) in UTF-8
+$iso8859_7_string = mb_convert_encoding($utf8_string, 'ISO-8859-7', 'UTF-8');
+echo bin2hex($iso8859_7_string), "\n";
+
+$utf8_string = "\xE2\x82\xAC"; // '€' (Euro sign) in UTF-8 (not present in ISO-8859-1)
+$windows_1252_string = mb_convert_encoding($utf8_string, 'Windows-1252', 'UTF-8');
+echo bin2hex($windows_1252_string), "\n";
+?>
+]]>
+     </programlisting>
+     &example.outputs;
+     <screen>
+<![CDATA[
+eb
+eb
+80
+]]>
+     </screen>
+    </informalexample>
+   </para>
+   <para>
+    他の代替として、インストールされている拡張機能に依存した関数ですが、
+    <methodname>UConverter::transcode</methodname> と <function>iconv</function>
+    が挙げられます。
+   </para>
+   <para>
+    次のコードは、いずれも同じ結果を返します:
+    <informalexample>
+     <programlisting role="php">
+<![CDATA[
+<?php
+$utf8_string = "\x5A\x6F\xC3\xAB"; // 'Zoë' in UTF-8
+$iso8859_1_string = utf8_decode($utf8_string);
+echo bin2hex($iso8859_1_string), "\n";
+
+$iso8859_1_string = mb_convert_encoding($utf8_string, 'ISO-8859-1', 'UTF-8');
+echo bin2hex($iso8859_1_string), "\n";
+
+$iso8859_1_string = iconv('UTF-8', 'ISO-8859-1', $utf8_string);
+echo bin2hex($iso8859_1_string), "\n";
+
+$iso8859_1_string = UConverter::transcode($utf8_string, 'ISO-8859-1', 'UTF8');
+echo bin2hex($iso8859_1_string), "\n";
+?>
+]]>
+     </programlisting>
+     &example.outputs;
+     <screen>
+<![CDATA[
+5a6feb
+5a6feb
+5a6feb
+5a6feb
+]]>
+     </screen>
+    </informalexample>
+     <methodname>UConverter::transcode</methodname> に
+     <literal>'to_subst'</literal> オプションとして
+     <literal>'?'</literal> を指定すると、
+     ISO-8859-1 で表現できないか、不正な文字列の場合の
+     <function>utf8_decode</function> 関数と同じ結果を返します。
+    <informalexample>
+     <programlisting role="php">
+<![CDATA[
+<?php
+$utf8_string = "\xE2\x82\xAC"; // € (Euro Sign) does not exist in ISO 8859-1
+$iso8859_1_string = UConverter::transcode(
+    $utf8_string, 'ISO-8859-1', 'UTF-8', ['to_subst' => '?']
+);
+var_dump($iso8859_1_string);
+?>
+]]>
+     </programlisting>
+     &example.outputs;
+     <screen>
+<![CDATA[
+sring(1) "?"
+]]>
+     </screen>
+    </informalexample>
+   </para>
+  </note>
  </refsect1>
 
  <refsect1 role="seealso">
