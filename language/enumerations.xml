@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 6c3091b54b66181db5f81ef5afe1d2e8b6efdeac Maintainer: mumumu Status: ready -->
+<!-- EN-Revision: 16b11ae4604f3c38f9011c46137ddcbf9238154b Maintainer: mumumu Status: ready -->
  <chapter xml:id="language.enumerations" xmlns="http://docbook.org/ns/docbook">
   <title>列挙型(Enum)</title>
   <sect1 xml:id="language.enumerations.overview">
@@ -839,6 +839,104 @@ Baz Enum:int {
 ?>
 ]]>
   </programlisting>
+ </sect1>
+
+ <sect1 xml:id="language.enumerations.object-differences.inheritance">
+
+  <title>列挙型が継承できない理由</title>
+
+  <simpara>
+   クラスは、メソッド呼び出しに対して契約を課します:
+  </simpara>
+
+  <programlisting role="php">
+<![CDATA[
+<?php
+
+class A {}
+class B extends A {}
+
+function foo(A $a) {}
+
+function bar(B $b) {
+    foo($b);
+}
+?>
+]]>
+ </programlisting>
+
+  <simpara>
+   上のコードは型安全といえます。なぜなら、
+   B は A との契約を守っており、かつ共変性/反変性のマジックによって、
+   メソッドへの期待は守られるからです。例外は別です。
+  </simpara>
+
+  <simpara>
+   一方で、列挙型は case に対して契約を課します。メソッドではありません:
+  </simpara>
+
+  <programlisting role="php">
+<![CDATA[
+<?php
+enum ErrorCode {
+    case SOMETHING_BROKE;
+}
+
+function quux(ErrorCode $errorCode)
+{
+    // 以下のようなコードを書くと、全ての case をカバーします
+    match ($errorCode) {
+        ErrorCode::SOMETHING_BROKE => true,
+    }
+}
+
+?>
+]]>
+  </programlisting>
+
+  <simpara>
+   <code>quux</code> 関数内の &match; 式は、
+   ErrorCode の全ての case について、マッチするかを静的に解析できます。
+  </simpara>
+
+  <simpara>
+   ここで以下のように、列挙型が継承可能だとしましょう:
+  </simpara>
+
+
+  <programlisting role="php">
+<![CDATA[
+<?php
+// 列挙型が final でなかったと仮定した、思考実験のコード
+// このコードは実際には動作しないので注意
+enum MoreErrorCode extends ErrorCode {
+    case PEBKAC;
+}
+
+function fot(MoreErrorCode $errorCode) {
+    quux($errorCode);
+}
+
+fot(MoreErrorCode::PEBKAC);
+
+?>
+]]>
+ </programlisting>
+
+  <simpara>
+   継承のルールでは、あるクラスを継承したクラスは、通常型チェックが行われます。
+  </simpara>
+
+  <simpara>
+   上のコードの問題点は、
+   <code>quux()</code> 関数の &match; 式が全ての case をカバーできないことです。
+   なぜなら、<code>MoreErrorCode::PEBKAC</code>
+   についてこの関数はわからないので、例外がスローされるからです。
+  </simpara>
+
+  <simpara>
+   こうした理由から、列挙型は final 扱いであり、継承できなくなっています。
+  </simpara>
  </sect1>
 
  <sect1 xml:id="language.enumerations.examples">
