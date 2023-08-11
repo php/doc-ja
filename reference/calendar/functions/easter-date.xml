@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 789af834328bf5d492ed174a4fedb226ccaf4b27 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: a0fcdcb58023bd4cb017fdba511df29b9f7a25f5 Maintainer: hirokawa Status: ready -->
 <!-- Credits: mumumu -->
 <refentry xml:id="function.easter-date" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -18,12 +18,6 @@
   <para>
    指定した年yearにおける復活祭の真夜中のUnix時を返します。
   </para>
-  <warning>
-   <para>
-    この関数は、年がUnixタイムスタンプの範囲を越える時
-    (すなわち、32bitシステムでは通常1970より前、または2037より後)に警告を発生させます。
-   </para>
-  </warning>
   <para>
    復活祭の日付は、西暦325年の Nicaea 会議で春分の日の後の
    最初の満月の後の日曜日として定められました。
@@ -47,8 +41,12 @@
      <term><parameter>year</parameter></term>
      <listitem>
       <para>
-       1970 から 2037 までの年。省略した場合、もしくは &null; の場合は、
-       ローカルタイムにおける現在の年を使います。
+       年の値。32ビットのシステムでは、
+       1970 から 2037 までである必要があります。
+       64ビットのシステムでは、
+       1970 から 2,000,000,000 までである必要があります。
+       省略した場合、もしくは &null; の場合は、
+       デフォルトとしてローカルタイムにおける現在の年を使います。
       </para>
      </listitem>
     </varlistentry>  
@@ -74,6 +72,16 @@
   </para>
  </refsect1>
 
+ <refsect1 role="errors">
+  &reftitle.errors;
+  <para>
+   32ビットのシステムでは、year の値が 1970 より前か 2037 より後の場合、
+   <classname>ValueError</classname> がスローされます。
+   64ビットのシステムでは、year の値が 1970 より前か 2,000,000,000 より後の場合、
+   <classname>ValueError</classname> がスローされます。
+  </para>
+ </refsect1>
+
  <refsect1 role="changelog">
   &reftitle.changelog;
   <informaltable>
@@ -86,9 +94,26 @@
     </thead>
     <tbody>
      <row>
+      <entry>8.3.0</entry>
+      <entry>
+       64ビットのシステムでは、
+       <parameter>year</parameter> の値として
+       1970 から 2,000,000,000 までの値を受け入れるようになりました。
+      </entry>
+     </row>
+     <row>
       <entry>8.0.0</entry>
       <entry>
        <parameter>year</parameter> は、nullable になりました。
+      </entry>
+     </row>
+     <row>
+      <entry>8.0.0</entry>
+      <entry>
+       <parameter>year</parameter> が範囲外の値の場合、
+       <classname>ValueError</classname> がスローされるようになりました。
+       これより前のバージョンでは、
+       <constant>E_WARNING</constant> が発生して &false; を返していました。
       </entry>
      </row>
     </tbody>
@@ -108,6 +133,21 @@
 echo date("M-d-Y", easter_date(1999));        // Apr-04-1999
 echo date("M-d-Y", easter_date(2000));        // Apr-23-2000
 echo date("M-d-Y", easter_date(2001));        // Apr-15-2001
+
+?>
+]]>
+    </programlisting>
+   </example>
+
+   <example>
+    <title><function>easter_date</function> を <classname>DateTime</classname> と一緒に使う</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$timestamp = easter_date(2023);
+$datetime = new \DateTime();
+$datetime->setTimestamp($timestamp);
+echo $datetime->format('M-d-Y'); // Apr-09-2023
 
 ?>
 ]]>
