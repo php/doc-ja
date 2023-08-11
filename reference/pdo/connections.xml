@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: eae19eb5fe0f5bebcbce382ea7a505cedeb5a883 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: d861a1bcea24f05e52e4938c1ecdf9d70326d7aa Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa,shimooka,mumumu -->
 
 <chapter xml:id="pdo.connections" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
@@ -37,13 +37,8 @@ $dbh = new PDO('mysql:host=localhost;dbname=test', $user, $pass);
 <?php
 try {
     $dbh = new PDO('mysql:host=localhost;dbname=test', $user, $pass);
-    foreach($dbh->query('SELECT * from FOO') as $row) {
-        print_r($row);
-    }
-    $dbh = null;
 } catch (PDOException $e) {
-    print "エラー!: " . $e->getMessage() . "<br/>";
-    die();
+    // たとえば、タイムアウトしたあとに再接続を試みます
 }
 ?>
 ]]>
@@ -52,13 +47,16 @@ try {
  </para>
  <warning>
   <para>
-   PDO コンストラクタからの例外をアプリケーション内でキャッチしない場合、
-   zend エンジンはスクリプトの実行を終了し、バックトレースを表示します。
+   他の <link linkend="language.exceptions">例外</link> と同様に、
+   <classname>PDOException</classname> は &catch; を使って
+   明示的にキャッチすることもできますし、
+   <function>set_exception_handler</function> を使って暗黙的にキャッチすることもできます。
+   そうしない場合、例外をキャッチしない場合のデフォルトの動作として
+   <constant>E_FATAL_ERROR</constant> が発生します。
+   この致命的なエラーはデータベース接続の詳細を含むバックトレースを含みます。
    このバックトレースを見れば、データベースへの接続の詳細がわかってしまいます。
-   その中にはユーザー名やパスワードも含まれます。
-   (<literal>catch</literal> 文を使用して) 明示的に例外をキャッチするか、
-   あるいは <function>set_exception_handler</function> を使用して
-   暗黙的に例外をキャッチするようにしましょう。
+   そのため、本番環境のサーバでは、
+   &php.ini; の <link linkend="ini.display-errors"><literal>display_errors</literal> を <literal>0</literal> に設定しておきましょう。
   </para>
  </warning>
  <para>
