@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision$ -->
+<!-- EN-Revision: f037a94fd276a36a5061b0160fd3c2eafb20d980 Maintainer: mumumu Status: ready -->
+<sect1 xml:id="migration83.incompatible" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <title>下位互換性のない変更点</title>
+
+ <sect2 xml:id="migration83.incompatible.core">
+  <title>PHP コア</title>
+
+  <sect3 xml:id="migration83.incompatible.core.overflowing-call-stack">
+
+   <title>コールスタックがオーバーフローしそうになっているプログラム</title>
+   <para>
+    コールスタックがオーバーフローしそうになっているプログラムは、zend.max_allowed_stack_size - zend.reserved_stack_size (ファイバーの場合は fiber.stack_size - zend.reserved_stack_size) バイト以上のスタックを使い切った時点で <classname>Error</classname> をスローするようになりました。 
+   </para>
+  </sect3>
+
+  <sect3 xml:id="migration83.incompatible.core.proc-get-status-multiple-times">
+   <title>proc_get_status() を複数回コールする</title>
+   <para>
+    <function>proc_get_status</function> を複数回コールした場合、POSIX システムでは常に正しい値を返すようになりました。これより前のバージョンでは、最初の呼び出しの場合にだけ正しい値を返していました。<function>proc_get_status</function> をコールしたあとに <function>proc_close</function> を呼び出した場合も、正しい終了コードを返すようになりました。これより前のバージョンでは、<literal>-1</literal> を返していました。内部的に、この処理は POSIX システム上で結果の値をキャッシュすることで実現しています。以前の振る舞いを望む場合は、<function>proc_get_status</function> が返す配列の <literal>"cached"</literal> キーをチェックすることで、結果がキャッシュされているかを確認できます。
+   </para>
+  </sect3>
+
+  <sect3 xml:id="migration83.incompatible.core.zend-max-execution-timers">
+   <title>実行時間の最大秒数を制御するタイマー</title>
+   <para>
+    実行時間の最大秒数を制御するタイマーが、Linux 上で ZTS を有効にしてビルドした場合でもデフォルトで有効になりました。
+   </para>
+  </sect3>
+
+  <sect3 xml:id="migration83.incompatible.core.traits-with-static-properties">
+   <title>static プロパティと一緒にトレイトを使う</title>
+   <para>
+    static プロパティと一緒にトレイトを使うと、親クラスから継承する static プロパティを再宣言するようになりました。つまり、現在のクラスのために別の static プロパティを作成するということです。これは、トレイトを使わずに直接 static プロパティを追加する操作に似ています。
+   </para>
+  </sect3>
+
+  <sect3 xml:id="migration83.incompatible.core.negative-index-to-empty-array">
+   <title>空の配列に負のインデックスを割り当てる</title>
+   <para>
+    空の配列に負のインデックス <varname>$n</varname> を割り当てた場合、その次のインデックスは <literal>0</literal> ではなく、必ず <code>$n+1</code> になります。
+   </para>
+  </sect3>
+
+  <sect3 xml:id="migration83.incompatible.core.class-constant-visibility-check">
+   <title>クラス定数のアクセス権</title>
+   <para>
+    クラス定数のアクセス権が、インターフェイスから継承した場合でも正しくチェックされるようになりました。
+   </para>
+  </sect3>
+
+  <sect3 xml:id="migration83.incompatible.core.weakmap-entries-maps-to-itself">
+   <title>キーが自分自身を参照している WeakMap のエントリ</title>
+   <para>
+    <classname>WeakMap</classname> のエントリのうち、(おそらく推移的に) キーが自分自身を参照しているものを、そのキーが到達できない場合に、循環参照のコレクタが削除できるようになりました。但し、WeakMap をループしている場合を除きます (ループ経由で到達できることは、weak と見なされるためです)。これより前のバージョンでは、こうしたエントリは自動で決して削除されませんでした。
+   </para>
+  </sect3>
+ </sect2>
+
+ <sect2 xml:id="migration83.incompatible.dom">
+  <title>DOM</title>
+
+  <para>
+   親が存在しないノード上で <methodname>DOMChildNode::after</methodname>, <methodname>DOMChildNode::before</methodname>, <methodname>DOMChildNode::replaceWith</methodname> をコールしても、親子関係に関する例外をスローせず、何もしなくなりました。これは DOM の仕様が要求している振る舞いです。
+  </para>
+
+  <para>
+   ドキュメントノードが存在しない状態で <classname>DOMParentNode</classname> と <classname>DOMChildNode</classname> のメソッドを使うと、<constant>DOM_HIERARCHY_REQUEST_ERR</constant> <classname>DOMException</classname> をスローせず、エラーなしで動作するようになりました。これはDOMの仕様が要求している振る舞いです。
+  </para>
+
+  <para>
+   prefix を指定せずに <methodname>DOMDocument::createAttributeNS</methodname> をコールすると、デフォルトの名前空間を誤って作成し、その名前空間中に属性ではなく要素を置いていました。PHP 8.3 では、このバグが修正されています。
+  </para>
+
+  <para>
+   以前のバージョンでは、<methodname>DOMDocument::createAttributeNS</methodname> は、prefix が既に異なる URI で使われている場合に <constant>DOM_NAMESPACE_ERRNAMESPACE_ERR</constant> <classname>DOMException</classname> をスローしていました。
+   このバージョンからは、prefix の名前が衝突していた場合でも、異なる prefix を正しく選べるようになりました。
+  </para>
+
+  <para>
+   新しいメソッドやプロパティが DOM クラスに追加されました。ユーザー定義のクラスがこれらを継承し、メソッドやプロパティを親クラスのものと同じ名前で宣言した場合、それらの宣言には互換性がなければいけません。互換性がない宣言の場合、それを指摘するコンパイルエラーがスローされることになります。新しく実装されたメソッドやプロパティについては、<link linkend="migration83.new-features.dom">新機能</link> のセクションと <link linkend="migration83.new-functions.dom">新しく追加された関数</link> を参照ください。
+  </para>
+ </sect2>
+
+ <sect2 xml:id="migration83.incompatible.ffi">
+  <title>FFI</title>
+
+  <para>
+   <type>void</type> 型を返すC言語の関数は、<literal>object(FFI\CData:void) { }</literal> ではなく、&null; を返すようになりました。
+  </para>
+ </sect2>
+
+ <sect2 xml:id="migration83.incompatible.opcache">
+  <title>Opcache</title>
+
+  <para>
+   INI ディレクティブ <link linkend="ini.opcache.consistency-checks">opcache.consistency_checks</link> が削除されました。この機能は tracing JIT や、inheritance cache (継承関係をキャッシュする機能) と一緒に使った場合に壊れてしまっていました。その後、このディレクティブを有効にする方法が見つからないまま、PHP 8.1.18 と 8.2.5 で無効にされました。tracing JIT と inheritance cache は両方、スクリプトが永続化された後に共有メモリを変更し、そのチェックサムを無効にする可能性があります。変更されうるポインタをスキップする変更も試みられましたが、複雑過ぎて受け入れられませんでした。以上の理由から、壊れてしまうバグを修正するのではなく、ディレクティブそのものが削除されることになりました。
+  </para>
+ </sect2>
+
+ <sect2 xml:id="migration83.incompatible.phar">
+  <title>Phar</title>
+
+  <para>
+   <classname>Phar</classname> クラスの定数が、型宣言するようになりました。
+  </para>
+ </sect2>
+
+ <sect2 xml:id="migration83.incompatible.standard">
+  <title>標準ライブラリ</title>
+
+  <para>
+   <function>range</function> 関数に対して、さまざまな変更が加えられました:
+   <simplelist>
+    <member>オブジェクトやリソース、配列を境界の値として渡すと、<classname>TypeError</classname> がスローされるようになりました。</member>
+    <member><parameter>$step</parameter> に <literal>0</literal> を渡すと、よりわかりやすい <classname>ValueError</classname> がスローされるようになりました。</member>
+    <member>範囲が増加しているのに、<parameter>$step</parameter> に負の値を渡すと、<classname>ValueError</classname> がスローされるようになりました。</member>
+    <member><parameter>$step</parameter> が整数型として解釈できる float の場合、整数型として解釈するようになりました。</member>
+    <member>引数のいずれかが無限大または NAN の場合、<classname>ValueError</classname> がスローされるようになりました。</member>
+    <member><parameter>$start</parameter> や <parameter>$end</parameter> が空文字列の場合、<constant>E_WARNING</constant> が発生するようになりました。値そのものが <literal>0</literal> にキャストされる動作は変更されていません。</member>
+    <member><parameter>$start</parameter> や <parameter>$end</parameter> が1バイトより長い場合、<constant>E_WARNING</constant> が発生するようになりました。但し、それが数値形式の文字列でない場合に限ります。</member>
+    <member><parameter>$start</parameter> や <parameter>$end</parameter> が整数型にキャストした値の場合、<constant>E_WARNING</constant> が発生するようになりました。なぜなら、他の境界の入力値は数値だからです。(例: <code>range(5, 'z');</code>)</member>
+    <member><parameter>$step</parameter> が float の場合で、ある範囲の文字を生成しようとした場合、<constant>E_WARNING</constant> が発生するようになりました。但し、境界の値がともに数値形式の文字列の場合を除きます。(例: <code>range('5', '9', 0.5);</code>  のようなコードは、警告が発生しません)</member>
+    <member><function>range</function> 関数は、境界の値の一方が数字の場合、もう片方の境界の値を整数にキャストせず、文字のリストを生成するようになりました。(例: <code>range('9', 'A');</code>).</member>
+   </simplelist>
+
+   <informalexample>
+    <programlisting role="php">
+<![CDATA[
+<?php
+range('9', 'A');  // PHP 8.3.0 以降は、["9", ":", ";", "<", "=", ">", "?", "@", "A"]
+range('9', 'A');  // PHP 8.3.0 より前は、[9, 8, 7, 6, 5, 4, 3, 2, 1, 0]
+?>
+]]>
+    </programlisting>
+   </informalexample>
+  </para>
+
+  <para>
+   <function>file</function> 関数の flags パラメータは、すべての不正な値をチェックするようになりました。注意すべきなのは、これより前のバージョンでは <constant>FILE_APPEND</constant> を黙って受け入れていましたが、このバージョンから受け入れなくなったことです。
+  </para>
+ </sect2>
+
+ <sect2 xml:id="migration83.incompatible.SNMP">
+  <title>SNMP</title>
+
+  <para>
+   <classname>SNMP</classname> クラスの定数が、型宣言するようになりました。
+  </para>
+ </sect2>
+
+</sect1>
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"~/.phpdoc/manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
