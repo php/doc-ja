@@ -1,0 +1,660 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision$ -->
+<!-- EN-Revision: 52407313885d27a4e891e08dd2e2481bcc39e244 Maintainer: mumumu Status: ready -->
+<sect1 xml:id="language.operators.bitwise">
+ <title>ビット演算子</title>
+ <simpara>
+  ビット演算子は、整数値の特定のビットの評価や操作を行います。
+ </simpara>
+ <table>
+  <title>ビット演算子</title>
+  <tgroup cols="3">
+   <thead>
+    <row>
+     <entry>例</entry>
+     <entry>名前</entry>
+     <entry>結果</entry>
+    </row>
+   </thead>
+   <tbody>
+    <row>
+     <entry><userinput>$a &amp; $b</userinput></entry>
+     <entry>ビット積</entry>
+     <entry><varname>$a</varname> および <varname>$b</varname> の両方にセットされているビットがセットされます</entry>
+    </row>
+    <row>
+     <entry><userinput>$a | $b</userinput></entry>
+     <entry>ビット和</entry>
+     <entry><varname>$a</varname> または <varname>$b</varname> のどちらかにセットされているビットがセットされます</entry>
+    </row>
+    <row>
+     <entry><userinput>$a ^ $b</userinput></entry>
+     <entry>排他的論理和</entry>
+     <entry><varname>$a</varname> または <varname>$b</varname> のどちらか一方にセットされており、両方にセットされていないビットがセットされます</entry>
+    </row>
+    <row>
+     <entry><userinput>~ $a</userinput></entry>
+     <entry>否定</entry>
+     <entry><varname>$a</varname> にセットされているビットはセットせず、そうでないものは逆にします</entry>
+    </row>
+    <row>
+     <entry><userinput>$a &lt;&lt; $b</userinput></entry>
+     <entry>左シフト</entry>
+     <entry><varname>$a</varname> のビットを左に <varname>$b</varname> ビットシフトする (各シフトは "2をかける"
+  ことを意味します)
+     </entry>
+    </row>
+    <row>
+     <entry><userinput>$a &gt;&gt; $b</userinput></entry>
+     <entry>右シフト</entry>
+     <entry><varname>$a</varname> のビットを右に <varname>$b</varname> ビットシフトします (各シフトは "2で割る"
+  ことを意味します)
+     </entry>
+    </row>
+   </tbody>
+  </tgroup>
+ </table>
+ <para>
+  PHP のシフト処理は算術シフトです。両端からあふれたビットは捨てられます。
+  左シフトをすると右側にはゼロが埋められます。
+  符号ビットは左端からあふれて消えます。
+  つまり、オペランドの符号は維持されないということです。
+  右シフトの際には、符号ビットと同じ内容が左端から埋められます。
+  つまり、この場合はオペランドの符号が維持されます。
+ </para>
+ <para>
+  括弧を使うことで、望みどおりの
+  <link linkend="language.operators.precedence">優先順位</link>
+  で処理させることができます。たとえば、<literal>$a &amp; $b == true</literal>
+  はまず等価かどうかを評価してからビット演算を行いますが
+  <literal>($a &amp; $b) == true</literal>
+  はまずビット演算を行ってから等価かどうかを評価します。
+ </para>
+ <para>
+  <literal>&amp;</literal>、<literal>|</literal> そして
+  <literal>^</literal> 演算子の左右のオペランドが文字列の場合、その演算は、
+  文字列を構成する文字の ASCII 値を使って行います。その結果は文字列になります。
+  それ以外の場合は、左右のオペランドを
+  <link linkend="language.types.integer.casting">integer に変換</link>
+  し、結果も integer になります。
+ </para>
+ <para>
+  <literal>~</literal> 演算子のオペランドが文字列の場合、その演算は、
+  文字列を構成する文字の ASCII 値を使って行います。その結果は文字列になります。
+  それ以外の場合は、オペランドや演算結果を integer として扱います。
+ </para>
+ <para>
+  <literal>&lt;&lt;</literal> および
+  <literal>&gt;&gt;</literal> 演算子のオペランドとその結果は、常に integer として扱います。
+ </para>
+ <para>
+  <informalexample>
+   <para>
+    <literallayout>
+PHP の ini 設定 error_reporting はビット値を用いています。
+これを用いて、特定のビットを落とす演算の例を見てみましょう。
+notice 以外のすべてのエラーを表示させるには、
+php.ini ファイルで
+<userinput>E_ALL &amp; ~E_NOTICE</userinput>
+と指定することになります。
+    </literallayout>
+   </para>
+   <para>
+    <literallayout>
+まずは E_ALL。
+<computeroutput>00000000000000000111011111111111</computeroutput>
+そして E_NOTICE...。
+<computeroutput>00000000000000000000000000001000</computeroutput>
+... これを <literal>~</literal> で逆転させます。
+<computeroutput>11111111111111111111111111110111</computeroutput>
+最後に AND (&amp;) を使い、両方ともビットが立っているところをみつけます。
+<computeroutput>00000000000000000111011111110111</computeroutput>
+    </literallayout>
+   </para>
+   <para>
+    <literallayout>
+同じ結果を得るもうひとつの方法として、 XOR (<literal>^</literal>)
+を使ってどちらか一方だけ立っているビットを探すという方法もあります。
+<userinput>E_ALL ^ E_NOTICE</userinput>
+    </literallayout>
+   </para>
+  </informalexample>
+ </para>
+ <para>
+  <informalexample>
+   <para>
+    <literallayout>
+error_reporting を使って、特定のビットを立てる処理の例を見てみましょう。
+通常のエラーとリカバー可能なエラーだけを表示させるには、次のようにします。
+<userinput>E_ERROR | E_RECOVERABLE_ERROR</userinput>
+    </literallayout>
+   </para>
+   <para>
+    <literallayout>
+この処理は、 E_ERROR
+<computeroutput>00000000000000000000000000000001</computeroutput>
+と
+<computeroutput>00000000000000000001000000000000</computeroutput>
+を OR (<literal>|</literal>) 演算子でつないで、
+少なくともどちらかのビットが立っているところを取得します。
+<computeroutput>00000000000000000001000000000001</computeroutput>
+    </literallayout>
+   </para>
+  </informalexample>
+ </para>
+ <para>
+  <example>
+   <title>整数値におけるビット AND、OR および XOR 演算</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+/*
+ * このへんは無視してください。
+ * たんに結果をきれいに表示させるためだけのものです。
+ */
+
+$format = '(%1$2d = %1$04b) = (%2$2d = %2$04b)'
+      . ' %3$s (%4$2d = %4$04b)' . "\n";
+
+echo <<<EOH
+ ---------     ---------  -- ---------
+ result        value      op test
+ ---------     ---------  -- ---------
+EOH;
+
+
+/*
+ * ここからが本番
+ */
+
+$values = array(0, 1, 2, 4, 8);
+$test = 1 + 4;
+
+echo "\n Bitwise AND \n";
+foreach ($values as $value) {
+  $result = $value & $test;
+  printf($format, $result, $value, '&', $test);
+}
+
+echo "\n Bitwise Inclusive OR \n";
+foreach ($values as $value) {
+  $result = $value | $test;
+  printf($format, $result, $value, '|', $test);
+}
+
+echo "\n Bitwise Exclusive OR (XOR) \n";
+foreach ($values as $value) {
+  $result = $value ^ $test;
+  printf($format, $result, $value, '^', $test);
+}
+?>
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+ ---------     ---------  -- ---------
+ result        value      op test
+ ---------     ---------  -- ---------
+ Bitwise AND
+( 0 = 0000) = ( 0 = 0000) & ( 5 = 0101)
+( 1 = 0001) = ( 1 = 0001) & ( 5 = 0101)
+( 0 = 0000) = ( 2 = 0010) & ( 5 = 0101)
+( 4 = 0100) = ( 4 = 0100) & ( 5 = 0101)
+( 0 = 0000) = ( 8 = 1000) & ( 5 = 0101)
+
+ Bitwise Inclusive OR
+( 5 = 0101) = ( 0 = 0000) | ( 5 = 0101)
+( 5 = 0101) = ( 1 = 0001) | ( 5 = 0101)
+( 7 = 0111) = ( 2 = 0010) | ( 5 = 0101)
+( 5 = 0101) = ( 4 = 0100) | ( 5 = 0101)
+(13 = 1101) = ( 8 = 1000) | ( 5 = 0101)
+
+ Bitwise Exclusive OR (XOR)
+( 5 = 0101) = ( 0 = 0000) ^ ( 5 = 0101)
+( 4 = 0100) = ( 1 = 0001) ^ ( 5 = 0101)
+( 7 = 0111) = ( 2 = 0010) ^ ( 5 = 0101)
+( 1 = 0001) = ( 4 = 0100) ^ ( 5 = 0101)
+(13 = 1101) = ( 8 = 1000) ^ ( 5 = 0101)
+]]>
+   </screen>
+  </example>
+ </para>
+ <para>
+  <example>
+   <title>文字列でのビット XOR 演算</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+echo 12 ^ 9; // 出力は '5'
+
+echo "12" ^ "9"; // 出力はバックスペース文字 (ascii 8)
+               // ('1' (ascii 49)) ^ ('9' (ascii 57)) = #8
+
+echo "hallo" ^ "hello"; // 出力は、ascii コード #0 #4 #0 #0 #0
+                      // 'a' ^ 'e' = #4
+
+echo 2 ^ "3"; // 出力は 1
+            // 2 ^ ((int)"3") == 1
+
+echo "2" ^ 3; // 出力は 1
+            // ((int)"2") ^ 3 == 1
+?>
+]]>
+   </programlisting>
+  </example>
+ </para>
+ <para>
+  <example>
+   <title>整数値のビットシフト</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+/*
+ * これが例です
+ */
+
+echo "\n--- BIT SHIFT RIGHT ON POSITIVE INTEGERS ---\n";
+
+$val = 4;
+$places = 1;
+$res = $val >> $places;
+p($res, $val, '>>', $places, 'copy of sign bit shifted into left side');
+
+$val = 4;
+$places = 2;
+$res = $val >> $places;
+p($res, $val, '>>', $places);
+
+$val = 4;
+$places = 3;
+$res = $val >> $places;
+p($res, $val, '>>', $places, 'bits shift out right side');
+
+$val = 4;
+$places = 4;
+$res = $val >> $places;
+p($res, $val, '>>', $places, 'same result as above; can not shift beyond 0');
+
+
+echo "\n--- BIT SHIFT RIGHT ON NEGATIVE INTEGERS ---\n";
+
+$val = -4;
+$places = 1;
+$res = $val >> $places;
+p($res, $val, '>>', $places, 'copy of sign bit shifted into left side');
+
+$val = -4;
+$places = 2;
+$res = $val >> $places;
+p($res, $val, '>>', $places, 'bits shift out right side');
+
+$val = -4;
+$places = 3;
+$res = $val >> $places;
+p($res, $val, '>>', $places, 'same result as above; can not shift beyond -1');
+
+
+echo "\n--- BIT SHIFT LEFT ON POSITIVE INTEGERS ---\n";
+
+$val = 4;
+$places = 1;
+$res = $val << $places;
+p($res, $val, '<<', $places, 'zeros fill in right side');
+
+$val = 4;
+$places = (PHP_INT_SIZE * 8) - 4;
+$res = $val << $places;
+p($res, $val, '<<', $places);
+
+$val = 4;
+$places = (PHP_INT_SIZE * 8) - 3;
+$res = $val << $places;
+p($res, $val, '<<', $places, 'sign bits get shifted out');
+
+$val = 4;
+$places = (PHP_INT_SIZE * 8) - 2;
+$res = $val << $places;
+p($res, $val, '<<', $places, 'bits shift out left side');
+
+
+echo "\n--- BIT SHIFT LEFT ON NEGATIVE INTEGERS ---\n";
+
+$val = -4;
+$places = 1;
+$res = $val << $places;
+p($res, $val, '<<', $places, 'zeros fill in right side');
+
+$val = -4;
+$places = (PHP_INT_SIZE * 8) - 3;
+$res = $val << $places;
+p($res, $val, '<<', $places);
+
+$val = -4;
+$places = (PHP_INT_SIZE * 8) - 2;
+$res = $val << $places;
+p($res, $val, '<<', $places, 'bits shift out left side, including sign bit');
+
+
+/*
+ * このへんは無視してください。
+ * たんに結果をきれいに表示させるためだけのものです。
+ */
+
+function p($res, $val, $op, $places, $note = '') {
+  $format = '%0' . (PHP_INT_SIZE * 8) . "b\n";
+
+  printf("Expression: %d = %d %s %d\n", $res, $val, $op, $places);
+
+  echo " Decimal:\n";
+  printf("  val=%d\n", $val);
+  printf("  res=%d\n", $res);
+
+  echo " Binary:\n";
+  printf('  val=' . $format, $val);
+  printf('  res=' . $format, $res);
+
+  if ($note) {
+      echo " NOTE: $note\n";
+  }
+
+  echo "\n";
+}
+?>
+]]>
+   </programlisting>
+   &example.outputs.32bit;
+   <screen>
+<![CDATA[
+
+--- BIT SHIFT RIGHT ON POSITIVE INTEGERS ---
+Expression: 2 = 4 >> 1
+ Decimal:
+val=4
+res=2
+ Binary:
+val=00000000000000000000000000000100
+res=00000000000000000000000000000010
+ NOTE: copy of sign bit shifted into left side
+
+Expression: 1 = 4 >> 2
+ Decimal:
+val=4
+res=1
+ Binary:
+val=00000000000000000000000000000100
+res=00000000000000000000000000000001
+
+Expression: 0 = 4 >> 3
+ Decimal:
+val=4
+res=0
+ Binary:
+val=00000000000000000000000000000100
+res=00000000000000000000000000000000
+ NOTE: bits shift out right side
+
+Expression: 0 = 4 >> 4
+ Decimal:
+val=4
+res=0
+ Binary:
+val=00000000000000000000000000000100
+res=00000000000000000000000000000000
+ NOTE: same result as above; can not shift beyond 0
+
+
+--- BIT SHIFT RIGHT ON NEGATIVE INTEGERS ---
+Expression: -2 = -4 >> 1
+ Decimal:
+val=-4
+res=-2
+ Binary:
+val=11111111111111111111111111111100
+res=11111111111111111111111111111110
+ NOTE: copy of sign bit shifted into left side
+
+Expression: -1 = -4 >> 2
+ Decimal:
+val=-4
+res=-1
+ Binary:
+val=11111111111111111111111111111100
+res=11111111111111111111111111111111
+ NOTE: bits shift out right side
+
+Expression: -1 = -4 >> 3
+ Decimal:
+val=-4
+res=-1
+ Binary:
+val=11111111111111111111111111111100
+res=11111111111111111111111111111111
+ NOTE: same result as above; can not shift beyond -1
+
+
+--- BIT SHIFT LEFT ON POSITIVE INTEGERS ---
+Expression: 8 = 4 << 1
+ Decimal:
+val=4
+res=8
+ Binary:
+val=00000000000000000000000000000100
+res=00000000000000000000000000001000
+ NOTE: zeros fill in right side
+
+Expression: 1073741824 = 4 << 28
+ Decimal:
+val=4
+res=1073741824
+ Binary:
+val=00000000000000000000000000000100
+res=01000000000000000000000000000000
+
+Expression: -2147483648 = 4 << 29
+ Decimal:
+val=4
+res=-2147483648
+ Binary:
+val=00000000000000000000000000000100
+res=10000000000000000000000000000000
+ NOTE: sign bits get shifted out
+
+Expression: 0 = 4 << 30
+ Decimal:
+val=4
+res=0
+ Binary:
+val=00000000000000000000000000000100
+res=00000000000000000000000000000000
+ NOTE: bits shift out left side
+
+
+--- BIT SHIFT LEFT ON NEGATIVE INTEGERS ---
+Expression: -8 = -4 << 1
+ Decimal:
+val=-4
+res=-8
+ Binary:
+val=11111111111111111111111111111100
+res=11111111111111111111111111111000
+ NOTE: zeros fill in right side
+
+Expression: -2147483648 = -4 << 29
+ Decimal:
+val=-4
+res=-2147483648
+ Binary:
+val=11111111111111111111111111111100
+res=10000000000000000000000000000000
+
+Expression: 0 = -4 << 30
+ Decimal:
+val=-4
+res=0
+ Binary:
+val=11111111111111111111111111111100
+res=00000000000000000000000000000000
+ NOTE: bits shift out left side, including sign bit
+]]>
+   </screen>
+   &example.outputs.64bit;
+   <screen>
+<![CDATA[
+
+--- BIT SHIFT RIGHT ON POSITIVE INTEGERS ---
+Expression: 2 = 4 >> 1
+ Decimal:
+val=4
+res=2
+ Binary:
+val=0000000000000000000000000000000000000000000000000000000000000100
+res=0000000000000000000000000000000000000000000000000000000000000010
+ NOTE: copy of sign bit shifted into left side
+
+Expression: 1 = 4 >> 2
+ Decimal:
+val=4
+res=1
+ Binary:
+val=0000000000000000000000000000000000000000000000000000000000000100
+res=0000000000000000000000000000000000000000000000000000000000000001
+
+Expression: 0 = 4 >> 3
+ Decimal:
+val=4
+res=0
+ Binary:
+val=0000000000000000000000000000000000000000000000000000000000000100
+res=0000000000000000000000000000000000000000000000000000000000000000
+ NOTE: bits shift out right side
+
+Expression: 0 = 4 >> 4
+ Decimal:
+val=4
+res=0
+ Binary:
+val=0000000000000000000000000000000000000000000000000000000000000100
+res=0000000000000000000000000000000000000000000000000000000000000000
+ NOTE: same result as above; can not shift beyond 0
+
+
+--- BIT SHIFT RIGHT ON NEGATIVE INTEGERS ---
+Expression: -2 = -4 >> 1
+ Decimal:
+val=-4
+res=-2
+ Binary:
+val=1111111111111111111111111111111111111111111111111111111111111100
+res=1111111111111111111111111111111111111111111111111111111111111110
+ NOTE: copy of sign bit shifted into left side
+
+Expression: -1 = -4 >> 2
+ Decimal:
+val=-4
+res=-1
+ Binary:
+val=1111111111111111111111111111111111111111111111111111111111111100
+res=1111111111111111111111111111111111111111111111111111111111111111
+ NOTE: bits shift out right side
+
+Expression: -1 = -4 >> 3
+ Decimal:
+val=-4
+res=-1
+ Binary:
+val=1111111111111111111111111111111111111111111111111111111111111100
+res=1111111111111111111111111111111111111111111111111111111111111111
+ NOTE: same result as above; can not shift beyond -1
+
+
+--- BIT SHIFT LEFT ON POSITIVE INTEGERS ---
+Expression: 8 = 4 << 1
+ Decimal:
+val=4
+res=8
+ Binary:
+val=0000000000000000000000000000000000000000000000000000000000000100
+res=0000000000000000000000000000000000000000000000000000000000001000
+ NOTE: zeros fill in right side
+
+Expression: 4611686018427387904 = 4 << 60
+ Decimal:
+val=4
+res=4611686018427387904
+ Binary:
+val=0000000000000000000000000000000000000000000000000000000000000100
+res=0100000000000000000000000000000000000000000000000000000000000000
+
+Expression: -9223372036854775808 = 4 << 61
+ Decimal:
+val=4
+res=-9223372036854775808
+ Binary:
+val=0000000000000000000000000000000000000000000000000000000000000100
+res=1000000000000000000000000000000000000000000000000000000000000000
+ NOTE: sign bits get shifted out
+
+Expression: 0 = 4 << 62
+ Decimal:
+val=4
+res=0
+ Binary:
+val=0000000000000000000000000000000000000000000000000000000000000100
+res=0000000000000000000000000000000000000000000000000000000000000000
+ NOTE: bits shift out left side
+
+
+--- BIT SHIFT LEFT ON NEGATIVE INTEGERS ---
+Expression: -8 = -4 << 1
+ Decimal:
+val=-4
+res=-8
+ Binary:
+val=1111111111111111111111111111111111111111111111111111111111111100
+res=1111111111111111111111111111111111111111111111111111111111111000
+ NOTE: zeros fill in right side
+
+Expression: -9223372036854775808 = -4 << 61
+ Decimal:
+val=-4
+res=-9223372036854775808
+ Binary:
+val=1111111111111111111111111111111111111111111111111111111111111100
+res=1000000000000000000000000000000000000000000000000000000000000000
+
+Expression: 0 = -4 << 62
+ Decimal:
+val=-4
+res=0
+ Binary:
+val=1111111111111111111111111111111111111111111111111111111111111100
+res=0000000000000000000000000000000000000000000000000000000000000000
+ NOTE: bits shift out left side, including sign bit
+]]>
+   </screen>
+  </example>
+ </para>
+ <warning>
+  <para>
+   <literal>PHP_INT_MAX</literal> を超える数のビット演算には、
+   <link linkend="book.gmp">gmp</link> 拡張モジュールの関数を使いましょう。
+  </para>
+ </warning>
+
+ <sect2 role="seealso">
+  &reftitle.seealso;
+  <para>
+   <simplelist>
+<!-- <link linkend="language.oop5.basic.class.class">::class</link> -->
+    <member><function>pack</function></member>
+    <member><function>unpack</function></member>
+    <member><function>gmp_and</function></member>
+    <member><function>gmp_or</function></member>
+    <member><function>gmp_xor</function></member>
+    <member><function>gmp_testbit</function></member>
+    <member><function>gmp_clrbit</function></member>
+   </simplelist>
+  </para>
+ </sect2>
+</sect1>
