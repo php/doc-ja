@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 9b89d5c26bba2f062bfbaba2e8c4c8cd89646770 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 62421b98a97fe576987878055e17cf755eb395af Maintainer: takagi Status: working -->
 <!-- CREDITS: hirokawa,shimooka -->
 <refentry xml:id="function.range" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -18,7 +18,19 @@
   <para>
    ある範囲の要素を含む配列を作成します。
   </para>
+  <para>
+   <parameter>start</parameter> と <parameter>end</parameter>
+   が両方文字列で、かつ <parameter>step</parameter> が整数の場合、
+   生成される配列はバイト列のシーケンスになります。
+   そうでない場合、生成される配列は数値のシーケンスになります。
+  </para>
+  <para>
+   <parameter>start</parameter> が <parameter>end</parameter>
+   よりも小さい場合、シーケンスは増加します。
+   そうでない場合、シーケンスは減少します。
+  </para>
  </refsect1>
+
  <refsect1 role="parameters">
   &reftitle.parameters;
   <para>
@@ -35,7 +47,7 @@
      <term><parameter>end</parameter></term>
      <listitem>
       <para>
-       値が <parameter>end</parameter> に達するまでシーケンスが続きます。
+       シーケンスの最後としてあり得る値。
       </para>
      </listitem>
     </varlistentry>
@@ -43,25 +55,183 @@
      <term><parameter>step</parameter></term>
      <listitem>
       <para>
-       <parameter>step</parameter> が指定されている場合、それは
-       要素毎の増加(または減少)数となります。
-       <parameter>step</parameter> は <literal>0</literal>
-       であってはいけませんし、
-       指定した範囲を超えた値であってもいけません。
-       デフォルトは 1 です。
+       <parameter>step</parameter> は、生成されるシーケンスの個別の値が
+       どれくらい離れているかを指定します。
+      </para>
+      <para>
+       シーケンスが減少する場合、<parameter>step</parameter>
+       は負の値を指定しても構いません。
+      </para>
+      <para>
+       <parameter>step</parameter> が 端数のない <type>float</type> 
+       の場合、整数として解釈されます。
       </para>
      </listitem>
     </varlistentry>
    </variablelist>
   </para>
  </refsect1>
+
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
-   <parameter>start</parameter> から
-   <parameter>end</parameter> までの整数の配列を返します。
+   要素のシーケンスを配列として返します。
+   最初の要素は <parameter>start</parameter> になり、
+   <parameter>end</parameter> になるまで続きます。
+   シーケンスのそれぞれの値は、<parameter>step</parameter> だけ離れています。
+  </para>
+  <para>
+   返される配列の最後の要素は、
+   <parameter>end</parameter> または シーケンスの直前の要素になります。
+   どちらになるかは、<parameter>step</parameter> の値によります。
+  </para>
+  <para>
+   <parameter>start</parameter> と <parameter>end</parameter>
+   が両方文字列で、かつ <parameter>step</parameter> が整数の場合、
+   生成される配列は、バイト列のシーケンスになります。
+   一般的にはラテン文字の <abbrev>ASCII</abbrev> 文字からなるシーケンスです。
+  </para>
+  <para>
+   <parameter>start</parameter>, <parameter>end</parameter>, <parameter>step</parameter> のうち少なくともひとつが <type>float</type> の場合、
+   生成される配列は <type>float</type> のシーケンスになります。
+  </para>
+  <para>
+   その他の場合、生成される配列は整数のシーケンスになります。
   </para>
  </refsect1>
+
+ <refsect1 role="errors">
+  &reftitle.errors;
+  <itemizedlist>
+   <listitem>
+    <simpara>
+     <parameter>step</parameter> が <literal>0</literal> の場合、<classname>ValueError</classname> がスローされます。
+    </simpara>
+   </listitem>
+   <listitem>
+    <simpara>
+     <parameter>start</parameter>, <parameter>end</parameter>, <parameter>step</parameter> が有限の値(<function>is_finite</function>) でない場合、
+     <classname>ValueError</classname> がスローされます。
+    </simpara>
+   </listitem>
+   <listitem>
+    <simpara>
+     <parameter>step</parameter> が負の値なのに、生成される範囲が増えている(つまり、 <code>$start &lt;= $end</code>) 場合、
+     <classname>ValueError</classname> がスローされます。
+    </simpara>
+   </listitem>
+   <listitem>
+    <simpara>
+     <parameter>start</parameter> または <parameter>end</parameter> が空文字列 <literal>''</literal> の場合、<constant>E_WARNING</constant> が発生し、空文字列は <literal>0</literal> として解釈されます。
+    </simpara>
+   </listitem>
+   <listitem>
+    <simpara>
+     <parameter>start</parameter> または <parameter>end</parameter> が
+     <link linkend="language.types.numeric-strings">数値形式の文字列</link>
+     でない、長さが1バイトより大きい値の場合、<constant>E_WARNING</constant> が発生します。
+    </simpara>
+   </listitem>
+   <listitem>
+    <simpara>
+     <parameter>start</parameter> または <parameter>end</parameter> が
+     暗黙のうちに整数にキャストされた文字列の場合、
+     <constant>E_WARNING</constant> が発生します。なぜなら、他の境界の入力値は数値だからです。
+    </simpara>
+   </listitem>
+   <listitem>
+    <simpara>
+     <parameter>step</parameter> が <type>float</type> の場合、
+     かつ <parameter>start</parameter> と <parameter>end</parameter> が
+     <link linkend="language.types.numeric-strings">数値形式の文字列</link>
+     でない場合、<constant>E_WARNING</constant> が発生します。
+    </simpara>
+   </listitem>
+  </itemizedlist>
+ </refsect1>
+
+ <refsect1 role="changelog">
+  &reftitle.changelog;
+  <informaltable>
+   <tgroup cols="2">
+    <thead>
+     <row>
+      <entry>&Version;</entry>
+      <entry>&Description;</entry>
+     </row>
+    </thead>
+    <tbody>
+     <row>
+      <entry>8.3.0</entry>
+      <entry>
+       If both <parameter>start</parameter> and <parameter>end</parameter>
+       are strings then <function>range</function> will now always produce
+       an <type>array</type> of bytes.
+       Previously if one of the boundary values was a numeric string,
+       then the other boundary value was implicitly cast to <type>int</type>.
+      </entry>
+     </row>
+     <row>
+      <entry>8.3.0</entry>
+      <entry>
+       An <constant>E_WARNING</constant> is now emitted if
+       <parameter>start</parameter> or <parameter>end</parameter>
+       is a string that is implicitly cast to <type>int</type>
+       because the other boundary value is a number.
+      </entry>
+     </row>
+     <row>
+      <entry>8.3.0</entry>
+      <entry>
+       An <constant>E_WARNING</constant> is now emitted if
+       <parameter>start</parameter> or <parameter>end</parameter>
+       is a non-numeric string with more than one byte.
+      </entry>
+     </row>
+     <row>
+      <entry>8.3.0</entry>
+      <entry>
+       An <constant>E_WARNING</constant> is now emitted if
+       <parameter>start</parameter> or <parameter>end</parameter>
+       is the empty string.
+      </entry>
+     </row>
+     <row>
+      <entry>8.3.0</entry>
+      <entry>
+       If <parameter>step</parameter> is a <type>float</type> with no
+       fractional part, it will be interpreted as an <type>int</type>.
+      </entry>
+     </row>
+     <row>
+      <entry>8.3.0</entry>
+      <entry>
+       A <classname>ValueError</classname> is now thrown if
+       <parameter>step</parameter> is negative when producing an increasing
+       range.
+      </entry>
+     </row>
+     <row>
+      <entry>8.3.0</entry>
+      <entry>
+       A <classname>ValueError</classname> is now thrown if
+       <parameter>step</parameter> is not finite.
+      </entry>
+     </row>
+     <row>
+      <entry>8.3.0</entry>
+      <entry>
+       A <classname>TypeError</classname> is now thrown if
+       <parameter>start</parameter> or <parameter>end</parameter>
+       is an <type>array</type>, <type>object</type>, or <type>resource</type>.
+       Previously they were implicitly cast to <type>int</type>.
+      </entry>
+     </row>
+    </tbody>
+   </tgroup>
+  </informaltable>
+ </refsect1>
+
  <refsect1 role="examples">
   &reftitle.examples;
   <para>
@@ -70,48 +240,32 @@
     <programlisting role="php">
 <![CDATA[
 <?php
-// array(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)
-foreach (range(0, 12) as $number) {
-    echo $number;
-}
+echo implode(', ', range(0, 12)), PHP_EOL;
 
-echo "\n";
+echo implode(', ', range(0, 100, 10)), PHP_EOL;
 
-// step 引数
-// array(0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
-foreach (range(0, 100, 10) as $number) {
-    echo $number;
-}
+echo implode(', ', range('a', 'i')), PHP_EOL;
 
-echo "\n";
+echo implode(', ', range('c', 'a')), PHP_EOL;
 
-// 文字シーケンスを使う
-// array('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i');
-foreach (range('a', 'i') as $letter) {
-    echo $letter;
-}
-
-echo "\n";
-
-// array('c', 'b', 'a');
-foreach (range('c', 'a') as $letter) {
-    echo $letter;
-}
+echo implode(', ', range('A', 'z')), PHP_EOL;
 ?>
 ]]>
     </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12
+0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100
+a, b, c, d, e, f, g, h, i
+c, b, a
+A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, [, \, ], ^, _, `, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z
+]]>
+    </screen>
    </example>
   </para>
  </refsect1>
- <refsect1 role="notes">
-  &reftitle.notes;
-  <note>
-   <para>
-    文字列シーケンスは、長さが 1 のものだけに限られます。
-    2 文字以上を指定した場合は、最初の 1 文字だけを使います。
-   </para>
-  </note>
- </refsect1>
+
  <refsect1 role="seealso">
   &reftitle.seealso;
   <para>
@@ -122,6 +276,7 @@ foreach (range('c', 'a') as $letter) {
    </simplelist>
   </para>
  </refsect1>
+
 </refentry>
 <!-- Keep this comment at the end of the file
 Local variables:
