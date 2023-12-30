@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 6ab6ea465889620fc2a8cdaf7b008cbaed83c523 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 87a266cdd7f53bc86cd22d21af289b9a75f57f94 Maintainer: mumumu Status: ready -->
 <refentry xmlns="http://docbook.org/ns/docbook" xml:id="function.ob-list-handlers">
  <refnamediv>
   <refname>ob_list_handlers</refname>
   <refpurpose>使用中の出力ハンドラの一覧を取得する</refpurpose>
  </refnamediv>
- 
+
  <refsect1 role="description">
   &reftitle.description;
   <methodsynopsis>
@@ -26,11 +26,33 @@
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
-   これは、使用中の出力ハンドラを（もし存在すれば）配列で返します。もし
-   <link linkend="ini.output-buffering">output_buffering</link> が
-   有効になっているか、あるいは <function>ob_start</function> で
-   無名関数が使用されている場合、<function>ob_list_handlers</function>
-   は "default output handler" を返します。
+   これは、使用中の出力ハンドラを（もし存在すれば）配列で返します。
+  </para>
+  <para>
+   もし <link linkend="ini.output-buffering">output_buffering</link> が
+   有効になっており、<link linkend="ini.output-handler">output_handler</link>
+   が未設定の場合や、コールバックが設定されていない場合、
+   あるいは <function>ob_start</function> に &null; を渡した場合は、
+   <literal>"default output handler"</literal> を返します。
+
+   <link linkend="ini.output-buffering">output_buffering</link>
+   を有効にし、<link linkend="ini.output-handler">output_handler</link>
+   を設定することは、
+   <link linkend="functions.internal">内部(組み込み)関数</link>
+   を <function>ob_start</function> に渡すことと同じです。
+  </para>
+  <para>
+   <function>ob_start</function> に <type>callable</type>
+   を渡した場合、<type>callable</type> の
+   <link linkend="language.namespaces.basics">完全修飾名</link>
+   を返します。<type>callable</type> が
+   <link linkend="language.oop5.magic.invoke">__invoke()</link> を実装したオブジェクトの場合、
+   オブジェクトの <link linkend="language.oop5.magic.invoke">__invoke()</link>
+   メソッドの
+   <link linkend="language.namespaces.basics">完全修飾名</link> を返します。
+
+   <type>callable</type> が <classname>Closure</classname> の場合、
+   <literal>"Closure::__invoke"</literal> を返します。
   </para>
  </refsect1>
 
@@ -42,17 +64,71 @@
     <programlisting role="php">
 <![CDATA[
 <?php
-// 出力バッファリングを On にします
-print_r(ob_list_handlers());
+// using output_buffering=On, no output_handler set
+var_dump(ob_list_handlers());
 ob_end_flush();
 
-ob_start("ob_gzhandler");
-print_r(ob_list_handlers());
+// no callback or null
+ob_start();
+var_dump(ob_list_handlers());
 ob_end_flush();
 
-// 無名関数
+// anonymous function
 ob_start(function($string) { return $string; });
-print_r(ob_list_handlers());
+var_dump(ob_list_handlers());
+ob_end_flush();
+
+// arrow function
+ob_start(fn($string) => $string);
+var_dump(ob_list_handlers());
+ob_end_flush();
+
+// first class callable
+$firstClassCallable = userDefinedFunction(...);
+
+ob_start([$firstClassCallable, '__invoke']);
+var_dump(ob_list_handlers());
+ob_end_flush();
+
+// internal (built-in) function
+ob_start('print_r');
+var_dump(ob_list_handlers());
+ob_end_flush();
+
+// user-defined function
+function userDefinedFunction($string, $flags) { return $string; };
+
+ob_start('userDefinedFunction');
+var_dump(ob_list_handlers());
+ob_end_flush();
+
+class MyClass {
+    public static function staticHandle($string) {
+        return $string;
+    }
+
+    public static function handle($string) {
+        return $string;
+    }
+
+    public function __invoke($string) {
+        return $string;
+    }
+}
+
+// class and static method
+ob_start(['MyClass','staticHandle']);
+var_dump(ob_list_handlers());
+ob_end_flush();
+
+// object and non-static method
+ob_start([new MyClass,'handle']);
+var_dump(ob_list_handlers());
+ob_end_flush();
+
+// invokable object
+ob_start(new MyClass);
+var_dump(ob_list_handlers());
 ob_end_flush();
 ?>
 ]]>
@@ -60,20 +136,46 @@ ob_end_flush();
     &example.outputs;
     <screen>
 <![CDATA[
-Array
-(
-    [0] => default output handler
-)
-
-Array
-(
-    [0] => ob_gzhandler
-)
-
-Array
-(
-    [0] => Closure::__invoke
-)
+array(1) {
+  [0]=>
+  string(22) "default output handler"
+}
+array(1) {
+  [0]=>
+  string(22) "default output handler"
+}
+array(1) {
+  [0]=>
+  string(7) "print_r"
+}
+array(1) {
+  [0]=>
+  string(19) "userDefinedFunction"
+}
+array(1) {
+  [0]=>
+  string(17) "Closure::__invoke"
+}
+array(1) {
+  [0]=>
+  string(17) "Closure::__invoke"
+}
+array(1) {
+  [0]=>
+  string(17) "Closure::__invoke"
+}
+array(1) {
+  [0]=>
+  string(21) "MyClass::staticHandle"
+}
+array(1) {
+  [0]=>
+  string(15) "MyClass::handle"
+}
+array(1) {
+  [0]=>
+  string(17) "MyClass::__invoke"
+}
 ]]>
     </screen>
    </example>
