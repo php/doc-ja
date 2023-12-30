@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 55f70d19870c396f3bf86b6c45826da3cb7e525f Maintainer: hirokawa Status: ready -->
-<!-- CREDITS: takagi -->
+<!-- EN-Revision: 2b3715871c83b928ac496e6c777d6be9f0d71cbf Maintainer: mumumu Status: ready -->
 <refentry xml:id="function.ob-get-status" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>ob_get_status</refname>
   <refpurpose>出力バッファのステータスを取得する</refpurpose>
  </refnamediv>
- 
+
  <refsect1 role="description">
   &reftitle.description;
   <methodsynopsis>
@@ -43,80 +42,147 @@
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
-   パラメータ <parameter>full_status</parameter> を指定していなかったり
-   <parameter>full_status</parameter> = &false; としていた場合は、
-   以下の要素を保持する配列が返されます。
-   <informalexample>
+   <parameter>full_status</parameter> が省略されるか、&false; の場合、
+   出力レベルがアクティブなステータス情報を持つ配列を返します。
+  </para>
+  <para>
+   <parameter>full_status</parameter> が &true; の場合、
+   アクティブな出力バッファの階層をひとつの要素とする配列を返します。
+   出力レベルは配列のトップレベルのキーとして使われ、
+   それぞれの配列の要素自体は、
+   単一のアクティブな出力レベルのステータス情報を持つ配列になります。
+  </para>
+  <para>
+   出力バッファが有効になっていない場合は、
+   空の配列が返されます。
+  </para>
+  <para>
+   <segmentedlist>
+    <title><function>ob_get_status</function> が返す配列の要素</title>
+    <segtitle>Key</segtitle><segtitle>Value</segtitle>
+    <seglistitem>
+     <seg>name</seg>
+     <seg>
+      <function>ob_start</function> の <parameter>callback</parameter> が設定した。
+      アクティブな出力ハンドラの名前。
+      <link linkend="ini.output-buffering">output_buffering</link> が有効な場合は、
+      <link linkend="ini.output-handler">output_handler</link> の値。
+      何も設定されていない場合は <literal>'default output handler'</literal>。
+     </seg>
+    </seglistitem>
+    <seglistitem>
+     <seg>type</seg>
+     <seg>
+      <literal>0</literal> (内部ハンドラ) あるいは
+      <literal>1</literal> (ユーザー指定のハンドラ)
+     </seg>
+    </seglistitem>
+    <seglistitem>
+     <seg>flags</seg>
+     <seg>
+    　<function>ob_start</function> が設定したフラグのビットマスク。
+      出力ハンドラのタイプ(上記を参照) と、
+      バッファリング中のプロセス
+      (<link linkend="outcontrol.constants">
+       <constant>PHP_OUTPUT_HANDLER_<replaceable>*</replaceable></constant>
+      </link> 定数)。
+      ハンドラのバッファの処理が成功し、&false; を返さなかった場合、
+      <constant>PHP_OUTPUT_HANDLER_STARTED</constant> と
+      <constant>PHP_OUTPUT_HANDLER_PROCESSED</constant> が設定されます。
+      ハンドラのバッファの処理が失敗するか、&false; を返した場合、
+      <constant>PHP_OUTPUT_HANDLER_STARTED</constant> と
+      <constant>PHP_OUTPUT_HANDLER_DISABLED</constant> が設定されます。
+     </seg>
+    </seglistitem>
+    <seglistitem>
+     <seg>level</seg>
+     <seg>
+      出力階層レベル(ゼロから始まります)。
+    　<function>ob_get_level</function> が返す階層の値とは、
+      ひとつずれることに注意して下さい。
+      <function>ob_get_status</function> が返す最初のレベルは
+      <literal>0</literal> ですが、<function>ob_get_level</function>
+      は <literal>1</literal> になります。
+     </seg>
+    </seglistitem>
+    <seglistitem>
+     <seg>chunk_size</seg>
+     <seg>
+      <function>ob_start</function> で設定したチャンクの大きさ。
+      <link linkend="ini.output-buffering">output_buffering</link>
+      が有効で、整数の値が設定されている場合はその値
+     </seg>
+    </seglistitem>
+    <seglistitem>
+     <seg>buffer_size</seg>
+     <seg>
+      出力バッファのサイズ(バイト単位)
+     </seg>
+    </seglistitem>
+    <seglistitem>
+     <seg>buffer_used</seg>
+     <seg>
+      出力バッファ中のデータサイズ(バイト単位) 
+     </seg>
+    </seglistitem>
+   </segmentedlist>
+  </para>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title><parameter>full_status</parameter> が &false; の場合に返される配列</title>
     <screen>
 <![CDATA[
 Array
 (
-    [level] => 2
-    [type] => 0
-    [status] => 0
     [name] => URL-Rewriter
-    [del] => 1
+    [type] => 0
+    [flags] => 112
+    [level] => 2
+    [chunk_size] => 0
+    [buffer_size] => 16384
+    [buffer_used] => 1024
 )
 ]]>
     </screen>
-   </informalexample>
-   <segmentedlist>
-    <title>単純な <function>ob_get_status</function> の出力結果</title>
-    <segtitle>キー</segtitle><segtitle>値</segtitle>
-    <seglistitem><seg>level</seg><seg>出力階層レベル</seg></seglistitem>
-    <seglistitem><seg>type</seg><seg><literal>0</literal> (内部ハンドラ) あるいは <literal>1</literal> (ユーザー指定のハンドラ)</seg></seglistitem>
-    <seglistitem><seg>status</seg><seg><literal>PHP_OUTPUT_HANDLER_START</literal> (0)、<literal>PHP_OUTPUT_HANDLER_CONT</literal> (1) あるいは <literal>PHP_OUTPUT_HANDLER_END</literal> (2) のいずれか</seg></seglistitem>
-    <seglistitem><seg>name</seg><seg>アクティブな出力ハンドラの名前、あるいは設定されていない場合は ' default output handler'</seg></seglistitem>
-    <seglistitem><seg>del</seg><seg><function>ob_start</function> が設定した削除フラグ</seg></seglistitem>
-   </segmentedlist>
+   </example>
   </para>
   <para>
-   <parameter>full_status</parameter> = &true; を指定してコールした場合、
-   出力バッファごとにひとつの要素を保持する配列が返されます。
-   出力レベルが配列のキーとして使用され、対応する値として
-   各出力レベルのステータス情報を配列として保持します。
-   <informalexample>
+   <example>
+    <title><parameter>full_status</parameter> が &true; の場合に返される配列</title>
     <screen>
 <![CDATA[
 Array
 (
     [0] => Array
         (
-            [chunk_size] => 0
-            [size] => 40960
-            [block_size] => 10240
-            [type] => 1
-            [status] => 0
             [name] => default output handler
-            [del] => 1
+            [type] => 0
+            [flags] => 112
+            [level] => 1
+            [chunk_size] => 0
+            [buffer_size] => 16384
+            [buffer_used] => 2048
         )
 
     [1] => Array
         (
-            [chunk_size] => 0
-            [size] => 40960
-            [block_size] => 10240
-            [type] => 0
-            [buffer_size] => 0
-            [status] => 0
             [name] => URL-Rewriter
-            [del] => 1
+            [type] => 0
+            [flags] => 112
+            [level] => 2
+            [chunk_size] => 0
+            [buffer_size] => 16384
+            [buffer_used] => 1024
         )
 
 )
 ]]>
     </screen>
-   </informalexample>
-  </para>
-  <para>
-   完全な出力には、追加項目として以下の要素が含まれます。
-   <segmentedlist>
-    <title>完全な <function>ob_get_status</function> の出力結果</title>
-    <segtitle>キー</segtitle><segtitle>値</segtitle>
-    <seglistitem><seg>chunk_size</seg><seg><function>ob_start</function> で設定したチャンクの大きさ</seg></seglistitem>
-    <seglistitem><seg>size</seg><seg>...</seg></seglistitem>
-    <seglistitem><seg>blocksize</seg><seg>...</seg></seglistitem>
-   </segmentedlist>
+   </example>
   </para>
  </refsect1>
 
@@ -126,6 +192,7 @@ Array
    <simplelist>
     <member><function>ob_get_level</function></member>
     <member><function>ob_list_handlers</function></member>
+    <member><function>ob_start</function></member>
    </simplelist>
   </para>
  </refsect1>
