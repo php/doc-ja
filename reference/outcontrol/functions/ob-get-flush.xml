@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 6ab6ea465889620fc2a8cdaf7b008cbaed83c523 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 86b976d5afaf037868174fe5c242e886eb69baa4 Maintainer: takagi Status: ready -->
 <refentry xml:id="function.ob-get-flush" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>ob_get_flush</refname>
-  <refpurpose>出力バッファをフラッシュし、その内容を文字列として返した後で出力バッファリングを終了する</refpurpose>
+  <refpurpose>アクティブな出力ハンドラの戻り値をフラッシュ(送信)し、その内容を文字列として返した後で、それをオフにする</refpurpose>
  </refnamediv>
  
  <refsect1 role="description">
@@ -14,22 +14,23 @@
    <void/>
   </methodsynopsis>
   <para>
-   <function>ob_get_flush</function> は、
-   出力バッファをフラッシュしてその内容を文字列として返した後、
-   出力バッファリングを終了します。
+   この関数は、
+   (<constant>PHP_OUTPUT_HANDLER_FINAL</constant> フラグを指定して)
+   出力ハンドラをコールし、その戻り値をフラッシュ(送信)するとともに、
+   アクティブな出力バッファの内容を返しつつ、
+   それをオフにします。
   </para>
   <para>
-   出力バッファを開始するときに、
-   <function>ob_start</function> で <link
-   linkend="constant.php-output-handler-flushable">PHP_OUTPUT_HANDLER_FLUSHABLE</link>
-   フラグを指定する必要があります。指定しなければ、<function>ob_get_flush</function> は動作しません。
+   <constant>PHP_OUTPUT_HANDLER_REMOVABLE</constant> を指定して
+   アクティブな出力バッファを開始しないと、
+   <function>ob_get_flush</function> は失敗します。
   </para>
-  <note>
-   <simpara>
-    この関数は <function>ob_end_flush</function> と似ていますが、
-    この関数はバッファの内容を文字列として返すこともします。
-   </simpara>
-  </note>
+  <para>
+   <function>ob_get_flush</function>
+   は、<constant>PHP_OUTPUT_HANDLER_FLUSHABLE</constant>
+   を指定せずにアクティブな出力バッファを開始したとしても、
+   出力ハンドラの戻り値をフラッシュ(送信) します。
+  </para>
  </refsect1>
 
  <refsect1 role="parameters">
@@ -40,8 +41,16 @@
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
-   出力バッファを返します。バッファリングが開始されていない場合は
-   &false; を返します。
+   成功した場合、アクティブな出力バッファの内容を返します。
+   失敗した場合、&false; を返します。
+  </para>
+ </refsect1>
+
+ <refsect1 role="errors">
+  &reftitle.errors;
+  <para>
+   この関数が失敗すると、
+   <constant>E_NOTICE</constant> が発生します。
   </para>
  </refsect1>
 
@@ -53,7 +62,7 @@
     <programlisting role="php">
 <![CDATA[
 <?php
-// 出力バッファリングを On にします
+//output_buffering=On であるとします
 print_r(ob_list_handlers());
 
 // バッファをファイルに保存します
@@ -84,12 +93,14 @@ Array
   &reftitle.seealso;
   <para>
    <simplelist>
-    <member><function>ob_end_clean</function></member>
+    <member><function>ob_start</function></member>
+    <member><function>ob_get_contents</function></member>
+    <member><function>ob_flush</function></member>
     <member><function>ob_end_flush</function></member>
-    <member><function>ob_list_handlers</function></member>
+    <member><function>ob_get_clean</function></member>
    </simplelist>
   </para>
- </refsect1> 
+ </refsect1>
 
 </refentry>
 <!-- Keep this comment at the end of the file
