@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: c6a8e42bdbbb814124b84d45d95cd793129aac6b Maintainer: takagi Status: ready -->
+<!-- EN-Revision: b0d9505811e05bc11b58ef23167f3855c742edba Maintainer: takagi Status: ready -->
 <!-- Credits: mumumu -->
 <refentry xmlns="http://docbook.org/ns/docbook" xml:id="function.output-add-rewrite-var">
  <refnamediv>
   <refname>output_add_rewrite_var</refname>
   <refpurpose>URL リライタの値を追加する</refpurpose>
  </refnamediv>
- 
+
  <refsect1 role="description">
   &reftitle.description;
   <methodsynopsis>
@@ -16,26 +16,34 @@
    <methodparam><type>string</type><parameter>value</parameter></methodparam>
   </methodsynopsis>
   <para>
-   この関数は、URL リライト機構に新しい名前/値の組を追加します。
-   名前および値は、URL (GET パラメータとして) およびフォーム
-   (hidden フィールドとして) で追加されます。これは、<link
-    linkend="ini.session.use-trans-sid">session.use_trans_sid</link>
-   で透過的 URL リライティングが有効になっている場合に
-   セッション ID が渡される方法と同じです。
+   この関数は、<literal>'URL-Rewriter'</literal>
+   出力バッファハンドラをアクティブでない場合に開始します。
+   その上で、<parameter>name</parameter> と <parameter>value</parameter>
+   パラメータを保存し、バッファがフラッシュされた際には
+   <acronym>URL</acronym> とフォームをini設定に基づいて書き換えます。
+   後にこの関数をコールした場合は、ハンドラがオフになるまで name/value
+   のペアをすべて保存します。
   </para>
   <para>
-   この関数の挙動は、&php.ini; パラメータ <link
-    linkend="ini.url-rewriter.tags">url_rewriter.tags</link>
-   および <link linkend="ini.url-rewriter.hosts">url_rewriter.hosts</link>
-   によって制御されます。
+   (<function>ob_flush</function>, <function>ob_end_flush</function>,
+   <function>ob_get_flush</function> がコールされたり、
+   スクリプトが終了する際) 出力バッファがフラッシュされると、
+   <literal>'URL-Rewriter'</literal> ハンドラが name/value のペアを
+   HTML タグの属性にある <acronym>URL</acronym> のクエリパラメータに追加します。
+   そして <link linkend="ini.url-rewriter.tags">url_rewriter.tags</link> と
+   <link linkend="ini.url-rewriter.hosts">url_rewriter.hosts</link>
+   設定ディレクティブの値に基づいて hidden フィールドをの値をフォームに追加します。
   </para>
   <para>
-   この関数の呼び出しが成功するのは、それぞれのリクエストで一度だけです。
+   <literal>'URL-Rewriter'</literal> のハンドラに追加された name/value
+   ペアは、たとえ <acronym>URL</acronym> のクエリパラメータが重複したり、
+   同じ名前の属性をもつ要素が発生したとしても、
+   それぞれが <acronym>URL</acronym> やフォームに追加されます。
   </para>
   <note>
    <simpara>
-    もし出力バッファリングが有効になっていない場合、この関数を
-    コールすると出力バッファリングが暗黙的に開始されます。
+    <literal>'URL-Rewriter'</literal> ハンドラがオフにされると、
+    再び値を保存することはできません。
    </simpara>
   </note>
  </refsect1>
@@ -86,12 +94,17 @@
       <row>
        <entry>7.1.0</entry>
        <entry>
-        PHP 7.1.0 より前のバージョンでは、<function>output_add_rewrite_var</function>
-        で設定したリライト変数は、透過的セッションID出力バッファと同じセッションモジュールを使っていました。
         PHP 7.1.0 以降では、専用の出力バッファを用いるようになりました。
-        <link linkend="ini.url-rewriter.tags">
-        url_rewriter.tags</link> はただ関数の出力にだけ使われるようになり、
-        <link linkend="ini.url-rewriter.tags">url_rewriter.hosts</link> が追加されました。
+        <link linkend="ini.url-rewriter.tags">url_rewriter.tags</link>
+        はただ関数の出力にだけ使われるようになり、
+        <link linkend="ini.url-rewriter.tags">url_rewriter.hosts</link>
+        が追加されました。
+        PHP 7.1.0 より前のバージョンでは、
+        <function>output_add_rewrite_var</function>
+        で設定したリライト変数は、
+        透過的セッションID出力バッファと同じ出力バッファを共有していました。
+        (<link linkend="ini.session.trans-sid-tags">session.trans_sid_tags</link>
+        を参照ください)
        </entry>
       </row>
      </tbody>
@@ -108,11 +121,13 @@
     <programlisting role="php">
 <![CDATA[
 <?php
+ini_set('url_rewriter.tags', 'a=href,form=');
+
 output_add_rewrite_var('var', 'value');
 
 // リンク
-echo '<a href="file.php">リンク</a>
-<a href="http://example.com">リンク2</a>';
+echo '<a href="file.php">link</a>
+<a href="http://example.com">link2</a>';
 
 // フォーム
 echo '<form action="script.php" method="post">
@@ -126,8 +141,8 @@ print_r(ob_list_handlers());
     &example.outputs;
     <screen>
 <![CDATA[
-<a href="file.php?var=value">リンク</a>
-<a href="http://example.com">リンク2</a>
+<a href="file.php?var=value">link</a>
+<a href="http://example.com">link2</a>
 
 <form action="script.php" method="post">
 <input type="hidden" name="var" value="value" />
@@ -153,11 +168,9 @@ Array
     <member><function>ob_list_handlers</function></member>
     <member><link linkend="ini.url-rewriter.tags">url_rewriter.tags</link></member>
     <member><link linkend="ini.url-rewriter.hosts">url_rewriter.hosts</link></member>
-    <member><link linkend="ini.session.trans-sid-tags">session.trans_sid_tags</link></member>
-    <member><link linkend="ini.session.trans-sid-hosts">session.trans_sid_hosts</link></member>
    </simplelist>
   </para>
- </refsect1>  
+ </refsect1>
 
 </refentry>
 
