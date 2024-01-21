@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 86e6094e86b84a51d00ab217ac50ce8dde33d82a Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: c2c5f47c53f58b5a50b5cc3c30116cb2aecf2d3c Maintainer: hirokawa Status: ready -->
 <section xml:id="outcontrol.configuration" xmlns="http://docbook.org/ns/docbook">
  &reftitle.runtime;
  &extension.runtime;
@@ -19,29 +19,34 @@
     <tbody>
     <row>
      <entry><link linkend="ini.output-buffering">output_buffering</link></entry>
-     <entry>"0"</entry>
+     <entry><literal>"0"</literal></entry>
      <entry>PHP_INI_PERDIR</entry>
      <entry></entry>
     </row>
     <row>
      <entry><link linkend="ini.output-handler">output_handler</link></entry>
-     <entry>NULL</entry>
+     <entry>&null;</entry>
      <entry>PHP_INI_PERDIR</entry>
      <entry></entry>
     </row>
     <row>
      <entry><link linkend="ini.implicit-flush">implicit_flush</link></entry>
-     <entry>"0"</entry>
+     <entry><literal>"0"</literal></entry>
      <entry>PHP_INI_ALL</entry>
      <entry></entry>
     </row>
     <row>
      <entry><link linkend="ini.url-rewriter.tags">url_rewriter.tags</link></entry>
-     <entry>"a=href,area=href,frame=src,form=,fieldset="</entry>
+     <entry><literal>"form="</literal></entry>
      <entry>PHP_INI_ALL</entry>
-     <entry>PHP 7.1.0 より前のバージョンでは、これを用いて
-     透過的セッションIDのリライトを設定していました。PHP 7.1.0 以降では、これは
-     <function>output_add_rewrite_var</function> でだけ用いられます。</entry>
+     <entry>
+      PHP 7.1.0 以降では、このINI設定は
+      <function>output_add_rewrite_var</function> でのみ影響します。
+      PHP 7.1.0 より前のバージョンでは、このINI設定は
+      透過的セッションIDのサポートを有効にしていました。
+      (<link linkend="ini.session.trans-sid-tags">session.trans_sid_tags</link>
+      も参照ください)
+     </entry>
     </row>
     <row>
      <entry><link linkend="ini.url-rewriter.hosts">url_rewriter.hosts</link></entry>
@@ -54,9 +59,9 @@
   </table>
    &ini.php.constants;
  </para>
- 
+
  &ini.descriptions.title;
- 
+
  <para>
   <variablelist>
    <varlistentry xml:id="ini.output-buffering">
@@ -66,11 +71,12 @@
     </term>
     <listitem>
      <para>
-      このディレクティブを 'On' と設定することにより、全てのファイルに
-      関して出力バッファリングを有効にすることができます。
-      特定の大きさにバッファの大きさを制限したい場合、このディレクティブの
-      値として 'On' の代わりに最大バイト数(例:output_buffering=4096)
-      を使用することができます。
+      このディレクティブを <literal>"On"</literal> と設定することにより、
+      全てのファイルに関して出力バッファリングを有効にすることができます。
+      バッファの大きさを制限したい場合、
+      このディレクティブに <literal>"On"</literal>
+      を設定する代わりに、許可される最大値をバイト数単位で設定できます。
+      たとえば <literal>output_buffering=4096</literal> のように設定できます。
       PHP-CLI ではこのディレクティブが常に Off となります。
     </para>
     </listitem>
@@ -83,21 +89,26 @@
     </term>
     <listitem>
      <para>
-      スクリプトの全ての出力を関数にリダイレクトすることができます。
-      例えば、output_handler に <function>mb_output_handler</function>
-      を指定した場合、文字エンコーディングは透過的に指定したエンコーディングに
+      スクリプトの出力を、関数にリダイレクトできます。
+      たとえば <literal>output_handler</literal> に
+      <function>mb_output_handler</function> を指定した場合、
+      文字エンコーディングは透過的に指定したエンコーディングに
       変換されます。出力ハンドラを指定することにより自動的に出力
-      バッファリングを on にします。
+      バッファリングが on になります。
      </para>
      <note>
       <para>
-       <function>ob_iconv_handler</function> と
-       <function>mb_output_handler</function> の両方で使用することは
-       できません。また、
-       <function>ob_gzhandler</function> と
-       <link
-       linkend="ini.zlib.output-compression">zlib.output_compression</link>
-       の両方を使用することはできません。
+       <function>mb_output_handler</function> と
+       <function>ob_iconv_handler</function> は一緒に使えません。
+       また、<function>ob_gzhandler</function> と
+       <link linkend="ini.zlib.output-compression">zlib.output_compression</link>
+       は、以下の値のいずれかと一緒に使えません:
+       <function>mb_output_handler</function>,
+       <function>ob_gzhandler</function>,
+       <link linkend="ini.zlib.output-compression">zlib.output_compression</link>,
+       'URL-Rewriter' ハンドラ
+       (<link linkend="ini.session.use-trans-sid">session.use_trans_sid</link>
+       と <function>output_add_rewrite_var</function> も参照ください)
       </para>
      </note>
     <note>
@@ -118,9 +129,10 @@
     <para>
       デフォルトは &false; です。これを &true; に変更すると、PHP が
       各出力ブロックの後で自動的に出力レイヤをフラッシュするよう
-      指定します。これは、各
-      <function>print</function> あるいは <function>echo</function>
-      そして <literal>HTML</literal> ブロックの後で
+      指定します。これは、
+      (<function>print</function> や <function>echo</function> のような)
+      出力を生成するあらゆる関数をコールするたびに/コールし、
+      <literal>HTML</literal> ブロックの後で
       <function>flush</function> 関数をコールすることと等価です。
     </para>
      <para>
@@ -143,15 +155,26 @@
    </term>
    <listitem>
     <simpara>
+
      <literal>url_rewriter.tags</literal> は、
-     <function>output_add_rewrite_var</function> でどの HTML タグをリライトするかを指定します。
-     デフォルトは
-     <literal>a=href,area=href,frame=src,input=src,form=</literal> です。
+     <function>output_add_rewrite_var</function>
+     の値でどのURLのHTMLタグや属性を書き換えるかを指定します。
+     デフォルトは <literal>"form="</literal> です。
     </simpara>
     <simpara>
-     <literal>form</literal> は特別なタグです。<literal>&lt;input hidden="session_id" name="session_name"&gt;</literal>
-     が form 変数に追加されます。
+     <literal>"form="</literal> や <literal>form</literal>
+     の任意の属性を追加すると、
+     <literal>input</literal> 要素の hidden 要素が
+     <function>output_add_rewrite_var</function> に渡された name/value
+     のペアごとに <literal>form</literal>要素に追加されます。
     </simpara>
+    <caution>
+     <simpara>
+      <literal>url_rewriter.tags</literal>
+      に一度以上同じタグを追加すると、
+      URL書き換えプロセスの間に最初に出てきたものだけが使われます。
+     </simpara>
+    </caution>
     <note>
      <simpara>
       PHP 7.1.0 より前のバージョンでは、<link linkend="ini.url-rewriter.tags">url_rewriter.tags</link>
@@ -172,8 +195,10 @@
      <literal>url_rewriter.hosts</literal> は、
      <function>output_add_rewrite_var</function> に含めるリライト対象のホストを指定します。
      デフォルトは <literal>$_SERVER['HTTP_HOST']</literal> です。
-     複数のホストを指定する場合は "," でつなぎます。その際に、ホストとホストの間にスペースを入れてはいけません。つまり、
-     <literal>php.net,wiki.php.net,bugs.php.net</literal> のように指定します。
+     複数のホストを指定する場合は、コンマ区切りのリストとして指定します。
+     但し、スペースを入れてはいけません。
+     たとえば、<literal>"php.net,wiki.php.net,bugs.php.net"</literal>
+     のように指定します。
     </simpara>
    </listitem>
   </varlistentry>
