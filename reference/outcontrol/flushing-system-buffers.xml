@@ -1,136 +1,138 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 7ad99aeafea66a1562f668aa3cb11dcc9d9cb951 Maintainer: mumumu Status: working -->
+<!-- EN-Revision: 7ad99aeafea66a1562f668aa3cb11dcc9d9cb951 Maintainer: mumumu Status: ready -->
 <chapter xml:id="outcontrol.flushing-system-buffers" xmlns="http://docbook.org/ns/docbook">
- <title>Flushing System Buffers</title>
+ <title>システムバッファのフラッシュ</title>
  <para>
-  PHP provides two related ways
-  to flush (send and discard the contents of) system buffers:
-  through calling <function>flush</function>
-  and through enabling implicit flushing
-  with <function>ob_implicit_flush</function>
-  or the <link linkend="ini.implicit-flush">implicit_flush</link>
-  &php.ini; setting.
+  PHP は、システムバッファをフラッシュ(内容を送信して破棄)
+  する方法をふたつ提供します:
+  <function>flush</function> と、
+  <function>ob_implicit_flush</function> や
+  &php.ini; 設定 <link linkend="ini.implicit-flush">implicit_flush</link>
+  経由で暗黙のフラッシュを有効にする方法です。
  </para>
 
  <section>
-  <title>Output Flushing Behaviour</title>
+  <title>出力をフラッシュする動作</title>
   <para>
-   With implicit flushing disabled, PHP will flush output only
-   when <function>flush</function> is called or when the script ends.
+   暗黙のフラッシュを無効にすると、
+   PHP は <function>flush</function> をコールしたときか、
+   スクリプトが終了したときにだけ出力をフラッシュします。
   </para>
   <para>
-   With implicit flushing enabled, PHP will attempt to flush
-   after every block of code resulting in output.
-   Output in this context is non-zero length data that is:
+   暗黙のフラッシュを有効にすると、
+   PHP は出力を生成するコードブロックが終了するたびに、
+   フラッシュを実行しようとします。
+   このコンテクストにおける出力は、以下に示す長さが 0 より大きなデータです:
    <itemizedlist xml:id="outputcontrol.what-is-output">
     <listitem>
      <simpara>
-      outside of the <literal>&#60;?php ?&#62;</literal> tags
+      <literal>&#60;?php ?&#62;</literal> タグの外側
      </simpara>
     </listitem>
     <listitem>
      <simpara>
-      printed by language constructs and functions
-      whose explicit purpose is to output user provided variables or strings such as
+      ユーザが提供した変数や文字列を出力することを明確な目的とした言語構造や関数による出力。
+      これにあてはまる言語構造や関数は、
       <function>echo</function>, <function>print</function>,
       <function>printf</function>, <function>var_dump</function>,
       <function>var_export</function>, <function>vprintf</function>
+      です。
      </simpara>
     </listitem>
     <listitem>
      <simpara>
-      printed by functions whose purpose is to collect and output
-      data/information on the running script or PHP such as
+      実行中のスクリプトや PHP に関するデータ/情報を収集し、
+      出力することを目的とした関数による出力。
+      これにあてはまる関数は、
       <function>debug_print_backtrace</function>, <function>phpcredits</function>,
       <function>phpinfo</function>,
-      <methodname>ReflectionExtension::info</methodname>
+      <methodname>ReflectionExtension::info</methodname> です。
      </simpara>
     </listitem>
     <listitem>
      <simpara>
-      printed by PHP on an uncaught exception or an unhandled error
-      (subject to the settings of
-      <link linkend="ini.display-errors">display_errors</link>
-      and <link linkend="ini.error-reporting">error_reporting</link>)
+      捕捉されなかった例外や、処理されなかったエラーが発生したときに
+      PHP が行う出力。
+      (出力されるかどうかは、
+      <link linkend="ini.display-errors">display_errors</link> と
+      <link linkend="ini.error-reporting">error_reporting</link> の設定次第です)
      </simpara>
     </listitem>
     <listitem>
      <simpara>
-      anything written to <literal>php://output</literal>
+      <literal>php://output</literal> に書き込まれたあらゆるデータ
      </simpara>
     </listitem>
    </itemizedlist>
   </para>
   <note>
    <simpara>
-    Printing empty strings or sending headers is not considered output
-    and will not result in a flush operation.
+    空文字列やヘッダの送信は、出力とはみなされないので、
+    フラッシュ操作は発生しません。
    </simpara>
   </note>
   <warning>
    <simpara>
-    If implicit flushing is enabled, control characters
-    (e.g. <literal>"\n"</literal>, <literal>"\r"</literal>,
-    <literal>"\0"</literal>)
-    will trigger flushing as well.
+    暗黙のフラッシュが有効な場合、制御文字
+    (例: <literal>"\n"</literal>, <literal>"\r"</literal>,
+    <literal>"\0"</literal>) もフラッシュを発生させます。
    </simpara>
   </warning>
  </section>
 
  <section>
-  <title>Limitations</title>
+  <title>制限</title>
   <para>
-   This functionality cannot flush user-level output buffers.
-   To use these together, user-level output buffers must be flushed
-   before flushing system buffers in order for PHP to produce any output.
+   この機能は、ユーザレベルの出力バッファをフラッシュできません。
+   ユーザレベルの出力バッファを一緒にフラッシュするには、
+   PHP が何らかの出力を生成するためにシステムバッファをフラッシュする前に、
+   ユーザレベルの出力バッファをフラッシュしなければなりません。
   </para>
   <warning>
    <simpara>
-    Calling <function>flush</function> or implicit flushing being enabled
-    can interfere with output handlers of user-level output buffers
-    that set and send headers in a web context
-    (e.g. <function>ob_gzhandler</function>)
-    by sending headers before these handlers can do so.
+    <function>flush</function> をコールしたり、
+    暗黙のフラッシュを有効にすると、
+    Web のコンテキスト中でヘッダを設定して送信するユーザレベルの出力バッファのハンドラ(例: <function>ob_gzhandler</function>) を邪魔する可能性があります。
+    これは、これらのハンドラがヘッダをそうしんする前に、フラッシュの動作がヘッダを送信することが原因です。
    </simpara>
   </warning>
   <para>
-   Buffering implemented by the underlying software/hardware
-   cannot be overridden by PHP and should be taken into account
-   when working with PHP's buffer control functions.
-   Checking the web servers/browsers/consoles buffering settings
-   and working with these can alleviate possible issues.
-   Working in a web context, either the web server's buffering settings
-   or the script's buffering could be adjusted to work in tandem
-   whereas working around the buffering strategies of various browsers
-   can be achieved by adjusting buffering in the PHP script.
-   On consoles that implement line buffering,
-   newline characters could be inserted in the appropriate places
-   before flushing output.
+   基礎となる ソフトウェア/ハードウェアによって実装されたバッファリングは
+   PHP によって上書きできません。
+   よって、PHP のバッファ制御関数を使う際にはこの点を考慮する必要があります。
+   ウェブサーバー/ブラウザ/コンソールのバッファリング設定をチェックして使うことで、
+   起こりうる問題を軽減することができます。
+   Web のコンテキストで作業する場合、ウェブサーバーのバッファリング設定や
+   スクリプトのバッファリングを一緒に調整することができます。
+   PHP スクリプトのバッファリングを調整することで、
+   さまざまなブラウザのバッファリング戦略を回避できます。
+   行バッファリングを実装しているコンソールでは、
+   改行文字を適切な場所に挿入してから出力をフラッシュします。
   </para>
  </section>
 
  <section>
-  <title><acronym>SAPI</acronym> Differences In Flushing</title>
+  <title><acronym>SAPI</acronym> ごとのフラッシュの動作の違い</title>
   <para>
-   Although flushing is implemented by each <acronym>SAPI</acronym>
-   in a slightly different way,
-   these implementations fall in one of two categories:
+   フラッシュの機能は、<acronym>SAPI</acronym>
+   ごとに少し違ったやり方で実装されていますが、
+   以下の2つのカテゴリに分類できます:
    <itemizedlist>
     <listitem>
      <simpara>
-      <acronym>SAPI</acronym>s used in a web context will flush headers first
-      followed by the output.
+      Web のコンテキストで使われる <acronym>SAPI</acronym> は、
+      ヘッダをまずフラッシュし、その後に出力を続けます。
       <literal>Apache2Handler</literal>, <literal>CGI</literal>,
-      <literal>FastCGI</literal> and <literal>FPM</literal>
-      are such <acronym>SAPI</acronym>s
+      <literal>FastCGI</literal>, <literal>FPM</literal>
+      がこうした <acronym>SAPI</acronym> に該当します。
      </simpara>
     </listitem>
     <listitem>
      <simpara>
-      other <acronym>SAPI</acronym>s
-      such as <literal>CLI</literal> and <literal>embed</literal>
-      will flush output only
+      出力をフラッシュするだけの
+      <literal>CLI</literal> と <literal>embed</literal>
+      のようなその他の <acronym>SAPI</acronym>
      </simpara>
     </listitem>
    </itemizedlist>
