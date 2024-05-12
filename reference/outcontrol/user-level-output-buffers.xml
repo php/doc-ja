@@ -2,84 +2,84 @@
 <!-- $Revision$ -->
 <!-- EN-Revision: 7ad99aeafea66a1562f668aa3cb11dcc9d9cb951 Maintainer: mumumu Status: working -->
 <chapter xml:id="outcontrol.user-level-output-buffers" xmlns="http://docbook.org/ns/docbook" xmlns:xi="http://www.w3.org/2001/XInclude">
- <title>User-Level Output Buffers</title>
+ <title>ユーザーレベルの出力バッファ</title>
  <para>
-  User-level output buffers can be started, manipulated
-  and terminated from PHP code.
-  Each of these buffers includes an output buffer
-  and an associated output handler function.
+  ユーザレベルの出力バッファは、
+  PHP コードから開始、操作、終了することができます。
+  これらのバッファには、出力バッファと関連する出力ハンドラ関数を含みます。
  </para>
 
  <section xml:id="outcontrol.what-output-is-buffered">
-  <title>What Output Is Buffered?</title>
+  <title>どの出力をバッファするのか？</title>
   <para>
-   PHP's user-level output buffers buffer all output after they are started
-   until they are turned off or the script ends.
-   Output in the context of PHP's user-level output buffer
-   is everything that PHP would display or send back to the browser.
-   In practical terms, output is non-zero length data that is:
+   PHP のユーザレベル出力バッファは、
+   起動した後から、バッファリングをオフにするか、
+   スクリプトが終わるまでのすべての出力をバッファリングします。
+   PHP のユーザーレベル出力バッファにおける出力とは、
+   PHP が表示したりブラウザに送り返したりするすべてのものを指します。
+   実用的な用語で説明すると、出力とは以下に示す、
+   長さがゼロでないデータのことです:
    <itemizedlist>
     <xi:include xpointer="xmlns(db=http://docbook.org/ns/docbook) xpointer(id('outputcontrol.what-is-output')/*)"><xi:fallback/></xi:include>
    </itemizedlist>
   </para>
   <note>
    <simpara>
-    Data that is written directly to <literal>stdout</literal>
-    or passed to an SAPI function with a similar functionality
-    will not be captured by user-level output buffers.
-    This includes
-    writing data to <literal>stdout</literal> with <function>fwrite</function>
-    or sending headers using <function>header</function>
-    or <function>setcookie</function>.
+    <literal>stdout</literal> に直接書き込まれたり、
+    同様の機能を持つ SAPI 関数に渡されたデータは、
+    ユーザレベルの出力バッファには取り込まれません。
+    これに該当するのは、
+    <function>fwrite</function> を使って <literal>stdout</literal>
+    にデータを書き込む場合や、<function>header</function> や
+    <function>setcookie</function> を使ってヘッダを送信する場合です。
    </simpara>
   </note>
  </section>
 
  <section>
-  <title>Turning Output Buffering On</title>
+  <title>出力バッファリングをオンにする</title>
   <para>
-   Output buffering can be turned on by using
-   the <function>ob_start</function> function or by setting
-   the <link linkend="ini.output-buffering">output_buffering</link>
-   and <link linkend="ini.output-handler">output_handler</link>
-   &php.ini; settings.
-   While both can create output buffers,
-   <function>ob_start</function> is more flexible
-   as it accepts user-defined functions as output handlers
-   and the operations allowed on the buffer (flush, clean, remove)
-   can be set as well.
-   Buffers started with <function>ob_start</function> will be active
-   from the line the function was called,
-   while those started with
+   出力バッファリングは、&php.ini; 設定
    <link linkend="ini.output-buffering">output_buffering</link>
-   will be buffering output from the first line of the script.
+   と <link linkend="ini.output-handler">output_handler</link>
+   を設定するか、<function>ob_start</function> 関数を使うことでオンにできます。
+   これらは両方、出力バッファを生成できますが、
+   <function>ob_start</function> の方がより柔軟です。
+   なぜなら、出力ハンドラをユーザー定義関数として受け入れますし、
+   (フラッシュ、クリーン、削除 のような)
+   バッファに対する操作もできるからです。
+   <function>ob_start</function> で開始したバッファは、
+   それをコールした行からアクティブになりますが、
+   <link linkend="ini.output-buffering">output_buffering</link>
+   を使って開始したバッファは、スクリプトの最初の行から、出力をバッファします。
   </para>
   <para>
-   PHP is also shipped with a built-in <literal>"URL-Rewriter"</literal>
-   output handler which starts its own output buffer and only allows
-   up to two instances of it running at any time
-   (one for user-level URL-rewriting
-   and one for transparent session id support).
-   These buffers can be started by calling
-   the <function>output_add_rewrite_var</function> function
-   and/or by enabling the
+   PHP は組み込みの
+   <literal>"URL-Rewriter"</literal>
+   出力ハンドラをバンドルしています。
+   このハンドラは、自分の出力バッファを開始します。
+   同時に実行できるのはふたつです(1つはユーザレベルのURL書き換えと、
+   透過的なセッションIDサポートのためのもの) 。
+   これらのバッファは、<function>output_add_rewrite_var</function>
+   関数をコールするか、&php.ini; 設定
    <link linkend="ini.session.use-trans-sid">session.use_trans_sid</link>
-   &php.ini; setting.
+   を有効にすることで開始できます。
   </para>
   <para>
-   The bundled <literal>zlib</literal> extension has its own
-   output buffer which can be enabled by using the
+   バンドルされている <literal>zlib</literal> 拡張モジュールは、
+   独自の出力バッファを持っています。
+   この出力バッファは、&php.ini; 設定
    <link linkend="ini.zlib.output-compression">zlib.output_compression</link>
-   &php.ini; setting.
+   を使うことで有効にできます。
   </para>
   <note>
    <simpara>
-    While <literal>"URL-Rewriter"</literal> is special
-    in that it only allows up to two instances of it running at any one time,
-    all user-level output buffers use the same underlying buffers
-    used by <function>ob_start</function>
-    with their functionality implemented by a custom output handler function.
-    As such, all of their functionality can be emulated by userland code.
+    一度に二つまでしか実行できないという意味で、
+    <literal>"URL-Rewriter"</literal> は特別なものです。
+    しかし、すべてのユーザレベルの出力バッファは、
+    カスタムの出力ハンドラ関数を指定して <function>ob_start</function>
+    をコールすることで開始した既存のバッファと同じものを使います。
+    そのため、すべての機能はユーザランドのコードでエミュレートすることができます。
    </simpara>
   </note>
  </section>
