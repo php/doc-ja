@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 7ad99aeafea66a1562f668aa3cb11dcc9d9cb951 Maintainer: mumumu Status: working -->
+<!-- EN-Revision: 7ad99aeafea66a1562f668aa3cb11dcc9d9cb951 Maintainer: mumumu Status: ready -->
 <chapter xml:id="outcontrol.user-level-output-buffers" xmlns="http://docbook.org/ns/docbook" xmlns:xi="http://www.w3.org/2001/XInclude">
  <title>ユーザーレベルの出力バッファ</title>
  <para>
@@ -504,122 +504,124 @@
  </section>
 
  <section>
-  <title>Exceptions Thrown In Output Handlers</title>
+  <title>出力ハンドラでスローされる例外</title>
   <para>
-   If an uncaught exception is thrown in an output handler
-   the program terminates and the handler is invoked
-   by the shutdown process after which
-   the <literal>"Uncaught Exception"</literal> error message is flushed.
+   捕捉されない例外が出力ハンドラーでスローされた場合、
+   プログラムは終了し、<literal>"Uncaught Exception"</literal>
+   エラーメッセージがフラッシュされた後に、
+   シャットダウン処理によってハンドラが呼び出されます。
   </para>
   <para>
-   If the uncaught exception is thrown in a handler
-   invoked by <function>ob_flush</function>,
-   <function>ob_end_flush</function> or <function>ob_get_flush</function>,
-   the contents of the buffer are flushed before the error message.
-  </para>
-  <para>
-   If an uncaught exception is thrown in an output handler during shutdown,
-   the handler is terminated and neither the contents of the buffer
-   nor the error message is flushed.
-  </para>
-  <note>
-   <simpara>
-    If a handler throws an exception
-    its <constant>PHP_OUTPUT_HANDLER_DISABLED</constant> status flag is set.
-   </simpara>
-  </note>
- </section>
-
- <section>
-  <title>Errors Raised In Output Handlers</title>
-  <para>
-   If a non-fatal error is raised in an output handler
-   the program continues execution.
-  </para>
-  <para>
-   If the non-fatal error is raised in a handler invoked by
-   <function>ob_flush</function>, <function>ob_end_flush</function>
-   or <function>ob_get_flush</function>,
-   the buffer flushes certain data depending on the return value of the handler.
-   If the handler returns &false; the buffer and the error message are flushed.
-   If the returns anything else the handler return value is flushed
-   but not the error message.
-  </para>
-  <note>
-   <simpara>
-    If a handler returns &false;
-    its <constant>PHP_OUTPUT_HANDLER_DISABLED</constant> status flag is set.
-   </simpara>
-  </note>
-  <para>
-   If a fatal error is raised in an output handler
-   the program terminates and the handler is invoked
-   by the shutdown process after which the error message is flushed.
-  </para>
-  <para>
-   If the fatal error is raised in a handler
-   invoked by <function>ob_flush</function>,
-   <function>ob_end_flush</function> or <function>ob_get_flush</function>,
-   the contents of the buffers are flushed before the error message.
-  </para>
-  <para>
-   If a fatal error is raised in an output handler during shutdown
-   the program terminates without flushing the buffer or the error message.
-  </para>
- </section>
-
- <section>
-  <title>Output In Output Handlers</title>
-  <para>
-   In specific circumstances, output produced in the handler is flushed
-   along with the contents of the buffer.
-   This output is not appended to the buffer and is not part of the string
-   returned by <function>ob_get_flush</function>.
-  </para>
-  <para>
-   During flush operations (calling <function>ob_flush</function>,
+   <function>ob_flush</function>,
    <function>ob_end_flush</function>, <function>ob_get_flush</function>
-   and during shutdown)
-   if the return value of a handler is &false;
-   the contents of the buffer are flushed followed by the output.
-   If the handler is not invoked during shutdown
-   the handler throwing an exception or <function>exit</function> being called
-   results in the same behavior.
+   が呼び出したハンドラーが、捕捉されない例外をスローした場合、
+   エラーメッセージがフラッシュされる前にバッファの内容がフラッシュされます。
+  </para>
+  <para>
+   シャットダウン処理中に出力ハンドラが捕捉されない例外をスローした場合、
+   ハンドラは終了し、バッファの内容もエラーメッセージもフラッシュされません。
   </para>
   <note>
    <simpara>
-    If a handler returns &false;
-    its <constant>PHP_OUTPUT_HANDLER_DISABLED</constant> status flag is set.
+    ハンドラーが例外をスローした場合、
+    <constant>PHP_OUTPUT_HANDLER_DISABLED</constant>
+    フラグが設定されます。
    </simpara>
   </note>
  </section>
 
  <section>
-  <title>Output Handler Status Flags</title>
+  <title>出力ハンドラで発生したエラー</title>
   <para>
-   The
-   <link linkend="outcontrol.constants.flags-returned-by-handler">
-    handler status flags
-   </link> of the buffer's <literal>flags</literal> bitmask
-   are set every time to the output handler is invoked
-   and are part of the <literal>flags</literal> returned by
-   <function>ob_get_status</function>.
-   If the handler successfully executes and does not return &false;,
-   <constant>PHP_OUTPUT_HANDLER_STARTED</constant> and
-   <constant>PHP_OUTPUT_HANDLER_PROCESSED</constant> is set.
-   If the handler returns &false; or throws an exception while executing,
-   <constant>PHP_OUTPUT_HANDLER_STARTED</constant> and
-   <constant>PHP_OUTPUT_HANDLER_DISABLED</constant> is set.
+   出力ハンドラで致命的でないエラーが発生した場合、
+   プログラムの実行は継続されます。
+  </para>
+  <para>
+   <function>ob_flush</function>, <function>ob_end_flush</function>,
+   <function>ob_get_flush</function>
+   が呼び出したハンドラで致命的でないエラーが発生した場合、
+   ハンドラの戻り値に応じて、バッファは一定のデータをフラッシュします。
+   ハンドラが &false; を返す場合、
+   バッファの中身とエラーメッセージがフラッシュされます。
+   それ以外の値をハンドラが返す場合、
+   ハンドラの戻り値はフラッシュされますが、エラーメッセージはフラッシュされません。
   </para>
   <note>
    <simpara>
-    If the <constant>PHP_OUTPUT_HANDLER_DISABLED</constant> of a handler is set,
-    the handler will not be invoked by calling
+    ハンドラが &false; を返す場合、
+    <constant>PHP_OUTPUT_HANDLER_DISABLED</constant> フラグが設定されます。
+   </simpara>
+  </note>
+  <para>
+   出力ハンドラ中で致命的なエラーが発生した場合、
+   プログラムは終了し、
+   エラーメッセージがフラッシュされた後に、
+   シャットダウン処理によってハンドラが呼び出されます。
+  </para>
+  <para>
+   <function>ob_flush</function>,
+   <function>ob_end_flush</function>, <function>ob_get_flush</function>
+   が呼び出したハンドラーで、致命的なエラーが発生した場合、
+   エラーメッセージがフラッシュされる前にバッファの内容がフラッシュされます。
+  </para>
+  <para>
+   シャットダウン処理中に出力ハンドラで致命的なエラーが発生した場合、
+   プログラムは終了し、バッファの内容もエラーメッセージもフラッシュされません。
+  </para>
+ </section>
+
+ <section>
+  <title>出力ハンドラで行われた出力</title>
+  <para>
+   特定の状況下では、
+   ハンドラ内で生成された出力はバッファの内容と共にフラッシュされます。
+   この出力はバッファに追加されず、
+   <function>ob_get_flush</function> が返す文字列の一部にもなりません。
+  </para>
+  <para>
+   フラッシュの操作中
+   (<function>ob_flush</function>,
+   <function>ob_end_flush</function>, <function>ob_get_flush</function>
+   のコール中、またはシャットダウン処理中)に、
+   ハンドラが &false; を返した場合、
+   バッファの内容がフラッシュされ、その後に出力が行われます。
+   シャットダウン処理中にハンドラが呼び出されなかった場合、
+   ハンドラが例外をスローするか、<function>exit</function> が呼び出されると、
+   同じ動作になります。
+  </para>
+  <note>
+   <simpara>
+    ハンドラが &false; を返した場合、
+    <constant>PHP_OUTPUT_HANDLER_DISABLED</constant> が設定されます。
+   </simpara>
+  </note>
+ </section>
+
+ <section>
+  <title>出力ハンドラのステータスフラグ</title>
+  <para>
+   バッファが持つ <literal>flags</literal> ビットマスクの
+   <link linkend="outcontrol.constants.flags-returned-by-handler">出力ハンドラのステータスフラグ</link> は、
+   出力ハンドラが起動されるたびに設定され、
+   <function>ob_get_status</function> が返す <literal>flags</literal>
+   の一部になります。
+   ハンドラが正常に実行され、&false; を返さなかった場合、
+   <constant>PHP_OUTPUT_HANDLER_STARTED</constant> と
+   <constant>PHP_OUTPUT_HANDLER_PROCESSED</constant> が設定されます。
+   ハンドラが &false; を返すか、実行中に例外がスローされた場合は、
+   <constant>PHP_OUTPUT_HANDLER_STARTED</constant> と
+   <constant>PHP_OUTPUT_HANDLER_DISABLED</constant> が設定されます。
+  </para>
+  <note>
+   <simpara>
+    ハンドラの <constant>PHP_OUTPUT_HANDLER_DISABLED</constant>
+    が設定されている場合、
     <function>ob_end_clean</function>, <function>ob_end_flush</function>,
     <function>ob_get_clean</function>, <function>ob_get_flush</function>
-    or during PHP's shutdown process.
-    This flag has no effect on when calling <function>ob_clean</function>
-    or <function>ob_flush</function>.
+    経由でハンドラは呼び出されません。
+    PHP のシャットダウン処理中でも同様です。
+    <function>ob_clean</function> や <function>ob_flush</function>
+    をコールする際には、このフラグはなんの意味もありません。
    </simpara>
   </note>
  </section>
