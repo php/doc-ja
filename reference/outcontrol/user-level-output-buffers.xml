@@ -6,7 +6,7 @@
  <para>
   ユーザレベルの出力バッファは、
   PHP コードから開始、操作、終了することができます。
-  これらのバッファには、出力バッファと関連する出力ハンドラ関数を含みます。
+  バッファは、出力バッファと関連する出力ハンドラ関数を含みます。
  </para>
 
  <section xml:id="outcontrol.what-output-is-buffered">
@@ -75,7 +75,7 @@
   <note>
    <simpara>
     一度に二つまでしか実行できないという意味で、
-    <literal>"URL-Rewriter"</literal> は特別なものです。
+    <literal>"URL-Rewriter"</literal> は特別です。
     しかし、すべてのユーザレベルの出力バッファは、
     カスタムの出力ハンドラ関数を指定して <function>ob_start</function>
     をコールすることで開始した既存のバッファと同じものを使います。
@@ -85,253 +85,263 @@
  </section>
 
  <section xml:id="outcontrol.nesting-output-buffers">
-  <title>Nesting Output Buffers</title>
+  <title>出力バッファをネストさせる</title>
   <para>
-   If there is an output buffer active when a new buffer is started,
-   the new buffer will be nested inside the previously active buffer.
-   The inner buffer will behave the same way regardless whether it is nested
-   but output buffered by it will not be buffered by the outer buffer.
-   Only output flushed by the inner buffer will be buffered by the outer buffer.
+   新しいバッファが開始されたときに、既にアクティブな出力バッファがある場合、
+   新しいバッファは、以前にアクティブだったバッファの内部にネストされます。
+   ネストされたバッファは、ネストされているかどうかに関係なく同じ動作をしますが、
+   ネストされたバッファによってバッファリングされた出力は、
+   以前にアクティブだった外側のバッファにはバッファリングされません。
+   ネストされたバッファからフラッシュされた出力のみが、
+   外側のバッファによってバッファリングされます。
   </para>
   <para>
-   Most <literal>ob_<replaceable>*</replaceable></literal> functions only work
-   with the active output buffer (the last one started)
-   therefore only the active buffer can be flushed, cleaned and turned off.
-   The functions that work with other buffers are
-   <function>ob_list_handlers</function>
-   which returns the list of all output handlers in use
-   and <function>ob_get_status</function>
-   which can return information on the active buffer only
-   or on all buffers in use.
+   ほとんどの <literal>ob_<replaceable>*</replaceable></literal> 
+   関数は、アクティブな出力バッファ（最後に開始されたもの）に対してのみ動作するため、
+   アクティブなバッファのみをフラッシュ、クリーン、オフにすることができます。
+   それ以外のバッファに対して動作する関数は、
+   使用中のすべての出力ハンドラのリストを返す
+   <function>ob_list_handlers</function> や、
+   アクティブなバッファや使用中のすべてのバッファに関する情報を返すことができる
+   <function>ob_get_status</function> があります。
   </para>
   <para>
-   Calling <function>ob_get_level</function>
-   or <function>ob_get_status</function> will return
-   the nesting level of the active output buffer.
+   <function>ob_get_level</function>
+   や <function>ob_get_status</function>
+   をコールすると、アクティブな出力バッファのネストレベルを返します。
   </para>
   <caution>
    <simpara>
-    The value for identical levels between <function>ob_get_level</function>
-    and <function>ob_get_status</function> is off by one.
-    For <function>ob_get_level</function>
-    the first level is <literal>1</literal>,
-    whereas for <function>ob_get_status</function>
-    the first level is <literal>0</literal>.
+    <function>ob_get_level</function>
+    と <function>ob_get_status</function>
+    が指す、同じレベルの値は1つずれています。
+    <function>ob_get_level</function> では最初のレベルは
+    <literal>1</literal> であるのに対し、
+    <function>ob_get_status</function> の最初のレベルは 
+    <literal>0</literal> になります。
    </simpara>
   </caution>
  </section>
 
  <section xml:id="outcontrol.buffer-size">
-  <title>Buffer Size</title>
+  <title>バッファサイズ</title>
   <para>
-   Buffer sizes are expressed by integers
-   and represent the number of bytes the buffer can store without flushing.
-   When the size of output in the buffer exceeds the size of the buffer,
-   the contents of the buffer are sent to the output handler,
-   its return value is flushed and the buffer is cleared.
+   バッファサイズは整数で表され、
+   バッファがフラッシュせずに格納できるバイト数を表します。
+   バッファ内の出力サイズがバッファサイズを超えると、
+   バッファの内容が出力ハンドラに送られ、
+   その戻り値がフラッシュされ、バッファがクリアされます。
   </para>
   <para>
-   With the exception of <literal>"URL-Rewriter"</literal>,
-   the size of output buffers can be set when the buffer is started.
-   If set to <literal>0</literal>,
-   the output buffer is only limited by the memory available to PHP.
-   If set to <literal>1</literal>,
-   the buffer is flushed after every block of code producing
-   any non-zero length output.
+   <literal>"URL-Rewriter"</literal> を除いて、
+   出力バッファのサイズはバッファの開始時に設定することができます。
+   <literal>0</literal> に設定すると、
+   出力バッファのサイズは PHP が使用可能なメモリの量に制限されます。
+   <literal>1</literal> に設定すると、
+   0 より大きい長さの出力を生成するコードブロックの後にバッファがフラッシュされます。
   </para>
   <para>
-   The size of output buffers can be retrieved by calling
-   <function>ob_get_status</function>.
+   出力バッファのサイズは、
+   <function>ob_get_status</function> をコールすることで取得できます。
   </para>
   <para>
-   Output buffers started with <function>ob_start</function>
-   will have their buffer sizes set to the integer value passed to
-   the function's second <parameter>chunk_size</parameter> parameter.
-   If omitted, it is set to <literal>0</literal>.
+   <function>ob_start</function> で開始された出力バッファのバッファサイズは、
+   2番目のパラメータ <parameter>chunk_size</parameter>
+   に渡された整数値に設定されます。省略された場合、
+   <literal>0</literal> が設定されます。
   </para>
   <para>
-   The output buffer started with
-   <link linkend="ini.output-buffering">output_buffering</link>
-   set to <literal>"On"</literal> will have its buffer size set to 0.
-   If set to an integer than buffer size will correspond to that number.
+   ini 設定 <link linkend="ini.output-buffering">output_buffering</link>
+   が <literal>"On"</literal> に設定されている場合、
+   開始された出力バッファのバッファサイズは 0 に設定されます。
+   バッファサイズより大きな整数を設定した場合、バッファサイズはその値になります。
   </para>
   <para>
-   <literal>"URL-Rewriter"</literal>'s buffer size is set to <literal>0</literal>,
-   therefore it is only limited by the memory available to PHP.
+   <literal>"URL-Rewriter"</literal> のバッファサイズは
+   <literal>0</literal> に設定されているため、
+   PHP が使用可能なメモリの量に制限されます。
   </para>
   <para>
-   The size of <literal>zlib</literal>'s output buffer is controlled by the
+   <literal>zlib</literal> の出力バッファのサイズは、
+   &php.ini; の
    <link linkend="ini.zlib.output-compression">zlib.output_compression</link>
-   &php.ini; setting.
-   If set to <literal>"On"</literal> the buffer size will be
-   <literal>"16K"</literal>/<literal>16384</literal>.
-   If set to an integer then buffer size will correspond to that number in bytes.
+   で設定します。
+   <literal>"On"</literal>
+   に設定すると、バッファサイズは <literal>"16K"</literal>/<literal>16384</literal>
+   になります。
+   バッファサイズより大きな整数を設定した場合、
+   バッファサイズはそのバイト数になります。
   </para>
  </section>
 
  <section xml:id="outcontrol.operations-on-buffers">
-  <title>Operations Allowed On Buffers</title>
+  <title>バッファに対して可能な操作</title>
   <para>
-   The operations allowed on buffers can be controlled
-   by passing one of the
-   <link linkend="outcontrol.constants.buffer-control-flags">buffer control flags</link>
-   to <function>ob_start</function>'s third
-   <parameter>flags</parameter> parameter.
-   If omitted, all operations are allowed by default.
-   If <literal>0</literal> is used instead,
-   the buffer cannot be flushed, cleaned or removed
-   but it's contents can still be retrieved.
+   バッファに対して可能な操作は、
+   <link linkend="outcontrol.constants.buffer-control-flags">出力バッファの制御フラグ</link>
+   のいずれかを <function>ob_start</function> の3番めの
+   <parameter>flags</parameter> パラメータに渡すことで制御できます。
+   省略した場合、すべての操作がデフォルトで許可されます。
+   <literal>0</literal> を指定すると、
+   バッファのフラッシュ、クリーン、削除はできませんが、
+   その内容を取得することはできます。
   </para>
   <para>
-   <constant>PHP_OUTPUT_HANDLER_CLEANABLE</constant> allows
-   <function>ob_clean</function> to clean the contents of the buffer.
-  </para>
-  <warning>
-   <simpara>
-    The absence of the <constant>PHP_OUTPUT_HANDLER_CLEANABLE</constant> flag
-    will not prevent <function>ob_end_clean</function>
-    or <function>ob_get_clean</function> from clearing the contents of the buffer.
-   </simpara>
-  </warning>
-  <para>
-   <constant>PHP_OUTPUT_HANDLER_FLUSHABLE</constant> allows
-   <function>ob_flush</function> to flush the contents of the buffer.
+   <constant>PHP_OUTPUT_HANDLER_CLEANABLE</constant> を指定すると、
+   <function>ob_clean</function> によってバッファの内容を削除できるようになります。
   </para>
   <warning>
    <simpara>
-    The absence of the <constant>PHP_OUTPUT_HANDLER_FLUSHABLE</constant> flag
-    will not prevent <function>ob_end_flush</function>
-    or <function>ob_get_flush</function> from flushing the contents of the buffer.
+    <constant>PHP_OUTPUT_HANDLER_CLEANABLE</constant> フラグ
+    を指定していなくても、
+    <function>ob_end_clean</function> や <function>ob_get_clean</function> 
+    がバッファの内容を削除できなくなるわけではありません。
    </simpara>
   </warning>
   <para>
-   <constant>PHP_OUTPUT_HANDLER_REMOVABLE</constant> allows
+   <constant>PHP_OUTPUT_HANDLER_FLUSHABLE</constant> を指定すると、
+   <function>ob_flush</function> を使ってバッファの内容をフラッシュできるようになります。
+  </para>
+  <warning>
+   <simpara>
+    <constant>PHP_OUTPUT_HANDLER_FLUSHABLE</constant> フラグ
+    を指定していなくても、
+    <function>ob_end_flush</function> や <function>ob_get_flush</function> 
+    がバッファの内容をフラッシュできなくなるわけではありません。
+   </simpara>
+  </warning>
+  <para>
+   <constant>PHP_OUTPUT_HANDLER_REMOVABLE</constant> を指定すると、
    <function>ob_end_clean</function>, <function>ob_end_flush</function>,
-   <function>ob_get_clean</function> or <function>ob_get_flush</function>
-   to turn off the buffer.
+   <function>ob_get_clean</function>, <function>ob_get_flush</function>
+   を使ってバッファをオフにすることができるようになります。
   </para>
   <para>
-   <constant>PHP_OUTPUT_HANDLER_STDFLAGS</constant>,
-   the combination of the three flags will allow each of the three operations
-   to be performed on the buffer.
+   <constant>PHP_OUTPUT_HANDLER_STDFLAGS</constant>
+   は、既に述べた3つのフラグの組み合わせで、
+   指定するとバッファに対する3つの操作を実行できます。
   </para>
  </section>
 
  <section>
-  <title>Flushing, Accessing And Cleaning Buffer Contents</title>
+  <title>バッファの内容をフラッシュ/アクセス/削除する</title>
   <para>
-   Flushing sends and discards the contents of the active buffer.
-   Output buffers get flushed when the size of the output
-   exceeds the size of the buffer; the script ends or
-   <function>ob_flush</function>, <function>ob_end_flush</function>
-   or <function>ob_get_flush</function> is called.
+   フラッシュは、アクティブなバッファの内容を送信し、破棄します。
+   出力バッファは、出力のサイズがバッファのサイズを超えたときか、
+   スクリプトが終了するか、
+   <function>ob_flush</function>, <function>ob_end_flush</function>,
+   <function>ob_get_flush</function>
+   のいずれかがコールされたときにフラッシュされます。
   </para>
   <caution>
    <simpara>
-    Calling <function>ob_end_flush</function>
-    or <function>ob_get_flush</function> will turn off the active buffer.
+    Calling <function>ob_end_flush</function> や <function>ob_get_flush</function>
+    をコールすると、アクティブなバッファがオフになります。
    </simpara>
   </caution>
   <caution>
    <simpara>
-    Flushing buffers will flush the return value of the output handler
-    which can differ from the contents of the buffer.
-    For example, using <function>ob_gzhandler</function> will compress
-    the output and flush the compressed output.
+    バッファをフラッシュすると、
+    出力バッファの戻り値がフラッシュされますが、
+    この値はバッファの内容と異なる場合があります。
+    例えば、<function>ob_gzhandler</function>
+    を使うと、出力が圧縮され、圧縮された出力がフラッシュされます。
    </simpara>
   </caution>
   <para>
-   The contents of the active buffer can be retrieved by calling
-   <function>ob_get_contents</function>, <function>ob_get_clean</function>
-   or <function>ob_get_flush</function>.
+   アクティブなバッファの内容は
+   <function>ob_get_contents</function>, <function>ob_get_clean</function>,
+   <function>ob_get_flush</function> をコールすると取得できます。
   </para>
   <para>
-   If only the length of the buffer's contents are needed,
-   <function>ob_get_length</function> or <function>ob_get_status</function>
-   will return the length of the contents in bytes.
+   バッファの中身の長さだけが必要な場合、
+   <function>ob_get_length</function> や <function>ob_get_status</function>
+   を使えばバッファの中身の長さをバイト単位で取得できます。
   </para>
   <caution>
    <simpara>
-    Calling <function>ob_get_clean</function>
-    or <function>ob_get_flush</function> will turn off the active buffer
-    after returning the its contents.
+    <function>ob_get_clean</function> や <function>ob_get_flush</function>
+    をコールすると、アクティブなバッファの中身を返した後、
+    そのバッファをオフにします。
    </simpara>
   </caution>
   <para>
-   The contents of the active buffer can be cleaned by calling
-   <function>ob_clean</function>, <function>ob_end_clean</function>
-   or <function>ob_get_clean</function>.
+   アクティブなバッファの中身は、
+   <function>ob_clean</function>, <function>ob_end_clean</function>,
+   <function>ob_get_clean</function> を使って削除できます。
   </para>
   <caution>
    <simpara>
-    Calling <function>ob_end_clean</function>
-    or <function>ob_get_clean</function> will turn off the active buffer.
+    <function>ob_end_clean</function> や <function>ob_get_clean</function>
+    を使うと、アクティブなバッファがオフになります。
    </simpara>
   </caution>
  </section>
 
  <section>
-  <title>Turning Buffers Off</title>
+  <title>バッファをオフにする</title>
   <para>
-   Output buffers can be turned off by calling
    <function>ob_end_clean</function>, <function>ob_end_flush</function>,
-   <function>ob_get_flush</function> or <function>ob_get_clean</function>.
+   <function>ob_get_flush</function>, <function>ob_get_clean</function>
+   をコールすると、出力バッファをオフにできます。
   </para>
   <warning>
    <simpara>
-    Output buffers started without the
-    <constant>PHP_OUTPUT_HANDLER_REMOVABLE</constant> flag
-    cannot be turned off and may generate an <constant>E_NOTICE</constant>.
+    <constant>PHP_OUTPUT_HANDLER_REMOVABLE</constant>   
+    を指定せずに起動した出力バッファはオフにできず、
+    <constant>E_NOTICE</constant> が発生します。
    </simpara>
   </warning>
   <para>
-   Every output buffer that has not been closed by the end of the script
-   or when <function>exit</function> is called will be flushed
-   and turned off by PHP's shutdown process.
-   The buffers will be flushed and turned off in reverse order
-   of their starting up.
-   The last buffered started will be first,
-   the first buffer started will be last to be flushed and turned off.
+   スクリプトの終了時、または <function>exit</function>
+   がコールされるまでに閉じられていないすべての出力バッファは、
+   PHP のシャットダウン処理によってフラッシュされ、オフになります。
+   バッファは、起動した順序と逆の順序でフラッシュされ、オフになります。
+   最後にバッファリングが開始されたものが最初になり、
+   最初にバッファリングが開始されたものが最後にフラッシュされ、オフになります。
   </para>
   <caution>
    <simpara>
-    If flushing of the buffer's contents is not desired,
-    a custom output handler should be used to prevent flushing during shutdown.
+    バッファの内容をフラッシュしたくない場合は、
+    カスタムの出力ハンドラーを使い、シャットダウン中のフラッシュを防ぐべきです。
    </simpara>
   </caution>
  </section>
 
  <section xml:id="outcontrol.output-handlers">
-  <title>Output Handlers</title>
+  <title>出力ハンドラ</title>
   <para>
-   Output handlers are <type>callable</type>s associated with output buffers
-   that are invoked by calling <function>ob_clean</function>,
+   出力ハンドラは、出力バッファに関連付けられた <type>callable</type> です。
+   <function>ob_clean</function>,
    <function>ob_flush</function>, <function>ob_end_flush</function>,
    <function>ob_get_flush</function>, <function>ob_end_clean</function>,
-   <function>ob_get_clean</function> or during PHP's shutdown process.
+   <function>ob_get_clean</function> をコールすると呼び出されます。
+   また、PHP のシャットダウン処理中にも呼び出されます。
   </para>
   <note>
    <simpara>
-    The shutdown process will flush the return value of the handler.
+    シャットダウン処理は、ハンドラの戻り値をフラッシュします。
    </simpara>
   </note>
   <para>
-   If omitted or &null; when starting the output buffer
-   the internal <literal>"default output handler"</literal> will be used
-   which returns the unmodified contents of the buffer when invoked.
-   Output handlers can be used to return a modified version
-   of the buffer's contents and/or have side-effects (e.g. send headers).
+   出力バッファを開始するときに、ハンドラを省略したり &null; を指定した場合、
+   内部的な <literal>"default output handler"</literal>
+   が使われます。このハンドラは、呼び出された際にバッファの内容を変更せずに返します。
+   出力ハンドラは、バッファの内容を変更 かつ/または 副作用(例:ヘッダの送信)
+   をもたせるために使うことができます。
   </para>
   <para>
-   PHP comes with two internal output handlers:
+   PHP には、内部的な出力ハンドラをふたつ持っています:
    <literal>"default output handler"</literal>
-   and <literal>"URL-Rewriter"</literal> (which is integrated into
-   its own output buffer and only up to two instances of it can be started).
+   と <literal>"URL-Rewriter"</literal> 
+   (これは独自の出力バッファに統合されており、2つまでしか起動できません) 
+   がそうです。
   </para>
   <para>
-   The bundled extensions include four additional output handlers:
+   PHP 本体にバンドルされている拡張モジュールには、
+   追加の出力ハンドラが4つあります:
    <function>mb_output_handler</function>, <function>ob_gzhandler</function>,
-   <function>ob_iconv_handler</function>, <function>ob_tidyhandler</function>.
+   <function>ob_iconv_handler</function>, <function>ob_tidyhandler</function> です。
   </para>
  </section>
 
