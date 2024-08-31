@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: c5d92fd7127e059d448d43ba339f19956f83b05a Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 91570644fbbe4d23e79908e1a04c4c4d003fe587 Maintainer: hirokawa Status: ready -->
 
  <chapter xml:id="security.filesystem" xmlns="http://docbook.org/ns/docbook">
   <title>ファイルシステムのセキュリティ</title>
@@ -14,7 +14,7 @@
    </simpara>
    <simpara>
     <acronym>PHP</acronym>は、ファイルシステムにユーザーレベルのアクセスを許可するように設
-    計されているため、<acronym>PHP</acronym>スクリプトから/etc/password のようなシステム
+    計されているため、<acronym>PHP</acronym>スクリプトから <filename>/etc/passwd</filename> のようなシステム
     ファイルを読み込み可能としたり、イーサネット接続を修正したり、巨大
     なプリンタジョブを出力したりすることができます。これから明らかにわ
     かることですが、読み書きするファイルを適切に設定する必要があります。
@@ -31,6 +31,7 @@
      <programlisting role="php">
 <![CDATA[
 <?php
+
 // ユーザーのホームディレクトリからファイルを削除する
 $username = $_POST['user_submitted_name'];
 $userfile = $_POST['user_submitted_filename'];
@@ -39,6 +40,7 @@ $homedir  = "/home/$username";
 unlink("$homedir/$userfile");
 
 echo "ファイルは削除されました!";
+
 ?>
 ]]>
      </programlisting>
@@ -47,13 +49,14 @@ echo "ファイルは削除されました!";
     username および filename を投稿して
     削除すべきではない削除することが可能となります。この場合、
     他の何らかの形式の認証を使用するべきです。投稿された変数が、
-    "../etc/" と "passwd " であった場合について考えてみましょう。簡単
+    <literal>"../etc/"</literal> と <literal>"passwd"</literal> であった場合について考えてみましょう。簡単
     なコードを以下に示します。
     <example>
      <title>... ファイルシステムへの攻撃</title>
      <programlisting role="php">
 <![CDATA[
 <?php
+
 // 外部からPHPユーザーがアクセス可能なハードドライブを削除します。PHPが
 // ルートのアクセス権限を有している場合、
 $username = $_POST['user_submitted_name']; // "../etc"
@@ -63,6 +66,7 @@ $homedir  = "/home/$username"; // "/home/../etc"
 unlink("$homedir/$userfile"); // "/home/../etc/passwd"
 
 echo "ファイルは削除されました!";
+
 ?>
 ]]>
      </programlisting>
@@ -87,6 +91,7 @@ echo "ファイルは削除されました!";
      <programlisting role="php">
 <![CDATA[
 <?php
+
 // PHPユーザーがアクセス可能なハードドライブからファイルを削除する。
 $username = $_SERVER['REMOTE_USER']; // 認証機構を使用する
 $userfile = basename($_POST['user_submitted_filename']);
@@ -99,6 +104,7 @@ if (file_exists($filepath) && unlink($filepath)) {
 } else {
     $logstring = "$filepath の削除に失敗しました\n";
 }
+j
 $fp = fopen("/home/logging/filedelete.log", "a");
 fwrite($fp, $logstring);
 fclose($fp);
@@ -111,7 +117,7 @@ echo htmlentities($logstring, ENT_QUOTES);
     </example>
     しかし、これでも、傷口を塞いだことにはなりません。
     ユーザーが自分用のユーザーログインを作成することをあなたの認証システムが
-    許可しており、ユーザーが"../etc/"へのログインを選択した場合、システム
+    許可しており、ユーザーが <literal>"../etc/"</literal> へのログインを選択した場合、システム
     はまたも公開されてしまいます。このため、よりカスタマイズされたチェッ
     クを行なう方がよいでしょう。
     <example>
@@ -119,6 +125,7 @@ echo htmlentities($logstring, ENT_QUOTES);
      <programlisting role="php">
 <![CDATA[
 <?php
+
 $username     = $_SERVER['REMOTE_USER']; // 認証機構を使用する
 $userfile     = $_POST['user_submitted_filename'];
 $homedir      = "/home/$username";
@@ -129,17 +136,17 @@ if (!ctype_alnum($username) || !preg_match('/^(?:[a-z0-9_-]|\.(?!\.))+$/iD', $us
     die("Bad username/filename");
 }
 
-//etc...
+// etc.
+
 ?>
 ]]>
      </programlisting>
     </example>
    </para>
    <para>
-    オペレーティングシステムにより、注意するべきファイルは大きく変化し
-    ます。これらには、デバイスエントリ(/dev/ または COM1)、設定ファイ
-    ル(/etc/ ファイルおよび .ini ファイル)、よく知られたファイル保存領
-    域 (/home/、 My Documents)等が含まれます。このため、明示的に許可す
+    オペレーティングシステムによって、注意するべきファイルは大きく変化し
+    ます。これらには、デバイスエントリ(<filename>/dev/</filename> または <filename>/dev/</filename>)、設定ファイル(<filename>/etc/</filename> ファイルおよび <literal>.ini</literal> ファイル)、よく知られたファイル保存領
+    域 (<filename>/home/</filename>、<filename>My Documents</filename>)等が含まれます。このため、明示的に許可す
     るもの以外の全てを禁止する方針とする方が通常はより簡単です。
    </para>   
    <sect1 xml:id="security.filesystem.nullbytes">
@@ -159,11 +166,15 @@ if (!ctype_alnum($username) || !preg_match('/^(?:[a-z0-9_-]|\.(?!\.))+$/iD', $us
 <![CDATA[
 <?php
 $file = $_GET['file']; // ここで "../../etc/passwd\0" が渡されたとします
-if (file_exists('/home/wwwrun/'.$file.'.php')) {
+
+if (file_exists('/home/wwwrun/' . $file . '.php')) {
     // file_exists は true を返します。これは、ファイル /home/wwwrun/../../etc/passwd が存在するからです
     include '/home/wwwrun/'.$file.'.php';
+
     // ファイル /etc/passwd がインクルードされてしまいます
+
 }
+
 ?>
 ]]>
      </programlisting>
@@ -185,11 +196,12 @@ switch ($file) {
     case 'main':
     case 'foo':
     case 'bar':
-        include '/home/wwwrun/include/'.$file.'.php';
+        include '/home/wwwrun/include/' . $file . '.php';
         break;
     default:
         include '/home/wwwrun/include/main.php';
 }
+
 ?>
 ]]>
      </programlisting>
