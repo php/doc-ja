@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 6d29533483657c036e49edb5ea88c7103d126681 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: d58ee8eaaa7f716c51f66f5f1058ab3c42376d98 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi,mumumu -->
  <chapter xml:id="language.references" xmlns="http://docbook.org/ns/docbook">
   <title>リファレンスの説明</title>
@@ -13,7 +13,7 @@
     リファレンスを使ってポインタの演算をすることはできませんし、
     リファレンスは実メモリのアドレスでもありません。詳細は
     <xref linkend="language.references.arent" /> を参照ください。
-    そうではなく、リファレンスはシンボルテーブルのエイリアスです。
+    そうではなく、リファレンスは <link linkend="features.gc.refcounting-basics">シンボルテーブル</link> のエイリアスです。
     PHP では、変数名と変数の内容は異なっており、
     このため、同じ内容は異なった複数の名前を有する事が可能であることに
     注意してください。最も良く似ているのは、Unix のファイル名とファイルの
@@ -43,7 +43,9 @@
       <programlisting role="php">
 <![CDATA[
 <?php
+
 $a =& $b;
+
 ?>
 ]]>
       </programlisting>
@@ -68,7 +70,8 @@ $a =& $b;
        <programlisting role="php">
 <![CDATA[
 <?php
-function foo(&$var) { }
+
+function foo(&$var) {}
 
 foo($a); // $a が作成され、null が代入されます
 
@@ -76,9 +79,10 @@ $b = array();
 foo($b['b']);
 var_dump(array_key_exists('b', $b)); // bool(true)
 
-$c = new stdClass;
+$c = new stdClass();
 foo($c->d);
 var_dump(property_exists($c, 'd')); // bool(true)
+
 ?>
 ]]>
        </programlisting>
@@ -92,7 +96,9 @@ var_dump(property_exists($c, 'd')); // bool(true)
       <programlisting role="php">
 <![CDATA[
 <?php
+
 $foo =& find_var($bar);
+
 ?>
 ]]>
       </programlisting>
@@ -116,12 +122,14 @@ $foo =& find_var($bar);
        <programlisting role="php">
 <![CDATA[
 <?php
+
 $var1 = "Example variable";
 $var2 = "";
 
 function global_references($use_globals)
 {
     global $var1, $var2;
+
     if (!$use_globals) {
         $var2 =& $var1; // 関数の内部でのみ参照可能
     } else {
@@ -131,8 +139,10 @@ function global_references($use_globals)
 
 global_references(false);
 echo "var2 の値は '$var2'\n"; // var2 の値は ''
+
 global_references(true);
 echo "var2 の値は '$var2'\n"; // var2 の値は 'Example variable'
+
 ?>
 ]]>
        </programlisting>
@@ -151,12 +161,16 @@ echo "var2 の値は '$var2'\n"; // var2 の値は 'Example variable'
        <programlisting role="php">
 <![CDATA[
 <?php
+
 $ref = 0;
 $row =& $ref;
+
 foreach (array(1, 2, 3) as $row) {
     // 何かを実行します
 }
+
 echo $ref; // 3 - 配列の最後の要素
+
 ?>
 ]]>
        </programlisting>
@@ -172,11 +186,16 @@ echo $ref; // 3 - 配列の最後の要素
       <programlisting role="php">
 <![CDATA[
 <?php
+
 $a = 1;
 $b = array(2, 3);
+
 $arr = array(&$a, &$b[0], &$b[1]);
-$arr[0]++; $arr[1]++; $arr[2]++;
+$arr[0]++;
+$arr[1]++;
+$arr[2]++;
 /* $a == 2, $b == array(3, 4); */
+
 ?>
 ]]>
       </programlisting>
@@ -192,6 +211,7 @@ $arr[0]++; $arr[1]++; $arr[2]++;
       <programlisting role="php">
 <![CDATA[
 <?php
+
 /* スカラー変数への代入 */
 $a = 1;
 $b =& $a;
@@ -205,6 +225,7 @@ $arr2 = $arr; // これは、リファレンス代入ではありません!
 $arr2[0]++;
 /* $a == 2, $arr == array(2) */
 /* $arr の内容は、たとえリファレンスでなくても変わります! */
+
 ?>
 ]]>
       </programlisting>
@@ -224,6 +245,7 @@ $arr2[0]++;
       <programlisting role="php">
 <![CDATA[
 <?php
+
 function foo(&$var) 
 {
   $var++;
@@ -231,6 +253,7 @@ function foo(&$var)
 
 $a=5;
 foo($a);
+
 ?>
 ]]>
       </programlisting>
@@ -262,11 +285,14 @@ foo($a);
      <programlisting role="php">
 <![CDATA[
 <?php
+
 function foo(&$var)
 {
     $var =& $GLOBALS["baz"];
 }
+
 foo($bar); 
+
 ?>
 ]]>
      </programlisting>
@@ -283,7 +309,7 @@ foo($bar);
     <varname>foo</varname> からは利用できないからです
     （この変数は <varname>$var</varname> として表されていますが、
     <varname>$var</varname> はその変数の内容のみを有しており、
-    コール側のシンボルテーブルで名前と変数を結合したものではありません）。
+    コール側の <link linkend="features.gc.refcounting-basics">シンボルテーブル</link> で名前と変数を結合したものではありません）。
     関数内で指定した変数を参照するには、<link 
     linkend="language.references.return">リファレンス返し</link>
     が使用可能です。
@@ -299,14 +325,17 @@ foo($bar);
      <programlisting role="php">
 <![CDATA[
 <?php
+
 function foo(&$var)
 {
     $var++;
 }
 
 $a=5;
+
 foo($a);
 // $a はここでは 6 です
+
 ?>
 ]]>
      </programlisting>
@@ -334,16 +363,20 @@ foo($a);
     <programlisting role="php">
 <![CDATA[
 <?php
+
 function foo(&$var)
 {
     $var++;
 }
+
 function &bar()
 {
     $a = 5;
     return $a;
 }
+
 foo(bar());
+
 ?>
 ]]>
     </programlisting>
@@ -361,26 +394,28 @@ foo(bar());
      <programlisting role="php">
 <![CDATA[
 <?php
+
 function foo(&$var)
 {
     $var++;
 }
+
 function bar() // & がないことに注意
 {
     $a = 5;
     return $a;
 }
+
 foo(bar()); // notice が発生
 
 foo($a = 5); // 式、変数ではない
 foo(5); // 致命的なエラーが発生する
 
-class Foobar
-{
-}
+class Foobar {}
 
 foo(new Foobar()) // PHP 7.0.7 以降は E_NOTICE が発生
                   // Notice: Only variables should be passed by reference
+
 ?>
 ]]>
      </programlisting>
@@ -401,18 +436,21 @@ foo(new Foobar()) // PHP 7.0.7 以降は E_NOTICE が発生
      <programlisting role="php">
 <![CDATA[
 <?php
-class foo {
+
+class Foo {
     public $value = 42;
 
-    public function &getValue() {
+    public function &getValue()
+    {
         return $this->value;
     }
 }
 
-$obj = new foo;
+$obj = new Foo();
 $myValue = &$obj->getValue(); // $myValue は $obj->value へのリファレンス、つまり 42 となります
 $obj->value = 2;
 echo $myValue;                // $obj->value の新しい値である 2 を表示します
+
 ?> 
 ]]>
      </programlisting>
@@ -444,12 +482,16 @@ echo $myValue;                // $obj->value の新しい値である 2 を表�
      <programlisting role="php">
 <![CDATA[
 <?php
-function &collector() {
+
+function &collector()
+{
   static $collection = array();
   return $collection;
 }
+
 $collection = &collector();
 $collection[] = 'foo';
+
 ?> 
 ]]>
      </programlisting>
@@ -460,11 +502,15 @@ $collection[] = 'foo';
      <programlisting role="php">
 <![CDATA[
 <?php
-function &collector() {
+
+function &collector()
+{
   static $collection = array();
   return $collection;
 }
+
 array_push(collector(), 'foo');
+
 ?> 
 ]]>
      </programlisting>
@@ -488,9 +534,11 @@ array_push(collector(), 'foo');
      <programlisting role="php">
 <![CDATA[
 <?php
+
 $a = 1;
 $b =& $a;
 unset($a);
+
 ?>
 ]]>
      </programlisting>
@@ -526,7 +574,9 @@ unset($a);
       <programlisting role="php">
 <![CDATA[
 <?php
+
 $var =& $GLOBALS["var"];
+
 ?>
 ]]>
       </programlisting>
