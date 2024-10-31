@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 5bc68add3da3cd18c40f851e944b15095d3a26aa Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 110ac43250fdb3531fe26d4d29292e33df7855e8 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi,mumumu -->
 <refentry xml:id="function.openssl-seal" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -20,15 +20,14 @@
    <methodparam choice="opt"><type>string</type><parameter role="reference">iv</parameter><initializer>&null;</initializer></methodparam>
   </methodsynopsis>
   <para>
-   <function>openssl_seal</function> は、ランダムに生成された秘密鍵
-   および指定した <parameter>cipher_algo</parameter> を使用して <parameter>data</parameter> をシール(暗号化)
-   します。このキーは、<parameter>public_key</parameter> を ID とする
-   公開鍵で暗号化されます。
-   それぞれの暗号化されたキーは <parameter>encrypted_keys</parameter> で返されます。
-   これは、暗号化されたデータを複数の受信者に
-   送信できることを意味します（この際、各受信者は送信側に公開鍵を
-   提供します）。各受信者は、暗号化されたデータとその受信者の
-   公開鍵で暗号化されたエンベロープキーを受け取る必要があります。
+   <function>openssl_seal</function> は、指定された <parameter>cipher_algo</parameter> を使用して
+   ランダムに生成された秘密鍵で <parameter>data</parameter> をシール(暗号化)します。
+   その鍵は続いて <parameter>public_key</parameter> 配列内の各公開鍵で暗号化され、
+   それぞれ暗号化されたエンベロープキーは <parameter>encrypted_keys</parameter> パラメータの
+   変数リファレンスに返されます。これによって、(公開鍵が利用可能なら) 複数の受信者にシールされた
+   データを送信できます。各受信者は、シールされたデータと受信者の公開鍵で暗号化されたエンベロープキー
+   の両方を受け取らなければいけません。
+   生成された IV (初期化ベクトル) は <parameter>iv</parameter> パラメータの変数リファレンスに返されます。
   </para>
  </refsect1>
 
@@ -76,7 +75,7 @@
        暗号化方式
        <caution>
         <simpara>
-         デフォルト値 (<literal>'RC4'</literal>) はセキュアでない値です。
+         PHP 8.0 以前のデフォルト値 (<literal>'RC4'</literal>) は安全ではありません。
          明示的にセキュアな暗号化方式を指定することを強く推奨します。
         </simpara>
        </caution>
@@ -87,8 +86,15 @@
      <term><parameter>iv</parameter></term>
      <listitem>
       <para>
-       初期化ベクトル。
+       データの復号に用いられる初期化ベクトル。暗号方式が IV を要求する場合に必要です。
+       これは <parameter>cipher_algo</parameter> で <function>openssl_cipher_iv_length</function>
+       を呼び出すことで確認できます。
       </para>
+      <caution>
+       <simpara>
+        初期化ベクトルは明示的に設定できません。設定された値はランダムに生成された値で上書きされます。
+       </simpara>
+      </caution>
      </listitem>
     </varlistentry>
    </variablelist>
@@ -151,26 +157,18 @@
 <![CDATA[
 <?php
 // $data には、暗号化されるデータが含まれていると仮定
+$data = "test";
 
-// 受信者の公開鍵を取得し、使用可能にする
-$fp = fopen("/src/openssl-0.9.6/demos/maurice/cert.pem", "r");
-$cert = fread($fp, 8192);
-fclose($fp);
-$pk1 = openssl_get_publickey($cert);
-// 2 番目の受信者についても同様
-$fp = fopen("/src/openssl-0.9.6/demos/sign/cert.pem", "r");
-$cert = fread($fp, 8192);
-fclose($fp);
-$pk2 = openssl_get_publickey($cert);
+// 公開鍵を取得する
+$pk1 = openssl_get_publickey("file://cert1.pem");
+$pk2 = openssl_get_publickey("file://cert2.pem");
 
 // メッセージを暗号化。$pk1 および $pk2 の所有者のみが、$sealed を
-// データをそれぞれ $ekeys[0] および $ekeys[1] で復号化することが
-// 可能
-openssl_seal($data, $sealed, $ekeys, array($pk1, $pk2));
-
-// キーをメモリから開放する
-openssl_free_key($pk1);
-openssl_free_key($pk2);
+// データをそれぞれ $ekeys[0] および $ekeys[1] で復号化することが可能
+if (openssl_seal($data, $sealed, $ekeys, array($pk1, $pk2), 'AES256', $iv) > 0) {
+    // $sealed と $iv の値を格納し、後で openssl_open で使用することもできます。
+    echo "success\n";
+}
 ?>
 ]]>
     </programlisting>

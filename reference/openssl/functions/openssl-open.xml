@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 5bc68add3da3cd18c40f851e944b15095d3a26aa Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 730fd5c3dd1523bb9330762084ce016d4e58e946 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi,mumumu -->
 <refentry xml:id="function.openssl-open" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -20,14 +20,14 @@
    <methodparam choice="opt"><type class="union"><type>string</type><type>null</type></type><parameter>iv</parameter><initializer>&null;</initializer></methodparam>
   </methodsynopsis>
   <para>
-   <function>openssl_open</function> は、キー ID
-   <parameter>private_key</parameter> およびエンベロープキー
-   <parameter>encrypted_key</parameter> に関連する公開鍵を使用して、
+   <function>openssl_open</function> は、 <parameter>private_key</parameter> を使用して
+   <parameter>encrypted_key</parameter> から復号されたエンベロープキーによって
    <parameter>data</parameter> をオープン(復号)します。
-   その上で、<parameter>output</parameter> を復号化したデータで埋めます。
-   エンベロープキーは、データがシール(暗号化)された際に生成され、特定の
-   一つの公開鍵でのみ使用することが可能です。詳細な情報については、
-   <function>openssl_seal</function> を参照ください。
+   復号は <parameter>cipher_algo</parameter> と <parameter>iv</parameter> を使用して行なわれます。
+   IV は暗号方式が要求する場合にのみ必要です。復号されたデータは <parameter>output</parameter> に
+   格納されます。エンベロープキーは通常、秘密鍵に関連付けられた公開鍵を用いてデータがシール(暗号化)
+   されたときに生成されます。
+   詳細は <function>openssl_seal</function> を参照ください。
   </para>
  </refsect1>
 
@@ -39,6 +39,7 @@
      <term><parameter>data</parameter></term>
      <listitem>
       <para>
+       シール(暗号化)されたデータ。
       </para>
      </listitem>
     </varlistentry>
@@ -46,7 +47,7 @@
      <term><parameter>output</parameter></term>
      <listitem>
       <para>
-       成功した場合、オープンしたデータをここに返します。
+       成功した場合、オープンしたデータをこのパラメータのリファレンス変数として返します。
       </para>
      </listitem>
     </varlistentry>
@@ -54,6 +55,7 @@
      <term><parameter>encrypted_key</parameter></term>
      <listitem>
       <para>
+        <parameter>private_key</parameter> を用いて復号できる暗号化された対称鍵。
       </para>
      </listitem>
     </varlistentry>
@@ -61,6 +63,7 @@
      <term><parameter>private_key</parameter></term>
      <listitem>
       <para>
+        <parameter>encrypted_key</parameter>の復号に用いられる秘密鍵。
       </para>
      </listitem>
     </varlistentry>
@@ -68,10 +71,10 @@
      <term><parameter>cipher_algo</parameter></term>
      <listitem>
       <para>
-       暗号化方式
+       <parameter>data</parameter>の復号に使用される暗号化方式。
        <caution>
         <simpara>
-         デフォルト値 (<literal>'RC4'</literal>) はセキュアでない値です。
+         PHP 8.0 以前のデフォルト値 (<literal>'RC4'</literal>) は安全ではありません。
          明示的にセキュアな暗号化方式を指定することを強く推奨します。
         </simpara>
        </caution>
@@ -82,7 +85,9 @@
      <term><parameter>iv</parameter></term>
      <listitem>
       <para>
-       初期化ベクトル。
+       データの復号に用いられる初期化ベクトル。暗号方式が IV を要求する場合に必要です。
+       これは <parameter>cipher_algo</parameter> で <function>openssl_cipher_iv_length</function>
+       を呼び出すことで確認できます。
       </para>
      </listitem>
     </varlistentry>
@@ -139,24 +144,19 @@
     <programlisting role="php">
 <![CDATA[
 <?php
-// $sealed および $env_key に暗号化されたデータおよびエンベロープキー
-// が含まれていると仮定。共にシール元(暗号化側)から与えられる。
 
-// ファイルから公開鍵を取得し、使用可能とする
-$fp = fopen("/src/openssl-0.9.6/demos/sign/key.pem", "r");
-$priv_key = fread($fp, 8192);
-fclose($fp);
-$pkeyid = openssl_get_privatekey($priv_key);
+// $sealed, $env_key および $iv に暗号化されたデータおよびエンベロープキーと
+// IV が含まれていると仮定。すべてシール元(暗号化側)から与えられる。
+
+// private_key.pem に置かれたファイルから公開鍵を取得する
+$pkey = openssl_get_privatekey("file://private_key.pem");
 
 // データを復号化し、$open に保存
-if (openssl_open($sealed, $open, $env_key, $pkeyid)) {
-    echo "here is the opened data: ", $open;
+if (openssl_open($sealed, $open, $env_key, $pkey, 'AES256', $iv)) {
+    echo "Here is the opened data: ", $open;
 } else {
-    echo "failed to open data";
+    echo "Failed to open data";
 }
-
-// 公開鍵をメモリから開放
-openssl_free_key($pkeyid);
 ?>
 ]]>
     </programlisting>
