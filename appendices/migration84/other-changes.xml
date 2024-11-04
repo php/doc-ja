@@ -1,72 +1,76 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision$ -->
+<!-- EN-Revision: 0f1d7fba407bd1385616508a1e42e31fe009bff2 Maintainer: KentarouTakeda Status: ready -->
+<!-- Credits: KentarouTakeda -->
 <sect1 xml:id="migration84.other-changes">
- <title>Other Changes</title>
+ <title>その他の変更</title>
 
  <sect2 xml:id="migration84.other-changes.core">
-  <title>Core changes</title>
+  <title>PHP コア</title>
 
   <sect3 xml:id="migration84.other-changes.core.closures">
-   <title>Closures</title>
+   <title>クロージャ</title>
 
    <simpara>
-    Closure names have been adjusted to include the parent function's name
-    and the line of definition to make them easier to distinguish, for example
-    within stack traces.
+    クロージャの名前が調整され、親関数の名前と
+    定義の行番号を含むようになりました。これにより、
+    スタックトレース内などでの識別が容易になります。
    </simpara>
   </sect3>
 
   <sect3 xml:id="migration84.other-changes.core.fibers">
-   <title>Fibers</title>
+   <title>ファイバー(Fibers)</title>
 
    <simpara>
-    Fiber switching during destructor execution is now allowed. It was previously
-    blocked due to conflicts with garbage collection.
+    デストラクタ実行中にファイバーを切り替えられるようになりました。
+    以前はガベージコレクションとの競合のためブロックされていました。
    </simpara>
 
    <simpara>
-    Destructors may now be executed in a separate Fiber:
+    デストラクタは別のファイバー内で実行される場合があります。
    </simpara>
 
    <simpara>
-    When garbage collection is triggered in a Fiber,
-    destructors called by the GC are executed in a separate Fiber:
-    the gc_destructor_fiber.
-    If this Fiber suspends, a new one is created to execute the remaining
-    destructors.
-    The previous gc_destructor_fiber is not referenced anymore by the GC
-    and may be collected if it's not referenced anywhere else.
-    Objects whose destructor is suspended will not be collected until the
-    destructor returns or the <classname>Fiber</classname> is collected.
+    ガベージコレクションがファイバー内でトリガーされると、
+    GC によって呼び出されるデストラクタは
+    別のファイバー(gc_destructor_fiber)内で実行されます。
+    このファイバーが中断された場合、残りのデストラクタを実行するために
+    新しいファイバーが作成されます。
+    以前の gc_destructor_fiber は GC によって参照されなくなり、
+    他に参照されていなければ回収される可能性があります。
+    デストラクタが中断されたオブジェクトは、
+    デストラクタが戻るか <classname>Fiber</classname> が回収されるまで回収されません。
    </simpara>
   </sect3>
 
   <sect3 xml:id="migration84.other-changes.core.output">
-   <title>Output Handlers</title>
+   <title>出力ハンドラ</title>
 
    <simpara>
-    Output handler status flags passed to the <parameter>flags</parameter>
-    parameter of <function>ob_start</function> are now cleared.
+    <function>ob_start</function> の <parameter>flags</parameter> パラメータに渡された
+    出力ハンドラのステータスフラグがクリアされるようになりました。
    </simpara>
 
    <simpara>
-    <function>output_add_rewrite_var</function> now uses
-    <link linkend="ini.url-rewriter.hosts"><literal>url_rewriter.hosts</literal></link>
-    instead of
+    <function>output_add_rewrite_var</function> は、
+    リライトされるホストを選択するために
+    <link linkend="ini.url-rewriter.hosts"><literal>url_rewriter.hosts</literal></link> を使用するようになりました。
+    以前は
     <link linkend="ini.session.trans-sid-hosts"><literal>session.trans_sid_hosts</literal></link>
-    for selecting hosts that will be rewritten.
+    を使用していました。
    </simpara>
   </sect3>
  </sect2>
 
  <sect2 xml:id="migration84.other-changes.sapi">
-  <title>Changes in SAPI Modules</title>
+  <title>SAPI モジュールへの変更</title>
 
   <sect3 xml:id="migration84.other-changes.sapi.apache">
    <title>apache2handler</title>
 
    <simpara>
-    Support for EOL Apache 2.0 and 2.2 has been removed.
-    Minimum required Apache version is now 2.4.
+    EOLを迎えた Apache 2.0 および 2.2 のサポートが削除されました。
+    最小必要 Apache バージョンは 2.4 になりました。
    </simpara>
   </sect3>
 
@@ -74,12 +78,12 @@
    <title>CLI</title>
 
    <simpara>
-    The builtin server looks for an index file recursively by traversing parent
-    directories in case the specified file cannot be located.
-    This process was previously skipped if the path looked like it was
-    referring to a file, i.e. if the last path component contained a period.
-    In that case, a 404 error was returned.
-    The behavior has been changed to look for an index file in all cases.
+    組み込みサーバーは、指定されたファイルが見つからない場合、
+    親ディレクトリをたどってインデックスファイルを再帰的に探します。
+    このプロセスは、パスがファイルを指しているように見える場合
+    （最後のパスコンポーネントにピリオドが含まれる場合）はスキップされていました。
+    その場合、404 エラーが返されていました。
+    この動作は、すべての場合にインデックスファイルを探すように変更されました。
    </simpara>
   </sect3>
 
@@ -87,22 +91,31 @@
    <title>FPM</title>
 
    <simpara>
+    本文なしでヘッダをフラッシュできるようになりました。
+    <!-- See GH-12785. -->
+   </simpara>
+
+   <simpara>
+    ステータスページにメモリの最大使用量を表示するフィールドが追加されました。
+   </simpara>
+
+   <simpara>
     <!-- TODO Does this need a link? -->
-    The <filename>/dev/poll</filename> <literal>events.mechanism</literal>
-    setting for Solaris/Illumos had been retired.
+    Solaris/Illumos 用の <filename>/dev/poll</filename> <literal>events.mechanism</literal>
+    設定は廃止されました。
    </simpara>
   </sect3>
  </sect2>
 
  <sect2 xml:id="migration84.other-changes.functions">
-  <title>Changed Functions</title>
+  <title>変更された関数</title>
 
   <sect3 xml:id="migration84.other-changes.functions.core">
-   <title>Core</title>
+   <title>PHP コア</title>
 
    <simpara>
-    <function>trigger_error</function> and <function>user_error</function>
-    now have a return type of <type>true</type> instead of <type>bool</type>.
+    <function>trigger_error</function> および <function>user_error</function>
+    は、戻り値の型が <type>bool</type> ではなく <type>true</type> になりました。
    </simpara>
   </sect3>
 
@@ -111,9 +124,8 @@
 
    <simpara>
     <methodname>DOMDocument::registerNodeClass</methodname>
-    now has a tentative return type of <type>true</type> instead of
-    <type>bool</type>.
-    It could only ever return &true; in practice.
+    は、戻り値の型が <type>bool</type> ではなく <type>true</type> になりました。
+    実際には常に &true; を返すことしかできませんでした。
    </simpara>
   </sect3>
 
@@ -122,9 +134,8 @@
 
    <simpara>
     <function>hash_update</function>
-    now has a tentative return type of <type>true</type> instead of
-    <type>bool</type>.
-    It could only ever return &true; in practice.
+    は、戻り値の型が <type>bool</type> ではなく <type>true</type> になりました。
+    実際には常に &true; を返すことしかできませんでした。
    </simpara>
   </sect3>
 
@@ -132,32 +143,32 @@
    <title>Intl</title>
 
    <simpara>
-    <constant>NumberFormatter::ROUND_TOWARD_ZERO</constant> and
+    <constant>NumberFormatter::ROUND_TOWARD_ZERO</constant> および
     <constant>NumberFormatter::ROUND_AWAY_FROM_ZERO</constant>
-    have been added as aliases for
-    <constant>NumberFormatter::ROUND_DOWN</constant> and
+    が、新しい <constant>PHP_ROUND_<replaceable>*</replaceable></constant>
+    モードと一致するように、
+    <constant>NumberFormatter::ROUND_DOWN</constant> および
     <constant>NumberFormatter::ROUND_UP</constant>
-    to be consistent with the new
-    <constant>PHP_ROUND_<replaceable>*</replaceable></constant> modes.
+    のエイリアスとして追加されました。
    </simpara>
 
    <simpara>
     <methodname>ResourceBundle::get</methodname>
     <!-- TODO Use a proper union type for the return type -->
-    now has a tentative return type of <literal>ResourceBundle|array|string|int|null</literal>.
+    は、戻り値の型が <literal>ResourceBundle|array|string|int|null</literal> になりました。
    </simpara>
 
    <simpara>
-    The <function>idn_to_ascii</function> and <function>idn_to_utf8</function>
-    functions now always throw <exceptionname>ValueError</exceptionname>s
-    if the <parameter>domain</parameter> name is empty or too long.
+    <function>idn_to_ascii</function> および <function>idn_to_utf8</function>
+    関数は、<parameter>domain</parameter> 名が空または長すぎる場合、
+    <exceptionname>ValueError</exceptionname> をスローするようになりました。
    </simpara>
 
    <simpara>
-    The <function>idn_to_ascii</function> and <function>idn_to_utf8</function>
-    functions now always throw <exceptionname>ValueError</exceptionname>
-    if the <parameter>variant</parameter> parameter is not
-    <constant>INTL_IDNA_VARIANT_UTS46</constant>.
+    <function>idn_to_ascii</function> および <function>idn_to_utf8</function>
+    関数は、<parameter>variant</parameter> パラメータが
+    <constant>INTL_IDNA_VARIANT_UTS46</constant> でない場合、
+    <exceptionname>ValueError</exceptionname> をスローするようになりました。
    </simpara>
   </sect3>
 
@@ -165,10 +176,10 @@
    <title>LibXML</title>
 
    <simpara>
-    <function>libxml_set_streams_context</function> now immediately throws a
-    <exceptionname>TypeError</exceptionname> when a non-stream-context
-    resource is passed to the function,
-    instead of throwing later when the stream context is used.
+    <function>libxml_set_streams_context</function> は、
+    非ストリームコンテキストリソースが関数に渡された場合、
+    ストリームコンテキストが使用されるときではなく、
+    直ちに <exceptionname>TypeError</exceptionname> をスローするようになりました。
    </simpara>
   </sect3>
 
@@ -176,9 +187,9 @@
    <title>MBString</title>
 
    <simpara>
-    The behavior of <function>mb_strcut</function> is more consistent
-    now on invalid UTF-8 and UTF-16 strings.
-    There is no behavioural change for valid UTF-8 and UTF-16 strings.
+    <function>mb_strcut</function> の動作は、
+    無効な UTF-8 および UTF-16 文字列に対してより一貫性のあるものになりました。
+    有効な UTF-8 および UTF-16 文字列に対する動作の変更はありません。
    </simpara>
   </sect3>
 
@@ -186,16 +197,16 @@
    <title>ODBC</title>
 
    <simpara>
-    The <parameter>row</parameter> of
-    <function>odbc_fetch_object</function>,
-    <function>odbc_fetch_array</function>, and
-    <function>odbc_fetch_into</function> now have a default value of &null;,
-    consistent with <function>odbc_fetch_row</function>.
-    Previously, the default values were
-    <literal>-1</literal>,
-    <literal>-1</literal>,
-    and <literal>0</literal>,
-    respectively.
+    <function>odbc_fetch_object</function>、
+    <function>odbc_fetch_array</function>、および
+    <function>odbc_fetch_into</function> の
+    <parameter>row</parameter> は、デフォルト値が &null; になり、
+    <function>odbc_fetch_row</function> と一致するようになりました。
+    以前は、それぞれデフォルト値が
+    <literal>-1</literal>、
+    <literal>-1</literal>、
+    <literal>0</literal>
+    でした。
    </simpara>
   </sect3>
 
@@ -203,28 +214,29 @@
    <title>OpenSSL</title>
 
    <simpara>
-    The <parameter>extra_attributes</parameter> in
-    <function>openssl_csr_new</function> sets the <acronym>CSR</acronym>
-    attributes instead of subject DN, which incorrectly done previously.
+    <function>openssl_csr_new</function> の
+    <parameter>extra_attributes</parameter> は、
+    <acronym>CSR</acronym> 属性を設定します。
+    以前はサブジェクト DN が誤って設定されていました。
    </simpara>
 
    <simpara>
-    The <parameter>dn</parameter> in
-    <function>openssl_csr_new</function> allows setting an <type>array</type>
-    of values for a single entry.
+    <function>openssl_csr_new</function> の
+    <parameter>dn</parameter> は、
+    単一のエントリに対して値の <type>array</type> を設定できるようになりました。
    </simpara>
 
    <simpara>
-    New <parameter>serial_hex</parameter> added to
-    <function>openssl_csr_sign</function> to allow setting serial numbers
-    in the hexadecimal format.
+    <function>openssl_csr_sign</function> に新たに
+    <parameter>serial_hex</parameter> が追加され、
+    16 進形式でシリアル番号を設定できるようになりました。
    </simpara>
 
    <simpara>
-    Parsing ASN.1 UTCTime with <function>openssl_x509_parse</function>
-    fails if seconds are omitted for OpenSSL version below 3.2
-    (<literal>-1</literal> is returned for such fields).
-    OpenSSL version above 3.3 did not load such certificates already.
+    <function>openssl_x509_parse</function> で ASN.1 UTCTime を解析する際、
+    OpenSSL バージョン 3.2 未満では秒が省略されていると失敗します
+    (そのようなフィールドでは <literal>-1</literal> が返されます)。
+    OpenSSL バージョン 3.3 以降では、そのような証明書は読み込むことができません。
    </simpara>
   </sect3>
 
@@ -232,15 +244,15 @@
    <title>PDO</title>
 
    <simpara>
-    It is now possible to fetch the value of the
-    <constant>PDO::ATTR_STRINGIFY_FETCHES</constant> attribute with
-    <methodname>PDO::getAttribute</methodname>.
+    <methodname>PDO::getAttribute</methodname> で
+    <constant>PDO::ATTR_STRINGIFY_FETCHES</constant>
+    属性の値を取得できるようになりました。
    </simpara>
 
    <simpara>
-    A new <constant>PDO::PGSQL_ATTR_RESULT_MEMORY_SIZE</constant>
-    has been added to retrieve the memory usage of query results with
-    <methodname>PDO::getAttribute</methodname> for drivers that support it.
+    <constant>PDO::PGSQL_ATTR_RESULT_MEMORY_SIZE</constant> が追加されました。
+    サポートされているドライバで <methodname>PDO::getAttribute</methodname> を使用して
+    クエリ結果のメモリ使用量を取得できるようになりました。
    </simpara>
   </sect3>
 
@@ -248,19 +260,17 @@
    <title>PDO_FIREBIRD</title>
 
    <simpara>
-    It is now possible to fetch the value of the
-    <!-- TODO Is this a class constant of the driver class? -->
-    <constant>FB_ATTR_DATE_FORMAT</constant>,
-    <constant>FB_ATTR_TIME_FORMAT</constant>,
-    <constant>FB_ATTR_TIMESTAMP_FORMAT</constant>,
-    attributes with
     <!-- TODO Only for the specific driver class? -->
-    <methodname>PDO::getAttribute</methodname>.
+    <methodname>PDO::getAttribute</methodname> で
+    <!-- TODO Is this a class constant of the driver class? -->
+    <constant>FB_ATTR_DATE_FORMAT</constant>、
+    <constant>FB_ATTR_TIME_FORMAT</constant>、
+    <constant>FB_ATTR_TIMESTAMP_FORMAT</constant> 属性の値を取得できるようになりました。
    </simpara>
 
    <para>
-    Added new attributes to specify transaction isolation level and access mode.
-    Five constants relating to this functionality have been added:
+    トランザクションの分離レベルとアクセスモードを指定するための新しい属性が追加されました。
+    この機能のため 5 つの定数が追加されました:
 
     <simplelist>
      <member><constant>Pdo\Firebird::TRANSACTION_ISOLATION_LEVEL</constant></member>
@@ -272,21 +282,20 @@
    </para>
 
    <simpara>
-    When using persistent connections, there is now a liveliness check in the
-    constructor.
+    永続的な接続を使用する場合、コンストラクタ内での生存チェックが追加されました。
    </simpara>
 
    <simpara>
-    The content that is built changes depending on the value of
-    <constant>FB_API_VER</constant> in
-    <filename class="headerfile">ibase.h</filename>.
-    A new static method <methodname>Pdo\Firebird::getApiVersion</methodname>
-    can be used to obtain this information.
-    This information is also now referenced in <function>phpinfo</function>.
+    ビルドされる内容は、
+    <filename class="headerfile">ibase.h</filename> 内の
+    <constant>FB_API_VER</constant> の値によって変わります。
+    この情報を取得するために新しい静的メソッド <methodname>Pdo\Firebird::getApiVersion</methodname>
+    が追加されました。
+    この情報は <function>phpinfo</function> からも参照できます。
    </simpara>
 
    <para>
-    Five new data types are now available:
+    5 つの新しいデータ型が利用可能になりました:
     <simplelist type="inline">
      <member><literal>INT128</literal></member>
      <member><literal>DEC16</literal></member>
@@ -294,8 +303,8 @@
      <member><literal>TIMESTAMP_TZ</literal></member>
      <member><literal>TIME_TZ</literal></member>
     </simplelist>
-    .
-    These are available starting with Firebird 4.0.
+
+    これらは Firebird 4.0 以降で利用可能です。
    </para>
   </sect3>
 
@@ -303,10 +312,10 @@
    <title>PDO_MYSQL</title>
 
    <simpara>
-    It is now possible to fetch the value of the
-    <constant>PDO::ATTR_FETCH_TABLE_NAMES</constant> attribute with
     <!-- TODO Only for the specific driver class? -->
-    <methodname>PDO::getAttribute</methodname>.
+    <methodname>PDO::getAttribute</methodname> で
+    <constant>PDO::ATTR_FETCH_TABLE_NAMES</constant> 属性の
+    値を取得できるようになりました。
    </simpara>
   </sect3>
 
@@ -314,14 +323,14 @@
    <title>PDO_PGSQL</title>
 
    <simpara>
-    Support retrieving the memory usage of queries for
-    <constant>PDO::PGSQL_ATTR_RESULT_MEMORY_SIZE</constant>.
+    <constant>PDO::PGSQL_ATTR_RESULT_MEMORY_SIZE</constant>
+    によるクエリのメモリ使用量の取得をサポートしました。
    </simpara>
 
    <simpara>
-    If the column is of type <literal>FLOAT4OID</literal> or
-    <literal>FLOAT8OID</literal> the value will now be returned as a
-    <type>float</type> instead of a <type>string</type>.
+    カラムが <literal>FLOAT4OID</literal> または
+    <literal>FLOAT8OID</literal> 型の場合、値は
+    <type>string</type> ではなく <type>float</type> として返されるようになりました。
    </simpara>
   </sect3>
 
@@ -329,8 +338,8 @@
    <title>PGSQL</title>
 
    <simpara>
-    The <parameter>conditions</parameter> parameter of
-    <function>pg_select</function> is now optional and accepts an empty array.
+    <function>pg_select</function> の <parameter>conditions</parameter> パラメータ
+    はオプションになり、空の配列を受け入れるようになりました。
    </simpara>
   </sect3>
 
@@ -338,13 +347,12 @@
    <title>Phar</title>
 
    <para>
-    The
     <simplelist type="inline">
      <member><methodname>Phar::setAlias</methodname></member>
      <member><methodname>Phar::setDefaultStub</methodname></member>
     </simplelist>
-    methods now have a tentative return type of <type>true</type>
-    instead of <type>bool</type>.
+    は、戻り値の型が <type>bool</type> ではなく
+    <type>true</type> になりました。
    </para>
   </sect3>
 
@@ -352,8 +360,8 @@
    <title>POSIX</title>
 
    <simpara>
-    <function>posix_isatty</function> now sets the error number when the
-    file descriptor/stream argument is invalid.
+    <function>posix_isatty</function> は、
+    ファイル記述子/ストリーム引数が無効な場合エラー番号を設定するようになりました。
    </simpara>
   </sect3>
 
@@ -362,7 +370,7 @@
 
    <simpara>
     <methodname>ReflectionGenerator::getFunction</methodname>
-    may now be called after the generator finished executing.
+    は、ジェネレータの実行が終了した後でも呼び出すことができるようになりました。
    </simpara>
   </sect3>
 
@@ -370,10 +378,10 @@
    <title>Sockets</title>
 
    <simpara>
-    The <parameter>backlog</parameter> parameter of
-    <function>socket_create_listen</function> now has a default value of
-    <constant>SOMAXCONN</constant>.
-    Previously, it was <literal>128</literal>.
+    <function>socket_create_listen</function> の
+    <parameter>backlog</parameter> パラメータのデフォルト値は
+    <constant>SOMAXCONN</constant> になりました。
+    以前は <literal>128</literal> でした。
    </simpara>
   </sect3>
 
@@ -381,9 +389,9 @@
    <title>Sodium</title>
 
    <simpara>
-    The <function>sodium_crypto_aead_aes256gcm_<replaceable>*</replaceable></function>
-    functions are now available on aarch64 CPUs with the ARM cryptographic
-    extensions.
+    <function>sodium_crypto_aead_aes256gcm_<replaceable>*</replaceable></function>
+    関数は、ARM 暗号化拡張を持つ aarch64 CPU で
+    利用可能になりました。
    </simpara>
   </sect3>
 
@@ -391,20 +399,19 @@
    <title>SPL</title>
 
    <para>
-    The
     <simplelist type="inline">
      <member><methodname>SplPriorityQueue::insert</methodname></member>
      <member><methodname>SplPriorityQueue::recoverFromCorruption</methodname></member>
      <member><methodname>SplHeap::insert</methodname></member>
      <member><methodname>SplHeap::recoverFromCorruption</methodname></member>
     </simplelist>
-    methods now have a tentative return type of <type>true</type>
-    instead of <type>bool</type>.
+    メソッドは、戻り値の型が <type>bool</type> ではなく
+    <type>true</type> になりました。
    </para>
 
    <simpara>
-    <classname>SplObjectStorage</classname> now implements
-    <interfacename>SeekableIterator</interfacename>.
+    <classname>SplObjectStorage</classname> は
+    <interfacename>SeekableIterator</interfacename> を実装するようになりました。
    </simpara>
   </sect3>
 
@@ -413,50 +420,50 @@
 
    <simpara>
 
-    The default <literal>'cost'</literal> value for the <constant>PASSWORD_BCRYPT</constant>
-    hashing algorithm for <function>password_hash</function> has been increased from
-    <literal>10</literal> to <literal>12</literal>.
+    <constant>PASSWORD_BCRYPT</constant> ハッシュアルゴリズムの
+    <function>password_hash</function> のデフォルトの <literal>'cost'</literal> 値が
+    <literal>10</literal> から <literal>12</literal> に引き上げられました。
     <!-- RFC: https://wiki.php.net/rfc/bcrypt_cost_2023 -->
    </simpara>
 
    <simpara>
-    <function>debug_zval_dump</function> now indicates whether an array is packed.
-   </simpara>
-
-   <simpara>
-    <function>long2ip</function> now has a return type of <type>string</type>
-    <!-- TODO Proper union type -->
-    instead of <literal>string|false</literal>.
+    <function>debug_zval_dump</function> は、配列がパックされているかどうかを示すようになりました。
    </simpara>
 
    <simpara>
     <!-- TODO Proper union type -->
-    <function>highlight_string</function> now has a return type of
-    <type>string|true</type> instead of <literal>string|bool</literal>.
+    <function>long2ip</function> は、戻り値の型が <literal>string|false</literal> ではなく
+    <type>string</type> になりました。
    </simpara>
 
    <simpara>
+    <function>highlight_string</function> は、戻り値の型が
     <!-- TODO Proper union type -->
-    <function>print_r</function> now has a return type of
-    <type>string|true</type> instead of <literal>string|bool</literal>.
+    <literal>string|bool</literal> ではなく<type>string|true</type> になりました。
+   </simpara>
+
+   <simpara>
+    <function>print_r</function> は、戻り値の型が
+    <!-- TODO Proper union type -->
+    <literal>string|bool</literal> ではなく <type>string|true</type> になりました。
    </simpara>
 
    <!-- TODO: Someone else take care of this - Girgias -->
    <sect4>
-    <title>Rounding with <function>round</function></title>
+    <title><function>round</function> による丸め処理</title>
 
     <simpara>
-     The <parameter>mode</parameter> parameter of the
-     <function>round</function> function has been widened to
+     <function>round</function> 関数の
+     <parameter>mode</parameter> パラメータは、
      <!-- TODO Proper union type -->
-     <literal>RoundingMode|int</literal>,
+     <literal>RoundingMode|int</literal> に拡張され、
      <!-- TODO should be <enumname> ? -->
-     accepting instances of a new <classname>RoundingMode</classname> enum.
+     新たに追加された <classname>RoundingMode</classname> 列挙型のインスタンスを受け入れます。
      <!-- RFC: https://wiki.php.net/rfc/correctly_name_the_rounding_mode_and_make_it_an_enum -->
     </simpara>
 
     <para>
-     Four new modes have been added to the <function>round</function> function:
+     <function>round</function> 関数に 4 つの新しいモードが追加されました:
      <simplelist type="inline">
       <member><!-- <enumidentifier> -->RoundingMode::PositiveInfinity<!-- </enumidentifier> --></member>
       <member><!-- <enumidentifier> -->RoundingMode::NegativeInfinity<!-- </enumidentifier> --></member>
@@ -467,32 +474,32 @@
     </para>
 
     <simpara>
-     The internal implementation for rounding to integers has been rewritten
-     to be easier to verify for correctness and to be easier to maintain.
-     Some rounding bugs have been fixed as a result of the rewrite.
-     For example previously rounding <literal>0.49999999999999994</literal>
-     to the nearest integer would have resulted in <literal>1.0</literal>
-     instead of the correct result <literal>0.0</literal>.
-     Additional inputs might also be affected and result in different outputs
-     compared to earlier PHP versions.
+     整数への丸めのための内部実装が、正確さの検証と
+     メンテナンスの容易さのために書き直されました。
+     その結果、いくつかの丸め処理のバグが修正されました。
+     例えば、以前は <literal>0.49999999999999994</literal>を最も近い整数に丸めると、
+     正しい結果の <literal>0.0</literal> ではなく
+     <literal>1.0</literal> になっていました。
+     他の入力も影響を受け、以前の PHP バージョンと比較して
+     異なる出力になる場合があります。
     </simpara>
 
     <simpara>
-     Fixed a bug caused by "pre-rounding" of the <function>round</function> function.
-     Previously, using "pre-rounding" to treat a value like <literal>0.285</literal>
-     (actually <literal>0.28499999999999998</literal>) as a decimal number
-     and round it to <literal>0.29</literal>.
-     However, "pre-rounding" incorrectly rounds certain numbers,
-     so this fix removes "pre-rounding" and changes the way numbers are compared,
-     so that the values are correctly rounded as decimal numbers.
+     <function>round</function> 関数の「事前丸め」によるバグが修正されました。
+     以前は、「事前丸め」により <literal>0.285</literal>
+     (実際には <literal>0.28499999999999998</literal>)のような値を
+     10 進数として、<literal>0.29</literal> に丸めていました。
+     しかし、「事前丸め」は特定の数値を誤って丸めるため、
+     この修正では「事前丸め」を削除し、値同士の比較方法を変更することで、
+     値が 10 進数として正しく丸められるようにしました。
     </simpara>
 
     <simpara>
-     The maximum precision that can be handled by <function>round</function>
-     has been extended by one digit.
-     For example, <code>round(4503599627370495.5)</code> returned in
-     <literal>4503599627370495.5</literal>,
-     but now returns <literal>4503599627370496</literal>.
+     <function>round</function> が処理できる最大精度が
+     1桁増えました。
+     例えば、<code>round(4503599627370495.5)</code> は以前は
+     <literal>4503599627370495.5</literal> を返していましたが、
+     現在は <literal>4503599627370496</literal> を返します。
     </simpara>
 
    </sect4>
@@ -501,20 +508,20 @@
  </sect2>
 
  <sect2 xml:id="migration84.other-changes.extensions">
-  <title>Other Changes to Extensions</title>
+  <title>拡張モジュールへのその他の変更</title>
 
   <sect3 xml:id="migration84.other-changes.extensions.curl">
    <title>cURL</title>
 
    <simpara>
-    The minimum libcurl version required is now 7.61.0.
+    最小必要 libcurl バージョンは 7.61.0 になりました。
    </simpara>
 
    <simpara>
-    The <constant>CURLOPT_DNS_USE_GLOBAL_CACHE</constant> option no longer
-    has any effect, and is silently ignored.
-    This underlying feature was deprecated in libcurl 7.11.1,
-    and removed in libcurl 7.62.0.
+    <constant>CURLOPT_DNS_USE_GLOBAL_CACHE</constant> オプションは
+    もはや効果がなく、通知なく無視されます。
+    この基本機能は libcurl 7.11.1 で非推奨となり、
+    libcurl 7.62.0 で削除されました。
    </simpara>
   </sect3>
 
@@ -523,10 +530,10 @@
 
    <!-- RFC: https://wiki.php.net/rfc/fix_up_bcmath_number_class -->
    <simpara>
-    Casting a <classname>GMP</classname> object to <type>bool</type> is now
-    possible instead of emitting a <constant>E_RECOVERABLE_ERROR</constant>.
-    The casting behaviour is overloaded such that a <classname>GMP</classname>
-    object representing the value <literal>0</literal> is cast to &false;.
+    <classname>GMP</classname> オブジェクトを <type>bool</type> に
+    キャストできるようになりました。以前は <constant>E_RECOVERABLE_ERROR</constant> が発生していました。
+    キャストの動作はオーバーロードされ、値が <literal>0</literal> を表す
+    <classname>GMP</classname> オブジェクトは &false; にキャストされます。
    </simpara>
   </sect3>
 
@@ -534,7 +541,7 @@
    <title>LibXML</title>
 
    <simpara>
-    The minimum libxml2 version required is now 2.9.4.
+    最小必要 libxml2 バージョンは 2.9.4 になりました。
    </simpara>
   </sect3>
 
@@ -542,9 +549,9 @@
    <title>Intl</title>
 
    <simpara>
-    The behaviour of Intl class has been normalized to always throw
-    <exceptionname>Error</exceptionname> exceptions when attempting to use
-    a non-initialized object, or when cloning fails.
+    Intl クラスの動作が統一され、
+    初期化されていないオブジェクトを使用しようとした場合やクローンに失敗した場合に、
+    <exceptionname>Error</exceptionname> 例外をスローするようになりました。
    </simpara>
   </sect3>
 
@@ -552,7 +559,7 @@
    <title>MBString</title>
 
    <simpara>
-    Unicode data tables have been updated to Unicode 16.0.
+    Unicode データテーブルが Unicode 16.0 に更新されました。
    </simpara>
   </sect3>
 
@@ -560,7 +567,7 @@
    <title>MySQLnd</title>
 
    <simpara>
-    Support for the new VECTOR data type from MySQL 9.
+    MySQL 9 の新しい VECTOR データ型のサポート。
    </simpara>
   </sect3>
 
@@ -568,7 +575,7 @@
    <title>OpenSSL</title>
 
    <simpara>
-    The minimum OpenSSL version required is now 1.1.1.
+    最小必要 OpenSSL バージョンは 1.1.1 になりました。
    </simpara>
   </sect3>
 
@@ -576,7 +583,7 @@
    <title>PDO_PGSQL</title>
 
    <simpara>
-    The minimum libpq version required is now 10.0.
+    最小必要 libpq バージョンは 10.0 になりました。
    </simpara>
   </sect3>
 
@@ -584,7 +591,7 @@
    <title>PGSQL</title>
 
    <simpara>
-    The minimum libpq version required is now 10.0.
+    最小必要 libpq バージョンは 10.0 になりました。
    </simpara>
   </sect3>
 
@@ -592,12 +599,12 @@
    <title>SPL</title>
 
    <simpara>
-    Out of bounds accesses in <classname>SplFixedArray</classname> now throw
-    exceptions of type <exceptionname>OutOfBoundsException</exceptionname>
-    instead of <exceptionname>RuntimeException</exceptionname>.
-    Because <exceptionname>OutOfBoundsException</exceptionname> is a child
-    class of <exceptionname>RuntimeException</exceptionname> no behavioural
-    changes are exhibited when attempting to catch those exceptions.
+    <classname>SplFixedArray</classname> での範囲外アクセスは、
+    <exceptionname>RuntimeException</exceptionname> ではなく
+    <exceptionname>OutOfBoundsException</exceptionname> 型の例外をスローするようになりました。
+    <exceptionname>OutOfBoundsException</exceptionname> は
+    <exceptionname>RuntimeException</exceptionname> の子クラスであるため、
+    これらの例外をキャッチしようとする際の動作に変更はありません。
    </simpara>
   </sect3>
 
@@ -605,8 +612,8 @@
    <title>XSL</title>
 
    <simpara>
-    The typed properties <property>XSLTProcessor::$cloneDocument</property>
-    and <property>XSLTProcessor::$doXInclude</property> are now declared
+    型付きプロパティ <property>XSLTProcessor::$cloneDocument</property>
+    および <property>XSLTProcessor::$doXInclude</property> が定義されました。
    </simpara>
   </sect3>
 
@@ -614,30 +621,30 @@
    <title>Zlib</title>
 
    <simpara>
-    The minimum zlib version required is now 1.2.11.
+    最小必要 zlib バージョンは 1.2.11 になりました。
    </simpara>
   </sect3>
  </sect2>
 
  <sect2 xml:id="migration84.other-changes.performance">
-  <title>Performance</title>
+  <title>パフォーマンス</title>
 
   <sect3 xml:id="migration84.other-changes.performance.core">
-   <title>Core</title>
+   <title>PHP コア</title>
 
    <simpara>
-    Improved the performance of floating point number parsing and formatting in
-    ZTS builds under highly concurrent loads.
-    This affects the <function>printf</function> family of functions as well
-    as serialization functions such as <function>json_encode</function>,
-    or <function>serialize</function>.
+    ZTS ビルドにおける高負荷の並行処理環境下で、
+    浮動小数点数の解析とフォーマットのパフォーマンスが向上しました。
+    これは <function>printf</function> 系の関数や
+    <function>json_encode</function>、<function>serialize</function>
+    などのシリアライズ関数に影響します。
    </simpara>
 
    <simpara>
-    <function>sprintf</function> using only <literal>%s</literal> and
-    <literal>%d</literal> specifiers will be compiled into the equivalent
-    string interpolation, avoiding the overhead of a function call and
-    repeatedly parsing the format string.
+    <literal>%s</literal> と <literal>%d</literal> 指定子のみを使用する
+    <function>sprintf</function> は、同等の文字列補間にコンパイルされ、
+    関数呼び出しのオーバーヘッドとフォーマット文字列の
+    繰り返し解析を回避します。
    </simpara>
   </sect3>
 
@@ -645,7 +652,7 @@
    <title>BCMath</title>
 
    <simpara>
-    Improved performance of number conversions and operations.
+    数値の変換と演算のパフォーマンスが向上しました。
    </simpara>
   </sect3>
 
@@ -653,18 +660,18 @@
    <title>DOM</title>
 
    <simpara>
-    The performance of <methodname>DOMNode::C14N</methodname> is greatly
-    improved for the case without an xpath query.
-    This can give a time improvement of easily two order of
-    magnitude for documents with tens of thousands of nodes.
+    <methodname>DOMNode::C14N</methodname> のパフォーマンスが、
+    xpath クエリなしの場合に大幅に向上しました。
+    これは数万ノードのドキュメントで簡単に 2 桁の
+    時間改善をもたらします。
    </simpara>
 
    <simpara>
-    Improved performance and reduce memory consumption of XML serialization.
+    XML シリアライズのパフォーマンスが向上し、メモリ消費が削減されました。
    </simpara>
 
    <simpara>
-    Reduced memory usage of node classes.
+    ノードクラスのメモリ使用量が削減されました。
    </simpara>
   </sect3>
 
@@ -672,8 +679,8 @@
    <title>FTP</title>
 
    <simpara>
-    Improved the performance of FTP uploads up to a factor of 10x for large
-    uploads.
+    大きなアップロードで FTP アップロードのパフォーマンスが
+    最大 10 倍向上しました。
    </simpara>
   </sect3>
 
@@ -681,10 +688,10 @@
    <title>Hash</title>
 
    <simpara>
-    Added SSE2 and SHA-NI implementations of SHA-256.
-    This improves the performance on supported CPUs by ~1.3x (SSE2),
-    and 3x - 5x (SHA-NI).
-    Credit to Colin Percival / Tarsnap for this optimization.
+    SHA-256 の SSE2 および SHA-NI 実装が追加されました。
+    これにより、サポートされている CPU でのパフォーマンスが SSE2 で最大 1.3 倍、
+    SHA-NIで 3から 5 倍向上します。
+    この最適化は Colin Percival / Tarsnap の功績です。
    </simpara>
   </sect3>
 
@@ -692,16 +699,16 @@
    <title>MBString</title>
 
    <simpara>
-    <function>mb_strcut</function> is much faster now for UTF-8
-    and UTF-16 strings.
+    <function>mb_strcut</function> は UTF-8 および
+    UTF-16 文字列で大幅に高速になりました。
    </simpara>
 
    <simpara>
-    Looking up mbstring encoding names is much faster now.
+    mbstring のエンコーディング名の検索が大幅に高速になりました。
    </simpara>
 
    <simpara>
-    The performance of converting SJIS-win to Unicode is greatly improved.
+    SJIS-win から Unicode への変換のパフォーマンスが大幅に向上しました。
    </simpara>
   </sect3>
 
@@ -709,7 +716,7 @@
    <title>MySQLnd</title>
 
    <simpara>
-    Improved the performance of MySQLnd quoting.
+    MySQLnd のクオートのパフォーマンスが向上しました。
    </simpara>
   </sect3>
 
@@ -717,7 +724,7 @@
    <title>PCRE</title>
 
    <simpara>
-    Improved the performance of named capture groups.
+    名前付きキャプチャグループのパフォーマンスが向上しました。
    </simpara>
   </sect3>
 
@@ -725,10 +732,9 @@
    <title>Random</title>
 
    <simpara>
-    Improved the performance of <classname>Random\Randomizer</classname>,
-    with a specific focus on the
-    <methodname>Random\Randomizer::getBytes</methodname>,
-    and <methodname>Random\Randomizer::getBytesFromString</methodname> methods.
+    <classname>Random\Randomizer</classname> のパフォーマンスが向上しました。
+    特に <methodname>Random\Randomizer::getBytes</methodname> と
+    <methodname>Random\Randomizer::getBytesFromString</methodname> メソッドで顕著です。
    </simpara>
   </sect3>
 
@@ -736,7 +742,7 @@
    <title>SimpleXML</title>
 
    <simpara>
-    Improved performance and reduce memory consumption of XML serialization.
+    XML シリアライズのパフォーマンスが向上し、メモリ消費が削減されました。
    </simpara>
   </sect3>
 
@@ -744,18 +750,18 @@
    <title>Standard</title>
 
    <simpara>
-    The performance of <function>strspn</function> and
-    <function>strcspn</function> is greatly improved.
-    They now run in linear time instead of being bounded by quadratic time.
+    <function>strspn</function> および <function>strcspn</function> の
+    パフォーマンスが大幅に向上しました。
+    二乗時間ではなく、線形時間で実行されるようになりました。
    </simpara>
 
    <simpara>
-    Improved the performance of <function>strpbrk</function>.
+    <function>strpbrk</function> のパフォーマンスが向上しました。
    </simpara>
 
    <simpara>
-    <function>get_browser</function> is much faster now,
-    up to 1.5x - 2.5x for some test cases.
+    <function>get_browser</function> は大幅に高速になり、
+    いくつかのテストケースで最大 1.5 倍から 2.5 倍の速度向上を実現しました。
    </simpara>
   </sect3>
  </sect2>

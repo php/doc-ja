@@ -1,21 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision$ -->
+<!-- EN-Revision: e3fc9c49817a5249d1efb9c79c93307ecebf2f53 Maintainer: KentarouTakeda Status: ready -->
+<!-- Credits: KentarouTakeda -->
 <sect1 xml:id="migration84.deprecated">
- <title>Deprecated Features</title>
+ <title>PHP 8.4.x で推奨されなくなる機能</title>
 
  <sect2 xml:id="migration84.deprecated.core">
-  <title>PHP Core</title>
+  <title>PHP コア</title>
 
   <sect3 xml:id="migration84.deprecated.core.implicitly-nullable-parameter">
    <!-- RFC: https://wiki.php.net/rfc/deprecate-implicitly-nullable-types -->
-   <title>Implicitly nullable parameter</title>
+   <title>暗黙的な nullable パラメータ</title>
 
    <simpara>
-    A parameter's type is implicitly widened to accept <type>null</type>
-    if the default value for it is &null;.
+    パラメータのデフォルト値が &null; の場合、
+    その型は暗黙的に <type>null</type> を受け入れるように拡張されます。
    </simpara>
 
    <para>
-    The following code:
+    次のコードは:
     <informalexample>
      <programlisting role="php">
 <![CDATA[
@@ -24,7 +27,7 @@ function foo(T1 $a = null) {}
 ]]>
      </programlisting>
     </informalexample>
-    should be converted to:
+    このように:
     <informalexample>
      <programlisting role="php">
 <![CDATA[
@@ -33,7 +36,7 @@ function foo(T1|null $a = null) {}
 ]]>
      </programlisting>
     </informalexample>
-    or
+    またはこのように修正する必要があります。
     <informalexample>
      <programlisting role="php">
 <![CDATA[
@@ -45,8 +48,7 @@ function foo(?T1 $a = null) {}
    </para>
 
    <para>
-    However, if such a parameter declaration is followed by a mandatory
-    parameter:
+    しかし、そのようなパラメータ宣言の後に必須パラメータが続く場合:
     <informalexample>
      <programlisting role="php">
 <![CDATA[
@@ -55,7 +57,7 @@ function foo(T1 $a, T2 $b = null, T3 $c) {}
 ]]>
      </programlisting>
     </informalexample>
-    It must be converted to:
+    このように:
     <informalexample>
      <programlisting role="php">
 <![CDATA[
@@ -64,7 +66,7 @@ function foo(T1 $a, T2|null $b, T3 $c) {}
 ]]>
      </programlisting>
     </informalexample>
-    or
+    またはこのように修正する必要があります。
     <informalexample>
      <programlisting role="php">
 <![CDATA[
@@ -73,39 +75,43 @@ function foo(T1 $a, ?T2 $b, T3 $c) {}
 ]]>
      </programlisting>
     </informalexample>
-    as optional parameter before required ones are deprecated.
+    なぜなら、必須パラメータの前に任意パラメータを置くことは非推奨だからです。
    </para>
   </sect3>
 
   <sect3>
    <!-- RFC: https://wiki.php.net/rfc/raising_zero_to_power_of_negative_number -->
-   <title>Raising zero to the power of negative number</title>
+   <title>ゼロを負の数でべき乗</title>
 
    <simpara>
-    Raising a number to the power of a negative number is equivalent to taking
-    the reciprocal of the number raised to the positive opposite of the power.
-    Therefore raising <literal>0</literal> to the power of a negative number
-    corresponds to dividing by <literal>0</literal>.
-    Thus, this behaviour has been deprecated.
+    ある数の負のべき乗は、
+    その数の正のべき乗の逆数と同等です。
+    例えば、<literal>10<superscript>-2</superscript></literal> は
+    <literal>1 / 10<superscript>2</superscript></literal> と同等です。
+    つまり、<literal>0</literal>の負のべき乗は
+    <literal>0</literal> で割ることを意味します。例えば、
+    <literal>0<superscript>-2</superscript></literal> は
+    <literal>1 / 0<superscript>2</superscript></literal>、または
+    <literal>1 / 0</literal> となります。以上より、この動作は非推奨とされました。
    </simpara>
 
    <simpara>
-    This affects the exponentiation operator <literal>**</literal>
-    and the <function>pow</function> function.
+    これはべき乗演算子 <literal>**</literal> と
+    <function>pow</function> 関数に影響します。
    </simpara>
 
    <simpara>
-    If the IEEE 754 semantics are desired one should use the new
-    <function>fpow</function> function.
+    IEEE 754 のセマンティクスが必要な場合は、新しい
+    <function>fpow</function> 関数を使用してください。
    </simpara>
   </sect3>
 
   <sect3 xml:id="migration84.deprecated.core.underscore-class-name">
    <!-- RFC: https://wiki.php.net/rfc/deprecations_php_8_4#deprecate_using_a_single_underscore_as_a_class_name -->
-   <title>Using underscore <literal>_</literal> as class name</title>
+   <title>クラス名をアンダースコア <literal>_</literal> とする</title>
 
    <para>
-    Naming a class <literal>_</literal> is now deprecated:
+    クラス名を <literal>_</literal> とすることは、現在非推奨となっています:
     <informalexample>
      <programlisting role="php">
 <![CDATA[
@@ -118,8 +124,8 @@ class _ {}
 
    <note>
     <para>
-     Classes whose names start with an underscore are <emphasis>not</emphasis>
-     deprecated:
+     クラス名がアンダースコアで始まるのは、
+     非推奨では<emphasis>ありません</emphasis>:
      <informalexample>
       <programlisting role="php">
 <![CDATA[
@@ -135,31 +141,31 @@ class _MyClass {}
   <sect3>
    <!-- RFC: https://wiki.php.net/rfc/deprecations_php_8_4#deprecate_passing_e_user_error_to_trigger_error -->
    <title>
-    Using <function>trigger_error</function> with
-    <constant>E_USER_ERROR</constant>
+    <function>trigger_error</function> で
+    <constant>E_USER_ERROR</constant> を使用
    </title>
 
    <simpara>
-    Calling <function>trigger_error</function> with
-    <parameter>error_level</parameter> being equal to
-    <constant>E_USER_ERROR</constant> is now deprecated.
+    <function>trigger_error</function> で
+    <parameter>error_level</parameter> として
+    <constant>E_USER_ERROR</constant> を指定するのは非推奨となりました。
    </simpara>
 
    <simpara>
-    Such usages should be replaced by either throwing an exception,
-    or calling <function>exit</function>, whichever is more appropriate.
+    そのような場合、例外をスローするか、
+    <function>exit</function> を呼び出すように修正すべきです。
    </simpara>
   </sect3>
 
   <sect3>
    <!-- RFC: https://wiki.php.net/rfc/deprecations_php_8_4#remove_e_strict_error_level_and_deprecate_e_strict_constant -->
    <title>
-    The <constant>E_STRICT</constant> constant
+    <constant>E_STRICT</constant> 定数
    </title>
 
    <simpara>
-    Because the <constant>E_STRICT</constant> error level was removed,
-    this constant is now deprecated.
+    <constant>E_STRICT</constant> エラーレベルが削除されたため、
+    この定数は非推奨となりました。
    </simpara>
   </sect3>
  </sect2>
@@ -168,7 +174,7 @@ class _MyClass {}
   <title>cURL</title>
 
   <simpara>
-   The <constant>CURLOPT_BINARYTRANSFER</constant> constant is now deprecated.
+   <constant>CURLOPT_BINARYTRANSFER</constant> 定数は非推奨となりました。
   </simpara>
  </sect2>
 
@@ -176,18 +182,18 @@ class _MyClass {}
   <title>Date</title>
 
   <simpara>
-   The <code> DatePeriod::__construct(string $isostr, int $options = 0)</code>
-   signature has been deprecated.
-   Use <methodname>DatePeriod::createFromISO8601String</methodname> instead.
+   <code> DatePeriod::__construct(string $isostr, int $options = 0)</code> の
+   シグネチャは非推奨となりました。
+   代わりに <methodname>DatePeriod::createFromISO8601String</methodname> を使用してください。
   </simpara>
 
   <!-- RFC: https://wiki.php.net/rfc/deprecations_php_8_4#constants_sunfuncs_ret_string_sunfuncs_ret_double_sunfuncs_ret_timestamp -->
   <simpara>
-   The <constant>SUNFUNCS_RET_TIMESTAMP</constant>,
-   <constant>SUNFUNCS_RET_STRING</constant>,
-   and <constant>SUNFUNCS_RET_DOUBLE</constant> constants are now deprecated.
-   This follows from the deprecation of the <function>date_sunset</function> and
-   <function>date_sunrise</function> functions in PHP 8.1.0.
+   <constant>SUNFUNCS_RET_TIMESTAMP</constant>、
+   <constant>SUNFUNCS_RET_STRING</constant>、
+   および <constant>SUNFUNCS_RET_DOUBLE</constant> 定数は非推奨となりました。
+   これは PHP 8.1.0 で <function>date_sunset</function> と
+   <function>date_sunrise</function> 関数が非推奨となったことに伴うものです。
   </simpara>
  </sect2>
 
@@ -196,9 +202,9 @@ class _MyClass {}
 
   <!-- RFC: https://wiki.php.net/rfc/deprecations_php_8_4#deprecate_passing_null_and_false_to_dba_key_split -->
   <simpara>
-   Passing &null; or &false; to <function>dba_key_split</function> is now
-   deprecated.
-   It would always return &false; in those cases.
+   <function>dba_key_split</function> に &null; または &false; を渡すことは
+   非推奨となりました。
+   これらの場合、常に &false; を返していました。
   </simpara>
  </sect2>
 
@@ -207,12 +213,12 @@ class _MyClass {}
 
   <!-- RFC: https://wiki.php.net/rfc/deprecations_php_8_4#deprecate_dom_php_err_constant -->
   <simpara>
-   The <constant>DOM_PHP_ERR</constant> constant is now deprecated.
+   <constant>DOM_PHP_ERR</constant> 定数は非推奨となりました。
   </simpara>
 
   <!-- RFC: https://wiki.php.net/rfc/deprecations_php_8_4#formally_deprecate_soft-deprecated_domdocument_and_domentity_properties -->
   <para>
-   The following properties have been formally deprecated:
+   以下のプロパティは正式に非推奨となりました:
    <simplelist>
     <member><property>DOMDocument::$actualEncoding</property></member>
     <member><property>DOMDocument::$config</property></member>
@@ -228,7 +234,7 @@ class _MyClass {}
 
   <!-- RFC: https://wiki.php.net/rfc/deprecations_php_8_4#deprecate_passing_incorrect_data_types_for_options_to_exthash_functions -->
   <simpara>
-   Passing invalid options to hash functions is now deprecated.
+   ハッシュ関数に無効なオプションを渡すことは非推奨となりました。
   </simpara>
  </sect2>
 
@@ -236,19 +242,19 @@ class _MyClass {}
   <title>Intl</title>
 
   <simpara>
-   Calling <function>intlcal_set</function> or
+   <function>intlcal_set</function> または
    <methodname>IntlCalendar::set</methodname>
-   with more than two arguments is deprecated.
-   Use either <methodname>IntlCalendar::setDate</methodname> or
-   <methodname>IntlCalendar::setDateTime</methodname> instead.
+   を 2 つを超える引数で呼び出すことは非推奨となりました。
+   代わりに <methodname>IntlCalendar::setDate</methodname> または
+   <methodname>IntlCalendar::setDateTime</methodname> を使用してください。
   </simpara>
 
   <simpara>
-   Calling <function>intlgregcal_create_instance</function> or
+   <function>intlgregcal_create_instance</function> または
    <methodname>IntlGregorianCalendar::__construct</methodname>
-   with more than two arguments is deprecated.
-   Use either <methodname>IntlGregorianCalendar::createFromDate</methodname> or
-   <methodname>IntlGregorianCalendar::createFromDateTime</methodname> instead.
+   を 2 つを超える引数で呼び出すことは非推奨となりました。
+   代わりに <methodname>IntlGregorianCalendar::createFromDate</methodname> または
+   <methodname>IntlGregorianCalendar::createFromDateTime</methodname> を使用してください。
   </simpara>
  </sect2>
 
@@ -256,15 +262,15 @@ class _MyClass {}
   <title>LDAP</title>
 
   <simpara>
-   Calling <function>ldap_connect</function>
-   with more than two arguments is deprecated.
-   Use <function>ldap_connect_wallet</function> instead.
+   <function>ldap_connect</function> を
+   2 つを超える引数で呼び出すことは非推奨となりました。
+   代わりに <function>ldap_connect_wallet</function> を使用してください。
   </simpara>
 
   <simpara>
-   Calling <function>ldap_exop</function>
-   with more than four arguments is deprecated.
-   Use <function>ldap_exop_sync</function> instead.
+   <function>ldap_exop</function>
+   を 4 つを超える引数で呼び出すことは非推奨となりました。
+   代わりに <function>ldap_exop_sync</function> を使用してください。
   </simpara>
  </sect2>
 
@@ -273,37 +279,37 @@ class _MyClass {}
 
   <!-- RFC: https://wiki.php.net/rfc/deprecations_php_8_4#mysqli_ping_and_mysqliping -->
   <simpara>
-   The <function>mysqli_ping</function> function and
-   <methodname>mysqli::ping</methodname> method
-   are now deprecated as the reconnect feature was removed in PHP 8.2.0.
+   <function>mysqli_ping</function> 関数および
+   <methodname>mysqli::ping</methodname> メソッドは、
+   PHP 8.2.0 で再接続機能が削除されたため、非推奨となりました。
   </simpara>
 
   <!-- RFC: https://wiki.php.net/rfc/deprecations_php_8_4#deprecate_mysqli_kill -->
   <simpara>
-   The <function>mysqli_kill</function> function and
-   <methodname>mysqli::kill</methodname> method
-   are now deprecated.
-   If this functionality is needed a SQL <literal>KILL</literal> command
-   can be used instead.
+   <function>mysqli_kill</function> 関数および
+   <methodname>mysqli::kill</methodname> メソッド
+   は非推奨となりました。
+   この機能が必要な場合は、代わりに SQL の <literal>KILL</literal>
+   コマンドを使用できます。
   </simpara>
 
   <!-- RFC: https://wiki.php.net/rfc/deprecations_php_8_4#deprecate_mysqli_refresh -->
   <simpara>
-   The <function>mysqli_refresh</function> function and
-   <methodname>mysqli::refresh</methodname> method
-   are now deprecated.
-   If this functionality is needed a SQL <literal>FLUSH</literal> command
-   can be used instead.
-   All <constant>MYSQLI_REFRESH_<replaceable>*</replaceable></constant>
-   constants have been deprecated as well.
+   <function>mysqli_refresh</function> 関数および
+   <methodname>mysqli::refresh</methodname> メソッドは
+   非推奨となりました。
+   この機能が必要な場合は、代わりに SQL の <literal>FLUSH</literal> コマンド
+   を使用できます。
+   すべての <constant>MYSQLI_REFRESH_<replaceable>*</replaceable></constant>
+   定数も非推奨となりました。
   </simpara>
 
   <!-- RFC: https://wiki.php.net/rfc/deprecations_php_8_4#deprecate_the_second_parameter_to_mysqli_store_result -->
   <simpara>
-   Passing the <parameter>mode</parameter> parameter to
-   <function>mysqli_store_result</function> explicitly has been deprecated.
-   As the <constant>MYSQLI_STORE_RESULT_COPY_DATA</constant> constant was
-   only used in conjunction with this function it has also been deprecated.
+   <function>mysqli_store_result</function> に
+   <parameter>mode</parameter> パラメータを明示的に渡すことは非推奨となりました。
+   この関数のために用意されていた<constant>MYSQLI_STORE_RESULT_COPY_DATA</constant> 定数も
+   非推奨となりました。
   </simpara>
  </sect2>
 
@@ -311,10 +317,10 @@ class _MyClass {}
   <title>PDO_PGSQL</title>
 
   <simpara>
-   Using escaped question marks (<literal>??</literal>) inside
-   dollar-quoted strings is deprecated.
-   Because PDO_PGSQL now has its own SQL parser with dollar-quoted strings
-   support, it is no longer necessary to escape question marks inside them.
+   ドル記号で囲まれた文字列の中で
+   エスケープされた疑問符（<literal>??</literal>）を使用することは非推奨となりました。
+   PDO_PGSQL はドル記号で囲まれた文字列をサポートする独自の SQL パーサーを持つようになったため、
+   それらの中で疑問符をエスケープする必要はなくなりました。
   </simpara>
  </sect2>
 
@@ -322,11 +328,11 @@ class _MyClass {}
   <title>PGSQL</title>
 
   <simpara>
-   The 2 arguments signature of <function>pg_fetch_result</function>,
-   <function>pg_field_prtlen</function>, and
-   <function>pg_field_is_null</function> is now deprecated.
-   Use the 3 arguments signature with <parameter>row</parameter> set to
-   &null; instead.
+   <function>pg_fetch_result</function>、
+   <function>pg_field_prtlen</function>、
+   および <function>pg_field_is_null</function> の 2 引数のシグネチャは非推奨となりました。
+   代わりに <parameter>row</parameter> を &null; に設定した 3 引数のシグネチャを
+   使用してください。
   </simpara>
  </sect2>
 
@@ -335,9 +341,9 @@ class _MyClass {}
 
   <!-- RFC: https://wiki.php.net/rfc/deprecations_php_8_4#deprecate_lcg_value -->
   <simpara>
-   <function>lcg_value</function> is now deprecated,
-   as the function is broken in multiple ways.
-   Use <methodname>Random\Randomizer::getFloat</methodname> instead.
+   <function>lcg_value</function> は非推奨となりました。
+   この関数は複数の点で問題があるためです。
+   代わりに <methodname>Random\Randomizer::getFloat</methodname> を使用してください。
   </simpara>
  </sect2>
 
@@ -345,9 +351,9 @@ class _MyClass {}
   <title>Reflection</title>
 
   <simpara>
-   Calling <methodname>ReflectionMethod::__construct</methodname>
-   with one arguments is deprecated.
-   Use <methodname>ReflectionMethod::createFromMethodName</methodname> instead.
+   <methodname>ReflectionMethod::__construct</methodname> を
+   1 つの引数で呼び出すことは非推奨となりました。
+   代わりに <methodname>ReflectionMethod::createFromMethodName</methodname> を使用してください。
   </simpara>
  </sect2>
 
@@ -355,31 +361,29 @@ class _MyClass {}
   <title>Session</title>
 
   <simpara>
-   Calling <function>session_set_save_handler</function>
-   with more than two arguments is deprecated.
-   Use the two arguments signature instead.
+   <function>session_set_save_handler</function> を
+   2 つを超える引数で呼び出すことは非推奨となりました。
+   2 引数のシグネチャを使用してください。
   </simpara>
 
   <!-- RFC: https://wiki.php.net/rfc/deprecations_php_8_4#sessionsid_length_and_sessionsid_bits_per_character -->
   <simpara>
-   Changing the value of the
-   <link linkend="ini.session.sid-length"><literal>session.sid_length</literal></link> and
+   <link linkend="ini.session.sid-length"><literal>session.sid_length</literal></link> および
    <link linkend="ini.session.sid-bits-per-character"><literal>session.sid_bits_per_character</literal></link>
-   INI settings is deprecated.
-   Update the session storage backend to accept 32 character hexadecimal
-   session IDs and stop changing these two INI settings instead.
+   の INI 設定値を変更することは非推奨となりました。
+   セッションストレージバックエンドを修正し、 16 進数 32 文字による
+   セッション ID を受け入れるようにし、これら 2 つの INI 設定を変更するのをやめてください。
   </simpara>
 
   <!-- RFC: https://wiki.php.net/rfc/deprecate-get-post-sessions -->
   <simpara>
-   Changing the value of the
-   <link linkend="ini.session.use-only-cookies"><literal>session.use_only_cookies</literal></link>,
-   <link linkend="ini.session.use-trans-sid"><literal>session.use_trans_sid</literal></link>,
-   <link linkend="ini.session.trans-sid-tags"><literal>session.trans_sid_tags</literal></link>,
-   <link linkend="ini.session.trans-sid-hosts"><literal>session.trans_sid_hosts</literal></link>, and
+   <link linkend="ini.session.use-only-cookies"><literal>session.use_only_cookies</literal></link>、
+   <link linkend="ini.session.use-trans-sid"><literal>session.use_trans_sid</literal></link>、
+   <link linkend="ini.session.trans-sid-tags"><literal>session.trans_sid_tags</literal></link>、
+   <link linkend="ini.session.trans-sid-hosts"><literal>session.trans_sid_hosts</literal></link>、および
    <link linkend="ini.session.referer-check"><literal>session.referer_check</literal></link>
-   INI settings is deprecated.
-   The <constant>SID</constant> constant is also deprecated.
+   の INI 設定値を変更することは非推奨となりました。
+   <constant>SID</constant> 定数も非推奨となりました。
   </simpara>
  </sect2>
 
@@ -388,15 +392,15 @@ class _MyClass {}
 
   <!-- RFC: https://wiki.php.net/rfc/deprecations_php_8_4#deprecate_soap_functions_all_constant_and_passing_it_to_soapserveraddfunction -->
   <simpara>
-   Passing an <type>int</type> to
-   <methodname>SoapServer::addFunction</methodname> is now deprecated.
-   If all PHP functions need to be provided flatten the array returned by
-   <function>get_defined_functions</function>.
+   <methodname>SoapServer::addFunction</methodname> に
+   <type>int</type> を渡すことは非推奨となりました。
+   すべての PHP 関数を提供する必要がある場合は、
+   <function>get_defined_functions</function> が返す配列をフラット化してください。
   </simpara>
 
   <!-- RFC: https://wiki.php.net/rfc/deprecations_php_8_4#deprecate_soap_functions_all_constant_and_passing_it_to_soapserveraddfunction -->
   <simpara>
-   The <constant>SOAP_FUNCTIONS_ALL</constant> constant is now deprecated.
+   <constant>SOAP_FUNCTIONS_ALL</constant> 定数は非推奨となりました。
   </simpara>
  </sect2>
 
@@ -404,25 +408,24 @@ class _MyClass {}
   <title>SPL</title>
 
   <simpara>
-   The <methodname>SplFixedArray::__wakeup</methodname> method is now
-   deprecated, as it implements
-   <methodname>SplFixedArray::__serialize</methodname> and
+   <methodname>SplFixedArray::__wakeup</methodname> メソッドは
+   非推奨となりました。代わりに
+   <methodname>SplFixedArray::__serialize</methodname> と
    <methodname>SplFixedArray::__unserialize</methodname>
-   which need to be overwritten instead.
+   をオーバーライドしてください。
   </simpara>
 
   <!-- RFC: https://wiki.php.net/rfc/deprecations_php_8_4#deprecate_proprietary_csv_escaping_mechanism -->
   <simpara>
-   Using the default value for the <parameter>escape</parameter> parameter for the
-   <methodname>SplFileObject::setCsvControl</methodname>,
-   <methodname>SplFileObject::fputcsv</methodname>, and
-   <methodname>SplFileObject::fgetcsv</methodname> is now deprecated.
+   <methodname>SplFileObject::setCsvControl</methodname>、
+   <methodname>SplFileObject::fputcsv</methodname>、および
+   <methodname>SplFileObject::fgetcsv</methodname> で
+   <parameter>escape</parameter> パラメータのデフォルト値を利用することは非推奨となりました。
    <!-- TODO: Link to named arguments feature -->
-   It must be passed explicitly either positionally or via named arguments.
-   This does not apply to <methodname>SplFileObject::fputcsv</methodname>
-   and <methodname>SplFileObject::fgetcsv</methodname> if
-   <methodname>SplFileObject::setCsvControl</methodname> was used to set a
-   new default value.
+   引数または名前付き引数で明示的に指定する必要があります。
+   これは、<methodname>SplFileObject::setCsvControl</methodname> で
+   新しいデフォルト値を設定した場合、<methodname>SplFileObject::fputcsv</methodname> および
+   <methodname>SplFileObject::fgetcsv</methodname> には適用されません。
   </simpara>
  </sect2>
 
@@ -430,25 +433,25 @@ class _MyClass {}
   <title>Standard</title>
 
   <simpara>
-   Calling <function>stream_context_set_option</function>
-   with two arguments is deprecated.
-   Use <function>stream_context_set_options</function> instead.
+   <function>stream_context_set_option</function> を
+   2 つの引数で呼び出すことは非推奨となりました。
+   代わりに <function>stream_context_set_options</function> を使用してください。
   </simpara>
 
   <!-- RFC: https://wiki.php.net/rfc/deprecations_php_8_4#unserialize_s_s_tag -->
   <simpara>
-   Unserializing strings using the uppercase <literal>S</literal> tag
-   with <function>unserialize</function> is deprecated.
+   <function>unserialize</function> で大文字の <literal>S</literal> タグを使用して文字列を
+   アンシリアライズすることは非推奨となりました。
   </simpara>
 
   <!-- RFC: https://wiki.php.net/rfc/deprecations_php_8_4#deprecate_proprietary_csv_escaping_mechanism -->
   <simpara>
-   Using the default value for the <parameter>escape</parameter> parameter for the
-   <function>fputcsv</function>,
-   <function>fgetcsv</function>, and
-   <function>str_getcsv</function>  is now deprecated.
+   <function>fputcsv</function>、
+   <function>fgetcsv</function>、および
+   <function>str_getcsv</function> の
+   <parameter>escape</parameter> パラメータのデフォルト値を利用することは非推奨となりました。
    <!-- TODO: Link to named arguments feature -->
-   It must be passed explicitly either positionally or via named arguments.
+   引数または名前付き引数で明示的に指定する必要があります。
   </simpara>
  </sect2>
 
@@ -457,14 +460,14 @@ class _MyClass {}
 
   <!-- RFC: https://wiki.php.net/rfc/deprecations_php_8_4#xml_set_object_and_xml_set_handler_with_string_method_names -->
   <simpara>
-   The <function>xml_set_object</function> function has been deprecated.
+   <function>xml_set_object</function> 関数は非推奨となりました。
   </simpara>
 
   <!-- RFC: https://wiki.php.net/rfc/deprecations_php_8_4#xml_set_object_and_xml_set_handler_with_string_method_names -->
   <simpara>
-   Passing non-<type>callable</type> strings to the
+   <type>callable</type> でない文字列を
    <function>xml_set_<replaceable>*</replaceable></function>
-   functions is now deprecated.
+   関数に渡すことは非推奨となりました。
   </simpara>
  </sect2>
 

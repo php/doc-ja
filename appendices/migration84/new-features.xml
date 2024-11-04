@@ -1,20 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision$ -->
+<!-- EN-Revision: 56b4b1960e07355f889ef6e4e3b75ebdc59507b9 Maintainer: KentarouTakeda Status: ready -->
+<!-- Credits: KentarouTakeda -->
 <sect1 xml:id="migration84.new-features">
- <title>New Features</title>
+ <title>新機能</title>
 
  <!-- TODO: Core features for 8.4 -->
  <sect2 xml:id="migration84.new-features.core">
-  <title>PHP Core</title>
+  <title>PHP コア</title>
 
   <!-- RFC: https://wiki.php.net/rfc/property-hooks -->
   <sect3 xml:id="migration84.new-features.core.property-hooks">
-   <title>Property Hooks</title>
+   <title>プロパティフック</title>
 
    <simpara>
-    Object properties may now have additional logic associated with their
-    <literal>get</literal> and <literal>set</literal> operations.
-    Depending on the usage, that may or may not make the property virtual,
-    that is, it has no backing value at all.
+    オブジェクトのプロパティは、
+    <literal>get</literal> および <literal>set</literal> 操作に
+    追加のロジックを関連付けることができるようになりました。
+    使用方法に応じてそのプロパティは、値を持つ場合もありますし、
+    仮想的、つまり値を持たない場合もあります。
    </simpara>
 
    <informalexample>
@@ -23,19 +27,19 @@
 <?php
 class Person
 {
-    // A "virtual" property.  It may not be set explicitly.
+    // 「仮想」プロパティ。明示的に設定されることはありません。
     public string $fullName {
         get => $this->firstName . ' ' . $this->lastName;
     }
 
-    // All write operations go through this hook, and the result is what is written.
-    // Read access happens normally.
+    // すべての書き込み操作はこのフックを通り、返却値が書き込まれます。
+    // 読み取りアクセスは通常通り行われます。
     public string $firstName {
         set => ucfirst(strtolower($value));
     }
 
-    // All write operations go through this hook, which has to write to the backing value itself.
-    // Read access happens normally.
+    // すべての書き込み操作はこのフックを通り、フックの中で値が書き込まれます。
+    // 読み取りアクセスは通常通り行われます。
     public string $lastName {
         set {
             if (strlen($value) < 2) {
@@ -59,11 +63,10 @@ print $p->fullName; // Prints "Peter Peterson"
 
   <!-- RFC: https://wiki.php.net/rfc/asymmetric-visibility-v2 -->
   <sect3 xml:id="migration84.new-features.core.asymmetric-property-visibility">
-   <title>Asymmetric Property Visibility</title>
+   <title>非対称可視性プロパティ</title>
 
    <simpara>
-    Object properties may now have their <literal>set</literal> visibility
-    controlled separately from the <literal>get</literal> visibility.
+    オブジェクトのプロパティは、<literal>set</literal> の可視性を <literal>get</literal> の可視性とは別に制御できるようになりました。
    </simpara>
    <informalexample>
     <programlisting role="php">
@@ -71,8 +74,8 @@ print $p->fullName; // Prints "Peter Peterson"
 <?php
 class Example
 {
-    // The first visibility modifier controls the get-visibility, and the second modifier
-    // controls the set-visibility. The get-visibility must not be narrower than set-visibility.
+    // 最初の可視性修飾子は取得時の可視性を制御し、2つ目の修飾子は設定時の可視性を制御します。
+    // 取得時の可視性は設定時の可視性よりも狭くなってはいけません。
     public protected(set) string $name;
 
     public function __construct(string $name)
@@ -87,11 +90,11 @@ class Example
 
   <!-- RFC: https://wiki.php.net/rfc/lazy-objects -->
   <sect3 xml:id="migration84.new-features.core.lazy-objects">
-   <title>Lazy Objects</title>
+   <title>レイジーオブジェクト</title>
    <simpara>
-    It is now possible to create objects whose initialization is deferred until
-    they are accessed. Libraries and frameworks can leverage these lazy objects
-    to defer fetching data or dependencies required for initialization.
+    アクセスされるまで初期化が延期されるオブジェクトを作成できるようになりました。
+    ライブラリやフレームワークは、これらのレイジーオブジェクトを利用して、
+    初期化に必要なデータや依存関係の取得を遅延させることができます。
    </simpara>
    <informalexample>
     <programlisting role="php">
@@ -122,75 +125,75 @@ $object = $reflector->newLazyGhost($initializer);
 
   <!-- RFC: https://wiki.php.net/rfc/deprecated_attribute -->
   <sect3 xml:id="migration84.new-features.core.deprecated-attribute">
-   <title><code>#[\Deprecated]</code> attribute</title>
+   <title><code>#[\Deprecated]</code> アトリビュート</title>
 
    <simpara>
-    The new <classname>Deprecated</classname> attribute can be used to mark functions, methods,
-    and class constants as deprecated. The behavior of functionality deprecated with this
-    attribute matches the behavior of the existing deprecation mechanism for functionality
-    provided by PHP itself. The only exception is that the emitted error code is
-    <constant>E_USER_DEPRECATED</constant> instead of <constant>E_DEPRECATED</constant>.
+    新しい <classname>Deprecated</classname> 属性を使用して、関数、メソッド、
+    およびクラス定数を非推奨としてマークできます。このアトリビュートで非推奨となった機能の動作は、
+    PHP 自身が提供する既存の非推奨メカニズムの動作と一致します。
+    唯一の例外は、発生するエラーコードが
+    <constant>E_DEPRECATED</constant> ではなく <constant>E_USER_DEPRECATED</constant> であることです。
    </simpara>
 
    <simpara>
-    Existing deprecations in functionality provided by PHP itself have been updated to use
-    the attribute, improving the emitted error messages by including a short explanation.
+    PHP 自身が提供する機能の既存の非推奨は、この属性を使用するように更新され、
+    短い説明を含むことでエラーメッセージが改善されました。
    </simpara>
   </sect3>
 
   <!-- RFC: https://wiki.php.net/rfc/rfc1867-non-post -->
   <sect3 xml:id="migration84.new-features.core.rfc1867">
-   <title>Parsing RFC1867 (multipart) requests in non-POST HTTP requests</title>
+   <title>POST 以外の HTTP リクエストでの RFC1867 (マルチパート)リクエストの解析</title>
 
    <!-- TODO: expand? -->
    <simpara>
-    Added <function>request_parse_body</function> function that allows parsing
-    RFC1867 (multipart) requests in non-POST HTTP requests.
+    POST 以外の HTTP リクエストで RFC1867（マルチパート）リクエストを解析するための
+    <function>request_parse_body</function> 関数が追加されました。
    </simpara>
   </sect3>
 
   <!-- RFC: https://wiki.php.net/rfc/new_without_parentheses -->
   <sect3 xml:id="migration84.new-features.core.new-chaining">
-   <title>Chaining &new; expressions without parentheses</title>
+   <title>括弧なしでの &new; 式のチェーン</title>
 
    <!-- TODO: expand and examples? -->
    <simpara>
-    New expressions with constructor arguments are now dereferencable, meaning
-    they allow chaining method calls, property accesses, etc. without enclosing
-    the expression in parentheses.
+    コンストラクタ引数を持つ &new; 式は直接参照できるようになり、
+    式を括弧で囲むことなくメソッド呼び出しや
+    プロパティアクセスなどのチェーンが可能になりました。
    </simpara>
   </sect3>
 
   <sect3 xml:id="migration84.new-features.core.debug-weakref">
-   <title>Improved Debugging Info for <classname>WeakReference</classname></title>
+   <title><classname>WeakReference</classname> のデバッグ情報の改善</title>
 
    <!-- TODO: expand and examples? -->
    <simpara>
-    Getting the debug info for <classname>WeakReference</classname> will now
-    also output the object it references, or &null; if the reference is no
-    longer valid.
+    <classname>WeakReference</classname> のデバッグ情報を取得すると、
+    参照しているオブジェクト、または参照が無効になっている場合は
+    &null; が出力されるようになりました。
    </simpara>
   </sect3>
 
   <sect3 xml:id="migration84.new-features.core.debug-closure">
-   <title>Improved Debugging Info for <classname>Closure</classname></title>
+   <title><classname>Closure</classname> のデバッグ情報の改善</title>
 
    <!-- TODO: expand and examples? -->
    <simpara>
-    The output of <methodname>Closure::__debugInfo</methodname> now includes
-    the name, file, and line of the <classname>Closure</classname>.
+    <methodname>Closure::__debugInfo</methodname> の出力には、
+    <classname>Closure</classname> の名前、ファイル名、および行が含まれるようになりました。
    </simpara>
   </sect3>
 
   <!-- Is this really a feature? Should this be moved to other changes? -->
   <sect3 xml:id="migration84.new-features.core.multiple-namespaces-symbols">
-   <title>Defining Identical Symbols in Different Namespace Blocks</title>
+   <title>異なる名前空間ブロックで同一のシンボルを定義</title>
 
    <!-- TODO: expand and examples? -->
    <simpara>
-    Exiting a namespace now clears seen symbols.
-    This allows using a symbol in a namespace block, even if a previous
-    namespace block declared a symbol with the same name.
+    名前空間を終了すると、そこで定義されたシンボルがクリアされるようになりました。
+    これにより、以前の名前空間ブロックで同じ名前のシンボルが宣言されていても、
+    名前空間ブロック内でシンボルを使用できるようになりました。
     <!-- See Zend/tests/use_function/ns_end_resets_seen_symbols_1.phpt. -->
    </simpara>
   </sect3>
@@ -201,40 +204,41 @@ $object = $reflector->newLazyGhost($initializer);
   <title>cURL</title>
 
   <simpara>
-   <function>curl_version</function> returns an additional
-   <literal>feature_list</literal> value, which is an associative array
-   of all known cURL features, and whether they are supported (&true;)
-   or not (&false;).
+   <function>curl_version</function> は、新たに
+   <literal>feature_list</literal> 値を返すようになりました。これは、
+   既知のすべての cURL 機能と、それらがサポートされているか(&true;)されていないか
+   (&false;)を示す連想配列です。
   </simpara>
 
   <simpara>
-   Added <constant>CURL_HTTP_VERSION_3</constant> and
-   <constant>CURL_HTTP_VERSION_3ONLY</constant> constants (available
-   since libcurl 7.66 and 7.88) as available options for
-   <constant>CURLOPT_HTTP_VERSION</constant>.
+   <constant>CURLOPT_HTTP_VERSION</constant> のオプションとして、
+   <constant>CURL_HTTP_VERSION_3</constant> および
+   <constant>CURL_HTTP_VERSION_3ONLY</constant> 定数
+   （libcurl 7.66 および 7.88 から利用可能）
+   が追加されました。
   </simpara>
 
   <simpara>
-   Added <constant>CURLOPT_PREREQFUNCTION</constant> as a cURL option that
-   accepts a <type>callable</type> to be called after the connection is made,
-   but before the request is sent.
-   This callable must return either <constant>CURL_PREREQFUNC_OK</constant> or
-   <constant>CURL_PREREQFUNC_ABORT</constant> to allow or abort the request.
+   cURL オプションとして<constant>CURLOPT_PREREQFUNCTION</constant> が追加されました。
+   接続が確立された後、リクエストが送信される前に呼び出される
+   <type>callable</type> を受け入れます。
+   この callable は、リクエストを許可または中止するために <constant>CURL_PREREQFUNC_OK</constant> または
+   <constant>CURL_PREREQFUNC_ABORT</constant> のいずれかを返す必要があります。
   </simpara>
 
   <simpara>
-   Added <constant>CURLOPT_SERVER_RESPONSE_TIMEOUT</constant>,
-   which was formerly known as <constant>CURLOPT_FTP_RESPONSE_TIMEOUT</constant>.
-   Both constants hold the same value.
+   <constant>CURLOPT_SERVER_RESPONSE_TIMEOUT</constant> が追加されました。
+   これは以前は <constant>CURLOPT_FTP_RESPONSE_TIMEOUT</constant> として知られていました。
+   両方の定数は同じ値を持ちます。
   </simpara>
 
   <para>
-   Added <constant>CURLOPT_DEBUGFUNCTION</constant> as a cURL option that
-   accepts a <type>callable</type> that gets called during the request lifetime
-   with the <classname>CurlHandle</classname> object,
-   an integer containing the debug message type, and a string containing the
-   debug message.
-   The debug message type is one of the following constants:
+   cURL オプションとして <constant>CURLOPT_DEBUGFUNCTION</constant> が追加されました。
+   リクエストの実行中に呼び出される <type>callable</type> を受け入れます。
+   この callable は、<classname>CurlHandle</classname> オブジェクト、
+   デバッグメッセージの種類を含む整数、
+   およびデバッグメッセージを含む文字列を受け取ります。
+   デバッグメッセージの種類は、次の定数のいずれかです:
    <simplelist>
     <member><constant>CURLINFO_TEXT</constant></member>
     <member><constant>CURLINFO_HEADER_IN</constant></member>
@@ -244,19 +248,19 @@ $object = $reflector->newLazyGhost($initializer);
     <member><constant>CURLINFO_SSL_DATA_IN</constant></member>
     <member><constant>CURLINFO_SSL_DATA_OUT</constant></member>
    </simplelist>
-   Once this option is set, <constant>CURLINFO_HEADER_OUT</constant>
-   must not be set because it uses the same libcurl functionality.
+   このオプションを設定した場合、<constant>CURLINFO_HEADER_OUT</constant> を設定してはいけません。
+   同じ libcurl の機能を使用するためです。
   </para>
 
   <simpara>
-   The <function>curl_getinfo</function> now returns an additional
-   <literal>posttransfer_time_us</literal> key, containing the number of
-   microseconds from the start until the last byte is sent.
-   When a redirect is followed, the time from each request is added together.
-   This value can also be retrieved by passing
-   <constant>CURLINFO_POSTTRANSFER_TIME_T</constant> to the
-   <function>curl_getinfo</function> <parameter>option</parameter> parameter.
-   This requires libcurl 8.10.0 or later.
+   <function>curl_getinfo</function> は、新たに
+   <literal>posttransfer_time_us</literal> キーを返すようになりました。
+   これは、開始から最後のバイトが送信されるまでのマイクロ秒数を示します。
+   リダイレクトが行われた場合、各リクエストの時間が合計されます。
+   この値は、<function>curl_getinfo</function> の
+   <parameter>option</parameter> パラメータに
+   <constant>CURLINFO_POSTTRANSFER_TIME_T</constant> を渡すことでも取得できます。
+   libcurl 8.10.0 以降が必要です。
   </simpara>
  </sect2>
 
@@ -266,17 +270,17 @@ $object = $reflector->newLazyGhost($initializer);
   <!-- RFC: https://wiki.php.net/rfc/domdocument_html5_parser -->
   <!-- RFC: https://wiki.php.net/rfc/opt_in_dom_spec_compliance -->
   <simpara>
-   Added the <package>Dom</package> namespace with new classes as counterparts
-   to the existing DOM classes (e.g. <classname>Dom\Node</classname> is the new
-   <classname>DOMNode</classname>).
-   These classes are compatible with HTML 5 and are WHATWG spec-compliant;
-   solving long-standing bugs in the DOM extension.
-   The old DOM classes remain available for backwards compatibility.
+   <package>Dom</package> 名前空間と、既存の DOM クラスに対応する
+   新たなクラスが追加されました(例: <classname>Dom\Node</classname> は
+   <classname>DOMNode</classname> に対応する新しいクラスです)。
+   これらのクラスは HTML 5 に対応しており、WHATWG の仕様に準拠しています。
+   これは DOM 拡張の長年のバグを解決します。
+   従来の DOM クラスも後方互換性のために引き続き利用可能です。
   </simpara>
 
   <para>
-   Added the <methodname>DOMNode::compareDocumentPosition</methodname>
-   with its associated constants:
+   <methodname>DOMNode::compareDocumentPosition</methodname>
+   と関連する定数が追加されました:
    <simplelist>
     <member><constant>DOMNode::DOCUMENT_POSITION_DISCONNECTED</constant></member>
     <member><constant>DOMNode::DOCUMENT_POSITION_PRECEDING</constant></member>
@@ -289,26 +293,12 @@ $object = $reflector->newLazyGhost($initializer);
 
   <!-- RFC: https://wiki.php.net/rfc/improve_callbacks_dom_and_xsl -->
   <simpara>
-   It is now possible to pass any callable to
-   <methodname>DOMXPath::registerPhpFunctions</methodname>.
+   <methodname>DOMXPath::registerPhpFunctions</methodname>
+   に任意の callable を渡すことが可能になりました。
 
-   Furthermore, with <methodname>DOMXPath::registerPhpFunctionNs</methodname>,
-   callbacks can now be registered that will use native function call syntax
-   rather than using <code>php:function('name')</code>.
-  </simpara>
- </sect2>
-
- <!-- TODO: Should this be moved to "other changes" in the SAPI section? - Girgias -->
- <sect2 xml:id="migration84.new-features.fpm">
-  <title>FPM</title>
-
-  <simpara>
-   Flushing headers without a body will now succeed.
-   <!-- See GH-12785. -->
-  </simpara>
-
-  <simpara>
-   Status page has a new field to display a memory peak.
+   さらに、<methodname>DOMXPath::registerPhpFunctionNs</methodname> により、
+   <code>php:function('name')</code> ではなく、ネイティブな関数呼び出し構文で
+   コールバックを登録できるようになりました。
   </simpara>
  </sect2>
 
@@ -316,9 +306,9 @@ $object = $reflector->newLazyGhost($initializer);
   <title>Intl</title>
 
   <simpara>
-   Added the <constant>NumberFormatter::ROUND_HALFODD</constant> to
-   complement the existing <constant>NumberFormatter::ROUND_HALFEVEN</constant>
-   functionality.
+   <constant>NumberFormatter::ROUND_HALFODD</constant> が追加されました。
+   既存の <constant>NumberFormatter::ROUND_HALFEVEN</constant> 機能を
+   補完します。
   </simpara>
  </sect2>
 
@@ -326,17 +316,17 @@ $object = $reflector->newLazyGhost($initializer);
   <title>OpenSSL</title>
 
   <simpara>
-   Added support for Curve25519 + Curve448 based keys.
-   Specifically x25519, ed25519, x448 and ed448 fields are supported in
-   <function>openssl_pkey_new</function>,
-   <function>openssl_pkey_get_details</function>,
-   <function>openssl_sign</function>, and
-   <function>openssl_verify</function> were extended to support those keys.
+   Curve25519 および Curve448 ベースのキーのサポートが追加されました。
+   具体的には、x25519、ed25519、x448、ed448 フィールドが
+   <function>openssl_pkey_new</function>、
+   <function>openssl_pkey_get_details</function>、
+   <function>openssl_sign</function>、および
+   <function>openssl_verify</function> を、サポートするよう拡張されました。
   </simpara>
 
   <simpara>
-   Implement PASSWORD_ARGON2 password hashing.
-   Requires OpenSSL 3.2 and NTS build.
+   パスワードのハッシュ方法として PASSWORD_ARGON2 が実装されました。
+   これは OpenSSL 3.2 および NTS ビルドが必要です。
   </simpara>
  </sect2>
 
@@ -344,22 +334,22 @@ $object = $reflector->newLazyGhost($initializer);
   <title>PCRE</title>
 
   <simpara>
-   The bundled pcre2lib has been updated to version 10.44.
-   As a consequence, LoongArch JIT support has been added, spaces
-   are now allowed between braces in Perl-compatible items, and
-   variable-length lookbehind assertions are now supported.
+   同梱の pcre2lib がバージョン 10.44 に更新されました。
+   これにより、LoongArch JIT サポートが追加され、
+   Perl 互換のアイテムで波括弧間のスペースが許可され、
+   可変長の後読みアサーションがサポートされるようになりました。
   </simpara>
 
   <simpara>
-   With pcre2lib version 10.44, the maximum length of named capture groups
-   has changed from <literal>32</literal> to <literal>128</literal>.
+   pcre2lib バージョン 10.44 では、名前付きキャプチャグループの最大長が
+   <literal>32</literal> から <literal>128</literal> に変更されました。
   </simpara>
 
   <simpara>
-   Added support for the <literal>r</literal> (PCRE2_EXTRA_CASELESS_RESTRICT)
-   modifier, as well as the <literal>(?r)</literal> mode modifier.
-   When enabled along with the case-insensitive modifier (<literal>i</literal>),
-   the expression locks out mixing of ASCII and non-ASCII characters.
+   <literal>r</literal> (PCRE2_EXTRA_CASELESS_RESTRICT)
+   修飾子と <literal>(?r)</literal> モード修飾子のサポートされました。
+   大文字・小文字を区別しない修飾子 (<literal>i</literal>) と一緒に有効にすると、
+   ASCII と非 ASCII 文字の混在が禁止されます。
   </simpara>
  </sect2>
 
@@ -368,24 +358,24 @@ $object = $reflector->newLazyGhost($initializer);
 
   <!-- RFC: https://wiki.php.net/rfc/pdo_driver_specific_subclasses -->
   <simpara>
-   Added support for driver-specific subclasses.
-   This RFC adds subclasses for PDO in order to better support
-   database-specific functionalities.
-   The new classes are instantiatable either via calling the
-   <methodname>PDO::connect</methodname> method or by instantiating an instance
-   of the driver-specific subclass directly.
+   ドライバ固有のサブクラスのサポートが追加されました。
+   PDO のサブクラスを追加することで、
+   データベース固有の機能のサポートを向上します。
+   新しいクラスは、<methodname>PDO::connect</methodname> メソッドを呼び出すか、
+   ドライバ固有のサブクラスを直接インスタンス化することで
+   利用できます。
   </simpara>
 
   <!-- RFC: https://wiki.php.net/rfc/pdo_driver_specific_parsers -->
   <para>
-   Added support for driver specific SQL parsers.
-   The default parser supports:
+   ドライバ固有の SQL パーサーのサポートが追加されました。
+   デフォルトのパーサーは以下をサポートします:
    <simplelist>
     <member>
-     single and double-quoted literals, with doubling as escaping mechanism
+     シングルクオートやダブルクオートで囲まれたリテラルでのクオートの二重化によるエスケープ
     </member>
     <member>
-     two-dashes and non-nested C-style comments
+     2 つのハイフンとネストされていない C スタイルのコメント
     </member>
    </simplelist>
   </para>
@@ -396,18 +386,18 @@ $object = $reflector->newLazyGhost($initializer);
 
   <!-- RFC: https://wiki.php.net/rfc/pdo_driver_specific_parsers -->
   <para>
-   Added a custom parser supporting:
+   以下をサポートするカスタムパーサーが追加されました:
    <simplelist>
     <member>
-     single and double-quoted literals, with doubling and backslash as escaping
-     mechanism
+     シングルクオートやダブルクオートで囲まれたリテラルでのクオートの二重化やバックスラッシュによる
+     エスケープ
     </member>
     <member>
-     backtick literal identifiers and with doubling as escaping mechanism
+     バッククオートで囲まれたリテラルでのクオートの二重化によるエスケープ
     </member>
     <member>
-     two dashes followed by at least 1 whitespace, non-nested C-style comments,
-     and hash-comments
+     1 つの空白が続く 2 つのハイフン、ネストされていない C スタイルのコメント、
+     <literal>#</literal> によるコメント
     </member>
    </simplelist>
   </para>
@@ -418,23 +408,22 @@ $object = $reflector->newLazyGhost($initializer);
 
   <!-- RFC: https://wiki.php.net/rfc/pdo_driver_specific_parsers -->
   <para>
-   Added a custom parser supporting:
+   以下をサポートするカスタムパーサーが追加されました:
    <simplelist>
     <member>
-     single and double-quoted literals, with doubling as escaping mechanism
+     シングルクオートやダブルクオートで囲まれたリテラルでのクオートの二重化によるエスケープ
     </member>
     <member>
-     C-style "escape" string literals (<literal>E'string'</literal>)
+     C スタイルの「エスケープ」文字列リテラル (<literal>E'string'</literal>)
     </member>
     <member>
-     dollar-quoted string literals
+     ドル記号で囲まれた文字列リテラル
     </member>
     <member>
-     two-dashes and C-style comments (non-nested)
+     2 つのハイフンとネストされていない C スタイルのコメント
     </member>
     <member>
-     support for <literal>??</literal> as escape sequence for the
-     <literal>?</literal> operator
+     <literal>?</literal> 演算子のエスケープシーケンスとしての <literal>??</literal> のサポート
     </member>
    </simplelist>
   </para>
@@ -445,17 +434,17 @@ $object = $reflector->newLazyGhost($initializer);
 
   <!-- RFC: https://wiki.php.net/rfc/pdo_driver_specific_parsers -->
   <para>
-   Added a custom parser supporting:
+   以下をサポートするカスタムパーサーが追加されました:
    <simplelist>
     <member>
-     single, double-quoted, and backtick literals, with doubling as
-     escaping mechanism
+     シングルクオート、ダブルクオート、バッククオートで囲まれたリテラルでのクオートの二重化による
+     エスケープ
     </member>
     <member>
-     square brackets quoting for identifiers
+     識別子の角括弧によるクオート
     </member>
     <member>
-     two-dashes and C-style comments (non-nested)
+     2 つのハイフンとネストされていない C スタイルのコメント
     </member>
    </simplelist>
   </para>
@@ -465,7 +454,7 @@ $object = $reflector->newLazyGhost($initializer);
   <title>Phar</title>
 
   <simpara>
-   Added support for the Unix timestamp extension for Zip archives.
+   Zip アーカイブの Unix タイムスタンプ拡張のサポートが追加されました。
   </simpara>
  </sect2>
 
@@ -473,8 +462,8 @@ $object = $reflector->newLazyGhost($initializer);
   <title>Readfile</title>
 
   <simpara>
-   Added ability to change the <literal>.php_history</literal> path through
-   the <envar>PHP_HISTFILE</envar> environment variable.
+   <envar>PHP_HISTFILE</envar> 環境変数を利用し
+   <literal>.php_history</literal> パスを変更する機能が追加されました。
   </simpara>
  </sect2>
 
@@ -482,20 +471,20 @@ $object = $reflector->newLazyGhost($initializer);
   <title>Reflection</title>
 
   <simpara>
-   <classname>ReflectionAttribute</classname> now contains a
-   <property>name</property> property to improve the debugging experience.
+   <classname>ReflectionAttribute</classname> に
+   デバッグ体験を向上させるための <property>name</property> プロパティが追加されました。
   </simpara>
 
   <simpara>
-   <methodname>ReflectionClassConstant::__toString</methodname> and
-   <methodname>ReflectionProperty::__toString</methodname> now returns the
-   attached doc comments.
+   <methodname>ReflectionClassConstant::__toString</methodname>および
+   <methodname>ReflectionProperty::__toString</methodname> は、
+   添付されたドキュメントコメントを返すようになりました。
   </simpara>
 
   <!-- RFC: https://wiki.php.net/rfc/lazy-objects -->
   <para>
-   Multiple new methods and constants which are related to the lazy objects
-   feature have been added:
+   レイジーオブジェクト機能に関連する複数の新しいメソッドと定数が
+   追加されました:
 
    <simplelist>
     <member>
@@ -523,10 +512,10 @@ $object = $reflector->newLazyGhost($initializer);
      <methodname>ReflectionClass::getLazyInitializer</methodname>
     </member>
     <member>
-     <methodname>ReflectionClass::skipLazyInitialization</methodname>
+     <methodname>ReflectionProperty::skipLazyInitialization</methodname>
     </member>
     <member>
-     <methodname>ReflectionClass::setRawValueWithoutLazyInitialization</methodname>
+     <methodname>ReflectionProperty::setRawValueWithoutLazyInitialization</methodname>
     </member>
     <member>
      <constant>ReflectionClass::SKIP_INITIALIZATION_ON_SERIALIZE</constant>
@@ -542,20 +531,20 @@ $object = $reflector->newLazyGhost($initializer);
   <title>SOAP</title>
 
   <simpara>
-   Added support for clark notation for namespaces in class map.
-   It is now possible to specify entries in a class map with clark notation
-   to resolve a type with a specific namespace to a specific class.
-   For example: <code>'{http://example.com}foo' => 'FooClass'</code>.
+   クラスマップでの名前空間のクラーク式記法のサポートが追加されました。
+   クラスマップ内でクラーク式記法を使用して、
+   特定の名前空間の型を特定のクラスに解決するエントリを指定できるようになりました。
+   例: <code>'{http://example.com}foo' => 'FooClass'</code>
   </simpara>
 
   <simpara>
-   Instances of <interfacename>DateTimeInterface</interfacename> that are
-   passed to <literal>xsd:datetime</literal> or similar elements are now
-   serialized as such instead of being serialized as an empty string.
+   <interfacename>DateTimeInterface</interfacename> のインスタンスが
+   <literal>xsd:datetime</literal> や類似の要素に渡されると、
+   空の文字列としてではなく、そのままシリアライズされるようになりました。
   </simpara>
 
   <simpara>
-   Session persistence now works with a shared session module.
+   持続的セッションが共有セッションモジュールで動作するようになりました。
   </simpara>
  </sect2>
 
@@ -565,11 +554,11 @@ $object = $reflector->newLazyGhost($initializer);
   <!-- RFC: https://wiki.php.net/rfc/correctly_name_the_rounding_mode_and_make_it_an_enum -->
   <simpara>
    <!-- Should this use <enumname> -->
-   Added a new <classname>RoundingMode</classname> enum with clearer naming
-   and improved discoverability compared to the
-   <constant>PHP_ROUND_<replaceable>*</replaceable></constant> constants.
-   Moreover, four new rounding modes were added which are only available via
-   the new <classname>RoundingMode</classname> enum.
+   <classname>RoundingMode</classname> 列挙型が追加されました。
+   <constant>PHP_ROUND_<replaceable>*</replaceable></constant> 定数より
+   明確な名前と発見性を提供します。
+   さらに、4 つの新しい丸めモードが追加されました。これらは
+   <classname>RoundingMode</classname> 列挙型を介してのみ利用可能です。
   </simpara>
  </sect2>
 
@@ -577,21 +566,21 @@ $object = $reflector->newLazyGhost($initializer);
   <title>XSL</title>
 
   <simpara>
-   It is now possible to use parameters that contain both single and double
-   quotes.
+   シングルクオートとダブルクオートの両方を含むパラメータを
+   使用できるようになりました。
   </simpara>
 
   <!-- RFC: https://wiki.php.net/rfc/improve_callbacks_dom_and_xsl -->
   <simpara>
-   It is now possible to pass any callable to
-   <methodname>XSLTProcessor::registerPhpFunctions</methodname>.
+   <methodname>XSLTProcessor::registerPhpFunctions</methodname> に
+   任意の callable を渡すことが可能になりました。
    <!-- TODO Mention XSLTProcessor::registerPHPFunctionNS ? -->
   </simpara>
 
   <simpara>
-   Added <property>XSLTProcessor::$maxTemplateDepth</property> and
-   <property>XSLTProcessor::$maxTemplateVars</property>
-   to control the recursion depth of XSL template evaluation.
+   <property>XSLTProcessor::$maxTemplateDepth</property> および
+   <property>XSLTProcessor::$maxTemplateVars</property> が追加されました。
+   XSL テンプレート評価の再帰の深さを制御することができます。
   </simpara>
  </sect2>
 
@@ -599,8 +588,8 @@ $object = $reflector->newLazyGhost($initializer);
   <title>Zip</title>
 
   <simpara>
-   Added the <constant>ZipArchive::ER_TRUNCATED_ZIP</constant>
-   constant, which was added in libzip 1.11.
+  <constant>ZipArchive::ER_TRUNCATED_ZIP</constant>
+  定数が追加されました。これは libzip 1.11 で追加されました。
   </simpara>
  </sect2>
 
