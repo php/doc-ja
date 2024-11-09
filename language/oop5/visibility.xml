@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: f5e5b54129045a7d02c5285a88cea0abff8ffb6f Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 7d7b378abd302430b8ce7cedb4b78c7033f5e88c Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi,mumumu -->
 
-<sect1 xml:id="language.oop5.visibility" xmlns="http://docbook.org/ns/docbook">
- <title>アクセス権</title>
- <para>
-  プロパティ、メソッドまたは (PHP 7.1.0 以降) 定数のアクセス権 (visibility) は、
-  キーワード: <literal>public</literal>, <literal>protected</literal>
-  または <literal>private</literal> を指定することにより定義できます。
-  public 宣言されたクラスのメンバーには、どこからでもアクセス可能です。
-  protected 宣言されたメンバーには、
-  そのクラス自身、そのクラスを継承したクラス、および親クラスからのみアクセスできます。
-  private 宣言されたメンバーには、そのメンバーを定義したクラスからのみアクセスできます。
- </para>
+ <sect1 xml:id="language.oop5.visibility" xmlns="http://docbook.org/ns/docbook">
+  <title>アクセス権</title>
+  <para>
+   プロパティ、メソッドまたは (PHP 7.1.0 以降) 定数のアクセス権 (visibility) は、
+   キーワード: <literal>public</literal>, <literal>protected</literal>
+   または <literal>private</literal> を指定することにより定義できます。
+   public 宣言されたクラスのメンバーには、どこからでもアクセス可能です。
+   protected 宣言されたメンバーには、
+   そのクラス自身、そのクラスを継承したクラス、および親クラスからのみアクセスできます。
+   private 宣言されたメンバーには、そのメンバーを定義したクラスからのみアクセスできます。
+  </para>
 
   <sect2 xml:id="language.oop5.visibility-members">
    <title>プロパティのアクセス権</title>
@@ -23,10 +23,9 @@
    アクセス権を明示的に指定しない場合、
    そのプロパティは public として定義されます。
   </para>
-  <para>
-   <example>
-    <title>プロパティの宣言</title>
-    <programlisting role="php">
+  <example>
+   <title>プロパティの宣言</title>
+   <programlisting role="php">
 <![CDATA[
 <?php
 /**
@@ -81,17 +80,135 @@ $obj2->printHello(); // Public2, Protected2, Undefined を表示します
 ]]>
     </programlisting>
    </example>
-  </para>
- </sect2>
+   <sect3 xml:id="language.oop5.visibility-members-aviz">
+    <title>非対称可視性プロパティ</title>
+    <simpara>
+     PHP 8.4 から、プロパティは非対称に
+     可視性を設定できるようになりました。
+     読み取り(<literal>get</literal>)と書き込み(<literal>set</literal>)に
+     異なるスコープを設定できます。具体的には、<literal>set</literal> の可視性を
+     メインの可視性よりも厳しくする限り、
+     別々に指定できます。
+    </simpara>
+    <example>
+     <title>非対称可視性プロパティ</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+class Book
+{
+    public function __construct(
+        public private(set) string $title,
+        public protected(set) string $author,
+        protected private(set) int $pubYear,
+    ) {}
+}
 
- <sect2 xml:id="language.oop5.visiblity-methods">
-  <title>メソッドのアクセス権</title>
-  <para>
-   クラスメソッドは、public, private, または protected
-   として定義します。アクセス権を明示せずに宣言したメソッドは、
-   public となります。
-  </para>
-  <para>
+class SpecialBook extends Book
+{
+    public function update(string $author, int $year): void
+    {
+        $this->author = $author; // OK
+        $this->pubYear = $year; // 致命的なエラー
+    }
+}
+
+$b = new Book('How to PHP', 'Peter H. Peterson', 2024);
+
+echo $b->title; // OK
+echo $b->author; // OK
+echo $b->pubYear; // 致命的なエラー
+
+$b->title = 'How not to PHP'; // 致命的なエラー
+$b->author = 'Pedro H. Peterson'; // 致命的なエラー
+$b->pubYear = 2023; // 致命的なエラー
+?>
+]]>
+     </programlisting>
+    </example>
+    <para>非対称可視性プロパティにはいくつかの注意点があります:</para>
+    <itemizedlist>
+     <listitem>
+      <simpara>
+       型付きプロパティのみが、<literal>set</literal> の可視性を個別に指定できます。
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       <literal>set</literal> の可視性は、<literal>get</literal> と同じか、
+       より厳しくなければなりません。つまり、
+       <code>public protected(set)</code> および <code>protected protected(set)</code>
+       は許可されますが、<code>protected public(set)</code> は構文エラーになります。
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       プロパティが <literal>public</literal> の場合、メインの可視性は
+       省略できます。つまり、<code>public private(set)</code> と <code>private(set)</code> は
+       同じ結果になります。
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       <literal>private(set)</literal> の可視性を持つプロパティは
+       自動的に <literal>final</literal> となり、子クラスで再宣言できません。
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       プロパティへの参照を取得する場合、<literal>get</literal> ではなく <literal>set</literal> の可視性に従います。
+       これは、参照を使用してプロパティの値を変更できるためです。
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       同様に、配列プロパティへの書き込みを試みると、内部的には <literal>get</literal> と
+       <literal>set</literal> の両方の操作が行われます。そのため、常により厳しい <literal>set</literal>
+       の可視性に従います。
+      </simpara>
+     </listitem>
+    </itemizedlist>
+    <simpara>
+     クラスが別のクラスを拡張するとき、子クラスは
+     <literal>final</literal> でない任意のプロパティを再定義できます。その際、
+     新しい可視性が親クラスと同じか広い場合に限り、メインの可視性または <literal>set</literal>
+     の可視性を広げることができます。ただし、
+     <literal>private</literal> プロパティがオーバーライドされると、
+     実際には親のプロパティを変更するのではなく、
+     異なる内部名を持つ新しいプロパティを作成することに注意してください。
+    </simpara>
+    <example>
+     <title>非対称可視性プロパティの継承</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+class Book
+{
+    protected string $title;
+    public protected(set) string $author;
+    protected private(set) int $pubYear;
+}
+
+class SpecialBook extends Book
+{
+    public protected(set) $title; // OK。読み取りの可視性が広く、書き込みは同じだから。
+    public string $author; // OK。読み取りの可視性は同じで、書き込みが広いから。
+    public protected(set) int $pubYear; // 致命的なエラー。private(set) プロパティは final です。
+}
+?>
+]]>
+     </programlisting>
+    </example>
+   </sect3>
+  </sect2>
+
+  <sect2 xml:id="language.oop5.visiblity-methods">
+   <title>メソッドのアクセス権</title>
+   <para>
+    クラスメソッドは、public, private, または protected
+    として定義します。アクセス権を明示せずに宣言したメソッドは、
+    public となります。
+   </para>
    <example>
     <title>メソッドの宣言</title>
     <programlisting role="php">
@@ -182,8 +299,7 @@ $myFoo->test(); // Bar::testPrivate
 ]]>
     </programlisting>
    </example>
-  </para>
- </sect2>
+  </sect2>
 
   <sect2 xml:id="language.oop5.visiblity-constants">
    <title>定数のアクセス権</title>
@@ -192,10 +308,9 @@ $myFoo->test(); // Bar::testPrivate
     として定義できるようになりました。
     明示的に公開範囲のキーワードを明示的に宣言しない定数は、public として定義されます。
    </para>
-   <para>
-    <example>
-     <title>PHP 7.1.0 以降での定数の宣言</title>
-     <programlisting role="php">
+   <example>
+    <title>PHP 7.1.0 以降での定数の宣言</title>
+    <programlisting role="php">
 <![CDATA[
 <?php
 /**
@@ -246,9 +361,8 @@ echo MyClass2::MY_PUBLIC; // 動作します
 $myclass2->foo2(); // Public, Protected では動作しますが、Private では動作しません
 ?>
 ]]>
-     </programlisting>
-    </example>
-   </para>
+    </programlisting>
+   </example>
   </sect2>
 
   <sect2 xml:id="language.oop5.visibility-other-objects">
@@ -304,7 +418,6 @@ Accessed the private method.
    </example>
   </sect2>
  </sect1>
- 
 <!-- Keep this comment at the end of the file
 Local variables:
 mode: sgml
