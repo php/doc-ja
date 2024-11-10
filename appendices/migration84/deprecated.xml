@@ -1,0 +1,494 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision$ -->
+<!-- EN-Revision: e3fc9c49817a5249d1efb9c79c93307ecebf2f53 Maintainer: KentarouTakeda Status: ready -->
+<!-- Credits: KentarouTakeda -->
+<sect1 xml:id="migration84.deprecated">
+ <title>PHP 8.4.x で推奨されなくなる機能</title>
+
+ <sect2 xml:id="migration84.deprecated.core">
+  <title>PHP コア</title>
+
+  <sect3 xml:id="migration84.deprecated.core.implicitly-nullable-parameter">
+   <!-- RFC: https://wiki.php.net/rfc/deprecate-implicitly-nullable-types -->
+   <title>暗黙的な nullable パラメータ</title>
+
+   <simpara>
+    パラメータのデフォルト値が &null; の場合、
+    その型は暗黙的に <type>null</type> を受け入れるように拡張されます。
+   </simpara>
+
+   <para>
+    次のコードは:
+    <informalexample>
+     <programlisting role="php">
+<![CDATA[
+<?php
+function foo(T1 $a = null) {}
+]]>
+     </programlisting>
+    </informalexample>
+    このように:
+    <informalexample>
+     <programlisting role="php">
+<![CDATA[
+<?php
+function foo(T1|null $a = null) {}
+]]>
+     </programlisting>
+    </informalexample>
+    またはこのように修正する必要があります。
+    <informalexample>
+     <programlisting role="php">
+<![CDATA[
+<?php
+function foo(?T1 $a = null) {}
+]]>
+     </programlisting>
+    </informalexample>
+   </para>
+
+   <para>
+    しかし、そのようなパラメータ宣言の後に必須パラメータが続く場合:
+    <informalexample>
+     <programlisting role="php">
+<![CDATA[
+<?php
+function foo(T1 $a, T2 $b = null, T3 $c) {}
+]]>
+     </programlisting>
+    </informalexample>
+    このように:
+    <informalexample>
+     <programlisting role="php">
+<![CDATA[
+<?php
+function foo(T1 $a, T2|null $b, T3 $c) {}
+]]>
+     </programlisting>
+    </informalexample>
+    またはこのように修正する必要があります。
+    <informalexample>
+     <programlisting role="php">
+<![CDATA[
+<?php
+function foo(T1 $a, ?T2 $b, T3 $c) {}
+]]>
+     </programlisting>
+    </informalexample>
+    なぜなら、必須パラメータの前に任意パラメータを置くことは非推奨だからです。
+   </para>
+  </sect3>
+
+  <sect3>
+   <!-- RFC: https://wiki.php.net/rfc/raising_zero_to_power_of_negative_number -->
+   <title>ゼロを負の数でべき乗</title>
+
+   <simpara>
+    ある数の負のべき乗は、
+    その数の正のべき乗の逆数と同等です。
+    例えば、<literal>10<superscript>-2</superscript></literal> は
+    <literal>1 / 10<superscript>2</superscript></literal> と同等です。
+    つまり、<literal>0</literal>の負のべき乗は
+    <literal>0</literal> で割ることを意味します。例えば、
+    <literal>0<superscript>-2</superscript></literal> は
+    <literal>1 / 0<superscript>2</superscript></literal>、または
+    <literal>1 / 0</literal> となります。以上より、この動作は非推奨とされました。
+   </simpara>
+
+   <simpara>
+    これはべき乗演算子 <literal>**</literal> と
+    <function>pow</function> 関数に影響します。
+   </simpara>
+
+   <simpara>
+    IEEE 754 のセマンティクスが必要な場合は、新しい
+    <function>fpow</function> 関数を使用してください。
+   </simpara>
+  </sect3>
+
+  <sect3 xml:id="migration84.deprecated.core.underscore-class-name">
+   <!-- RFC: https://wiki.php.net/rfc/deprecations_php_8_4#deprecate_using_a_single_underscore_as_a_class_name -->
+   <title>クラス名をアンダースコア <literal>_</literal> とする</title>
+
+   <para>
+    クラス名を <literal>_</literal> とすることは、現在非推奨となっています:
+    <informalexample>
+     <programlisting role="php">
+<![CDATA[
+<?php
+class _ {}
+]]>
+     </programlisting>
+    </informalexample>
+   </para>
+
+   <note>
+    <para>
+     クラス名がアンダースコアで始まるのは、
+     非推奨では<emphasis>ありません</emphasis>:
+     <informalexample>
+      <programlisting role="php">
+<![CDATA[
+<?php
+class _MyClass {}
+]]>
+      </programlisting>
+     </informalexample>
+    </para>
+   </note>
+  </sect3>
+
+  <sect3>
+   <!-- RFC: https://wiki.php.net/rfc/deprecations_php_8_4#deprecate_passing_e_user_error_to_trigger_error -->
+   <title>
+    <function>trigger_error</function> で
+    <constant>E_USER_ERROR</constant> を使用
+   </title>
+
+   <simpara>
+    <function>trigger_error</function> で
+    <parameter>error_level</parameter> として
+    <constant>E_USER_ERROR</constant> を指定するのは非推奨となりました。
+   </simpara>
+
+   <simpara>
+    そのような場合、例外をスローするか、
+    <function>exit</function> を呼び出すように修正すべきです。
+   </simpara>
+  </sect3>
+
+  <sect3>
+   <!-- RFC: https://wiki.php.net/rfc/deprecations_php_8_4#remove_e_strict_error_level_and_deprecate_e_strict_constant -->
+   <title>
+    <constant>E_STRICT</constant> 定数
+   </title>
+
+   <simpara>
+    <constant>E_STRICT</constant> エラーレベルが削除されたため、
+    この定数は非推奨となりました。
+   </simpara>
+  </sect3>
+ </sect2>
+
+ <sect2 xml:id="migration84.deprecated.core.curl">
+  <title>cURL</title>
+
+  <simpara>
+   <constant>CURLOPT_BINARYTRANSFER</constant> 定数は非推奨となりました。
+  </simpara>
+ </sect2>
+
+ <sect2 xml:id="migration84.deprecated.core.date">
+  <title>Date</title>
+
+  <simpara>
+   <code> DatePeriod::__construct(string $isostr, int $options = 0)</code> の
+   シグネチャは非推奨となりました。
+   代わりに <methodname>DatePeriod::createFromISO8601String</methodname> を使用してください。
+  </simpara>
+
+  <!-- RFC: https://wiki.php.net/rfc/deprecations_php_8_4#constants_sunfuncs_ret_string_sunfuncs_ret_double_sunfuncs_ret_timestamp -->
+  <simpara>
+   <constant>SUNFUNCS_RET_TIMESTAMP</constant>、
+   <constant>SUNFUNCS_RET_STRING</constant>、
+   および <constant>SUNFUNCS_RET_DOUBLE</constant> 定数は非推奨となりました。
+   これは PHP 8.1.0 で <function>date_sunset</function> と
+   <function>date_sunrise</function> 関数が非推奨となったことに伴うものです。
+  </simpara>
+ </sect2>
+
+ <sect2 xml:id="migration84.deprecated.core.dba">
+  <title>DBA</title>
+
+  <!-- RFC: https://wiki.php.net/rfc/deprecations_php_8_4#deprecate_passing_null_and_false_to_dba_key_split -->
+  <simpara>
+   <function>dba_key_split</function> に &null; または &false; を渡すことは
+   非推奨となりました。
+   これらの場合、常に &false; を返していました。
+  </simpara>
+ </sect2>
+
+ <sect2 xml:id="migration84.deprecated.core.dom">
+  <title>DOM</title>
+
+  <!-- RFC: https://wiki.php.net/rfc/deprecations_php_8_4#deprecate_dom_php_err_constant -->
+  <simpara>
+   <constant>DOM_PHP_ERR</constant> 定数は非推奨となりました。
+  </simpara>
+
+  <!-- RFC: https://wiki.php.net/rfc/deprecations_php_8_4#formally_deprecate_soft-deprecated_domdocument_and_domentity_properties -->
+  <para>
+   以下のプロパティは正式に非推奨となりました:
+   <simplelist>
+    <member><property>DOMDocument::$actualEncoding</property></member>
+    <member><property>DOMDocument::$config</property></member>
+    <member><property>DOMEntity::$actualEncoding</property></member>
+    <member><property>DOMEntity::$encoding</property></member>
+    <member><property>DOMEntity::$version</property></member>
+   </simplelist>
+  </para>
+ </sect2>
+
+ <sect2 xml:id="migration84.deprecated.core.hash">
+  <title>Hash</title>
+
+  <!-- RFC: https://wiki.php.net/rfc/deprecations_php_8_4#deprecate_passing_incorrect_data_types_for_options_to_exthash_functions -->
+  <simpara>
+   ハッシュ関数に無効なオプションを渡すことは非推奨となりました。
+  </simpara>
+ </sect2>
+
+ <sect2 xml:id="migration84.deprecated.intl">
+  <title>Intl</title>
+
+  <simpara>
+   <function>intlcal_set</function> または
+   <methodname>IntlCalendar::set</methodname>
+   を 2 つを超える引数で呼び出すことは非推奨となりました。
+   代わりに <methodname>IntlCalendar::setDate</methodname> または
+   <methodname>IntlCalendar::setDateTime</methodname> を使用してください。
+  </simpara>
+
+  <simpara>
+   <function>intlgregcal_create_instance</function> または
+   <methodname>IntlGregorianCalendar::__construct</methodname>
+   を 2 つを超える引数で呼び出すことは非推奨となりました。
+   代わりに <methodname>IntlGregorianCalendar::createFromDate</methodname> または
+   <methodname>IntlGregorianCalendar::createFromDateTime</methodname> を使用してください。
+  </simpara>
+ </sect2>
+
+ <sect2 xml:id="migration84.deprecated.ldap">
+  <title>LDAP</title>
+
+  <simpara>
+   <function>ldap_connect</function> を
+   2 つを超える引数で呼び出すことは非推奨となりました。
+   代わりに <function>ldap_connect_wallet</function> を使用してください。
+  </simpara>
+
+  <simpara>
+   <function>ldap_exop</function>
+   を 4 つを超える引数で呼び出すことは非推奨となりました。
+   代わりに <function>ldap_exop_sync</function> を使用してください。
+  </simpara>
+ </sect2>
+
+ <sect2 xml:id="migration84.deprecated.core.mysqli">
+  <title>MySQLi</title>
+
+  <!-- RFC: https://wiki.php.net/rfc/deprecations_php_8_4#mysqli_ping_and_mysqliping -->
+  <simpara>
+   <function>mysqli_ping</function> 関数および
+   <methodname>mysqli::ping</methodname> メソッドは、
+   PHP 8.2.0 で再接続機能が削除されたため、非推奨となりました。
+  </simpara>
+
+  <!-- RFC: https://wiki.php.net/rfc/deprecations_php_8_4#deprecate_mysqli_kill -->
+  <simpara>
+   <function>mysqli_kill</function> 関数および
+   <methodname>mysqli::kill</methodname> メソッド
+   は非推奨となりました。
+   この機能が必要な場合は、代わりに SQL の <literal>KILL</literal>
+   コマンドを使用できます。
+  </simpara>
+
+  <!-- RFC: https://wiki.php.net/rfc/deprecations_php_8_4#deprecate_mysqli_refresh -->
+  <simpara>
+   <function>mysqli_refresh</function> 関数および
+   <methodname>mysqli::refresh</methodname> メソッドは
+   非推奨となりました。
+   この機能が必要な場合は、代わりに SQL の <literal>FLUSH</literal> コマンド
+   を使用できます。
+   すべての <constant>MYSQLI_REFRESH_<replaceable>*</replaceable></constant>
+   定数も非推奨となりました。
+  </simpara>
+
+  <!-- RFC: https://wiki.php.net/rfc/deprecations_php_8_4#deprecate_the_second_parameter_to_mysqli_store_result -->
+  <simpara>
+   <function>mysqli_store_result</function> に
+   <parameter>mode</parameter> パラメータを明示的に渡すことは非推奨となりました。
+   この関数のために用意されていた<constant>MYSQLI_STORE_RESULT_COPY_DATA</constant> 定数も
+   非推奨となりました。
+  </simpara>
+ </sect2>
+
+ <sect2 xml:id="migration84.deprecated.core.pdo-pgsql">
+  <title>PDO_PGSQL</title>
+
+  <simpara>
+   ドル記号で囲まれた文字列の中で
+   エスケープされた疑問符（<literal>??</literal>）を使用することは非推奨となりました。
+   PDO_PGSQL はドル記号で囲まれた文字列をサポートする独自の SQL パーサーを持つようになったため、
+   それらの中で疑問符をエスケープする必要はなくなりました。
+  </simpara>
+ </sect2>
+
+ <sect2 xml:id="migration84.deprecated.core.pgsql">
+  <title>PGSQL</title>
+
+  <simpara>
+   <function>pg_fetch_result</function>、
+   <function>pg_field_prtlen</function>、
+   および <function>pg_field_is_null</function> の 2 引数のシグネチャは非推奨となりました。
+   代わりに <parameter>row</parameter> を &null; に設定した 3 引数のシグネチャを
+   使用してください。
+  </simpara>
+ </sect2>
+
+ <sect2 xml:id="migration84.deprecated.random">
+  <title>Random</title>
+
+  <!-- RFC: https://wiki.php.net/rfc/deprecations_php_8_4#deprecate_lcg_value -->
+  <simpara>
+   <function>lcg_value</function> は非推奨となりました。
+   この関数は複数の点で問題があるためです。
+   代わりに <methodname>Random\Randomizer::getFloat</methodname> を使用してください。
+  </simpara>
+ </sect2>
+
+ <sect2 xml:id="migration84.deprecated.reflection">
+  <title>Reflection</title>
+
+  <simpara>
+   <methodname>ReflectionMethod::__construct</methodname> を
+   1 つの引数で呼び出すことは非推奨となりました。
+   代わりに <methodname>ReflectionMethod::createFromMethodName</methodname> を使用してください。
+  </simpara>
+ </sect2>
+
+ <sect2 xml:id="migration84.deprecated.session">
+  <title>Session</title>
+
+  <simpara>
+   <function>session_set_save_handler</function> を
+   2 つを超える引数で呼び出すことは非推奨となりました。
+   2 引数のシグネチャを使用してください。
+  </simpara>
+
+  <!-- RFC: https://wiki.php.net/rfc/deprecations_php_8_4#sessionsid_length_and_sessionsid_bits_per_character -->
+  <simpara>
+   <link linkend="ini.session.sid-length"><literal>session.sid_length</literal></link> および
+   <link linkend="ini.session.sid-bits-per-character"><literal>session.sid_bits_per_character</literal></link>
+   の INI 設定値を変更することは非推奨となりました。
+   セッションストレージバックエンドを修正し、 16 進数 32 文字による
+   セッション ID を受け入れるようにし、これら 2 つの INI 設定を変更するのをやめてください。
+  </simpara>
+
+  <!-- RFC: https://wiki.php.net/rfc/deprecate-get-post-sessions -->
+  <simpara>
+   <link linkend="ini.session.use-only-cookies"><literal>session.use_only_cookies</literal></link>、
+   <link linkend="ini.session.use-trans-sid"><literal>session.use_trans_sid</literal></link>、
+   <link linkend="ini.session.trans-sid-tags"><literal>session.trans_sid_tags</literal></link>、
+   <link linkend="ini.session.trans-sid-hosts"><literal>session.trans_sid_hosts</literal></link>、および
+   <link linkend="ini.session.referer-check"><literal>session.referer_check</literal></link>
+   の INI 設定値を変更することは非推奨となりました。
+   <constant>SID</constant> 定数も非推奨となりました。
+  </simpara>
+ </sect2>
+
+ <sect2 xml:id="migration84.deprecated.core.soap">
+  <title>SOAP</title>
+
+  <!-- RFC: https://wiki.php.net/rfc/deprecations_php_8_4#deprecate_soap_functions_all_constant_and_passing_it_to_soapserveraddfunction -->
+  <simpara>
+   <methodname>SoapServer::addFunction</methodname> に
+   <type>int</type> を渡すことは非推奨となりました。
+   すべての PHP 関数を提供する必要がある場合は、
+   <function>get_defined_functions</function> が返す配列をフラット化してください。
+  </simpara>
+
+  <!-- RFC: https://wiki.php.net/rfc/deprecations_php_8_4#deprecate_soap_functions_all_constant_and_passing_it_to_soapserveraddfunction -->
+  <simpara>
+   <constant>SOAP_FUNCTIONS_ALL</constant> 定数は非推奨となりました。
+  </simpara>
+ </sect2>
+
+ <sect2 xml:id="migration84.deprecated.core.spl">
+  <title>SPL</title>
+
+  <simpara>
+   <methodname>SplFixedArray::__wakeup</methodname> メソッドは
+   非推奨となりました。代わりに
+   <methodname>SplFixedArray::__serialize</methodname> と
+   <methodname>SplFixedArray::__unserialize</methodname>
+   をオーバーライドしてください。
+  </simpara>
+
+  <!-- RFC: https://wiki.php.net/rfc/deprecations_php_8_4#deprecate_proprietary_csv_escaping_mechanism -->
+  <simpara>
+   <methodname>SplFileObject::setCsvControl</methodname>、
+   <methodname>SplFileObject::fputcsv</methodname>、および
+   <methodname>SplFileObject::fgetcsv</methodname> で
+   <parameter>escape</parameter> パラメータのデフォルト値を利用することは非推奨となりました。
+   <!-- TODO: Link to named arguments feature -->
+   引数または名前付き引数で明示的に指定する必要があります。
+   これは、<methodname>SplFileObject::setCsvControl</methodname> で
+   新しいデフォルト値を設定した場合、<methodname>SplFileObject::fputcsv</methodname> および
+   <methodname>SplFileObject::fgetcsv</methodname> には適用されません。
+  </simpara>
+ </sect2>
+
+ <sect2 xml:id="migration84.deprecated.standard">
+  <title>Standard</title>
+
+  <simpara>
+   <function>stream_context_set_option</function> を
+   2 つの引数で呼び出すことは非推奨となりました。
+   代わりに <function>stream_context_set_options</function> を使用してください。
+  </simpara>
+
+  <!-- RFC: https://wiki.php.net/rfc/deprecations_php_8_4#unserialize_s_s_tag -->
+  <simpara>
+   <function>unserialize</function> で大文字の <literal>S</literal> タグを使用して文字列を
+   アンシリアライズすることは非推奨となりました。
+  </simpara>
+
+  <!-- RFC: https://wiki.php.net/rfc/deprecations_php_8_4#deprecate_proprietary_csv_escaping_mechanism -->
+  <simpara>
+   <function>fputcsv</function>、
+   <function>fgetcsv</function>、および
+   <function>str_getcsv</function> の
+   <parameter>escape</parameter> パラメータのデフォルト値を利用することは非推奨となりました。
+   <!-- TODO: Link to named arguments feature -->
+   引数または名前付き引数で明示的に指定する必要があります。
+  </simpara>
+ </sect2>
+
+ <sect2 xml:id="migration84.deprecated.core.xml">
+  <title>XML</title>
+
+  <!-- RFC: https://wiki.php.net/rfc/deprecations_php_8_4#xml_set_object_and_xml_set_handler_with_string_method_names -->
+  <simpara>
+   <function>xml_set_object</function> 関数は非推奨となりました。
+  </simpara>
+
+  <!-- RFC: https://wiki.php.net/rfc/deprecations_php_8_4#xml_set_object_and_xml_set_handler_with_string_method_names -->
+  <simpara>
+   <type>callable</type> でない文字列を
+   <function>xml_set_<replaceable>*</replaceable></function>
+   関数に渡すことは非推奨となりました。
+  </simpara>
+ </sect2>
+
+</sect1>
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"~/.phpdoc/manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->

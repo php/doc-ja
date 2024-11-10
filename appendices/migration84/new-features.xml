@@ -1,0 +1,616 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision$ -->
+<!-- EN-Revision: 56b4b1960e07355f889ef6e4e3b75ebdc59507b9 Maintainer: KentarouTakeda Status: ready -->
+<!-- Credits: KentarouTakeda -->
+<sect1 xml:id="migration84.new-features">
+ <title>新機能</title>
+
+ <!-- TODO: Core features for 8.4 -->
+ <sect2 xml:id="migration84.new-features.core">
+  <title>PHP コア</title>
+
+  <!-- RFC: https://wiki.php.net/rfc/property-hooks -->
+  <sect3 xml:id="migration84.new-features.core.property-hooks">
+   <title>プロパティフック</title>
+
+   <simpara>
+    オブジェクトのプロパティは、
+    <literal>get</literal> および <literal>set</literal> 操作に
+    追加のロジックを関連付けることができるようになりました。
+    使用方法に応じてそのプロパティは、値を持つ場合もありますし、
+    仮想的、つまり値を持たない場合もあります。
+   </simpara>
+
+   <informalexample>
+    <programlisting role="php">
+<![CDATA[
+<?php
+class Person
+{
+    // 「仮想」プロパティ。明示的に設定されることはありません。
+    public string $fullName {
+        get => $this->firstName . ' ' . $this->lastName;
+    }
+
+    // すべての書き込み操作はこのフックを通り、返却値が書き込まれます。
+    // 読み取りアクセスは通常通り行われます。
+    public string $firstName {
+        set => ucfirst(strtolower($value));
+    }
+
+    // すべての書き込み操作はこのフックを通り、フックの中で値が書き込まれます。
+    // 読み取りアクセスは通常通り行われます。
+    public string $lastName {
+        set {
+            if (strlen($value) < 2) {
+                throw new \InvalidArgumentException('Too short');
+            }
+            $this->lastName = $value;
+        }
+    }
+}
+
+$p = new Person();
+
+$p->firstName = 'peter';
+print $p->firstName; // Prints "Peter"
+$p->lastName = 'Peterson';
+print $p->fullName; // Prints "Peter Peterson"
+]]>
+    </programlisting>
+   </informalexample>
+  </sect3>
+
+  <!-- RFC: https://wiki.php.net/rfc/asymmetric-visibility-v2 -->
+  <sect3 xml:id="migration84.new-features.core.asymmetric-property-visibility">
+   <title>非対称可視性プロパティ</title>
+
+   <simpara>
+    オブジェクトのプロパティは、<literal>set</literal> の可視性を <literal>get</literal> の可視性とは別に制御できるようになりました。
+   </simpara>
+   <informalexample>
+    <programlisting role="php">
+<![CDATA[
+<?php
+class Example
+{
+    // 最初の可視性修飾子は取得時の可視性を制御し、2つ目の修飾子は設定時の可視性を制御します。
+    // 取得時の可視性は設定時の可視性よりも狭くなってはいけません。
+    public protected(set) string $name;
+
+    public function __construct(string $name)
+    {
+        $this->name = $name;
+    }
+}
+]]>
+    </programlisting>
+   </informalexample>
+  </sect3>
+
+  <!-- RFC: https://wiki.php.net/rfc/lazy-objects -->
+  <sect3 xml:id="migration84.new-features.core.lazy-objects">
+   <title>レイジーオブジェクト</title>
+   <simpara>
+    アクセスされるまで初期化が延期されるオブジェクトを作成できるようになりました。
+    ライブラリやフレームワークは、これらのレイジーオブジェクトを利用して、
+    初期化に必要なデータや依存関係の取得を遅延させることができます。
+   </simpara>
+   <informalexample>
+    <programlisting role="php">
+<![CDATA[
+<?php
+class Example
+{
+    public function __construct(private int $data)
+    {
+    }
+
+    // ...
+}
+
+$initializer = static function (Example $ghost): void {
+    // Fetch data or dependencies
+    $data = ...;
+    // Initialize
+    $ghost->__construct($data);
+};
+
+$reflector = new ReflectionClass(Example::class);
+$object = $reflector->newLazyGhost($initializer);
+]]>
+    </programlisting>
+   </informalexample>
+  </sect3>
+
+  <!-- RFC: https://wiki.php.net/rfc/deprecated_attribute -->
+  <sect3 xml:id="migration84.new-features.core.deprecated-attribute">
+   <title><code>#[\Deprecated]</code> アトリビュート</title>
+
+   <simpara>
+    新しい <classname>Deprecated</classname> 属性を使用して、関数、メソッド、
+    およびクラス定数を非推奨としてマークできます。このアトリビュートで非推奨となった機能の動作は、
+    PHP 自身が提供する既存の非推奨メカニズムの動作と一致します。
+    唯一の例外は、発生するエラーコードが
+    <constant>E_DEPRECATED</constant> ではなく <constant>E_USER_DEPRECATED</constant> であることです。
+   </simpara>
+
+   <simpara>
+    PHP 自身が提供する機能の既存の非推奨は、この属性を使用するように更新され、
+    短い説明を含むことでエラーメッセージが改善されました。
+   </simpara>
+  </sect3>
+
+  <!-- RFC: https://wiki.php.net/rfc/rfc1867-non-post -->
+  <sect3 xml:id="migration84.new-features.core.rfc1867">
+   <title>POST 以外の HTTP リクエストでの RFC1867 (マルチパート)リクエストの解析</title>
+
+   <!-- TODO: expand? -->
+   <simpara>
+    POST 以外の HTTP リクエストで RFC1867（マルチパート）リクエストを解析するための
+    <function>request_parse_body</function> 関数が追加されました。
+   </simpara>
+  </sect3>
+
+  <!-- RFC: https://wiki.php.net/rfc/new_without_parentheses -->
+  <sect3 xml:id="migration84.new-features.core.new-chaining">
+   <title>括弧なしでの &new; 式のチェーン</title>
+
+   <!-- TODO: expand and examples? -->
+   <simpara>
+    コンストラクタ引数を持つ &new; 式は直接参照できるようになり、
+    式を括弧で囲むことなくメソッド呼び出しや
+    プロパティアクセスなどのチェーンが可能になりました。
+   </simpara>
+  </sect3>
+
+  <sect3 xml:id="migration84.new-features.core.debug-weakref">
+   <title><classname>WeakReference</classname> のデバッグ情報の改善</title>
+
+   <!-- TODO: expand and examples? -->
+   <simpara>
+    <classname>WeakReference</classname> のデバッグ情報を取得すると、
+    参照しているオブジェクト、または参照が無効になっている場合は
+    &null; が出力されるようになりました。
+   </simpara>
+  </sect3>
+
+  <sect3 xml:id="migration84.new-features.core.debug-closure">
+   <title><classname>Closure</classname> のデバッグ情報の改善</title>
+
+   <!-- TODO: expand and examples? -->
+   <simpara>
+    <methodname>Closure::__debugInfo</methodname> の出力には、
+    <classname>Closure</classname> の名前、ファイル名、および行が含まれるようになりました。
+   </simpara>
+  </sect3>
+
+  <!-- Is this really a feature? Should this be moved to other changes? -->
+  <sect3 xml:id="migration84.new-features.core.multiple-namespaces-symbols">
+   <title>異なる名前空間ブロックで同一のシンボルを定義</title>
+
+   <!-- TODO: expand and examples? -->
+   <simpara>
+    名前空間を終了すると、そこで定義されたシンボルがクリアされるようになりました。
+    これにより、以前の名前空間ブロックで同じ名前のシンボルが宣言されていても、
+    名前空間ブロック内でシンボルを使用できるようになりました。
+    <!-- See Zend/tests/use_function/ns_end_resets_seen_symbols_1.phpt. -->
+   </simpara>
+  </sect3>
+
+ </sect2>
+
+ <sect2 xml:id="migration84.new-features.curl">
+  <title>cURL</title>
+
+  <simpara>
+   <function>curl_version</function> は、新たに
+   <literal>feature_list</literal> 値を返すようになりました。これは、
+   既知のすべての cURL 機能と、それらがサポートされているか(&true;)されていないか
+   (&false;)を示す連想配列です。
+  </simpara>
+
+  <simpara>
+   <constant>CURLOPT_HTTP_VERSION</constant> のオプションとして、
+   <constant>CURL_HTTP_VERSION_3</constant> および
+   <constant>CURL_HTTP_VERSION_3ONLY</constant> 定数
+   （libcurl 7.66 および 7.88 から利用可能）
+   が追加されました。
+  </simpara>
+
+  <simpara>
+   cURL オプションとして<constant>CURLOPT_PREREQFUNCTION</constant> が追加されました。
+   接続が確立された後、リクエストが送信される前に呼び出される
+   <type>callable</type> を受け入れます。
+   この callable は、リクエストを許可または中止するために <constant>CURL_PREREQFUNC_OK</constant> または
+   <constant>CURL_PREREQFUNC_ABORT</constant> のいずれかを返す必要があります。
+  </simpara>
+
+  <simpara>
+   <constant>CURLOPT_SERVER_RESPONSE_TIMEOUT</constant> が追加されました。
+   これは以前は <constant>CURLOPT_FTP_RESPONSE_TIMEOUT</constant> として知られていました。
+   両方の定数は同じ値を持ちます。
+  </simpara>
+
+  <para>
+   cURL オプションとして <constant>CURLOPT_DEBUGFUNCTION</constant> が追加されました。
+   リクエストの実行中に呼び出される <type>callable</type> を受け入れます。
+   この callable は、<classname>CurlHandle</classname> オブジェクト、
+   デバッグメッセージの種類を含む整数、
+   およびデバッグメッセージを含む文字列を受け取ります。
+   デバッグメッセージの種類は、次の定数のいずれかです:
+   <simplelist>
+    <member><constant>CURLINFO_TEXT</constant></member>
+    <member><constant>CURLINFO_HEADER_IN</constant></member>
+    <member><constant>CURLINFO_HEADER_OUT</constant></member>
+    <member><constant>CURLINFO_DATA_IN</constant></member>
+    <member><constant>CURLINFO_DATA_OUT</constant></member>
+    <member><constant>CURLINFO_SSL_DATA_IN</constant></member>
+    <member><constant>CURLINFO_SSL_DATA_OUT</constant></member>
+   </simplelist>
+   このオプションを設定した場合、<constant>CURLINFO_HEADER_OUT</constant> を設定してはいけません。
+   同じ libcurl の機能を使用するためです。
+  </para>
+
+  <simpara>
+   <function>curl_getinfo</function> は、新たに
+   <literal>posttransfer_time_us</literal> キーを返すようになりました。
+   これは、開始から最後のバイトが送信されるまでのマイクロ秒数を示します。
+   リダイレクトが行われた場合、各リクエストの時間が合計されます。
+   この値は、<function>curl_getinfo</function> の
+   <parameter>option</parameter> パラメータに
+   <constant>CURLINFO_POSTTRANSFER_TIME_T</constant> を渡すことでも取得できます。
+   libcurl 8.10.0 以降が必要です。
+  </simpara>
+ </sect2>
+
+ <sect2 xml:id="migration84.new-features.dom">
+  <title>DOM</title>
+
+  <!-- RFC: https://wiki.php.net/rfc/domdocument_html5_parser -->
+  <!-- RFC: https://wiki.php.net/rfc/opt_in_dom_spec_compliance -->
+  <simpara>
+   <package>Dom</package> 名前空間と、既存の DOM クラスに対応する
+   新たなクラスが追加されました(例: <classname>Dom\Node</classname> は
+   <classname>DOMNode</classname> に対応する新しいクラスです)。
+   これらのクラスは HTML 5 に対応しており、WHATWG の仕様に準拠しています。
+   これは DOM 拡張の長年のバグを解決します。
+   従来の DOM クラスも後方互換性のために引き続き利用可能です。
+  </simpara>
+
+  <para>
+   <methodname>DOMNode::compareDocumentPosition</methodname>
+   と関連する定数が追加されました:
+   <simplelist>
+    <member><constant>DOMNode::DOCUMENT_POSITION_DISCONNECTED</constant></member>
+    <member><constant>DOMNode::DOCUMENT_POSITION_PRECEDING</constant></member>
+    <member><constant>DOMNode::DOCUMENT_POSITION_FOLLOWING</constant></member>
+    <member><constant>DOMNode::DOCUMENT_POSITION_CONTAINS</constant></member>
+    <member><constant>DOMNode::DOCUMENT_POSITION_CONTAINED_BY</constant></member>
+    <member><constant>DOMNode::DOCUMENT_POSITION_IMPLEMENTATION_SPECIFIC</constant></member>
+   </simplelist>
+  </para>
+
+  <!-- RFC: https://wiki.php.net/rfc/improve_callbacks_dom_and_xsl -->
+  <simpara>
+   <methodname>DOMXPath::registerPhpFunctions</methodname>
+   に任意の callable を渡すことが可能になりました。
+
+   さらに、<methodname>DOMXPath::registerPhpFunctionNs</methodname> により、
+   <code>php:function('name')</code> ではなく、ネイティブな関数呼び出し構文で
+   コールバックを登録できるようになりました。
+  </simpara>
+ </sect2>
+
+ <sect2 xml:id="migration84.new-features.intl">
+  <title>Intl</title>
+
+  <simpara>
+   <constant>NumberFormatter::ROUND_HALFODD</constant> が追加されました。
+   既存の <constant>NumberFormatter::ROUND_HALFEVEN</constant> 機能を
+   補完します。
+  </simpara>
+ </sect2>
+
+ <sect2 xml:id="migration84.new-features.openssl">
+  <title>OpenSSL</title>
+
+  <simpara>
+   Curve25519 および Curve448 ベースのキーのサポートが追加されました。
+   具体的には、x25519、ed25519、x448、ed448 フィールドが
+   <function>openssl_pkey_new</function>、
+   <function>openssl_pkey_get_details</function>、
+   <function>openssl_sign</function>、および
+   <function>openssl_verify</function> を、サポートするよう拡張されました。
+  </simpara>
+
+  <simpara>
+   パスワードのハッシュ方法として PASSWORD_ARGON2 が実装されました。
+   これは OpenSSL 3.2 および NTS ビルドが必要です。
+  </simpara>
+ </sect2>
+
+ <sect2 xml:id="migration84.new-features.pcre">
+  <title>PCRE</title>
+
+  <simpara>
+   同梱の pcre2lib がバージョン 10.44 に更新されました。
+   これにより、LoongArch JIT サポートが追加され、
+   Perl 互換のアイテムで波括弧間のスペースが許可され、
+   可変長の後読みアサーションがサポートされるようになりました。
+  </simpara>
+
+  <simpara>
+   pcre2lib バージョン 10.44 では、名前付きキャプチャグループの最大長が
+   <literal>32</literal> から <literal>128</literal> に変更されました。
+  </simpara>
+
+  <simpara>
+   <literal>r</literal> (PCRE2_EXTRA_CASELESS_RESTRICT)
+   修飾子と <literal>(?r)</literal> モード修飾子のサポートされました。
+   大文字・小文字を区別しない修飾子 (<literal>i</literal>) と一緒に有効にすると、
+   ASCII と非 ASCII 文字の混在が禁止されます。
+  </simpara>
+ </sect2>
+
+ <sect2 xml:id="migration84.new-features.pdo">
+  <title>PDO</title>
+
+  <!-- RFC: https://wiki.php.net/rfc/pdo_driver_specific_subclasses -->
+  <simpara>
+   ドライバ固有のサブクラスのサポートが追加されました。
+   PDO のサブクラスを追加することで、
+   データベース固有の機能のサポートを向上します。
+   新しいクラスは、<methodname>PDO::connect</methodname> メソッドを呼び出すか、
+   ドライバ固有のサブクラスを直接インスタンス化することで
+   利用できます。
+  </simpara>
+
+  <!-- RFC: https://wiki.php.net/rfc/pdo_driver_specific_parsers -->
+  <para>
+   ドライバ固有の SQL パーサーのサポートが追加されました。
+   デフォルトのパーサーは以下をサポートします:
+   <simplelist>
+    <member>
+     シングルクオートやダブルクオートで囲まれたリテラルでのクオートの二重化によるエスケープ
+    </member>
+    <member>
+     2 つのハイフンとネストされていない C スタイルのコメント
+    </member>
+   </simplelist>
+  </para>
+ </sect2>
+
+ <sect2 xml:id="migration84.new-features.pdo-mysql">
+  <title>PDO_MYSQL</title>
+
+  <!-- RFC: https://wiki.php.net/rfc/pdo_driver_specific_parsers -->
+  <para>
+   以下をサポートするカスタムパーサーが追加されました:
+   <simplelist>
+    <member>
+     シングルクオートやダブルクオートで囲まれたリテラルでのクオートの二重化やバックスラッシュによる
+     エスケープ
+    </member>
+    <member>
+     バッククオートで囲まれたリテラルでのクオートの二重化によるエスケープ
+    </member>
+    <member>
+     1 つの空白が続く 2 つのハイフン、ネストされていない C スタイルのコメント、
+     <literal>#</literal> によるコメント
+    </member>
+   </simplelist>
+  </para>
+ </sect2>
+
+ <sect2 xml:id="migration84.new-features.pdo-pgsql">
+  <title>PDO_PGSQL</title>
+
+  <!-- RFC: https://wiki.php.net/rfc/pdo_driver_specific_parsers -->
+  <para>
+   以下をサポートするカスタムパーサーが追加されました:
+   <simplelist>
+    <member>
+     シングルクオートやダブルクオートで囲まれたリテラルでのクオートの二重化によるエスケープ
+    </member>
+    <member>
+     C スタイルの「エスケープ」文字列リテラル (<literal>E'string'</literal>)
+    </member>
+    <member>
+     ドル記号で囲まれた文字列リテラル
+    </member>
+    <member>
+     2 つのハイフンとネストされていない C スタイルのコメント
+    </member>
+    <member>
+     <literal>?</literal> 演算子のエスケープシーケンスとしての <literal>??</literal> のサポート
+    </member>
+   </simplelist>
+  </para>
+ </sect2>
+
+ <sect2 xml:id="migration84.new-features.pdo-sqlite">
+  <title>PDO_SQLITE</title>
+
+  <!-- RFC: https://wiki.php.net/rfc/pdo_driver_specific_parsers -->
+  <para>
+   以下をサポートするカスタムパーサーが追加されました:
+   <simplelist>
+    <member>
+     シングルクオート、ダブルクオート、バッククオートで囲まれたリテラルでのクオートの二重化による
+     エスケープ
+    </member>
+    <member>
+     識別子の角括弧によるクオート
+    </member>
+    <member>
+     2 つのハイフンとネストされていない C スタイルのコメント
+    </member>
+   </simplelist>
+  </para>
+ </sect2>
+
+ <sect2 xml:id="migration84.new-features.phar">
+  <title>Phar</title>
+
+  <simpara>
+   Zip アーカイブの Unix タイムスタンプ拡張のサポートが追加されました。
+  </simpara>
+ </sect2>
+
+ <sect2 xml:id="migration84.new-features.readfile">
+  <title>Readfile</title>
+
+  <simpara>
+   <envar>PHP_HISTFILE</envar> 環境変数を利用し
+   <literal>.php_history</literal> パスを変更する機能が追加されました。
+  </simpara>
+ </sect2>
+
+ <sect2 xml:id="migration84.new-features.reflection">
+  <title>Reflection</title>
+
+  <simpara>
+   <classname>ReflectionAttribute</classname> に
+   デバッグ体験を向上させるための <property>name</property> プロパティが追加されました。
+  </simpara>
+
+  <simpara>
+   <methodname>ReflectionClassConstant::__toString</methodname>および
+   <methodname>ReflectionProperty::__toString</methodname> は、
+   添付されたドキュメントコメントを返すようになりました。
+  </simpara>
+
+  <!-- RFC: https://wiki.php.net/rfc/lazy-objects -->
+  <para>
+   レイジーオブジェクト機能に関連する複数の新しいメソッドと定数が
+   追加されました:
+
+   <simplelist>
+    <member>
+     <methodname>ReflectionClass::newLazyGhost</methodname>
+    </member>
+    <member>
+     <methodname>ReflectionClass::newLazyProxy</methodname>
+    </member>
+    <member>
+     <methodname>ReflectionClass::resetAsLazyGhost</methodname>
+    </member>
+    <member>
+     <methodname>ReflectionClass::resetAsLazyProxy</methodname>
+    </member>
+    <member>
+     <methodname>ReflectionClass::isUninitializedLazyObject</methodname>
+    </member>
+    <member>
+     <methodname>ReflectionClass::initializeLazyObject</methodname>
+    </member>
+    <member>
+     <methodname>ReflectionClass::markLazyObjectAsInitialized</methodname>
+    </member>
+    <member>
+     <methodname>ReflectionClass::getLazyInitializer</methodname>
+    </member>
+    <member>
+     <methodname>ReflectionProperty::skipLazyInitialization</methodname>
+    </member>
+    <member>
+     <methodname>ReflectionProperty::setRawValueWithoutLazyInitialization</methodname>
+    </member>
+    <member>
+     <constant>ReflectionClass::SKIP_INITIALIZATION_ON_SERIALIZE</constant>
+    </member>
+    <member>
+     <constant>ReflectionClass::SKIP_DESTRUCTOR</constant>
+    </member>
+   </simplelist>
+  </para>
+ </sect2>
+
+ <sect2 xml:id="migration84.new-features.soap">
+  <title>SOAP</title>
+
+  <simpara>
+   クラスマップでの名前空間のクラーク式記法のサポートが追加されました。
+   クラスマップ内でクラーク式記法を使用して、
+   特定の名前空間の型を特定のクラスに解決するエントリを指定できるようになりました。
+   例: <code>'{http://example.com}foo' => 'FooClass'</code>
+  </simpara>
+
+  <simpara>
+   <interfacename>DateTimeInterface</interfacename> のインスタンスが
+   <literal>xsd:datetime</literal> や類似の要素に渡されると、
+   空の文字列としてではなく、そのままシリアライズされるようになりました。
+  </simpara>
+
+  <simpara>
+   持続的セッションが共有セッションモジュールで動作するようになりました。
+  </simpara>
+ </sect2>
+
+ <sect2 xml:id="migration84.new-features.standard">
+  <title>Standard</title>
+
+  <!-- RFC: https://wiki.php.net/rfc/correctly_name_the_rounding_mode_and_make_it_an_enum -->
+  <simpara>
+   <!-- Should this use <enumname> -->
+   <classname>RoundingMode</classname> 列挙型が追加されました。
+   <constant>PHP_ROUND_<replaceable>*</replaceable></constant> 定数より
+   明確な名前と発見性を提供します。
+   さらに、4 つの新しい丸めモードが追加されました。これらは
+   <classname>RoundingMode</classname> 列挙型を介してのみ利用可能です。
+  </simpara>
+ </sect2>
+
+ <sect2 xml:id="migration84.new-features.xsl">
+  <title>XSL</title>
+
+  <simpara>
+   シングルクオートとダブルクオートの両方を含むパラメータを
+   使用できるようになりました。
+  </simpara>
+
+  <!-- RFC: https://wiki.php.net/rfc/improve_callbacks_dom_and_xsl -->
+  <simpara>
+   <methodname>XSLTProcessor::registerPhpFunctions</methodname> に
+   任意の callable を渡すことが可能になりました。
+   <!-- TODO Mention XSLTProcessor::registerPHPFunctionNS ? -->
+  </simpara>
+
+  <simpara>
+   <property>XSLTProcessor::$maxTemplateDepth</property> および
+   <property>XSLTProcessor::$maxTemplateVars</property> が追加されました。
+   XSL テンプレート評価の再帰の深さを制御することができます。
+  </simpara>
+ </sect2>
+
+ <sect2 xml:id="migration84.new-features.zip">
+  <title>Zip</title>
+
+  <simpara>
+  <constant>ZipArchive::ER_TRUNCATED_ZIP</constant>
+  定数が追加されました。これは libzip 1.11 で追加されました。
+  </simpara>
+ </sect2>
+
+</sect1>
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"~/.phpdoc/manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
