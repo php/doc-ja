@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision$ -->
+<!-- EN-Revision: c0fa5077c8862405942d8aac7360c5169558b59b Maintainer: KentarouTakeda Status: ready -->
+<!-- Credits: KentarouTakeda -->
+<refentry xml:id="reflectionclass.newlazyproxy" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xi="http://www.w3.org/2001/XInclude">
+ <refnamediv>
+  <refname>ReflectionClass::newLazyProxy</refname>
+  <refpurpose>新しいレイジープロキシインスタンスを作成する</refpurpose>
+ </refnamediv>
+
+ <refsect1 role="description">
+  &reftitle.description;
+  <methodsynopsis role="ReflectionClass">
+   <modifier>public</modifier> <type>object</type><methodname>ReflectionClass::newLazyProxy</methodname>
+   <methodparam><type>callable</type><parameter>factory</parameter></methodparam>
+   <methodparam choice="opt"><type>int</type><parameter>options</parameter><initializer>0</initializer></methodparam>
+  </methodsynopsis>
+  <simpara>
+   クラスの新しいレイジープロキシインスタンスを作成し、
+   <parameter>factory</parameter> をアタッチします。コンストラクタは呼び出されず、
+   プロパティはデフォルト値に設定されません。プロキシの状態を
+   初めて参照または変更する時に、
+   ファクトリ関数により実インスタンスが初期化され、
+   プロキシにアタッチされます。その後、プロキシとのすべての対話は
+   実インスタンスに転送されます。
+   <link linkend="language.oop5.lazy-objects.initialization-triggers">初期化トリガー</link>および
+   <link linkend="language.oop5.lazy-objects.initialization-sequence">初期化シーケンス</link>
+   を参照してください。
+  </simpara>
+ </refsect1>
+
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <variablelist>
+   <varlistentry>
+    <term><parameter>factory</parameter></term>
+    <listitem>
+     <simpara>
+      ファクトリは以下のシグネチャを持つコールバックです:
+     </simpara>
+     <para>
+      <methodsynopsis>
+       <type>object</type><methodname><replaceable>factory</replaceable></methodname>
+       <methodparam><type>object</type><parameter>object</parameter></methodparam>
+      </methodsynopsis>
+      <variablelist>
+       <varlistentry>
+        <term><parameter>object</parameter></term>
+        <listitem>
+         <simpara>
+          初期化される<parameter>object</parameter>。この時点では、
+          オブジェクトはもはやレイジーとしてマークされておらず、
+          アクセスしても再び初期化がトリガーされることはありません。
+         </simpara>
+        </listitem>
+       </varlistentry>
+      </variablelist>
+     </para>
+     <simpara>
+      ファクトリ関数は、<emphasis>実インスタンス</emphasis>として参照される
+      オブジェクトを返す必要があり、それがプロキシにアタッチされます。
+      この実インスタンスはレイジーであってはならず、
+      プロキシ自体でもあってはなりません。もし実インスタンスが
+      プロキシと同じクラスでない場合、プロキシのクラスは実インスタンスのクラスの
+      サブクラスでなければならず、追加のプロパティを持ってはならず、
+      <methodname>__destruct</methodname>や<methodname>__clone</methodname>メソッドを
+      オーバーライドしてはいけまさん。
+     </simpara>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <xi:include xpointer="xmlns(db=http://docbook.org/ns/docbook) xpointer(id('reflectionclass.newlazyghost.parameters.options')/*)">
+     <xi:fallback/>
+    </xi:include>
+   </varlistentry>
+  </variablelist>
+ </refsect1>
+
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <simpara>
+   レイジープロキシインスタンスを返します。オブジェクトにプロパティがない場合、または
+   そのプロパティがすべてstaticまたはvirtualの場合、通常の（レイジーではない）インスタンスが
+   返されます。
+   <link linkend="language.oop5.lazy-objects.lifecycle">レイジーオブジェクトの
+   ライフサイクル</link>も参照してください。
+  </simpara>
+ </refsect1>
+
+ <xi:include xpointer="xmlns(db=http://docbook.org/ns/docbook) xpointer(id('reflectionclass.newlazyghost')/db:refsect1[@role='errors'])">
+  <xi:fallback/>
+ </xi:include>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <example>
+   <title>基本的な使用法</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+class Example {
+    public function __construct(public int $prop) {
+        echo __METHOD__, "\n";
+    }
+}
+
+$reflector = new ReflectionClass(Example::class);
+$object = $reflector->newLazyProxy(function (Example $object) {
+     $realInstance = new Example(1);
+     return $realInstance;
+});
+
+var_dump($object);
+var_dump($object instanceof Example);
+
+// 初期化をトリガーし、プロパティの取得を実インスタンスに転送します
+var_dump($object->prop);
+
+var_dump($object);
+?>
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+lazy proxy object(Example)#3 (0) {
+  ["prop"]=>
+  uninitialized(int)
+}
+bool(true)
+Example::__construct
+int(1)
+lazy proxy object(Example)#3 (1) {
+  ["instance"]=>
+  object(Example)#4 (1) {
+    ["prop"]=>
+    int(1)
+  }
+}
+]]>
+   </screen>
+  </example>
+ </refsect1>
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <simplelist>
+   <member><link linkend="language.oop5.lazy-objects">レイジーオブジェクト</link></member>
+   <member><methodname>ReflectionClass::newLazyGhost</methodname></member>
+   <member><methodname>ReflectionClass::newInstanceWithoutConstructor</methodname></member>
+   <member><methodname>ReflectionClass::resetAsLazyProxy</methodname></member>
+   <member><methodname>ReflectionClass::markLazyObjectAsInitialized</methodname></member>
+   <member><methodname>ReflectionClass::initializeLazyObject</methodname></member>
+   <member><methodname>ReflectionClass::isUninitializedLazyObject</methodname></member>
+   <member><methodname>ReflectionProperty::setRawValueWithoutLazyInitialization</methodname></member>
+   <member><methodname>ReflectionProperty::skipLazyInitialization</methodname></member>
+   <member><methodname>ReflectionProperty::isLazy</methodname></member>
+  </simplelist>
+ </refsect1>
+
+</refentry>
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"~/.phpdoc/manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->

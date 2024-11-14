@@ -1,0 +1,479 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision$ -->
+<!-- EN-Revision: c0fa5077c8862405942d8aac7360c5169558b59b Maintainer: KentarouTakeda Status: ready -->
+<!-- Credits: KentarouTakeda -->
+<sect1 xml:id="language.oop5.lazy-objects" xmlns="http://docbook.org/ns/docbook">
+ <title>レイジーオブジェクト</title>
+
+ <simpara>
+  レイジーオブジェクトは、状態が参照または変更されるまで
+  初期化が遅延されるオブジェクトです。ユースケースの例として、
+  必要な時だけ初期化される遅延DIコンポーネント、
+  必要な時だけデータを読み込む遅延<acronym>ORM</acronym>、
+  必要な時だけ解析を行う遅延JSONパーサーなどがあります。
+ </simpara>
+
+ <simpara>
+  レイジーオブジェクトには、ゴーストオブジェクトとバーチャルプロキシの
+  2つの戦略があります。以降 &quot;レイジーゴースト&quot;、
+  &quot;レイジープロキシ&quot; と呼びます。
+  どちらの戦略の場合も、レイジーオブジェクトには
+  最初に状態が参照または変更されたときに自動的に呼び出されるイニシャライザまたはファクトリが
+  接続されています。抽象的な観点では、レイジーゴーストオブジェクトは
+  非レイジーなものと区別がつかず、レイジーであること意識せず使用できます。
+  レイジープロキシも同様に透過的ですが、実体を
+  参照する際は注意が必要です。プロキシと実インスタンスは異なる実体を
+  持つからです。
+ </simpara>
+
+ <sect2 xml:id="language.oop5.lazy-objects.creation">
+  <title>レイジーオブジェクトの作成</title>
+
+  <simpara>
+   任意のユーザー定義クラスや<classname>stdClass</classname>クラス
+   （他の内部クラスはサポートされていません）のレイジーインスタンスを作成したり、
+   これらのクラスのインスタンスをレイジーにリセットすることが可能です。
+   レイジーオブジェクトを作成するエントリーポイントは、
+   <methodname>ReflectionClass::newLazyGhost</methodname>および
+   <methodname>ReflectionClass::newLazyProxy</methodname>メソッドです。
+  </simpara>
+
+  <simpara>
+   どちらのメソッドも、オブジェクトの初期化が必要な際に呼び出される関数を
+   受け取ります。その関数が要求する動作は、使用する戦略に応じて
+   異なります。各メソッドのリファレンスを参照してください。
+  </simpara>
+
+  <example>
+   <title>レイジーゴーストの作成</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+class Example
+{
+    public function __construct(public int $prop)
+    {
+        echo __METHOD__, "\n";
+    }
+}
+
+$reflector = new ReflectionClass(Example::class);
+$lazyObject = $reflector->newLazyGhost(function (Example $object) {
+    // ここでオブジェクトを初期化
+    $object->__construct(1);
+});
+
+var_dump($lazyObject);
+var_dump(get_class($lazyObject));
+
+// ここで初期化がトリガーされる
+var_dump($lazyObject->prop);
+?>
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+lazy ghost object(Example)#3 (0) {
+["prop"]=>
+uninitialized(int)
+}
+string(7) "Example"
+Example::__construct
+int(1)
+]]>
+   </screen>
+  </example>
+
+  <example>
+   <title>レイジープロキシの作成</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+class Example
+{
+    public function __construct(public int $prop)
+    {
+        echo __METHOD__, "\n";
+    }
+}
+
+$reflector = new ReflectionClass(Example::class);
+$lazyObject = $reflector->newLazyProxy(function (Example $object) {
+    // 実インスタンスを初期化して返す
+    return new Example(1);
+});
+
+var_dump($lazyObject);
+var_dump(get_class($lazyObject));
+
+// ここで初期化がトリガーされる
+var_dump($lazyObject->prop);
+?>
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+lazy proxy object(Example)#3 (0) {
+  ["prop"]=>
+  uninitialized(int)
+}
+string(7) "Example"
+Example::__construct
+int(1)
+]]>
+   </screen>
+  </example>
+
+  <simpara>
+   レイジーオブジェクトのプロパティへのアクセスは、初期化をトリガーします
+   (<classname>ReflectionProperty</classname> 経由も含む)。
+   しかし、特定のプロパティに対してはトリガーしないよう、
+   事前に初期化しておく必要があるかもしれません。
+  </simpara>
+
+  <example>
+   <title>プロパティを事前に初期化する</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+class BlogPost
+{
+    public function __construct(
+        private int $id,
+        private string $title,
+        private string $content,
+    ) { }
+}
+
+$reflector = new ReflectionClass(BlogPost::class);
+
+$post = $reflector->newLazyGhost(function ($post) {
+    $data = fetch_from_store($post->id);
+    $post->__construct($data['id'], $data['title'], $data['content']);
+});
+
+// この行がないと、次のReflectionProperty::setValue()の呼び出しは
+// 初期化をトリガーします。
+$reflector->getProperty('id')->skipLazyInitialization($post);
+$reflector->getProperty('id')->setValue($post, 123);
+
+// または、直接以下を使用できます:
+$reflector->getProperty('id')->setRawValueWithoutLazyInitialization($post, 123);
+
+// 事前に設定したidプロパティは初期化をトリガーせずにアクセスできます
+var_dump($post->id);
+?>
+]]>
+   </programlisting>
+  </example>
+
+  <simpara>
+   <methodname>ReflectionProperty::skipLazyInitialization</methodname> および
+   <methodname>ReflectionProperty::setRawValueWithoutLazyInitialization</methodname>
+   メソッドで、プロパティにアクセスする際の遅延初期化をバイパスできます。
+  </simpara>
+ </sect2>
+
+ <sect2 xml:id="language.oop5.lazy-objects.patterns">
+  <title>レイジーオブジェクトの戦略について</title>
+
+  <simpara>
+   <emphasis>レイジーゴースト</emphasis>は、その場で初期化され、
+   初期化後はレイジーでないオブジェクトと区別がつきません。
+   この戦略は、オブジェクトのインスタンス化と初期化の両方を
+   制御できる場合に適しています。どちらかを制御出来ない場合は
+   適していません。
+  </simpara>
+
+  <simpara>
+   <emphasis>レイジープロキシ</emphasis>は、初期化後、実インスタンスへの
+   プロキシとして機能します。初期化されたレイジープロキシ上のあらゆる操作は、
+   実インスタンスに転送されます。この戦略は、インスタンスの作成を
+   外部に委ねているなど、レイジーゴーストが適さない場合に
+   適しています。レイジープロキシはほぼ透過的ですが、インスタンスの実体を
+   使用する場合は注意が必要です。プロキシと実インスタンスは異なる
+   実体を持つからです。
+  </simpara>
+ </sect2>
+
+ <sect2 xml:id="language.oop5.lazy-objects.lifecycle">
+  <title>レイジーオブジェクトのライフサイクル</title>
+
+  <simpara>
+   オブジェクトは、インスタンス化時に
+   <methodname>ReflectionClass::newLazyGhost</methodname>または
+   <methodname>ReflectionClass::newLazyProxy</methodname>を使用して、
+   あるいはインスタンス化後に
+   <methodname>ReflectionClass::resetAsLazyGhost</methodname>または
+   <methodname>ReflectionClass::resetAsLazyProxy</methodname>を使用して、
+   レイジーにできます。その後、以下のいずれかの操作により初期化されます:
+  </simpara>
+
+  <simplelist>
+   <member>
+    自動初期化をトリガーする方法でオブジェクトと対話する。
+    <link linkend="language.oop5.lazy-objects.initialization-triggers">初期化トリガー</link>を
+    参照してください。
+   </member>
+   <member>
+    <methodname>ReflectionProperty::skipLazyInitialization</methodname>または
+    <methodname>ReflectionProperty::setRawValueWithoutLazyInitialization</methodname>を使用して、
+    すべてのプロパティを非レイジーとしてマークする。
+   </member>
+   <member>
+    <methodname>ReflectionClass::initializeLazyObject</methodname>または
+    <methodname>ReflectionClass::markLazyObjectAsInitialized</methodname>を
+    明示的に呼び出す。
+   </member>
+  </simplelist>
+
+  <simpara>
+   すべてのプロパティが非レイジーとしてマークされると、レイジーオブジェクトは
+   初期化済とみなされます。従って上記のメソッドは、非レイジーなプロパティがない場合、
+   オブジェクトをレイジーとみなしません。
+  </simpara>
+ </sect2>
+
+ <sect2 xml:id="language.oop5.lazy-objects.initialization-triggers">
+  <title>初期化トリガー</title>
+
+  <simpara>
+   レイジーオブジェクトは、利用者に対して透過的に設計されているため、
+   オブジェクトの状態を参照または変更する通常の操作は、
+   その実行の前に自動的に初期化をトリガーします。これには以下の操作が含まれますが、
+   これらに限定されません:
+  </simpara>
+
+  <simplelist>
+   <member>
+    プロパティの読み取りまたは書き込み。
+   </member>
+   <member>
+    プロパティが設定されているかテスト、またはプロパティの削除。
+   </member>
+   <member>
+    <methodname>ReflectionProperty::getValue</methodname>、
+    <methodname>ReflectionProperty::getRawValue</methodname>、
+    <methodname>ReflectionProperty::setValue</methodname>、
+    <methodname>ReflectionProperty::setRawValue</methodname>
+    によるプロパティの参照または変更。
+   </member>
+   <member>
+    <methodname>ReflectionObject::getProperties</methodname>、
+    <methodname>ReflectionObject::getProperty</methodname>、
+    <function>get_object_vars</function>
+    によるプロパティの取得。
+   </member>
+   <member>
+    <interfacename>Iterator</interfacename>や
+    <interfacename>IteratorAggregate</interfacename>を
+    実装していないオブジェクトを
+    <link linkend="control-structures.foreach">foreach</link>でイテレーション。
+   </member>
+   <member>
+    <function>serialize</function>、
+    <function>json_encode</function>などでシリアライズ。
+   </member>
+   <member>
+    <link linkend="language.oop5.lazy-objects.cloning">クローン</link>の作成。
+   </member>
+  </simplelist>
+
+  <simpara>
+   オブジェクトの状態にアクセスしないメソッド呼び出しは初期化を
+   トリガーしません。同様に、マジックメソッドやフック関数を呼び出す
+   オブジェクトとの対話も、これらのメソッドや関数がオブジェクトの状態に
+   アクセスしない限りトリガーしません。
+  </simpara>
+
+  <sect3>
+   <title>初期化をトリガーしない操作</title>
+
+   <simpara>
+    以下の特定のメソッドや低レベルの操作は、初期化をトリガーせずにレイジー
+    オブジェクトへのアクセスや変更を可能にします:
+   </simpara>
+
+   <simplelist>
+    <member>
+     <methodname>ReflectionProperty::skipLazyInitialization</methodname> や
+     <methodname>ReflectionProperty::setRawValueWithoutLazyInitialization</methodname>
+     でプロパティを非レイジーとしてマーク。
+    </member>
+    <member>
+     <function>get_mangled_object_vars</function> や、
+     <link linkend="language.types.array.casting">配列への変換</link>による
+     プロパティ内部表現の取得。
+    </member>
+    <member>
+     <constant>ReflectionClass::SKIP_INITIALIZATION_ON_SERIALIZE</constant>
+     が設定された状態での <function>serialize</function> 。
+     ただし <link linkend="object.serialize">__serialize()</link> または
+     <link linkend="object.sleep">__sleep()</link> が初期化をトリガーしない場合。
+    </member>
+    <member>
+     <methodname>ReflectionObject::__toString</methodname> の呼び出し。
+    </member>
+    <member>
+     <function>var_dump</function> または
+     <function>debug_zval_dump</function> 。ただし、
+     <link linkend="object.debuginfo">__debugInfo()</link> が初期化をトリガー
+     しない場合に限る。
+    </member>
+   </simplelist>
+  </sect3>
+ </sect2>
+
+ <sect2 xml:id="language.oop5.lazy-objects.initialization-sequence">
+  <title>初期化シーケンス</title>
+
+  <simpara>
+   このセクションでは、初期化がトリガーされたときに実行される操作の順序を
+   使用する戦略に応じて説明します。
+  </simpara>
+
+  <sect3>
+   <title>ゴーストオブジェクト</title>
+   <simplelist>
+    <member>
+     オブジェクトは非レイジーとしてマークされます。
+    </member>
+    <member>
+     <methodname>ReflectionProperty::skipLazyInitialization</methodname>または
+     <methodname>ReflectionProperty::setRawValueWithoutLazyInitialization</methodname>
+     で初期化されていないプロパティは、デフォルト値があれば
+     それに設定されます。結果的に、事前に初期化済のプロパティを除き、
+     <methodname>ReflectionClass::newInstanceWithoutConstructor</methodname>
+     でと似たオブジェクトになります。
+    </member>
+    <member>
+     そのオブジェクトをパラメータとして、イニシャライザ関数が呼び出されます。
+     この関数は、オブジェクトの状態を初期化することが
+     期待されますが、必須ではありません。&null; を返すか、値を返さない必要があります。
+     オブジェクトはもはやレイジーではないので、
+     関数はプロパティに直接アクセスできます。
+    </member>
+   </simplelist>
+   <simpara>
+    初期化後、オブジェクトはレイジーでない場合と
+    区別がつきません。
+   </simpara>
+  </sect3>
+
+  <sect3>
+   <title>プロキシオブジェクト</title>
+   <simplelist>
+    <member>
+     オブジェクトは非レイジーとしてマークされます。
+    </member>
+    <member>
+     ゴーストオブジェクトとは異なり、この段階でオブジェクトのプロパティは
+     変更されません。
+    </member>
+    <member>
+     オブジェクトがファクトリ関数に入力されます。
+     この関数は、互換性のあるクラスの非レイジーなインスタンスを返す必要があります
+     （<methodname>ReflectionClass::newLazyProxy</methodname>を参照）。
+    </member>
+    <member>
+     返されたインスタンスは <emphasis>実インスタンス</emphasis> として参照され、
+     プロキシに接続されます。
+    </member>
+    <member>
+     プロキシのプロパティ値は、
+     <function>unset</function> と同等の方法で破棄されます。
+    </member>
+   </simplelist>
+   <simpara>
+    初期化後、プロキシの任意のプロパティへのアクセスは、
+    実インスタンスへのアクセスと同じ結果をもたらします。
+    宣言済プロパティ、動的プロパティ、存在しないプロパティ、
+    <methodname>ReflectionProperty::skipLazyInitialization</methodname> や
+    <methodname>ReflectionProperty::setRawValueWithoutLazyInitialization</methodname> で
+    マークされたプロパティを含む、すべてのプロパティへのアクセスは
+    実インスタンスに転送されます。
+   </simpara>
+   <simpara>
+    プロキシオブジェクトが、
+    実インスタンスに置き換えられることは<emphasis>ありません</emphasis>。
+   </simpara>
+   <simpara>
+    ファクトリは最初のパラメータとしてプロキシを受け取りますが、
+    それを変更することは期待されていません（変更は許可されますが、
+    最終的な初期化ステップ中に失われます）。しかし、プロキシは
+    事前に初期化されたプロパティの値、クラス、オブジェクト自体、
+    その同一性に基づく決定に使用できます。例えば、イニシャライザは
+    実インスタンスを作成する際に初期化されたプロパティの値を利用するかもしれません。
+   </simpara>
+  </sect3>
+
+  <sect3>
+   <title>共通の動作</title>
+
+   <simpara>
+    イニシャライザまたはファクトリ関数のスコープと<varname>$this</varname>の
+    コンテキストは変更されず、通常の可視性制約が適用されます。
+   </simpara>
+
+   <simpara>
+    初期化が成功した後、イニシャライザまたはファクトリ関数は
+    オブジェクトから参照されなくなり、他に参照がなければ
+    解放される場合があります。
+   </simpara>
+
+   <simpara>
+    イニシャライザが例外をスローした場合、オブジェクトの状態は
+    初期化前の状態に戻され、オブジェクトは再びレイジーとマークされます。つまり、
+    オブジェクトへの副作用はすべて破棄されます。これは、失敗した場合に
+    壊れたインスタンスが生成されてしまうのを防ぎます。ただし、他のオブジェクトへの
+    影響など、外部への副作用は元に戻されません。
+   </simpara>
+  </sect3>
+ </sect2>
+
+ <sect2 xml:id="language.oop5.lazy-objects.cloning">
+  <title>クローン</title>
+
+  <simpara>
+   レイジーオブジェクトを<link linkend="language.oop5.cloning">クローン</link>すると、
+   クローンが作成される前に初期化がトリガーされ、
+   結果として初期化されたオブジェクトが得られます。
+  </simpara>
+
+  <simpara>
+   プロキシオブジェクトの場合、プロキシとその実インスタンスの両方がクローンされ、
+   プロキシのクローンが返されます。
+   <link linkend="object.clone"><literal>__clone</literal></link>メソッドは
+   プロキシではなく実インスタンス上で呼び出されます。
+   クローンされたプロキシと実インスタンスは
+   初期化時にリンクされるため、クローン後のプロキシへのアクセスは
+   クローン後の実インスタンスに転送されます。
+  </simpara>
+
+  <simpara>
+   この動作により、クローンと元のオブジェクトは独立した状態を持つことが
+   保証されます。クローン後に元のオブジェクトまたはそのイニシャライザの状態に
+   変更を加えても、クローンには影響しません。実インスタンスのみではなく
+   両方をクローンすることで、クローン操作は常に同じクラスのオブジェクトを
+   返すことを保証します。
+  </simpara>
+ </sect2>
+
+ <sect2 xml:id="language.oop5.lazy-objects.destructors">
+  <title>デストラクタ</title>
+
+  <simpara>
+   レイジーゴーストの場合、オブジェクトが初期化されている場合のみ、
+   プロキシの場合、実インスタンスが存在する場合のみ、
+   デストラクタが呼び出されます。
+  </simpara>
+
+  <simpara>
+   <methodname>ReflectionClass::resetAsLazyGhost</methodname>および
+   <methodname>ReflectionClass::resetAsLazyProxy</methodname>メソッドは、
+   リセットされるオブジェクトのデストラクタを呼び出す場合があります。
+  </simpara>
+ </sect2>
+</sect1>
