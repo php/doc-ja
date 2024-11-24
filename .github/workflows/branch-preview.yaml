@@ -11,19 +11,39 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout doc-ja
-        uses: actions/checkout@v4
-        with:
-          path: doc-ja
+    - name: Checkout phd
+      uses: actions/checkout@v4
+      with:
+        repository: php/phd
+        path: phd
+    
+    - name: Checkout doc-base
+      uses: actions/checkout@v4
+      with:
+        repository: php/doc-base
+        path: doc-base
 
-      - name: Checkout phd
-        uses: actions/checkout@v4
-        with:
-          repository: phd/phd
-          path: phd
+    - name: Checkout doc-en
+      uses: actions/checkout@v4
+      with:
+        repository: php/doc-en
+        path: doc-en
 
-      - name: Set up PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.3'
+    - name: Checkout doc-ja
+      uses: actions/checkout@v4
+      with:
+        path: doc-ja
 
+    - name: Set up PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.3'
+
+    - name: Validate and build .manual.xml
+      run: |
+        php doc-base/configure.php --with-lang=ja
+
+    - name: Render xhtml
+      run: |
+        php phd/render.php --docbook doc-base/.manual.xml --package PHP --format xhtml
+        cat output/php-chunked-xhtml/index.html
