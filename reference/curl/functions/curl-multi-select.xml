@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: b7f8c11e56ff1c57a2993e2ed7e5c5ace18637fd Maintainer: takagi Status: ready -->
+<!-- EN-Revision: f414967c2c80702de6401191034d9837a2801dc1 Maintainer: takagi Status: ready -->
 <refentry xml:id="function.curl-multi-select" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>curl_multi_select</refname>
-  <refpurpose>curl_multi 接続のアクティビティを待つ</refpurpose>
+  <refpurpose>任意の cURL マルチハンドル接続で読み取りまたは書き込みが可能になるまで待機する</refpurpose>
  </refnamediv>
  
  <refsect1 role="description">
@@ -14,8 +14,10 @@
    <methodparam><type>CurlMultiHandle</type><parameter>multi_handle</parameter></methodparam>
    <methodparam choice="opt"><type>float</type><parameter>timeout</parameter><initializer>1.0</initializer></methodparam>
   </methodsynopsis>
-  <para>
-   curl_multi 接続に関するアクティビティがあるまでブロックします。
+  <para>   
+   スクリプトの実行をブロックし、次の <function>curl_multi_exec</function> の呼び出しで
+   cURL マルチハンドルに関連付けられた cURL ハンドルが処理を進められるようになるか、
+   タイムアウトになるまで待機します（どちらか早い方が適用されます）。
   </para>
 
  </refsect1>
@@ -29,7 +31,7 @@
      <term><parameter>timeout</parameter></term>
      <listitem>
       <para>
-       レスポンスを待つ秒数。
+       アクティブな cURL マルチハンドル接続からのレスポンスを待機する時間（秒単位）。
       </para>
      </listitem>
     </varlistentry>
@@ -41,10 +43,18 @@
   &reftitle.returnvalues;
   <para>
    成功した場合は、記述子セットに含まれる記述子の数を返します。
-   どの記述子上にもアクティビティがなかった場合は、結果が 0 になることもあります。
-   select に失敗した場合は -1 を返し、それ以外の失敗時は
-   (select システムコールから) タイムアウトします。
+   どの記述子上にもアクティビティがなかった場合は、結果が <literal>0</literal> になることもあります。
+   <literal>select()</literal> に失敗した場合は <literal>-1</literal> を返し、それ以外の失敗時は
+   ( <literal>select()</literal> システムコールから) タイムアウトします。
   </para>
+ </refsect1>
+
+ <refsect1 role="errors">
+  &reftitle.errors;
+  <simpara>
+   <parameter>timeout</parameter> が <literal>0</literal> 未満または <constant>PHP_INT_MAX</constant>
+   を超える場合、<exceptionname>ValueError</exceptionname> をスローします。
+  </simpara>
  </refsect1>
 
  <refsect1 role="changelog">
@@ -58,6 +68,13 @@
      </row>
     </thead>
     <tbody>
+     <row>
+      <entry>8.4.0</entry>
+      <entry>
+       <parameter>timeout</parameter> が <literal>0</literal> 未満または <constant>PHP_INT_MAX</constant>
+       を超える場合、<exceptionname>ValueError</exceptionname> をスローするようになりました。
+      </entry>
+     </row>
      &curl.changelog.multi-handle-param;
     </tbody>
    </tgroup>
