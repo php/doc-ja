@@ -1,109 +1,154 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 86e6094e86b84a51d00ab217ac50ce8dde33d82a Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 2aaaf1967f2510471b694daf8e41a419fc98b751 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi -->
 <refentry xml:id="function.exit" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>exit</refname>
-  <refpurpose>メッセージを出力し、現在のスクリプトを終了する</refpurpose>
+  <refpurpose>ステータスコードかメッセージを返して現在のスクリプトを終了する</refpurpose>
  </refnamediv>
- 
+
  <refsect1 role="description">
   &reftitle.description;
   <methodsynopsis>
-   <type>void</type><methodname>exit</methodname>
-   <methodparam choice="opt"><type>string</type><parameter>status</parameter></methodparam>
+   <type>never</type><methodname>exit</methodname>
+   <methodparam choice="opt"><type class="union"><type>string</type><type>int</type></type><parameter>status</parameter><initializer>0</initializer></methodparam>
   </methodsynopsis>
-  <methodsynopsis>
-   <type>void</type><methodname>exit</methodname>
-   <methodparam><type>int</type><parameter>status</parameter></methodparam>
-  </methodsynopsis>
-  <para>
+  <simpara>
    スクリプトの実行を終了します。
    <link linkend="function.register-shutdown-function">シャットダウン関数</link>
    や <link linkend="language.oop5.decon.destructor">オブジェクトのデストラクタ</link>
-   は、<literal>exit</literal> がコールされた場合にも実行されます。
-  </para>
-  <para>
-   <literal>exit</literal> は言語構造です。
-   <parameter>status</parameter> を指定しない場合は括弧なしでコールできます。
-  </para>
+   は、<function>exit</function> がコールされた場合にも実行されます。
+   ただし、&finally; ブロックは実行されません。
+  </simpara>
+  <simpara>
+   終了コード <literal>0</literal> は、そのタスクでプログラムが成功したことを表します。
+   他の値は、実行中に何らかのエラーが発生したことを表します。
+  </simpara>
+  <simpara>
+   <function>exit</function> は特殊な関数です。
+   パーサーに専用のトークンがあるため、文として使用して（つまり、括弧なしで）、
+   デフォルトのステータスコードでスクリプトを終了させることができます。
+  </simpara>
+  <caution>
+   <simpara>
+    グローバルな <function>exit</function> を無効にしたり、
+    名前空間つきの関数でシャドーイングすることはできません。
+   </simpara>
+  </caution>
  </refsect1>
 
  <refsect1 role="parameters">
   &reftitle.parameters;
-  <para>
-   <variablelist>
-    <varlistentry>
-     <term><parameter>status</parameter></term>
-     <listitem>
-      <para>
-       <parameter>status</parameter> が文字列の場合は、この関数は終了直前に
-       <parameter>status</parameter> を表示します。
-      </para>
-      <para>
-       <parameter>status</parameter> が <type>int</type> の場合は
-       その値が終了ステータスとして使われ、表示はされません。終了ステータスは
-       0 から 254 までの値でなければなりません。終了ステータス 255 は
-       PHP に予約されており、使用してはいけません。ステータス 0 は、
-       プログラムを正常終了させる際に使用します。
-      </para>
-     </listitem>
-    </varlistentry>
-   </variablelist>
-  </para>
+  <variablelist>
+   <varlistentry>
+    <term><parameter>status</parameter></term>
+    <listitem>
+     <simpara>
+      <parameter>status</parameter> が文字列の場合は、
+      この関数は終了直前に <parameter>status</parameter> を表示します。
+      PHP によって返される終了コードは <literal>0</literal> です。
+     </simpara>
+     <para>
+      <parameter>status</parameter> が <type>int</type> の場合は、
+      この関数は終了直前に <parameter>status</parameter> を表示します。
+      <note>
+       <simpara>
+        終了コードは <literal>0</literal> から <literal>254</literal> の範囲でなければならず、
+        終了コード <literal>255</literal> は PHP によって予約されているため使用できません。
+       </simpara>
+      </note>
+     </para>
+     <warning>
+      <simpara>
+       PHP 8.4.0 より前のバージョンでは、 <function>exit</function> は PHP の標準的な
+       <link linkend="language.types.type-juggling.function">型の相互変換のセマンティクス</link>に基づいておらず、
+       また、<link linkend="language.types.declarations.strict"><literal>strict_types</literal></link> 宣言も適用されませんでした。
+      </simpara>
+      <simpara>
+       また、<type>resource</type> や <type>array</type> を含む、<type>int</type> 型以外の値は
+       <type>string</type> にキャストされていました。
+       PHP 8.4.0 以降は、通常の型の相互変換が適用され、無効な値に対しては
+       <exceptionname>TypeError</exceptionname> をスローします。
+      </simpara>
+     </warning>
+    </listitem>
+   </varlistentry>
+  </variablelist>
  </refsect1>
 
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
-  <para>
-   &return.void;
-  </para>
+  <simpara>
+   この関数は PHP スクリプトを終了するため、値を返すことはありません。
+  </simpara>
+ </refsect1>
+
+ <refsect1 role="changelog">
+  &reftitle.changelog;
+  <informaltable>
+   <tgroup cols="2">
+    <thead>
+     <row>
+      <entry>&Version;</entry>
+      <entry>&Description;</entry>
+     </row>
+    </thead>
+    <tbody>
+     <row>
+      <entry>8.4.0</entry>
+      <entry>
+       <function>exit</function> は言語構造から正式な関数になったので、
+       通常の
+       <link linkend="language.types.type-juggling.function">型の相互変換</link>
+       に従い、
+       <link linkend="language.types.declarations.strict"><literal>strict_types</literal></link>
+       宣言も適用されるようになりました。また、名前付き引数や
+       <link linkend="functions.variable-functions">可変関数</link>
+       によって呼び出すこともできるようになりました。
+      </entry>
+     </row>
+    </tbody>
+   </tgroup>
+  </informaltable>
  </refsect1>
 
  <refsect1 role="examples">
   &reftitle.examples;
-  <para>
-   <example>
-    <title><literal>exit</literal> の例</title>
-    <programlisting role="php">
+  <example>
+   <title><function>exit</function> の基本的な使用例</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+// exit program normally
+exit();
+exit(0);
+
+// exit with an error code
+exit(1);
+
+?>
+]]>
+   </programlisting>
+  </example>
+  <example>
+   <title><function>exit</function> に<type>string</type>を渡す例</title>
+   <programlisting role="php">
 <![CDATA[
 <?php
 
 $filename = '/path/to/data-file';
 $file = fopen($filename, 'r')
-    or exit("ファイル ($filename) をオープンできません");
+    or exit("unable to open file ($filename)");
 
 ?>
 ]]>
-    </programlisting>
-   </example>
-  </para>
-  <para>
-   <example>
-    <title><literal>exit</literal> でステータスを指定する例</title>
-    <programlisting role="php">
-<![CDATA[
-<?php
-
-// 正常終了
-exit;
-exit();
-exit(0);
-
-// エラーコードつきの終了
-exit(1);
-exit(0376); // 八進数
-
-?>
-]]>
-    </programlisting>
-   </example>
-  </para>
-  <para>
-   <example>
-    <title>シャットダウン関数やデストラクタが実行される例</title>
-    <programlisting role="php">
+   </programlisting>
+  </example>
+  <example>
+   <title>シャットダウン関数やデストラクタが実行される例</title>
+   <programlisting role="php">
 <![CDATA[
 <?php
 class Foo
@@ -126,41 +171,50 @@ exit();
 echo 'これは出力されません。';
 ?>
 ]]>
-    </programlisting>
-    &example.outputs;
-    <screen>
- <![CDATA[
- Shutdown: shutdown()
- Destruct: Foo::__destruct()
- ]]>
-    </screen>
-   </example>
-  </para>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+Shutdown: shutdown()
+Destruct: Foo::__destruct()
+]]>
+   </screen>
+  </example>
+  <example>
+   <title>文としての <function>exit</function></title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+// exit program normally with exit code 0
+exit;
+
+?>
+]]>
+   </programlisting>
+  </example>
  </refsect1>
 
  <refsect1 role="notes">
   &reftitle.notes;
-  
-  &note.language-construct;
-
-  <note>
-   <para>
-    この言語構造は、<function>die</function> と等価です。
-   </para>
-  </note>
+  <warning>
+   <simpara>
+    PHP 8.4.0 以降は、 <function>exit</function> は関数ではなく言語構造でした。 
+    したがって、 <link linkend="functions.variable-functions">可変関数</link> や <link linkend="functions.named-arguments">名前付き引数</link> を使って関数を呼び出すことはできませんでした。
+   </simpara>
+  </warning>
  </refsect1>
 
  <refsect1 role="seealso">
   &reftitle.seealso;
-  <para>
-   <simplelist>
-    <member><function>register_shutdown_function</function></member>
-   </simplelist>
-  </para>
+  <simplelist>
+   <member><function>register_shutdown_function</function></member>
+   <member><link linkend="function.register-shutdown-function">シャットダウン関数</link></member>
+   <member><link linkend="language.oop5.decon.destructor">オブジェクトのデストラクタ</link></member>
+  </simplelist>
  </refsect1>
 
 </refentry>
-
 <!-- Keep this comment at the end of the file
 Local variables:
 mode: sgml
