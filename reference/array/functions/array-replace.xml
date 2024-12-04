@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: fea4357a0ced6a776a2db2ef0d4c09c39ad41ae1 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 5cc10e8d90a9d0cbb35779b60580e772e7d660a1 Maintainer: takagi Status: ready -->
 <refentry xml:id="function.array-replace" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>array_replace</refname>
@@ -14,19 +14,14 @@
    <methodparam rep="repeat"><type>array</type><parameter>replacements</parameter></methodparam>
   </methodsynopsis>
   <para>
-   <function>array_replace</function> は、
-   <parameter>array</parameter> の値をそれ以降の配列の同じ要素の値で置き換えます。
-   最初の配列のキーと同じキーが 2 番目の配列にあれば、
-   2 番目の配列の値が最初の配列の値を上書きします。
-   2 番目の配列に存在するキーが最初の配列に存在しなければ、
-   そのキーが新たに最初の配列内に作られます。
-   最初の配列にしか存在しないキーについては何も変わりません。
-   置き換え用の配列が複数渡された場合は渡した順に処理を行い、
-   後から渡した配列の値のほうが優先されます。
+   <function>array_replace</function> は、新しい配列を生成し、
+   指定された配列のそれぞれのキーを新しい配列の要素として割り当てます。
+   同じキーが複数の配列に存在した場合、
+   一番最後に指定された配列のものが使われます。
   </para>
   <para>
-   <function>array_replace</function> は再起的な処理を行いません。
-   2 番目の配列の値がどんな型であっても、最初の配列の値を置き換えます。
+   <function>array_replace</function> は再帰的に要素を処理しませんが、
+   置き換えを行うときに、それぞれのキーの値全体を置き換えます。
   </para>
  </refsect1>
  <refsect1 role="parameters">
@@ -72,21 +67,59 @@ $replacements = array(0 => "pineapple", 4 => "cherry");
 $replacements2 = array(0 => "grape");
 
 $basket = array_replace($base, $replacements, $replacements2);
-print_r($basket);
+var_dump($basket);
 ?>
 ]]>
     </programlisting>
     &example.outputs;
     <screen role="php">
 <![CDATA[
-Array
-(
-    [0] => grape
-    [1] => banana
-    [2] => apple
-    [3] => raspberry
-    [4] => cherry
-)
+array(5) {
+  [0]=>
+  string(5) "grape"
+  [1]=>
+  string(6) "banana"
+  [2]=>
+  string(5) "apple"
+  [3]=>
+  string(9) "raspberry"
+  [4]=>
+  string(6) "cherry"
+}
+]]>
+
+    </screen>
+   </example>
+   <example>
+    <title>ネストした配列を、どのように処理するかを示す例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$base = [ 'citrus' => [ 'orange', 'lemon' ], 'pome' => [ 'apple' ] ];
+$replacements = [ 'citrus' => [ 'grapefruit' ] ];
+$replacements2 = [ 'citrus' => [ 'kumquat', 'citron' ], 'pome' => [ 'loquat' ] ];
+$basket = array_replace($base, $replacements, $replacements2);
+var_dump($basket);
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen role="php">
+<![CDATA[
+array(2) {
+  ["citrus"]=>
+  array(2) {
+    [0]=>
+    string(7) "kumquat"
+    [1]=>
+    string(6) "citron"
+  }
+  ["pome"]=>
+  array(1) {
+    [0]=>
+    string(6) "loquat"
+  }
+}
 ]]>
     </screen>
    </example>
