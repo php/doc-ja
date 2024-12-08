@@ -3,6 +3,9 @@
 ここには、PHP マニュアル 日本語版で「統一した」訳語を当てている単語を記録しています。  
 以下の単語の訳がブレていたら、issue または Pull Request で報告してください。
 
+- visibility
+  * 「アクセス権」で統一
+  * protected/private/public を付けた、メソッドやプロパティが可視な範囲のこと
 - extension
   * 拡張モジュール ( [#24](https://github.com/php/doc-ja/issues/24) )
 - internal function / builtin function
