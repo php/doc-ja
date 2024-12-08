@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 5bc68add3da3cd18c40f851e944b15095d3a26aa Maintainer: takagi Status: ready -->
+<!-- EN-Revision: ee14f82484f6289278255f798f1e8b93cdc2cab5 Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa,mumumu -->
 <refentry xml:id="mysqli.change-user" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>mysqli::change_user</refname>
   <refname>mysqli_change_user</refname>
-  <refpurpose>指定されたデータベース接続のユーザー名を変更する</refpurpose>
+  <refpurpose>データベース接続のユーザー名を変更する</refpurpose>
  </refnamediv>
 
  <refsect1 role="description">
@@ -27,8 +27,11 @@
    <methodparam><type class="union"><type>string</type><type>null</type></type><parameter>database</parameter></methodparam>
   </methodsynopsis>
   <para>
-   指定されたデータベース接続のユーザー名を変更し、
-   現在のデータベースを設定します。
+   指定された認証情報を使って、指定されたデータベースに接続しようと試みます。
+  </para>
+  <para>
+   このメソッドは新しい接続が確立できなかった場合に、現在の接続を切断しません。
+   その点で <methodname>mysqli::connect</methodname> と異なります。
   </para>
   <para>
    ユーザーを正しく変更するには、<parameter>username</parameter> と
@@ -64,13 +67,9 @@
      <term><parameter>database</parameter></term>
      <listitem>
       <para>
-       変更するデータベース。
-      </para>
-      <para>
-       引数には &null; 値を渡すこともできます。
-       その場合ユーザーの変更だけでデータベースの選択はされません。
-       そのようなケースでデータベースを選択したい場合には
-       <function>mysqli_select_db</function> 関数を使用してください。
+       データベース名。
+       &null; または空文字列を指定した場合、
+       デフォルトのデータベースを指定しない状態でサーバとの接続がオープンされます。
       </para>
      </listitem>
     </varlistentry>
@@ -93,89 +92,83 @@
  <refsect1 role="examples">
   &reftitle.examples;
   <example>
-   <title><methodname>mysqli::change_user</methodname> の例</title>
+   <title>接続セッションをリセットする</title>
    <para>&style.oop;</para>
    <programlisting role="php">
 <![CDATA[
 <?php
 
-/* データベース test に接続します */
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $mysqli = new mysqli("localhost", "my_user", "my_password", "test");
 
-/* 接続をチェックします */
-if (mysqli_connect_errno()) {
-    printf("Connect failed: %s\n", mysqli_connect_error());
-    exit();
-}
-
-/* 変数 a を設定します */
 $mysqli->query("SET @a:=1");
 
-/* すべてをリセットし、新しいデータベースを選択します */
 $mysqli->change_user("my_user", "my_password", "world");
 
-if ($result = $mysqli->query("SELECT DATABASE()")) {
-    $row = $result->fetch_row();
-    printf("デフォルトデータベース: %s\n", $row[0]);
-    $result->close();
-}
+$result = $mysqli->query("SELECT DATABASE()");
+$row = $result->fetch_row();
+printf("Default database: %s\n", $row[0]);
 
-if ($result = $mysqli->query("SELECT @a")) {
-    $row = $result->fetch_row();
-    if ($row[0] === NULL) {
-        printf("変数 a の値は NULL\n");
-    }
-    $result->close();
+$result = $mysqli->query("SELECT @a");
+$row = $result->fetch_row();
+if ($row[0] === null) {
+    printf("Value of variable a is NULL\n");
 }
-
-/* 接続を閉じます */
-$mysqli->close();
-?>
 ]]>
    </programlisting>
    <para>&style.procedural;</para>
    <programlisting role="php">
 <![CDATA[
 <?php
-/* データベース test に接続します */
+
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $link = mysqli_connect("localhost", "my_user", "my_password", "test");
 
-/* 接続をチェックします */
-if (!$link) {
-    printf("Connect failed: %s\n", mysqli_connect_error());
-    exit();
-}
-
-/* 変数 a を設定します */
 mysqli_query($link, "SET @a:=1");
 
-/* すべてをリセットし、新しいデータベースを選択します */
 mysqli_change_user($link, "my_user", "my_password", "world");
 
-if ($result = mysqli_query($link, "SELECT DATABASE()")) {
-    $row = mysqli_fetch_row($result);
-    printf("デフォルトデータベース: %s\n", $row[0]);
-    mysqli_free_result($result);
-}
+$result = mysqli_query($link, "SELECT DATABASE()");
+$row = mysqli_fetch_row($result);
+printf("Default database: %s\n", $row[0]);
 
-if ($result = mysqli_query($link, "SELECT @a")) {
-    $row = mysqli_fetch_row($result);
-    if ($row[0] === NULL) {
-        printf("変数 a の値は NULL\n");
-    }
-    mysqli_free_result($result);
+$result = mysqli_query($link, "SELECT @a");
+$row = mysqli_fetch_row($result);
+if ($row[0] === null) {
+    printf("Value of variable a is NULL\n");
 }
-
-/* 接続を閉じます */
-mysqli_close($link);
-?>
 ]]>
    </programlisting>
    &examples.outputs;
    <screen>
 <![CDATA[
-デフォルトデータベース: world
-変数 a の値は NULL
+Default database: world
+Value of variable a is NULL
+]]>
+   </screen>
+  </example>
+  <example>
+   <title><parameter>database</parameter> が &null; の場合、
+   デフォルトのデータベースが選択されない状態で接続がオープンされる</title>
+   <para>&style.oop;</para>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+$mysqli = new mysqli("localhost", "my_user", "my_password", "test");
+
+$mysqli->change_user("my_user", "my_password", null);
+
+$result = $mysqli->query("SELECT DATABASE()");
+$row = $result->fetch_row();
+printf("Default database: %s\n", $row[0]);
+]]>
+   </programlisting>
+   &examples.outputs;
+   <screen>
+<![CDATA[
+Default database:
 ]]>
    </screen>
   </example>
