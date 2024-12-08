@@ -6,6 +6,7 @@
 - visibility
   * 「アクセス権」で統一
   * protected/private/public を付けた、メソッドやプロパティが可視な範囲のこと
+  * 但し、「非対称可視性プロパティ」(Asymmetric Property Visibility)は 例外
 - extension
   * 拡張モジュール ( [#24](https://github.com/php/doc-ja/issues/24) )
 - internal function / builtin function
