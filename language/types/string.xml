@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: affa37e16f562d9297e83b2e21ec416aadc8b72d Maintainer: takagi Status: ready -->
+<!-- EN-Revision: b012e0dd8360e47b814d9954a5ae0d6c57f5fc2d Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa,shimooka,mumumu -->
 <sect1 xml:id="language.types.string">
  <title>文字列</title>
@@ -199,7 +199,7 @@ echo 'Variables do not $expand $either';
    <para>
     しかし、二重引用符で括られた文字列で最も重要なのは、
     変数名が展開されるところです。詳細は、<link
-    linkend="language.types.string.parsing">文字列のパース</link>を参照ください。
+    linkend="language.types.string.parsing">文字列の補間</link>を参照ください。
    </para>
   </sect3>
   
@@ -596,7 +596,7 @@ FOOBAR;
     ヒアドキュメントがダブルクォートで囲んだ文字列として扱われるのに対して、
     Nowdoc はシングルクォートで囲んだ文字列として扱われます。
     Nowdoc の使用方法はヒアドキュメントとほぼ同じですが、
-    その中身について <emphasis>パース処理を行いません</emphasis>。
+    その中身について <emphasis>文字列の補間処理を行いません</emphasis>。
     PHP のコードや大量のテキストを埋め込む際に、
     エスケープが不要になるので便利です。この機能は、SGML の
     <literal>&lt;![CDATA[ ]]&gt;</literal>
@@ -691,35 +691,28 @@ EOT;
   </sect3>
 
   <sect3 xml:id="language.types.string.parsing">
-   <title>変数のパース</title>
+   <title>文字列の補間処理</title>
 
    <simpara>
     文字列が二重引用符で括られるかヒアドキュメントで指定された場合、
-    その中の<link linkend="language.variables">変数</link>はパースされます。
+    その中の<link linkend="language.variables">変数</link>は置き換えられます。
    </simpara>
 
    <simpara>
     構文の型には、<link
-    linkend="language.types.string.parsing.simple">単純な</link>構文と
-    <link linkend="language.types.string.parsing.complex">複雑な
-    </link>構文の 2 種類があります。簡単な構文は、最も一般的で便利です。
+    linkend="language.types.string.parsing.basic">単純な</link>構文と
+    <link linkend="language.types.string.parsing.advanced">高度な
+    </link>構文の 2 種類があります。単純な構文は、最も一般的で便利です。
     この構文では、変数や配列の値、オブジェクトのプロパティを、
     簡単に文字列に埋め込むことができます。
    </simpara>
 
-   <simpara>
-    複雑な構文は、式を波括弧で括ることにより認識されます。
-   </simpara>
-
-   <sect4 xml:id="language.types.string.parsing.simple">
-    <title>簡単な構文</title>
-
+   <sect4 xml:id="language.types.string.parsing.basic">
+    <title>単純な構文</title>
     <simpara>
      ドル記号 (<literal>$</literal>) を見付けると、
-     パーサは、有効な変数名を形成することが可能な最長のトークンを取得します。
-     変数名の終りを明示的に指定したい場合は、変数名を波括弧で括ってください。
+     その後に変数名で使える文字は変数として解釈され、置き換えられます。
     </simpara>
-
     <informalexample>
      <programlisting role="php">
 <![CDATA[
@@ -728,12 +721,6 @@ $juice = "apple";
 
 echo "He drank some $juice juice." . PHP_EOL;
 
-// 意図しない動作をします。"s" は、変数名として有効な文字です。よって、変数は $juices を参照しています。$juice ではありません。
-echo "He drank some juice made of $juices." . PHP_EOL;
-
-// 参照する変数名を波括弧で囲むことで、変数名の終端を明示的に指定しています。
-echo "He drank some juice made of {$juice}s.";
-
 ?>
 ]]>
      </programlisting>
@@ -741,42 +728,132 @@ echo "He drank some juice made of {$juice}s.";
      <screen>
 <![CDATA[
 He drank some apple juice.
-He drank some juice made of .
-He drank some juice made of apples.
 ]]>
      </screen>
     </informalexample>
 
     <simpara>
-     同様に、配列添字とオブジェクトのプロパティをパースすることも可能です。
-     配列添字の場合、閉じ角括弧 (<literal>]</literal>) は添字の終りを意味します。
-     シンプルな変数の場合と同じ規則が、オブジェクトのプロパティに対しても適用されます。
-    </simpara>
+     形式的には、文字列の変数の置き換えの文法は下記のようになります:
 
-    <example><title>簡単な構文の例</title>
+    </simpara>
+    <informalexample>
+     <programlisting>
+<![CDATA[
+string-variable::
+     variable-name   (offset-or-property)?
+   | ${   expression   }
+
+offset-or-property::
+     offset-in-string
+   | property-in-string
+
+offset-in-string::
+     [   name   ]
+   | [   variable-name   ]
+   | [   integer-literal   ]
+
+property-in-string::
+     ->  name
+
+variable-name::
+     $   name
+
+name::
+     [a-zA-Z_\x80-\xff][a-zA-Z0-9_\x80-\xff]*
+
+]]>
+     </programlisting>
+    </informalexample>
+
+    <warning>
+     <para>
+      <literal>${ expression }</literal> の形式は、
+      PHP 8.2.0 以降では推奨されなくなりました。
+      なぜなら、これは
+      <link linkend="language.variables.variable">可変変数</link>:
+      として解釈される可能性があるからです。
+      <informalexample>
+       <programlisting role="php">
+<![CDATA[
+<?php
+const foo = 'bar';
+$foo = 'foo';
+$bar = 'bar';
+var_dump("${foo}");
+var_dump("${(foo)}");
+?>
+]]>
+       </programlisting>
+       &example.outputs.82;
+       <screen>
+<![CDATA[
+Deprecated: Using ${var} in strings is deprecated, use {$var} instead in file on line 6
+
+Deprecated: Using ${expr} (variable variables) in strings is deprecated, use {${expr}} instead in file on line 9
+string(3) "foo"
+string(3) "bar"
+]]>
+       </screen>
+       &example.outputs;
+       <screen>
+<![CDATA[
+string(3) "foo"
+string(3) "bar"
+]]>
+       </screen>
+      </informalexample>
+      <link linkend="language.types.string.parsing.advanced">高度な</link>
+      文字列補間の記法を代わりに使うべきです。
+     </para>
+    </warning>
+
+    <note>
+     <simpara>
+      有効な変数名にならない場合、ドル記号は文字列中でそのまま解釈されます:
+     </simpara>
+     <informalexample>
+      <programlisting role="php">
+<![CDATA[
+<?php
+echo "No interpolation $  has happened\n";
+echo "No interpolation $\n has happened\n";
+echo "No interpolation $2 has happened\n";
+?>
+]]>
+      </programlisting>
+      &example.outputs;
+      <screen>
+<![CDATA[
+No interpolation $  has happened
+No interpolation $
+ has happened
+No interpolation $2 has happened
+]]>
+      </screen>
+     </informalexample>
+    </note>
+
+    <example>
+     <title>配列の最初の次元やプロパティの値を補間させる</title>
      <programlisting role="php">
 <![CDATA[
 <?php
-$juices = array("apple", "orange", "koolaid1" => "purple");
+$juices = array("apple", "orange", "string_key" => "purple");
 
-echo "He drank some $juices[0] juice.".PHP_EOL;
-echo "He drank some $juices[1] juice.".PHP_EOL;
-echo "He drank some $juices[koolaid1] juice.".PHP_EOL;
+echo "He drank some $juices[0] juice.";
+echo PHP_EOL;
+echo "He drank some $juices[1] juice.";
+echo PHP_EOL;
+echo "He drank some $juices[string_key] juice.";
+echo PHP_EOL;
 
-class people {
-    public $john = "John Smith";
-    public $jane = "Jane Smith";
-    public $robert = "Robert Paulsen";
-    
-    public $smith = "Smith";
+class A {
+    public $s = "string";
 }
 
-$people = new people();
+$o = new A();
 
-echo "$people->john drank some $juices[0] juice.".PHP_EOL;
-echo "$people->john then said hello to $people->jane.".PHP_EOL;
-echo "$people->john's wife greeted $people->robert.".PHP_EOL;
-echo "$people->robert greeted the two $people->smiths."; // 動作しません
+echo "Object value: $o->s.";
 ?>
 ]]>
      </programlisting>
@@ -786,16 +863,23 @@ echo "$people->robert greeted the two $people->smiths."; // 動作しません
 He drank some apple juice.
 He drank some orange juice.
 He drank some purple juice.
-John Smith drank some apple juice.
-John Smith then said hello to Jane Smith.
-John Smith's wife greeted Robert Paulsen.
-Robert Paulsen greeted the two .
+Object value: string.
 ]]>
      </screen>
     </example>
 
+    <note>
+     <simpara>
+      配列のキーについては、クォートを外さなければなりません。
+      よって、単純な記法ではキーを定数として参照できません。
+      <link linkend="language.types.string.parsing.advanced">高度な</link>
+      記法を使ってください。
+     </simpara>
+    </note>
+
     <simpara>
-     PHP 7.1.0 以降では、 <emphasis>負の</emphasis> 数値インデックスもサポートされました。
+     PHP 7.1.0 以降では、<emphasis>負の</emphasis> 
+     数値インデックスもサポートされています
     </simpara>
 
     <example><title>負の数値インデックス</title>
@@ -819,164 +903,107 @@ Changing the character at index -3 to o gives strong.
     </example>
 
     <simpara>
-     より複雑な場合は、複雑な構文を使用する必要があります。
+     さらに複雑な処理は、
+     <link linkend="language.types.string.parsing.advanced">高度な</link>
+     記法を使う必要があります。
     </simpara>
    </sect4>
 
-   <sect4 xml:id="language.types.string.parsing.complex">
-    <title>複雑な (波括弧) 構文</title>
+   <sect4 xml:id="language.types.string.parsing.advanced">
+    <title>高度な (波括弧) 記法</title>
 
     <simpara>
-     この構文が「複雑(complex)な構文」と呼ばれているのは、
-     構文が複雑であるからではなく、
-     この方法では複雑な式を含めることができるからです。
+     高度な波括弧を使った記法を使うと、
+     任意のアクセス方法で <emphasis>変数</emphasis>
+     の補間を行うことができます。
     </simpara>
 
     <simpara>
-     どんなスカラー変数、配列の要素あるいはオブジェクトのプロパティの文字列表現であっても
-     この構文で含めることができます。
-     文字列の外側に置く場合と同様に式を書き、これを
-     { と } の間に含めてください。'{' はエスケープすることができないため、
-     この構文は $ が { のすぐ後に続く場合にのみ認識されます
-     (リテラル "{$" を指定するには、"{\$" を使用してください)。
-     以下のいくつかの例を見ると理解しやすくなるでしょう。
+     任意のスカラー変数や、配列の要素、オブジェクトのプロパティ
+     (<modifier>static</modifier> かそうでないかは問いません)
+     の文字列表現を、この記法に含めることができます。
+     式は文字列の外部に現れるものと同じやり方で書くことができ、
+     <literal>{</literal> と <literal>}</literal> で囲みます。
+     <literal>{</literal> はエスケープできないので、
+     この記法は <literal>$</literal>
+     記号のすぐ後に <literal>{</literal>
+     が続く場合にのみ認識されます。
+     <literal>{$</literal> を使いたい場合は
+     <literal>{\$</literal> と書くようにしてください。
+     以下の複数の例を見ると、わかりやすいでしょう:
     </simpara>
 
     <informalexample>
      <programlisting role="php">
 <![CDATA[
 <?php
-// すべてのエラーを表示します
-error_reporting(E_ALL);
 
+const DATA_KEY = 'const-key';
 $great = 'fantastic';
+$arr = [
+    '1',
+    '2',
+    '3',
+    [41, 42, 43],
+    'key' => 'Indexed value',
+    'const-key' => 'Key with minus sign',
+    'foo' => ['foo1', 'foo2', 'foo3']
+];
 
-// うまく動作しません。出力: This is { fantastic}
+// Won't work, outputs: This is { fantastic}
 echo "This is { $great}";
 
-// うまく動作します。出力: This is fantastic
+// Works, outputs: This is fantastic
 echo "This is {$great}";
 
-// 動作します
-echo "This square is {$square->width}00 centimeters broad."; 
+class Square {
+    public $width;
+
+    public function __construct(int $width) { $this->width = $width; }
+}
+
+$square = new Square(5);
+
+// Works
+echo "This square is {$square->width}00 centimeters wide.";
 
 
-// 動作します。クォートしたキーを使う場合は、波括弧構文を使わなければなりません
+// Works, quoted keys only work using the curly brace syntax
 echo "This works: {$arr['key']}";
 
 
-// 動作します
+// Works
 echo "This works: {$arr[4][3]}";
 
-// これが動作しない理由は、文字列の外で $foo[bar]
-// が動作しない理由と同じです。
-// PHP はまず最初に foo という名前の定数を探し、
-// 見つからない場合はエラーをスローします。
-// 定数が見つかった場合は、その値('foo' そのものではない)
-// を配列のインデックスとして使います。
-echo "This is wrong: {$arr[foo][3]}"; 
+echo "This works: {$arr[DATA_KEY]}";
 
-// 動作します。多次元配列を使用する際は、
-// 文字列の中では必ず配列を波括弧で囲むようにします。
+// When using multidimensional arrays, always use braces around arrays
+// when inside of strings
 echo "This works: {$arr['foo'][3]}";
 
-// 動作します
-echo "This works: " . $arr['foo'][3];
+echo "This works: {$obj->values[3]->name}";
 
-echo "You can even write {$obj->values[3]->name}";
+echo "This works: {$obj->$staticProp}";
 
-echo "This is the value of the var named $name: {${$name}}";
-
-echo "This is the value of the var named by the return value of getName(): {${getName()}}";
-
-echo "This is the value of the var named by the return value of \$object->getName(): {${$object->getName()}}";
-
-// 動作しません。出力: This is the return value of getName(): {getName()}
-echo "This is the return value of getName(): {getName()}";
-
-// 動作しません。出力: C:\folder\{fantastic}.txt
+// Won't work, outputs: C:\folder\{fantastic}.txt
 echo "C:\folder\{$great}.txt"
-// 動作します。出力: C:\folder\fantastic.txt
+// Works, outputs: C:\folder\fantastic.txt
 echo "C:\\folder\\{$great}.txt"
 ?>
 ]]>
-<!-- maybe it's better to leave this out?? 
-// this works, but i disencourage its use, since this is NOT 
-// involving functions, rather than mere variables, arrays and objects.
-$beer = 'Heineken';
-echo "I'd like to have another {${ strrev('reeb') }}, hips";
- -->
      </programlisting>
     </informalexample>
 
-    <para>
-     文字列内で、変数を使ってクラスのプロパティにアクセスすることもできます。
-     このような構文を使います。
-    </para>
-
-   <informalexample>
-    <programlisting role="php">
-<![CDATA[
-<?php
-class foo {
-    var $bar = 'I am bar.';
-}
-
-$foo = new foo();
-$bar = 'bar';
-$baz = array('foo', 'bar', 'baz', 'quux');
-echo "{$foo->$bar}\n";
-echo "{$foo->{$baz[1]}}\n";
-?>
-]]>
-    </programlisting>
-   &example.outputs;
-   <screen>
-<![CDATA[
-I am bar.
-I am bar.
-]]>
-   </screen>
-   </informalexample>
-    
     <note>
-     <para>
-      <literal>{$}</literal> の内部における
-      関数やメソッドのコール、static なクラス変数、クラス定数からアクセスする値は、
-      文字列が定義されたスコープにおける変数名として解釈します。
-      ひとつの波括弧 (<literal>{}</literal>) では、
-      関数やメソッドの戻り値、クラス定数やstaticなクラス変数の値にはアクセスできません。
-     </para>
+     <simpara>
+      この記法を使うと任意の式が使えるので、
+      <link linkend="language.variables.variable">可変変数</link>
+      を使うこともできます。
+     </simpara>
     </note>
-
-    <informalexample>
-     <programlisting role="php">
-<![CDATA[
-<?php
-// すべてのエラーを表示します
-error_reporting(E_ALL);
-
-class beers {
-    const softdrink = 'rootbeer';
-    public static $ale = 'ipa';
-}
-
-$rootbeer = 'A & W';
-$ipa = 'Alexander Keith\'s';
-
-// これは動作し、出力は I'd like an A & W となります
-echo "I'd like an {${beers::softdrink}}\n";
-
-// これも動作し、出力は I'd like an Alexander Keith's となります
-echo "I'd like an {${beers::$ale}}\n";
-?>
-]]>
-     </programlisting>
-    </informalexample>
-
    </sect4>
   </sect3>
-  
+
   <sect3 xml:id="language.types.string.substr">
    <title>文字列への文字単位のアクセスと修正</title>
 
