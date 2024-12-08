@@ -1,30 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: a885fa2bce80474eb2632993905bb8b603650a3a Maintainer: takagi Status: ready -->
+<!-- EN-Revision: b7dbf6357d4c2d68ffb52158076f692ed532b546 Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa,mumumu -->
  <chapter xml:id="language.variables" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
   <title>変数</title>
   
   <sect1 xml:id="language.variables.basics">
    <title>基本的な事</title>
-   
+
    <simpara>
     PHP の変数はドル記号の後に変数名が続く形式で表されます。
     変数名は大文字小文字を区別します。
    </simpara>
 
    <para>
-    変数名は、PHPの他のラベルと同じルールに従います。
-    有効な変数名は文字またはアンダースコアから始まり、任意の数の文字、
-    数字、アンダースコアが続きます。正規表現によれば、これは次の
+    変数名は、文字
+    (<literal>A-Z</literal>, <literal>a-z</literal>,
+     128から255 までのバイト) で始まり、
+    任意の数の文字、
+    数字、アンダースコアが続きます。正規表現を使うと、これは次の
     ように表現することができます。
     <code>^[a-zA-Z_\x80-\xff][a-zA-Z0-9_\x80-\xff]*$</code>
    </para>
-   
+
    <note>
     <simpara>
-     ここで言うところの文字とはa-z、A-Z、128から255まで
-     (<literal>0x80-0xff</literal>)のバイトを意味します。
+     PHP は Unicode の変数名はサポートしていませんが、
+     (UTF-8のような)文字エンコーディングによっては、
+     マルチバイト文字の全てのバイトを可能な範囲にまでエンコードする場合があり、
+     その結果正しい変数名になる場合があります。
     </simpara>
    </note>
 
@@ -39,29 +43,49 @@
 
    &tip.userlandnaming;
 
-   <para>
-    変数関連の関数に関する情報については、
-    <link linkend="ref.var">変数関数リファレンス</link>
-    を参照ください。
-   </para>
-
-   <para>
-    <informalexample>
-     <programlisting role="php"> 
+   <example>
+    <title>有効な変数と無効な変数</title>
+    <programlisting role="php">
 <![CDATA[
 <?php
 $var = 'Bob';
 $Var = 'Joe';
-echo "$var, $Var";      // "Bob, Joe"を出力します。
+echo "$var, $Var";      // outputs "Bob, Joe"
 
-$4site = 'not yet';     // 無効：数字で始まっている。
-$_4site = 'not yet';    // 有効：アンダースコアで始まっている。
-$tayte = 'mansikka';    // 有効：'a' はアスキーコード228です。
+$4site = 'not yet';     // invalid; starts with a number
+$_4site = 'not yet';    // valid; starts with an underscore
+$täyte = 'mansikka';    // valid; 'ä' is (Extended) ASCII 228.
 ?>
 ]]>
-     </programlisting>
-    </informalexample>
-   </para>
+    </programlisting>
+   </example>
+
+   <simpara>
+    PHP は、任意のバイトの連続を変数名として受け入れます。
+    既に述べたルールに従わない変数名は、実行時にのみ動的にアクセスできます。
+    アクセスする方法については
+    <link linkend="language.variables.variable">可変変数</link>
+    を参照ください。
+   </simpara>
+
+   <example>
+    <title>曖昧な変数名にアクセスする</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+${'invalid-name'} = 'bar';
+$name = 'invalid-name';
+echo ${'invalid-name'}, " ", $$name;
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+bar bar
+]]>
+    </screen>
+   </example>
 
    <para>
     デフォルトでは、変数に代入されるのは常にその値です。
@@ -100,7 +124,7 @@ echo $foo;                 // $fooも変更される。
    </para>
 
    <para>
-    注意すべき重要な点として、名前のある変数のみが参照により代入できる
+    注意すべき重要な点として、変数のみが参照により代入できる
     ということがあります。
     <informalexample>
      <programlisting role="php">
@@ -114,69 +138,76 @@ function test() {
    return 25;
 }
 
-$bar = &test();    // 無効。
+$bar = &test();    // 無効。なぜなら、リファレンスで値を返していないからです。
 ?>
 ]]>
      </programlisting>
     </informalexample>
    </para>
-   
-   
+ 
    <para>
-    PHP では変数を初期化する必要はありませんが、そのようにするのはとてもよいことです。
-    初期化されていない変数の値は、状況に応じたその型のデフォルト値
-    - boolean なら &false;、integer や float ならゼロ、
-    文字列 (<function>echo</function> で使う場合など)
-    なら空の文字列、配列なら空の配列となります。
+    PHP では変数を初期化する必要はありませんが、
+    そうするのはとてもよいことです。
+    初期化されていない場合、
+    <constant>E_WARNING</constant>
+    (PHP 8.0.0 より前のバージョンでは <constant>E_NOTICE</constant>)
+    が発生します。
+    未定義の変数は、デフォルト値 &null; を持ちます。
+    変数が既に初期化済みかどうかを検知するには、
+    言語構造 <function>isset</function> が使えます。
    </para>
    <para>
     <example>
-     <title>初期化されていない変数のデフォルト値</title>
+     <title>未初期化の変数のデフォルト値</title>
      <programlisting role="php">
 <![CDATA[
 <?php
-// 設定も参照もされていない (使用中のコンテキストではない) 変数は NULL となります
+// Unset AND unreferenced (no use context) variable.
 var_dump($unset_var);
-
-// boolean として使用すると、出力は 'false' となります (この構文の詳細は三項演算子を参照ください)
-echo $unset_bool ? "true\n" : "false\n";
-
-// 文字列として使用すると、出力は 'string(3) "abc"' となります
-$unset_str .= 'abc';
-var_dump($unset_str);
-
-// integer として使用すると、出力は 'int(25)' となります
-$unset_int += 25; // 0 + 25 => 25
-var_dump($unset_int);
-
-// float として使用すると、出力は 'float(1.25)' となります
-$unset_float += 1.25;
-var_dump($unset_float);
-
-// 配列として使用すると、出力は array(1) {  [3]=>  string(3) "def" } となります
-$unset_arr[3] = "def"; // array() + array(3 => "def") => array(3 => "def")
-var_dump($unset_arr);
-
-// オブジェクトとして使用し、新しい stdClass オブジェクト (http://www.php.net/manual/ja/reserved.classes.php を参照ください)
-// を作成すると、出力は object(stdClass)#1 (1) {  ["foo"]=>  string(3) "bar" } となります
-$unset_obj->foo = 'bar';
-var_dump($unset_obj);
 ?>
 ]]>
      </programlisting>
+     &example.outputs;
+     <screen>
+<![CDATA[
+Warning: Undefined variable $unset_var in ...
+NULL
+]]>
+     </screen>
     </example>
    </para>
-   <para>
+
+   <simpara>
+    PHP は、未定義の変数からの配列の autovivification
+    (新しい配列の自動生成) を許可しています。
+    未定義の変数に要素を追加する操作は、
+    新しい配列を生成し、警告は発生しません。
+   </simpara>
+   <example>
+    <title>未定義の変数から配列を自動生成する</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$unset_array[] = 'value'; // 警告は発生しません
+?>
+]]>
+    </programlisting>
+   </example>
+
+   <warning>
+    <simpara>
     初期化されていない変数のデフォルト値に依存すると、そのファイルを
-    include している別のファイルで同名の変数が使用されていた場合などに問題を起こします。
-    初期化されていない変数を使用すると、
-    <constant>E_WARNING</constant> (PHP 8.0.0 より前のバージョンでは <constant>E_NOTICE</constant>) レベルのエラーが発生します。
-    しかし、初期化されていない配列に要素を追加する場合はエラーにはなりません。
-    変数が初期化されているかどうかの判断には、<function>isset</function>
-    を使用します。
-   </para>
+    include している別のファイルで同名の変数が使用されていた場合に問題を起こします。
+    </simpara>
+   </warning>
+
+   <simpara>
+    変数に関連した関数については、
+    <link linkend="ref.var">関数リファレンス</link>
+    を参照ください。
+   </simpara>
   </sect1>
-  
+
   <sect1 xml:id="language.variables.predefined">
    <title>定義済みの変数</title>
    
