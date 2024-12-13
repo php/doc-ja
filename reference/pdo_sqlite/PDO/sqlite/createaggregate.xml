@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision$ -->
+<!-- EN-Revision: 51610360d58ed09bc9d1312f419057c0d1d1a998 Maintainer: KentarouTakeda Status: ready -->
+<!-- CREDITS: takagi,KentarouTakeda -->
+<refentry xml:id="pdo-sqlite.createaggregate" xmlns="http://docbook.org/ns/docbook">
+ <refnamediv>
+  <refname>Pdo\Sqlite::createAggregate</refname>
+  <refpurpose>
+   SQL 文で使用するユーザー定義集約関数を登録する
+  </refpurpose>
+ </refnamediv>
+
+ <refsect1 role="description">
+  &reftitle.description;
+  <methodsynopsis role="Pdo\\Sqlite">
+   <modifier>public</modifier> <type>bool</type><methodname>Pdo\Sqlite::createAggregate</methodname>
+   <methodparam><type>string</type><parameter>name</parameter></methodparam>
+   <methodparam><type>callable</type><parameter>step</parameter></methodparam>
+   <methodparam><type>callable</type><parameter>finalize</parameter></methodparam>
+   <methodparam choice="opt"><type>int</type><parameter>numArgs</parameter><initializer>-1</initializer></methodparam>
+  </methodsynopsis>
+  <simpara>
+   このメソッドは <methodname>Pdo\Sqlite::createFunction</methodname>
+   と似ていますが、クエリのすべての行を集約する関数を登録する点が
+   異なります。
+  </simpara>
+  <simpara>
+   この関数と
+   <methodname>Pdo\Sqlite::createFunction</methodname>
+   の最大の違いは、集約関数の登録には 2 つの関数が必要であるということです。
+  </simpara>
+  <tip>
+   <simpara>
+    このメソッドを使用してネイティブ SQL 関数を上書きすることができます。
+   </simpara>
+  </tip>
+ </refsect1>
+
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <variablelist>
+   <varlistentry>
+    <term><parameter>name</parameter></term>
+    <listitem>
+     <simpara>
+       SQL 文で使用する関数の名前。
+     </simpara>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term><parameter>step</parameter></term>
+    <listitem>
+     <simpara>
+      結果セットの各行を処理するコールバック関数。
+      この関数は、結果を蓄積して集約コンテキストに保存しなければなりません。
+     </simpara>
+     <para>
+      定義は次のとおりです:
+      <methodsynopsis>
+       <type>mixed</type><methodname><replaceable>step</replaceable></methodname>
+       <methodparam><type>mixed</type><parameter>context</parameter></methodparam>
+       <methodparam><type>int</type><parameter>rownumber</parameter></methodparam>
+       <methodparam><type>mixed</type><parameter>value</parameter></methodparam>
+       <methodparam rep="repeat"><type>mixed</type><parameter>values</parameter></methodparam>
+      </methodsynopsis>
+      <variablelist>
+       <varlistentry>
+        <term><parameter>context</parameter></term>
+        <listitem>
+         <simpara>
+          最初の行では &null;
+          2行目以降では、この関数が前回返した値です。
+          この値で集約の状態を管理します。
+         </simpara>
+        </listitem>
+       </varlistentry>
+       <varlistentry>
+        <term><parameter>rownumber</parameter></term>
+        <listitem>
+         <simpara>
+          現在の行番号
+         </simpara>
+        </listitem>
+       </varlistentry>
+       <varlistentry>
+        <term><parameter>value</parameter></term>
+        <listitem>
+         <simpara>
+          集約関数に渡されるはじめの引数
+         </simpara>
+        </listitem>
+       </varlistentry>
+       <varlistentry>
+        <term><parameter>values</parameter></term>
+        <listitem>
+         <simpara>
+          集約関数に渡されるふたつめ以降の引数
+         </simpara>
+        </listitem>
+       </varlistentry>
+      </variablelist>
+      この関数の戻り値を、次の関数呼び出し、または
+      ファイナライズ関数の<parameter>context</parameter> 引数として
+      使います。
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term><parameter>finalize</parameter></term>
+    <listitem>
+     <simpara>
+       すべての行が処理された後で呼び出されるコールバック関数。
+       ここでは、集約コンテキストからデータを取得して結果を返します。
+       この関数が返す値は、SQLite が理解できる形式 (すなわち
+       <link linkend="language.types.intro">スカラー型</link>)
+       でなければなりません。
+     </simpara>
+     <para>
+      定義は次のとおりです:
+      <methodsynopsis>
+       <type>mixed</type><methodname><replaceable>fini</replaceable></methodname>
+       <methodparam><type>mixed</type><parameter>context</parameter></methodparam>
+       <methodparam><type>int</type><parameter>rowcount</parameter></methodparam>
+      </methodsynopsis>
+      <variablelist>
+       <varlistentry>
+        <term><parameter>context</parameter></term>
+        <listitem>
+         <para>
+          ステップ関数の最後の戻り値
+         </para>
+        </listitem>
+       </varlistentry>
+       <varlistentry>
+        <term><parameter>rowcount</parameter></term>
+        <listitem>
+         <para>
+          ステップ関数が処理した行数
+         </para>
+        </listitem>
+       </varlistentry>
+      </variablelist>
+      この関数の戻り値が、
+      集約関数全体の戻り値となります。
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term><parameter>numArgs</parameter></term>
+    <listitem>
+     <simpara>
+      コールバック関数があらかじめ定義済みの引数を受け取る場合に、
+      SQLite のパーサに渡すヒント。
+     </simpara>
+    </listitem>
+   </varlistentry>
+  </variablelist>
+ </refsect1>
+
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <simpara>
+   &return.success;
+  </simpara>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <example>
+   <title><methodname>Pdo\Sqlite::createAggregate</methodname> example</title>
+   <simpara>
+    この例では、SQLクエリの中で使用できる
+    <literal>max_length</literal> という名前のユーザー定義集約関数を作成しています。
+   </simpara>
+   <simpara>
+    この例では、<literal>max_length</literal> という集約関数を
+    作成しています。この関数はテーブルの特定のカラム内で
+    最も長い文字列の長さを計算します。
+    各行に対し <literal>max_len_step</literal> 関数が呼ばれ、
+    その際に <literal>$context</literal> パラメータが渡されます。
+    この context パラメータには、他の PHP 変数と同様
+    <type>array</type> や <type>object</type> などを格納できます。
+    この例では、これまでの中で最大の文字列長を格納するために利用しています。
+    もし <varname>$string</varname> が現在の最大値よりも長ければ、
+    context に格納した最大長を新たな値で更新します。
+   </simpara>
+   <simpara>
+    全ての行が処理された後、
+    SQLite は集約関数の結果を計算するため <literal>max_len_finalize</literal>
+    関数を呼び出します。
+    <literal>$context</literal> 内のデータに基づいて何らかの計算を行うことも可能です。
+    この例では、結果はクエリの進行中に計算されているため、
+    context の値をそのまま返すことができます。
+   </simpara>
+   <programlisting role="php">
+<![CDATA[
+<?php
+$data = [
+   'one',
+   'two',
+   'three',
+   'four',
+   'five',
+   'six',
+   'seven',
+   'eight',
+   'nine',
+   'ten',
+];
+$db = new Pdo\Sqlite('sqlite::memory:');
+$db->exec("CREATE TABLE strings(a)");
+$insert = $db->prepare('INSERT INTO strings VALUES (?)');
+foreach ($data as $str) {
+    $insert->execute(array($str));
+}
+$insert = null;
+
+function max_len_step($context, $row_number, $string)
+{
+    if (strlen($string) > $context) {
+        $context = strlen($string);
+    }
+    return $context;
+}
+
+function max_len_finalize($context, $row_count)
+{
+    return $context === null ? 0 : $context;
+}
+
+$db->createAggregate('max_len', 'max_len_step', 'max_len_finalize');
+
+var_dump($db->query('SELECT max_len(a) from strings')->fetchAll());
+
+?>
+]]>
+   </programlisting>
+   <!-- TODO
+   &example.outputs;
+   <screen>
+<![CDATA[
+Code example
+]]>
+   </screen>
+   -->
+   <tip>
+    <simpara>
+     結果の値を context に蓄積し、最後に一括で処理する方法は推奨
+     「しません」。これは、SQLite のメモリ消費量が大きくなるからです。
+     仮に 32 バイトの長さのデータが百万件あったとして、
+     それを蓄積しておくのにどれだけのメモリが必要になるか
+     考えてみましょう。
+    </simpara>
+   </tip>
+  </example>
+ </refsect1>
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <simplelist>
+   <member><methodname>Pdo\Sqlite::createFunction</methodname></member>
+   <member><methodname>Pdo\Sqlite::createCollation</methodname></member>
+   <member><function>sqlite_create_function</function></member>
+   <member><function>sqlite_create_aggregate</function></member>
+  </simplelist>
+ </refsect1>
+
+</refentry>
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"~/.phpdoc/manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
