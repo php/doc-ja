@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 92226911a09278dd440b836583bf382c629cfc63 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 2ebb9660d47e648a28007960bf059d1f691c7f21 Maintainer: takagi Status: ready -->
 <!-- Credits: mumumu -->
 <refentry xml:id="function.curl-multi-exec" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -97,16 +97,9 @@ foreach ($urls as $url) {
 }
 
 do {
-    $status = curl_multi_exec($mh, $active);
+    $status = curl_multi_exec($mh, $unfinishedHandles);
     if ($status !== CURLM_OK) {
         throw new \Exception(curl_multi_strerror(curl_multi_errno($mh)));
-    }
-
-    if ($active) {
-        $activity = curl_multi_select($mh);
-        if ($activity === -1) {
-            throw new \Exception(curl_multi_strerror(curl_multi_errno($mh)));
-        }
     }
 
     while (($info = curl_multi_info_read($mh)) !== false) {
@@ -128,7 +121,13 @@ do {
             }
         }
     }
-} while ($active);
+
+    if ($unfinishedHandles) {
+        if (($updatedHandles = curl_multi_select($mh)) === -1) {
+            throw new \Exception(curl_multi_strerror(curl_multi_errno($mh)));
+        }
+    }
+} while ($unfinishedHandles);
 
 curl_multi_close($mh);
 
