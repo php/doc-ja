@@ -2,55 +2,55 @@
 <!-- $Revision$ -->
 <!-- EN-Revision: c925e1a0ce0659ee1c12d80f9a4a58b10cc4222f Maintainer: KentarouTakeda Status: ready -->
 <sect1 xml:id="language.oop5.property-hooks" xmlns="http://docbook.org/ns/docbook">
- <title>Property Hooks</title>
+ <title>プロパティフック</title>
 
  <simpara>
-  Property hooks, also known as "property accessors" in some other languages,
-  are a way to intercept and override the read and write behavior of a property.
-  This functionality serves two purposes:
+  プロパティフックは、他の言語では「プロパティアクセサー」とも呼ばれる仕組みで、
+  プロパティの読み書き動作へ干渉し、それを上書きする機能を提供します。
+  この機能には、次の2つの目的があります:
  </simpara>
  <orderedlist>
   <listitem>
    <simpara>
-    It allows for properties to be used directly, without get- and set- methods,
-    while leaving the option open to add additional behavior in the future.
-    That renders most boilerplate get/set methods unnecessary,
-    even without using hooks.
+    get- メソッドや set- メソッドを使わずプロパティを参照しつつ、
+    将来的に追加の機能を追加する余地を残す。
+    フックを使わない場合の定型の get/set メソッドのほとんどは
+    不要になる。
    </simpara>
   </listitem>
   <listitem>
    <simpara>
-    It allows for properties that describe an object without needing to store
-    a value directly.
+    実際に値を保持することなく、
+    オブジェクトを説明するプロパティを実装する。
    </simpara>
   </listitem>
  </orderedlist>
  <simpara>
-  There are two hooks available on non-static properties: <literal>get</literal> and <literal>set</literal>.
-  They allow overriding the read and write behavior of a property, respectively.
-  Hooks are available for both typed and untyped properties.
+  非静的なプロパティには <literal>get</literal> と <literal>set</literal> の2種類のフックがあります。
+  それぞれ、プロパティの読み取りと書き込みの動作を上書きします。
+  フックは、型付きプロパティ、型のないプロパティ、何れにも利用可能です。
  </simpara>
  <simpara>
-  A property may be "backed" or "virtual".
-  A backed property is one that actually stores a value.
-  Any property that has no hooks is backed.
-  A virtual property is one that has hooks and those hooks do not interact with the property itself.
-  In this case, the hooks are effectively the same as methods,
-  and the object does not use any space to store a value for that property.
+  プロパティはバックドプロパティか仮想プロパティのどちらかになります。
+  バックドプロパティは実体の値を持つプロパティです。
+  フックを持たないプロパティは、全てバックドプロパティになります。
+  仮想プロパティは、実体の値を必要としないフックだけを持つプロパティです。
+  この場合、フックは実質的にメソッドと等価であり、
+  オブジェクトはこのプロパティ用のメモリを必要としません。
  </simpara>
  <simpara>
-  Property hooks are incompatible with <literal>readonly</literal> properties.
-  If there is a need to restrict access to a <literal>get</literal> or <literal>set</literal>
-  operation in addition to altering its behavior, use
-  <link linkend="language.oop5.visibility-members-aviz">asymmetric property visibility</link>.
+  プロパティフックは <literal>readonly</literal> プロパティと同時に使えません。
+  <literal>get</literal> や <literal>set</literal> の動作の変更だけでなく
+  アクセス自体の制限も行いたい場合、
+  <link linkend="language.oop5.visibility-members-aviz">非対称可視性プロパティ</link> を使ってください。
  </simpara>
- <sect2>
-  <title>Basic Hook Syntax</title>
+<sect2>
+  <title>基本的なフック構文</title>
   <simpara>
-   The general syntax for declaring a hook is as follows.
+   フックを宣言する一般的な構文は次のとおりです。
   </simpara>
   <example>
-   <title>Property hooks (full version)</title>
+   <title>プロパティフック (フルバージョン)</title>
    <programlisting role="php">
 <![CDATA[
 <?php
@@ -80,40 +80,40 @@ print $example->foo;
    </programlisting>
   </example>
   <simpara>
-   The <varname>$foo</varname> property ends in <literal>{}</literal>, rather than a semicolon.
-   That indicates the presence of hooks.
-   Both a <literal>get</literal> and <literal>set</literal> hook are defined,
-   although it is allowed to define only one or the other.
-   Both hooks have a body, denoted by <literal>{}</literal>, that may contain arbitrary code.
+   <varname>$foo</varname> プロパティの末尾はセミコロンではなく <literal>{}</literal> です。
+   これがフックの存在を表します。
+   ここでは <literal>get</literal> と <literal>set</literal> 両方のフックを定義していますが、
+   一方だけ定義することも可能です。
+   どちらのフックも <literal>{}</literal> の中に任意のコードを書くことができます。
   </simpara>
   <simpara>
-   The <literal>set</literal> hook additionally allows specifying the type and name of an incoming value,
-   using the same syntax as a method.
-   The type must be either the same as the type of the property,
-   or <link linkend="language.oop5.variance.contravariance">contravariant</link> (wider) to it.
-   For instance, a property of type <type>string</type> could have a
-   <literal>set</literal> hook that accepts <type class="union"><type>string</type><type>Stringable</type></type>,
-   but not one that only accepts <type>array</type>.
+   <literal>set</literal> フックは、渡される値の型と名前を
+   メソッドと同じ書式で指定できます。
+   この型はプロパティの型と同じか、
+   <link linkend="language.oop5.variance.contravariance">反変</link> (より広い型) でなければなりません。
+   たとえば <type>string</type> 型のプロパティに対しては、
+   <type class="union"><type>string</type><type>Stringable</type></type> を受け取る <literal>set</literal> フックを定義できますが、
+   <type>array</type> のみを受け取るものは定義できません。
   </simpara>
   <simpara>
-   At least one of the hooks references <code>$this->foo</code>, the property itself.
-   That means the property wll be "backed."
-   When calling <code>$example->foo = 'changed'</code>,
-   the provided string will be first cast to lowercase, then saved to the backing value.
-   When reading from the property, the previously saved value may conditionally be appended
-   with additional text.
+   少なくとも一方のフックが <code>$this->foo</code>（プロパティ自体）を参照しているため、
+   このプロパティはバックドプロパティになります。
+   <code>$example->foo = 'changed'</code> が呼び出されると、
+   渡された文字列は小文字に変換され、それが値として保存されます。
+   プロパティを読み取る際には、保存された値に対し、条件に応じて追加の文字列が
+   付与されます。
   </simpara>
   <simpara>
-   There are a number of shorthand syntax variants as well to handle common cases.
+   一般的なケースを簡単に書くための、いくつかの短縮構文があります。
   </simpara>
   <simpara>
-   If the <literal>get</literal> hook is a single expression,
-   then the <literal>{}</literal> may be omitted and replaced with an arrow expression.
+   <literal>get</literal> フックが単独の式である場合、
+   <literal>{}</literal> を省略してアロー式で置き換えることができます。
   </simpara>
   <example>
-   <title>Property get expression</title>
+   <title>プロパティの get 式</title>
    <simpara>
-    This example is equivalent to the previous.
+    この例は前の例と等価です。
    </simpara>
    <programlisting role="php">
 <![CDATA[
@@ -136,13 +136,13 @@ class Example
    </programlisting>
   </example>
   <simpara>
-   If the <literal>set</literal> hook's parameter type is the same as the property type (which is typical),
-   it may be omitted.  In that case, the value to set is automatically given the name <varname>$value</varname>.
+   <literal>set</literal> フックのパラメータの型がプロパティの型と同じ場合 (典型的にはそうなります)、
+   その型は省略可能です。この場合、渡される値には自動的に <varname>$value</varname> という名前が付きます。
   </simpara>
   <example>
-   <title>Property set defaults</title>
+   <title>プロパティ set のデフォルト</title>
    <simpara>
-    This example is equivalent to the previous.
+    この例は前の例と等価です。
    </simpara>
    <programlisting role="php">
 <![CDATA[
@@ -165,12 +165,12 @@ class Example
    </programlisting>
   </example>
   <simpara>
-   If the <literal>set</literal> hook is only setting a modified version of the passed in value,
-   then it may also be simplified to an arrow expression.
-   The value the expression evaluates to will be set on the backing value.
+   <literal>set</literal> フックが、渡された値を変形して保存するだけの場合には、
+   アロー式でより簡略にできます。
+   式の評価結果が値として保存されます。
   </simpara>
   <example>
-   <title>Property set expression</title>
+   <title>プロパティの set 式</title>
    <programlisting role="php">
 <![CDATA[
 <?php
@@ -186,30 +186,30 @@ class Example
    </programlisting>
   </example>
   <simpara>
-   This example is not quite equivalent to the previous,
-   as it does not also modify <code>$this->modified</code>.
-   If multiple statements are needed in the set hook body, use the braces version.
+   この例は <code>$this->modified</code> の値を更新していないため
+   前の例と等価ではありません。
+   set フック内で複数の文が必要な場合、中括弧付きの構文を使用してください。
   </simpara>
   <simpara>
-   A property may implement zero, one, or both hooks as the situation requires.
-   All shorthand versions are mutually-independent.
-   That is, using a short-get with a long-set,
-   or a short-set with an explicit type, or so on is all valid.
+   プロパティは状況に応じて、一方または双方のフックを実装するか、どちらも実装しないことができます。
+   それぞれの短縮構文は独立しており、
+   たとえば「短縮構文の get と 通常の set」
+   「型を明示した短縮構文の set」など、いずれも有効です。
   </simpara>
   <simpara>
-   On a backed property, omitting a <literal>get</literal> or<literal>set</literal>
-   hook means the default read or write behavior will be used.
+   バックドプロパティで <literal>get</literal> や <literal>set</literal> のフックを省略した場合、
+   それはデフォルトの読み書き動作になります。
   </simpara>
   <note>
    <simpara>
-    Hooks can be defined when using
-    <link linkend="language.oop5.decon.constructor.promotion">constructor property promotion</link>.
-    However, when doing so, values provided
-    to the constructor must match the type associated with the property,
-    regardless of what the <literal>set</literal> hook might allow.
+    フックは
+    <link linkend="language.oop5.decon.constructor.promotion">コンストラクタのプロモーション</link>
+    にも定義できます。ただし、コンストラクタで受け取る値は
+    <literal>set</literal> フックが受け入れる型ではなく、
+    プロパティの本来の型に一致しなければならない点に注意してください。
    </simpara>
    <simpara>
-    Consider the following:
+    次のような例を考えます:
    </simpara>
    <programlisting role="php">
 <![CDATA[
@@ -230,7 +230,7 @@ class Example
 ]]>
    </programlisting>
    <simpara>
-    Internally, the engine decomposes this to the following:
+    内部では次のような形で処理されます:
    </simpara>
    <programlisting role="php">
 <![CDATA[
@@ -254,30 +254,30 @@ class Example
 ]]>
    </programlisting>
    <simpara>
-    Any attempts to set the property outside the constructor will
-    allow either <type>string</type> or <interfacename>DateTimeInterface</interfacename>
-    values, but the constructor will only allow <interfacename>DateTimeInterface</interfacename>.
-    This is because the defined type for the property (<interfacename>DateTimeInterface</interfacename>)
-    is used as the parameter type within the constructor signature, regardless of what
-    the <literal>set</literal> hook allows.
+    コンストラクタ以外からプロパティに値を書き込む時は <type>string</type> か
+    <interfacename>DateTimeInterface</interfacename> を受け入れますが、
+    コンストラクタからは <interfacename>DateTimeInterface</interfacename> のみ受け入れます。
+    プロパティの型 (<interfacename>DateTimeInterface</interfacename>) が
+    コンストラクタのシグネチャのパラメータ型として使われ、
+    <literal>set</literal> フックが受け入れる型は参照されないためです。
    </simpara>
    <simpara>
-    If this kind of behavior is needed from the constructor, constructor
-    property promotion cannot be used.
+    このような振る舞いがコンストラクタでも必要な場合、
+    コンストラクタのプロモーションは使用できません。
    </simpara>
   </note>
  </sect2>
  <sect2 xml:id="language.oop5.property-hooks.virtual">
-  <title>Virtual properties</title>
+  <title>仮想プロパティ</title>
   <simpara>
-   Virtual properties are properties that have no backing value.
-   A property is virtual if neither its <literal>get</literal>
-   nor <literal>set</literal> hook references the property itself using exact syntax.
-   That is, a property named <code>$foo</code> whose hook contains <code>$this->foo</code> will be backed.
-   But the following is not a backed property, and will error:
+   仮想プロパティは、値を保持しないプロパティです。
+   <literal>get</literal>、<literal>set</literal> 何れのフックも
+   プロパティ自体を正確に参照していない場合、それは仮想プロパティになります。
+   例えば、<code>$foo</code> という名前のプロパティのフックに <code>$this->foo</code> というコード含まれれば、それはバックドプロパティです。
+   次のプロパティはバックドプロパティではなく、エラーが発生します:
   </simpara>
   <example>
-   <title>Invalid virtual property</title>
+   <title>無効な仮想プロパティ</title>
    <programlisting role="php">
 <![CDATA[
 <?php
@@ -286,7 +286,7 @@ class Example
     public string $foo {
         get {
             $temp = __PROPERTY__;
-            return $this->$temp; // Doesn't refer to $this->foo, so it doesn't count.
+            return $this->$temp; // $this->foo を正確に参照していません
         }
     }
 }
@@ -295,20 +295,20 @@ class Example
    </programlisting>
   </example>
   <simpara>
-   For virtual properties, if a hook is omitted then that operation does
-   not exist and trying to use it will produce an error.
-   Virtual properties take up no memory space in an object.
-   Virtual properties are suited for "derived" properties,
-   such as those that are the combination of two other properties.
+   仮想プロパティでは、フックを省略するとその操作は存在しないとみなされ、
+   使おうとするとエラーが発生します。
+   仮想プロパティはオブジェクト内でメモリを消費しません。
+   仮想プロパティは、例えば他の2つのプロパティを組み合わせて値を作るような
+   「派生」プロパティに向いています。
   </simpara>
   <example>
-   <title>Virtual property</title>
+   <title>仮想プロパティ</title>
    <programlisting role="php">
 <![CDATA[
 <?php
 readonly class Rectangle
 {
-    // A virtual property.
+    // 仮想プロパティ
     public int $area {
         get => $this->h * $this->w;
     }
@@ -317,31 +317,31 @@ readonly class Rectangle
 }
 
 $s = new Rectangle(4, 5);
-print $s->area; // prints 20
-$s->area = 30; // Error, as there is no set operation defined.
+print $s->area; // 20 と表示
+$s->area = 30; // set が定義されていないためエラー
 ?>
 ]]>
    </programlisting>
   </example>
   <simpara>
-   Defining both a <literal>get</literal> and <literal>set</literal> hook on a virtual property is also allowed.
+   仮想プロパティに対して <literal>get</literal> と <literal>set</literal> 両方のフックを定義することもできます。
   </simpara>
  </sect2>
  <sect2>
-  <title>Scoping</title>
+  <title>スコープ</title>
   <simpara>
-   All hooks operate in the scope of the object being modified.
-   That means they have access to all public, private, or protected methods of the object,
-   as well as any public, private, or protected properties,
-   including properties that may have their own property hooks.
-   Accessing another property from within a hook does not bypass the hooks defined on that property.
+   全てのフックは、オブジェクトスコープで動作します。
+   すなわち、全ての public、private、protected な
+   メソッドやプロパティに対してアクセスできます。
+   フックを持つプロパティへアクセスする場合も同様です。
+   フック内で別のプロパティにアクセスしても、そのフックがバイパスされることはありません。
   </simpara>
   <simpara>
-   The most notable implication of this is that non-trivial hooks may sub-call
-   to an arbitrarily complex method if they wish.
+   重要なのは、フック内で必要に応じて、
+   任意の複雑なメソッドを呼び出すこともできるという点です。
   </simpara>
   <example>
-   <title>Calling a method from a hook</title>
+   <title>フックからメソッド呼び出し</title>
    <programlisting role="php">
 <![CDATA[
 <?php
@@ -366,49 +366,49 @@ class Person {
   </example>
  </sect2>
  <sect2>
-  <title>References</title>
+  <title>リファレンス</title>
   <simpara>
-   Because the presence of hooks intercept the read and write process for properties,
-   they cause issues when acquiring a reference to a property or with indirect
-   modification, such as <code>$this->arrayProp['key'] = 'value';</code>.
-   That is because any attempted modification of the value by reference would bypass a set hook,
-   if one is defined.
+   フックはプロパティの読み書きの操作へ干渉するため、
+   プロパティへのリファレンスを取得したり、
+   <code>$this->arrayProp['key'] = 'value';</code> のような
+   間接的な変更操作を行う場合に問題が発生します。
+   リファレンスによる値の変更が set フックをバイパスしてしまうからです。
   </simpara>
   <simpara>
-   In the rare case that getting a reference to a property that has hooks defined is necessary,
-   the <literal>get</literal> hook may be prefixed with <literal>&amp;</literal>
-   to cause it to return by reference.
-   Defining both <literal>get</literal> and <literal>&amp;get</literal> on the
-   same property is a syntax error.
+   プロパティからフックを経由してリファレンスを取得する必要がある場合、
+   <literal>get</literal> フックの先頭に <literal>&amp;</literal>
+   を付与します。
+   同じプロパティで <literal>get</literal> と <literal>&amp;get</literal> を両方定義すると
+   構文エラーになります。
   </simpara>
   <simpara>
-   Defining both <literal>&amp;get</literal> and <literal>set</literal> hooks on a backed property is not allowed.
-   As noted above, writing to the value returned by reference would bypass the <literal>set</literal> hook.
-   On virtual properties, there is no necessary common value shared between the two hooks, so defining both is allowed.
+   バックドプロパティでは <literal>&amp;get</literal> フックと <literal>set</literal> フックは同時に定義できません。
+   前述のとおり、リファレンスへの書き込みは <literal>set</literal> フックをバイパスしてしまうためです。
+   仮想プロパティでは、両フックから共有される実体の値がないため、同時に定義しても問題ありません。
   </simpara>
   <simpara>
-   Writing to an index of an array property also involves an implicit reference.
-   For that reason, writing to a backed array property with hooks defined is
-   allowed if and only if it defines only a <literal>&amp;get</literal> hook.
-   On a virtual property, writing to the array returned from either
-   <literal>get</literal> or <literal>&amp;get</literal> is legal,
-   but whether that has any impact on the object depends on the hook implementation.
+   配列プロパティのインデックスへ書き込みを行う場合も、暗黙的にリファレンスが使われます。
+   従って、フックを伴う配列のバックドプロパティの要素の書き換えができるのは、
+   <literal>&amp;get</literal> フックだけが定義されている場合に限ります。
+   仮想プロパティの場合、
+   <literal>get</literal> や <literal>&amp;get</literal> から返された配列の書き換え自体は可能ですが、
+   それが実際にオブジェクトに反映されるかはフックの実装次第です。
   </simpara>
   <simpara>
-   Overwriting the entire array property is fine, and behaves the same as any other property.
-   Only working with elements of the array require special care.
+   配列全体を上書きする場合は問題ありません。他のプロパティと同様に扱われます。
+   配列の個々の要素を操作する場合のみ注意が必要です。
   </simpara>
  </sect2>
  <sect2>
-  <title>Inheritance</title>
+  <title>継承</title>
   <sect3>
-   <title>Final hooks</title>
+   <title>final フック</title>
    <simpara>
-    Hooks may also be declared <link linkend="language.oop5.final">final</link>,
-    in which case they may not be overridden.
+    フックは <link linkend="language.oop5.final">final</link> としても宣言することもできます。
+    その場合はオーバーライドできなくなります。
    </simpara>
    <example>
-    <title>Final hooks</title>
+    <title>final フックの例</title>
     <programlisting role="php">
 <![CDATA[
 <?php
@@ -422,10 +422,10 @@ class User
 class Manager extends User
 {
     public string $username {
-        // This is allowed
+        // これは許可される
         get => strtoupper($this->username);
 
-        // But this is NOT allowed, because set is final in the parent.
+        // parentのsetがfinalのため許可されない。
         set => strtoupper($value);
     }
 }
@@ -434,23 +434,23 @@ class Manager extends User
     </programlisting>
    </example>
    <simpara>
-    A property may also be declared <link linkend="language.oop5.final">final</link>.
-    A final property may not be redeclared by a child class in any way,
-    which precludes altering hooks or widening its access.
+    プロパティ自体を <link linkend="language.oop5.final">final</link> と宣言することもできます。
+    final で宣言されたプロパティは子クラスで再宣言できず、
+    フックを変更したりアクセス権を広げることもできません。
    </simpara>
    <simpara>
-    Declaring hooks final on a property that is declared final is redundant,
-    and will be silently ignored.
-    This is the same behavior as final methods.
+    final と宣言したプロパティに対しフックも final とするのは
+    単に冗長であり無視されます。
+    これは final メソッドと同じ動作です。
    </simpara>
    <simpara>
-    A child class may define or redefine individual hooks on a property
-    by redefining the property and just the hooks it wishes to override.
-    A child class may also add hooks to a property that had none.
-    This is essentially the same as if the hooks were methods.
+    子クラスでは、オーバーライドしたいフックを再定義することで、
+    フックを個別に上書きできます。
+    フックを持たないプロパティにフックを追加することもできます。
+    フックがメソッドのように振る舞うという点で、一貫した動作です。
    </simpara>
    <example>
-    <title>Hook inheritance</title>
+    <title>フックの継承</title>
     <programlisting role="php">
 <![CDATA[
 <?php
@@ -476,33 +476,33 @@ class PositivePoint extends Point
     </programlisting>
    </example>
    <simpara>
-    Each hook overrides parent implementations independently of each other.
-    If a child class adds hooks, any default value set on the property is removed, and must be redeclared.
-    That is the same consistent with how inheritance works on hook-less properties.
+    それぞれのフックは親の実装を個別にオーバーライドします。
+    子クラスがフックを追加する場合、親クラスのプロパティで設定されたデフォルト値は削除され、再宣言が必要です。
+    これはフックのないプロパティを継承する場合と同じ動作です。
    </simpara>
   </sect3>
   <sect3>
-   <title>Accessing parent hooks</title>
+   <title>親フックへのアクセス</title>
    <simpara>
-    A hook in a child class may access the parent class's property using the
-    <code>parent::$prop</code> keyword, followed by the desired hook.
-    For example, <code>parent::$propName::get()</code>.
-    It may be read as "access the <varname>prop</varname> defined on the parent class,
-    and then run its get operation" (or set operation, as appropriate).
+    子クラスのフックから <code>parent::$prop</code> に続き目的のフックを指定することで、
+    親クラスのプロパティにアクセスできます。
+    例えば <code>parent::$propName::get()</code> は、
+    「親クラスに定義された <varname>prop</varname> の get 操作を実行する」
+    という意味になります。同様に set 操作も実行できます。
    </simpara>
    <simpara>
-    If not accessed this way, the parent class's hook is ignored.
-    This behavior is consistent with how all methods work.
-    This also offers a way to access the parent class's storage, if any.
-    If there is no hook on the parent property,
-    its default get/set behavior will be used.
-    Hooks may not access any other hook except their own parent on their own property.
+    これらの方法でアクセスしない限り、親クラスのフックは無視されます。
+    これはメソッドの動作と同じです。
+    この方法で親クラスの記憶領域にアクセスできます。
+    親クラスのプロパティにフックが存在しない場合、
+    デフォルトの get/set 動作が使われます。
+    フックは、自分自身のプロパティにおける親フック以外は呼び出せません。
    </simpara>
    <simpara>
-    The example above could be rewritten more efficiently as follows.
+    上記の例をより効率的に書くと、以下のようになります。
    </simpara>
    <example>
-    <title>Parent hook access (set)</title>
+    <title>親フックへのアクセス (set)</title>
     <programlisting role="php">
 <![CDATA[
 <?php
@@ -528,10 +528,10 @@ class PositivePoint extends Point
     </programlisting>
    </example>
    <simpara>
-    An example of overriding only a get hook could be:
+    get フックだけをオーバーライドする場合、次の例のようになります:
    </simpara>
    <example>
-    <title>Parent hook access (get)</title>
+    <title>親フックへのアクセス (get)</title>
     <programlisting role="php">
 <![CDATA[
 <?php
@@ -557,27 +557,27 @@ class CaseFoldingStrings extends Strings
   </sect3>
  </sect2>
  <sect2>
-  <title>Serialization</title>
+  <title>シリアライズ</title>
   <simpara>
-   PHP has a number of different ways in which an object may be serialized,
-   either for public consumption or for debugging purposes.
-   The behavior of hooks varies depending on the use case.
-   In some cases, the raw backing value of a property will be used,
-   bypassing any hooks.
-   In others, the property will be read or written "through" the hook,
-   just like any other normal read/write action.
+   PHP には、オブジェクトを外部で利用したりしたり
+   デバッグしたりするための、いくつかのシリアライズ手段があります。
+   その際のフックの挙動は、用途によって異なります。
+   あるケースでは、プロパティに保存された生の値が使われ、
+   フックはバイパスされます。
+   別のケースでは、通常の読み書きと同じように
+   フックを通して処理されます。
   </simpara>
   <simplelist>
-   <member><function>var_dump</function>: Use raw value</member>
-   <member><function>serialize</function>: Use raw value</member>
-   <member><function>unserialize</function>: Use raw value</member>
-   <member><link linkend="object.serialize">__serialize()</link>/<link linkend="object.unserialize">__unserialize()</link>: Custom logic, uses get/set hook</member>
-   <member>Array casting: Use raw value</member>
-   <member><function>var_export</function>: Use get hook</member>
-   <member><function>json_encode</function>: Use get hook</member>
-   <member><interfacename>JsonSerializable</interfacename>: Custom logic, uses get hook</member>
-   <member><function>get_object_vars</function>: Use get hook</member>
-   <member><function>get_mangled_object_vars</function>: Use raw value</member>
+   <member><function>var_dump</function>: 生の値を使用</member>
+   <member><function>serialize</function>: 生の値を使用</member>
+   <member><function>unserialize</function>: 生の値を使用</member>
+   <member><link linkend="object.serialize">__serialize()</link>/<link linkend="object.unserialize">__unserialize()</link>: カスタムロジックと get/set フック</member>
+   <member>配列キャスト: 生の値を使用</member>
+   <member><function>var_export</function>: get フックを使用</member>
+   <member><function>json_encode</function>: get フックを使用</member>
+   <member><interfacename>JsonSerializable</interfacename>: カスタムロジックと get フック</member>
+   <member><function>get_object_vars</function>: get フックを使用</member>
+   <member><function>get_mangled_object_vars</function>: 生の値を使用</member>
   </simplelist>
  </sect2>
 </sect1>

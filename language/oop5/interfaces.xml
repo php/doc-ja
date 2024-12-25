@@ -6,10 +6,9 @@
 <sect1 xml:id="language.oop5.interfaces" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>オブジェクト インターフェイス</title>
  <para>
-  オブジェクト インターフェイスを使うと、
-  メソッドの実装を定義せずに、
-  クラスが実装する必要があるメソッドを指定するコードを作成できます。
-  インターフェイス は クラス や トレイト と名前空間を共有するので、
+  オブジェクト インターフェースでは、クラスが実装すべきメソッドやプロパティの
+  宣言だけを行うコードを作成できます。ここでは具体的な実装は必要ありません。
+  インターフェイスはクラス、トレイト、列挙型と名前空間を共有するので、
   それらと同じ名前を使ってはいけません。
  </para>
  <para>
@@ -117,10 +116,94 @@
     そのインターフェイスを継承したクラスやインターフェイスから定数をオーバーライドすることができませんでした。
    </para>
   </sect2>
+  <sect2 xml:id="language.oop5.interfaces.properties">
+   <title>プロパティ</title>
+   <simpara>
+    PHP 8.4.0 から、インターフェイスはプロパティを宣言できるようになりました。
+    宣言する場合、そのプロパティの読み取り可否、書き込み可否、あるいは双方を
+    指定する必要があります。
+    インターフェイスによる宣言は、public な読み書きに対してのみ適用できます。
+   </simpara>
+   <simpara>
+    クラス側でインターフェイスのプロパティ要件を満たすには、
+    public な通常のプロパティを定義する、
+    対応するフックを実装する public な
+    <link linkend="language.oop5.property-hooks.virtual">仮想プロパティ</link>
+    を定義するなど、複数の方法があります。
+    読み取り用プロパティは <literal>readonly</literal> プロパティによって満たすこともできます。
+    ただし、インターフェイスで「書き込み可能」と宣言されているプロパティを <literal>readonly</literal> にすることはできません。
+   </simpara>
+   <example>
+    <title>インターフェイスのでのプロパティ宣言の例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+interface I
+{
+    // 実装クラスは、public に読み取り可能なプロパティを持つ必要があります。
+    // public に書き込み可能かどうかは制限されません。
+    public string $readable { get; }
+
+    // 実装クラスは、public に書き込み可能なプロパティを持つ必要があります。
+    // public に読み取り可能かどうかは制限されません。
+    public string $writeable { set; }
+
+    // 実装クラスは、public に読み書き可能なプロパティを持つ必要があります。
+    public string $both { get; set; }
+}
+
+// このクラスは、3つのプロパティをすべてフックのない通常のプロパティとして実装しています。
+// これは問題ありません。
+class C1 implements I
+{
+    public string $readable;
+
+    public string $writeable;
+
+    public string $both;
+}
+
+// このクラスは、3つのプロパティすべてを、要求されたフックのみを使って実装しています。
+// これも問題ありません。
+class C2 implements I
+{
+    private string $written = '';
+    private string $all = '';
+
+    // get フックのみ使い仮想プロパティを作成しています。
+    // 「public に読み取り可能」という要件を満たします。
+    // 書き込みはできませんが、インターフェイスからは要求されていません。
+    public string $readable { get => strtoupper($this->writeable); }
+
+    // インターフェイスはこのプロパティが「書き込み可能」であることのみ要求しています。
+    // ここに get の動作も含めることは全く問題ありません。
+    // この例では仮想プロパティを作成しています。
+    public string $writeable {
+        get => $this->written;
+        set {
+            $this->written = $value;
+        }
+    }
+
+    // このプロパティは「public に読み書き可能」でなければならないため、
+    // get と set の両方を実装する必要があります。
+    // デフォルトの動作のままでも問題ありません。
+    public string $both {
+        get => $this->all;
+        set {
+            $this->all = strtoupper($value);
+        }
+    }
+}
+?>
+]]>
+    </programlisting>
+   </example>
+  </sect2>
   <sect2 xml:id="language.oop5.interfaces.examples">
    &reftitle.examples;
    <example xml:id="language.oop5.interfaces.examples.ex1">
-    <title>Interface の例</title>
+    <title>インターフェイスの例</title>
      <programlisting role="php">
 <![CDATA[
 <?php
