@@ -1,0 +1,603 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision$ -->
+<!-- EN-Revision: c925e1a0ce0659ee1c12d80f9a4a58b10cc4222f Maintainer: KentarouTakeda Status: ready -->
+<sect1 xml:id="language.oop5.property-hooks" xmlns="http://docbook.org/ns/docbook">
+ <title>プロパティフック</title>
+
+ <simpara>
+  プロパティフックは、他の言語では「プロパティアクセサー」とも呼ばれる仕組みで、
+  プロパティの読み書き動作へ干渉し、それを上書きする機能を提供します。
+  この機能には、次の2つの目的があります:
+ </simpara>
+ <orderedlist>
+  <listitem>
+   <simpara>
+    get- メソッドや set- メソッドを使わずプロパティを参照しつつ、
+    将来的に追加の機能を追加する余地を残す。
+    フックを使わない場合の定型の get/set メソッドのほとんどは
+    不要になる。
+   </simpara>
+  </listitem>
+  <listitem>
+   <simpara>
+    実際に値を保持することなく、
+    オブジェクトを説明するプロパティを実装する。
+   </simpara>
+  </listitem>
+ </orderedlist>
+ <simpara>
+  非静的なプロパティには <literal>get</literal> と <literal>set</literal> の2種類のフックがあります。
+  それぞれ、プロパティの読み取りと書き込みの動作を上書きします。
+  フックは、型付きプロパティ、型のないプロパティ、いずれにも利用可能です。
+ </simpara>
+ <simpara>
+  プロパティはバックドプロパティか仮想プロパティのどちらかになります。
+  バックドプロパティは実体の値を持つプロパティです。
+  フックを持たないプロパティは、全てバックドプロパティになります。
+  仮想プロパティは、実体の値を必要としないフックだけを持つプロパティです。
+  この場合、フックは実質的にメソッドと等価であり、
+  オブジェクトはこのプロパティ用のメモリを必要としません。
+ </simpara>
+ <simpara>
+  プロパティフックは <literal>readonly</literal> プロパティと同時に使えません。
+  <literal>get</literal> や <literal>set</literal> の動作の変更だけでなく
+  アクセス自体の制限も行いたい場合、
+  <link linkend="language.oop5.visibility-members-aviz">非対称可視性プロパティ</link> を使ってください。
+ </simpara>
+<sect2>
+  <title>基本的なフック構文</title>
+  <simpara>
+   フックを宣言する一般的な構文は次のとおりです。
+  </simpara>
+  <example>
+   <title>プロパティフック (フルバージョン)</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+class Example
+{
+    private bool $modified = false;
+
+    public string $foo = 'default value' {
+        get {
+            if ($this->modified) {
+                return $this->foo . ' (modified)';
+            }
+            return $this->foo;
+        }
+        set(string $value) {
+            $this->foo = strtolower($value);
+            $this->modified = true;
+        }
+    }
+}
+
+$example = new Example();
+$example->foo = 'changed';
+print $example->foo;
+?>
+]]>
+   </programlisting>
+  </example>
+  <simpara>
+   <varname>$foo</varname> プロパティの末尾はセミコロンではなく <literal>{}</literal> です。
+   これがフックの存在を表します。
+   ここでは <literal>get</literal> と <literal>set</literal> 両方のフックを定義していますが、
+   一方だけ定義することも可能です。
+   どちらのフックも <literal>{}</literal> の中に任意のコードを書くことができます。
+  </simpara>
+  <simpara>
+   <literal>set</literal> フックは、渡される値の型と名前を
+   メソッドと同じ書式で指定できます。
+   この型はプロパティの型と同じか、
+   <link linkend="language.oop5.variance.contravariance">反変</link> (より広い型) でなければなりません。
+   たとえば <type>string</type> 型のプロパティに対しては、
+   <type class="union"><type>string</type><type>Stringable</type></type> を受け取る <literal>set</literal> フックを定義できますが、
+   <type>array</type> のみを受け取るものは定義できません。
+  </simpara>
+  <simpara>
+   少なくとも一方のフックが <code>$this->foo</code>（プロパティ自体）を参照しているため、
+   このプロパティはバックドプロパティになります。
+   <code>$example->foo = 'changed'</code> が呼び出されると、
+   渡された文字列は小文字に変換され、それが値として保存されます。
+   プロパティを読み取る際には、保存された値に対し、条件に応じて追加の文字列が
+   付与されます。
+  </simpara>
+  <simpara>
+   よくあるケースに対応するために、いくつかの短縮構文が用意されています。
+  </simpara>
+  <simpara>
+   <literal>get</literal> フックが単独の式である場合、
+   <literal>{}</literal> を省略してアロー式で置き換えることができます。
+  </simpara>
+  <example>
+   <title>プロパティの get 式</title>
+   <simpara>
+    この例は前の例と等価です。
+   </simpara>
+   <programlisting role="php">
+<![CDATA[
+<?php
+class Example
+{
+    private bool $modified = false;
+
+    public string $foo = 'default value' {
+        get => $this->foo . ($this->modified ? ' (modified)' : '');
+
+        set(string $value) {
+            $this->foo = strtolower($value);
+            $this->modified = true;
+        }
+    }
+}
+?>
+]]>
+   </programlisting>
+  </example>
+  <simpara>
+   <literal>set</literal> フックのパラメータの型がプロパティの型と同じ場合 (典型的にはそうなります)、
+   その型は省略可能です。この場合、渡される値には自動的に <varname>$value</varname> という名前が付きます。
+  </simpara>
+  <example>
+   <title>プロパティ set のデフォルト</title>
+   <simpara>
+    この例は前の例と等価です。
+   </simpara>
+   <programlisting role="php">
+<![CDATA[
+<?php
+class Example
+{
+    private bool $modified = false;
+
+    public string $foo = 'default value' {
+        get => $this->foo . ($this->modified ? ' (modified)' : '');
+
+        set {
+            $this->foo = strtolower($value);
+            $this->modified = true;
+        }
+    }
+}
+?>
+]]>
+   </programlisting>
+  </example>
+  <simpara>
+   <literal>set</literal> フックが、渡された値を変形して保存するだけの場合には、
+   アロー式でより簡略にできます。
+   式の評価結果が値として保存されます。
+  </simpara>
+  <example>
+   <title>プロパティの set 式</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+class Example
+{
+    public string $foo = 'default value' {
+        get => $this->foo . ($this->modified ? ' (modified)' : '');
+        set => strtolower($value);
+    }
+}
+?>
+]]>
+   </programlisting>
+  </example>
+  <simpara>
+   この例は <code>$this->modified</code> の値を更新していないため
+   前の例と等価ではありません。
+   set フック内で複数の文が必要な場合、中括弧付きの構文を使用してください。
+  </simpara>
+  <simpara>
+   プロパティは状況に応じて、一方または双方のフックを実装するか、どちらも実装しないことができます。
+   それぞれの短縮構文は独立しており、
+   たとえば「短縮構文の get と 通常の set」
+   「型を明示した短縮構文の set」など、いずれも有効です。
+  </simpara>
+  <simpara>
+   バックドプロパティで <literal>get</literal> や <literal>set</literal> のフックを省略した場合、
+   それはデフォルトの読み書き動作になります。
+  </simpara>
+  <note>
+   <simpara>
+    フックは
+    <link linkend="language.oop5.decon.constructor.promotion">コンストラクタのプロモーション</link>
+    にも定義できます。ただし、コンストラクタで受け取る値は
+    <literal>set</literal> フックが受け入れる型ではなく、
+    プロパティの本来の型に一致しなければならない点に注意してください。
+   </simpara>
+   <simpara>
+    次のような例を考えます:
+   </simpara>
+   <programlisting role="php">
+<![CDATA[
+class Example
+{
+    public function __construct(
+        public private(set) DateTimeInterface $created {
+            set (string|DateTimeInterface $value) {
+                if (is_string($value)) {
+                    $value = new DateTimeImmutable($value);
+                }
+                $this->created = $value;
+            }
+        },
+    ) {
+    }
+}
+]]>
+   </programlisting>
+   <simpara>
+    内部では次のような形で処理されます:
+   </simpara>
+   <programlisting role="php">
+<![CDATA[
+class Example
+{
+    public private(set) DateTimeInterface $created {
+        set (string|DateTimeInterface $value) {
+            if (is_string($value)) {
+                $value = new DateTimeImmutable($value);
+            }
+            $this->created = $value;
+        }
+    }
+
+    public function __construct(
+        DateTimeInterface $created,
+    ) {
+        $this->created = $created;
+    }
+}
+]]>
+   </programlisting>
+   <simpara>
+    コンストラクタ以外からプロパティに値を書き込む時は <type>string</type> か
+    <interfacename>DateTimeInterface</interfacename> を受け入れますが、
+    コンストラクタからは <interfacename>DateTimeInterface</interfacename> のみ受け入れます。
+    プロパティの型 (<interfacename>DateTimeInterface</interfacename>) が
+    コンストラクタのシグネチャのパラメータ型として使われ、
+    <literal>set</literal> フックが受け入れる型は参照されないためです。
+   </simpara>
+   <simpara>
+    このような振る舞いがコンストラクタでも必要な場合、
+    コンストラクタのプロモーションは使用できません。
+   </simpara>
+  </note>
+ </sect2>
+ <sect2 xml:id="language.oop5.property-hooks.virtual">
+  <title>仮想プロパティ</title>
+  <simpara>
+   仮想プロパティは、値を保持しないプロパティです。
+   <literal>get</literal>、<literal>set</literal> いずれのフックも
+   プロパティ自体を正確に参照していない場合、それは仮想プロパティになります。
+   例えば、<code>$foo</code> という名前のプロパティのフックに <code>$this->foo</code> というコード含まれれば、それはバックドプロパティです。
+   次のプロパティはバックドプロパティではなく、エラーが発生します:
+  </simpara>
+  <example>
+   <title>無効な仮想プロパティ</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+class Example
+{
+    public string $foo {
+        get {
+            $temp = __PROPERTY__;
+            return $this->$temp; // $this->foo を正確に参照していません
+        }
+    }
+}
+?>
+]]>
+   </programlisting>
+  </example>
+  <simpara>
+   仮想プロパティでは、フックを省略するとその操作は存在しないとみなされ、
+   使おうとするとエラーが発生します。
+   仮想プロパティはオブジェクト内でメモリを消費しません。
+   仮想プロパティは、例えば他の2つのプロパティを組み合わせて値を作るような
+   「派生」プロパティに向いています。
+  </simpara>
+  <example>
+   <title>仮想プロパティ</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+readonly class Rectangle
+{
+    // 仮想プロパティ
+    public int $area {
+        get => $this->h * $this->w;
+    }
+
+    public function __construct(public int $h, public int $w) {}
+}
+
+$s = new Rectangle(4, 5);
+print $s->area; // 20 と表示
+$s->area = 30; // set が定義されていないためエラー
+?>
+]]>
+   </programlisting>
+  </example>
+  <simpara>
+   仮想プロパティに対して <literal>get</literal> と <literal>set</literal> 両方のフックを定義することもできます。
+  </simpara>
+ </sect2>
+ <sect2>
+  <title>スコープ</title>
+  <simpara>
+   全てのフックは、オブジェクトスコープで動作します。
+   すなわち、全ての public、private、protected な
+   メソッドやプロパティに対してアクセスできます。
+   フックを持つプロパティへアクセスする場合も同様です。
+   フック内で別のプロパティにアクセスしても、そのフックがバイパスされることはありません。
+  </simpara>
+  <simpara>
+   重要なのは、フック内で必要に応じて、
+   任意の複雑なメソッドを呼び出すこともできるという点です。
+  </simpara>
+  <example>
+   <title>フックからメソッド呼び出し</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+class Person {
+    public string $phone {
+        set => $this->sanitizePhone($value);
+    }
+
+    private function sanitizePhone(string $value): string {
+        $value = ltrim($value, '+');
+        $value = ltrim($value, '1');
+
+        if (!preg_match('/\d\d\d\-\d\d\d\-\d\d\d\d/', $value)) {
+            throw new \InvalidArgumentException();
+        }
+        return $value;
+    }
+}
+?>
+]]>
+   </programlisting>
+  </example>
+ </sect2>
+ <sect2>
+  <title>リファレンス</title>
+  <simpara>
+   フックはプロパティの読み書きの操作へ干渉するため、
+   プロパティへのリファレンスを取得したり、
+   <code>$this->arrayProp['key'] = 'value';</code> のような
+   間接的な変更操作を行う場合に問題が発生します。
+   リファレンスによる値の変更が set フックをバイパスしてしまうからです。
+  </simpara>
+  <simpara>
+   プロパティからフックを経由してリファレンスを取得する必要がある場合、
+   <literal>get</literal> フックの先頭に <literal>&amp;</literal>
+   を付与します。
+   同じプロパティで <literal>get</literal> と <literal>&amp;get</literal> を両方定義すると
+   構文エラーになります。
+  </simpara>
+  <simpara>
+   バックドプロパティでは <literal>&amp;get</literal> フックと <literal>set</literal> フックは同時に定義できません。
+   前述のとおり、リファレンスへの書き込みは <literal>set</literal> フックをバイパスしてしまうためです。
+   仮想プロパティでは、両フックから共有される実体の値がないため、同時に定義しても問題ありません。
+  </simpara>
+  <simpara>
+   配列プロパティのインデックスへ書き込みを行う場合も、暗黙的にリファレンスが使われます。
+   従って、フックを伴う配列のバックドプロパティの要素の書き換えができるのは、
+   <literal>&amp;get</literal> フックだけが定義されている場合に限ります。
+   仮想プロパティの場合、
+   <literal>get</literal> や <literal>&amp;get</literal> から返された配列の書き換え自体は可能ですが、
+   それが実際にオブジェクトに反映されるかはフックの実装次第です。
+  </simpara>
+  <simpara>
+   配列全体を上書きする場合は問題ありません。他のプロパティと同様に扱われます。
+   配列の個々の要素を操作する場合のみ注意が必要です。
+  </simpara>
+ </sect2>
+ <sect2>
+  <title>継承</title>
+  <sect3>
+   <title>final フック</title>
+   <simpara>
+    フックは <link linkend="language.oop5.final">final</link> としても宣言することもできます。
+    その場合はオーバーライドできなくなります。
+   </simpara>
+   <example>
+    <title>final フックの例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+class User
+{
+    public string $username {
+        final set => strtolower($value);
+    }
+}
+
+class Manager extends User
+{
+    public string $username {
+        // これは許可される
+        get => strtoupper($this->username);
+
+        // parentのsetがfinalのため許可されない。
+        set => strtoupper($value);
+    }
+}
+?>
+]]>
+    </programlisting>
+   </example>
+   <simpara>
+    プロパティ自体を <link linkend="language.oop5.final">final</link> と宣言することもできます。
+    final で宣言されたプロパティは子クラスで再宣言できず、
+    フックを変更したりアクセス権を広げることもできません。
+   </simpara>
+   <simpara>
+    final と宣言したプロパティに対しフックも final とするのは
+    単に冗長であり無視されます。
+    これは final メソッドと同じ動作です。
+   </simpara>
+   <simpara>
+    子クラスでは、オーバーライドしたいフックを再定義することで、
+    フックを個別に上書きできます。
+    フックを持たないプロパティにフックを追加することもできます。
+    フックがメソッドのように振る舞うという点で、一貫した動作です。
+   </simpara>
+   <example>
+    <title>フックの継承</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+class Point
+{
+    public int $x;
+    public int $y;
+}
+
+class PositivePoint extends Point
+{
+    public int $x {
+        set {
+            if ($value < 0) {
+                throw new \InvalidArgumentException('Too small');
+            }
+            $this->x = $value;
+        }
+    }
+}
+?>
+]]>
+    </programlisting>
+   </example>
+   <simpara>
+    それぞれのフックは親の実装を個別にオーバーライドします。
+    子クラスがフックを追加する場合、親クラスのプロパティで設定されたデフォルト値は削除され、再宣言が必要です。
+    これはフックのないプロパティを継承する場合と同じ動作です。
+   </simpara>
+  </sect3>
+  <sect3>
+   <title>親フックへのアクセス</title>
+   <simpara>
+    子クラスのフックから <code>parent::$prop</code> に続き目的のフックを指定することで、
+    親クラスのプロパティにアクセスできます。
+    例えば <code>parent::$propName::get()</code> は、
+    「親クラスに定義された <varname>prop</varname> の get 操作を実行する」
+    という意味になります。同様に set 操作も実行できます。
+   </simpara>
+   <simpara>
+    これらの方法でアクセスしない限り、親クラスのフックは無視されます。
+    これはメソッドの動作と同じです。
+    この方法で親クラスの記憶領域にアクセスできます。
+    親クラスのプロパティにフックが存在しない場合、
+    デフォルトの get/set 動作が使われます。
+    フックは、自分自身のプロパティにおける親フック以外は呼び出せません。
+   </simpara>
+   <simpara>
+    上記の例をより効率的に書くと、以下のようになります。
+   </simpara>
+   <example>
+    <title>親フックへのアクセス (set)</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+class Point
+{
+    public int $x;
+    public int $y;
+}
+
+class PositivePoint extends Point
+{
+    public int $x {
+        set {
+            if ($value < 0) {
+                throw new \InvalidArgumentException('Too small');
+            }
+            $this->x = $value;
+        }
+    }
+}
+?>
+]]>
+    </programlisting>
+   </example>
+   <simpara>
+    get フックだけをオーバーライドする場合、次の例のようになります:
+   </simpara>
+   <example>
+    <title>親フックへのアクセス (get)</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+class Strings
+{
+    public string $val;
+}
+
+class CaseFoldingStrings extends Strings
+{
+    public bool $uppercase = true;
+
+    public string $val {
+        get => $this->uppercase
+            ? strtoupper(parent::$val::get())
+            : strtolower(parent::$val::get());
+    }
+}
+?>
+]]>
+    </programlisting>
+   </example>
+  </sect3>
+ </sect2>
+ <sect2>
+  <title>シリアライズ</title>
+  <simpara>
+   PHP には、オブジェクトを外部で利用したり
+   デバッグしたりするための、いくつかのシリアライズ手段があります。
+   その際のフックの挙動は、用途によって異なります。
+   あるケースでは、プロパティに保存された生の値が使われ、
+   フックはバイパスされます。
+   別のケースでは、通常の読み書きと同じように
+   フックを通して処理されます。
+  </simpara>
+  <simplelist>
+   <member><function>var_dump</function>: 生の値を使用</member>
+   <member><function>serialize</function>: 生の値を使用</member>
+   <member><function>unserialize</function>: 生の値を使用</member>
+   <member><link linkend="object.serialize">__serialize()</link>/<link linkend="object.unserialize">__unserialize()</link>: カスタムロジックと get/set フック</member>
+   <member>配列キャスト: 生の値を使用</member>
+   <member><function>var_export</function>: get フックを使用</member>
+   <member><function>json_encode</function>: get フックを使用</member>
+   <member><interfacename>JsonSerializable</interfacename>: カスタムロジックと get フック</member>
+   <member><function>get_object_vars</function>: get フックを使用</member>
+   <member><function>get_mangled_object_vars</function>: 生の値を使用</member>
+  </simplelist>
+ </sect2>
+</sect1>
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"~/.phpdoc/manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->

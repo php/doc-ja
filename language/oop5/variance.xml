@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 76874c0982c06b2cdfeb12427bb319e34c6066d8 Maintainer: mumumu Status: ready -->
+<!-- EN-Revision: 2e7c00fd314a708ecbd495ef7cc9ae8c8462c33c Maintainer: mumumu Status: ready -->
 <sect1 xml:id="language.oop5.variance" xmlns="http://docbook.org/ns/docbook">
 
  <title>共変性と反変性</title>
@@ -12,7 +12,7 @@
 
  <para>
   共変性とは、子クラスのメソッドが、親クラスの戻り値よりも、より特定の、狭い型を返すことを許すことです。
-  一方で、反変性とは、親クラスのものよりも、より抽象的な、広い型を引数に指定することを許すものです。
+  反変性とは、親クラスのものよりも、より抽象的な、広い型を引数に指定することを許すものです。
  </para>
 
  <para>
@@ -246,6 +246,61 @@ Fatal error: Uncaught TypeError: Argument 1 passed to Animal::eat() must be an i
 ]]>
    </screen>
   </informalexample>
+ </sect2>
+ <sect2>
+  <title>プロパティの共変性と反変性(変性)</title>
+  <simpara>
+   デフォルトでは、プロパティは共変でも反変でもなく不変です。
+   つまり、子クラスでは型は変更できません。
+   「get」操作は共変でなければならず、
+   「set」操作は反変でなければならないことが理由です。
+   双方を同時に満たすには、プロパティは不変である必要があります。
+  </simpara>
+  <simpara>
+   PHP 8.4.0 から、インターフェイスや抽象クラスでの抽象プロパティや、
+   <link linkend="language.oop5.property-hooks.virtual">仮想プロパティ</link> が追加されたことにより、
+   プロパティが「get」または「set」だけを持つことを宣言できるようになりました。
+   つまり、「get」操作だけが必要な抽象プロパティや仮想プロパティは共変性を持ちます。
+   同様に、「set」操作だけが必要な抽象プロパティや仮想プロパティは反変性を持ちます。
+  </simpara>
+  <simpara>
+   ただし、いったんプロパティが「get」と「set」操作の両方を持つようになると、
+   それ以上の拡張において共変あるいは反変にはなりません。
+   その時点で不変となります。
+  </simpara>
+  <example>
+   <title>プロパティの型の変性</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+class Animal {}
+class Dog extends Animal {}
+class Poodle extends Dog {}
+
+interface PetOwner
+{
+    // 必要なのは「get」操作のみなので、共変です
+    public Animal $pet { get; }
+}
+
+class DogOwner implements PetOwner
+{
+    // 「get」が Animal を返す限り、より狭い型に変更できます。
+    // しかし、これは通常のプロパティなので、
+    // 子クラスでは型を変更できません。
+    public Dog $pet;
+}
+
+class PoodleOwner extends DogOwner
+{
+    // これは許可されません。
+    // DogOwner::$pet は「get」「set」両方の操作を持つためです。
+    public Poodle $pet;
+}
+?>
+]]>
+   </programlisting>
+  </example>
  </sect2>
 </sect1>
 <!-- Keep this comment at the end of the file
