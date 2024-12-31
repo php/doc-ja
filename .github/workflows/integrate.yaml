@@ -12,7 +12,7 @@ jobs:
   build:
     name: "Build"
 
-    runs-on: "ubuntu-20.04"
+    runs-on: "ubuntu-24.04"
 
     strategy:
       matrix:
@@ -20,6 +20,13 @@ jobs:
           - "ja"
 
     steps:
+      - name: "Set up PHP"
+        uses: "shivammathur/setup-php@v2"
+        with:
+          php-version: "8.3"
+          extensions: "sqlite3"
+          coverage: "none"
+
       - name: "Checkout php/doc-${{ matrix.language }}"
         uses: "actions/checkout@v4"
         with:
@@ -39,5 +46,52 @@ jobs:
           path: "doc-base"
           repository: "php/doc-base"
 
+      - name: "Checkout php/phd"
+        uses: "actions/checkout@v4"
+        with:
+          path: "phd"
+          repository: "php/phd"
+
       - name: "Build documentation for ${{ matrix.language }}"
-        run: "php8.0 doc-base/configure.php --disable-libxml-check --enable-xml-details --redirect-stderr-to-stdout --with-lang=${{ matrix.language }}"
+        run: "php doc-base/configure.php --disable-libxml-check --enable-xml-details --redirect-stderr-to-stdout --with-lang=${{ matrix.language }}"
+
+      - name: "Render documentation for ${{ matrix.language }}"
+        run: "php phd/render.php --docbook doc-base/.manual.xml --package PHP --format xhtml"
+
+      - name: "Save documentation for ${{ matrix.language }}"
+        uses: "actions/upload-artifact@v4"
+        with:
+          name: "manual-html"
+          path: "output/php-chunked-xhtml"
+          retention-days: 7
+
+  textlint:
+    name: "Textlint"
+
+    needs: ["build"]
+    runs-on: "ubuntu-24.04"
+
+    steps:
+      - name: "Checkout"
+        uses: "actions/checkout@v4"
+
+      - name: "Install Node.js"
+        uses: "actions/setup-node@v4"
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: "build/package-lock.json"
+
+      - name: "Download artifacts"
+        uses: "actions/download-artifact@v4"
+        with:
+          name: "manual-html"
+          path: "build/output"
+
+      - name: "Install textlint"
+        run: "npm ci --no-audit"
+        working-directory: "build"
+
+      - name: "Run textlint"
+        run: "npx textlint --color ./output"
+        working-directory: "build"
