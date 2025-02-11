@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 4f5e2b22575131fa5e9c3004b1c874e1acb06573 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 2bd9a67c8c6c5961189f868364837a5c3ba7e063 Maintainer: takagi Status: ready -->
 
 <refentry xml:id="domxpath.registerphpfunctions" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -31,7 +31,10 @@
        このパラメータを使って、特定の関数のみを XPath からコールできるように制限することができます。
       </para>
       <para>
-       このパラメータには、文字列 (関数名) あるいは関数名の配列を指定します。
+       このパラメータは、以下のいずれかになります:
+       <type>string</type> (関数名),
+       関数名の <type>array</type>,
+       関数名がキーで <type>callable</type> な値を持つ連想配列。
       </para>
      </listitem>
     </varlistentry>
@@ -46,6 +49,29 @@
   </para>
  </refsect1>
 
+ <refsect1 role="changelog">
+  &reftitle.changelog;
+  <informaltable>
+   <tgroup cols="2">
+    <thead>
+     <row>
+      <entry>&Version;</entry>
+      <entry>&Description;</entry>
+     </row>
+    </thead>
+    <tbody>
+     <row>
+      <entry>8.4.0</entry>
+      <entry>
+       <parameter>restrict</parameter> を <type>配列</type> にする際、
+       コールバックとして <type>callable</type> を使用できるようになりました。
+      </entry>
+     </row>
+    </tbody>
+   </tgroup>
+  </informaltable>
+ </refsect1>
+ 
  <refsect1 role="examples">
   &reftitle.examples;
   <para>
@@ -150,6 +176,38 @@ foreach ($books as $book) {
     </programlisting>
     &example.outputs.similar;
     <screen>
+     <![CDATA[
+Books with multiple authors:
+PHP Basics
+]]>
+    </screen>
+   </example>
+  </para>
+  <para>
+   <example>
+    <title><methodname>DOMXPath::registerPHPFunctions</methodname> with a <type>callable</type></title>
+    <programlisting role="php">
+     <![CDATA[
+<?php
+$doc = new DOMDocument;
+$doc->load('book.xml');
+$xpath = new DOMXPath($doc);
+// 名前空間 php: を登録します (必須)
+$xpath->registerNamespace("php", "http://php.net/xpath");
+// PHP の関数を登録します (has_multiple 限定)
+$xpath->registerPHPFunctions(["has_multiple" => fn ($nodes) => count($nodes) > 1]);
+// 複数の author がいる book のみを取り出します
+$books = $xpath->query('//book[php:function("has_multiple", author)]');
+echo "Books with multiple authors:\n";
+foreach ($books as $book) {
+    echo $book->getElementsByTagName("title")->item(0)->nodeValue . "\n";
+}
+
+?>
+]]>
+    </programlisting>
+    &example.outputs.similar;
+    <screen>
 <![CDATA[
 Books with multiple authors:
 PHP Basics
@@ -166,6 +224,7 @@ PHP Basics
     <member><methodname>DOMXPath::registerNamespace</methodname></member>
     <member><methodname>DOMXPath::query</methodname></member>
     <member><methodname>DOMXPath::evaluate</methodname></member>
+    <member><methodname>XSLTProcessor::registerPHPFunctions</methodname></member>
    </simplelist>
   </para>
  </refsect1>
