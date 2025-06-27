@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: c925e1a0ce0659ee1c12d80f9a4a58b10cc4222f Maintainer: KentarouTakeda Status: ready -->
+<!-- EN-Revision: cd2980a57a0845def25ed84276d9662159a91bd5 Maintainer: KentarouTakeda Status: ready -->
 <sect1 xml:id="language.oop5.property-hooks" xmlns="http://docbook.org/ns/docbook">
  <title>プロパティフック</title>
 
@@ -44,7 +44,15 @@
   アクセス自体の制限も行いたい場合、
   <link linkend="language.oop5.visibility-members-aviz">非対称可視性プロパティ</link> を使ってください。
  </simpara>
-<sect2>
+
+ <note>
+  <title>バージョン情報</title>
+  <simpara>
+   プロパティフックは PHP 8.4 で導入されました。
+  </simpara>
+ </note>
+
+ <sect2>
   <title>基本的なフック構文</title>
   <simpara>
    フックを宣言する一般的な構文は次のとおりです。
@@ -213,6 +221,7 @@ class Example
    </simpara>
    <programlisting role="php">
 <![CDATA[
+<?php
 class Example
 {
     public function __construct(
@@ -234,6 +243,7 @@ class Example
    </simpara>
    <programlisting role="php">
 <![CDATA[
+<?php
 class Example
 {
     public private(set) DateTimeInterface $created {
@@ -273,7 +283,7 @@ class Example
    仮想プロパティは、値を保持しないプロパティです。
    <literal>get</literal>、<literal>set</literal> いずれのフックも
    プロパティ自体を正確に参照していない場合、それは仮想プロパティになります。
-   例えば、<code>$foo</code> という名前のプロパティのフックに <code>$this->foo</code> というコード含まれれば、それはバックドプロパティです。
+   例えば、<code>$foo</code> という名前のプロパティのフックに <code>$this->foo</code> というコードが含まれれば、それはバックドプロパティです。
    次のプロパティはバックドプロパティではなく、エラーが発生します:
   </simpara>
   <example>
@@ -306,7 +316,7 @@ class Example
    <programlisting role="php">
 <![CDATA[
 <?php
-readonly class Rectangle
+class Rectangle
 {
     // 仮想プロパティ
     public int $area {
@@ -499,7 +509,10 @@ class PositivePoint extends Point
     フックは、自分自身のプロパティにおける親フック以外は呼び出せません。
    </simpara>
    <simpara>
-    上記の例をより効率的に書くと、以下のようになります。
+    上記の例は以下のように書き換えることができます。このようにすると、
+    将来 <literal>Point</literal> クラスに独自の <literal>set</literal>
+    フックを追加しても問題になりません（前述の例では、
+    親クラスに追加されたフックが子クラスで無視されてしまいます）。
    </simpara>
    <example>
     <title>親フックへのアクセス (set)</title>
@@ -519,7 +532,7 @@ class PositivePoint extends Point
             if ($value < 0) {
                 throw new \InvalidArgumentException('Too small');
             }
-            $this->x = $value;
+            parent::$x::set($value);
         }
     }
 }
