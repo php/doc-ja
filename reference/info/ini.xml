@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: ada1d79de35239334b68d0120b011530e31244ff Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: b1116af46680f7baf89c46610430a3b63ce9a1f0 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi,mumumu -->
 <section xml:id="info.configuration" xmlns="http://docbook.org/ns/docbook">
  &reftitle.runtime;
@@ -100,6 +100,24 @@
      <entry>"1"</entry>
      <entry><constant>INI_ALL</constant></entry>
      <entry></entry>
+    </row>
+    <row>
+     <entry><link linkend="ini.zend.max-allowed-stack-size">zend.max_allowed_stack_size</link></entry>
+     <entry>"0"</entry>
+     <entry><constant>INI_SYSTEM</constant></entry>
+     <entry>PHP 8.3.0 以降で利用可能</entry>
+    </row>
+    <row>
+     <entry><link linkend="ini.zend.reserved-stack-size">zend.reserved_stack_size</link></entry>
+     <entry>"0"</entry>
+     <entry><constant>INI_SYSTEM</constant></entry>
+     <entry>PHP 8.3.0 以降で利用可能</entry>
+    </row>
+    <row>
+     <entry><link linkend="ini.fiber.stack-size">fiber.stack_size</link></entry>
+     <entry></entry>
+     <entry><constant>INI_ALL</constant></entry>
+     <entry>PHP 8.1.0 以降で利用可能</entry>
     </row>
     </tbody>
    </tgroup>
@@ -311,6 +329,106 @@
     </listitem>
    </varlistentry>
 
+   <varlistentry xml:id="ini.zend.max-allowed-stack-size">
+    <term>
+     <parameter>zend.max_allowed_stack_size</parameter>
+     <type>int</type>
+    </term>
+    <listitem>
+     <para>
+      オペレーティングシステムが、
+      プログラムに使うことを許可しているネイティブスタックスペースの最大値。
+      オペレーティングシステムがが許可している以上のサイズを使おうとすると、
+      通常はハードなクラッシュが発生し、
+      デバッグ情報が簡単に利用できることはありません。
+      デバッグを容易にするために、PHP のエンジンはそうしたことが発生する前に
+      (<link linkend="ini.zend.max-allowed-stack-size">zend.max_allowed_stack_size</link>-<link linkend="ini.zend.reserved-stack-size">zend.reserved_stack_size</link> バイト以上のスタックをプログラムが使った場合に)
+      <classname>Error</classname> をスローします。
+     </para>
+     <para>
+      ユーザー定義の再帰的なコードは、ネイティブスタック空間を消費しません。
+      しかし、内部関数やマジックメソッドは消費します。
+      これらの関数を含む、とても深い再帰コードは、
+      利用可能なネイティブスタックスペースをすべて使い切る原因になりえます。
+     </para>
+     <para>
+      この
+      このパラメータに設定可能な値は下記の通りです:
+      <simplelist>
+       <member>
+        <literal>0</literal>:
+        プログラムが消費できる、
+        オペレーティングシステムのネイティブスタックスペースの最大値を自動検知します。これがデフォルトです。
+        検知できない場合は、既知のシステムのデフォルト値を使います。
+       </member>
+       <member>
+        <literal>-1</literal>: エンジンのスタックサイズチェックを無効にします。
+       </member>
+       <member>
+        正の整数: 固定のサイズをバイト単位で指定します。
+        この値に大き過ぎる値を指定すると、スタックサイズチェックを無効にすることと同じことになります。
+       </member>
+      </simplelist>
+     </para>
+     <para>
+      <link linkend="language.fibers">fibers</link> のスタックサイズは
+      <link linkend="ini.fiber.stack-size">fiber.stack_size</link>
+      によって決まります。
+      Fiber の実行中に行われるスタックをチェックする際には、
+      <link linkend="ini.zend.max-allowed-stack-size">zend.max_allowed_stack_size</link> の代わりにこれを使います。
+     </para>
+     <note>
+      <para>
+       この機能は スタック <emphasis>バッファ</emphasis>
+       のオーバーフローとは無関係です。つまり、セキュリティ機能ではありません。
+      </para>
+     </note>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="ini.zend.reserved-stack-size">
+    <term>
+     <parameter>zend.reserved_stack_size</parameter>
+     <type>int</type>
+    </term>
+    <listitem>
+     <para>
+      予約するスタックのサイズを、バイト単位で指定します。
+      この値はバッファの値として
+      スタックサイズをチェックする際に <link linkend="ini.zend.max-allowed-stack-size">max allowed stack size</link> から引かれます。
+     </para>
+     <para>
+      このパラメータに設定可能な値は下記の通りです:
+      <simplelist>
+       <member>
+        <literal>0</literal>: 適切な値を自動的に検知します。
+       </member>
+       <member>
+        正の整数: 固定のサイズをバイト単位で指定します。
+       </member>
+      </simplelist>
+     </para>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="ini.fiber.stack-size">
+    <term>
+     <parameter>fiber.stack_size</parameter>
+     <type>int</type>
+    </term>
+    <listitem>
+     <para>
+      個別の <link linkend="language.fibers">Fiber</link>
+      に割り当てられるネイティブスタックサイズを、
+      バイト単位で指定します。
+     </para>
+     <para>
+      ポインタのサイズが8バイトより小さいシステムでは、
+      デフォルト値は 1MiB です。
+      8バイト以上のシステムでは、デフォルトは 2MiB です。
+     </para>
+    </listitem>
+   </varlistentry>
   </variablelist>
  </para>
 </section>
