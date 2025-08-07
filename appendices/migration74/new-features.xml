@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 8d1a5d2d15df15cc5cbc7f96cdc083b8fe49366e Maintainer: mumumu Status: ready -->
+<!-- EN-Revision: e150cc645a17588282e5e6b5e43e600a2f345549 Maintainer: mumumu Status: ready -->
 
 <sect1 xml:id="migration74.new-features" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>新機能</title>
@@ -72,6 +72,34 @@ class ChildProducer extends Producer {
      </programlisting>
     </informalexample>
     完全な型の変位指定は、オートローディングが使われている場合のみ有効です。単一ファイル内では、型の参照が循環参照していない場合のみ可能です。なぜなら、全てのクラスは参照する前に利用可能でなければならないからです。
+    <informalexample>
+     <programlisting role="php">
+<![CDATA[
+<?php
+
+/**
+ * これらのクラスは、LSP の要件を満たします。
+ * なぜなら、C は A の部分型だからです。
+ * しかし、B が宣言された時点で、C はまだ利用可能ではありません。
+ */
+class A
+{
+    public function method(): A {}
+}
+
+class B extends A
+{
+    // Fatal error: Could not check compatibility between B::method():C and
+    // A::method(): A, because class С is not available
+    public function method(): С {}
+}
+
+class C extends B {}
+
+?>
+]]>
+     </programlisting>
+    </informalexample>
    </para>
   </sect3>
 
@@ -298,10 +326,14 @@ $fruits = ['banana', 'orange', ...$parts, 'watermelon'];
 <![CDATA[
 <?php
 // オブジェクトに必要な状態を全て保持した配列を返す
-public function __serialize(): array;
+public function __serialize(): array
+{
+}
 
 // 与えられた data 配列から、オブジェクトの状態を復元する
-public function __unserialize(array $data): void;
+public function __unserialize(array $data): void
+{
+}
 ?>
 ]]>
      </programlisting>
