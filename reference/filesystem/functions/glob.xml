@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 07e4b982a4097d894d8576ab793f3cf18759983d Maintainer: hirokawa Status: ready -->
-<!-- CREDITS: shimooka,mumumu -->
+<!-- EN-Revision: bb9bfdfc5a4a8ffe27ab4edcfe0d8747a375e2f2 Maintainer: mumumu Status: ready -->
 <refentry xml:id="function.glob" xmlns="http://docbook.org/ns/docbook" xmlns:xi="http://www.w3.org/2001/XInclude">
  <refnamediv>
   <refname>glob</refname>
   <refpurpose>パターンにマッチするパス名を探す</refpurpose>
  </refnamediv>
- 
+
  <refsect1 role="description">
   &reftitle.description;
   <methodsynopsis>
@@ -21,6 +20,12 @@
    <parameter>pattern</parameter> にマッチする全てのパス名を検索します。
    ルールは、一般のシェルで使われるルールと似ています。
   </para>
+  <simpara>
+   Unix システムと macOS での振る舞いは、
+   システムの glob() の実装によって決まります。
+   Windows の実装は、POSIX 1003.2 の glob() の定義を満たしており、
+   範囲を否定する規約 <literal>[!...]</literal> を扱うための拡張も含んでいます。
+  </simpara>
  </refsect1>
 
  <refsect1 role="parameters">
@@ -34,7 +39,7 @@
        パターン。チルダの展開やパラメータ置換は行いません。
       </para>
       <para>
-       Special characters:
+       特殊文字は以下のとおりです:
        <itemizedlist>
         <listitem>
          <simpara>
@@ -55,6 +60,11 @@
         </listitem>
         <listitem>
          <simpara>
+          <literal>{a,b,c}</literal> - <constant>GLOB_BRACE</constant> フラグを使った場合に、コンマで区切った文字列のグループのうち、ひとつにマッチします。
+         </simpara>
+        </listitem>
+        <listitem>
+         <simpara>
           <literal>\</literal> - 次に来る文字をエスケープします。
           但し、<constant>GLOB_NOESCAPE</constant> が使われている場合は除きます。
          </simpara>
@@ -67,10 +77,7 @@
      <term><parameter>flags</parameter></term>
      <listitem>
       <para>
-       有効なフラグは次のとおりです。
-       <variablelist>
-        <xi:include xpointer="xmlns(db=http://docbook.org/ns/docbook) xpointer(id('constant.glob-constant-variablelist')/*)"><xi:fallback/></xi:include>
-       </variablelist>
+       <constant>GLOB_<replaceable>*</replaceable></constant> 定数のいずれか
       </para>
      </listitem>
     </varlistentry>
@@ -84,12 +91,9 @@
    マッチするファイル／ディレクトリを含む配列を返します。
    マッチするファイルがなかった場合には空の配列、
    そして失敗した場合には &false; を返します。
+   <literal>GLOB_NOSORT</literal> を使わない限り、
+   名前はアルファベット順にソートされます。
   </para>
-  <note>
-   <para>
-    システムによっては、何もマッチしなかった場合とエラーが発生した場合を区別できないものもあります。
-   </para>
-  </note>
  </refsect1>
 
  <refsect1 role="examples">
@@ -98,7 +102,7 @@
    <example>
     <title>
      <function>glob</function> が <function>opendir</function>
-     と関連する関数群の代替策になるかを示す簡便な方法
+     と関連する関数群をどのように置き換えられるかを示す簡便な方法
     </title>
     <programlisting role="php">
 <![CDATA[
@@ -115,6 +119,30 @@ foreach (glob("*.txt") as $filename) {
 funclist.txt size 44686
 funcsummary.txt size 267625
 quickref.txt size 137820
+]]>
+    </screen>
+   </example>
+   <example>
+    <title>
+     もっと複雑なパターンを使う例
+    </title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+foreach (glob("path/*/*.{txt,md}", \GLOB_BRACE) as $filename) {
+    echo "$filename\n";
+}
+?>
+]]>
+    </programlisting>
+    &example.outputs.similar;
+    <screen>
+<![CDATA[
+path/docs/mailinglist-rules.md
+path/docs/README.md
+path/docs/release-process.md
+path/pear/install-pear.txt
+path/Zend/README.md
 ]]>
     </screen>
    </example>
