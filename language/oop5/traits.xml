@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 7341710fa635b4a969bc855a1e4619cdfa6b63f1 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: c1f37a6c270aadbbb3da56a3973ffd62197adf2b Maintainer: takagi Status: ready -->
 <!-- CREDITS: mumumu -->
 
  <sect1 xml:id="language.oop5.traits" xmlns="http://docbook.org/ns/docbook">
@@ -26,23 +26,43 @@
     <programlisting role="php">
 <![CDATA[
 <?php
-trait ezcReflectionReturnInfo {
-    function getReturnType() { /*1*/ }
-    function getReturnDescription() { /*2*/ }
+
+trait TraitA {
+    public function sayHello() {
+        echo 'Hello';
+    }
 }
 
-class ezcReflectionMethod extends ReflectionMethod {
-    use ezcReflectionReturnInfo;
-    /* ... */
+trait TraitB {
+    public function sayWorld() {
+        echo 'World';
+    }
 }
 
-class ezcReflectionFunction extends ReflectionFunction {
-    use ezcReflectionReturnInfo;
-    /* ... */
+class MyHelloWorld
+{
+    use TraitA, TraitB; // A class can use multiple traits
+
+    public function sayHelloWorld() {
+        $this->sayHello();
+        echo ' ';
+        $this->sayWorld();
+        echo "!\n";
+    }
 }
+
+$myHelloWorld = new MyHelloWorld();
+$myHelloWorld->sayHelloWorld();
+
 ?>
 ]]>
     </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+Hello World!
+]]>
+    </screen>
    </example>
   
   <sect2 xml:id="language.oop5.traits.precedence">
@@ -123,7 +143,7 @@ Hello Universe!
     </screen>
    </example>
   </sect2>
-  
+
   <sect2 xml:id="language.oop5.traits.multiple">
    <title>複数のトレイト</title>
    <para>
@@ -200,7 +220,7 @@ Hello World!
       演算子を使って B の bigTalk の実装に
       <literal>talk</literal> というエイリアスを指定して使います。
     </para> 
-    <programlisting role="php">
+    <programlisting role="php" annotations="non-interactive">
 <![CDATA[
 <?php
 trait A {
@@ -249,7 +269,7 @@ class Aliased_Talker {
    </para>
    <example xml:id="language.oop5.traits.visibility.ex1">
     <title>メソッドのアクセス権を変更する</title>
-    <programlisting role="php">
+    <programlisting role="php" annotations="non-interactive">
 <![CDATA[
 <?php
 trait HelloWorld {
@@ -383,67 +403,126 @@ class MyHelloWorld {
     <programlisting role="php">
 <![CDATA[
 <?php
-trait Counter {
-    public function inc() {
+
+trait Counter
+{
+    public function inc()
+    {
         static $c = 0;
         $c = $c + 1;
         echo "$c\n";
     }
 }
 
-class C1 {
+class C1
+{
     use Counter;
 }
 
-class C2 {
+class C2
+{
     use Counter;
 }
 
-$o = new C1(); $o->inc(); // 1 と表示
-$p = new C2(); $p->inc(); // 1 と表示
+$o = new C1();
+$o->inc();
+$p = new C2();
+$p->inc();
+
 ?>
 ]]>
     </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+1
+1
+]]>
+    </screen>
    </example>
    <example xml:id="language.oop5.traits.static.ex2">
     <title>staticメソッド</title>
     <programlisting role="php">
 <![CDATA[
 <?php
-trait StaticExample {
-    public static function doSomething() {
+
+trait StaticExample
+{
+    public static function doSomething()
+    {
         return 'Doing something';
     }
 }
 
-class Example {
+class Example
+{
     use StaticExample;
 }
 
-Example::doSomething();
-?>
+echo Example::doSomething();
 
+?>
 ]]>
     </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+Doing something
+]]>
+    </screen>
    </example>
    <example xml:id="language.oop5.traits.static.ex3">
     <title>staticプロパティ</title>
+    <caution>
+     <simpara>
+      PHP 8.3.0 より前のバージョンでは、トレイト中で定義された static プロパティは、
+      そのトレイトを use している同じ継承階層にある全てのクラスで共有されていました。
+      PHP 8.3.0 以降では、子クラスが static プロパティを持つトレイトを use している場合、
+      親クラスで定義された static プロパティとは別物とみなされるようになりました。
+     </simpara>
+    </caution>
     <programlisting role="php">
      <![CDATA[
 <?php
-trait StaticExample {
-    public static $static = 'foo';
+
+trait T
+{
+    public static $counter = 1;
 }
-class Example {
-    use StaticExample;
+
+class A
+{
+    use T;
+
+    public static function incrementCounter()
+    {
+        static::$counter++;
+    }
 }
-echo Example::$static;
+
+class B extends A
+{
+    use T;
+}
+
+A::incrementCounter();
+
+echo A::$counter, "\n";
+echo B::$counter, "\n";
+
 ?>
 ]]>
     </programlisting>
+    &example.outputs.83;
+    <screen>
+<![CDATA[
+2
+1
+]]>
+    </screen>
    </example>
   </sect2>
-  
+
   <sect2 xml:id="language.oop5.traits.properties">
    <title>プロパティ</title>
    <para>
@@ -454,16 +533,20 @@ echo Example::$static;
     <programlisting role="php">
 <![CDATA[
 <?php
-trait PropertiesTrait {
+
+trait PropertiesTrait
+{
     public $x = 1;
 }
 
-class PropertiesExample {
+class PropertiesExample
+{
     use PropertiesTrait;
 }
 
-$example = new PropertiesExample;
+$example = new PropertiesExample();
 $example->x;
+
 ?>
 ]]>
     </programlisting>
@@ -518,10 +601,16 @@ class ConstantsExample {
 }
 
 $example = new ConstantsExample;
-echo $example::FLAG_MUTABLE; // 1
+echo $example::FLAG_MUTABLE;
 ?>
 ]]>
    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+1
+]]>
+    </screen>
   </example>
   <para>
    トレイトで定数を定義したときは、
@@ -545,6 +634,53 @@ class ConstantsExample {
 ?>
 ]]>
    </programlisting>
+  </example>
+ </sect2>
+
+ <sect2 xml:id="language.oop5.traits.final-methods">
+  <title>Final メソッド</title>
+  <simpara>
+   PHP 8.3.0 以降では、<literal>as</literal> 演算子を使って
+   <link linkend="language.oop5.final">final</link>
+   をトレイトからインポートしたメソッドに適用できるようになりました。
+   こうすることで、子クラスでそのメソッドをオーバーライドすることを防止できます。
+   しかし、トレイトを使うクラスは、未だそのメソッドをオーバーライドできます。
+  </simpara>
+  <example xml:id="language.oop5.traits.final-methods.example">
+   <title>トレイトからインポートするメソッドを <literal>final</literal> として定義する</title>
+   <programlisting role="php">
+    <![CDATA[
+<?php
+
+trait CommonTrait
+{
+    public function method()
+    {
+        echo 'Hello';
+    }
+}
+
+class FinalExampleA
+{
+    use CommonTrait {
+        CommonTrait::method as final; // The 'final' prevents child classes from overriding the method
+    }
+}
+
+class FinalExampleB extends FinalExampleA
+{
+    public function method() {}
+}
+
+?>
+]]>
+   </programlisting>
+    &example.outputs.similar;
+    <screen>
+<![CDATA[
+Fatal error: Cannot override final method FinalExampleA::method() in ...
+]]>
+    </screen>
   </example>
  </sect2>
 
