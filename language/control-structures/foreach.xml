@@ -1,27 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 53a400680d0cb2ddabd4493fb9846533c422e90d Maintainer: takagi Status: ready -->
+<!-- EN-Revision: e49940b757b35b8ef26bb64380c231eda7b49fc4 Maintainer: takagi Status: ready -->
 <!-- Credits: mumumu -->
 
 <sect1 xml:id="control-structures.foreach" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>foreach</title>
  <?phpdoc print-version-for="foreach"?>
  <para>
-  <literal>foreach</literal> 構文は、<type>array</type> や <interfacename>Traversable</interfacename> オブジェクトを簡単に反復処理する方法を提供します。
-  それらと別のデータ型を含む変数や、初期化されていない変数とともに使用するとエラーになります。
+  <literal>foreach</literal> は、配列を反復処理するための便利な方法です。
+  <literal>foreach</literal> が使えるのは配列とオブジェクトだけであり、
+  別のデータ型や初期化前の変数に対して使うとエラーになります。
+  この構造には二種類の構文があります。
   <informalexample>
-   <simpara>
-    <literal>foreach</literal> は、各要素の <literal>key</literal> をオプションで取得できます:
-   </simpara>
    <programlisting>
 <![CDATA[
-foreach (iterable_expression as $value) {
-    文のリスト
-}
-
-foreach (iterable_expression as $key => $value) {
-    文のリスト
-}
+foreach (iterable_expression as $value)
+    文
+foreach (iterable_expression as $key => $value)
+    文
 ]]>
    </programlisting>
   </informalexample>
@@ -46,77 +42,160 @@ foreach (iterable_expression as $key => $value) {
   することもできます。
  </simpara>
 
- <example>
-  <title>一般的な <literal>foreach</literal> の使用法</title>
-  <programlisting role="php">
+ <para>
+  ループの中で配列の要素を直接変更したい場合は、
+  <literal>$value</literal> の前に &amp; をつけます。こうすると、変数には
+  <link linkend="language.references">リファレンス</link>
+  が代入されることになります。
+  <informalexample>
+   <programlisting role="php">
 <![CDATA[
 <?php
-/* 例: 値のみ */
-$array = [1, 2, 3, 17];
-foreach ($array as $value) {
-    echo "現在の \$array の要素: $value\n";
+$arr = array(1, 2, 3, 4);
+foreach ($arr as &$value) {
+    $value = $value * 2;
+}
+// $arr は array(2, 4, 6, 8) となります
+unset($value); // 最後の要素への参照を解除します
+?>
+]]>
+   </programlisting>
+  </informalexample>
+ </para>
+ <warning>
+  <para>
+   <literal>foreach</literal> ループを終えた後でも、
+   <literal>$value</literal> は配列の最後の要素を参照したままとなります。
+   <function>unset</function> でその参照を解除しておくようにしましょう。
+   さもないと、次のような目に遭うことになるでしょう。
+  </para>
+  <informalexample>
+   <programlisting role="php">
+<![CDATA[
+<?php
+$arr = array(1, 2, 3, 4);
+foreach ($arr as &$value) {
+    $value = $value * 2;
+}
+// この時点で、$arr は array(2, 4, 6, 8) となります
+
+// unset($value) しなければ、$value は今でも最後の要素 ($arr[3]) を指したままです
+
+foreach ($arr as $key => $value) {
+    // $arr[3] が、$arr の各要素で上書きされて...
+    echo "{$key} => {$value} ";
+    print_r($arr);
+}
+// ...つまり、二番目から最後までの値が最後の値にコピーされていきます
+
+// 出力
+// 0 => 2 Array ( [0] => 2, [1] => 4, [2] => 6, [3] => 2 )
+// 1 => 4 Array ( [0] => 2, [1] => 4, [2] => 6, [3] => 4 )
+// 2 => 6 Array ( [0] => 2, [1] => 4, [2] => 6, [3] => 6 )
+// 3 => 6 Array ( [0] => 2, [1] => 4, [2] => 6, [3] => 6 )
+?>
+]]>
+   </programlisting>
+  </informalexample>
+ </warning>
+ <para>
+  配列定数の値を、参照によって反復処理させることもできます。
+  <informalexample>
+   <programlisting role="php">
+<![CDATA[
+<?php
+foreach (array(1, 2, 3, 4) as &$value) {
+    $value = $value * 2;
+}
+?>
+]]>
+   </programlisting>
+  </informalexample>
+ </para>
+ <para>
+  <note>
+   <para>
+    <literal>foreach</literal> は、<literal linkend="language.operators.errorcontrol">@</literal>
+    によりエラーメッセージ出力を抑制する機能をサポートしていません。
+   </para>
+  </note>
+ </para>
+ <para>
+  使用法を示すためにその他の例を示します。
+  <informalexample>
+   <programlisting role="php">
+<![CDATA[
+<?php
+/* foreach の例 1: 値のみ */
+
+$a = array(1, 2, 3, 17);
+
+foreach ($a as $v) {
+    echo "Current value of \$a: $v.\n";
 }
 
-/* 例: キーと値 */
-$array = [
+/* foreachの例2: 値 (説明用に、手動でアクセスする際の表記を出力) */
+
+$a = array(1, 2, 3, 17);
+
+$i = 0; /* 説明用 */
+
+foreach ($a as $v) {
+    echo "\$a[$i] => $v.\n";
+    $i++;
+}
+
+/* foreachの例3: キーと値 */
+
+$a = array(
     "one" => 1,
     "two" => 2,
     "three" => 3,
     "seventeen" => 17
-];
-foreach ($array as $key => $value) {
-    echo "キー: $key => 値: $value\n";
+);
+
+foreach ($a as $k => $v) {
+    echo "\$a[$k] => $v.\n";
 }
 
-/* 例: 多次元のキーと値の配列 */
-$grid = [];
-$grid[0][0] = "a";
-$grid[0][1] = "b";
-$grid[1][0] = "y";
-$grid[1][1] = "z";
-foreach ($grid as $y => $row) {
-    foreach ($row as $x => $value) {
-        echo "x=$x, y=$y の位置の値: $value\n";
+/* foreach の例4: 多次元配列 */
+$a = array();
+$a[0][0] = "a";
+$a[0][1] = "b";
+$a[1][0] = "y";
+$a[1][1] = "z";
+
+foreach ($a as $v1) {
+    foreach ($v1 as $v2) {
+        echo "$v2\n";
     }
 }
 
-/* 例: 動的配列 */
-foreach (range(1, 5) as $value) {
-    echo "$value\n";
+/* foreach の例5: 動的配列 */
+
+foreach (array(1, 2, 3, 4, 5) as $v) {
+    echo "$v\n";
 }
 ?>
 ]]>
-  </programlisting>
- </example>
- <note>
-  <para>
-   <literal>foreach</literal> は、<literal linkend="language.operators.errorcontrol">@</literal>
-   による、エラーメッセージの出力を抑制する機能をサポートしていません。
-  </para>
- </note>
+   </programlisting>
+  </informalexample>
+ </para>
 
  <sect2 xml:id="control-structures.foreach.list">
-  <title>ネストした配列の展開</title>
+  <title>ネストした配列の list() による展開</title>
   <?phpdoc print-version-for="foreach.list"?>
+
   <para>
-   配列の配列を反復処理し、ネストされた配列をループ変数に展開することが可能です。
-   <link linkend="language.types.array.syntax.destructuring">配列の分解</link>
-   を <literal>[]</literal> で行うか、<function>list</function> 言語構造の値として配列を指定します。
-   <note>
-    <simpara>
-     <literal>[]</literal> による
-     <link linkend="language.types.array.syntax.destructuring">配列の分解</link>
-     は、PHP 7.1.0 以降でのみ可能であることに注意してください。
-    </simpara>
-   </note>
+   配列の配列の反復処理を行うこともできます。
+   値として <function>list</function> を渡すと、
+   ネストした配列をループ変数に展開できます。
   </para>
 
   <para>
+   例を示します。
+
    <informalexample>
-    <simpara>
-     次の例では、どちらも <literal>$a</literal> がネストされた配列の最初の要素に設定され、
-     <literal>$b</literal> が2番目の要素を含むようになります:
-    </simpara>
     <programlisting role="php">
 <![CDATA[
 <?php
@@ -125,11 +204,9 @@ $array = [
     [3, 4],
 ];
 
-foreach ($array as [$a, $b]) {
-    echo "A: $a; B: $b\n";
-}
-
 foreach ($array as list($a, $b)) {
+    // $a にはネストした配列の最初の要素が含まれ、
+    // $b には二番目の要素が含まれます。
     echo "A: $a; B: $b\n";
 }
 ?>
@@ -146,44 +223,9 @@ A: 3; B: 4
   </para>
 
   <para>
-   配列内の要素よりも少ない変数を指定すると、
-   残りの要素は無視されます。
-   同様に、カンマを使用して要素をスキップできます:
-   <informalexample>
-    <programlisting role="php">
-<![CDATA[
-<?php
-$array = [
-    [1, 2, 3],
-    [4, 5, 6],
-];
+   <function>list</function> で指定する要素数を、ネストした配列の要素数より少なくしてもかまいません。
+   その場合は、配列の残りの要素は無視されます。
 
-foreach ($array as [$a, $b]) {
-    // ここに $c がないことに注意してください。
-    echo "$a $b\n";
-}
-
-foreach ($array as [, , $c]) {
-    // $a と $b をスキップ
-    echo "$c\n";
-}
-?>
-]]>
-    </programlisting>
-    &example.outputs;
-    <screen>
-<![CDATA[
-1 2
-3 4
-5
-6
-]]>
-    </screen>
-   </informalexample>
-  </para>
-
-  <para>
-   <function>list</function> で指定した変数を埋めるだけの要素が足りないときには、notice が発生します。
    <informalexample>
     <programlisting role="php">
 <![CDATA[
@@ -193,7 +235,36 @@ $array = [
     [3, 4],
 ];
 
-foreach ($array as [$a, $b, $c]) {
+foreach ($array as list($a)) {
+    // $b を指定していないことに注目。
+    echo "$a\n";
+}
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+1
+3
+]]>
+    </screen>
+   </informalexample>
+  </para>
+
+  <para>
+   <function>list</function> で指定した変数を埋めるだけの要素が足りないときには、notice が発生します。
+
+   <informalexample>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$array = [
+    [1, 2],
+    [3, 4],
+];
+
+foreach ($array as list($a, $b, $c)) {
     echo "A: $a; B: $b; C: $c\n";
 }
 ?>
@@ -212,88 +283,6 @@ A: 3; B: 4; C:
     </screen>
    </informalexample>
   </para>
- </sect2>
-
- <sect2 xml:id="control-structures.foreach.reference">
-  <title>foreach とリファレンス</title>
-  <para>
-   ループ内で配列要素を直接変更するには、<literal>$value</literal> の前に <literal>&amp;</literal> を付けます。
-   その場合、値は<link linkend="language.references">リファレンス</link>によって代入されます。
-   <informalexample>
-    <programlisting role="php">
-<![CDATA[
-<?php
-$arr = [1, 2, 3, 4];
-foreach ($arr as &$value) {
-    $value = $value * 2;
-}
-// $arr is now [2, 4, 6, 8]
-unset($value); // 最後の要素へのリファレンスを解除する
-?>
-]]>
-    </programlisting>
-   </informalexample>
-  </para>
-  <warning>
-   <simpara>
-    最後の配列要素の <literal>$value</literal> への参照は、<literal>foreach</literal> ループの後も残ります。
-    <function>unset</function> を使ってこれらを破棄することをお勧めします。
-    そうしないと、以下のようなことが起こります:
-   </simpara>
-   <informalexample>
-    <programlisting role="php">
-<![CDATA[
-<?php
-$arr = [1, 2, 3, 4];
-foreach ($arr as &$value) {
-    $value = $value * 2;
-}
-// $arr is now [2, 4, 6, 8]
-
-// unset($value) しないと、$value はまだ最後の要素 $arr[3] への参照です
-
-foreach ($arr as $key => $value) {
-    // $arr[3] は $arr の各値で更新されます...
-    echo "{$key} => {$value} ";
-    print_r($arr);
-}
-// ...最終的に、最後から2番目の値が最後の値にコピーされるまで
-?>
-]]>
-    </programlisting>
-    &example.outputs;
-    <screen>
-<![CDATA[
-0 => 2 Array ( [0] => 2, [1] => 4, [2] => 6, [3] => 2 )
-1 => 4 Array ( [0] => 2, [1] => 4, [2] => 6, [3] => 4 )
-2 => 6 Array ( [0] => 2, [1] => 4, [2] => 6, [3] => 6 )
-3 => 6 Array ( [0] => 2, [1] => 4, [2] => 6, [3] => 6 )
-]]>
-    </screen>
-   </informalexample>
-  </warning>
-  <example>
-  <title>リファレンスによる、定数配列の値の反復処理</title>
-   <programlisting role="php">
-<![CDATA[
-<?php
-foreach ([1, 2, 3, 4] as &$value) {
-    $value = $value * 2;
-}
-?>
-]]>
-   </programlisting>
-  </example>
- </sect2>
-
- <sect2 role="seealso">
-  &reftitle.seealso;
-  <simplelist>
-   <member><link linkend="language.types.array">array</link></member>
-   <member><interfacename>Traversable</interfacename></member>
-   <member><link linkend="language.types.iterable">iterable</link></member>
-   <member><function>list</function></member>
-  </simplelist>
  </sect2>
 
 </sect1>
