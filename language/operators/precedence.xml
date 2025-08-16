@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 43d07782b514d0c7a8487f2c74063739f302df8d Maintainer: mumumu Status: ready -->
+<!-- EN-Revision: 16934048f79c6e117cd16a23c09c1b2ea502e284 Maintainer: mumumu Status: ready -->
 <sect1 xml:id="language.operators.precedence">
  <title>演算子の優先順位</title>
  <titleabbrev>演算子の優先順位</titleabbrev>
@@ -298,12 +298,31 @@
 <![CDATA[
 <?php
 $a = 3 * 3 % 5; // (3 * 3) % 5 = 4
-// PHP の三項演算子の結合法則は、C/C++のそれとは異なります
-$a = true ? 0 : true ? 1 : 2; // PHP 8.0.0 より前のバージョンでは、(true ? 0 : true) ? 1 : 2 = 2
+var_dump($a);
 
 $a = 1;
 $b = 2;
 $a = $b += 3; // $a = ($b += 3) -> $a = 5, $b = 5
+var_dump($a, $b);
+?>
+]]>
+   </programlisting>
+  </example>
+ </para>
+ <para>
+  三項演算子は特に、優先順位を明確にするための括弧が必要となります。
+ </para>
+ <para>
+  <example>
+   <title>優先順位の明示</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+$a = true ? 0 : (true ? 1 : 2);
+var_dump($a);
+
+// PHP 8 以降は以下のように書くことはできません
+// $a = true ? 0 : true ? 1 : 2;
 ?>
 ]]>
    </programlisting>
@@ -316,7 +335,7 @@ $a = $b += 3; // $a = ($b += 3) -> $a = 5, $b = 5
   PHP のバージョンが変わったり前後のコードが変わったりしたときに、評価順が変わる可能性があるからです。
   <example>
    <title>評価順序は未定義</title>
-   <programlisting role="php">
+   <programlisting role="php" annotations="non-interactive">
 <![CDATA[
 <?php
 $a = 1;
@@ -329,15 +348,43 @@ $array[$i] = $i++; // インデックス 1 をセットするかもしれない�
    </programlisting>
   </example>
   <example>
-   <title><literal>+</literal>、<literal>-</literal>、<literal>.</literal> の優先順位は同じ(PHP 8.0.0 より前のバージョン)</title>
+   <title><literal>+</literal>、<literal>-</literal>、<literal>.</literal> の優先順位</title>
    <programlisting role="php">
 <![CDATA[
 <?php
 $x = 4;
 // 次の行は、予期せぬ結果になることでしょう
 echo "x minus one equals " . $x-1 . ", or so I hope\n";
-// なぜなら、これは次のように評価されるからです(PHP 8.0.0より前のバージョン)
+
+// 期待どおりの結果を得るには、括弧を使って優先順位を指定します
+echo "x minus one equals " . ($x-1) . ", or so I hope\n";
+
+// このようにはできず、TypeError がスローされます
 echo (("x minus one equals " . $x) - 1) . ", or so I hope\n";
+?>
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+-1, or so I hope
+-1, or so I hope
+Fatal error: Uncaught TypeError: Unsupported operand types: string - int
+]]>
+   </screen>
+  </example>
+  <example>
+   <title>PHP 8 より前のバージョンでは、 <literal>+</literal>, <literal>-</literal> and <literal>.</literal> の優先順位は同じ</title>
+   <programlisting role="php" annotations="non-interactive">
+<![CDATA[
+<?php
+$x = 4;
+// 次の行は、予期せぬ結果になることでしょう
+echo "x minus one equals " . $x-1 . ", or so I hope\n";
+
+// なぜなら、これは次のように評価されるからです(PHP 8.0.0 より前のバージョン)
+echo (("x minus one equals " . $x) - 1) . ", or so I hope\n";
+
 // 期待どおりの結果を得るには、括弧を使って優先順位を指定します
 echo "x minus one equals " . ($x-1) . ", or so I hope\n";
 ?>
