@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: eae19eb5fe0f5bebcbce382ea7a505cedeb5a883 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 969a4a70626497a200e4f2ffd883a29cbb228b33 Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa,shimooka -->
 
 <chapter xml:id="pdo.transactions" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
@@ -58,6 +58,42 @@
    MyISAM テーブルでトランザクションを使おうとした場合にこの現象が発生します。
   </para>
  </warning>
+ <warning>
+  <para>
+   <emphasis>DDL文を使った場合の暗黙のコミット:</emphasis>
+   データベースによっては、
+   <literal>DROP TABLE</literal> や <literal>CREATE TABLE</literal>,
+   のような database definition language (DDL)
+   がトランザクション中に実行された場合に、
+   自動で暗黙のうちに <literal>COMMIT</literal> を発行するものがあります。
+   これは、DDL 文より前に行われた、同じトランザクション中のあらうる変更が
+   <emphasis>自動でコミット</emphasis> さて、ロールバックできないことを意味します。
+  </para>
+  <para>
+   こうした振る舞いをするデータベースの例として、
+   <literal>MySQL</literal> と <literal>Oracle</literal>
+   が挙げられます。
+  </para>
+ </warning>
+ <para>
+  <example>
+   <title>暗黙のコミットの例</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+$pdo->beginTransaction();
+$pdo->exec("INSERT INTO users (name) VALUES ('Rasmus')");
+$pdo->exec("CREATE TABLE test (id INT PRIMARY KEY)"); // Implicit COMMIT occurs here
+$pdo->rollBack(); // This will NOT undo the INSERT/CREATE for MySQL or Oracle
+?>
+]]>
+   </programlisting>
+  </example>
+ </para>
+ <para>
+  <emphasis>ベストプラクティス:</emphasis> このような振る舞いを強制してくるデータベースを使う場合は、トランザクション中で DDL を使うのを避けましょう。
+  必要な場合には、DDL の操作をトランザクションのロジックと分離しましょう。
+ </para>
  <para>
   スクリプトが終了したり接続が閉じられようとした際に、もし処理が
   完了していないトランザクションがあれば PDO が自動的に
