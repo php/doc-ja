@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 8fee3ae9715ffa15922469eb7d98f4878917a6ee Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 873a99f094902ad72129ab391b1fb80525fab30e Maintainer: takagi Status: ready -->
 <refentry xml:id="generator.rewind" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
   <refname>Generator::rewind</refname>
-  <refpurpose>イテレータを巻き戻す</refpurpose>
+  <refpurpose>イテレータを最初の yield まで巻き戻す</refpurpose>
  </refnamediv>
 
  <refsect1 role="description">
@@ -14,9 +14,22 @@
    <void/>
   </methodsynopsis>
   <para>
-   既に処理が始まっている場合は、例外をスローします。
+   このメソッドは ジェネレーターを最初の &yield; の前のポイントまで巻き戻します。
+   このメソッドがコールされた際に、
+   ジェネレーターが最初の &yield; 式に達していない場合、
+   巻き戻す前に最初の &yield; まで進めます。
+   ジェネレーターが既に二番目の &yield; の始点に達している場合は
+   <classname>Exception</classname> がスローされます。
   </para>
 
+  <note>
+   <para>
+    これは、&foreach; ループを開始する際に <emphasis>最初に</emphasis>
+    コールされるメソッドです。&foreach; ループが実行された
+    <emphasis>後に</emphasis> 実行されるのでは
+    <emphasis>ありません</emphasis>。
+   </para>
+  </note>
  </refsect1>
 
  <refsect1 role="parameters">
@@ -31,6 +44,82 @@
   </para>
  </refsect1>
 
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title><methodname>Generator::rewind</methodname> の例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+function generator(): Generator
+{
+    echo "I'm a generator!\n";
+
+    for ($i = 1; $i <= 3; $i++) {
+        yield $i;
+    }
+}
+
+// ジェネレータを初期化
+$generator = generator();
+
+// まだ達していない場合、最初の yield 式の開始までジェネレータを巻き戻します。
+$generator->rewind(); // I'm a generator!
+
+// ここでは何も起きません; ジェネレータは既に巻き戻されています。
+$generator->rewind(); // No output (NULL)
+
+// ここでは、まだ達していない場合、
+// 最初の yield 式の開始までジェネレータを巻き戻します。
+// そして、ジェネレータを反復します。
+foreach ($generator as $value) {
+    // 最初の値を yield したあと、ジェネレータは
+    // 実行が再開されて次の yield に進むまで最初の
+    // yield 式にとどまったままです。
+    echo $value, PHP_EOL; // 1
+
+    break;
+}
+
+// 巻き戻しを再開します。
+// エラーは発生しません。なぜんら、ジェネレータは最初の yield を越えて
+// 進んでいないからです。
+$generator->rewind();
+
+echo $generator->current(), PHP_EOL; // 1
+
+// エラーは起きません。
+// ジェネレータはまだ最初の yield に留まっています。
+$generator->rewind();
+
+// ここで、ジェネレータを二回目の yield 式に進めます。
+$generator->next();
+
+try {
+    // これは、例外をスローします。
+    // なぜなら、既にジェネレータが二回目の yield に進んでいるからです。
+    $generator->rewind(); // Fatal error: Uncaught Exception: Cannot rewind a generator that was already run
+} catch (Exception $e) {
+    echo $e->getMessage();
+}
+
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+I'm a generator!
+1
+1
+Cannot rewind a generator that was already run
+]]>
+    </screen>
+   </example>
+  </para>
+ </refsect1>
 
 </refentry>
 <!-- Keep this comment at the end of the file
