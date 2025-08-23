@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: e35fbbaa52702ebf45c5e7284351e136ed67f3bb Maintainer: hirokawa Status: ready -->
-<!-- CREDITS: shimooka,mumumu -->
+<!-- EN-Revision: da15b6674ac1900c7d065bd746a04b53d7e963bf Maintainer: hirokawa Status: ready -->
 <refentry xml:id="function.parse-str" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>parse_str</refname>
-  <refpurpose>文字列を処理し、変数に代入する</refpurpose>
+  <refpurpose>URL のクエリストリングとして文字列をパースする</refpurpose>
  </refnamediv>
  
  <refsect1 role="description">
@@ -16,9 +15,10 @@
    <methodparam><type>array</type><parameter role="reference">result</parameter></methodparam>
   </methodsynopsis>
   <para>
-   URL 経由で渡されるクエリ文字列と同様に <parameter>string</parameter>
-   を処理し、現在のスコープに変数をセットします。
-   (<parameter>result</parameter> が指定された場合は、配列 <parameter>result</parameter> にセットします)
+   URL 経由で渡されたクエリストリングと同様に <parameter>string</parameter> 
+   をパースし、渡された配列 <parameter>result</parameter> のキーに設定します。
+   <parameter>result</parameter> が渡されない場合、
+   現在のスコープの変数として、値が設定されます。
   </para>
  </refsect1>
 
@@ -38,10 +38,13 @@
      <term><parameter>result</parameter></term>
      <listitem>
       <para>
-       2 番目の引数
-       <parameter>result</parameter> が指定された場合、
-       変数は、代わりに配列の要素としてこの変数に保存されます。
+       リファレンスで渡される変数。
+       <parameter>string</parameter> から展開された、
+       キーと値のペアを含む配列に設定されます。
+       <parameter>result</parameter> が渡されない場合、
+       それぞれのキーが別々の変数として、ローカルスコープに設定されます。
       </para>
+
       <warning>
        <para>
         この関数を <parameter>result</parameter> パラメータを指定せずに使うことは
@@ -106,35 +109,28 @@
 <?php
 $str = "first=value&arr[]=foo+bar&arr[]=baz";
 
-// 推奨
+// お勧め
 parse_str($str, $output);
-echo $output['first'];  // value
-echo $output['arr'][0]; // foo bar
-echo $output['arr'][1]; // baz
-
-// お勧めできない
-parse_str($str);
-echo $first;  // value
-echo $arr[0]; // foo bar
-echo $arr[1]; // baz
+echo $output['first'], PHP_EOL;  // value
+echo $output['arr'][0], PHP_EOL; // foo bar
+echo $output['arr'][1], PHP_EOL; // baz
 ?>
 ]]>
     </programlisting>
    </example>
   </para>
   <para>
-   PHP における変数は、名前にドットやスペースを許容しないので、
-   そういった値はアンダースコアに変換されます。同じことは、
-   この関数に <parameter>result</parameter> パラメータを指定した
-   場合の、配列のキーの名前にも当てはまります。
+   パラメータ名に含まれるスペースやドットは、
+   配列のキーやローカル変数を作成する際にアンダースコアに置換されます。
+   こうなっている理由は、
+   PHP の変数名がスペースやドットを許容していないからですが、
+   この関数に、お勧めのパラメータ <parameter>result</parameter>
+   を指定しても同じ処理が適用されます。
    <example>
-    <title><function>parse_str</function> name mangling</title>
+    <title><function>parse_str</function> の、名前のマングリング処理</title>
     <programlisting role="php">
 <![CDATA[
 <?php
-parse_str("My Value=Something");
-echo $My_Value; // Something
-
 parse_str("My Value=Something", $output);
 echo $output['My_Value']; // Something
 ?>
@@ -143,19 +139,34 @@ echo $output['My_Value']; // Something
    </example>
   </para> 
  </refsect1>
-
+ 
  <refsect1 role="notes">
   &reftitle.notes;
 
   <note>
    <para>
-    全ての作成された変数 (第二引数が設定された場合は配列に設定される値)
-    の値は、既に <function>urldecode</function> されています。
+    <function>parse_str</function> は、
+    <link linkend="ini.max-input-vars">max_input_vars</link>
+    の影響を受けます。
+    この値の制限を超えると <constant>E_WARNING</constant>
+    が発生し、その制限を越えた変数は結果の配列に設定されません。
+    この値のデフォルトは 1000 です。
+    <link linkend="ini.max-input-vars">max_input_vars</link>
+    を必要に応じて調整してください。
+   </para>
+  </note>
+
+  <note>
+   <para>
+    配列 <parameter>result</parameter>
+    (または第二引数が設定されない場合に作成される変数)
+    に設定される全ての値は、<function>urldecode</function>
+    と同じルールで URLデコード されています。
    </para>
   </note>
   <note>
    <para>
-    現在の <literal>QUERY_STRING</literal> を取得するには、変数
+    現在のリクエストのクエリストリングを取得するには、変数
     <varname>$_SERVER['QUERY_STRING']</varname>
     を使用する事ができます。また、
     <link linkend="language.variables.external">外部から来る変数</link>
