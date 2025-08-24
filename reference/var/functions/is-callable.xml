@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 83a17a7324c2597bd6385148abf19f76127229f5 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 32c55286c8739fd20de9c8624473b2f3268de68e Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa,mumumu -->
 <refentry xml:id="function.is-callable" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -19,7 +19,8 @@
    <methodparam choice="opt"><type>string</type><parameter role="reference">callable_name</parameter><initializer>&null;</initializer></methodparam>
   </methodsynopsis>
   <para>
-   引数の内容が、<type>callable</type> かどうかを調べます。
+   <parameter>value</parameter> の内容が <type>callable</type> かどうか、
+   または <function>call_user_func</function> を使ってコールできるかを調べます。
   </para>
  </refsect1>
 
@@ -41,10 +42,12 @@
       <para>
        &true; の場合、この関数は単に <parameter>value</parameter>
        が関数またはメソッドであるかどうかだけを調べます。
-       文字列以外の型の変数や不正な形式の配列は、
-       引数として受け付けられません。有効な配列の形式は、
-       最初のエントリがオブジェクトあるいは文字列で、2 番目のエントリが文字列である
-       2 つのエントリからなるものです。
+       <link linkend="object.invoke">invokable</link> オブジェクト、
+       <classname>Closure</classname>、文字列、
+       コールバックとして使える有効な構造の配列でない値は拒否されます。
+       有効な配列の形式は、
+       最初のエントリがオブジェクトあるいは文字列で、
+       2 番目のエントリが文字列である 2 つのエントリからなるものです。
       </para>
      </listitem>
     </varlistentry>
@@ -52,8 +55,10 @@
      <term><parameter>callable_name</parameter></term>
      <listitem>
       <para>
-       "呼び出し名" を受け取ります。下の例では "someClass::someMethod"
-       です。これは someClass::SomeMethod() が static メソッドであるかのようにみえますが、
+       "呼び出し名" を受け取ります。下の例では
+       <literal>"SomeClass::someMethod"</literal> です。
+       これは <literal>SomeClass::someMethod()</literal> 
+       呼び出し可能な static メソッドであるかのようにみえますが、
        そうではないことに注意しましょう。
       </para>
      </listitem>
@@ -74,55 +79,70 @@
   &reftitle.examples;
   <para>
    <example>
-    <title><function>is_callable</function> の例</title>
+    <title>文字列が関数としてコールできるかを調べる</title>
     <programlisting role="php">
 <![CDATA[
 <?php
-//  変数が、関数としてコール可能かどうかを確かめます。
 
-//
-//  関数名を含む単純な配列
-//
-
-function someFunction() 
-{
-}
+function someFunction() {}
 
 $functionVariable = 'someFunction';
 
-var_dump(is_callable($functionVariable, false, $callable_name));  // bool(true)
+var_dump(is_callable($functionVariable, false, $callable_name));
 
-echo $callable_name, "\n";  // someFunction
-
-//
-//  メソッドを含む配列
-//
-
-class someClass {
-
-  function someMethod() 
-  {
-  }
-
-}
-
-$anObject = new someClass();
-
-$methodVariable = array($anObject, 'someMethod');
-
-var_dump(is_callable($methodVariable, true, $callable_name));  //  bool(true)
-
-echo $callable_name, "\n";  //  someClass::someMethod
+var_dump($callable_name);
 
 ?>
 ]]>
     </programlisting>
-   </example>   
+    &example.outputs;
+    <screen>
+<![CDATA[
+bool(true)
+string(12) "someFunction"
+]]>
+    </screen>
+   </example>
+   <example>
+    <title>配列が関数としてコールできるかを調べる</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+class SomeClass
+{
+    public function someMethod() {}
+}
+
+$anObject = new SomeClass();
+
+$methodVariable = [$anObject, 'someMethod'];
+
+var_dump(is_callable($methodVariable, true, $callable_name));
+
+var_dump($callable_name);
+
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+bool(true)
+string(21) "SomeClass::someMethod"
+]]>
+    </screen>
+   </example>
    <example>
     <title><function>is_callable</function> とコンストラクタ</title>
     <simpara>
+     コンストラクタは、
+     オブジェクトが作成される際にコールされるメソッドであるにも関わらず、
+     static メソッドではありませんし、
      <function>is_callable</function>
-     はコンストラクタを callable だとはみなしません。
+     はコンストラクタに対して &false; を返します。
+     特定のクラスが現在のスコープからインスタンス可能かをチェックする用途に
+     <function>is_callable</function> は使えません。
     </simpara>
     <programlisting role="php">
 <![CDATA[
@@ -131,13 +151,19 @@ echo $callable_name, "\n";  //  someClass::someMethod
 class Foo
 {
     public function __construct() {}
+
     public function foo() {}
 }
 
 var_dump(
-    is_callable(array('Foo', '__construct')),
-    is_callable(array('Foo', 'foo'))
+    is_callable(['Foo', '__construct']),
+    is_callable(['Foo', 'foo'])
 );
+
+$foo = new Foo();
+var_dump(is_callable([$foo, '__construct']));
+
+?>
 ]]>
     </programlisting>
     &example.outputs;
@@ -145,6 +171,7 @@ var_dump(
 <![CDATA[
 bool(false)
 bool(false)
+bool(true)
 ]]>
     </screen>
    </example>
@@ -181,6 +208,7 @@ bool(false)
   &reftitle.seealso;
   <para>
    <simplelist>
+    <member><function>call_user_func</function></member>
     <member><function>function_exists</function></member>
     <member><function>method_exists</function></member>
    </simplelist>
