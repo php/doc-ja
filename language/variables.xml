@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: d6baeae3fa6e100b6b4b4ecd59fda030aa32f694 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 22583751fbfdaa3eaa41aeb6470d1343f5cb2c78 Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa,mumumu -->
  <chapter xml:id="language.variables" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
   <title>変数</title>
@@ -44,7 +44,7 @@
    &tip.userlandnaming;
 
    <example>
-    <title>有効な変数と無効な変数</title>
+    <title>有効な変数名</title>
     <programlisting role="php">
 <![CDATA[
 <?php
@@ -52,10 +52,19 @@ $var = 'Bob';
 $Var = 'Joe';
 echo "$var, $Var";      // outputs "Bob, Joe"
 
-$4site = 'not yet';     // invalid; starts with a number
 $_4site = 'not yet';    // valid; starts with an underscore
 $täyte = 'mansikka';    // valid; 'ä' is (Extended) ASCII 228.
 ?>
+]]>
+    </programlisting>
+   </example>
+
+   <example>
+    <title>無効な変数名</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$4site = 'not yet';     // invalid; starts with a number
 ]]>
     </programlisting>
    </example>
@@ -525,6 +534,36 @@ function foo(){
     </example>
    </para>
 
+   <simpara>
+    無名関数の内部にある static 変数は、
+    その特定の関数のインスタンス内でのみ生き残ります。
+    コールされるたびに無名関数が再作成される場合、
+    static 変数は再初期化されます。
+   </simpara>
+   <example>
+    <title>無名関数の内部にある static 変数</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+function exampleFunction($input) {
+    $result = (static function () use ($input) {
+        static $counter = 0;
+        $counter++;
+        return "Input: $input, Counter: $counter\n";
+    });
+
+    return $result();
+}
+
+// Calls to exampleFunction will recreate the anonymous function, so the static
+// variable does not retain its value.
+echo exampleFunction('A'); // Outputs: Input: A, Counter: 1
+echo exampleFunction('B'); // Outputs: Input: B, Counter: 1
+?>
+]]>
+    </programlisting>
+   </example>
+
    <para>
     (オーバーライドされていない場合)
     内部でstatic 変数を使ったメソッドも継承されます。
@@ -533,6 +572,12 @@ function foo(){
     つまり、メソッド内でのstatic 変数も、
     static プロパティと同じ振る舞いになったということです。
    </para>
+
+   <simpara>
+    PHP 8.3.0 以降では、static 変数は任意の式で初期化できるようになりました。
+    これはたとえば、メソッドをコールすることでも、
+    static 変数を初期化できるようになったということです。
+   </simpara>
 
    <example>
     <title>継承されたメソッドのstatic 変数を使う</title>
@@ -793,15 +838,15 @@ echo "$a $hello";
       <programlisting role="php">
 <![CDATA[
 <?php
-class foo {
-    var $bar = 'I am bar.';
-    var $arr = array('I am A.', 'I am B.', 'I am C.');
-    var $r   = 'I am r.';
+class Foo {
+    public $bar = 'I am bar.';
+    public $arr = ['I am A.', 'I am B.', 'I am C.'];
+    public $r   = 'I am r.';
 }
 
-$foo = new foo();
+$foo = new Foo();
 $bar = 'bar';
-$baz = array('foo', 'bar', 'baz', 'quux');
+$baz = ['foo', 'bar', 'baz', 'quux'];
 echo $foo->$bar . "\n";
 echo $foo->{$baz[1]} . "\n";
 
@@ -810,17 +855,20 @@ $end   = 'ar';
 echo $foo->{$start . $end} . "\n";
 
 $arr = 'arr';
-echo $foo->{$arr[1]} . "\n";
+echo $foo->{$arr}[1] . "\n";
 
 ?>
 ]]>
      </programlisting>
      &example.outputs;
      <screen>
+<![CDATA[
 I am bar.
 I am bar.
 I am bar.
 I am r.
+I am B.
+]]>
      </screen>
     </example>
    </para>

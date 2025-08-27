@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 489d46bc2598784bd3711454ccab8940107cde67 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: dd87866772c31671146ff778140dc0955c55005c Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa,mumumu,jdkfx -->
  <chapter xml:id="language.functions" xmlns="http://docbook.org/ns/docbook">
   <title>関数</title>
@@ -9,12 +9,15 @@
    <title>ユーザー定義関数</title>
  
    <para>
-    関数は次のような構文で定義されます。
+    関数は、<literal>function</literal> キーワードと関数の名前、
+    カンマ(<literal>,</literal>) で区切ったパラメーターのリスト
+    （空であっても構いません）を括弧で囲み、
+    関数の本体を波括弧で囲んだものを続けて定義します。
+    たとえば、以下のようになります:
    </para>
-   <para>
-    <example>
-     <title>関数の使用法を説明するための擬似コード</title>
-     <programlisting role="php">
+   <example>
+    <title><literal>foo</literal> という名前の新しい関数を宣言する</title>
+    <programlisting role="php">
 <![CDATA[
 <?php
 function foo($arg_1, $arg_2, /* ..., */ $arg_n)
@@ -24,12 +27,27 @@ function foo($arg_1, $arg_2, /* ..., */ $arg_n)
 }
 ?>
 ]]>
-     </programlisting>
-    </example>
-   </para>
-     
+    </programlisting>
+   </example>
+   <note>
+    <para>
+     PHP 8.0.0 以降では、
+     パラメーターのリストの末尾に、カンマを付加できるようになっています:
+     <informalexample>
+      <programlisting role="php">
+<![CDATA[
+<?php
+function foo($arg_1, $arg_2,) { }
+?>
+]]>
+      </programlisting>
+     </informalexample>
+    </para>
+   </note>
+
    <simpara>
-    関数の中では、他の関数や <link linkend="language.oop5.basic.class">クラス</link>
+    関数の本体の中では、
+    他の関数や <link linkend="language.oop5.basic.class">クラス</link>
     定義を含む PHP のあらゆる有効なコードを使用することができます。
    </simpara>
    <para>
@@ -174,15 +192,19 @@ function recursion($a)
   </sect1>
  
   <sect1 xml:id="functions.arguments">
-   <title>関数の引数</title>
+   <title>関数のパラメーターと引数</title>
  
    <simpara>
+    関数のパラメーターは、関数のシグネチャの中で宣言します。
     引数のリストにより関数へ情報を渡すことができます。
     このリストは、カンマで区切られた式のリストです。
     引数の評価は、関数が実際にコールされる前に、
-    左から右の順番で行われます(<emphasis>先行</emphasis>評価)。
+    左から右の順番で行われ、
+    評価された結果が関数のパラメーターに代入されます
+    (<emphasis>先行</emphasis>評価)。
    </simpara>
 
+   <!-- Note: this paragraph feels like it should be moved to the syntax part? -->
    <para>
     PHP は、値渡し(デフォルト)、
     <link linkend="functions.arguments.by-reference">リファレンス渡し</link>、
@@ -192,29 +214,33 @@ function recursion($a)
     <link linkend="functions.named-arguments">名前付き引数</link>
     もサポートしています。
    </para>
-   <para>
-    <example>
-     <title>関数に配列を渡す</title>
-     <programlisting role="php">
+   <note>
+    <para>
+     PHP 7.3.0 以降では、
+     関数コールの引数リストの末尾にも、カンマを付加できるようになっています:
+     <informalexample>
+      <programlisting role="php">
 <![CDATA[
 <?php
-function takes_array($input)
-{
-    echo "$input[0] + $input[1] = ", $input[0]+$input[1];
-}
+$v = foo(
+    $arg_1,
+    $arg_2,
+);
 ?>
 ]]>
-     </programlisting>
-    </example>
-   </para>
+      </programlisting>
+     </informalexample>
+    </para>
+   </note>
+
    <para>
-    PHP 8.0.0 以降では、引数リストの最後にカンマを付けることができます。
+    PHP 8.0.0 以降では、関数のパラメーターリストの最後にカンマをつけることができます。
     このカンマは無視されます。
     これは、引数リストや変数名が長かったりした場合に、
     引数を縦に並べるのに便利です。
    </para>
    <example>
-    <title>関数の引数リストの最後にカンマを付ける</title>
+    <title>関数のパラメーターリストの最後にカンマを付ける</title>
     <programlisting role="php">
 <![CDATA[
 <?php
@@ -244,11 +270,11 @@ function takes_many_args(
     </simpara>
     <para>
      関数の引数を常にリファレンス渡しとしたい場合には、関数定義において
-     アンパサンド(&amp;) を引数名の前に付加することができます。    
+     アンパサンド(&amp;) をパラメーター名の前に付加することができます。    
     </para>
     <para>
      <example>
-      <title>関数のパラメータのリファレンス渡し</title>
+      <title>関数の引数のリファレンス渡し</title>
       <programlisting role="php">
 <![CDATA[
 <?php
@@ -265,17 +291,17 @@ echo $str;    // 出力は 'This is a string, and something extra.' となりま
      </example>
     </para>
     <para>
-     リファレンス渡しが想定されているところに、値渡しを行うとエラーになります。
+     リファレンス渡しが想定されているところに、定数式を引数として渡すとエラーになります。
     </para> 
    </sect2>
  
    <sect2 xml:id="functions.arguments.default">
-    <title>デフォルト引数値</title>
+    <title>デフォルトのパラメーター値</title>
     
     <para>
      関数は、変数に代入する記法に似たやり方で、
-     デフォルト値を引数に定義することができます。
-     デフォルト値は引数が指定されなかった場合に使われますが、
+     デフォルト値をパラメーターに定義することができます。
+     デフォルト値はパラメーターに引数が指定されなかった場合に使われますが、
      &null; を渡した場合はデフォルト値を代入
      <emphasis>しない</emphasis> ことに特に注意して下さい。
     </para>
@@ -369,7 +395,7 @@ echo makecoffee(new FancyCoffeeMaker);
     </para>
     <para>
      <example>
-      <title>関数の引数のデフォルト値の 間違った使用法</title>
+      <title>関数のパラメーターのデフォルト値の 間違った使用法</title>
       <programlisting role="php">
 <![CDATA[
 <?php
@@ -396,7 +422,7 @@ Fatal error: Uncaught ArgumentCountError: Too few arguments
     </para>
     <para>
      <example>
-      <title>関数の引数のデフォルト値の 正しい使用法</title>
+      <title>関数のパラメーターのデフォルト値の 正しい使用法</title>
       <programlisting role="php">
 <![CDATA[
 <?php
@@ -448,19 +474,19 @@ Making a bowl of raspberry natural yogurt.
     </para>
     <para>
      PHP 8.0.0 以降では、
-     デフォルト値を指定した引数の後に、
-     必須の引数を宣言することは <emphasis>推奨されません</emphasis>。
+     デフォルト値を指定したパラメーターの後に、
+     必須のパラメーターを宣言することは <emphasis>推奨されません</emphasis>。
      なぜなら、そのデフォルト値は絶対に使われないからです。
      これは、デフォルト値を削除することで解決できます。
      このルールの唯一の例外は、
-     <code>Type $param = null</code> と書かれた引数です。
+     <code>Type $param = null</code> と書かれたパラメーターです。
      &null; をデフォルトにすることは、
      型が暗黙のうちに nullable であることを示しています。
      この使い方はPHP 8.4.0で非推奨となり、代わりに明示的な
      <link linkend="language.types.declarations.nullable">nullable 型</link>
      を使用する必要があります。
      <example>
-      <title>デフォルト値を指定した引数は、必須の引数の後に宣言する</title>
+      <title>デフォルト値を指定したパラメーターは、必須のパラメーターの後に宣言する</title>
       <programlisting role="php">
 <![CDATA[
  <?php
@@ -487,7 +513,7 @@ Making a bowl of raspberry natural yogurt.
     </note>
     <note>
      <simpara>
-      リファレンス渡しの引数にもデフォルト値を指定できます。
+      リファレンス渡しのパラメーターにもデフォルト値を指定できます。
      </simpara>
     </note>
    </sect2>
@@ -500,7 +526,7 @@ Making a bowl of raspberry natural yogurt.
     </simpara>
 
     <para>
-      引数リストに
+      パラメーターリストに
       <literal>...</literal> トークンを含めることで、
       その関数が可変長の引数を受け取ることを示せます。
       引数は、指定した変数に配列として渡されます:
@@ -561,7 +587,7 @@ echo add(...$a);
     </para>
 
     <para>
-      通常の引数を、<literal>...</literal> の前に指定することもできます。
+      通常のパラメーターを、<literal>...</literal> の前に指定することもできます。
       この場合は、通常の引数リストにマッチしなかったのこりの引数が
       <literal>...</literal> による配列に追加されます。
     </para>
@@ -693,11 +719,11 @@ htmlspecialchars($string, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML401, 'UTF-8', fa
     </example>
 
     <para>
-     同じ引数を複数回渡すと、Error 例外が発生します。
+     同じ名前の引数を複数回渡すと、<classname>Error</classname> 例外が発生します。
     </para>
 
     <example>
-     <title>同じ引数を複数回渡すと、Error がスローされる</title>
+     <title>同じ名前の引数を複数回渡すと、Error がスローされる</title>
      <programlisting role="php">
 <![CDATA[
 <?php
@@ -705,8 +731,10 @@ function foo($param) { ... }
 
 foo(param: 1, param: 2);
 // Error: Named parameter $param overwrites previous argument
+
 foo(1, param: 2);
 // Error: Named parameter $param overwrites previous argument
+
 ?>
 ]]>
      </programlisting>
@@ -1409,6 +1437,13 @@ Warning: Cannot bind an instance to a static closure in %s on line %d
         </row>
        </thead>
        <tbody>
+        <row>
+         <entry>8.3.0</entry>
+         <entry>
+          <link linkend="language.oop5.magic">マジックメソッド</link>
+          経由で作られたクロージャも、名前付き引数を受け入れるようになりました。
+         </entry>
+        </row>
         <row>
          <entry>7.1.0</entry>
          <entry>
