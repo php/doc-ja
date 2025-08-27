@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 7a75b854c8c52226d38397e7e8177e339fdb273f Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: c81a48e58fc530a74827316027fae74668d17a1d Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi,mumumu -->
 
 <chapter xml:id="language.exceptions" xmlns="http://docbook.org/ns/docbook">
@@ -95,6 +95,14 @@
     結果は &finally; ブロックが実行された後に返されます。
     さらに、&finally; ブロックにも &return; 文が存在した場合は、
     &finally; ブロックから値が返されます。
+   </para>
+   <para>
+    &try; ブロック内でスローされた例外と、
+    &finally; ブロック内でスローされた例外には、
+    もう一つ注意すべき相互作用があります。
+    これら両方のブロックから例外がスローされると、
+    &finally; ブロックからスローされた例外は伝播しますが、
+    &try; ブロック内でスローされた例外は前の例外として使われます。
    </para>
   </sect1>
 
@@ -343,6 +351,12 @@ try {
 ?>
 ]]>
     </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+A SpecificException was thrown, but we don't care about the details.
+]]>
+    </screen>
    </example>
    <example>
     <title>throw を 式として扱う</title>
@@ -357,6 +371,10 @@ function test() {
     do_something_risky() or throw new Exception('It did not work');
 }
 
+function do_something_risky() {
+    return false; // Simulate failure
+}
+
 try {
     test();
 } catch (Exception $e) {
@@ -365,6 +383,44 @@ try {
 ?>
 ]]>
     </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+It did not work
+]]>
+    </screen>
+   </example>
+   <example>
+    <title>try と finally の内部からスローされる例外</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+try {
+    try {
+        throw new Exception(message: 'Third', previous: new Exception('Fourth'));
+    } finally {
+        throw new Exception(message: 'First', previous: new Exception('Second'));
+    }
+} catch (Exception $e) {
+    var_dump(
+        $e->getMessage(),
+        $e->getPrevious()->getMessage(),
+        $e->getPrevious()->getPrevious()->getMessage(),
+        $e->getPrevious()->getPrevious()->getPrevious()->getMessage(),
+    );
+}
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+string(5) "First"
+string(6) "Second"
+string(5) "Third"
+string(6) "Fourth"
+]]>
+    </screen>
    </example>
   </sect1>
 
@@ -390,7 +446,7 @@ class Exception implements Throwable
     private   $trace;                           // backtrace
     private   $previous;                        // previous exception if nested exception
 
-    public function __construct($message = '', $code = 0, Throwable $previous = null);
+    public function __construct($message = '', $code = 0, ?Throwable $previous = null);
 
     final private function __clone();           // Inhibits cloning of exceptions.
 
@@ -437,7 +493,7 @@ class Exception implements Throwable
 class MyException extends Exception
 {
     // 例外を再定義し、メッセージをオプションではなくする
-    public function __construct($message, $code = 0, Throwable $previous = null) {
+    public function __construct($message, $code = 0, ?Throwable $previous = null) {
         // なんらかのコード
 
         // 全てを正しく確実に代入する
