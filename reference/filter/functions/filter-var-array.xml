@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: de9c65c91ff1710d8b2d2ec955caea0162679305 Maintainer: takagi Status: ready -->
-<!-- Credits: mumumu -->
+<!-- EN-Revision: 53054bf8decc8648cf2e90a493692a161e2371af Maintainer: mumumu Status: ready -->
 <refentry xml:id="function.filter-var-array" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>filter_var_array</refname>
   <refpurpose>複数の変数を受け取り、オプションでそれらをフィルタリングする</refpurpose>
  </refnamediv>
+
  <refsect1 role="description">
   &reftitle.description;
   <methodsynopsis>
@@ -15,55 +15,71 @@
    <methodparam choice="opt"><type class="union"><type>array</type><type>int</type></type><parameter>options</parameter><initializer><constant>FILTER_DEFAULT</constant></initializer></methodparam>
    <methodparam choice="opt"><type>bool</type><parameter>add_empty</parameter><initializer>&true;</initializer></methodparam>
   </methodsynopsis>
-  <para>
-   この関数を使用すると、大量の変数を取得する際に
-   <function>filter_var</function> を繰り返しコールする必要がなくなるので便利です。
-  </para>
+  <simpara>
+   検証フィルタ
+   <constant>FILTER_VALIDATE_<replaceable>*</replaceable></constant>
+   や、除去フィルタ
+   <constant>FILTER_SANITIZE_<replaceable>*</replaceable></constant>、
+   またはカスタムフィルタを使って連想配列をフィルタリングします。
+  </simpara>
  </refsect1>
+
  <refsect1 role="parameters">
   &reftitle.parameters;
-  <para>
-   <variablelist>
-    <varlistentry>
-     <term><parameter>array</parameter></term>
-     <listitem>
-      <para>
-       文字列キーの配列。フィルタリングするデータを保持します。
-      </para>
-     </listitem>
-    </varlistentry>
-    <varlistentry>
-     <term><parameter>options</parameter></term>
-     <listitem>
-      <para>
-       引数を定義する配列。配列のキーとして使用できるのは
-       変数名を <type>string</type> で表したものです。
-       対応する値に使用できるのは、
-       <link linkend="filter.filters">フィルタの型</link>か配列 (フィルタ・フラグ・オプションを指定したもの) です。
-       配列の値として配列を使用する場合に使用できるキーは、
-       <literal>filter</literal> (<link linkend="filter.filters">フィルタの型</link>)、
-       <literal>flags</literal> (フィルタに適用するフラグ)
-       および <literal>options</literal> (フィルタに適用するオプション)
-       です。理解を深めるために、以下の例を参照ください。
-      </para>
-      <para>
-       このパラメータには、<link
-       linkend="filter.constants">フィルタ定数</link> を表す整数値を指定することもできます。
-       こうすると、入力配列のすべての値がそのフィルタで処理されます。
-      </para>
-     </listitem>
-    </varlistentry>
-    <varlistentry>
-     <term><parameter>add_empty</parameter></term>
-     <listitem>
-      <para>
-       存在しないキーは &null; として戻り値に追加します。
-      </para>
-     </listitem>
-    </varlistentry>
-   </variablelist>
-  </para>
+  <variablelist>
+   <varlistentry>
+    <term><parameter>array</parameter></term>
+    <listitem>
+     <simpara>
+      フィルタリングするデータを保持している連想配列
+     </simpara>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term><parameter>options</parameter></term>
+    <listitem>
+     <simpara>
+      オプション、またはエントリごとに適用するフィルタの連想配列。
+      フィルタは検証フィルタ
+      <constant>FILTER_VALIDATE_<replaceable>*</replaceable></constant>
+      または除去フィルタ
+      <constant>FILTER_SANITIZE_<replaceable>*</replaceable></constant>
+      が使えます。
+     </simpara>
+     <simpara>
+      オプションの値は、
+      <parameter>array</parameter> に存在するキーをキーとして、
+      そのエントリに適用するフィルタを値とする連想配列、
+      または、そのエントリにどのフィルタを、
+      どのように適用するかを記述した連想配列です。
+     </simpara>
+     <simpara>
+      どのようにフィルタを適用するかを連想配列に記述する場合、
+      どのフィルタを対応する値に適用するかを <literal>'filter'</literal>
+      キーに含めなければいけません。
+      <literal>'filter'</literal> キーに指定できるのは、
+      <constant>FILTER_VALIDATE_<replaceable>*</replaceable></constant>,
+      <constant>FILTER_SANITIZE_<replaceable>*</replaceable></constant>,
+      <constant>FILTER_UNSAFE_RAW</constant>,
+      <constant>FILTER_CALLBACK</constant> のうちのいずれかです。
+      オプションで <literal>'flags'</literal> キーには、
+      フィルタに適用するフラグを指定できますし、
+      <literal>'options'</literal> には、
+      フィルタに適用するオプションを指定できます。
+     </simpara>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term><parameter>add_empty</parameter></term>
+    <listitem>
+     <para>
+      返り値の配列に対して、キーが存在しない場合に &null; を追加します。
+     </para>
+    </listitem>
+   </varlistentry>
+  </variablelist>
  </refsect1>
+
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
@@ -83,37 +99,40 @@
 <![CDATA[
 <?php
 
-$data = array(
-    'product_id'    => 'libgd<script>',
-    'component'     => '10',
-    'versions'      => '2.0.33',
-    'testscalar'    => array('2', '23', '10', '12'),
-    'testarray'     => '2',
-);
+$data = [
+    'product_id' => 'libgd<script>',
+    'component'  => '10',
+    'versions'   => '2.0.33',
+    'testscalar' => ['2', '23', '10', '12'],
+    'testarray'  => '2',
+];
 
-$args = array(
+$filters = [
     'product_id'   => FILTER_SANITIZE_ENCODED,
-    'component'    => array('filter'    => FILTER_VALIDATE_INT,
-                            'flags'     => FILTER_FORCE_ARRAY, 
-                            'options'   => array('min_range' => 1, 'max_range' => 10)
-                           ),
-    'versions'     => FILTER_SANITIZE_ENCODED,
+    'component'    => [
+        'filter'   => FILTER_VALIDATE_INT,
+        'flags'    => FILTER_FORCE_ARRAY,
+        'options'  => [
+            'min_range' => 1,
+            'max_range' => 10,
+        ],
+    ],
+    'versions'     => [
+        'filter' => FILTER_SANITIZE_ENCODED
+    ],
+    'testscalar'   => [
+        'filter' => FILTER_VALIDATE_INT,
+        'flags'  => FILTER_REQUIRE_SCALAR,
+    ],
+    'testarray'    => [
+        'filter' => FILTER_VALIDATE_INT,
+        'flags'  => FILTER_FORCE_ARRAY,
+    ],
     'doesnotexist' => FILTER_VALIDATE_INT,
-    'testscalar'   => array(
-                            'filter' => FILTER_VALIDATE_INT,
-                            'flags'  => FILTER_REQUIRE_SCALAR,
-                           ),
-    'testarray'    => array(
-                            'filter' => FILTER_VALIDATE_INT,
-                            'flags'  => FILTER_FORCE_ARRAY,
-                           )
+];
 
-);
+var_dump(filter_var_array($data, $filters));
 
-$myinputs = filter_var_array($data, $args);
-
-var_dump($myinputs);
-echo "\n";
 ?>
 ]]>
     </programlisting>
@@ -130,8 +149,6 @@ array(6) {
   }
   ["versions"]=>
   string(6) "2.0.33"
-  ["doesnotexist"]=>
-  NULL
   ["testscalar"]=>
   bool(false)
   ["testarray"]=>
@@ -139,6 +156,8 @@ array(6) {
     [0]=>
     int(2)
   }
+  ["doesnotexist"]=>
+  NULL
 }
 ]]>
     </screen>
@@ -148,14 +167,19 @@ array(6) {
 
  <refsect1 role="seealso">
   &reftitle.seealso;
-  <para>
-   <simplelist>
-    <member><function>filter_input_array</function></member>
-    <member><function>filter_var</function></member>
-    <member><function>filter_input</function></member>
-    <member><xref linkend="filter.filters"/></member>
-   </simplelist>
-  </para>
+  <simplelist>
+   <member><function>filter_input_array</function></member>
+   <member><function>filter_var</function></member>
+   <member><function>filter_input</function></member>
+   <member>
+    検証フィルタ
+    <constant>FILTER_VALIDATE_<replaceable>*</replaceable></constant>
+   </member>
+   <member>
+    除去フィルタ
+    <constant>FILTER_SANITIZE_<replaceable>*</replaceable></constant>
+   </member>
+  </simplelist>
  </refsect1>
 
 </refentry>
