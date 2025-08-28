@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 2f85d57a0b5a01b875cbca2b291f04389cf61ac2 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: c1f37a6c270aadbbb3da56a3973ffd62197adf2b Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa,mumumu,jdkfx -->
 
 <sect1 xml:id="language.oop5.basic" xmlns="http://docbook.org/ns/docbook">
@@ -226,67 +226,26 @@ readonly class Foo
    <programlisting role="php">
 <![CDATA[
 <?php
+class SimpleClass {
+}
+
 $instance = new SimpleClass();
+var_dump($instance);
 
 // 変数を使うこともできます
 $className = 'SimpleClass';
 $instance = new $className(); // new SimpleClass()
+var_dump($instance);
 ?>
 ]]>
    </programlisting>
   </example>
-   <para>
-    クラスのコンテキストにおいては、
-    <literal>new self</literal> や <literal>new parent</literal>
-    のようにして新しいオブジェクトを作成することができます。
-   </para>
   <para>
-   作成済みのクラスのインスタンスを新たな変数に代入する場合、新しい変数は、
-   代入されたオブジェクトと同じインスタンスにアクセスします。
-   この動作は、インスタンスを関数に渡す場合も同様です。
-   作成済みのオブジェクトのコピーは、その
-   <link linkend="language.oop5.cloning">クローンを作成</link>
-   することにより作成可能です。
-  </para>
-  <example>
-   <title>オブジェクトの代入</title>
-   <programlisting role="php">
-<![CDATA[
-<?php
-
-$instance = new SimpleClass();
-
-$assigned   =  $instance;
-$reference  =& $instance;
-
-$instance->var = '$assigned will have this value';
-
-$instance = null; // $instance と $reference は null になります
-
-var_dump($instance);
-var_dump($reference);
-var_dump($assigned);
-?>
-]]>
-   </programlisting>
-   &example.outputs;
-   <screen>
-<![CDATA[
-NULL
-NULL
-object(SimpleClass)#1 (1) {
-   ["var"]=>
-     string(30) "$assigned will have this value"
-}
-]]>
-    </screen>
-   </example>
-   <para>
-    PHP 8.0.0 以降では、
-    <literal>new</literal> を任意の式と一緒に使う機能がサポートされました。
-    これによって、式が文字列を生成する場合に、
-    より複雑なインスタンス化を行えるようになります。
-    式は括弧で囲まなければいけません。
+   PHP 8.0.0 以降では、
+   <literal>new</literal> を任意の式と一緒に使う機能がサポートされました。
+   これによって、式が文字列を生成する場合に、
+   より複雑なインスタンス化を行えるようになります。
+   式は括弧で囲まなければいけません。
    </para>
    <example>
     <title>任意の式を使ってインスタンスを生成する</title>
@@ -333,6 +292,55 @@ object(ClassD)#1 (0) {
     </screen>
    </example>
    <para>
+    クラスのコンテキストにおいては、
+    <literal>new self</literal> や <literal>new parent</literal>
+    のようにして新しいオブジェクトを作成することができます。
+   </para>
+  <para>
+   作成済みのクラスのインスタンスを新たな変数に代入する場合、新しい変数は、
+   代入されたオブジェクトと同じインスタンスにアクセスします。
+   この動作は、インスタンスを関数に渡す場合も同様です。
+   作成済みのオブジェクトのコピーは、その
+   <link linkend="language.oop5.cloning">クローンを作成</link>
+   することにより作成可能です。
+  </para>
+  <example>
+   <title>オブジェクトの代入</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+class SimpleClass {
+    public string $var;
+}
+
+$instance = new SimpleClass();
+
+$assigned   =  $instance;
+$reference  =& $instance;
+
+$instance->var = '$assigned will have this value';
+
+$instance = null; // $instance と $reference は null になります
+
+var_dump($instance);
+var_dump($reference);
+var_dump($assigned);
+?>
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+NULL
+NULL
+object(SimpleClass)#1 (1) {
+   ["var"]=>
+     string(30) "$assigned will have this value"
+}
+]]>
+    </screen>
+   </example>
+   <para>
     複数のやり方で、オブジェクトのインスタンスを作ることが出来ます:
    </para>
    <example>
@@ -340,26 +348,27 @@ object(ClassD)#1 (0) {
     <programlisting role="php">
 <![CDATA[
 <?php
+
 class Test
 {
-    static public function getNew()
+    public static function getNew()
     {
-        return new static;
+        return new static();
     }
 }
 
-class Child extends Test
-{}
+class Child extends Test {}
 
-$obj1 = new Test();
-$obj2 = new $obj1;
+$obj1 = new Test(); // By the class name
+$obj2 = new $obj1(); // Through the variable containing an object
 var_dump($obj1 !== $obj2);
 
-$obj3 = Test::getNew();
+$obj3 = Test::getNew(); // By the class method
 var_dump($obj3 instanceof Test);
 
-$obj4 = Child::getNew();
+$obj4 = Child::getNew(); // Through a child class method
 var_dump($obj4 instanceof Child);
+
 ?>
 ]]>
     </programlisting>
@@ -381,16 +390,18 @@ bool(true)
     <programlisting role="php">
 <![CDATA[
 <?php
-echo (new DateTime())->format('Y');
+echo (new DateTime())->format('Y'), PHP_EOL;
+
 // PHP 8.4.0 以降、囲む括弧は省略可能です。
-echo new DateTime()->format('Y');
+echo new DateTime()->format('Y'), PHP_EOL;
 ?>
 ]]>
     </programlisting>
     &example.outputs.similar;
     <screen>
 <![CDATA[
-2016
+2025
+2025
 ]]>
     </screen>
    </example>
@@ -503,6 +514,14 @@ echo ($obj->bar)(), PHP_EOL;
    <programlisting role="php">
 <![CDATA[
 <?php
+class SimpleClass
+{
+    function displayVar()
+    {
+        echo "Parent class\n";
+    }
+}
+
 class ExtendClass extends SimpleClass
 {
     // 親クラスのメソッドを再定義
@@ -754,9 +773,10 @@ Does\Not\Exist
 namespace NS {
     class ClassName {
     }
+
+    $c = new ClassName();
+    print $c::class;
 }
-$c = new ClassName();
-print $c::class;
 ?>
 ]]>
     </programlisting>
@@ -787,7 +807,7 @@ NS\ClassName
   <para>
    <example>
     <title>nullsafe 演算子</title>
-    <programlisting role="php">
+    <programlisting role="php" annotations="non-interactive">
 <![CDATA[
 <?php
 
