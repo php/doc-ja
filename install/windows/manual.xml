@@ -1,92 +1,88 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 8e732e84a1425cf0ab3a5b0da8fe113c7a6da85e Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 42b7ea093412486fa88b7270a397abb008218163 Maintainer: takagi Status: ready -->
 <!-- Credits: mumumu -->
 <sect1 xml:id="install.windows.manual" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
- <title>Windows 上での PHP の手動インストール</title>
- <sect2>
-  <title>ウェブサーバーの選択</title>
-  <sect3>
-   <title>IIS</title>
-   <para>
-    IIS は Windows に標準で組み込まれています。
-    Windows サーバーの場合は、サーバーマネージャーを使って IIS ロールを追加します。CGI ロールを含める必要があります。
-    Windows デスクトップの場合は、コントロールパネルの「プログラムの追加と削除」を使って IIS を追加します。
-    Microsoft のドキュメントに <link xlink:href="https://docs.microsoft.com/en-us/previous-versions/ms181052(v=vs.80)">詳細な手順があります</link>。
-    デスクトップウェブアプリケーションやウェブ開発の場合は、IIS/Express や PHP Desktop も使えます。
+ <title>ビルド済みバイナリの手動インストール</title>
 
-    <example>
-     <title>IIS と PHP の設定をするためのコマンドライン</title>
-     <programlisting>
-<![CDATA[
+ <simplesect xml:id="install.windows.requirements" annotations="chunk:false">
+  <title>インストールに必要なもの</title>
+  <simpara>
+   PHP は 32bit x86 または 64bit x64 システムでだけ利用できます。
+   そして、現状では ARM で動作する Windows RT では利用できません。
+   PHP 8.3.0 以降では、Windows 8 または Windows Server 2012 が必要です。
+   PHP 7.2.0 以降では、Windows 7 または Windows Server 2008 R2 が必要です。
+   PHP 7.2.0 より前のバージョンでは、Windows 2008 や Vista がサポートしていました。
+  </simpara>
 
-@echo off
+  <simpara>
+   PHP は Visual C runtime(CRT) を必要とします。
+   他の多くのアプリケーションも CRT を必要としているので、
+   CRT は既にインストールされていそうではあります。
+   しかし、仮にインストールされていない場合は
+   Microsoft Visual C++ Redistributable for Visual Studio 2022
+   が全ての PHP バージョンに適合しており、
+   <link xlink:href="&url.microsoft.visualc.redistr;">Microsoft のページ</link>
+   からダウンロードできます。
+  </simpara>
 
-REM download .ZIP file of PHP build from http://windows.php.net/downloads/
+  <simpara>
+   x86 版の PHP をビルドするには、x86 版の CRT が必要ですし、
+   x64 版の PHP をビルドするには、x64 版の CRT が必要です。
+   CRT が既にインストールされている場合は、
+   インストーラーは「既にインストールされている」旨を表示し、
+   システムを何も変更しません。
+   CRT のインストーラーは <option>/quiet</option> と
+   <option>/norestart</option> コマンドラインオプションをサポートしているので、
+   インストール自体はスクリプトで自動化できます。
+  </simpara>
+ </simplesect>
 
-REM path to directory you decompressed PHP .ZIP file into (no trailing \)
-set phppath=c:\php
+ <simplesect>
+  <title>どこから PHP バイナリをダウンロードするか</title>
+  <simpara>
+   Windows 向けのビルドは
+   <link xlink:href="&url.php.win.downloads;">PHP Windows website</link>
+   からダウンロードできます。
+   全てのバイナリは最適化(<abbrev>PGO</abbrev>)されており、
+   QA が通されています。
+   そして、GA リリースは十分にテストされています。
+  </simpara>
+ </simplesect>
 
-
-REM Clear current PHP handlers
-%windir%\system32\inetsrv\appcmd clear config /section:system.webServer/fastCGI
-REM The following command will generate an error message if PHP is not installed. This can be ignored.
-%windir%\system32\inetsrv\appcmd set config /section:system.webServer/handlers /-[name='PHP_via_FastCGI']
-
-REM Set up the PHP handler
-%windir%\system32\inetsrv\appcmd set config /section:system.webServer/fastCGI /+[fullPath='%phppath%\php-cgi.exe']
-%windir%\system32\inetsrv\appcmd set config /section:system.webServer/handlers /+[name='PHP_via_FastCGI',path='*.php',verb='*',modules='FastCgiModule',scriptProcessor='%phppath%\php-cgi.exe',resourceType='Unspecified']
-%windir%\system32\inetsrv\appcmd set config /section:system.webServer/handlers /accessPolicy:Read,Script
-
-REM Configure FastCGI Variables
-%windir%\system32\inetsrv\appcmd set config -section:system.webServer/fastCgi /[fullPath='%phppath%\php-cgi.exe'].instanceMaxRequests:10000
-%windir%\system32\inetsrv\appcmd.exe set config -section:system.webServer/fastCgi /+"[fullPath='%phppath%\php-cgi.exe'].environmentVariables.[name='PHP_FCGI_MAX_REQUESTS',value='10000']"
-%windir%\system32\inetsrv\appcmd.exe set config -section:system.webServer/fastCgi /+"[fullPath='%phppath%\php-cgi.exe'].environmentVariables.[name='PHPRC',value='%phppath%\php.ini']"
-]]>
-     </programlisting>
-    </example>
-   </para>
-  </sect3>
-
-  <sect3>
-   <title>Apache</title>
-   <para>
-    Windows 用の Apache2 のビルドには、いくつかの種類があります。
-
-    ApacheLounge がおすすめですが、それ以外にも XAMPP や WampServer や BitNami といったものがあり、これらはインストーラがついています。
-
-    Apache で PHP を使うには、mod_php あるいは mod_fastcgi を用います。
-
-    mod_php を使う場合は、スレッドセーフ版の Apache を使う必要があります。また、同じバージョンの Visual C、同じ CPU (x86 あるいは x64) のビルドでなければいけません。
-   </para>
-  </sect3>
- </sect2>
-
- <sect2>
-  <title>ビルド方法の選択</title>
+ <simplesect xml:id="install.windows.pecl" annotations="chunk:false">
+  <title>ビルド済みのPECL拡張モジュール</title>
   <para>
-   Windows 向けのビルドは <link xlink:href="http://windows.php.net/download/">http://windows.php.net/download/</link> からダウンロードできます。
-
-   全てのビルドは最適化(<abbrev>PGO</abbrev>) されており、 QA や GA リリースで数多くのテストがなされています。
+   Windows 版のビルド済みPECL拡張モジュールは、
+   拡張モジュールのPECLページで DLL として配布されています。
   </para>
   <para>
-   PHP には四種類のビルドがあります。
+   Unix のような、Windows 以外のシステムに特有の機能を使っていたり、
+   Windows で利用できないライブラリに依存していたりする拡張モジュールは、
+   Windows でバイナリは利用できません。
+  </para>
+ </simplesect>
+
+ <simplesect>
+  <title>Build types</title>
+  <para>
+   PHP のビルドには以下の4種類があります:
    <itemizedlist spacing="compact">
     <listitem>
      <para>Thread-Safe(TS) - Apache と mod_php のような、シングルプロセスのウェブサービス用</para>
     </listitem>
     <listitem>
-     <para>Non-Thread-Safe(NTS) - IIS やその他の FastCGI ウェブサーバー (Apache と mod_fastcgi など) 用。また、コマンドラインのスクリプト用にもおすすめ。</para>
+     <para>Non-Thread-Safe(NTS) - IIS やその他の FastCGI ウェブサーバー (Apache と mod_fastcgi など) 用。コマンドラインのスクリプト用にもおすすめ。</para>
     </listitem>
     <listitem>
-     <para>x86 - 32ビット版向け</para>
+     <para>x86 - 32-bit システム向け</para>
     </listitem>
     <listitem>
-     <para>x64 - 64ビット版向け</para>
+     <para>x64 - 64-bit システム向け</para>
     </listitem>
    </itemizedlist>
   </para>
- </sect2>
+ </simplesect>
 </sect1>
 <!-- Keep this comment at the end of the file
 Local variables:
