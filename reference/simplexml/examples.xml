@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: a0ae28d3bc85f927c22649ebd9a590b921534b7d Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 8ac065774e87c73919ee3508fc957adebe1c4408 Maintainer: takagi Status: ready -->
 <!-- CREDITS: shimooka,hirokawa -->
 
 <chapter xml:id="simplexml.examples" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  &reftitle.examples;
  <section xml:id="simplexml.examples-basic">
   <title>基本的な SimpleXML の使用法</title>
+
   <para>
    このリファレンスの多くの例では XML 文字列が必要です。それぞれの例で
    この文字列をくり返す代わりに、あるファイルにこの文字列を保存して、
@@ -18,7 +19,8 @@
   </para>
   <para>
    <example>
-    <title>XML 文字列を設定するインクルードファイル example.php</title>
+    <title>Include file examples/simplexml-data.php with XML string</title>
+    <title>XML 文字列を設定するインクルードファイル examples/simplexml-data.php</title>
     <programlisting role="php" xml:id="simplexml.examples.movie">
 <![CDATA[
 <?php
@@ -59,11 +61,11 @@ XML;
    SimpleXML の容易さが最も明確に現われるのは、
    簡単な XML ドキュメントから文字列または数字を展開する時です。
    <example>
-    <title><literal>&lt;plot&gt;</literal> を取得する</title>
+    <title>Getting <literal>&lt;plot&gt;</literal></title>
     <programlisting role="php">
 <![CDATA[
 <?php
-include 'example.php';
+include 'examples/simplexml-data.php';
 
 $movies = new SimpleXMLElement($xmlstr);
 
@@ -92,7 +94,7 @@ echo $movies->movie[0]->plot;
     <programlisting role="php">
 <![CDATA[
 <?php
-include 'example.php';
+include 'examples/simplexml-data.php';
 
 $movies = new SimpleXMLElement($xmlstr);
 
@@ -118,7 +120,7 @@ PHP solves all my web problems
     <programlisting role="php">
 <![CDATA[
 <?php
-include 'example.php';
+include 'examples/simplexml-data.php';
 
 $movies = new SimpleXMLElement($xmlstr);
 
@@ -158,14 +160,14 @@ Mr. Coder played by El ActÓr
     <programlisting role="php">
 <![CDATA[
 <?php
-include 'example.php';
+include 'examples/simplexml-data.php';
 
 $movies = new SimpleXMLElement($xmlstr);
 
 /* 最初の映画の <rating> ノードにアクセスします。
  * また、その評価も出力します。*/
 foreach ($movies->movie[0]->rating as $rating) {
-    switch((string) $rating['type']) { // 要素のインデックスとして、属性を取得します
+    switch((string) $rating['type']) { // Get attributes as element indices
     case 'thumbs':
         echo $rating, ' thumbs up';
         break;
@@ -196,7 +198,7 @@ foreach ($movies->movie[0]->rating as $rating) {
     <programlisting role="php">
 <![CDATA[
 <?php
-include 'example.php';
+include 'examples/simplexml-data.php';
 
 $movies = new SimpleXMLElement($xmlstr);
 
@@ -226,7 +228,7 @@ My favorite movie.PHP: Behind the Parser
     <programlisting role="php">
 <![CDATA[
 <?php
-include 'example.php';
+include 'examples/simplexml-data.php';
 
 $movies1 = new SimpleXMLElement($xmlstr);
 $movies2 = new SimpleXMLElement($xmlstr);
@@ -250,10 +252,14 @@ bool(false)
      <literal>&lt;character&gt;</literal> 要素をすべて見つけるには、
      以下のようにします。
     </simpara>
+    <simpara>
+     '<literal>//</literal>' は、ワイルドカードとして機能します。
+     完全なパスを指定するには、スラッシュをひとつ省略します:
+    </simpara>
     <programlisting role="php">
 <![CDATA[
 <?php
-include 'example.php';
+include 'examples/simplexml-data.php';
 
 $movies = new SimpleXMLElement($xmlstr);
 
@@ -263,10 +269,6 @@ foreach ($movies->xpath('//character') as $character) {
 ?>
 ]]>
     </programlisting>
-    <simpara>
-     '<literal>//</literal>' はワイルドカードとして動作します。絶対パスを指定するには、
-     スラッシュを一つだけにします。
-    </simpara>
     &example.outputs;
     <screen>
 <![CDATA[
@@ -286,7 +288,7 @@ Mr. Coder played by El ActÓr
     <programlisting role="php">
 <![CDATA[
 <?php
-include 'example.php';
+include 'examples/simplexml-data.php';
 $movies = new SimpleXMLElement($xmlstr);
 
 $movies->movie[0]->characters->character[0]->name = 'Miss Coder';
@@ -337,7 +339,7 @@ echo $movies->asXML();
     <programlisting role="php">
 <![CDATA[
 <?php
-include 'example.php';
+include 'examples/simplexml-data.php';
 $movies = new SimpleXMLElement($xmlstr);
 
 $character = $movies->movie[0]->characters->addChild('character');
@@ -413,6 +415,51 @@ echo $books->book[0]->title;
 blah
 ]]>
     </screen>
+   </example>
+  </para>
+  <para>
+   <example>
+    <title>名前空間を扱う</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$data = <<<XML
+<movies xmlns="http://default" xmlns:a="http://a">
+ <movie xml:id="movie1" a:link="IMDB">
+  <a:actor>Onlivia Actora</a:actor>
+ </movie>
+</movies>
+XML;
+
+$movies = simplexml_load_string($data);
+
+// 名前空間 http://www.w3.org/XML/1998/namespace は、"xml" として利用できます
+echo $movies->movie->attributes("xml", true)["id"] . "\n";
+
+// 名前空間付きの属性は attributes() でアクセスできます。
+echo $movies->movie->attributes("a", true)["link"] . "\n";
+
+// Using namespace URI allows document to use any namespace alias.
+
+// 名前空間URI を使うと、ドキュメントを任意の名前空間のエイリアスとして使えます 
+echo $movies->movie->attributes("http://a")["link"] . "\n";
+
+// 子要素は children() を使ってアクセスできます
+echo $movies->movie->children("http://a")->actor . "\n";
+
+// 名前空間付きで xpath() を使うには、名前空間をまず登録する必要があります
+$movies->registerXPathNamespace("a", "http://a");
+echo count($movies->xpath("//a:actor")) . "\n";
+
+// デフォルトの名前空間であっても、登録が必要です
+$movies->registerXPathNamespace("default", "http://default");
+echo count($movies->xpath("//default:movie")) . "\n";
+
+// この結果は空になります
+echo count($movies->xpath("//movie")) . "\n";
+?>
+]]>
+    </programlisting>
    </example>
   </para>
  </section>
@@ -495,4 +542,3 @@ vim600: syn=xml fen fdm=syntax fdl=2 si
 vim: et tw=78 syn=sgml
 vi: ts=1 sw=1
 -->
-
