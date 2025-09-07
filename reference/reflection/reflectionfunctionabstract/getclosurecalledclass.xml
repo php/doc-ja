@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision$ -->
+<!-- EN-Revision: 1870b4c6aa53e14eec6201eb63f28ed6be6349f7 Maintainer: mumumu Status: ready -->
+<refentry xml:id="reflectionfunctionabstract.getclosurecalledclass" xmlns="http://docbook.org/ns/docbook">
+ <refnamediv>
+  <refname>ReflectionFunctionAbstract::getClosureCalledClass</refname>
+  <refpurpose>クロージャ内部で static:: に対応するクラスを返す</refpurpose>
+ </refnamediv>
+
+ <refsect1 role="description">
+  &reftitle.description;
+  <methodsynopsis role="ReflectionFunctionAbstract">
+   <modifier>public</modifier> <type class="union"><type>ReflectionClass</type><type>null</type></type><methodname>ReflectionFunctionAbstract::getClosureCalledClass</methodname>
+   <void/>
+  </methodsynopsis>
+  <simpara>
+   <classname>Closure</classname> 内部で <literal>static::</literal>
+   に対応するクラス名に解決されるクラスを、<classname>ReflectionClass</classname>
+   として返します。
+  </simpara>
+ </refsect1>
+
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  &no.function.parameters;
+ </refsect1>
+
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <simpara>
+   <classname>Closure</classname> 内部で <literal>static::</literal>
+   で表現されるクラスに対応する <classname>ReflectionClass</classname> を返します。
+   関数がクロージャでないか、グローバルスコープの場合は &null; を返します。
+  </simpara>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <example>
+   <title>
+    この例は、オブジェクトコンテキスト内部のクロージャについて、
+    <methodname>ReflectionFunctionAbstract::getClosureCalledClass</methodname>,
+    <methodname>ReflectionFunctionAbstract::getClosureScopeClass</methodname>,
+    <methodname>ReflectionFunctionAbstract::getClosureThis</methodname>
+    の違いを示しています。
+   </title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+class A
+{
+    public function getClosure()
+    {
+        var_dump(self::class, static::class);
+
+        return function() {};
+    }
+}
+
+class B extends A {}
+
+$b = new B();
+$c = $b->getClosure();
+$r = new ReflectionFunction($c);
+
+var_dump($r->getClosureThis()); // $this === $b, since a non-static closure take the object context
+var_dump($r->getClosureScopeClass()); // Corresponds to the self::class resolution inside a closure
+var_dump($r->getClosureCalledClass()); // Corresponds to the static::class resolution inside a closure
+
+?>
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+string(1) "A"
+string(1) "B"
+object(B)#1 (0) {
+}
+object(ReflectionClass)#4 (1) {
+  ["name"]=>
+  string(1) "A"
+}
+object(ReflectionClass)#4 (1) {
+  ["name"]=>
+  string(1) "B"
+}
+]]>
+   </screen>
+  </example>
+  <example>
+   <title>
+    この例は、オブジェクトコンテキストが存在しない static なクロージャについて、
+    <methodname>ReflectionFunctionAbstract::getClosureCalledClass</methodname>,
+    <methodname>ReflectionFunctionAbstract::getClosureScopeClass</methodname>,
+    <methodname>ReflectionFunctionAbstract::getClosureThis</methodname>
+    の違いを示しています。
+   </title>
+   <programlisting role="php">
+    <![CDATA[
+<?php
+
+class A
+{
+    public function getClosure()
+    {
+        var_dump(self::class, static::class);
+
+        return static function() {};
+    }
+}
+
+class B extends A {}
+
+$b = new B();
+$c = $b->getClosure();
+$r = new ReflectionFunction($c);
+
+var_dump($r->getClosureThis()); // NULL, since the pseudo-variable $this is not available in a static context
+var_dump($r->getClosureScopeClass()); // Corresponds to the self::class resolution inside a closure
+var_dump($r->getClosureCalledClass()); // Corresponds to the static::class resolution inside a closure
+
+?>
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+string(1) "A"
+string(1) "B"
+NULL
+object(ReflectionClass)#4 (1) {
+  ["name"]=>
+  string(1) "A"
+}
+object(ReflectionClass)#4 (1) {
+  ["name"]=>
+  string(1) "B"
+}
+
+]]>
+   </screen>
+  </example>
+ </refsect1>
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <simplelist>
+   <member><methodname>ReflectionFunctionAbstract::getClosureScopeClass</methodname></member>
+   <member><methodname>ReflectionFunctionAbstract::getClosureThis</methodname></member>
+   <member><xref linkend="language.oop5.late-static-bindings" /></member>
+  </simplelist>
+ </refsect1>
+
+</refentry>
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"~/.phpdoc/manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
