@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 2a5223230bf6177c225003ca30c63f48ef266cc0 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 5c58d39a0bb5b81bff6618a1c6e27d8fb9622f29 Maintainer: takagi Status: ready -->
 
 <refentry xml:id="snmp.construct" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -20,7 +20,8 @@
    <methodparam choice="opt"><type>int</type><parameter>retries</parameter><initializer>-1</initializer></methodparam>
   </constructorsynopsis>
   <para>
-   The function description goes here.
+   リモートの <acronym>SNMP</acronym>
+   エージェントとのセッションを表現する、SNMP インスタンスを作成します。
   </para>
  </refsect1>
 
@@ -46,7 +47,7 @@
       には、オプションでコロンに続けて <acronym>SNMP</acronym> エージェントのポートを指定できます。
       IPv6 アドレスでポートを指定する場合は、アドレス部を角括弧で囲まなければなりません。
       <parameter>hostname</parameter> で FQDN を使うと、その解決に使われるのは
-      php-snmp ライブラリであり、Net-SNMP エンジンは使いません。
+      PHP SNMP 拡張モジュールであり、<productname>Net-SNMP</productname> エンジンは使いません。
       FQDN を指定するときに IPv6 アドレスを使うには、FQDN を角括弧で囲まなければなりません。
       いくつか例を示します。
      <informaltable>
@@ -69,17 +70,53 @@
    <varlistentry>
     <term><parameter>community</parameter></term>
     <listitem>
-     <para><parameter>community</parameter> の目的は
-     <acronym>SNMP</acronym> のバージョンによって異なります。</para>
+     <para>
+      指定された
+      <parameter>version</parameter>
+      に対応するセキュリティレベルを指定します。
+      <parameter>community</parameter> の目的は、
+      <acronym>SNMP</acronym> のバージョンによって異なります。
+     </para>
      <informaltable>
       <tgroup cols="2">
        <tbody>
-        <row><entry>SNMP::VERSION_1</entry><entry><acronym>SNMP</acronym> コミュニティ</entry></row>
-        <row><entry>SNMP::VERSION_2C</entry><entry><acronym>SNMP</acronym> コミュニティ</entry></row>
-        <row><entry>SNMP::VERSION_3</entry><entry><acronym>SNMP</acronym>v3 セキュリティ名</entry></row>
+        <row>
+         <entry>
+          <constant>SNMP::VERSION_1</constant>
+         </entry>
+         <entry>
+          読み取り専用パーミッションに対応する <literal>public</literal>、
+          または読み取りと書き込みに対応する <literal>private</literal>
+         </entry>
+        </row>
+        <row>
+         <entry>
+          <constant>SNMP::VERSION_2C</constant>
+         </entry>
+         <entry>
+          読み取り専用パーミッションに対応する <literal>public</literal>、
+          または読み取りと書き込みに対応する <literal>private</literal>
+         </entry>
+        </row>
+        <row>
+         <entry>
+          <constant>SNMP::VERSION_3</constant>
+         </entry>
+         <entry>
+          <acronym>SNMP</acronym>v3 のセキュリティ名。以下のうちの一つが指定できます:
+          <literal>noAuthNoPriv</literal>,
+          <literal>authNoPriv</literal> (認証のパスフレーズと認証プロトコルが必須),
+          <literal>authPriv</literal> (認証のパスフレーズとプロトコル、そして、プライバシーのパスフレーズとプロトコルが必須)
+         </entry>
+        </row>
        </tbody>
       </tgroup>
      </informaltable>
+     <simpara>
+      SNMPv3 を使うには、
+      <methodname>SNMP::setSecurity</methodname> 
+      を使ってセキュリティ関連のセッションパラメータの設定が必要です。
+     </simpara>
     </listitem>
    </varlistentry>
     <varlistentry>
@@ -113,13 +150,15 @@
  <refsect1 role="examples">
   &reftitle.examples;
   <example xml:id="snmp.construct.example.basic">
-   <title>sysLocation の取得</title>
+    <title>ホストの物理的な位置を取得</title>
    <programlisting role="php">
 <![CDATA[
 <?php
-  $session = new SNMP(SNMP::VERSION_1, "127.0.0.1", "public");
-  $sysdescr = $session->get("sysDescr.0");
-  echo "$sysdescr\n";
+
+$session = new SNMP(SNMP::VERSION_1, "127.0.0.1", "public");
+$sysdescr = $session->get("sysDescr.0");
+echo "$sysdescr\n";
+
 ?>
 ]]>
    </programlisting>
