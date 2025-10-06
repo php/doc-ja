@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision$ -->
+<!-- EN-Revision: 2946c8a267734a9e8696e1764f7436e6caa8909c Maintainer: mumumu Status: ready -->
+<sect1 xml:id="language.operators.functional">
+ <title>パイプ演算子</title>
+ <titleabbrev>パイプ演算子</titleabbrev>
+ <para>
+  PHP 8.5 以降では、callable に直接値を渡す演算子をサポートしています。
+  <literal>|></literal> 演算子、または "パイプ" は、右辺にパラメーターをひとつ取る
+  callable を受け入れ、左辺値をそれに渡し、callable の結果を評価します。
+  右辺の callable は、有効な PHP の callable であれば何でも構いません:
+  つまり、<classname>Closure</classname>、
+  <link linkend="functions.first_class_callable_syntax">第一級callableを生成する記法</link>、
+  <link linkend="object.invoke">__invoke()</link> を実装したオブジェクトなどです。
+ </para>
+ <para>
+  論理的には同じ意味になる、2行のコードを以下に示します。
+  <example>
+   <title><literal>|></literal> を使う</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+$result = "Hello World" |> strlen(...);
+print $result . PHP_EOL;
+
+$result = strlen("Hello World");
+print $result . PHP_EOL;
+?>
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+11
+11
+]]>
+   </screen>
+  </example>
+ </para>
+ <para>
+  単一の呼び出しは特に役に立ちませんが、
+  複数の呼び出しを一緒にチェインさせると役に立ちます。
+  たとえば、論理的には同じ意味になるコード片を2つ、以下に示します:
+  <example>
+   <title>|> の呼び出しをチェインさせる</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+$result = "PHP Rocks"
+    |> htmlentities(...)
+    |> str_split(...)
+    |> (fn($x) => array_map(strtoupper(...), $x))
+    |> (fn($x) => array_filter($x, fn($v) => $v != 'O'))
+;
+print $result . PHP_EOL;
+
+$temp = "PHP Rocks";
+$temp = htmlentities($temp);
+$temp = str_split($temp);
+$temp = array_map(strtoupper(...), $temp);
+$temp = array_filter($temp, fn($v) => $v != 'O');
+$result = $temp;
+print $result . PHP_EOL;
+?>
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+Array
+(
+    [0] => P
+    [1] => H
+    [2] => P
+    [3] =>
+    [4] => R
+    [6] => C
+    [7] => K
+    [8] => S
+)
+Array
+(
+    [0] => P
+    [1] => H
+    [2] => P
+    [3] =>
+    [4] => R
+    [6] => C
+    [7] => K
+    [8] => S
+)
+]]>
+   </screen>
+  </example>
+ </para>
+ <para>
+  パイプの左側は、値や式であれば何でも構いません。
+  パイプの右側は、パラメーターをひとつ取る PHP の有効な callable か、
+  そのように評価できる任意の式であれば何でも構いません。
+  必須のパラメーターをひとつ以上とる関数を右側に指定した場合、
+  それは許可されず、
+  引数が不足した状態で関数をコールしたかのように失敗します。
+  リファレンスの値を取る関数も許可されていません。
+  右辺が有効な callable として評価されない場合、Error がスローされます。
+ </para>
+ <note>
+  <para>
+   上の例で示したとおり、文法的な曖昧さを回避するため、
+   <link linkend="functions.arrow">アロー関数</link> は、
+   パイプ演算子を一緒に使う場合に括弧で囲わなければならない点に注意してください。
+   そうしない場合、致命的なエラーが発生します。
+  </para>
+ </note>
+
+ <sect2 role="seealso">
+  &reftitle.seealso;
+  <para>
+   <simplelist>
+    <member><classname>Closure</classname></member>
+   </simplelist>
+  </para>
+ </sect2>
+</sect1>
