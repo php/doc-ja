@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 34f90a65914c900173f9a42331acc45bc53d8eee Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 7c4b5fb40ac3149a5b931f1e31b1050ab5eaab7e Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi,mumumu -->
 <refentry xml:id="function.mb-detect-encoding" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -22,6 +22,12 @@
    のもっとも可能性が高い文字エンコーディングを検出します。
   </para>
   <para>
+   PHP 8.1 以降では、
+   この関数は指定されたテキスト中の有効なテキストエンコーディングのうち、
+   もっとも正しい可能性が高いものを、経験則を用いて検出します。
+   そのため、<parameter>encodings</parameter> の順番通りでない場合があります。　
+  </para>
+  <para>
    追加の情報なしに、
    意図した文字エンコーディングを自動で検出する行為は、
    全く役に立ちません。
@@ -34,7 +40,7 @@
    この関数は、全ての文字列が正しいバイト配列とは限らない
    マルチバイト文字列を指定するともっとも役に立ちます。
    入力となる文字列に誤ったバイトが含まれていた場合、
-   そのエンコーディングは採用されず、次のものを試します。
+   そのエンコーディングは採用されません。
   </para>
 
   <warning>
@@ -66,7 +72,7 @@
      <term><parameter>encodings</parameter></term>
      <listitem>
       <para>
-       文字エンコーディングの一覧を試す順番に指定します。
+       試す文字エンコーディングの一覧を指定します。
        このリストは、文字列の配列または、
        カンマ区切りのリストで指定できます。
       </para>
@@ -245,9 +251,10 @@ string(10) "ISO-8859-1"
 <?php
 $str = "\xC4\xA2";
 
-// 3つ全てのエンコーディングに照らして正しい文字列なので、
-// 最初のひとつが返されます。
-var_dump(mb_detect_encoding($str, ['UTF-8', 'ISO-8859-1', 'ISO-8859-5']));
+// 3つ全てのエンコーディングに照らして正しい文字列ですが、
+// 最初のひとつが常に返されるとは限りません
+var_dump(mb_detect_encoding($str, ['UTF-8']));
+var_dump(mb_detect_encoding($str, ['UTF-8', 'ISO-8859-1', 'ISO-8859-5'])); // PHP 8.1 以降では、UTF-8 ではなく ISO-8859-1 が返されます
 var_dump(mb_detect_encoding($str, ['ISO-8859-1', 'ISO-8859-5', 'UTF-8']));
 var_dump(mb_detect_encoding($str, ['ISO-8859-5', 'UTF-8', 'ISO-8859-1']));
 ?>
@@ -257,6 +264,7 @@ var_dump(mb_detect_encoding($str, ['ISO-8859-5', 'UTF-8', 'ISO-8859-1']));
     <screen>
 <![CDATA[
 string(5) "UTF-8"
+string(10) "ISO-8859-1"
 string(10) "ISO-8859-1"
 string(10) "ISO-8859-5"
 ]]>
