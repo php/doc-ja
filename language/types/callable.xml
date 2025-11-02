@@ -1,104 +1,249 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: eac9eff7b66d8c2b168c25c72de0422126daf8cb Maintainer: takagi Status: ready -->
-<!-- Credits: mumumu -->
+<!-- EN-Revision: 147b80d1974b969caad1db188a48f4bcd90f5eb8 Maintainer: mumumu Status: ready -->
+
 <sect1 xml:id="language.types.callable">
  <title>コールバック / Callable</title>
- 
- <para>
-  コールバックは、<type>callable</type> 型で表されます。
- </para>
 
- <para>
-  <function>call_user_func</function> や <function>usort</function>
-  等の関数は、ユーザーが定義するコールバック関数を引数として受け入れます。
-  コールバック関数は、単純な関数だけでなく、オブジェクトのメソッド
-  あるいはクラスのstaticメソッドであってもかまいません。
- </para>
+<simpara>
+  callable は、
+  別の関数への引数として渡される関数またはメソッドへのリファレンスです。
+  これらは、<type>callable</type> 型を宣言することで表されます。
+</simpara>
+ <informalexample>
+  <programlisting role="php" annotations="non-interactive">
+<![CDATA[
+<?php
+function foo(callable $callback) {
+    $callback();
+}
+?>
+]]>
+  </programlisting>
+ </informalexample>
+
+ <simpara>
+  関数によっては、コールバック関数を引数として受け入れるものがあります。
+  例として
+  <function>array_map</function>, <function>usort</function>,
+  <function>preg_replace_callback</function> が挙げられます。
+ </simpara>
 
  <sect2 xml:id="language.types.callable.passing">
-  <title>受け渡し</title>
+  <title>callable の作成</title>
 
-  <para>
-   PHP 関数はその名前を単に文字列、または
-   <link linkend="functions.first_class_callable_syntax">第一級callable</link>
-   として渡します。
-   どのようなビルトインまたはユーザー定義の関数も渡すことができます。
-   ただし、
-   <function>array</function>, <function>echo</function>,
-   <function>empty</function>, <function>eval</function>, 
-   <function>exit</function>, <function>isset</function>, 
-   <function>list</function>, <function>print</function> あるいは
-   <function>unset</function>
-   といった言語構造はコールバックとしては使えないことに注意しましょう。
-  </para>
+  <simpara>
+   callable は、呼び出し可能な何かを表す型です。
+   コールバック関数をパラメータとして期待する関数や、
+   メソッドの引数として渡すことができますし、
+   直接呼び出すこともできます。
 
-  <para>
-   オブジェクトのインスタンスを渡すには配列を使います。
-   配列の 0 番目の要素にオブジェクトを、
-   そして 1 番目の要素にメソッド名を指定します。
-   protected メソッドや private メソッドは、クラスの内部からはアクセスできます。
-  </para>
+   <type>callable</type> 型は、
+   クラスのプロパティの型宣言には使えません。
+   代わりに、<classname>Closure</classname> を型宣言に使ってください。
+  </simpara>
 
-  <para>
-   static メソッドの場合、オブジェクトのインスタンスは不要です。
-   0 番目の要素として、オブジェクトのかわりにクラス名を指定します。
-   <literal>'ClassName::methodName'</literal> 形式で指定することもできます。
-  </para>
+  <simpara>
+   callable は、複数の異なる方法で作成できます:
+  </simpara>
 
-  <para>
-   一般的なユーザー定義関数とは異なり、
-   <link linkend="functions.anonymous">無名関数</link> と
-   <link linkend="functions.arrow">アロー関数</link> もパラメータとして渡せます。
-  </para>
+  <itemizedlist>
+   <listitem>
+    <simpara><classname>Closure</classname> オブジェクト</simpara>
+   </listitem>
+   <listitem>
+    <simpara>関数またはメソッドの名前を含む文字列</simpara>
+   </listitem>
+   <listitem>
+    <simpara>
+     配列。クラス名または <type>object</type>
+     をインデックス 0 に、メソッド名をインデックス 1 に含みます。
+    </simpara>
+   </listitem>
+   <listitem>
+    <simpara>
+     <link linkend="object.invoke">__invoke()</link>
+     マジックメソッドを実装した &object;
+    </simpara>
+   </listitem>
+  </itemizedlist>
+
+  <simpara>
+   <classname>Closure</classname> オブジェクトは、
+   <link linkend="functions.anonymous">無名関数</link>、
+   <link linkend="functions.arrow">アロー関数</link>、
+   <link linkend="functions.first_class_callable_syntax">第一級callableを生成する記法</link>、
+   もしくは <methodname>Closure::fromCallable</methodname>
+   メソッドを使って作成できます。
+  </simpara>
 
   <note>
-   <para>
-    PHP 8.1.0 以降では、
-    無名関数を作るための記法として、<link linkend="functions.first_class_callable_syntax">第一級callableを生成する記法</link> も使えます。
-   </para>
+   <simpara>
+    <link linkend="functions.first_class_callable_syntax">第一級callableを生成する記法</link>
+    は、PHP 8.1.0 以降でのみ利用可能です。
+   </simpara>
   </note>
 
-  <para>
-   一般的には、
-   <link linkend="object.invoke">__invoke()</link> を実装した任意のオブジェクトもパラメータとして渡せます。
-  </para>
-
-  <para>
-   <example>
-    <title>
-     コールバック関数の例
-    </title>
-    <programlisting role="php">
+  <example>
+   <title>
+    <classname>Closure</classname> を使ったコールバックの例
+   </title>
+  <programlisting role="php">
 <![CDATA[
-<?php 
+<?php
+// Using anonymous function syntax
+$double1 = function ($a) {
+    return $a * 2;
+};
 
-// コールバック関数の例
+// Using first-class callable syntax
+function double_function($a) {
+    return $a * 2;
+}
+$double2 = double_function(...);
+
+// Using arrow function syntax
+$double3 = fn($a) => $a * 2;
+
+// Using Closure::fromCallable
+$double4 = Closure::fromCallable('double_function');
+
+// Use the closure as a callback here to
+// double the size of each element in our range
+$new_numbers = array_map($double1, range(1, 5));
+print implode(' ', $new_numbers) . PHP_EOL;
+
+$new_numbers = array_map($double2, range(1, 5));
+print implode(' ', $new_numbers) . PHP_EOL;
+
+$new_numbers = array_map($double3, range(1, 5));
+print implode(' ', $new_numbers) . PHP_EOL;
+
+$new_numbers = array_map($double4, range(1, 5));
+print implode(' ', $new_numbers);
+
+?>
+]]>
+   </programlisting>
+   &example.outputs.81;
+   <screen>
+<![CDATA[
+2 4 6 8 10
+2 4 6 8 10
+2 4 6 8 10
+2 4 6 8 10
+]]>
+   </screen>
+  </example>
+
+  <simpara>
+   callable は、
+   関数名や static メソッドを含む文字列でも表現できます。
+   ビルトイン関数、またはユーザー定義関数も使えます。
+   但し、以下のような言語構造は除きます:
+   <function>array</function>, <function>echo</function>,
+   <function>empty</function>, <function>eval</function>,
+   <function>isset</function>,
+   <function>list</function>, <function>print</function>,
+   <function>unset</function>
+  </simpara>
+
+  <simpara>
+   static メソッドは、クラスの <type>object</type>
+   型をインスタンス化せずに使えます。
+   クラス名をインデックス 0 に、
+   メソッド名をインデックス 1 に配置した配列を作成するか、
+   <literal>'ClassName::methodName'</literal> のような、
+   スコープ解決演算子 <literal>::</literal> を使った特殊構文が使えます。
+  </simpara>
+
+  <simpara>
+   インスタンス化された <type>object</type>
+   のメソッドは、<type>object</type> をインデックス 0 に、
+   メソッド名をインデックス 1 に配置した配列を作成することで、
+   callable にできます。
+  </simpara>
+
+  <simpara>
+   <classname>Closure</classname> オブジェクトと callable 型の主な違いは、
+   <classname>Closure</classname>
+   オブジェクトがスコープに依存せず常に呼び出せるのに対し、
+   callable はスコープに依存する場合があり、
+   直接呼び出せない可能性がある点です。
+   <classname>Closure</classname> が、callable を作成する望ましい方法です。
+  </simpara>
+
+  <note>
+   <simpara>
+    <classname>Closure</classname> オブジェクトは、
+    それが作成されたスコープにバインドされますが、
+    クラスメソッドを文字列または配列で参照する callable は、
+    それらが呼び出されたスコープの内部で解決されます。
+    callable を private または protected メソッドから作成し、
+    クラスのスコープ外から呼び出せるようにするには、
+    <methodname>Closure::fromCallable</methodname> または、
+    <link linkend="functions.first_class_callable_syntax">第一級callableを生成する記法</link> を使います。
+   </simpara>
+  </note>
+
+  <simpara>
+   PHP は、コールバック引数として使えるものの、
+   直接は呼び出せない callable を作成できます。
+   これらはコンテキスト依存の callable であり、
+   例えば <literal>'parent::method'</literal> や
+   <literal>["static", "method"]</literal>
+   の形で、クラスの継承階層におけるクラスメソッドを参照します。
+  </simpara>
+
+  <note>
+   <simpara>
+    PHP 8.2.0 以降では、
+    コンテキスト依存の callable は推奨されなくなりました。
+    <literal>'parent::method'</literal> を
+    <literal>parent::class . '::method'</literal>
+    形式に置き換えることでコンテキスト依存を除去するか、
+    <link linkend="functions.first_class_callable_syntax">第一級callableを生成する記法</link> を使ってください。
+   </simpara>
+  </note>
+
+  <example>
+   <title>
+    <function>call_user_function</function>
+    を使って、様々なタイプの callable を呼び出す
+   </title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+// An example callback function
 function my_callback_function() {
     echo 'hello world!', PHP_EOL;
 }
 
-// コールバックメソッドの例
+// An example callback method
 class MyClass {
     static function myCallbackMethod() {
         echo 'Hello World!', PHP_EOL;
     }
 }
 
-// タイプ 1: 単純なコールバック
-call_user_func('my_callback_function'); 
+// Type 1: Simple callback
+call_user_func('my_callback_function');
 
-// タイプ 2: staticメソッドのコール
-call_user_func(array('MyClass', 'myCallbackMethod')); 
+// Type 2: Static class method call
+call_user_func(['MyClass', 'myCallbackMethod']);
 
-// タイプ 3: オブジェクトメソッドのコール
+// Type 3: Object method call
 $obj = new MyClass();
-call_user_func(array($obj, 'myCallbackMethod'));
+call_user_func([$obj, 'myCallbackMethod']);
 
-// タイプ 4: staticメソッドのコール
+// Type 4: Static class method call
 call_user_func('MyClass::myCallbackMethod');
 
-// タイプ 5: 相対指定によるstaticメソッドのコール
+// Type 5: Static class method call using ::class keyword
+call_user_func([MyClass::class, 'myCallbackMethod']);
+
+// Type 6: Relative static class method call
 class A {
     public static function who() {
         echo 'A', PHP_EOL;
@@ -111,12 +256,12 @@ class B extends A {
     }
 }
 
-call_user_func(array('B', 'parent::who')); // A, 但し PHP 8.2.0 以降は非推奨
+call_user_func(['B', 'parent::who']); // deprecated as of PHP 8.2.0
 
-// タイプ 6: __invoke を実装したオブジェクトを callable として用いる
+// Type 7: Objects implementing __invoke can be used as callables
 class C {
     public function __invoke($name) {
-        echo 'Hello ', $name, PHP_EOL;
+        echo 'Hello ', $name;
     }
 }
 
@@ -124,47 +269,28 @@ $c = new C();
 call_user_func($c, 'PHP!');
 ?>
 ]]>
-    </programlisting>
-   </example>
-  </para>
-  <para>
-   <example>
-    <title>
-     クロージャ (<classname>Closure</classname>) を使ったコールバックの例
-    </title>
-   <programlisting role="php">
+   </programlisting>
+   &example.outputs;
+   <screen>
 <![CDATA[
-<?php
-// クロージャ
-$double = function($a) {
-    return $a * 2;
-};
+hello world!
+Hello World!
+Hello World!
+Hello World!
+Hello World!
 
-// 数値の範囲
-$numbers = range(1, 5);
-
-// ここでクロージャをコールバックとして使用し、
-// 指定した範囲の各要素の二倍の値を計算します
-$new_numbers = array_map($double, $numbers);
-
-print implode(' ', $new_numbers);
-?>
+Deprecated: Callables of the form ["B", "parent::who"] are deprecated in script on line 41
+A
+Hello PHP!
 ]]>
-    </programlisting>
-    &example.outputs;
-    <screen>
-<![CDATA[
-2 4 6 8 10
-]]>
-    </screen>
-   </example>
-  </para>
+   </screen>
+  </example>
 
   &note.func-callback-exceptions;
  </sect2>
 
 </sect1>
- 
+
 <!-- Keep this comment at the end of the file
 Local variables:
 mode: sgml
