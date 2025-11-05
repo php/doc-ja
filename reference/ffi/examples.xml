@@ -1,32 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 8859c8b96cd9e80652813f7bcf561432a5e9f934 Maintainer: nsfisis Status: working -->
+<!-- EN-Revision: 8859c8b96cd9e80652813f7bcf561432a5e9f934 Maintainer: nsfisis Status: ready -->
 
 <chapter xml:id="ffi.examples" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  &reftitle.examples;
  <section xml:id="ffi.examples-basic">
-  <title>Basic FFI usage</title>
+  <title>FFI の基本的な使い方</title>
   <para>
-   Before diving into the details of the FFI API, lets take a look at a few examples
-   demonstrating the simplicity of the FFI API usage for regular tasks.
+   FFI API の詳細に深く立ち入る前に、よくあるタスクに対する FFI API の使い方が
+   どれほど簡単かを示す例をいくつか見てみましょう。
   </para>
   <note>
    <para>
-    Some of these examples require <filename>libc.so.6</filename> and as such will
-    not work on systems where it is not available.
+    これらの例の中には、<filename>libc.so.6</filename> を必要とするものがあります。
+    それらは、このライブラリが利用できないシステムでは動きません。
    </para>
   </note>
   <para>
    <example xml:id="ffi.examples.function">
-    <title>Calling a function from shared library</title>
+    <title>共有ライブラリの関数を呼ぶ</title>
     <programlisting role="php">
 <![CDATA[
 <?php
-// create FFI object, loading libc and exporting function printf()
+// FFI オブジェクトを作成し、libc を読み込んで printf() 関数をエクスポートする
 $ffi = FFI::cdef(
-    "int printf(const char *format, ...);", // this is a regular C declaration
+    "int printf(const char *format, ...);", // ここは通常の C の宣言
     "libc.so.6");
-// call C's printf()
+// C の printf() を呼ぶ
 $ffi->printf("Hello %s!\n", "world");
 ?>
 ]]>
@@ -41,17 +41,17 @@ Hello world!
   </para>
     <note>
    <para>
-    Note that some C functions need specific calling conventions, e.g. <literal>__fastcall</literal>,
-    <literal>__stdcall</literal> or <literal>,__vectorcall</literal>.
+    C の関数のうちのいくつかは、特定の呼び出し規約 (例: <literal>__fastcall</literal>、
+    <literal>__stdcall</literal>、<literal>,__vectorcall</literal> など) を必要とすることに注意してください。
    </para>
   </note>
   <para>
    <example xml:id="ffi.examples.structure">
-    <title>Calling a function, returning a structure through an argument</title>
+    <title>関数を呼び出し、構造体を引数経由で返す</title>
     <programlisting role="php">
 <![CDATA[
 <?php
-// create gettimeofday() binding
+// gettimeofday() のバインディングを作成する
 $ffi = FFI::cdef("
     typedef unsigned int time_t;
     typedef unsigned int suseconds_t;
@@ -68,14 +68,14 @@ $ffi = FFI::cdef("
  
     int gettimeofday(struct timeval *tv, struct timezone *tz);    
 ", "libc.so.6");
-// create C data structures
+// C のデータ構造を作成する
 $tv = $ffi->new("struct timeval");
 $tz = $ffi->new("struct timezone");
-// call C's gettimeofday()
+// C の gettimeofday() を呼ぶ
 var_dump($ffi->gettimeofday(FFI::addr($tv), FFI::addr($tz)));
-// access field of C data structure
+// C のデータ構造のフィールドにアクセスする
 var_dump($tv->tv_sec);
-// print the whole C data structure
+// C のデータ構造全体を出力する
 var_dump($tz);
 ?>
 ]]>
@@ -97,15 +97,15 @@ object(FFI\CData:struct timezone)#3 (2) {
   </para>
   <para>
    <example xml:id="ffi.examples.variable-existing">
-    <title>Accessing existing C variables</title>
+    <title>既存の C の変数にアクセスする</title>
     <programlisting role="php">
 <![CDATA[
 <?php
-// create FFI object, loading libc and exporting errno variable
+// FFI オブジェクトを作成し、libc を読み込んで errno 変数をエクスポートする
 $ffi = FFI::cdef(
-    "int errno;", // this is a regular C declaration
+    "int errno;", // ここは通常の C の宣言
     "libc.so.6");
-// print C's errno
+// C の errno を出力する
 var_dump($ffi->errno);
 ?>
 ]]>
@@ -120,19 +120,19 @@ int(0)
   </para>
   <para>
    <example xml:id="ffi.examples.variable-creating">
-    <title>Creating and Modifying C variables</title>
+    <title>C の変数を作成して書き換える</title>
     <programlisting role="php">
 <![CDATA[
 <?php
-// create a new C int variable
+// 新しい C の int 変数を作成する
 $x = FFI::new("int");
 var_dump($x->cdata);
 
-// simple assignment
+// 単純な代入
 $x->cdata = 5;
 var_dump($x->cdata);
 
-// compound assignment
+// 複合代入
 $x->cdata += 2;
 var_dump($x->cdata);
 ?>
@@ -150,13 +150,13 @@ int(7)
   </para>
   <para>
    <example xml:id="ffi.examples.array">
-    <title>Working with C arrays</title>
+    <title>C の配列を扱う</title>
     <programlisting role="php">
 <![CDATA[
 <?php
-// create C data structure
+// C のデータ構造を作成する
 $a = FFI::new("long[1024]");
-// work with it like with a regular PHP array
+// 通常の PHP の配列を扱うのと同じように扱う
 for ($i = 0; $i < count($a); $i++) {
     $a[$i] = $i;
 }
@@ -184,7 +184,7 @@ int(8192)
   </para>
   <para>
     <example xml:id="ffi.examples.enum">
-    <title>Working with C enums</title>
+    <title>C の enum を扱う</title>
     <programlisting role="php">
 <![CDATA[
 <?php
@@ -213,12 +213,12 @@ int(3)
   </para>
  </section>
  <section xml:id="ffi.examples-callback">
-  <title>PHP Callbacks</title>
+  <title>PHP のコールバック</title>
   <para>
-   It is possible to assign a PHP closure to a native variable of function pointer type
-   or to pass it as a function argument:
+   PHP のクロージャを、関数ポインタ型のネイティブ変数に代入したり、
+   関数の引数として渡したりできます。
    <example>
-    <title>Assigning a PHP <classname>Closure</classname> to a C function pointer</title>
+    <title>PHP の <classname>Closure</classname> を C の関数ポインタに代入する</title>
     <programlisting role="php">
 <![CDATA[
 <?php
@@ -254,18 +254,18 @@ Hello World 3!
 ]]>
     </screen>
    </example>
-   Although this works, this functionality is not supported on all libffi platforms, is not efficient
-   and leaks resources by the end of request.
+   これは動作こそしますが、この機能は libffi が動作するすべてのプラットフォームでサポートされているわけではありません。
+   また、非効率的であり、リクエストの終了時にリソースがリークします。
    <tip>
     <simpara>
-     It is therefore recommended to minimize the usage of PHP callbacks.
+     したがって、PHP のコールバックの使用は最小限にすることを推奨します。
     </simpara>
    </tip>
   </para>
  </section>
 
  <section xml:id="ffi.examples-complete">
-  <title>A Complete PHP/FFI/preloading Example</title>
+  <title>PHP/FFI/事前ロードの完全な例</title>
   <informalexample>
    <simpara><filename>php.ini</filename></simpara>
    <programlisting role="ini">
