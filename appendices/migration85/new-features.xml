@@ -1,0 +1,546 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision$ -->
+<!-- EN-Revision: ec45af749649dc0d6a23eaedeed1b601f7460813 Maintainer: mumumu Status: ready --> 
+<sect1 xml:id="migration85.new-features" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <title>新機能</title>
+
+ <sect2 xml:id="migration85.new-features.core">
+  <title>PHP コア</title>
+
+  <sect3 xml:id="migration85.new-features.core.pipe-operator">
+   <title>パイプ演算子</title>
+
+   <simpara>
+    <link linkend="language.operators.functional">
+    パイプ演算子(<literal>|&gt;</literal>)</link> が追加されました。
+    <!-- RFC: https://wiki.php.net/rfc/pipe-operator-v3 -->
+   </simpara>
+
+   <informalexample>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$result = "Hello World" |> strlen(...);
+print $result . PHP_EOL;  // Prints "11"
+]]>
+    </programlisting>
+   </informalexample>
+  </sect3>
+
+  <sect3 xml:id="migration85.new-features.core.closures-in-constexpr">
+   <title>定数式にクロージャ</title>
+
+   <para>
+    定数式に、<link linkend="class.closure">クロージャ</link> や
+    <link linkend="functions.first_class_callable_syntax">第一級callable</link>
+    を指定できるようになりました。
+    これらを指定できる箇所として、以下が挙げられます:
+
+    <simplelist>
+     <member>アトリビュートの引数</member>
+     <member>プロパティやパラメーターのデフォルト値</member>
+     <member>定数および、クラス定数</member>
+    </simplelist>
+
+    <!-- RFC: https://wiki.php.net/rfc/closures_in_const_expr -->
+    <!-- RFC: https://wiki.php.net/rfc/fcc_in_const_expr -->
+   </para>
+  </sect3>
+
+  <sect3 xml:id="migration85.new-features.core.nodiscard-attribute">
+   <title>#[\NoDiscard] アトリビュート</title>
+
+   <simpara>
+    関数の戻り値が重要であり、
+    その値を使うべきことを示すアトリビュートとして、
+    <classname>NoDiscard</classname> が追加されました。
+    <!-- RFC: https://wiki.php.net/rfc/marking_return_value_as_important -->
+   </simpara>
+
+   <simpara>
+    また、値を意図的に使わないことを指示する <literal>(void)</literal>
+    キャストが追加されました。
+    <literal>(void)</literal> キャストは、
+    プログラムそのものの実行には影響しませんが、
+    <code>#[\NoDiscard]</code> アトリビュートが発生させる警告や、
+    外部の IDE や静的解析ツールが発生させる可能性がある、
+    診断メッセージを抑制する目的に使えます。
+    <!-- RFC: https://wiki.php.net/rfc/marking_return_value_as_important -->
+   </simpara>
+
+   <informalexample>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+#[\NoDiscard]
+function concat(string $a, string $b): string {
+     return a + b;
+}
+
+// Warning: The return value of function concat() should either be used or
+// intentionally ignored by casting it as (void) in xxx.php
+concat("a", "b");
+
+// 戻り値が代入されているため、警告は出ません
+$results = concat("a", "b");
+
+// (void) キャストが使われているので、警告は出ません
+(void)concat("a", "b");
+]]>
+    </programlisting>
+   </informalexample>
+
+  </sect3>
+
+  <sect3 xml:id="migration85.new-features.core.attributes-on-constants">
+   <title>定数に対するアトリビュート</title>
+
+   <simpara>
+    クラス定数でないコンパイル時定数
+    (例: <code>define('MY_CONST', 1);</code> ではなく、
+    <code>const MY_CONST = 1;</code> の形で定義するもの)
+    に対して、アトリビュートを指定できるようになりました。
+    <!-- RFC: https://wiki.php.net/rfc/attributes-on-constants -->
+   </simpara>
+
+   <simpara>
+    定数に対して、<classname>Deprecated</classname>
+    アトリビュートを指定できるようになりました。
+    <!-- RFC: https://wiki.php.net/rfc/attributes-on-constants -->
+   </simpara>
+
+  </sect3>
+
+  <sect3 xml:id="migration85.new-features.core.delayedtargetvalidation-attribute">
+   <title><code>#[\DelayedTargetValidation]</code> アトリビュート</title>
+
+   <simpara>
+    無効なターゲットに指定した、
+    PHP コア(または拡張モジュール)
+    のアトリビュートから発生するコンパイル時エラーを抑制する手段として、
+    <classname>DelayedTargetValidation</classname>
+    アトリビュートが追加されました。
+    このアトリビュートが抑制したエラーは代わりに、
+    <methodname>ReflectionAttribute::newInstance</methodname> 
+    がコールされたタイミングで、実行時に報告されます。
+    <!-- RFC: https://wiki.php.net/rfc/delayedtargetvalidation_attribute -->
+   </simpara>
+
+  </sect3>
+
+  <sect3 xml:id="migration85.new-features.core.override-for-properties">
+   <title>プロパティに対する <code>#[\Override]</code> 指定</title>
+
+   <simpara>
+    プロパティに、<classname>Override</classname>
+    アトリビュートを指定できるようになりました。
+    <!-- RFC: https://wiki.php.net/rfc/override_properties -->
+   </simpara>
+
+  </sect3>
+
+  <sect3 xml:id="migration85.new-features.core.static-aviz">
+   <title>static プロパティに対する、非対称可視性の指定</title>
+
+   <simpara>
+    <link linkend="language.oop5.visibility-members-aviz">
+    非対称可視性プロパティ</link> が、static プロパティをサポートしました。
+    <!-- RFC: https://wiki.php.net/rfc/static-aviz -->
+   </simpara>
+
+  </sect3>
+
+  <sect3 xml:id="migration85.new-features.core.backtraces-for-fatal-errors">
+   <title>Fatal Error 発生時のバックトレース</title>
+
+   <simpara>
+    (Maximum execution time exceeded のような) 致命的なエラーにも、
+    バックトレースが含まれるようになりました。
+    <!-- RFC: https://wiki.php.net/rfc/error_backtraces_v2 -->
+   </simpara>
+
+  </sect3>
+
+  <sect3 xml:id="migration85.new-features.core.final-property-promotion">
+   <title>final プロパティと、コンストラクタのプロモーション</title>
+
+   <simpara>
+    final なプロパティも、
+    <link linkend="language.oop5.decon.constructor.promotion">
+    コンストラクタでプロパティに昇格</link> させることができるようになりました。
+    <!-- RFC: https://wiki.php.net/rfc/final_promotion -->
+   </simpara>
+
+  </sect3>
+
+  <sect3 xml:id="migration85.new-features.core.casts-in-constexpr">
+   <title>定数式をキャスト</title>
+
+   <simpara>
+    定数式をキャストできるようになりました。
+   </simpara>
+
+   <informalexample>
+    <programlisting role="php">
+<![CDATA[
+<?php
+const T1 = (int) 0.3; // PHP 8.5.0 より前は、"Fatal error: Constant expression contains invalid operations" が発生していました
+print T1 . PHP_EOL;   // Prints "0"
+]]>
+    </programlisting>
+   </informalexample>
+
+  </sect3>
+
+  <sect3 xml:id="migration85.new-features.core.clone-function">
+   <title>Clone キーワードへの変更</title>
+
+   <simpara>
+    <link linkend="language.oop5.cloning">clone キーワード</link>
+    は、関数のように振る舞うようになりました。
+    そして、読み取り専用プロパティに clone して値を再代入する際に、
+    新しく <property>$withProperties</property>
+    パラメータが使えるようになりました
+    <!-- RFC: https://wiki.php.net/rfc/clone_with_v2 -->
+   </simpara>
+
+  </sect3>
+
+
+ </sect2>
+
+ <sect2 xml:id="migration85.new-features.curl">
+  <title>cURL</title>
+
+  <simpara>
+   複数のリクエストにまたがって持続する
+   <link linkend="class.curlsharepersistenthandle">CurlSharePersistentHandle</link>
+   のサポートが追加されました。
+   これを使うと、より効率的な接続の再利用が安全にできるようになります。
+   <!-- RFC: https://wiki.php.net/rfc/curl_share_persistence_improvement -->
+  </simpara>
+
+  <simpara>
+   <function>curl_getinfo</function> 関数に、
+   <constant>CURLINFO_USED_PROXY</constant> (libcurl >= 8.7.0),
+   <constant>CURLINFO_HTTPAUTH_USED</constant> (libcurl >= 8.12.0),
+   <constant>CURLINFO_PROXYAUTH_USED</constant> (libcurl >= 8.12.0)
+   のサポートが追加されました。
+   <function>curl_getinfo</function> が配列を返す場合、
+   これらの情報は <literal>"used_proxy"</literal>,
+   <literal>"httpauth_used"</literal>,
+   <literal>"proxyauth_used"</literal> というキーで利用できます。
+
+   <constant>CURLINFO_USED_PROXY</constant> は、
+   直近の転送でプロキシを使った場合にゼロでない値を、
+   使わなかった場合にゼロを返します。
+
+   <constant>CURLINFO_HTTPAUTH_USED</constant> と
+   <constant>CURLINFO_PROXYAUTH_USED</constant> は、
+   直近の転送で HTTP および、プロキシ経由の認証メソッドを示す情報を、
+   ビットマスクで返します。利用可能な値は、
+   <constant>CURLAUTH_<replaceable>*</replaceable></constant>
+   を参照ください。
+  </simpara>
+
+  <simpara>
+   <constant>CURLOPT_INFILESIZE</constant> を安全に置き換えられる、
+   <constant>CURLOPT_INFILESIZE_LARGE</constant> が追加されました。
+   特定のシステムでは、たとえ 64bit システムであっても、
+   <constant>CURLOPT_INFILESIZE</constant> は 32bit の符号付き整数(2.0 Gib)
+   しか受け入れない場合があります。
+   <constant>CURLOPT_INFILESIZE_LARGE</constant> は、
+   システムが扱える整数の最大値を受け入れます。
+  </simpara>
+
+  <simpara>
+   <function>curl_setopt</function> 関数に指定する、
+   <constant>CURLOPT_FOLLOWLOCATION</constant> オプション向けに、
+   <constant>CURLFOLLOW_OBEYCODE</constant>,
+   <constant>CURLFOLLOW_FIRSTONLY</constant>,
+   <constant>CURLFOLLOW_ALL</constant> が追加されました。
+
+   <constant>CURLFOLLOW_OBEYCODE</constant> は、
+   許可されている場合に、より厳密にリダイレクトを行います。
+
+   <constant>CURLFOLLOW_FIRSTONLY</constant> は、
+   最初のリダイレクトのみを行います。そのため、
+   その後に後続のリダイレクトがあったとしても、それ以上はリダイレクトしません。
+   
+   <constant>CURLFOLLOW_ALL</constant> は、
+   <constant>CURLOPT_FOLLOWLOCATION</constant>
+   を &true; に設定することと同じです。
+  </simpara>
+
+  <simpara>
+   <function>curl_getinfo</function> 関数に、
+   <constant>CURLINFO_CONN_ID</constant>
+   のサポートが追加されました (libcurl >= 8.2.0)。
+   この定数を使うと、
+   cURL の転送で使ったユニークな接続IDを取得できるようになります。
+   このIDは、主に PHP レベルでのアプリケーションにおいて、
+   接続の再利用や接続のプーリング処理が必要な場合に役立ちます。
+   <function>curl_getinfo</function>が配列を返す場合、
+   この値は <literal>"conn_id"</literal> キーとして利用できます。
+  </simpara>
+
+  <simpara>
+   <function>curl_getinfo</function> 関数に、
+   <constant>CURLINFO_QUEUE_TIME_T</constant>
+   のサポートが追加されました (libcurl >= 8.6.0)。
+   この定数を使うと、
+   リクエストが送信される前に libcurl
+   の接続キューで待機した時間(マイクロ秒単位)を取得できます。
+   <function>curl_getinfo</function> の <parameter>option</parameter>
+   パラメーターに <constant>CURLINFO_QUEUE_TIME_T</constant>
+   を渡すことで、値が取得できます。
+  </simpara>
+
+  <simpara>
+   TLS で使う署名アルゴリズムを指定する定数として、
+   <constant>CURLOPT_SSL_SIGNATURE_ALGORITHMS</constant> 
+   が追加されました。
+  </simpara>
+
+ </sect2>
+
+ <sect2 xml:id="migration85.new-features.dom">
+  <title>DOM</title>
+
+  <simpara>
+   <property>Dom\Element::$outerHTML</property> が追加されました。
+  </simpara>
+
+  <simpara>
+   <interfacename>Dom\ParentNode</interfacename> の実装に、
+   <property>$children</property> プロパティが追加されました。
+  </simpara>
+
+ </sect2>
+
+ <sect2 xml:id="migration85.new-features.exif">
+  <title>EXIF</title>
+
+  <simpara>
+   <literal>OffsetTime*</literal> Exif タグが追加されました。
+  </simpara>
+
+  <simpara>
+   HEIF/HEIC のサポートが追加されました。
+  </simpara>
+
+ </sect2>
+
+ <sect2 xml:id="migration85.new-features.filter">
+  <title>Filter</title>
+
+  <simpara>
+   フィルタ関数に渡すと、
+   検証に失敗した際に強制的に例外を発生させる
+   <constant>FILTER_THROW_ON_FAILURE</constant> フラグが追加されました。
+   この新しいフラグは、
+   <constant>FILTER_NULL_ON_FAILURE</constant> と組み合わせることはできません。
+   組み合わせようとすると、
+   <exceptionname>ValueError</exceptionname> がスローされます。
+   <!-- RFC: https://wiki.php.net/rfc/filter_throw_on_failure -->
+  </simpara>
+
+ </sect2>
+
+ <sect2 xml:id="migration85.new-features.intl">
+  <title>Intl</title>
+
+  <simpara>
+   様々な通貨関連の数値フォーマット向けに、
+   クラス定数 <constant>NumberFormatter::CURRENCY_ISO</constant>,
+   <constant>NumberFormatter::CURRENCY_PLURAL</constant>,
+   <constant>NumberFormatter::CASH_CURRENCY</constant>,
+   <constant>NumberFormatter::CURRENCY_STANDARD</constant> が追加されました。
+  </simpara>
+
+  <simpara>
+   指定されたロケールで likely tag を処理するために、
+   <methodname>Locale::addLikelySubtags</methodname> と
+   <methodname>Locale::minimizeSubtags</methodname> が追加されました。
+  </simpara>
+
+  <simpara>
+   <classname>IntlListFormatter</classname> クラスが追加されました。
+   これは、指定されたロケールで項目のリストをフォーマット、順序付け、
+   句読点を付ける操作を行うためのものです。
+   クラス定数として、<constant>IntlListFormatter::TYPE_AND</constant>,
+   <constant>IntlListFormatter::TYPE_OR</constant>,
+   <constant>IntlListFormatter::TYPE_UNITS</constant> 演算子と、
+   <constant>IntlListFormatter::WIDTH_WIDE</constant>,
+   <constant>IntlListFormatter::WIDTH_SHORT</constant>,
+   <constant>IntlListFormatter::WIDTH_NARROW</constant> があります。
+   このクラスは ICU 67 以降でサポートされます。
+  </simpara>
+
+ </sect2>
+
+ <sect2 xml:id="migration85.new-features.pdo-sqlite">
+  <title>PDO_Sqlite</title>
+
+  <simpara>
+   クラス定数
+   <constant>Pdo\Sqlite::ATTR_BUSY_STATEMENT</constant> が追加されました。
+  </simpara>
+
+  <simpara>
+   クラス定数
+   <constant>Pdo\Sqlite::ATTR_EXPLAIN_STATEMENT</constant>,
+   <constant>Pdo\Sqlite::EXPLAIN_MODE_PREPARED</constant>,
+   <constant>Pdo\Sqlite::EXPLAIN_MODE_EXPLAIN</constant>,
+   <constant>Pdo\Sqlite::EXPLAIN_MODE_EXPLAIN_QUERY_PLAN</constant> が追加されました。
+  </simpara>
+
+  <simpara>
+   接続する際の属性として、
+   <constant>Pdo\Sqlite::ATTR_TRANSACTION_MODE</constant> を追加しました。
+   これに指定可能な値は、
+   <constant>Pdo\Sqlite::TRANSACTION_MODE_DEFERRED</constant>,
+   <constant>Pdo\Sqlite::TRANSACTION_MODE_IMMEDIATE</constant>,
+   <constant>Pdo\Sqlite::TRANSACTION_MODE_EXCLUSIVE</constant> があります。
+   これを使うと、beginTransaction()
+   呼び出し時に使用するトランザクションモードを構成できます。
+  </simpara>
+
+ </sect2>
+
+ <sect2 xml:id="migration85.new-features.session">
+  <title>Session</title>
+
+  <simpara>
+   <function>session_set_cookie_params</function>,
+   <function>session_get_cookie_params</function>,
+   <function>session_start</function> 関数は、
+   <literal>"partitioned"</literal> というキー経由で、
+   パーティショニングされた Cookie をサポートしました。
+   <!-- RFC: https://wiki.php.net/rfc/CHIPS -->
+  </simpara>
+
+ </sect2>
+
+ <sect2 xml:id="migration85.new-features.soap">
+  <title>SOAP</title>
+
+  <simpara>
+   <methodname>SoapClient::__getTypes</methodname> が、
+   列挙型の case をダンプするようになりました。
+  </simpara>
+
+  <simpara>
+   Soap 1.2 の Reason テキスト向けに、xml:lang 属性のサポートが追加されました。
+  </simpara>
+
+  <simpara>
+   上記のサポートによって、
+   <methodname>SoapFault::__construct</methodname> と
+   <methodname>SoapServer::fault</methodname> のシグネチャに、
+   オプションの <parameter>$lang</parameter> パラメータが追加されました。
+   これによって、.NET SOAP クライアントとの互換性問題が解決します。
+  </simpara>
+
+ </sect2>
+
+ <sect2 xml:id="migration85.new-features.standard">
+  <title>Standard</title>
+
+  <simpara>
+   <function>mail</function> は、sendmail の実際のエラーを返すようになり、
+   sendmail プロセスが予期せず終了したかどうかを検出するようになりました。
+   予期せず終了した場合、警告が発生し、この関数は &false; を返します。
+   これより前のバージョンでは、こうしたエラーは黙って無視されていました。
+   この変更は、sendmail を使ったメール送信にのみ影響します。
+  </simpara>
+
+  <simpara>
+   <function>getimagesize</function> が、HEIF/HEIC 画像をサポートしました。
+  </simpara>
+
+  <simpara>
+   libxml 拡張モジュールがロードされている場合に、
+   <function>getimagesize</function> は SVG 画像もサポートするようになりました。
+   同様に、<function>image_type_to_extension</function> と
+   <function>image_type_to_mime_type</function> も、
+   IMAGETYPE_SVG を処理するようになりました。
+  </simpara>
+
+  <simpara>
+   <function>getimagesize</function> が返す配列に、
+   2つエントリが追加されました: <literal>"width_unit"</literal> と
+   <literal>"height_unit"</literal> です。
+   これらは、寸法がどの単位で表現されているかを示します。
+   これらの単位は px がデフォルトですが、
+   必ずしも同じ単位であるとは限りません
+   (一例を挙げると、片方が cm で、もう片方が px である場合があります)
+  </simpara>
+
+  <simpara>
+   <function>setcookie</function> と <function>setrawcookie</function>
+   関数が、<literal>"partitioned"</literal> キーをサポートしました。
+  </simpara>
+
+ </sect2>
+
+ <sect2 xml:id="migration85.new-features.uri">
+  <title>URI</title>
+
+  <simpara>
+   RFC 3986 と WHATWG URL に従い、
+   URI と URL を処理するのに使える拡張モジュールが追加されました。
+   これは、常に有効になっています。
+   <!-- RFC: https://wiki.php.net/rfc/url_parsing_api -->
+  </simpara>
+
+ </sect2>
+
+ <sect2 xml:id="migration85.new-features.xsl">
+  <title>XSL</title>
+
+  <simpara>
+   <methodname>XSLTProcessor::getParameter</methodname>,
+   <methodname>XSLTProcessor::setParameter</methodname>,
+   <methodname>XSLTProcessor::removeParameter</methodname> の
+   <parameter>$namespace</parameter> 引数は、
+   空でなくても動作するようになりました。
+   動作するのは、<parameter>$name</parameter> 引数が Clark 記法でなく、かつ
+   QName 形式でもない場合です。
+   これらの場合は、名前空間が href または prefix からそれぞれ取得されるためです。
+  </simpara>
+
+ </sect2>
+
+ <sect2 xml:id="migration85.new-features.zlib">
+  <title>Zlib</title>
+
+  <simpara>
+   <function>flock</function> が、zlib ストリームをサポートしました。
+   これより前のバージョンでは、あらゆるロック操作を行う際に常に失敗していました。
+  </simpara>
+
+ </sect2>
+
+</sect1>
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"~/.phpdoc/manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->

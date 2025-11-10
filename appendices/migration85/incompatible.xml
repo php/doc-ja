@@ -1,0 +1,657 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision$ -->
+<!-- EN-Revision: ec45af749649dc0d6a23eaedeed1b601f7460813 Maintainer: mumumu Status: ready -->
+<sect1 xml:id="migration85.incompatible" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <title>下位互換性のない変更点</title>
+
+ <sect2 xml:id="migration85.incompatible.core">
+  <title>PHP コア</title>
+
+  <sect3 xml:id="migration85.incompatible.core.array-callable-alias">
+   <title>クラスの別名に <literal>"array"</literal> と <literal>"callable"</literal> を使う</title>
+
+   <simpara>
+    <function>class_alias</function> では、
+    クラスのエイリアス名として、<literal>"array"</literal>
+    と <literal>"callable"</literal> を指定できなくなりました。
+   </simpara>
+
+  </sect3>
+
+  <sect3 xml:id="migration85.incompatible.core.loosely-comparing-object">
+   <title>比較できないオブジェクトと == で比較する</title>
+
+   <simpara>
+    比較できないオブジェクト
+    (例: 列挙型, <classname>CurlHandle</classname>,
+    その他の内部クラス) を boolean と比較した場合の振る舞いは、
+    以前のバージョンでは一貫性がありませんでした。
+    boolean リテラルと <code>$object == true</code>
+    のように比較した場合、<code>(bool)$object</code>
+    と同じ振る舞いをしていました。
+    静的に不明な値と <code>$object == $true</code>
+    のように比較した場合、常に &false; を返していました。
+    これらの振る舞いが、常に <code>(bool)$object</code>
+    に従うように統一されました。
+   </simpara>
+
+  </sect3>
+
+  <sect3 xml:id="migration85.incompatible.core.gc-collect-cycles">
+   <title>gc_collect_cycles の戻り値</title>
+
+   <simpara>
+    <function>gc_collect_cycles</function> の戻り値には、
+    間接的に収集されたリソースや文字列が含まれなくなりました。
+   </simpara>
+
+  </sect3>
+
+  <sect3 xml:id="migration85.incompatible.core.substitute-final-subclasses">
+   <title>final 指定のサブクラスでの static キーワードの置き換え</title>
+
+   <simpara>
+    final を指定したサブクラスにおける、
+    メソッドの戻り値 <type>static</type> は、
+    <type>self</type> または具象クラスに置き換えられるようになりました。
+   </simpara>
+   <!-- https://github.com/php/php-src/pull/17724 -->
+   <!-- https://github.com/php/php-src/issues/17725 -->
+
+  </sect3>
+
+  <sect3 xml:id="migration85.incompatible.core.tick-handlers">
+   <title>tick ハンドラ</title>
+
+   <simpara>
+    tick ハンドラは、
+    すべてのシャットダウン関数とデストラクタが実行され、
+    出力ハンドラがクリーンアップされた後に、
+    無効化されるようになりました。
+   </simpara>
+
+  </sect3>
+
+  <sect3 xml:id="migration85.incompatible.core.trait-binding">
+   <title>トレイトのバインド</title>
+
+   <simpara>
+    トレイトは、親クラスの前にバインドされるようになりました。
+    これは微妙な振る舞いの変更ですが、
+    ユーザーの期待により一致するはずです。
+    <!-- https://github.com/php/php-src/pull/15878 -->
+   </simpara>
+
+  </sect3>
+
+  <sect3 xml:id="migration85.incompatible.core.errors-compilation-and-linking">
+   <title>コンパイル中やクラスのリンク中に発生したエラー</title>
+
+   <simpara>
+    コンパイル中やクラスのリンク中に発生したエラーは、
+    常に処理が遅延されるようになりました。
+    これらのエラーは、コンパイルまたはクラスのリンク後に処理されます。
+    コンパイル中やクラスのリンク中に致命的なエラーが発生した場合、
+    遅延させられていたエラーがすぐに処理されます。
+    この場合、ユーザー定義のエラーハンドラを呼び出しません。
+    <!-- https://github.com/php/php-src/issues/17422 -->
+   </simpara>
+
+  </sect3>
+
+  <sect3 xml:id="migration85.incompatible.core.exception-by-userdefined-handler">
+   <title>ユーザー定義のエラーハンドラからスローされた例外</title>
+
+   <simpara>
+    クラスのリンク処理時に、
+    ユーザー定義のエラーハンドラからスローされた例外は、
+    致命的なエラーに昇格しなくなり、リンクを妨げなくなりました。
+    <!-- https://github.com/php/php-src/issues/17422 -->
+   </simpara>
+
+  </sect3>
+
+  <sect3 xml:id="migration85.incompatible.core.attribute-during-compilation">
+   <title>コンパイル中のアトリビュート適用エラー</title>
+
+   <simpara>
+    抽象クラス、列挙型、インターフェース、
+    またはトレイトに <code>#[\Attribute]</code> を適用すると、
+    コンパイル時にエラーが発生します。
+    以前のバージョンではアトリビュートを追加できていましたが、
+    <methodname>ReflectionAttribute::newInstance</methodname>
+    がコールされた際に Error がスローされていました。
+    新しい <code>#[\DelayedTargetValidation]</code> アトリビュートを使うと、
+    このエラーをコンパイル時から実行時に遅延させることできます。
+   </simpara>
+
+  </sect3>
+
+  <sect3 xml:id="migration85.incompatible.core.disable-ini-setting">
+   <title>disable_classes INI ディレクティブ</title>
+
+   <simpara>
+    さまざまな PHP エンジンの想定を壊してしまうため、
+    <link linkend="ini.disable-classes">disable_classes</link>
+    INI ディレティブは削除されました。
+    <!-- RFC: https://wiki.php.net/rfc/deprecations_php_8_5#remove_disable_classes_ini_setting -->
+   </simpara>
+
+  </sect3>
+
+  <sect3 xml:id="migration85.incompatible.core.destruct-non-array-values">
+   <title>配列でない値を分解した場合</title>
+
+   <simpara>
+    配列でない(但し &null; を除く)値を、
+    <literal>[]</literal> や <function>list</function> で分解した場合、
+    警告が発生するようになりました。
+    <!-- RFC: https://wiki.php.net/rfc/warnings-php-8-5#destructuring_non-array_values -->
+   </simpara>
+
+  </sect3>
+
+  <sect3 xml:id="migration85.incompatible.core.warning-related-to-cast">
+   <title>キャスト関連の警告</title>
+
+   <simpara>
+    浮動小数点数(または浮動小数点数のように見える文字列)
+    を int 型にキャストする際、
+    それらが int 型として表現できない場合に警告が発生するようになりました。
+    これは明示的な int キャストと暗黙的な int キャストの両方に影響します。
+    <!-- RFC: https://wiki.php.net/rfc/warnings-php-8-5#casting_out_of_range_floats_to_int -->
+   </simpara>
+
+   <simpara>
+    NAN を他の型にキャストした場合、警告が発生するようになりました。
+    <!-- RFC: https://wiki.php.net/rfc/warnings-php-8-5#coercing_nan_to_other_types -->
+   </simpara>
+
+  </sect3>
+
+ </sect2>
+
+ <sect2 xml:id="migration85.incompatible.bzip2">
+  <title>Bzip2</title>
+
+  <simpara>
+   <parameter>$block_size</parameter> に 1 から 9 の間以外の値を指定した場合、
+   <function>bzcompress</function> は <classname>ValueError</classname>
+   をスローするようになりました。
+  </simpara>
+
+  <simpara>
+   <parameter>$work_factor</parameter> に 0 から 250 の間以外の値を指定した場合、
+   <function>bzcompress</function> は <classname>ValueError</classname>
+   をスローするようになりました。
+  </simpara>
+
+ </sect2>
+
+ <sect2 xml:id="migration85.incompatible.dom">
+  <title>DOM</title>
+
+  <simpara>
+   <classname>DOMNamedNodeMap</classname>,
+   <classname>DOMNodeList</classname>,
+   <classname>Dom\NamedNodeMap</classname>,
+   <classname>Dom\NodeList</classname>,
+   <classname>Dom\HTMLCollection</classname>,
+   <classname>Dom\DtdNamedNodeMap</classname> を clone すると、
+   失敗するようになりました。
+   この変更で、動作しているオブジェクトが実際に失敗することはありません。
+   よって、実際の影響はゼロのはずです。
+  </simpara>
+
+ </sect2>
+
+ <sect2 xml:id="migration85.incompatible.fileinfo">
+  <title>FileInfo</title>
+
+  <simpara>
+   <parameter>$filename</parameter> に nul バイトが含まれている場合、
+   <function>finfo_file</function> と
+   <methodname>finfo::file</methodname> は、
+   <exceptionname>TypeError</exceptionname> ではなく
+   <exceptionname>ValueError</exceptionname> をスローするようになりました。
+   これにより、スローされるエラーの型が、
+   言語の他の動作と一貫性を保つように調整されます。
+  </simpara>
+
+ </sect2>
+
+ <sect2 xml:id="migration85.incompatible.intl">
+  <title>Intl</title>
+
+  <simpara>
+   この拡張モジュールは、ICU 57.1 以降が必須になりました。
+  </simpara>
+
+  <simpara>
+   クラスが初期化されていなかったり、
+   clone が失敗した場合に、
+   <methodname>IntlDateFormatter::setTimeZone</methodname>/<function>datefmt_set_timezone</function>
+   は <exceptionname>IntlException</exceptionname> をスローするようになりました。
+  </simpara>
+
+  <simpara>
+   <classname>Locale</classname> クラスの全てのメソッドは、
+   ロケールの引数に null バイトが含まれていた場合に
+   <exceptionname>ValueError</exceptionname> をスローするようになりました。
+  </simpara>
+
+  <simpara>
+   数値形式の文字列の処理に関する
+   <constant>Collator::SORT_REGULAR</constant> の動作が、
+   ext/standard の <constant>SORT_REGULAR</constant>
+   の動作と同じになるように調整されました。
+  </simpara>
+
+ </sect2>
+
+ <sect2 xml:id="migration85.incompatible.ldap">
+  <title>LDAP</title>
+
+  <simpara>
+   不正なオプションを渡した場合、
+   <function>ldap_get_option</function>
+   と <function>ldap_set_option</function> は
+   <exceptionname>ValueError</exceptionname>
+   をスローするようになりました。
+  </simpara>
+
+ </sect2>
+
+ <sect2 xml:id="migration85.incompatible.mbstring">
+  <title>MBString</title>
+
+  <simpara>
+   Unicode データテーブルが、Unicode 17.0 に更新されました。
+  </simpara>
+
+ </sect2>
+
+ <sect2 xml:id="migration85.incompatible.mysqli">
+  <title>MySQLi</title>
+
+  <simpara>
+   既に構築済みのオブジェクトに対して、
+   mysqli のコンストラクタをコールすることはできなくなりました。
+   コールした場合、<exceptionname>Error</exceptionname> がスローされます。
+  </simpara>
+
+ </sect2>
+
+ <sect2 xml:id="migration85.incompatible.odbc">
+  <title>ODBC</title>
+
+  <simpara>
+   ODBC は、最低でも ODBC 3.5 の機能が使えると想定するようになりました。
+   ODBCVER の定義や、それを制御するビルドシステムフラグは削除されました。
+  </simpara>
+
+  <simpara>
+   ODBC は、
+   特定のドライバ向けにビルドするためのビルドフラグを(DB2以外に)
+   持たなくなり、
+   それらのドライバ向けの特別なケースも削除されました。
+   Windows 以外の環境では、
+   iODBC や unixODBC のようなドライバマネージャの使用を強く推奨します。
+  </simpara>
+
+ </sect2>
+
+ <sect2 xml:id="migration85.incompatible.opcache">
+  <title>Opcache</title>
+
+  <simpara>
+   Opcache 拡張モジュールは、
+   常に PHP バイナリに組み込まれ、ロードされるようになりました。
+   <link linkend="ini.opcache.enable">opcache.enable</link>
+   と <link linkend="ini.opcache.enable-cli">opcache.enable_cli</link>
+   の設定はまだ有効です。
+  </simpara>
+
+  <simpara>
+   <option role="configure">--enable-opcache</option>/<option role="configure">--disable-opcache</option>
+   configure オプションは削除され、
+   ビルドしても <filename>opcache.so</filename>
+   や <filename>php_opcache.dll</filename> はもはや生成されません。
+  </simpara>
+
+  <simpara>
+   <literal>zend_extension=opcache.so</literal> や
+   <literal>zend_extension=php_opcache.dll</literal>
+   INI 設定を使うと、警告が発生するようになりました。
+  </simpara>
+
+ </sect2>
+
+ <sect2 xml:id="migration85.incompatible.pcntl">
+  <title>PCNTL</title>
+
+  <simpara>
+   <function>pcntl_exec</function> の
+   <parameter>$args</parameter> パラメータのエントリに、
+   null バイトが含まれていた場合、
+   <exceptionname>ValueError</exceptionname> がスローされるようになりました。
+  </simpara>
+
+  <simpara>
+   <function>pcntl_exec</function> の
+   <parameter>$env_vars</parameter> パラメータのエントリまたはキーに、
+   null バイトが含まれていた場合、
+   <exceptionname>ValueError</exceptionname> がスローされるようになりました。
+  </simpara>
+
+ </sect2>
+
+ <sect2 xml:id="migration85.incompatible.pcre">
+  <title>PCRE</title>
+
+  <simpara>
+   semi-deprecated 扱いになっていた、
+   コンパイルオプション PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK
+   抜きでビルドされるようになりました。
+   <!-- https://github.com/PCRE2Project/pcre2/issues/736#issuecomment-2754024651 -->
+  </simpara>
+
+ </sect2>
+
+ <sect2 xml:id="migration85.incompatible.pdo">
+  <title>PDO</title>
+
+  <simpara>
+   <constant>PDO::FETCH_CLASS</constant>
+   と組み合わせて設定されるコンストラクタ引数は、
+   通常の CUFA (<function>call_user_func_array</function>)
+   の規約に従うようになりました。
+   つまり、文字列のキーは名前付き引数のように振る舞うということです。
+   さらに、リファレンス渡しのパラメータに渡される、
+   値渡し引数の自動ラップが廃止され、
+   通常の <constant>E_WARNING</constant> が発生するようになりました。
+   コンストラクタ引数に変数をリファレンス渡しするには、
+   配列の値にリファレンスの値を代入します: <code>$ctor_args = [&amp;$valByRef]</code>
+  </simpara>
+
+  <simpara>
+   <methodname>PDO::fetch</methodname>,
+   <methodname>PDO::fetchObject</methodname>,
+   <methodname>PDO::fetchAll</methodname> の呼び出し中に、
+   <methodname>PDOStatement::setFetchMode</methodname> を呼び出そうとすると、
+   <exceptionname>Error</exceptionname> がスローされるようになりました。
+   これはたとえば、
+   オブジェクトのフェッチ中に Statement
+   オブジェクトをコンストラクタの引数として渡す際に、
+   <methodname>PDOStatement::setFetchMode</methodname> を呼び出す場合が該当します。
+  </simpara>
+
+  <simpara>
+   定数 <constant>PDO::FETCH_GROUP</constant>,
+   <constant>PDO::FETCH_UNIQUE</constant>,
+   <constant>PDO::FETCH_CLASSTYPE</constant>,
+   <constant>PDO::FETCH_PROPS_LATE</constant>,
+   <constant>PDO::FETCH_SERIALIZE</constant> の値が変更されました。
+  </simpara>
+
+  <simpara>
+   <constant>PDO::FETCH_PROPS_LATE</constant>
+   が <constant>PDO::FETCH_CLASS</constant>
+   以外のフェッチモードと一緒に使われた場合、
+   <exceptionname>ValueError</exceptionname> がスローされるようになりました。
+   これは、他のフェッチフラグの動作と一貫性を持たせるためです。
+  </simpara>
+
+  <simpara>
+   <methodname>PDO::fetchAll</methodname> で、
+   <constant>PDO::FETCH_INTO</constant> をフェッチモードとして使おうとすると、
+   <constant>PDO::FETCH_LAZY</constant>
+   と同様に <exceptionname>ValueError</exceptionname> がスローされるようになりました。
+  </simpara>
+
+ </sect2>
+
+ <sect2 xml:id="migration85.incompatible.pdo-firebird">
+  <title>PDO_FIREBIRD</title>
+
+  <simpara>
+   Firebird ドライバが生成した <classname>PDOStatement</classname>
+   に対して、長過ぎるカーソル名を設定しようとすると、
+   <exceptionname>ValueError</exceptionname> がスローされるようになりました。
+  </simpara>
+
+ </sect2>
+
+ <sect2 xml:id="migration85.incompatible.pdo-sqlite">
+  <title>PDO_SQLITE</title>
+
+  <simpara>
+   SQLite の <methodname>PDO::quote</methodname> は、
+   文字列に null バイトが含まれていた場合に、
+   エラーモードに応じて警告を発生させたり、例外をスローするようになりました。
+  </simpara>
+
+  <simpara>
+   <methodname>PDO::sqliteCreateCollation</methodname> は、
+   コールバック関数の戻り値の型が間違っている場合に、
+   例外をスローするようになりました。
+   この変更によって、
+   <methodname>Pdo\Sqlite::createCollation</methodname>
+   の動作とより一致するようになります。
+  </simpara>
+
+ </sect2>
+
+ <sect2 xml:id="migration85.incompatible.posix">
+  <title>POSIX</title>
+
+  <simpara>
+   <function>posix_kill</function> は、
+   process_id 引数がプラットフォームがサポートする範囲
+   (符号付きまたは long）より小さいか大きい場合に
+   <exceptionname>ValueError</exceptionname> をスローするようになりました。
+
+   <function>posix_setpgid</function> は、
+   process_id または process_group_id が 0 未満、
+   またはプラットフォームがサポートする範囲より大きい場合に
+   <classname>ValueError</classname> をスローするようになりました。
+  </simpara>
+
+  <simpara>
+   <function>posix_setrlimit</function> は、
+   hard_limit または soft_limit 引数が -1 より小さい場合、
+   または soft_limit が hard_limit より大きい場合に
+   <exceptionname>ValueError</exceptionname> をスローします。
+  </simpara>
+
+ </sect2>
+
+ <sect2 xml:id="migration85.incompatible.reflection">
+  <title>Reflection</title>
+
+  <simpara>
+   無効なターゲットにアトリビュートが適用された場合、
+   <methodname>ReflectionAttribute::newInstance</methodname> は、
+   内部的なアトリビュート向けに例外をスローするようになりました。
+   #[\DelayedTargetValidation] を使うと、
+   発生するエラーがコンパイル時から実行時に遅延されます。
+   <!-- RFC: https://wiki.php.net/rfc/delayedtargetvalidation_attribute -->
+  </simpara>
+
+ </sect2>
+
+ <sect2 xml:id="migration85.incompatible.session">
+  <title>Session</title>
+
+  <simpara>
+   パイプ文字 (<literal>|</literal>)
+   が含まれたキーを持つ <varname>$_SESSION</varname>
+   にセッションデータを書き込もうとすると、
+   黙って失敗するのではなく、警告が発生するようになりました。
+   <!-- https://github.com/php/php-src/pull/18653 -->
+  </simpara>
+
+  <simpara>
+   <function>session_start</function> は、
+   オプション引数をより厳格に扱うようになりました。
+   配列が連想配列でない場合、
+   <exceptionname>ValueError</exceptionname> がスローされるようになりました。
+   read_and_close の値が int と互換性のない値の場合、
+   <exceptionname>TypeError</exceptionname> がスローされるようになりました。
+  </simpara>
+
+ </sect2>
+
+ <sect2 xml:id="migration85.incompatible.simplexml">
+  <title>SimpleXML</title>
+
+  <simpara>
+   ノードの集合以外を返す XPath 式を
+   <methodname>SimpleXMLElement::xpath</methodname>
+   に渡した場合、警告が発生し、&false; を返すようになりました。
+   これより前のバージョンでは、黙って失敗し、
+   空の配列を返していました。
+  </simpara>
+
+ </sect2>
+
+ <sect2 xml:id="migration85.incompatible.snmp">
+  <title>SNMP</title>
+
+  <simpara>
+   <function>snmpget</function>,
+   <function>snmpset</function>,
+   <function>snmp2_get</function>,
+   <function>snmp2_set</function>,
+   <function>snmp3_get</function>,
+   <function>snmp3_set</function>
+   <methodname>SNMP::__construct</methodname> は、
+   <exceptionname>ValueError</exceptionname> をスローするようになりました。
+   スローされるのは、ホスト名が長すぎたり、
+   ホスト名が null バイトを含んでいたり、
+   負の値や 65535 を超えるポート番号を指定したり、 
+   タイムアウトやリトライの値が -1 より小さかったり、大きすぎたりする場合です。
+  </simpara>
+
+ </sect2>
+
+ <sect2 xml:id="migration85.incompatible.soap">
+  <title>SOAP</title>
+
+  <simpara>
+   <methodname>SoapClient::__doRequest</methodname> に、
+   オプションの <parameter>$uriParserClass</parameter>
+   パラメータが新しく追加されました。
+   これは、文字列と &null; を受け入れます。
+   &null; を渡すと、オリジナルの <function>parse_url</function>
+   ベースのメソッドになります。
+   <classname>Uri\Rfc3986\Uri</classname> や
+   <classname>Uri\WhatWg\Url</classname> を渡すと、
+   新しいバックエンドを使います。
+   <!-- RFC: https://wiki.php.net/rfc/url_parsing_api#plugability -->
+  </simpara>
+
+ </sect2>
+
+ <sect2 xml:id="migration85.incompatible.sockets">
+  <title>Sockets</title>
+
+  <simpara>
+   <function>socket_create_listen</function>,
+   <function>socket_bind</function>,
+   <function>socket_sendto</function> は、
+   ポートが 0 未満または 65535 を超える場合、
+   または hints 配列のエントリが数値インデックスの場合に、
+   <exceptionname>ValueError</exceptionname> をスローするようになりました。
+  </simpara>
+
+  <simpara>
+   <function>socket_addrinfo_lookup</function> は、
+   hints 値のいずれかが int 型にキャストできない場合に、
+   <exceptionname>TypeError</exceptionname> をスローするようになりました。
+   また、これらの値のいずれかがオーバーフローした場合、
+   <exceptionname>ValueError</exceptionname> をスローする可能性があります。
+  </simpara>
+
+  <simpara>
+   <function>socket_set_option</function> 関数で
+   <constant>MCAST_LEAVE_GROUP</constant>/<constant>MCAST_LEAVE_SOURCE_GROUP</constant> を指定した場合、
+   値が有効なオブジェクトまたは配列でない場合は例外がスローされるようになりました。
+  </simpara>
+
+  <simpara>
+   <function>socket_set_option</function>
+   をマルチキャストコンテキストで呼び出す場合、
+   作成されたソケットが
+   <constant>AF_INET</constant>/<constant>AF_INET6</constant>
+   ファミリでない場合、<exceptionname>ValueError</exceptionname> がスローされるようになりました。
+  </simpara>
+
+ </sect2>
+
+ <sect2 xml:id="migration85.incompatible.spl">
+  <title>SPL</title>
+
+  <simpara>
+
+   <classname>ArrayObject</classname> は 列挙型を受け入れなくなりました。
+   列挙型の <property>$name</property> や <property>$value</property>
+   プロパティが、PHP エンジンの想定を壊す可能性があるからです。
+  </simpara>
+
+  <simpara>
+   <methodname>SplFileObject::fwrite</methodname> の
+   <parameter>$length</parameter> パラメータは、nullable になりました。
+   デフォルト値が <literal>0</literal> から &null; に変更されています。
+  </simpara>
+
+ </sect2>
+
+ <sect2 xml:id="migration85.incompatible.standard">
+  <title>Standard</title>
+
+  <simpara>
+   printf ファミリの関数に精度を指定しないフォーマットを使った場合、
+   精度を 0 として扱うようになりました。
+   これより前のバージョンでは、誤って精度をリセットしていました。
+  </simpara>
+
+ </sect2>
+
+ <sect2 xml:id="migration85.incompatible.tidy">
+  <title>Tidy</title>
+
+  <simpara>
+   <methodname>tidy::__construct</methodname>,
+   <methodname>tidy::parseFile</methodname>,
+   <methodname>tidy::parseString</methodname> は、
+   無効な設定値が含まれていたり、
+   読み取り専用の内部エントリを設定しようとした場合に
+   <exceptionname>ValueError</exceptionname> をスローするようになりました。
+   設定キーが文字列でない場合は、
+   <exceptionname>TypeError</exceptionname> がスローされるようになっています。
+  </simpara>
+
+ </sect2>
+
+</sect1>
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"~/.phpdoc/manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
