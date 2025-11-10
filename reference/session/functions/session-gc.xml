@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: be8baf89c0016c1c39ab0b85cafca28c8364e95b Maintainer: satoruyoshida Status: ready -->
+<!-- EN-Revision: 372350f3bfad45ba01db850a1a3be40c803e196b Maintainer: satoruyoshida Status: ready -->
 <!-- Credits: mumumu -->
 <refentry xml:id="function.session-gc" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -13,22 +13,40 @@
    <type class="union"><type>int</type><type>false</type></type><methodname>session_gc</methodname>
    <void/>
   </methodsynopsis>
-  <para>
-   <function>session_gc</function> は、セッションデータの GC (ガベージコレクション)
-   を実行するために使用されます。PHPは、デフォルトで確率ベースのセッション GC を行います。
-  </para>
-  <para>
-   確率ベースの GC は多少は機能しますが、いくつかの問題があります。
-   1) トラフィックが少ないサイトのセッションデータは、優先期間内に削除されないことがあります。
-   2) トラフィックの多いサイトでは、GC が頻繁になる可能性があります。
-   3) ユーザーの要求の際に GC が実行され、ユーザーは GC 遅延を感じます。
-  </para>
-  <para>
-   そのため、例えば UNIX 系のシステムでは「cron」を使用して、
-   本稼動システムに対して定期的に GC を実行することをお勧めします。
-   <link linkend="ini.session.gc-probability">session.gc_probability</link> を 0 に設定して、
-   確率ベースのGCを無効にしてください。
-  </para>
+  <simpara>
+   デフォルトで PHP は、
+   <link linkend="ini.session.gc-probability">session.gc_probability</link>
+   の設定をを使用して、
+   各リクエストごとに確率的にセッションガベージコレクタを実行します。
+   この方法には以下に示すいくつかの制限があります:
+  </simpara>
+  <simplelist>
+   <member>トラフィックが少ないサイトのセッションデータは、望んだ期間内に削除されないことがあります</member>
+   <member>トラフィックの多いサイトでは、GC が頻繁に行われる可能性があり、余計な処理が行われる可能性があります</member>
+   <member>ガベージコレクションはユーザーのリクエストに基づいて行われるため、ユーザーが遅延を感じる可能性があります</member>
+  </simplelist>
+  <simpara>
+   本番環境のシステムでは、
+   確率ベースのガベージコレクションを
+   <link linkend="ini.session.gc-probability">session.gc_probability</link>
+   の値を <literal>0</literal> にすることで無効にし、
+   定期的にガベージコレクタを明示的に実行させることをおすすめします。
+   たとえば UNIX 系のシステムでは <function>session_gc</function>
+   をコールするスクリプトを "cron" を実行する方法が挙げられます。
+  </simpara>
+
+  <note>
+   <simpara>
+    コマンドライン経由で実行する PHP スクリプトから
+    <function>session_gc</function> を呼び出す場合、
+    <link linkend="ini.session.save-path">session.save_path</link> については、
+    Web からのリクエスト時のものと同じ値を設定し、
+    PHP スクリプトはセッションファイルに対するアクセス権と削除権限が必須です。
+    権限については、スクリプトを実行されるユーザー、
+    および systemd の <literal>PrivateTmp=</literal> オプションなどの
+    コンテナやサンドボックス機能の影響を受ける可能性があります。
+   </simpara>
+  </note>
  </refsect1>
 
  <refsect1 role="parameters">
@@ -38,42 +56,44 @@
 
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
-  <para>
+  <simpara>
    <function>session_gc</function> は、
-   成功時には削除されたセッションデータの数、
-   失敗時には &false; を返します。
-  </para>
-  <para>
-   古いセーブハンドラは、削除されたセッションデータの数を返さず、成功/失敗フラグのみを返します。
-   この場合、実際に削除されたデータにかかわらず、削除されたセッションデータの数は 1 になります。
-  </para>
+   成功時には削除されたセッションデータの数を返します。
+   &return.falseforfailure;
+  </simpara>
+  <note>
+   <simpara>
+    古いセーブハンドラは、
+    削除されたセッションデータの数を返さず、成功/失敗フラグのみを返します。
+    この場合、実際に削除されたデータにかかわらず、
+    削除されたセッションデータの数は <literal>1</literal> になります。
+   </simpara>
+  </note>
  </refsect1>
 
  <refsect1 role="examples">
   &reftitle.examples;
-  <para>
-   <example>
-    <title>cron のようなタスクマネージャでの <function>session_gc</function> の例</title>
-    <programlisting role="php">
+  <example>
+   <title>cron のようなタスクマネージャでの <function>session_gc</function> の例</title>
+   <programlisting role="php">
 <![CDATA[
 <?php
 // 注 : このスクリプトは、Web サーバープロセスと同じユーザーで実行される必要があります。
-
 // セッションデータストレージアクセスを初期化するには、アクティブセッションが必要です。
 session_start();
 
 // 直ちに GC を実行します
 session_gc();
 
-// session_gc() によって作成されたセッション ID をクリーンアップします
+// session_start() によって作成されたセッション ID をクリーンアップします
 session_destroy();
 ?>
 ]]>
-    </programlisting>
-   </example>
-   <example>
-    <title>ユーザーがアクセス可能なスクリプトでの <function>session_gc</function> の例</title>
-    <programlisting role="php">
+   </programlisting>
+  </example>
+  <example>
+   <title>ユーザーがアクセス可能なスクリプトでの <function>session_gc</function> の例</title>
+   <programlisting role="php">
 <![CDATA[
 <?php
 // 注 : session_gc() は、タスクマネージャスクリプトで使用することをお勧めしますが、次のように使用できます。
@@ -95,24 +115,19 @@ if (file_exists($gc_time)) {
 }
 ?>
 ]]>
-    </programlisting>
-   </example>
-  </para>
+   </programlisting>
+  </example>
  </refsect1>
 
  <refsect1 role="seealso">
   &reftitle.seealso;
-  <para>
-   <simplelist>
-    <member><function>session_start</function></member>
-    <member><function>session_destroy</function></member>
-    <member><link linkend="ini.session.gc-probability">session.gc_probability</link></member>
-   </simplelist>
-  </para>
+  <simplelist>
+   <member><function>session_start</function></member>
+   <member><function>session_destroy</function></member>
+   <member><link linkend="ini.session.gc-probability">session.gc_probability</link></member>
+  </simplelist>
  </refsect1>
 </refentry>
-
-
 <!-- Keep this comment at the end of the file
 Local variables:
 mode: sgml
