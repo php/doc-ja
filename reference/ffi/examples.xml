@@ -1,0 +1,345 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision$ -->
+<!-- EN-Revision: 8859c8b96cd9e80652813f7bcf561432a5e9f934 Maintainer: nsfisis Status: ready -->
+
+<chapter xml:id="ffi.examples" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+ &reftitle.examples;
+ <section xml:id="ffi.examples-basic">
+  <title>FFI の基本的な使い方</title>
+  <para>
+   FFI API の詳細に深く立ち入る前に、よくあるタスクに対する FFI API の使い方が
+   どれほど簡単かを示す例をいくつか見てみましょう。
+  </para>
+  <note>
+   <para>
+    これらの例の中には、<filename>libc.so.6</filename> を必要とするものがあります。
+    それらは、このライブラリが利用できないシステムでは動きません。
+   </para>
+  </note>
+  <para>
+   <example xml:id="ffi.examples.function">
+    <title>共有ライブラリの関数を呼ぶ</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+// FFI オブジェクトを作成し、libc を読み込んで printf() 関数をエクスポートする
+$ffi = FFI::cdef(
+    "int printf(const char *format, ...);", // ここは通常の C の宣言
+    "libc.so.6");
+// C の printf() を呼ぶ
+$ffi->printf("Hello %s!\n", "world");
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+Hello world!
+]]>
+    </screen>
+   </example>
+  </para>
+    <note>
+   <para>
+    C の関数のうちのいくつかは、特定の呼び出し規約 (例: <literal>__fastcall</literal>、
+    <literal>__stdcall</literal>、<literal>,__vectorcall</literal> など) を必要とすることに注意してください。
+   </para>
+  </note>
+  <para>
+   <example xml:id="ffi.examples.structure">
+    <title>関数を呼び出し、構造体を引数経由で返す</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+// gettimeofday() のバインディングを作成する
+$ffi = FFI::cdef("
+    typedef unsigned int time_t;
+    typedef unsigned int suseconds_t;
+ 
+    struct timeval {
+        time_t      tv_sec;
+        suseconds_t tv_usec;
+    };
+ 
+    struct timezone {
+        int tz_minuteswest;
+        int tz_dsttime;
+    };
+ 
+    int gettimeofday(struct timeval *tv, struct timezone *tz);    
+", "libc.so.6");
+// C のデータ構造を作成する
+$tv = $ffi->new("struct timeval");
+$tz = $ffi->new("struct timezone");
+// C の gettimeofday() を呼ぶ
+var_dump($ffi->gettimeofday(FFI::addr($tv), FFI::addr($tz)));
+// C のデータ構造のフィールドにアクセスする
+var_dump($tv->tv_sec);
+// C のデータ構造全体を出力する
+var_dump($tz);
+?>
+]]>
+    </programlisting>
+    &example.outputs.similar;
+    <screen>
+<![CDATA[
+int(0)
+int(1555946835)
+object(FFI\CData:struct timezone)#3 (2) {
+  ["tz_minuteswest"]=>
+  int(0)
+  ["tz_dsttime"]=>
+  int(0)
+}
+]]>
+    </screen>
+   </example>
+  </para>
+  <para>
+   <example xml:id="ffi.examples.variable-existing">
+    <title>既存の C の変数にアクセスする</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+// FFI オブジェクトを作成し、libc を読み込んで errno 変数をエクスポートする
+$ffi = FFI::cdef(
+    "int errno;", // ここは通常の C の宣言
+    "libc.so.6");
+// C の errno を出力する
+var_dump($ffi->errno);
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+int(0)
+]]>
+    </screen>
+   </example>
+  </para>
+  <para>
+   <example xml:id="ffi.examples.variable-creating">
+    <title>C の変数を作成して書き換える</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+// 新しい C の int 変数を作成する
+$x = FFI::new("int");
+var_dump($x->cdata);
+
+// 単純な代入
+$x->cdata = 5;
+var_dump($x->cdata);
+
+// 複合代入
+$x->cdata += 2;
+var_dump($x->cdata);
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+int(0)
+int(5)
+int(7)
+]]>
+    </screen>
+   </example>
+  </para>
+  <para>
+   <example xml:id="ffi.examples.array">
+    <title>C の配列を扱う</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+// C のデータ構造を作成する
+$a = FFI::new("long[1024]");
+// 通常の PHP の配列を扱うのと同じように扱う
+for ($i = 0; $i < count($a); $i++) {
+    $a[$i] = $i;
+}
+var_dump($a[25]);
+$sum = 0;
+foreach ($a as $n) {
+    $sum += $n;
+}
+var_dump($sum);
+var_dump(count($a));
+var_dump(FFI::sizeof($a));
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+int(25)
+int(523776)
+int(1024)
+int(8192)
+]]>
+    </screen>
+   </example>
+  </para>
+  <para>
+    <example xml:id="ffi.examples.enum">
+    <title>C の enum を扱う</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$a = FFI::cdef('typedef enum _zend_ffi_symbol_kind {
+    ZEND_FFI_SYM_TYPE,
+    ZEND_FFI_SYM_CONST = 2,
+    ZEND_FFI_SYM_VAR,
+    ZEND_FFI_SYM_FUNC
+} zend_ffi_symbol_kind;
+');
+var_dump($a->ZEND_FFI_SYM_TYPE);
+var_dump($a->ZEND_FFI_SYM_CONST);
+var_dump($a->ZEND_FFI_SYM_VAR);
+?>
+]]>
+     </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+int(0)
+int(2)
+int(3)
+]]>
+    </screen>
+   </example>
+  </para>
+ </section>
+ <section xml:id="ffi.examples-callback">
+  <title>PHP のコールバック</title>
+  <para>
+   PHP のクロージャを、関数ポインタ型のネイティブ変数に代入したり、
+   関数の引数として渡したりできます。
+   <example>
+    <title>PHP の <classname>Closure</classname> を C の関数ポインタに代入する</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$zend = FFI::cdef("
+    typedef int (*zend_write_func_t)(const char *str, size_t str_length);
+    extern zend_write_func_t zend_write;
+");
+ 
+echo "Hello World 1!\n";
+ 
+$orig_zend_write = clone $zend->zend_write;
+$zend->zend_write = function($str, $len) {
+    global $orig_zend_write;
+    $orig_zend_write("{\n\t", 3);
+    $ret = $orig_zend_write($str, $len);
+    $orig_zend_write("}\n", 2);
+    return $ret;
+};
+echo "Hello World 2!\n";
+$zend->zend_write = $orig_zend_write;
+echo "Hello World 3!\n";
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+Hello World 1!
+{
+        Hello World 2!
+}
+Hello World 3!
+]]>
+    </screen>
+   </example>
+   これは動作こそしますが、この機能は libffi が動作するすべてのプラットフォームでサポートされているわけではありません。
+   また、非効率的であり、リクエストの終了時にリソースがリークします。
+   <tip>
+    <simpara>
+     したがって、PHP のコールバックの使用は最小限にすることを推奨します。
+    </simpara>
+   </tip>
+  </para>
+ </section>
+
+ <section xml:id="ffi.examples-complete">
+  <title>PHP/FFI/事前ロードの完全な例</title>
+  <informalexample>
+   <simpara><filename>php.ini</filename></simpara>
+   <programlisting role="ini">
+<![CDATA[
+ffi.enable=preload
+opcache.preload=preload.php
+]]>
+   </programlisting>
+   <simpara><filename>preload.php</filename></simpara>
+   <programlisting role="php">
+<![CDATA[
+<?php
+FFI::load(__DIR__ . "/dummy.h");
+opcache_compile_file(__DIR__ . "/dummy.php");
+?>
+]]>
+   </programlisting>
+   <simpara><filename>dummy.h</filename></simpara>
+   <programlisting role="c">
+<![CDATA[
+#define FFI_SCOPE "DUMMY"
+#define FFI_LIB "libc.so.6"
+ 
+int printf(const char *format, ...);
+]]>
+   </programlisting>
+   <simpara><filename>dummy.php</filename></simpara>
+   <programlisting role="php">
+<![CDATA[
+<?php
+final class Dummy {
+    private static $ffi = null;
+    function __construct() {
+        if (is_null(self::$ffi)) {
+            self::$ffi = FFI::scope("DUMMY");
+        }
+    }
+    function printf($format, ...$args) {
+       return (int) self::$ffi->printf($format, ...$args);
+    }
+}
+?>
+]]>
+   </programlisting>
+   <simpara><filename>test.php</filename></simpara>
+   <programlisting role="php">
+<![CDATA[
+<?php
+$d = new Dummy();
+$d->printf("Hello %s!\n", "world");
+?>
+]]>
+   </programlisting>
+  </informalexample>
+ </section>
+</chapter>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"~/.phpdoc/manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
