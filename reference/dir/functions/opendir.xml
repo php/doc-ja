@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- splitted from ./ja/functions/dir.xml, last change in rev 1.1 -->
-<!-- EN-Revision: b0b19b66183b28cebc1ffbcf1e2b8763f9d9c7b3 Maintainer: hirokawa Status: ready -->
-<!-- CREDITS: takagi -->
+<!-- EN-Revision: 5c7e9e1351240b5f9e0858cdeba8f754a366d1b7 Maintainer: mumumu Status: ready -->
 <refentry xml:id="function.opendir" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>opendir</refname>
@@ -16,56 +14,54 @@
    <methodparam><type>string</type><parameter>directory</parameter></methodparam>
    <methodparam choice="opt"><type class="union"><type>resource</type><type>null</type></type><parameter>context</parameter><initializer>&null;</initializer></methodparam>
   </methodsynopsis>
-  <para>
+  <simpara>
    ディレクトリハンドルをオープンします。このハンドルは、この後
    <function>closedir</function>, <function>readdir</function>, 
    <function>rewinddir</function> 関数コールで使用されます。
-  </para>
+  </simpara>
  </refsect1>
 
  <refsect1 role="parameters">
   &reftitle.parameters;
-  <para>
-   <variablelist>
-    <varlistentry>
-     <term><parameter>directory</parameter></term>
-     <listitem>
-      <para>
-       オープンするディレクトリのパス。
-      </para>
-     </listitem>
-    </varlistentry>
-    <varlistentry>
-     <term><parameter>context</parameter></term>
-     <listitem>
-      <para>
-       <parameter>context</parameter> パラメータの詳細については
-       マニュアルの<link linkend="ref.stream">ストリーム</link>
-       を参照ください。
-      </para> 
-     </listitem>
-    </varlistentry>
-   </variablelist>
-  </para>
+  <variablelist>
+   <varlistentry>
+    <term><parameter>directory</parameter></term>
+    <listitem>
+     <simpara>
+      オープンするディレクトリのパス。
+     </simpara>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term><parameter>context</parameter></term>
+    <listitem>
+     <simpara>
+      <parameter>context</parameter> パラメータの詳細については
+      マニュアルの<link linkend="ref.stream">ストリーム</link>
+      を参照ください。
+     </simpara>
+    </listitem>
+   </varlistentry>
+  </variablelist>
  </refsect1>
 
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
-  <para>
-   成功した場合にディレクトリハンドルの <type>resource</type> 、
+  <simpara>
+   成功した場合にディレクトリハンドルを返します。
    &return.falseforfailure;
-  </para> 
+  </simpara>
  </refsect1>
 
  <refsect1 role="errors">
   &reftitle.errors;
   &fs.emits.warning.on.failure;
-  <para>
+  <simpara>
    <parameter>directory</parameter> が有効なディレクトリでない場合、
    権限の制限によりディレクトリがオープンできない場合、
    またはファイルシステムのエラー時に起こりえます。
-   </para>
-  </refsect1>
+  </simpara>
+ </refsect1>
 
  <refsect1 role="changelog">
   &reftitle.changelog;
@@ -91,49 +87,69 @@
 
  <refsect1 role="examples">
   &reftitle.examples;
-  <para>
-   <example>
-    <title><function>opendir</function> の例</title>
-    <programlisting role="php">
+  <example>
+   <title>
+    ディレクトリ中の全てのエントリを表示します。
+    ただし、特別な <literal>.</literal> と
+    <literal>..</literal> ディレクトリはスキップします。
+   </title>
+   <simpara>
+    ファイル名やディレクトリ名は、
+    PHP が &false; と見なす文字列
+    (例: <literal>"0"</literal> という名前のディレクトリ)
+    の可能性があり、かつ <function>readdir</function> 
+    は全てのディレクトリエントリを読み取ったあとに &false; を返します。
+    そのため、PHP が &false;
+    とみなすディレクトリ名と、
+    全てのディレクトリエントリを読み取ったことを適切に区別するためには、
+    <link linkend="language.operators.comparison">比較演算子</link> <literal>===</literal>
+    を使う必要があります。
+   </simpara>
+   <programlisting role="php">
 <![CDATA[
 <?php
-$dir = "/etc/php5/";
 
-// 既知のディレクトリをオープンし、その内容を読み込みます。
-if (is_dir($dir)) {
-    if ($dh = opendir($dir)) {
-        while (($file = readdir($dh)) !== false) {
-            echo "filename: $file : filetype: " . filetype($dir . $file) . "\n";
+if ($handle = opendir('/path/to/files')) {
+    echo "Entries:\n";
+
+    /* Correctly handling directory entries that may be considered falsy */
+    while (false !== ($entry = readdir($handle))) {
+        if ($entry === '.' || $entry === '..') {
+            continue;
         }
-        closedir($dh);
+        echo "$entry\n";
     }
+
+    closedir($handle);
 }
 ?>
 ]]>
-    </programlisting>
-    &example.outputs.similar;
-    <screen>
+   </programlisting>
+   &example.outputs.similar;
+   <screen>
 <![CDATA[
-filename: . : filetype: dir
-filename: .. : filetype: dir
-filename: apache : filetype: dir
-filename: cgi : filetype: dir
-filename: cli : filetype: dir
+Entries:
+base
+en
+fr
+output.md
+test.php
 ]]>
-    </screen>
-   </example>
-  </para>
+   </screen>
+  </example>
  </refsect1>
 
  <refsect1 role="seealso">
   &reftitle.seealso;
-  <para>
-   <simplelist>
-    <member><function>is_dir</function></member>
-    <member><function>readdir</function></member>
-    <member><function>dir</function></member>
-   </simplelist>
-  </para>
+  <simplelist>
+   <member><function>readdir</function></member>
+   <member><function>rewinddir</function></member>
+   <member><function>closedir</function></member>
+   <member><function>dir</function></member>
+   <member><function>is_dir</function></member>
+   <member><function>glob</function></member>
+   <member><function>scandir</function></member>
+  </simplelist>
  </refsect1>
 </refentry>
 <!-- Keep this comment at the end of the file
