@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 5bc68add3da3cd18c40f851e944b15095d3a26aa Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 71ebfcb54339612efc64861dcb0869e765be8aa3 Maintainer: takagi Status: ready -->
 <!-- Credits: mumumu -->
 <refentry xml:id="mysqli.real-connect" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -35,7 +35,8 @@
    <methodparam choice="opt"><type>int</type><parameter>flags</parameter><initializer>0</initializer></methodparam>
   </methodsynopsis>
   <para>
-   MySQL データベースエンジンとの接続を確立します。
+   オプションの接続オプションを使用して、
+   MySQL データベースサーバーとの接続を確立します。
   </para>
   <para>
    この関数は、以下の点で <function>mysqli_connect</function>
@@ -46,12 +47,6 @@
     <para>
      <function>mysqli_real_connect</function> は、
      <function>mysqli_init</function> が作成した接続オブジェクトが必要です。
-    </para>
-   </listitem>
-   <listitem>
-    <para>
-     <function>mysqli_options</function> 関数を使用して、
-     さまざまな接続オプションを設定することが可能です。
     </para>
    </listitem>
    <listitem>
@@ -243,28 +238,15 @@
 <![CDATA[
 <?php
 
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $mysqli = mysqli_init();
-if (!$mysqli) {
-    die('mysqli_init failed');
-}
 
-if (!$mysqli->options(MYSQLI_INIT_COMMAND, 'SET AUTOCOMMIT = 0')) {
-    die('Setting MYSQLI_INIT_COMMAND failed');
-}
+$mysqli->options(MYSQLI_INIT_COMMAND, 'SET AUTOCOMMIT = 0');
+$mysqli->options(MYSQLI_OPT_CONNECT_TIMEOUT, 5);
 
-if (!$mysqli->options(MYSQLI_OPT_CONNECT_TIMEOUT, 5)) {
-    die('Setting MYSQLI_OPT_CONNECT_TIMEOUT failed');
-}
-
-if (!$mysqli->real_connect('localhost', 'my_user', 'my_password', 'my_db')) {
-    die('Connect Error (' . mysqli_connect_errno() . ') '
-            . mysqli_connect_error());
-}
+$mysqli->real_connect('localhost', 'my_user', 'my_password', 'my_db', null, null, MYSQLI_CLIENT_COMPRESS|MYSQLI_CLIENT_FOUND_ROWS);
 
 echo 'Success... ' . $mysqli->host_info . "\n";
-
-$mysqli->close();
-?>
 ]]>
    </programlisting>
    <para>&style.oop; で mysqli クラスを継承する例</para>
@@ -273,30 +255,20 @@ $mysqli->close();
 <?php
 
 class foo_mysqli extends mysqli {
-    public function __construct($host, $user, $pass, $db) {
+    public function __construct($host, $user, $pass, $db)
+    {
         parent::__construct();
 
-        if (!parent::options(MYSQLI_INIT_COMMAND, 'SET AUTOCOMMIT = 0')) {
-            die('Setting MYSQLI_INIT_COMMAND failed');
-        }
+        parent::options(MYSQLI_INIT_COMMAND, 'SET AUTOCOMMIT = 0');
+        parent::options(MYSQLI_OPT_CONNECT_TIMEOUT, 5);
 
-        if (!parent::options(MYSQLI_OPT_CONNECT_TIMEOUT, 5)) {
-            die('Setting MYSQLI_OPT_CONNECT_TIMEOUT failed');
-        }
-
-        if (!parent::real_connect($host, $user, $pass, $db)) {
-            die('Connect Error (' . mysqli_connect_errno() . ') '
-                    . mysqli_connect_error());
-        }
+        parent::real_connect($host, $user, $pass, $db, null, null, MYSQLI_CLIENT_COMPRESS|MYSQLI_CLIENT_FOUND_ROWS);
     }
 }
 
 $db = new foo_mysqli('localhost', 'my_user', 'my_password', 'my_db');
 
 echo 'Success... ' . $db->host_info . "\n";
-
-$db->close();
-?>
 ]]>
    </programlisting>
    <para>&style.procedural;</para>
@@ -304,28 +276,15 @@ $db->close();
 <![CDATA[
 <?php
 
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $link = mysqli_init();
-if (!$link) {
-    die('mysqli_init failed');
-}
 
-if (!mysqli_options($link, MYSQLI_INIT_COMMAND, 'SET AUTOCOMMIT = 0')) {
-    die('Setting MYSQLI_INIT_COMMAND failed');
-}
+mysqli_options($link, MYSQLI_INIT_COMMAND, 'SET AUTOCOMMIT = 0');
+mysqli_options($link, MYSQLI_OPT_CONNECT_TIMEOUT, 5);
 
-if (!mysqli_options($link, MYSQLI_OPT_CONNECT_TIMEOUT, 5)) {
-    die('Setting MYSQLI_OPT_CONNECT_TIMEOUT failed');
-}
-
-if (!mysqli_real_connect($link, 'localhost', 'my_user', 'my_password', 'my_db')) {
-    die('Connect Error (' . mysqli_connect_errno() . ') '
-            . mysqli_connect_error());
-}
+mysqli_real_connect($link, 'localhost', 'my_user', 'my_password', 'my_db', null, null, MYSQLI_CLIENT_COMPRESS|MYSQLI_CLIENT_FOUND_ROWS);
 
 echo 'Success... ' . mysqli_get_host_info($link) . "\n";
-
-mysqli_close($link);
-?>
 ]]>
    </programlisting>
    &examples.outputs;
