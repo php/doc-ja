@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 44428b04b7b046593e9ab33874eddd1fea7dfab1 Maintainer: mumumu Status: ready -->
-<refentry xml:id="function.dba-open" xmlns="http://docbook.org/ns/docbook">
+<!-- EN-Revision: bfa334803465822457b4dabcf9d9f9a5a990c4d3 Maintainer: mumumu Status: ready -->
+<refentry xmlns="http://docbook.org/ns/docbook" xml:id="function.dba-open">
  <refnamediv>
   <refname>dba_open</refname>
   <refpurpose>データベースをオープンする</refpurpose>
@@ -26,192 +26,190 @@
 
  <refsect1 role="parameters">
   &reftitle.parameters;
-  <para>
-   <variablelist>
-    <varlistentry>
-     <term><parameter>path</parameter></term>
-     <listitem>
+  <variablelist>
+   <varlistentry>
+    <term><parameter>path</parameter></term>
+    <listitem>
+     <para>
+      通常のファイルシステムのパス。
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term><parameter>mode</parameter></term>
+    <listitem>
+     <para>
+      既存のデータベースへの読み込みアクセスには "r"、読込み/書き込み
+      アクセスには "w" を指定します。
+      読み込み/書き込みアクセスおよび存在しない場合にデータベースの作成を
+      するには "c" を、そして作成、削除、読込み/書き込みアクセス用には
+      "n" を指定します。データベースは BTree モードで作られます。
+      その他のモード (Hash や Queue) には対応していません。
+     </para>
+     <para>
+      さらに、次の文字でデータベースのロック方法を指定することができます。
+      <filename>.lck</filename> でデータベースをロックする場合には "l"、
+      データベースファイル自体をロックする場合は "d" を使用してください。
+      アプリケーション全体で統一した方法を用いることが重要です。
+     </para>
+     <para>
+      アクセスのテストを行う際にロックのために待ちたくない場合、"t" を
+      3 番目の文字に追加することができます。明らかにデータベースのロックが
+      不要な場合には、"l" や "d" の代わりに "-" を使用してロックを
+      行わないことができます。"d"、"l" または "-" のどれも指定されない場合、
+      "d"が指定されたものとしてデータベースファイルをロックします。
+     </para>
+     <note>
       <para>
-       通常のファイルシステムのパス。
+       ひとつのデータベースファイルに同時に書き込めるのは、ひとつだけです。
+       dba を Web サーバーで使用している際に複数のリクエストが書き込み処理を
+       行う必要がある場合、他の書き込みが終わってからでないと次の書き込みを
+       行うことができません。また、書き込み中に読み込むことはできません。
+       dba 拡張モジュールは、このようなことを防止するためにロックを使用します。
+       以下の表を参照ください:
+       <table>
+        <title>DBA のロック処理</title>
+        <tgroup cols="9">
+         <thead>
+          <row>
+           <entry>既にオープンしているデータベース</entry>
+           <entry><parameter>mode</parameter> = "rl"</entry>
+           <entry><parameter>mode</parameter> = "rlt"</entry>
+           <entry><parameter>mode</parameter> = "wl"</entry>
+           <entry><parameter>mode</parameter> = "wlt"</entry>
+           <entry><parameter>mode</parameter> = "rd"</entry>
+           <entry><parameter>mode</parameter> = "rdt"</entry>
+           <entry><parameter>mode</parameter> = "wd"</entry>
+           <entry><parameter>mode</parameter> = "wdt"</entry>
+          </row>
+         </thead>
+         <tbody>
+          <row>
+           <entry>not open</entry>
+           <entry>ok</entry>
+           <entry>ok</entry>
+           <entry>ok</entry>
+           <entry>ok</entry>
+           <entry>ok</entry>
+           <entry>ok</entry>
+           <entry>ok</entry>
+           <entry>ok</entry>
+          </row>
+          <row>
+           <entry><parameter>mode</parameter> = "rl"</entry>
+           <entry>ok</entry>
+           <entry>ok</entry>
+           <entry>wait</entry>
+           <entry>false</entry>
+           <entry>illegal</entry>
+           <entry>illegal</entry>
+           <entry>illegal</entry>
+           <entry>illegal</entry>
+          </row>
+          <row>
+           <entry><parameter>mode</parameter> = "wl"</entry>
+           <entry>wait</entry>
+           <entry>false</entry>
+           <entry>wait</entry>
+           <entry>false</entry>
+           <entry>illegal</entry>
+           <entry>illegal</entry>
+           <entry>illegal</entry>
+           <entry>illegal</entry>
+          </row>
+          <row>
+           <entry><parameter>mode</parameter> = "rd"</entry>
+           <entry>illegal</entry>
+           <entry>illegal</entry>
+           <entry>illegal</entry>
+           <entry>illegal</entry>
+           <entry>ok</entry>
+           <entry>ok</entry>
+           <entry>wait</entry>
+           <entry>false</entry>
+          </row>
+          <row>
+           <entry><parameter>mode</parameter> = "wd"</entry>
+           <entry>illegal</entry>
+           <entry>illegal</entry>
+           <entry>illegal</entry>
+           <entry>illegal</entry>
+           <entry>wait</entry>
+           <entry>false</entry>
+           <entry>wait</entry>
+           <entry>false</entry>
+          </row>
+         </tbody>
+        </tgroup>
+       </table>
+       <simplelist>
+        <member>ok: 2 番目のコールは成功します。</member>
+        <member>wait: 2 番目のコールは、最初のデータベースで <function>dba_close</function> がコールされるまで待ちます。</member>
+        <member>false: 2 番目のコールは、false を返します。</member>
+        <member>illegal: <parameter>mode</parameter> パラメータで <literal>"l"</literal> および <literal>"d"</literal> を同時に使用することはできません。</member>
+       </simplelist>
       </para>
-     </listitem>
-    </varlistentry>
-    <varlistentry>
-     <term><parameter>mode</parameter></term>
-     <listitem>
-      <para>
-       既存のデータベースへの読み込みアクセスには "r"、読込み/書き込み
-       アクセスには "w" を指定します。
-       読み込み/書き込みアクセスおよび存在しない場合にデータベースの作成を
-       するには "c" を、そして作成、削除、読込み/書き込みアクセス用には
-       "n" を指定します。データベースは BTree モードで作られます。
-       その他のモード (Hash や Queue) には対応していません。
-      </para>
-      <para>
-       さらに、次の文字でデータベースのロック方法を指定することができます。
-       <filename>.lck</filename> でデータベースをロックする場合には "l"、
-       データベースファイル自体をロックする場合は "d" を使用してください。
-       アプリケーション全体で統一した方法を用いることが重要です。
-      </para>
-      <para>
-       アクセスのテストを行う際にロックのために待ちたくない場合、"t" を
-       3 番目の文字に追加することができます。明らかにデータベースのロックが
-       不要な場合には、"l" や "d" の代わりに "-" を使用してロックを
-       行わないことができます。"d"、"l" または "-" のどれも指定されない場合、
-       "d"が指定されたものとしてデータベースファイルをロックします。
-      </para>
-      <note>
-       <para>
-        ひとつのデータベースファイルに同時に書き込めるのは、ひとつだけです。
-        dba を Web サーバーで使用している際に複数のリクエストが書き込み処理を
-        行う必要がある場合、他の書き込みが終わってからでないと次の書き込みを
-        行うことができません。また、書き込み中に読み込むことはできません。
-        dba 拡張モジュールは、このようなことを防止するためにロックを使用します。
-        以下の表を参照ください:
-        <table>
-         <title>DBA のロック処理</title>
-         <tgroup cols="9">
-          <thead>
-           <row>
-            <entry>既にオープンしているデータベース</entry>
-            <entry><parameter>mode</parameter> = "rl"</entry>
-            <entry><parameter>mode</parameter> = "rlt"</entry>
-            <entry><parameter>mode</parameter> = "wl"</entry>
-            <entry><parameter>mode</parameter> = "wlt"</entry>
-            <entry><parameter>mode</parameter> = "rd"</entry>
-            <entry><parameter>mode</parameter> = "rdt"</entry>
-            <entry><parameter>mode</parameter> = "wd"</entry>
-            <entry><parameter>mode</parameter> = "wdt"</entry>
-           </row>
-          </thead>
-          <tbody>
-           <row>
-            <entry>not open</entry>
-            <entry>ok</entry>
-            <entry>ok</entry>
-            <entry>ok</entry>
-            <entry>ok</entry>
-            <entry>ok</entry>
-            <entry>ok</entry>
-            <entry>ok</entry>
-            <entry>ok</entry>
-           </row>
-           <row>
-            <entry><parameter>mode</parameter> = "rl"</entry>
-            <entry>ok</entry>
-            <entry>ok</entry>
-            <entry>wait</entry>
-            <entry>false</entry>
-            <entry>illegal</entry>
-            <entry>illegal</entry>
-            <entry>illegal</entry>
-            <entry>illegal</entry>
-           </row>
-           <row>
-            <entry><parameter>mode</parameter> = "wl"</entry>
-            <entry>wait</entry>
-            <entry>false</entry>
-            <entry>wait</entry>
-            <entry>false</entry>
-            <entry>illegal</entry>
-            <entry>illegal</entry>
-            <entry>illegal</entry>
-            <entry>illegal</entry>
-           </row>
-           <row>
-            <entry><parameter>mode</parameter> = "rd"</entry>
-            <entry>illegal</entry>
-            <entry>illegal</entry>
-            <entry>illegal</entry>
-            <entry>illegal</entry>
-            <entry>ok</entry>
-            <entry>ok</entry>
-            <entry>wait</entry>
-            <entry>false</entry>
-           </row>
-           <row>
-            <entry><parameter>mode</parameter> = "wd"</entry>
-            <entry>illegal</entry>
-            <entry>illegal</entry>
-            <entry>illegal</entry>
-            <entry>illegal</entry>
-            <entry>wait</entry>
-            <entry>false</entry>
-            <entry>wait</entry>
-            <entry>false</entry>
-           </row>
-          </tbody>
-         </tgroup>
-        </table>
-        <simplelist>
-         <member>ok: 2 番目のコールは成功します。</member>
-         <member>wait: 2 番目のコールは、最初のデータベースで <function>dba_close</function> がコールされるまで待ちます。</member>
-         <member>false: 2 番目のコールは、false を返します。</member>
-         <member>illegal: <parameter>mode</parameter> パラメータで <literal>"l"</literal> および <literal>"d"</literal> を同時に使用することはできません。</member>
-        </simplelist>
-       </para>
-      </note>
-     </listitem>
-    </varlistentry>
-    <varlistentry>
-     <term><parameter>handler</parameter></term>
-     <listitem>
-      <para>
-       <parameter>path</parameter> にアクセスする際に使用する
-       <link linkend="dba.requirements">ハンドラ</link>の名前。
-       <function>dba_open</function> に指定したすべてのオプションが渡され、
-       その機能を用いることができます。
-       <parameter>handler</parameter> が &null; の場合、
-       デフォルトのハンドラが使われます。
-      </para>
-     </listitem>
-    </varlistentry>
-    <varlistentry>
-     <term><parameter>permission</parameter></term>
-     <listitem>
-      <para>
-       ドライバに渡されるオプションの整数パラメータ。
-       <function>chmod</function> の
-       <parameter>permissions</parameter> を同じ意味です。
-       デフォルトは <literal>0644</literal> です。
-      </para>
-      <para>
-       <literal>db1</literal>, <literal>db2</literal>, <literal>db3</literal>,
-       <literal>db4</literal>, <literal>dbm</literal>, <literal>gdbm</literal>,
-       <literal>ndbm</literal>, <literal>lmdb</literal> ドライバが
-       <parameter>permission</parameter> パラメータをサポートしています。
-      </para>
-     </listitem>
-    </varlistentry>
-    <varlistentry>
-     <term><parameter>map_size</parameter></term>
-     <listitem>
-      <para>
-       ドライバに渡されるオプションの整数パラメータ。
-       OS のページサイズの倍数を指定すべきです。
-       ゼロを指定すると、デフォルトのマップサイズが使われます。
-      </para>
-      <para>
-       <literal>lmdb</literal> ドライバだけが
-       <parameter>map_size</parameter> パラメータを受け入れます。
-      </para>
-     </listitem>
-    </varlistentry>
-    <varlistentry>
-     <term><parameter>flags</parameter></term>
-     <listitem>
-      <para>
-       データベースドライバに渡すフラグ。
-       &null; の場合、
-       デフォルトのフラグが渡されます。
-       現状、LMDB ドライバだけが
-       <constant>DBA_LMDB_USE_SUB_DIR</constant> と
-       <constant>DBA_LMDB_NO_SUB_DIR</constant> をサポートしています。
-      </para>
-     </listitem>
-    </varlistentry>
-   </variablelist>
-  </para>
+     </note>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term><parameter>handler</parameter></term>
+    <listitem>
+     <para>
+      <parameter>path</parameter> にアクセスする際に使用する
+      <link linkend="dba.requirements">ハンドラ</link>の名前。
+      <function>dba_open</function> に指定したすべてのオプションが渡され、
+      その機能を用いることができます。
+      <parameter>handler</parameter> が &null; の場合、
+      デフォルトのハンドラが使われます。
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term><parameter>permission</parameter></term>
+    <listitem>
+     <para>
+      ドライバに渡されるオプションの整数パラメータ。
+      <function>chmod</function> の
+      <parameter>permissions</parameter> を同じ意味です。
+      デフォルトは <literal>0644</literal> です。
+     </para>
+     <para>
+      <literal>db1</literal>, <literal>db2</literal>, <literal>db3</literal>,
+      <literal>db4</literal>, <literal>dbm</literal>, <literal>gdbm</literal>,
+      <literal>ndbm</literal>, <literal>lmdb</literal> ドライバが
+      <parameter>permission</parameter> パラメータをサポートしています。
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term><parameter>map_size</parameter></term>
+    <listitem>
+     <para>
+      ドライバに渡されるオプションの整数パラメータ。
+      OS のページサイズの倍数を指定すべきです。
+      ゼロを指定すると、デフォルトのマップサイズが使われます。
+     </para>
+     <para>
+      <literal>lmdb</literal> ドライバだけが
+      <parameter>map_size</parameter> パラメータを受け入れます。
+     </para>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term><parameter>flags</parameter></term>
+    <listitem>
+     <para>
+      データベースドライバに渡すフラグ。
+      &null; の場合、
+      デフォルトのフラグが渡されます。
+      現状、LMDB ドライバだけが
+      <constant>DBA_LMDB_USE_SUB_DIR</constant> と
+      <constant>DBA_LMDB_NO_SUB_DIR</constant> をサポートしています。
+     </para>
+    </listitem>
+   </varlistentry>
+  </variablelist>
  </refsect1>
 
  <refsect1 role="returnvalues">
@@ -276,12 +274,10 @@
 
  <refsect1 role="seealso">
   &reftitle.seealso;
-  <para>
-   <simplelist>
-    <member><function>dba_popen</function></member>
-    <member><function>dba_close</function></member>
-   </simplelist>
-  </para>
+  <simplelist>
+   <member><function>dba_popen</function></member>
+   <member><function>dba_close</function></member>
+  </simplelist>
  </refsect1>
 </refentry>
 <!-- Keep this comment at the end of the file
