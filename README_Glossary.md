@@ -61,5 +61,8 @@ test([1234]);
 - fatal error
   * 致命的なエラー ( [#321](https://github.com/php/doc-ja/issues/321) )
     - 「fatal エラー」としない
+- parser
+  * 「パーサー」と伸ばす。「パーサ」としない ( [#310](https://github.com/php/doc-ja/issues/310) )
+    - server と同様、末尾の長音記号を付ける
 - server
   * 「サーバー」と伸ばす。「サーバ」としない ( [#69](https://github.com/php/doc-ja/issues/69) )
