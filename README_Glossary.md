@@ -58,5 +58,8 @@ function test($parameters = array()) {}
 test([1234]);
 ```
 
+- fatal error
+  * 致命的なエラー ( [#321](https://github.com/php/doc-ja/issues/321) )
+    - 「fatal エラー」としない
 - server
   * 「サーバー」と伸ばす。「サーバ」としない ( [#69](https://github.com/php/doc-ja/issues/69) )
