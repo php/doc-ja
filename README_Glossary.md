@@ -58,6 +58,10 @@ function test($parameters = array()) {}
 test([1234]);
 ```
 
+- override (OOP)
+  * 「オーバーライド」で統一 ( [#26](https://github.com/php/doc-ja/issues/26) )
+    - 継承の文脈（メソッド、プロパティ、定数の再定義）では「上書き」を使わない
+    - 「上書き」はファイルや設定値、配列の値を書き換える文脈 (overwrite) でのみ使う
 - fatal error
   * 致命的なエラー ( [#321](https://github.com/php/doc-ja/issues/321) )
     - 「fatal エラー」としない
