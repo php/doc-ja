@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- EN-Revision: 78cc29837ed269491a4fc330797c7184eca7ed2f Maintainer: lacatoire Status: ready -->
+<refentry xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="function.simdjson-is-valid">
+ <refnamediv>
+  <refname>simdjson_is_valid</refname>
+  <refpurpose>JSON 文字列が有効かどうかを調べる</refpurpose>
+ </refnamediv>
+
+ <refsect1 role="description">
+  &reftitle.description;
+  <methodsynopsis>
+   <type>bool</type><methodname>simdjson_is_valid</methodname>
+   <methodparam><type>string</type><parameter>json</parameter></methodparam>
+   <methodparam choice="opt"><type>int</type><parameter>depth</parameter><initializer>512</initializer></methodparam>
+  </methodsynopsis>
+  <simpara>
+   JSON エンコードされた文字列を受け取り、有効な場合に true を返します。
+  </simpara>
+ </refsect1>
+
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <variablelist>
+   <varlistentry>
+    <term><parameter>json</parameter></term>
+    <listitem>
+      <simpara>
+       バリデーションする JSON <type>string</type>。
+      </simpara>
+      <simpara>
+       この関数は UTF-8 でエンコードされた文字列でのみ動作します。
+      </simpara>
+      <simpara>
+       この関数は <function>json_decode</function> がデコードできる
+       入力をバリデーションしますが、4 GiB 未満の長さに限ります。
+      </simpara>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term><parameter>depth</parameter></term>
+    <listitem>
+     <simpara>
+      バリデーションする構造のネストの最大深さ。
+      値は <literal>0</literal> より大きく、
+      <literal>2147483647</literal> 以下でなければなりません。
+
+      呼び出し側は妥当な小さい値を使用するべきです。
+      現在の <function>json_decode</function> の実装とは異なり、
+      大きな深さはより多くのバッファ領域を必要とし、
+      再帰の深さが増加します。
+     </simpara>
+    </listitem>
+   </varlistentry>
+  </variablelist>
+ </refsect1>
+
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <simpara>
+   <parameter>json</parameter> が有効な JSON 文字列の場合は
+   &true; を、そうでない場合は &false; を返します。
+  </simpara>
+ </refsect1>
+
+ <refsect1 role="errors">
+  &reftitle.errors;
+  <simpara>
+   <parameter>json</parameter> が 4 GiB を超える場合、
+   PECL simdjson 2.1.0 以降では <classname>SimdJsonException</classname>
+   がスローされます。以前は <classname>RuntimeException</classname>
+   がスローされていました。
+  </simpara>
+  <simpara>
+   <parameter>depth</parameter> が許容範囲外の場合、
+   PECL simdjson 3.0.0 以降では <classname>SimdJsonValueError</classname>
+   がスローされます。以前は <constant>E_WARNING</constant>
+   レベルのエラーが発生していました。
+  </simpara>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <para>
+   <example>
+    <title><function>simdjson_decode</function> の例</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$json = '{"a":1,"b":2,"c":3}';
+$invalidJson = '{"a":1,"b":2,"c":';
+
+var_dump(simdjson_is_valid($json));
+var_dump(simdjson_is_valid($invalidJson));
+
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+bool(true)
+bool(false)
+]]>
+    </screen>
+   </example>
+   <example>
+    <title><parameter>depth</parameter> エラー</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+// 最大深さ 4 でデータをエンコード
+// (array -> array -> array -> string)
+$json = json_encode(
+    [
+        1 => [
+            'English' => [
+                'One',
+                'January'
+            ],
+            'French' => [
+                'Une',
+                'Janvier'
+            ]
+        ]
+    ]
+);
+
+// 異なる深さでのエラーを表示
+var_dump(simdjson_is_valid($json, 4));
+var_dump(simdjson_is_valid($json, 3));
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+bool(true)
+bool(false)
+]]>
+    </screen>
+   </example>
+  </para>
+ </refsect1>
+
+ <refsect1 role="notes">
+  &reftitle.notes;
+  <note>
+   <simpara>
+    JSON 仕様は JavaScript ではなく、JavaScript のサブセットです。
+   </simpara>
+  </note>
+  <note>
+   <simpara>
+    デコードに失敗した場合、
+    <classname>SimdJsonException</classname> がスローされ、
+    <methodname>SimdJsonException::getCode</methodname> と
+    <methodname>SimdJsonException::getMessage</methodname> を使用して
+    エラーの正確な内容を特定できます。
+   </simpara>
+  </note>
+ </refsect1>
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <simplelist>
+   <member><function>json_encode</function></member>
+   <member><function>json_decode</function></member>
+  </simplelist>
+ </refsect1>
+</refentry>
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"~/.phpdoc/manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
