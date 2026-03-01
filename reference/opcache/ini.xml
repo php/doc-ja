@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 87d6bb1bbd5f118f5b0cf0160438f06c0f91ea45 Maintainer: satoruyoshida Status: ready -->
+<!-- EN-Revision: 8ea24dc32374bf4f6b04005e317101e4c65a0214 Maintainer: satoruyoshida Status: ready -->
 <!-- CREDITS: mumumu -->
 <sect1 xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="opcache.configuration">
  &reftitle.runtime;
@@ -578,10 +578,170 @@
    <listitem>
     <simpara>
      どの最適化パスが実行されるかコントロールするビットマスク。
-     デフォルトでは、すべての安全な最適化を適用します。
-     デフォルト値の変更が役に立つのは、
-     大半が最適化エンジンをデバッグ/開発する時です(<link linkend="ini.opcache.opt_debug_level">opcache.opt_debug_level</link> も参照ください)。
+     デフォルト値は <literal>0x7FFEBFFF</literal> で、すべての安全な最適化が有効になっています。
+     最適化を無効にしたり、安全でない最適化を有効にするのが役に立つのは、
+     大半が最適化エンジンをデバッグ/開発する時です。
     </simpara>
+    <simpara>
+     ビットマスクの各ビットが、特定の最適化パスを有効にします:
+    </simpara>
+    <table>
+     <title>最適化パスのビットマスク</title>
+     <tgroup cols="4">
+      <thead>
+       <row>
+        <entry>ビット</entry>
+        <entry>パス名</entry>
+        <entry>&Description;</entry>
+        <entry>デフォルト</entry>
+       </row>
+      </thead>
+      <tbody>
+       <row>
+        <entry>0</entry>
+        <entry>PASS_1</entry>
+        <entry>単純なピープホール最適化</entry>
+        <entry>有効</entry>
+       </row>
+       <row>
+        <entry>1</entry>
+        <entry>PASS_2</entry>
+        <entry>未使用 (PASS_1 に統合済み)</entry>
+        <entry>有効</entry>
+       </row>
+       <row>
+        <entry>2</entry>
+        <entry>PASS_3</entry>
+        <entry>単純なジャンプ最適化</entry>
+        <entry>有効</entry>
+       </row>
+       <row>
+        <entry>3</entry>
+        <entry>PASS_4</entry>
+        <entry>コール最適化</entry>
+        <entry>有効</entry>
+       </row>
+       <row>
+        <entry>4</entry>
+        <entry>PASS_5</entry>
+        <entry>制御フローグラフに基づく最適化</entry>
+        <entry>有効</entry>
+       </row>
+       <row>
+        <entry>5</entry>
+        <entry>PASS_6</entry>
+        <entry>データフロー解析に基づく最適化</entry>
+        <entry>有効</entry>
+       </row>
+       <row>
+        <entry>6</entry>
+        <entry>PASS_7</entry>
+        <entry>SSA ベースの最適化にコールグラフを使用するかどうか</entry>
+        <entry>有効</entry>
+       </row>
+       <row>
+        <entry>7</entry>
+        <entry>PASS_8</entry>
+        <entry>疎条件定数伝播</entry>
+        <entry>有効</entry>
+       </row>
+       <row>
+        <entry>8</entry>
+        <entry>PASS_9</entry>
+        <entry>一時変数の最適化</entry>
+        <entry>有効</entry>
+       </row>
+       <row>
+        <entry>9</entry>
+        <entry>PASS_10</entry>
+        <entry>NOP オペコードの除去</entry>
+        <entry>有効</entry>
+       </row>
+       <row>
+        <entry>10</entry>
+        <entry>PASS_11</entry>
+        <entry>リテラルの圧縮</entry>
+        <entry>有効</entry>
+       </row>
+       <row>
+        <entry>11</entry>
+        <entry>PASS_12</entry>
+        <entry>コールスタックサイズの事前計算</entry>
+        <entry>有効</entry>
+       </row>
+       <row>
+        <entry>12</entry>
+        <entry>PASS_13</entry>
+        <entry>未使用変数の除去</entry>
+        <entry>有効</entry>
+       </row>
+       <row>
+        <entry>13</entry>
+        <entry>PASS_14</entry>
+        <entry>デッドコードの除去</entry>
+        <entry>有効</entry>
+       </row>
+       <row>
+        <entry>14</entry>
+        <entry>PASS_15</entry>
+        <entry>定数宣言の収集と置換 (安全でない)</entry>
+        <entry><emphasis>無効</emphasis></entry>
+       </row>
+       <row>
+        <entry>15</entry>
+        <entry>PASS_16</entry>
+        <entry>自明な関数のインライン化 (コール最適化の一部)</entry>
+        <entry>有効</entry>
+       </row>
+       <row>
+        <entry>16</entry>
+        <entry>(フラグ)</entry>
+        <entry>演算子オーバーロードの可能性を無視する (安全でない)</entry>
+        <entry><emphasis>無効</emphasis></entry>
+       </row>
+      </tbody>
+     </tgroup>
+    </table>
+    <note>
+     <title>安全な最適化と安全でない最適化</title>
+     <simpara>
+      <emphasis>安全な最適化</emphasis> (デフォルトで有効) は、
+      PHP コードの正確な動作を維持しつつパフォーマンスを向上させます。
+      デッドコードの除去、定数畳み込み、ジャンプ最適化がこれに含まれます。
+     </simpara>
+     <simpara>
+      <emphasis>安全でない最適化</emphasis> (デフォルトで無効) は、
+      エッジケースで動作を変える可能性があります:
+     </simpara>
+     <itemizedlist>
+      <listitem>
+       <simpara>
+        <emphasis>ビット 14</emphasis>: 定数の収集。定数がコンパイル時に置換され、
+        実行時の宣言順序が無視されます:
+       </simpara>
+       <informalexample>
+        <programlisting role="php">
+<![CDATA[
+<?php
+echo getA();         // Error をスローする代わりに "hello" を出力
+const A = "hello";
+function getA() { return A; }
+]]>
+        </programlisting>
+       </informalexample>
+      </listitem>
+      <listitem>
+       <simpara>
+        <emphasis>ビット 16</emphasis>: 演算子オーバーロードを無視。
+        <literal>do_operation</literal> を持つクラス
+        (例: <link linkend="book.gmp">GMP</link>、
+        <link linkend="book.bc">BCMath</link>) を
+        算術演算で使用している場合に安全ではありません。
+        型宣言を使用することで、オプティマイザーは同じ最適化を安全に適用できます。
+       </simpara>
+      </listitem>
+     </itemizedlist>
+    </note>
    </listitem>
   </varlistentry>
   <varlistentry xml:id="ini.opcache.inherited-hack">
