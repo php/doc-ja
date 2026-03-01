@@ -1,0 +1,81 @@
+name: Deploy Pull Request to GitHub Pages
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout phd
+      uses: actions/checkout@v4
+      with:
+        repository: php/phd
+        path: phd
+    
+    - name: Checkout doc-base
+      uses: actions/checkout@v4
+      with:
+        repository: php/doc-base
+        path: doc-base
+
+    - name: Checkout doc-en
+      uses: actions/checkout@v4
+      with:
+        repository: php/doc-en
+        path: en
+
+    - name: Checkout doc-ja
+      uses: actions/checkout@v4
+      with:
+        path: ja
+
+    - name: Set up PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.3'
+
+    - name: Validate and build .manual.xml
+      run: |
+        php doc-base/configure.php --with-lang=ja
+
+    - name: Render xhtml
+      run: |
+        php phd/render.php --docbook doc-base/.manual.xml --package PHP --format xhtml
+
+    - name: Add Pull Request Path
+      run: |
+        PR_NUMBER=${{ github.event.pull_request.number }}
+        mkdir -p ./output/pr/$PR_NUMBER
+        mv ./output/php-chunked-xhtml/* ./output/pr/$PR_NUMBER/
+
+    - name: Upload static files as artifact
+      id: deployment
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: ./output/
+        retention-days: 7 # 1週間くらい残しておく
+
+  deploy:
+    permissions:
+      pages: write
+      id-token: write
+      pull-requests: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+      - name: Comment URL to Pull Request
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          message: |
+            Deployed ${{ github.event.pull_request.head.sha }} to ${{ steps.deployment.outputs.page_url }}pr/${{ github.event.pull_request.number }}
