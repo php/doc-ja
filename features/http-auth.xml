@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: bdf9a4e40204c805f2c2a5c94c2f2f8f5556195a Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: cd4180557a185469a64a7eb26f7be98d0a5f1ebb Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: shimooka,takagi,mumumu -->
  <chapter xml:id="features.http-auth" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
   <title>PHP による HTTP 認証</title>
@@ -14,7 +14,7 @@
    パスワードを入力すると、PHP スクリプトを含むその URL は、次回以降、
    <link linkend="reserved.variables">定義済みの変数</link>
    <varname>PHP_AUTH_USER</varname> と、 <varname>PHP_AUTH_PW</varname> と、
-   <varname>PHP_AUTH_TYPE</varname> にそれぞれユーザー名、
+   <varname>AUTH_TYPE</varname> にそれぞれユーザー名、
    パスワード、認証型が代入された状態で呼ばれます。
    定義済みの変数は、配列
    <varname>$_SERVER</varname> でアクセス可能です。
@@ -24,14 +24,16 @@
 
   <para>
    ページ上でクライアント認証を強制するスクリプトの例を以下に示します。
+  </para>
+  <para>
    <example>
     <title>Basic HTTP 認証の例</title>
     <programlisting role="php">
 <![CDATA[
 <?php
 if (!isset($_SERVER['PHP_AUTH_USER'])) {
-    header("WWW-Authenticate: Basic realm=\"My Realm\"");
-    header("HTTP/1.0 401 Unauthorized");
+    header('HTTP/1.1 401 Unauthorized');
+    header('WWW-Authenticate: Basic realm="My Realm"');
     echo "ユーザーがキャンセルボタンを押した時に送信されるテキスト\n";
     exit;
 } else {
@@ -45,12 +47,12 @@ if (!isset($_SERVER['PHP_AUTH_USER'])) {
   </para>
 
   <note>
-   <title>互換性に関する注意</title>
+   <title>互換性</title>
    <para>
     HTTPヘッダ行をコーディングする際には注意を要します。全てのクライアントへの
     互換性を最大限に保証するために、キーワード "Basic" には、
     大文字の"B"を使用して書くべきです。realm文字列は(一重引用符ではなく)
-    二重引用符で括る必要があります。また、<emphasis>HTTP/1.0 401</emphasis>
+    二重引用符で括る必要があります。また、<emphasis>HTTP/1.1 401</emphasis>
     ヘッダ行のコード <emphasis>401</emphasis> の前には、
     1つだけ空白を置く必要があります。
     認証パラメータは、
@@ -66,15 +68,8 @@ if (!isset($_SERVER['PHP_AUTH_USER'])) {
    ユーザーを調べるといったことをすることになるでしょう。
   </para>
 
-  <para>
-   バグのある Internet Explorer ブラウザには注意してください。このブラ
-   ウザは、ヘッダの順序に関してとてもうるさいようです。今のところ、
-   <literal>HTTP/1.0 401</literal> ヘッダの前に
-   <emphasis>WWW-Authenticate</emphasis> ヘッダを送るのが効果があるようです。
-  </para>
-
   <note>
-   <title>設定上の注意</title>
+   <title>Apache の設定</title>
    <para>
     PHP は、外部認証が動作しているかどうかの判定を
     <literal>AuthType</literal> ディレクティブの有無で行います。
@@ -86,62 +81,34 @@ if (!isset($_SERVER['PHP_AUTH_USER'])) {
    にある認証を要するURLからパスワードを盗むことを防ぐわけではありませ
    ん。
   </simpara>
-  <simpara>
-   サーバーからレスポンスコード 401 を受けた際に、Netscape Navigatorおよび
-   Internet Explorer は共にローカルブラウザのウインドウ上の認証キャッシュを
-   消去します。この機能により、簡単にユーザーを"ログアウト"させ、強制的に
-   ユーザー名とパスワードを再入力させることができます。この機能は、
-   "タイムアウト" 付きのログインや、"ログアウト" ボタンに適用されています。
-  </simpara>
-  <example>
-   <title>新規に名前 / パスワードを入力させる HTTP 認証の例</title>
-   <programlisting role="php">
-<![CDATA[
-<?php
-function authenticate() {
-    header('WWW-Authenticate: Basic realm="Test Authentication System"');
-    header('HTTP/1.0 401 Unauthorized');
-    echo "このリソースにアクセスする際には有効なログインIDとパスワードを入力する必要があります。\n";
-    exit;
-}
 
-if (!isset($_SERVER['PHP_AUTH_USER']) ||
-    ($_POST['SeenBefore'] == 1 && $_POST['OldAuth'] == $_SERVER['PHP_AUTH_USER'])) {
-    authenticate();
-} else {
-    echo "<p>Welcome: " . htmlspecialchars($_SERVER['PHP_AUTH_USER']) . "<br />";
-    echo "Old: " . htmlspecialchars($_REQUEST['OldAuth']);
-    echo "<form action='' method='post'>\n";
-    echo "<input type='hidden' name='SeenBefore' value='1'>\n";
-    echo "<input type='hidden' name='OldAuth' value=\"" . htmlspecialchars($_SERVER['PHP_AUTH_USER']) . "\" />\n";
-    echo "<input type='submit' value='Re Authenticate'>\n";
-    echo "</form></p>\n";
-}
-?>
-]]>
-   </programlisting>
-  </example>
-  <simpara>
-   この動作は、<literal>HTTP Basic</literal> 認証の標準に基づいていません。よって、この機能に
-   依存しないように注意する必要があります。<literal>Lynx</literal> によるテストの結果、
-   <literal>Lynx</literal> は、認証証明書を 401 サーバー応答によりクリアしないことが明らかに
-   なっています。このため、back を押してから forward を再度押すことにより
-   証明書の要件が変更されない限りリソースをオープンすることができます。
-   しかし、ユーザーは <literal>'_'</literal> キーを押すことにより認証情報をクリアすることが可能です。
-  </simpara>
-  <simpara>
-   IIS サーバーと CGI 版の PHP の組み合わせで HTTP 認証を使うには、
-   IIS の設定の "<literal>ディレクトリセキュリティ</literal>" の "<literal>編集</literal>" ボタンを押して
-   "<literal>匿名アクセス</literal>" のみをオンにしてください。
-   その他のフィールドはオフのままにしてください。
-  </simpara>
   <note>
-   <title>IIS に関する注意:</title>
+   <title>ブラウザの挙動</title>
    <simpara>
-    IIS上 で HTTP 認証を使用する場合、PHP の
-    <link linkend="ini.cgi.rfc2616-headers">cgi.rfc2616_headers</link>
-    ディレクティブは<literal>0</literal> (デフォルト値) にセットされて
-    いなければなりません。
+    HTTP Basic 認証は非常に基本的なもので、ログアウトをサポートするようには
+    設計されていません。HTTP はステートレスなプロトコルであるため、
+    ほとんどのブラウザは <literal>2xx</literal> ステータスコードを受け取ると
+    すぐに認証情報をキャッシュし、ブラウザを閉じるまですべてのリクエストで
+    その認証情報を送信し続けます。サーバーが認証情報の再入力を求める
+    プロンプトを要求するための標準的な方法は定義されていません。
+
+    長年にわたり、この問題に対するさまざまな回避策がインターネット上で
+    広まってきましたが、それらはすべて、異なるブラウザが未定義のエッジケース
+    （あるいは HTTP 標準の違反さえも）をどのように処理するかに依存しています。
+    このような回避策は避け、Basic 認証を重要な用途に使用しないことが最善です。
+   </simpara>
+  </note>
+
+  <note>
+   <title>IIS の設定</title>
+   <simpara>
+    IIS サーバーと CGI 版の PHP の組み合わせで HTTP 認証を使うには、
+    php.ini ディレクティブ <link linkend="ini.cgi.rfc2616-headers">cgi.rfc2616_headers</link>
+    を <literal>0</literal> (デフォルト値) に設定し、IIS の設定の
+    "<literal>ディレクトリセキュリティ</literal>" を編集する必要があります。
+    "<literal>編集</literal>" ボタンを押して
+    "<literal>匿名アクセス</literal>" のみをオンにしてください。
+    その他のフィールドはオフのままにしてください。
    </simpara>
   </note>
 
