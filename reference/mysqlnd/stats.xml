@@ -1,0 +1,1652 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision$ -->
+<!-- EN-Revision: 9598935f21bc472f22383fb989625f0b22785331 Maintainer: KentarouTakeda Status: ready -->
+<chapter xmlns="http://docbook.org/ns/docbook" xmlns:xi="http://www.w3.org/2001/XInclude" xml:id="mysqlnd.stats">
+ <title>統計情報</title>
+
+ <para>
+  MySQL Native Driver は、クライアントとサーバー間の通信に関する
+  統計情報の収集をサポートしています。
+  収集される統計情報は、主に以下の 2 種類です。
+  <itemizedlist>
+   <listitem>
+    <simpara>クライアント統計情報</simpara>
+   </listitem>
+   <listitem>
+    <simpara>接続統計情報</simpara>
+   </listitem>
+  </itemizedlist>
+ </para>
+ <para>
+  <link linkend="book.mysqli">mysqli</link> 拡張モジュールを使用している場合、
+  これらの統計情報は以下の 2 つの API 呼び出しで取得できます。
+  <itemizedlist>
+   <listitem>
+    <simpara><function>mysqli_get_client_stats</function></simpara>
+   </listitem>
+   <listitem>
+    <simpara><function>mysqli_get_connection_stats</function></simpara>
+   </listitem>
+  </itemizedlist>
+ </para>
+
+ <note>
+  <simpara>
+   統計情報は、MySQL Native Driver を使用するすべての拡張モジュール間で
+   集約されます。
+   たとえば、<link linkend="book.mysqli">mysqli</link>
+   拡張モジュールと PDO MySQL ドライバの両方が MySQLnd を使用するように
+   設定されている場合、<link linkend="book.mysqli">mysqli</link>
+   の関数呼び出しと PDO のメソッド呼び出しの両方が統計情報に影響します。
+  </simpara>
+  <simpara>
+   MySQL Native Driver を利用する各拡張モジュールの API
+   呼び出しが、個々の統計情報にどの程度影響しているかを特定することはできません。
+  </simpara>
+ </note>
+
+ <section xml:id="mysqlnd.stats.retrieve" annotations="chunk:false">
+  <title>統計情報の取得</title>
+
+  <simpara>
+   クライアント統計情報は、
+   <function>mysqli_get_client_stats</function> 関数を呼び出すことで取得できます。
+  </simpara>
+
+  <simpara>
+   接続統計情報は、
+   <function>mysqli_get_connection_stats</function> 関数を呼び出すことで取得できます。
+  </simpara>
+
+  <simpara>
+   どちらの関数も連想配列を返します。
+   統計項目の名前が、対応する統計データのキーになっています。
+  </simpara>
+ </section>
+
+ <section xml:id="mysqlnd.stats.statistics" annotations="chunk:false">
+  <title>MySQL Native Driver の統計情報</title>
+  <simpara>
+   ほとんどの統計情報は接続に関連付けられますが、
+   一部はプロセスに関連付けられます。その場合はその旨が記載されます。
+   <!-- Process running the server? -->
+  </simpara>
+  <simpara>
+   MySQL Native Driver が生成する統計情報を以下に示します。
+  </simpara>
+
+  <variablelist>
+   <title>ネットワーク関連の統計情報</title>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.bytes-sent">
+    <term><literal>bytes_sent</literal></term>
+    <listitem>
+     <simpara>
+      PHP から MySQL サーバーに送信されたバイト数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.bytes-received">
+    <term><literal>bytes_received</literal></term>
+    <listitem>
+     <simpara>
+      MySQL サーバーから受信したバイト数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.packets-sent">
+    <term><literal>packets_sent</literal></term>
+    <listitem>
+     <simpara>
+      MySQL クライアントサーバープロトコルで送信されたパケット数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.packets-received">
+    <term><literal>packets_received</literal></term>
+    <listitem>
+     <simpara>
+      MySQL クライアントサーバープロトコルで受信したパケット数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.protocol-overhead-in">
+    <term><literal>protocol_overhead_in</literal></term>
+    <listitem>
+     <simpara>
+      MySQL クライアントサーバープロトコルの受信トラフィックにおけるオーバーヘッド（バイト単位）。
+      現在はパケットヘッダ（4 バイト）のみがオーバーヘッドとみなされます。
+      <code>protocol_overhead_in = packets_received * 4</code>
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.protocol-overhead-out">
+    <term><literal>protocol_overhead_out</literal></term>
+    <listitem>
+     <simpara>
+      MySQL クライアントサーバープロトコルの送信トラフィックにおけるオーバーヘッド（バイト単位）。
+      現在はパケットヘッダ（4 バイト）のみがオーバーヘッドとみなされます。
+      <code>protocol_overhead_out = packets_received * 4</code>
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.bytes-received-ok-packet">
+    <term><literal>bytes_received_ok_packet</literal></term>
+    <listitem>
+     <simpara>
+      受信した MySQL クライアントサーバープロトコルの OK パケットの合計サイズ（バイト単位）。
+      OK パケットにはステータスメッセージを含めることができます。
+      ステータスメッセージの長さは可変であるため、OK パケットのサイズは固定ではありません。
+     </simpara>
+     <note>
+      <simpara>
+       合計サイズ（バイト単位）にはヘッダパケットのサイズ
+       （4 バイト。プロトコルオーバーヘッドを参照）が含まれます。
+      </simpara>
+     </note>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.packets-received-ok">
+    <term><literal>packets_received_ok</literal></term>
+    <listitem>
+     <simpara>
+      受信した MySQL クライアントサーバープロトコルの OK パケットの数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.bytes-received-eof-packet">
+    <term><literal>bytes_received_eof_packet</literal></term>
+    <listitem>
+     <simpara>
+      受信した MySQL クライアントサーバープロトコルの EOF パケットの合計サイズ（バイト単位）。
+      EOF のサイズはサーバーのバージョンによって異なる場合があります。
+      また、EOF はエラーメッセージを転送することもあります。
+     </simpara>
+     <xi:include xpointer="xmlns(db=http://docbook.org/ns/docbook) xpointer(id('mysqlnd.stats.statistics.bytes-received-ok-packet')/db:listitem/db:note)">
+      <xi:fallback/>
+     </xi:include>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.packets-received-eof">
+    <term><literal>packets_received_eof</literal></term>
+    <listitem>
+     <simpara>
+      MySQL クライアントサーバープロトコルの EOF パケットの数。
+     </simpara>
+     <simpara>
+      他のパケット統計情報と同様に、PHP が期待するパケットではなく
+      たとえばエラーメッセージを受信した場合でもパケット数は増加します。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.bytes-received-rset-header-packet">
+    <term><literal>bytes_received_rset_header_packet</literal></term>
+    <listitem>
+     <simpara>
+      受信した MySQL クライアントサーバープロトコルの結果セットのヘッダパケット
+      合計サイズ（バイト単位）。
+      パケットのサイズはペイロード
+      （<literal>LOAD LOCAL INFILE</literal>、<literal>INSERT</literal>、
+      <literal>UPDATE</literal>、<literal>SELECT</literal>、エラーメッセージ）によって異なります。
+     </simpara>
+     <xi:include xpointer="xmlns(db=http://docbook.org/ns/docbook) xpointer(id('mysqlnd.stats.statistics.bytes-received-ok-packet')/db:listitem/db:note)">
+      <xi:fallback/>
+     </xi:include>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.packets-received-rset-header">
+    <term><literal>packets_received_rset_header</literal></term>
+    <listitem>
+     <simpara>
+      MySQL クライアントサーバープロトコルの結果セットのヘッダパケット数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.bytes-received-rset-field-meta-packet">
+    <term><literal>bytes_received_rset_field_meta_packet</literal></term>
+    <listitem>
+     <simpara>
+      受信した MySQL クライアントサーバープロトコルの結果セットのメタデータ
+      （フィールド情報）パケット合計サイズ（バイト単位）。
+      当然、サイズは結果セット内のフィールドによって異なります。
+      COM_LIST_FIELDS の場合、パケットにはエラーまたは EOF パケットが
+      含まれることもあります。
+     </simpara>
+     <xi:include xpointer="xmlns(db=http://docbook.org/ns/docbook) xpointer(id('mysqlnd.stats.statistics.bytes-received-ok-packet')/db:listitem/db:note)">
+      <xi:fallback/>
+     </xi:include>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.packets-received-rset-field-meta">
+    <term><literal>packets_received_rset_field_meta</literal></term>
+    <listitem>
+     <simpara>
+      MySQL クライアントサーバープロトコルの結果セットのメタデータ
+      （フィールド情報）パケット数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.bytes-received-rset-row-packet">
+    <term><literal>bytes_received_rset_row_packet</literal></term>
+    <listitem>
+     <simpara>
+      受信した MySQL クライアントサーバープロトコルの結果セットの行データパケット
+      合計サイズ（バイト単位）。
+      パケットにはエラーまたは EOF パケットが含まれることもあります。
+      <literal>rows_fetched_from_server_normal</literal>
+      と <literal>rows_fetched_from_server_ps</literal>
+      を <literal>bytes_received_rset_row_packet</literal>
+      から差し引くことで、エラーおよび EOF パケットの数を算出できます。
+     </simpara>
+     <xi:include xpointer="xmlns(db=http://docbook.org/ns/docbook) xpointer(id('mysqlnd.stats.statistics.bytes-received-ok-packet')/db:listitem/db:note)">
+      <xi:fallback/>
+     </xi:include>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.packets-received-rset-row">
+    <term><literal>packets_received_rset_row</literal></term>
+    <listitem>
+     <simpara>
+      MySQL クライアントサーバープロトコルの結果セットの行データパケット数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.bytes-received-prepare-response-packet">
+    <term><literal>bytes_received_prepare_response_packet</literal></term>
+    <listitem>
+     <simpara>
+      受信した MySQL クライアントサーバープロトコルのプリペアドステートメント初期化用
+      OK パケット（プリペアドステートメント初期化パケット）の合計サイズ（バイト単位）。
+      パケットにはエラーが含まれることもあります。
+      パケットのサイズは MySQL のバージョンによって異なります。
+     </simpara>
+     <xi:include xpointer="xmlns(db=http://docbook.org/ns/docbook) xpointer(id('mysqlnd.stats.statistics.bytes-received-ok-packet')/db:listitem/db:note)">
+      <xi:fallback/>
+     </xi:include>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.packets-received-prepare-response">
+    <term><literal>packets_received_prepare_response</literal></term>
+    <listitem>
+     <simpara>
+      MySQL クライアントサーバープロトコルのプリペアドステートメント初期化用
+      OK パケット（プリペアドステートメント初期化パケット）の数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.bytes-received-change-user-packet">
+    <term><literal>bytes_received_change_user_packet</literal></term>
+    <listitem>
+     <simpara>
+      受信した MySQL クライアントサーバープロトコルの COM_CHANGE_USER パケットの
+      合計サイズ（バイト単位）。
+      パケットにはエラーまたは EOF が含まれることもあります。
+     </simpara>
+     <xi:include xpointer="xmlns(db=http://docbook.org/ns/docbook) xpointer(id('mysqlnd.stats.statistics.bytes-received-ok-packet')/db:listitem/db:note)">
+      <xi:fallback/>
+     </xi:include>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.packets-received-change-user">
+    <term><literal>packets_received_change_user</literal></term>
+    <listitem>
+     <simpara>
+      MySQL クライアントサーバープロトコルの COM_CHANGE_USER パケットの数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.packets-sent-command">
+    <term><literal>packets_sent_command</literal></term>
+    <listitem>
+     <simpara>
+      PHP から MySQL に送信された MySQL クライアントサーバープロトコルコマンドの数。
+     </simpara>
+     <simpara>
+      どの特定のコマンドがいくつ送信されたかを知る方法はありません。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.bytes-received-real-data_normal">
+    <term><literal>bytes_received_real_data_normal</literal></term>
+    <listitem>
+     <simpara>
+      PHP クライアントがテキストプロトコルを使用して
+      <literal>mysqlnd</literal> から取得したペイロードのバイト数。
+     </simpara>
+     <simpara>
+      これは、プリペアドステートメントから生成されたものではなく、
+      PHP クライアントが取得した結果セットに含まれる実データのサイズです。
+     </simpara>
+     <simpara>
+      <literal>mysqlnd</literal> が MySQL からの結果セット全体を
+      取得済みであっても、この統計情報は PHP クライアントが
+      <literal>mysqlnd</literal> から実際に取得したデータのみをカウントすることに
+      注意してください。
+     </simpara>
+     <para>
+      値を増加させるコードの例を以下に示します。
+      <programlisting>
+<![CDATA[
+$mysqli = new mysqli();
+$res = $mysqli->query("SELECT 'abc'");
+$res->fetch_assoc();
+$res->close();
+]]>
+      </programlisting>
+      フェッチ操作を行うたびに値が増加します。
+     </para>
+     <para>
+      ただし、結果セットがクライアント側でバッファリングされただけで
+      フェッチされなかった場合、以下の例のように統計情報は増加しません。
+      <programlisting>
+<![CDATA[
+$mysqli = new mysqli();
+$res = $mysqli->query("SELECT 'abc'");
+$res->close();
+]]>
+      </programlisting>
+     </para>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.bytes-received-real-data-ps">
+    <term><literal>bytes_received_real_data_ps</literal></term>
+    <listitem>
+     <simpara>
+      PHP クライアントがプリペアドステートメントプロトコルを使用して
+      <literal>mysqlnd</literal> から取得したペイロードのバイト数。
+     </simpara>
+     <simpara>
+      これは、プリペアドステートメントから生成され、
+      PHP クライアントが取得した結果セットに含まれる実データのサイズです。
+     </simpara>
+     <simpara>
+      結果セットがその後 PHP クライアントによって読み取られなかった場合、値は増加しません。
+     </simpara>
+     <simpara>
+      <literal>mysqlnd</literal> が MySQL からの結果セット全体を
+      取得済みであっても、この統計情報は PHP クライアントが
+      <literal>mysqlnd</literal> から実際に取得したデータのみをカウントすることに
+      注意してください。
+     </simpara>
+     <simpara>
+      <literal>bytes_received_real_data_normal</literal> も参照してください。
+     </simpara>
+    </listitem>
+   </varlistentry>
+  </variablelist>
+
+  <variablelist>
+   <title>結果セット関連の統計情報</title>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.result-set-queries">
+    <term><literal>result_set_queries</literal></term>
+    <listitem>
+     <simpara>
+      結果セットを生成したクエリの数。
+      結果セットを生成するクエリの例:
+      <literal>SELECT</literal>、<literal>SHOW</literal>。
+     </simpara>
+     <simpara>
+      結果セットのヘッダパケットの読み取り時にエラーが発生した場合、
+      この統計情報は増加しません。
+     </simpara>
+     <note>
+      <simpara>
+       この統計情報は、PHP が MySQL に送信したクエリ数の
+       間接的な指標として使用できます。
+       これは、データベースに高い負荷をかけているクライアントの
+       特定に役立つ場合があります。
+      </simpara>
+     </note>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.non-result-set-queries">
+    <term><literal>non_result_set_queries</literal></term>
+    <listitem>
+     <simpara>
+      結果セットを生成しなかったクエリの数。
+      結果セットを生成しないクエリの例:
+      <literal>INSERT</literal>、<literal>UPDATE</literal>、<literal>LOAD DATA</literal>。
+     </simpara>
+     <simpara>
+      結果セットのヘッダパケットの読み取り時にエラーが発生した場合、
+      この統計情報は増加しません。
+     </simpara>
+     <xi:include xpointer="xmlns(db=http://docbook.org/ns/docbook) xpointer(id('mysqlnd.stats.statistics.result-set-queries')/db:listitem/db:note)">
+      <xi:fallback/>
+     </xi:include>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.no-index-used">
+    <term><literal>no_index_used</literal></term>
+    <listitem>
+     <simpara>
+      結果セットを生成したがインデックスを使用しなかったクエリの数。
+      （mysqld の起動オプション <literal>--log-queries-not-using-indexes</literal> も参照してください。）
+     </simpara>
+     <note>
+      <simpara>
+       これらのクエリは、
+       <code>mysqli_report(MYSQLI_REPORT_INDEX);</code>
+       を呼び出すことで例外を通じて報告させることができます。
+       <code>mysqli_report(MYSQLI_REPORT_INDEX ^ MYSQLI_REPORT_STRICT);</code>
+       を呼び出すことで、代わりに警告として報告させることもできます。
+      </simpara>
+     </note>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.bad-index-used">
+    <term><literal>bad_index_used</literal></term>
+    <listitem>
+     <simpara>
+      結果セットを生成したが適切なインデックスを使用しなかったクエリの数。
+      （mysqld の起動オプション <literal>--log-slow-queries</literal> も参照してください。）
+     </simpara>
+     <xi:include xpointer="xmlns(db=http://docbook.org/ns/docbook) xpointer(id('mysqlnd.stats.statistics.no-index-used')/db:listitem/db:note)">
+      <xi:fallback/>
+     </xi:include>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.slow-queries">
+    <term><literal>slow_queries</literal></term>
+    <listitem>
+     <simpara>
+      実行に <literal>long_query_time</literal> 秒以上かかり、
+      少なくとも <literal>min_examined_row_limit</literal> 行の検査を
+      必要とした SQL 文。
+     </simpara>
+     <caution>
+      <simpara>
+       <function>mysqli_report</function> を通じては報告されません。
+      </simpara>
+     </caution>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.buffered-sets">
+    <term><literal>buffered_sets</literal></term>
+    <listitem>
+     <simpara>
+      通常のクエリ（つまり、プリペアドステートメント経由ではないクエリ）が返した
+      バッファリングされた結果セットの数。
+     </simpara>
+     <para>
+      クライアント側で結果セットをバッファリングする API 呼び出しの例:
+      <simplelist type="inline">
+       <member><function>mysqli_query</function></member>
+       <member><function>mysqli_store_result</function></member>
+       <member><function>mysqli_stmt_get_result</function></member>
+      </simplelist>
+     </para>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.unbuffered-sets">
+    <term><literal>unbuffered_sets</literal></term>
+    <listitem>
+     <simpara>
+      通常のクエリ（つまり、プリペアドステートメント経由ではないクエリ）が返した
+      バッファリングされない結果セットの数。
+     </simpara>
+     <para>
+      クライアント側で結果セットをバッファリングしない API 呼び出しの例:
+      <simplelist type="inline">
+       <member><function>mysqli_use_result</function></member>
+      </simplelist>
+     </para>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.ps-buffered-sets">
+    <term><literal>ps_buffered_sets</literal></term>
+    <listitem>
+     <simpara>
+      プリペアドステートメントが返したバッファリングされた結果セットの数。
+     </simpara>
+     <para>
+      クライアント側で結果セットをバッファリングする API 呼び出しの例:
+      <simplelist type="inline">
+       <member><function>mysqli_stmt_store_result</function></member>
+      </simplelist>
+     </para>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.ps-unbuffered-sets">
+    <term><literal>ps_unbuffered_sets</literal></term>
+    <listitem>
+     <simpara>
+      プリペアドステートメントが返したバッファリングされない結果セットの数。
+     </simpara>
+     <simpara>
+      デフォルトではプリペアドステートメントはバッファリングされないため、
+      ほとんどのプリペアドステートメントはこの統計情報にカウントされます。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.flushed-normal-sets">
+    <term><literal>flushed_normal_sets</literal></term>
+    <listitem>
+     <simpara>
+      通常のクエリ（つまり、プリペアドステートメント経由ではないクエリ）が返した
+      結果セットのうち、未読のデータが暗黙的にフラッシュされたものの数。
+     </simpara>
+
+     <note>
+      <simpara>
+       フラッシュはバッファリングされない結果セットでのみ発生します。
+      </simpara>
+      <simpara>
+       バッファリングされない結果セットは、接続上で新しいクエリを実行する前に
+       完全にフェッチする必要があります。そうしないと MySQL がエラーをスローします。
+       アプリケーションがバッファリングされない結果セットのすべての行をフェッチしなかった場合、
+       mysqlnd は暗黙的に結果セットをフェッチして回線をクリアします。
+      </simpara>
+      <simpara>
+       <literal>rows_skipped_normal</literal>、<literal>rows_skipped_ps</literal> も参照してください。
+      </simpara>
+      <para>
+       暗黙的なフラッシュが発生する原因の例:
+       <itemizedlist>
+        <listitem>
+         <simpara>
+          クライアントアプリケーションの不具合
+         </simpara>
+        </listitem>
+        <listitem>
+         <simpara>
+          クライアントが必要なデータを見つけた後に読み取りを中止したが、
+          MySQL に必要以上のレコードを計算させてしまった場合
+         </simpara>
+        </listitem>
+        <listitem>
+         <simpara>
+          クライアントアプリケーションが予期せず停止した場合
+         </simpara>
+        </listitem>
+       </itemizedlist>
+      </para>
+     </note>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.flushed-ps-sets">
+    <term><literal>flushed_ps_sets</literal></term>
+    <listitem>
+     <simpara>
+      プリペアドステートメントが返した結果セットのうち、
+      未読のデータが暗黙的にフラッシュされたものの数。
+     </simpara>
+
+     <xi:include xpointer="xmlns(db=http://docbook.org/ns/docbook) xpointer(id('mysqlnd.stats.statistics.flushed-normal-sets')/db:listitem/db:note)">
+      <xi:fallback/>
+     </xi:include>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.ps-prepared-never-executed">
+    <term><literal>ps_prepared_never_executed</literal></term>
+    <listitem>
+     <simpara>
+      準備されたが一度も実行されなかったステートメントの数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.ps-prepared-once-executed">
+    <term><literal>ps_prepared_once_executed</literal></term>
+    <listitem>
+     <simpara>
+      一度だけ実行されたプリペアドステートメントの数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.rows-fetched-from-server-normal">
+    <term><literal>rows_fetched_from_server_normal</literal></term>
+    <term><literal>rows_fetched_from_server_ps</literal></term>
+    <listitem>
+     <simpara>
+      サーバーからフェッチされた結果セット行の合計数。
+      これには、クライアントが読み取らなかったが、
+      バッファリングされない結果セットのフラッシュにより暗黙的にフェッチされた行も含まれます。
+     </simpara>
+     <simpara>
+      <literal>packets_received_rset_row</literal> も参照してください。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.rows-buffered-from-server-normal">
+    <term><literal>rows_buffered_from_client_normal</literal></term>
+    <listitem>
+     <simpara>
+      通常のクエリから生成された、バッファリングされた行の合計数。
+     </simpara>
+     <simpara>
+      これは、MySQL からフェッチされ、クライアント側でバッファリングされた行の数です。
+     </simpara>
+     <para>
+      結果をバッファリングするクエリの例:
+      <simplelist>
+       <member><function>mysqli_query</function></member>
+       <member><function>mysqli_store_result</function></member>
+      </simplelist>
+     </para>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.rows-buffered-from-client-ps">
+    <term><literal>rows_buffered_from_client_ps</literal></term>
+    <listitem>
+     <simpara>
+      <literal>rows_buffered_from_client_normal</literal> と同様ですが、
+      プリペアドステートメント用です。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.rows-fetched-from-client-normal-buffered">
+    <term><literal>rows_fetched_from_client_normal_buffered</literal></term>
+    <listitem>
+     <simpara>
+      通常のクエリで作成されたバッファリングされた結果セットから、
+      クライアントがフェッチした行の合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.rows-fetched-from-client-ps-buffered">
+    <term><literal>rows_fetched_from_client_ps_buffered</literal></term>
+    <listitem>
+     <simpara>
+      プリペアドステートメントで作成されたバッファリングされた結果セットから、
+      クライアントがフェッチした行の合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.rows-fetched-from-client-normal-unbuffered">
+    <term><literal>rows_fetched_from_client_normal_unbuffered</literal></term>
+    <listitem>
+     <simpara>
+      通常のクエリで作成されたバッファリングされない結果セットから、
+      クライアントがフェッチした行の合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.rows-fetched-from-client-ps-unbuffered">
+    <term><literal>rows_fetched_from_client_ps_unbuffered</literal></term>
+    <listitem>
+     <simpara>
+      プリペアドステートメントで作成されたバッファリングされない結果セットから、
+      クライアントがフェッチした行の合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.rows-fetched-from-client-ps-cursor">
+    <term><literal>rows_fetched_from_client_ps_cursor</literal></term>
+    <listitem>
+     <simpara>
+      プリペアドステートメントで作成されたカーソルから、
+      クライアントがフェッチした行の合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <!-- TODO: This seems to actually be supported, check and document -->
+   <varlistentry xml:id="mysqlnd.stats.statistics.rows-skipped-normal">
+    <term><literal>rows_skipped_normal</literal></term>
+    <term><literal>rows_skipped_ps</literal></term>
+    <listitem>
+     <simpara>
+      将来の使用のために予約されています（現在はサポートされていません）。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.copy-on-write">
+    <term><literal>copy_on_write_saved</literal></term>
+    <term><literal>copy_on_write_performed</literal></term>
+    <listitem>
+     <simpara>
+      これはプロセスレベルのスコープの統計情報です。
+     </simpara>
+     <simpara>
+      mysqlnd では、拡張モジュールが返す変数は mysqlnd の
+      内部ネットワーク結果バッファを指しています。
+      データが変更されない場合、フェッチされたデータはメモリ内に一度だけ保持されます。
+      ただし、データを変更する場合は、mysqlnd が
+      コピーオンライト操作を実行する必要があります。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.free-result">
+    <term><literal>explicit_free_result</literal></term>
+    <term><literal>implicit_free_result</literal></term>
+    <listitem>
+     <simpara>
+      これは接続およびプロセスレベルのスコープの統計情報です。
+     </simpara>
+     <simpara>
+      解放された結果セットの合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.proto-text-fetched-null">
+    <term><literal>proto_text_fetched_null</literal></term>
+    <listitem>
+     <simpara>
+      通常のクエリ（MySQL テキストプロトコル）から取得した
+      <literal>MYSQL_TYPE_NULL</literal>
+      型のカラムの合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.proto-binary-fetched-null">
+    <term><literal>proto_binary_fetched_null</literal></term>
+    <listitem>
+     <simpara>
+      プリペアドステートメント（MySQL バイナリプロトコル）から取得した
+      <literal>MYSQL_TYPE_NULL</literal>
+      型のカラムの合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.proto-text-fetched-bit">
+    <term><literal>proto_text_fetched_bit</literal></term>
+    <listitem>
+     <simpara>
+      通常のクエリ（MySQL テキストプロトコル）から取得した
+      <literal>MYSQL_TYPE_BIT</literal>
+      型のカラムの合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.proto-binary-fetched-bit">
+    <term><literal>proto_binary_fetched_bit</literal></term>
+    <listitem>
+     <simpara>
+      プリペアドステートメント（MySQL バイナリプロトコル）から取得した
+      <literal>MYSQL_TYPE_BIT</literal>
+      型のカラムの合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.proto-text-fetched-tinyint">
+    <term><literal>proto_text_fetched_tinyint</literal></term>
+    <listitem>
+     <simpara>
+      通常のクエリ（MySQL テキストプロトコル）から取得した
+      <literal>MYSQL_TYPE_TINY</literal>
+      型のカラムの合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.proto-binary-fetched-tinyint">
+    <term><literal>proto_binary_fetched_tinyint</literal></term>
+    <listitem>
+     <simpara>
+      プリペアドステートメント（MySQL バイナリプロトコル）から取得した
+      <literal>MYSQL_TYPE_TINY</literal>
+      型のカラムの合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.proto-text-fetched-short">
+    <term><literal>proto_text_fetched_short</literal></term>
+    <listitem>
+     <simpara>
+      通常のクエリ（MySQL テキストプロトコル）から取得した
+      <literal>MYSQL_TYPE_SHORT</literal>
+      型のカラムの合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.proto-binary-fetched-short">
+    <term><literal>proto_binary_fetched_short</literal></term>
+    <listitem>
+     <simpara>
+      プリペアドステートメント（MySQL バイナリプロトコル）から取得した
+      <literal>MYSQL_TYPE_SHORT</literal>
+      型のカラムの合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.proto-text-fetched-int24">
+    <term><literal>proto_text_fetched_int24</literal></term>
+    <listitem>
+     <simpara>
+      通常のクエリ（MySQL テキストプロトコル）から取得した
+      <literal>MYSQL_TYPE_INT24</literal>
+      型のカラムの合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.proto-binary-fetched-int24">
+    <term><literal>proto_binary_fetched_int24</literal></term>
+    <listitem>
+     <simpara>
+      プリペアドステートメント（MySQL バイナリプロトコル）から取得した
+      <literal>MYSQL_TYPE_INT24</literal>
+      型のカラムの合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.proto-text-fetched-int">
+    <term><literal>proto_text_fetched_int</literal></term>
+    <listitem>
+     <simpara>
+      通常のクエリ（MySQL テキストプロトコル）から取得した
+      <literal>MYSQL_TYPE_LONG</literal>
+      型のカラムの合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.proto-binary-fetched-int">
+    <term><literal>proto_binary_fetched_int</literal></term>
+    <listitem>
+     <simpara>
+      プリペアドステートメント（MySQL バイナリプロトコル）から取得した
+      <literal>MYSQL_TYPE_LONG</literal>
+      型のカラムの合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.proto-text-fetched-bigint">
+    <term><literal>proto_text_fetched_bigint</literal></term>
+    <listitem>
+     <simpara>
+      通常のクエリ（MySQL テキストプロトコル）から取得した
+      <literal>MYSQL_TYPE_LONGLONG</literal>
+      型のカラムの合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.proto-binary-fetched-bigint">
+    <term><literal>proto_binary_fetched_bigint</literal></term>
+    <listitem>
+     <simpara>
+      プリペアドステートメント（MySQL バイナリプロトコル）から取得した
+      <literal>MYSQL_TYPE_LONGLONG</literal>
+      型のカラムの合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.proto-text-fetched-decimal">
+    <term><literal>proto_text_fetched_decimal</literal></term>
+    <listitem>
+     <simpara>
+      通常のクエリ（MySQL テキストプロトコル）から取得した
+      <literal>MYSQL_TYPE_DECIMAL</literal> または <literal>MYSQL_TYPE_NEWDECIMAL</literal>
+      型のカラムの合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.proto-binary-fetched-decimal">
+    <term><literal>proto_binary_fetched_decimal</literal></term>
+    <listitem>
+     <simpara>
+      プリペアドステートメント（MySQL バイナリプロトコル）から取得した
+      <literal>MYSQL_TYPE_DECIMAL</literal> または <literal>MYSQL_TYPE_NEWDECIMAL</literal>
+      型のカラムの合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.proto-text-fetched-float">
+    <term><literal>proto_text_fetched_float</literal></term>
+    <listitem>
+     <simpara>
+      通常のクエリ（MySQL テキストプロトコル）から取得した
+      <literal>MYSQL_TYPE_FLOAT</literal>
+      型のカラムの合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.proto-binary-fetched-float">
+    <term><literal>proto_binary_fetched_float</literal></term>
+    <listitem>
+     <simpara>
+      プリペアドステートメント（MySQL バイナリプロトコル）から取得した
+      <literal>MYSQL_TYPE_FLOAT</literal>
+      型のカラムの合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.proto-text-fetched-double">
+    <term><literal>proto_text_fetched_double</literal></term>
+    <listitem>
+     <simpara>
+      通常のクエリ（MySQL テキストプロトコル）から取得した
+      <literal>MYSQL_TYPE_DOUBLE</literal>
+      型のカラムの合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.proto-binary-fetched-double">
+    <term><literal>proto_binary_fetched_double</literal></term>
+    <listitem>
+     <simpara>
+      プリペアドステートメント（MySQL バイナリプロトコル）から取得した
+      <literal>MYSQL_TYPE_DOUBLE</literal>
+      型のカラムの合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.proto-text-fetched-date">
+    <term><literal>proto_text_fetched_date</literal></term>
+    <listitem>
+     <simpara>
+      通常のクエリ（MySQL テキストプロトコル）から取得した
+      <literal>MYSQL_TYPE_DATE</literal> または <literal>MYSQL_TYPE_NEWDATE</literal>
+      型のカラムの合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.proto-binary-fetched-date">
+    <term><literal>proto_binary_fetched_date</literal></term>
+    <listitem>
+     <simpara>
+      プリペアドステートメント（MySQL バイナリプロトコル）から取得した
+      <literal>MYSQL_TYPE_DATE</literal> または <literal>MYSQL_TYPE_NEWDATE</literal>
+      型のカラムの合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.proto-text-fetched-year">
+    <term><literal>proto_text_fetched_year</literal></term>
+    <listitem>
+     <simpara>
+      通常のクエリ（MySQL テキストプロトコル）から取得した
+      <literal>MYSQL_TYPE_YEAR</literal>
+      型のカラムの合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.proto-binary-fetched-year">
+    <term><literal>proto_binary_fetched_year</literal></term>
+    <listitem>
+     <simpara>
+      プリペアドステートメント（MySQL バイナリプロトコル）から取得した
+      <literal>MYSQL_TYPE_YEAR</literal>
+      型のカラムの合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.proto-text-fetched-time">
+    <term><literal>proto_text_fetched_time</literal></term>
+    <listitem>
+     <simpara>
+      通常のクエリ（MySQL テキストプロトコル）から取得した
+      <literal>MYSQL_TYPE_TIME</literal>
+      型のカラムの合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.proto-binary-fetched-time">
+    <term><literal>proto_binary_fetched_time</literal></term>
+    <listitem>
+     <simpara>
+      プリペアドステートメント（MySQL バイナリプロトコル）から取得した
+      <literal>MYSQL_TYPE_TIME</literal>
+      型のカラムの合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.proto-text-fetched-datetime">
+    <term><literal>proto_text_fetched_datetime</literal></term>
+    <listitem>
+     <simpara>
+      通常のクエリ（MySQL テキストプロトコル）から取得した
+      <literal>MYSQL_TYPE_DATETIME</literal>
+      型のカラムの合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.proto-binary-fetched-datetime">
+    <term><literal>proto_binary_fetched_datetime</literal></term>
+    <listitem>
+     <simpara>
+      プリペアドステートメント（MySQL バイナリプロトコル）から取得した
+      <literal>MYSQL_TYPE_DATETIME</literal>
+      型のカラムの合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.proto-text-fetched-timestamp">
+    <term><literal>proto_text_fetched_timestamp</literal></term>
+    <listitem>
+     <simpara>
+      通常のクエリ（MySQL テキストプロトコル）から取得した
+      <literal>MYSQL_TYPE_TIMESTAMP</literal>
+      型のカラムの合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.proto-binary-fetched-timestamp">
+    <term><literal>proto_binary_fetched_timestamp</literal></term>
+    <listitem>
+     <simpara>
+      プリペアドステートメント（MySQL バイナリプロトコル）から取得した
+      <literal>MYSQL_TYPE_TIMESTAMP</literal>
+      型のカラムの合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.proto-text-fetched-string">
+    <term><literal>proto_text_fetched_string</literal></term>
+    <listitem>
+     <simpara>
+      通常のクエリ（MySQL テキストプロトコル）から取得した
+      <literal>MYSQL_TYPE_STRING</literal>、<literal>MYSQL_TYPE_VARSTRING</literal>、または <literal>MYSQL_TYPE_VARCHAR</literal>
+      型のカラムの合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.proto-binary-fetched-string">
+    <term><literal>proto_binary_fetched_string</literal></term>
+    <listitem>
+     <simpara>
+      プリペアドステートメント（MySQL バイナリプロトコル）から取得した
+      <literal>MYSQL_TYPE_STRING</literal>、<literal>MYSQL_TYPE_VARSTRING</literal>、または <literal>MYSQL_TYPE_VARCHAR</literal>
+      型のカラムの合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.proto-text-fetched-blob">
+    <term><literal>proto_text_fetched_blob</literal></term>
+    <listitem>
+     <simpara>
+      通常のクエリ（MySQL テキストプロトコル）から取得した
+      <literal>MYSQL_TYPE_TINY_BLOB</literal>、
+      <literal>MYSQL_TYPE_MEDIUM_BLOB</literal>、
+      <literal>MYSQL_TYPE_LONG_BLOB</literal>、
+      または <literal>MYSQL_TYPE_BLOB</literal>
+      型のカラムの合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.proto-binary-fetched-blob">
+    <term><literal>proto_binary_fetched_blob</literal></term>
+    <listitem>
+     <simpara>
+      プリペアドステートメント（MySQL バイナリプロトコル）から取得した
+      <literal>MYSQL_TYPE_TINY_BLOB</literal>、
+      <literal>MYSQL_TYPE_MEDIUM_BLOB</literal>、
+      <literal>MYSQL_TYPE_LONG_BLOB</literal>、
+      または <literal>MYSQL_TYPE_BLOB</literal>
+      型のカラムの合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.proto-text-fetched-enum">
+    <term><literal>proto_text_fetched_enum</literal></term>
+    <listitem>
+     <simpara>
+      通常のクエリ（MySQL テキストプロトコル）から取得した
+      <literal>MYSQL_TYPE_ENUM</literal>
+      型のカラムの合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.proto-binary-fetched-enum">
+    <term><literal>proto_binary_fetched_enum</literal></term>
+    <listitem>
+     <simpara>
+      プリペアドステートメント（MySQL バイナリプロトコル）から取得した
+      <literal>MYSQL_TYPE_ENUM</literal>
+      型のカラムの合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.proto-text-fetched-set">
+    <term><literal>proto_text_fetched_set</literal></term>
+    <listitem>
+     <simpara>
+      通常のクエリ（MySQL テキストプロトコル）から取得した
+      <literal>MYSQL_TYPE_SET</literal>
+      型のカラムの合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.proto-binary-fetched-set">
+    <term><literal>proto_binary_fetched_set</literal></term>
+    <listitem>
+     <simpara>
+      プリペアドステートメント（MySQL バイナリプロトコル）から取得した
+      <literal>MYSQL_TYPE_SET</literal>
+      型のカラムの合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.proto-text-fetched-geometry">
+    <term><literal>proto_text_fetched_geometry</literal></term>
+    <listitem>
+     <simpara>
+      通常のクエリ（MySQL テキストプロトコル）から取得した
+      <literal>MYSQL_TYPE_GEOMETRY</literal>
+      型のカラムの合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.proto-binary-fetched-geometry">
+    <term><literal>proto_binary_fetched_geometry</literal></term>
+    <listitem>
+     <simpara>
+      プリペアドステートメント（MySQL バイナリプロトコル）から取得した
+      <literal>MYSQL_TYPE_GEOMETRY</literal>
+      型のカラムの合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.proto-text-fetched-other">
+    <term><literal>proto_text_fetched_other</literal></term>
+    <listitem>
+     <simpara>
+      通常のクエリ（MySQL テキストプロトコル）から取得した、
+      上記に記載されていない
+      <literal>MYSQL_TYPE_<replaceable>*</replaceable></literal>
+      型のカラムの合計数。
+     </simpara>
+     <note>
+      <simpara>
+       理論上、これは常に <literal>0</literal> になるはずです。
+      </simpara>
+     </note>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.proto-binary-fetched-other">
+    <term><literal>proto_binary_fetched_other</literal></term>
+    <listitem>
+     <simpara>
+      プリペアドステートメント（MySQL バイナリプロトコル）から取得した、
+      上記に記載されていない
+      <literal>MYSQL_TYPE_<replaceable>*</replaceable></literal>
+      型のカラムの合計数。
+     </simpara>
+     <note>
+      <simpara>
+       理論上、これは常に <literal>0</literal> になるはずです。
+      </simpara>
+     </note>
+    </listitem>
+   </varlistentry>
+
+  </variablelist>
+
+  <variablelist>
+   <title>接続関連の統計情報</title>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.connect-success">
+    <term><literal>connect_success</literal></term>
+    <listitem>
+     <simpara>
+      成功した接続試行の合計数。
+     </simpara>
+     <note>
+      <simpara>
+       <literal>connect_success</literal> には、成功した持続的接続と
+       非持続的接続の試行の合計が含まれます。
+       したがって、成功した非持続的接続の試行数は
+       <literal>connect_success - pconnect_success</literal> となります。
+      </simpara>
+     </note>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.pconnect-success">
+    <term><literal>pconnect_success</literal></term>
+    <listitem>
+     <simpara>
+      成功した持続的接続試行の合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.connect-failure">
+    <term><literal>connect_failure</literal></term>
+    <listitem>
+     <simpara>
+      失敗した接続試行の合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.reconnect">
+    <term><literal>reconnect</literal></term>
+    <listitem>
+     <simpara>
+      これはプロセスレベルのスコープの統計情報です。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.active-connections">
+    <term><literal>active_connections</literal></term>
+    <listitem>
+     <simpara>
+      これはプロセスレベルのスコープの統計情報です。
+     </simpara>
+     <simpara>
+      アクティブな持続的接続と非持続的接続の合計数。
+     </simpara>
+     <note>
+      <simpara>
+       アクティブな非持続的接続の合計数は
+       <literal>active_connections - active_persistent_connections</literal> です。
+      </simpara>
+     </note>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.active-persistent-connections">
+    <term><literal>active_persistent_connections</literal></term>
+    <listitem>
+     <simpara>
+      これはプロセスレベルのスコープの統計情報です。
+     </simpara>
+     <simpara>
+      アクティブな持続的接続の合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.explicit-close">
+    <term><literal>explicit_close</literal></term>
+    <listitem>
+     <simpara>
+      明示的に閉じられた接続の合計数。
+     </simpara>
+     <example>
+      <title>明示的なクローズが発生するコードスニペットの例</title>
+      <itemizedlist>
+       <listitem>
+        <programlisting>
+<![CDATA[
+$link = new mysqli(/* ... */);
+$link->close(/* ... */);
+]]>
+        </programlisting>
+       </listitem>
+       <listitem>
+        <programlisting>
+<![CDATA[
+$link = new mysqli(/* ... */);
+$link->connect(/* ... */);
+]]>
+        </programlisting>
+       </listitem>
+      </itemizedlist>
+     </example>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.implicit-close">
+    <term><literal>implicit_close</literal></term>
+    <listitem>
+     <simpara>
+      暗黙的に閉じられた接続の合計数。
+     </simpara>
+     <example>
+      <title>暗黙的なクローズが発生するコードスニペットの例</title>
+      <itemizedlist>
+       <listitem>
+        <programlisting>
+<![CDATA[
+$link = new mysqli(/* ... */);
+$link->real_connect(/* ... */);
+]]>
+        </programlisting>
+       </listitem>
+       <listitem>
+        <programlisting>
+         <code>unset($link)</code>
+        </programlisting>
+       </listitem>
+       <listitem>
+        <simpara>
+         持続的接続: プールされた接続が
+         real_connect で作成されており、未知のオプションが設定されている可能性がある場合、
+         未知のオプションが設定された接続を返すことを避けるために暗黙的にクローズする
+        </simpara>
+       </listitem>
+       <listitem>
+        <simpara>
+         持続的接続: ping/change_user が失敗し、ext/mysqli
+         が接続をクローズする場合
+        </simpara>
+       </listitem>
+       <listitem>
+        <simpara>
+         スクリプト実行の終了時: ユーザーが閉じなかった接続を
+         自動的にクローズする
+        </simpara>
+       </listitem>
+      </itemizedlist>
+     </example>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.disconnect-close">
+    <term><literal>disconnect_close</literal></term>
+    <listitem>
+     <simpara>
+      接続確立時に C API の
+      <literal>mysql_real_connect</literal> 呼び出しが示す接続失敗。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.in-middle-of-command-close">
+    <term><literal>in_middle_of_command_close</literal></term>
+    <listitem>
+     <simpara>
+      これはプロセスレベルのスコープの統計情報です。
+     </simpara>
+     <simpara>
+      コマンド実行の途中で接続がクローズされた回数
+      （未取得の結果セットがある状態、クエリ送信後かつ応答受信前、
+      データフェッチ中、LOAD DATA でのデータ転送中）。
+     </simpara>
+     <warning>
+      <simpara>
+       非同期クエリを使用していない限り、
+       これは PHP アプリケーションが予期せず終了し、
+       PHP が自動的に接続をクローズした場合にのみ発生するはずです。
+      </simpara>
+     </warning>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.init-command-executed-count">
+    <term><literal>init_command_executed_count</literal></term>
+    <listitem>
+     <simpara>
+      init コマンドの実行回数の合計。
+      例: <code>mysqli_options(MYSQLI_INIT_COMMAND , $value)</code>。
+     </simpara>
+     <simpara>
+      成功した実行回数は
+      <literal>init_command_executed_count - init_command_failed_count</literal> です。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.init-command-failed-count">
+    <term><literal>init_command_failed_count</literal></term>
+    <listitem>
+     <simpara>
+      失敗した init コマンドの合計数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+  </variablelist>
+
+  <variablelist>
+   <title><literal>COM_*</literal> コマンド関連の統計情報</title>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.com">
+    <term><literal>com_quit</literal></term>
+    <term><literal>com_init_db</literal></term>
+    <term><literal>com_query</literal></term>
+    <term><literal>com_field_list</literal></term>
+    <term><literal>com_create_db</literal></term>
+    <term><literal>com_drop_db</literal></term>
+    <term><literal>com_refresh</literal></term>
+    <term><literal>com_shutdown</literal></term>
+    <term><literal>com_statistics</literal></term>
+    <term><literal>com_process_info</literal></term>
+    <term><literal>com_connect</literal></term>
+    <term><literal>com_process_kill</literal></term>
+    <term><literal>com_debug</literal></term>
+    <term><literal>com_ping</literal></term>
+    <term><literal>com_time</literal></term>
+    <term><literal>com_delayed_insert</literal></term>
+    <term><literal>com_change_user</literal></term>
+    <term><literal>com_binlog_dump</literal></term>
+    <term><literal>com_table_dump</literal></term>
+    <term><literal>com_connect_out</literal></term>
+    <term><literal>com_register_slave</literal></term>
+    <term><literal>com_stmt_prepare</literal></term>
+    <term><literal>com_stmt_execute</literal></term>
+    <term><literal>com_stmt_send_long_data</literal></term>
+    <term><literal>com_stmt_close</literal></term>
+    <term><literal>com_stmt_reset</literal></term>
+    <term><literal>com_stmt_set_option</literal></term>
+    <term><literal>com_stmt_fetch</literal></term>
+    <term><literal>com_daemon</literal></term>
+    <listitem>
+     <simpara>
+      PHP から MySQL に特定の <literal>COM_*</literal>
+      コマンドを送信した試行回数の合計。
+     </simpara>
+     <simpara>
+      統計情報は、回線の確認後、対応する MySQL クライアントサーバープロトコルパケットを
+      送信する直前にインクリメントされます。
+     </simpara>
+     <caution>
+      <simpara>
+       MySQLnd がパケットの送信に失敗した場合でも、統計情報はデクリメントされません。
+       失敗した場合、MySQLnd は PHP の警告
+       <quote>Error while sending %s packet. PID=%d.</quote>
+       を発行します。
+      </simpara>
+     </caution>
+
+     <example>
+      <title>使用例</title>
+      <itemizedlist>
+       <listitem>
+        <simpara>
+         PHP が特定のコマンドを MySQL に送信しているかどうかを確認する。
+         たとえば、クライアントが <literal>COM_PROCESS_KILL</literal>
+         を送信しているかどうかを確認する
+        </simpara>
+       </listitem>
+       <listitem>
+        <simpara>
+         <literal>COM_EXECUTE</literal> と
+         <literal>COM_PREPARE</literal> を比較して、
+         プリペアドステートメントの平均実行回数を算出する
+        </simpara>
+       </listitem>
+       <listitem>
+        <simpara>
+         <literal>COM_QUERY</literal> がゼロかどうかを確認して、
+         PHP がプリペアドステートメント以外の SQL 文を実行していないかどうかを確認する
+        </simpara>
+       </listitem>
+       <listitem>
+        <simpara>
+         <literal>COM_QUERY</literal> と
+         <literal>COM_EXECUTE</literal> を確認して、
+         過剰な数の SQL 文を実行している PHP スクリプトを特定する
+        </simpara>
+       </listitem>
+      </itemizedlist>
+     </example>
+    </listitem>
+   </varlistentry>
+  </variablelist>
+
+  <variablelist>
+   <title>その他の統計情報</title>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.stmt-close">
+    <term><literal>explicit_stmt_close</literal></term>
+    <term><literal>implicit_stmt_close</literal></term>
+    <listitem>
+     <simpara>
+      これはプロセスレベルのスコープの統計情報です。
+     </simpara>
+     <simpara>
+      クローズされたプリペアドステートメントの合計数。
+     </simpara>
+     <note>
+      <simpara>
+       プリペアドステートメントは常に明示的にクローズされます。暗黙的にクローズされるのは、
+       準備に失敗した場合だけです。
+      </simpara>
+     </note>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.memory-management">
+    <term><literal>mem_emalloc_count</literal></term>
+    <term><literal>mem_emalloc_ammount</literal></term>
+    <term><literal>mem_ecalloc_count</literal></term>
+    <term><literal>mem_ecalloc_ammount</literal></term>
+    <term><literal>mem_realloc_count</literal></term>
+    <term><literal>mem_realloc_ammount</literal></term>
+    <term><literal>mem_efree_count</literal></term>
+    <term><literal>mem_malloc_count</literal></term>
+    <term><literal>mem_malloc_ammount</literal></term>
+    <term><literal>mem_calloc_count</literal></term>
+    <term><literal>mem_calloc_ammount</literal></term>
+    <term><literal>mem_ealloc_count</literal></term>
+    <term><literal>mem_ealloc_ammount</literal></term>
+    <term><literal>mem_free_count</literal></term>
+    <listitem>
+     <simpara>
+      これはプロセスレベルのスコープの統計情報です。
+     </simpara>
+     <simpara>
+      メモリ管理の呼び出し。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.command-buffer-too-small">
+    <term><literal>command_buffer_too_small</literal></term>
+    <!-- TODO: XInclude/sync description of INI setting
+     ini.mysqlnd.net-cmd-buffer-size with this statistic -->
+    <listitem>
+     <simpara>
+      PHP から MySQL にコマンドを送信する際に、ネットワークコマンドバッファが
+      拡張された回数。
+     </simpara>
+     <simpara>
+      MySQLnd は各接続に対して
+      <link linkend="ini.mysqlnd.net-cmd-buffer-size">mysqlnd.net_cmd_buffer_size</link>
+      バイトの内部コマンド/ネットワークバッファを割り当てます。
+     </simpara>
+     <simpara>
+      MySQL クライアントサーバープロトコルコマンド、
+      たとえば <literal>COM_QUERY</literal>（通常のクエリ）が
+      バッファに収まらない場合、
+      MySQLnd はコマンドの送信に必要なサイズまでバッファを拡張します。
+      ある接続でバッファが拡張されるたびに、
+      <literal>command_buffer_too_small</literal> が 1 増加します。
+     </simpara>
+     <simpara>
+      MySQLnd がほぼすべての接続で初期サイズの
+      <link linkend="ini.mysqlnd.net-cmd-buffer-size">mysqlnd.net_cmd_buffer_size</link>
+      バイトを超えてバッファを拡張する必要がある場合は、
+      再割り当てを避けるためにデフォルトサイズの増加を検討すべきです。
+     </simpara>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry xml:id="mysqlnd.stats.statistics.connection-reused">
+    <term><literal>connection_reused</literal></term>
+    <listitem>
+     <simpara>
+      持続的接続が再利用された合計回数。
+     </simpara>
+    </listitem>
+   </varlistentry>
+  </variablelist>
+ </section>
+</chapter>
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"~/.phpdoc/manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
