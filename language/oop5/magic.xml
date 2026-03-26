@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 5e15a6c3e4d5819102361ae78e73c90a06238c8a Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 8f51247cb4631b29686f867bd904dfe5b2678074 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: shimooka,mumumu -->
 
 <sect1 xml:id="language.oop5.magic" xmlns="http://docbook.org/ns/docbook">
@@ -29,10 +29,10 @@
    <link linkend="object.set">__set()</link>,
    <link linkend="object.isset">__isset()</link>,
    <link linkend="object.unset">__unset()</link>,
-   <link linkend="object.sleep">__sleep()</link>,
-   <link linkend="object.wakeup">__wakeup()</link>,
    <link linkend="object.serialize">__serialize()</link>,
    <link linkend="object.unserialize">__unserialize()</link>,
+   <link linkend="object.sleep">__sleep()</link>,
+   <link linkend="object.wakeup">__wakeup()</link>,
    <link linkend="object.tostring">__toString()</link>,
    <link linkend="object.invoke">__invoke()</link>,
    <link linkend="object.set-state">__set_state()</link>,
@@ -71,104 +71,6 @@
    </para>
   </warning>
  
- <sect2 xml:id="language.oop5.magic.sleep">
-   <title>
-    <link linkend="object.sleep">__sleep()</link> と
-    <link linkend="object.wakeup">__wakeup()</link>
-   </title>
-   
-   <methodsynopsis xml:id="object.sleep">
-    <modifier>public</modifier> <type>array</type><methodname>__sleep</methodname>
-    <void/>
-   </methodsynopsis>
-   <methodsynopsis xml:id="object.wakeup">
-    <modifier>public</modifier> <type>void</type><methodname>__wakeup</methodname>
-    <void/>
-   </methodsynopsis>
-   
-  <para>
-   <function>serialize</function> は、クラスに特殊な名前
-   <link linkend="object.sleep">__sleep()</link> の関数があるかどうかを調べます。
-   もしあれば、シリアル化の前にその関数を実行します。
-   この関数で、オブジェクトをクリアすることができます。
-   またこの関数は、シリアル化するオブジェクトについて、
-   すべての変数の名前を配列で返すことが前提となっています。
-   このメソッドが何も返さなかった場合は、&null;
-   がシリアル化され、<constant>E_NOTICE</constant> が発生します。
-  </para>
-   <note>
-    <para>
-     <link linkend="object.sleep">__sleep()</link> で、親クラスの private
-     プロパティの名前を返すことはできません。
-     そうしようとすると <constant>E_NOTICE</constant> レベルのエラーとなります。
-     この場合は、<link linkend="object.serialize">__serialize()</link> を代わりに使って下さい。
-    </para>
-   </note>
-   <note>
-    <para>
-     PHP 8.0.0 以降では、
-     <link linkend="object.sleep">__sleep()</link> から配列でない値を返すと、
-     E_WARNING が発生するようになりました。これより前のバージョンでは、
-     E_NOTICE が発生していました。
-    </para>
-   </note>
-  <para>
-   典型的な <link linkend="object.sleep">__sleep()</link> の使用法は、
-   途中のデータをコミットしたり、
-   似たようなタスクのクリアを行うといったものです。
-   また、オブジェクトが非常に大きく、かつ、完全に保存する必要がない場合、
-   この関数が有用です。
-  </para>
-  <para>
-   逆に、<function>unserialize</function> は、
-   特殊な名前 <link linkend="object.wakeup">__wakeup()</link> を有する
-   関数の存在を調べます。
-   もし存在する場合、この関数は、オブジェクトが有する可能性が
-   あるあらゆるリソースを再構築することができます。
-  </para>
-  <para>
-    <link linkend="object.wakeup">__wakeup()</link> の使用目的は、
-   シリアル化の際に失われたデータベース接続を再度確立したり、
-   その他の再初期化を行うことです。
-  </para>
-   <example>
-    <title>sleep と wakeup</title>
-    <programlisting role="php">
-<![CDATA[
-<?php
-class Connection
-{
-    protected $link;
-    private $dsn, $username, $password;
-    
-    public function __construct($dsn, $username, $password)
-    {
-        $this->dsn = $dsn;
-        $this->username = $username;
-        $this->password = $password;
-        $this->connect();
-    }
-    
-    private function connect()
-    {
-        $this->link = new PDO($this->dsn, $this->username, $this->password);
-    }
-    
-    public function __sleep()
-    {
-        return array('dsn', 'username', 'password');
-    }
-    
-    public function __wakeup()
-    {
-        $this->connect();
-    }
-}?>
-]]>
-    </programlisting>
-   </example>
-  </sect2>
-
   <sect2 xml:id="language.oop5.magic.serialize">
    <title>
     <link linkend="object.serialize">__serialize()</link> と
@@ -271,6 +173,114 @@ class Connection
 ]]>
     </programlisting>
    </example>
+ </sect2>
+
+ <sect2 xml:id="language.oop5.magic.sleep">
+  <title>
+   <link linkend="object.sleep">__sleep()</link> と
+   <link linkend="object.wakeup">__wakeup()</link>
+  </title>
+
+  <warning>
+   <simpara>
+    このシリアル化の仕組みは、PHP 8.5.0 以降 soft-deprecated 扱いになりました。
+    後方互換性のために維持されていますが、新規コードおよび既存コードは、代わりに
+    <link linkend="object.serialize">__serialize()</link> と
+    <link linkend="object.unserialize">__unserialize()</link>
+    マジックメソッドを使うように移行すべきです。
+   </simpara>
+  </warning>
+
+  <methodsynopsis xml:id="object.sleep">
+   <modifier>public</modifier> <type>array</type><methodname>__sleep</methodname>
+   <void/>
+  </methodsynopsis>
+  <methodsynopsis xml:id="object.wakeup">
+   <modifier>public</modifier> <type>void</type><methodname>__wakeup</methodname>
+   <void/>
+  </methodsynopsis>
+
+  <para>
+   <function>serialize</function> は、クラスに特殊な名前
+   <link linkend="object.sleep">__sleep()</link> の関数があるかどうかを調べます。
+   もしあれば、シリアル化の前にその関数を実行します。
+   この関数で、オブジェクトをクリアすることができます。
+   またこの関数は、シリアル化するオブジェクトについて、
+   すべての変数の名前を配列で返すことが前提となっています。
+   このメソッドが何も返さなかった場合は、&null;
+   がシリアル化され、<constant>E_NOTICE</constant> が発生します。
+  </para>
+  <note>
+   <para>
+    <link linkend="object.sleep">__sleep()</link> で、親クラスの private
+    プロパティの名前を返すことはできません。
+    そうしようとすると <constant>E_NOTICE</constant> レベルのエラーとなります。
+    この場合は、<link linkend="object.serialize">__serialize()</link> を代わりに使って下さい。
+   </para>
+  </note>
+  <note>
+   <para>
+    PHP 8.0.0 以降では、
+    <link linkend="object.sleep">__sleep()</link> から配列でない値を返すと、
+    E_WARNING が発生するようになりました。これより前のバージョンでは、
+    E_NOTICE が発生していました。
+   </para>
+  </note>
+  <para>
+   典型的な <link linkend="object.sleep">__sleep()</link> の使用法は、
+   途中のデータをコミットしたり、
+   似たようなタスクのクリアを行うといったものです。
+   また、オブジェクトが非常に大きく、かつ、完全に保存する必要がない場合、
+   この関数が有用です。
+  </para>
+  <para>
+   逆に、<function>unserialize</function> は、
+   特殊な名前 <link linkend="object.wakeup">__wakeup()</link> を有する
+   関数の存在を調べます。
+   もし存在する場合、この関数は、オブジェクトが有する可能性が
+   あるあらゆるリソースを再構築することができます。
+  </para>
+  <para>
+   <link linkend="object.wakeup">__wakeup()</link> の使用目的は、
+   シリアル化の際に失われたデータベース接続を再度確立したり、
+   その他の再初期化を行うことです。
+  </para>
+  <example>
+   <title>sleep と wakeup</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+class Connection
+{
+    protected $link;
+    private $dsn, $username, $password;
+
+    public function __construct($dsn, $username, $password)
+    {
+        $this->dsn = $dsn;
+        $this->username = $username;
+        $this->password = $password;
+        $this->connect();
+    }
+
+    private function connect()
+    {
+        $this->link = new PDO($this->dsn, $this->username, $this->password);
+    }
+
+    public function __sleep()
+    {
+        return array('dsn', 'username', 'password');
+    }
+
+    public function __wakeup()
+    {
+        $this->connect();
+    }
+}?>
+]]>
+   </programlisting>
+  </example>
  </sect2>
 
  <sect2 xml:id="language.oop5.magic.tostring">
