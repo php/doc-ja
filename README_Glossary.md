@@ -41,6 +41,10 @@
   * 移行ガイドの文脈での Standard は「標準ライブラリ」で統一する
     - php-src で言うところの ext/standard に入っている関数全てを指す
     - Standard PHP Librady (SPL) は別にあるが、「標準ライブラリ」でいいことにする
+- WHATWG URL Standard
+  * 「WHATWG URL Standard」（原語のまま）で統一
+    - ext/uri などで言及される、URL 仕様の固有名詞
+    - 「WHATWG URL 標準」とはしない
 - throw Exception
   * 例外をスローする
     - 例外を「投げる」とはしない
