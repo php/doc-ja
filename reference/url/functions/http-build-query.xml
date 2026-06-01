@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: e80ef2394f0c64be66917a5d4335736ae05b774f Maintainer: shimooka Status: ready -->
+<!-- EN-Revision: f72c6031982a6f8152ef351d20f8e0d90e8f1612 Maintainer: shimooka Status: ready -->
 <!-- Credits: mumumu -->
 <refentry xml:id="function.http-build-query" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -42,6 +42,14 @@
        <parameter>data</parameter> がオブジェクトの場合、
        public プロパティだけが結果に含められます。
       </para>
+      <note>
+       <simpara>
+        オブジェクトが評価される際に
+        <link linkend="object.tostring">__toString()</link> マジックメソッドが
+        呼び出されることはありません。クエリ文字列でオブジェクトの文字列表現を
+        使用するには、オブジェクトを明示的に文字列にキャストする必要があります。
+       </simpara>
+      </note>
      </listitem>
     </varlistentry>
     <varlistentry>
@@ -267,6 +275,44 @@ echo http_build_query($parent);
    <screen>
 <![CDATA[
 pub=publicParent&pub_bar%5Bpub%5D=publicChild
+]]>
+   </screen>
+  </example>
+
+  <example>
+   <title><link linkend="object.tostring">__toString()</link> を含むオブジェクトでの
+    <function>http_build_query</function> の使用
+   </title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+class Foo {
+    public $publicProperty = 'visible';
+
+    public function __toString() {
+        return "bar";
+    }
+}
+
+$params = array(
+    'a' => 'b',
+    'foo' => new Foo()
+);
+
+// キャストしない場合、http_build_query は public プロパティを読み取ります
+echo http_build_query($params) . "\n";
+
+// 明示的にキャストすると、http_build_query は __toString() の出力を使用します
+$params['foo'] = (string) new Foo();
+echo http_build_query($params) . "\n";
+?>
+]]>
+   </programlisting>
+ &example.outputs;
+   <screen>
+<![CDATA[
+a=b&foo%5BpublicProperty%5D=visible
+a=b&foo=bar
 ]]>
    </screen>
   </example>
