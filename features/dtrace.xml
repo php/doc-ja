@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: d35d7d811ccf7662eefe4f23ff1cabc727a917ca Maintainer: satoruyoshida Status: ready -->
+<!-- EN-Revision: 7c966c94fde8a9bb4e52975b559dc0bb0cb2ef72 Maintainer: satoruyoshida Status: ready -->
 <chapter xml:id="features.dtrace" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>DTrace 動的トレーシング</title>
 
@@ -564,6 +564,190 @@ probe process("sapi/cli/php").provider("php").mark("request__startup") {
      </programlisting>
     </informalexample>
    </para>
+  </sect2>
+ </sect1>
+ <sect1 xml:id="features.dtrace.bpftrace">
+  <title>PHP DTrace 静的プローブとともに bpftrace を使用</title>
+  <simpara>
+   LinuxディストリビューションにおいてカーネルがeBPFをサポートする場合、bpftraceユーティリティはPHPのDTraceプローブ（USDT）に対してSystemTapを必要とせず直接アタッチすることができます。
+  </simpara>
+  <sect2 xml:id="features.dtrace.bpftrace-install">
+   <title>bpftraceのインストール</title>
+   <para>
+    bpftraceをパッケージマネージャを利用してインストールします。例えばOracle Linux、RHELまたはFedoraの場合は
+    <informalexample>
+     <programlisting role="shell">
+<![CDATA[
+# dnf install bpftrace
+]]>
+     </programlisting>
+    </informalexample>
+    Debian、Ubuntuの場合は以下のコマンドでインストールします。
+    <informalexample>
+     <programlisting role="shell">
+<![CDATA[
+# apt install bpftrace
+]]>
+     </programlisting>
+    </informalexample>
+   </para>
+   <simpara>
+    下記の例ではターゲットとなるPHPバイナリのインストール先は
+    <filename>/usr/bin/php</filename>であると仮定しています。
+   </simpara>
+   <simpara>
+    同じUSDTプローブは同一のソースツリーからビルドされた他のSAPIでも利用可能であり、プローブのターゲットはApache module
+    (<filename>libphp.so</filename>)またはFastCGI Process Manager
+    バイナリ (<filename>php-fpm</filename>)となる場合もあります。必要に応じて適切なパスに置き換えや、
+    <literal>-p</literal>によるPID指定を行いアタッチしてください。
+   </simpara>
+   <simpara>
+    ターゲットバイナリでDTraceが有効になっていること、環境変数が適切に設定されていることを確認してください。
+    詳細は<link linkend="features.dtrace.install">DTrace 静的プローブのために PHP を構成</link>で参照できます。
+   </simpara>
+   <para>
+    PHPの静的プローブをリストするには以下の<command>bpftrace</command>コマンドを使用します。
+    <informalexample>
+     <programlisting>
+<![CDATA[
+# bpftrace -l 'usdt:/usr/bin/php:php:*'
+]]>
+     </programlisting>
+    </informalexample>
+   </para>
+
+   <para>
+    出力はこのようになります。
+    <informalexample>
+     <programlisting>
+<![CDATA[
+usdt:/usr/bin/php:php:compile__file__entry
+usdt:/usr/bin/php:php:compile__file__return
+usdt:/usr/bin/php:php:error
+usdt:/usr/bin/php:php:exception__caught
+usdt:/usr/bin/php:php:exception__thrown
+usdt:/usr/bin/php:php:execute__entry
+usdt:/usr/bin/php:php:execute__return
+usdt:/usr/bin/php:php:function__entry
+usdt:/usr/bin/php:php:function__return
+usdt:/usr/bin/php:php:request__shutdown
+usdt:/usr/bin/php:php:request__startup
+]]>
+     </programlisting>
+    </informalexample>
+   </para>
+
+   <para>
+    <example>
+     <title>bpftraceを使用してすべてのPHP静的プローブをトレースする<filename>all_probes.bt</filename></title>
+     <programlisting role="shell">
+<![CDATA[
+#!/usr/bin/env bpftrace
+
+usdt:/usr/bin/php:php:compile__file__entry
+{
+    printf("Probe compile__file__entry\n");
+    printf("  compile_file %s\n", str(arg0));
+    printf("  compile_file_translated %s\n", str(arg1));
+}
+usdt:/usr/bin/php:php:compile__file__return
+{
+    printf("Probe compile__file__return\n");
+    printf("  compile_file %s\n", str(arg0));
+    printf("  compile_file_translated %s\n", str(arg1));
+}
+usdt:/usr/bin/php:php:error
+{
+    printf("Probe error\n");
+    printf("  errormsg %s\n", str(arg0));
+    printf("  request_file %s\n", str(arg1));
+    printf("  lineno %d\n", (int32)arg2);
+}
+usdt:/usr/bin/php:php:exception__caught
+{
+    printf("Probe exception__caught\n");
+    printf("  classname %s\n", str(arg0));
+}
+usdt:/usr/bin/php:php:exception__thrown
+{
+    printf("Probe exception__thrown\n");
+    printf("  classname %s\n", str(arg0));
+}
+usdt:/usr/bin/php:php:execute__entry
+{
+    printf("Probe execute__entry\n");
+    printf("  request_file %s\n", str(arg0));
+    printf("  lineno %d\n", (int32)arg1);
+}
+usdt:/usr/bin/php:php:execute__return
+{
+    printf("Probe execute__return\n");
+    printf("  request_file %s\n", str(arg0));
+    printf("  lineno %d\n", (int32)arg1);
+}
+usdt:/usr/bin/php:php:function__entry
+{
+    printf("Probe function__entry\n");
+    printf("  function_name %s\n", str(arg0));
+    printf("  request_file %s\n", str(arg1));
+    printf("  lineno %d\n", (int32)arg2);
+    printf("  classname %s\n", str(arg3));
+    printf("  scope %s\n", str(arg4));
+}
+usdt:/usr/bin/php:php:function__return
+{
+    printf("Probe function__return\n");
+    printf("  function_name %s\n", str(arg0));
+    printf("  request_file %s\n", str(arg1));
+    printf("  lineno %d\n", (int32)arg2);
+    printf("  classname %s\n", str(arg3));
+    printf("  scope %s\n", str(arg4));
+}
+usdt:/usr/bin/php:php:request__shutdown
+{
+    printf("Probe request__shutdown\n");
+    printf("  file %s\n", str(arg0));
+    printf("  request_uri %s\n", str(arg1));
+    printf("  request_method %s\n", str(arg2));
+}
+usdt:/usr/bin/php:php:request__startup
+{
+    printf("Probe request__startup\n");
+    printf("  file %s\n", str(arg0));
+    printf("  request_uri %s\n", str(arg1));
+    printf("  request_method %s\n", str(arg2));
+}
+]]>
+     </programlisting>
+    </example>
+   </para>
+
+   <para>
+    上記のスクリプトはPHPのスクリプトの実行中のすべてのコアPHP静的プローブポイントをトレースします。bpftraceの実行にはroot権限が必要です。
+    <informalexample>
+     <programlisting>
+<![CDATA[
+# USE_ZEND_DTRACE=1 bpftrace -c '/usr/bin/php test.php' all_probes.bt
+]]>
+     </programlisting>
+    </informalexample>
+   </para>
+
+   <para>
+    すでに実行中のPHPプロセス (例えば
+    <filename>php-fpm</filename> ワーカー、または
+    <filename>libphp.so</filename>をロードするapacheプロセス)はPIDを指定してアタッチできます。
+    <informalexample>
+     <programlisting>
+<![CDATA[
+# bpftrace -p $PID all_probes.bt
+]]>
+     </programlisting>
+    </informalexample>
+    スクリプト中の<literal>usdt:</literal> ターゲットパスは実行しているプロセスのバイナリにマッチする必要があります。
+    <literal>usdt:/usr/bin/php</literal>部分を
+    <filename>php-fpm</filename> バイナリまたは <filename>libphp.so</filename> などのパスに必要に応じて修正してください。
+  </para>
   </sect2>
  </sect1>
 </chapter>
