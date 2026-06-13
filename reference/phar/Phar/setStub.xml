@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 8a910daad2efdfd29acf6766be8bca7c32c3dd2a Maintainer: takagi Status: ready -->
+<!-- EN-Revision: d7056bd0948e3dd9316708247933026bd3d560b1 Maintainer: takagi Status: ready -->
 <!-- Credits: mumumu -->
 <refentry xmlns="http://docbook.org/ns/docbook" xml:id="phar.setstub">
  <refnamediv>
@@ -16,7 +16,6 @@
   </methodsynopsis>
   &phar.write;
 
-
   <para>
    このメソッドを使用して、新しい Phar アーカイブに
    PHP 起動ローダスタブを追加します。あるいは、既存の
@@ -25,14 +24,20 @@
   <para>
    Phar アーカイブのローダスタブは、
    このようにアーカイブを直接インクルードした際に使用されます。
-  </para>
-  <programlisting role="php">
-   <![CDATA[
+   <programlisting role="php">
+    <![CDATA[
 <?php
 include 'myphar.phar';
 ?>
-   ]]>
-  </programlisting>
+    ]]>
+   </programlisting>
+   あるいは、単にこのように実行した際にも使用されます。
+   <screen>
+    <![CDATA[
+php myphar.phar
+    ]]>
+   </screen>
+  </para>
   <para>
    <literal>phar</literal> ストリームラッパーを使用して次のようにファイルをインクルードした際には、
    ローダにはアクセスしません。
@@ -63,9 +68,16 @@ include 'phar://myphar.phar/somefile.php';
     <varlistentry>
      <term><parameter>length</parameter></term>
      <listitem>
-      <para>
-       
-      </para>
+      <simpara>
+       <parameter>stub</parameter> の長さ（バイト単位）。
+      </simpara>
+      <warning>
+       <simpara>
+        第一引数に &resource; を指定して <parameter>length</parameter> 引数を渡すことは、
+        PHP 8.3.0 以降では<emphasis>非推奨</emphasis>です。
+        かわりに <literal>$phar->setStub(stream_get_contents($resource))</literal> を使ってください。
+       </simpara>
+      </warning>
      </listitem>
     </varlistentry>
    </variablelist>
@@ -127,12 +139,14 @@ include 'phar://myphar.phar/somefile.php';
     <programlisting role="php">
 <![CDATA[
 <?php
+
 try {
     $p = new Phar(dirname(__FILE__) . '/brandnewphar.phar', 0, 'brandnewphar.phar');
     $p['a.php'] = '<?php var_dump("Hello");';
     $p->setStub('<?php var_dump("First"); Phar::mapPhar("brandnewphar.phar"); __HALT_COMPILER(); ?>');
     include 'phar://brandnewphar.phar/a.php';
     var_dump($p->getStub());
+
     $p['b.php'] = '<?php var_dump("World");';
     $p->setStub('<?php var_dump("Second"); Phar::mapPhar("brandnewphar.phar"); __HALT_COMPILER(); ?>');
     include 'phar://brandnewphar.phar/b.php';
