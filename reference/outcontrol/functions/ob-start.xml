@@ -18,38 +18,24 @@
   </methodsynopsis>
   <para>
    この関数は出力のバッファリングをオンにします。
-   出力のバッファリングを有効にすると、
-   (ヘッダ以外の) スクリプトからの出力は実際には行われず、
+   出力のバッファリングが有効な間は、スクリプトからの出力は送信されず、
    代わりに内部バッファに保存されます。
+   どの出力が影響を受けるのかについては
+   <xref linkend="outcontrol.what-output-is-buffered"/>
+   を参照ください。
   </para>
   <para>
-   この内部バッファの内容は、<function>ob_get_contents</function>
-   を用いて文字列変数にコピーされます。
-   内部バッファの内容を出力するには
-   <function>ob_end_flush</function> を使用します。
-   <function>ob_end_clean</function>
-   は、バッファの内容を出力せずに消去します。
-  </para>
-  <warning>
-   <para>
-    web サーバーによっては (例: Apache)、コールバック関数からコールされた際に、
-    スクリプトの実行ディレクトリを変更するものがあります。
-    コールバック関数の内部で <literal>chdir(dirname($_SERVER['SCRIPT_FILENAME']))</literal>
-    などと指定することで、これをもとに戻すことが可能です。
-   </para>
-  </warning>
-  <para>
-   出力バッファはスタッカブルであり、このため、他の
-   <function>ob_start</function> がアクティブの間に
-   <function>ob_start</function> をコールすることが可能です。この場合、
-   <function>ob_end_flush</function> を適切な回数コールするようにしてください。
-   複数の出力コールバック関数がアクティブの場合、
-   ネストした順番で逐次連続的に出力がフィルタ処理されます。
+   出力バッファはスタッカブルです。つまり、他のバッファがアクティブな間に
+   <function>ob_start</function> をコールできます。
+   複数の出力バッファがアクティブの場合、
+   出力はネストした順番でそれぞれのバッファを通して逐次フィルタ処理されます。
+   詳細は <xref linkend="outcontrol.nesting-output-buffers"/>
+   を参照ください。
   </para>
   <para>
-   スクリプトが終了した際に、
-   出力バッファリングがまだアクティブな場合、
-   PHP はバッファリングされた内容を自動的に出力します。
+   出力バッファの詳細な説明は
+   <xref linkend="outcontrol.user-level-output-buffers"/>
+   を参照ください。
   </para>
  </refsect1>
 
@@ -61,20 +47,17 @@
      <term><parameter>callback</parameter></term>
      <listitem>
       <para>
-       オプションの引数 <parameter>callback</parameter>
-       関数を指定することが可能です。この関数は、パラメータとして文字列をとり、
-       文字列を返します。このコールバック関数は、
-       出力バッファがフラッシュ (送信) あるいは消去
-       (<function>ob_flush</function>, <function>ob_clean</function>
-       あるいは同等の関数で) された場合、
-       またはリクエストの最後にブラウザに出力をフラッシュする際にコールされます。
-       <parameter>callback</parameter> がコールされた際に、
-       この関数は出力バッファの内容をパラメータとして受け取ります。このコールバック関数は、
-       新規の出力バッファを実際に出力される結果として返す必要があり、
-       この結果はブラウザに送信されます。
-       <parameter>callback</parameter> がコール可能な関数ではない場合は
-       &false; を返します。
-       コールバックのシグネチャは、次のとおりです。
+       オプションの <parameter>callback</parameter> として、
+       <type>callable</type> を指定できます。
+       &null; を渡すことでバイパスすることもできます。
+      </para>
+      <para>
+       <parameter>callback</parameter> は、出力バッファがフラッシュ (送信)
+       または消去されたとき、あるいはスクリプトの最後に出力バッファが
+       フラッシュされる際にコールされます。
+      </para>
+      <para>
+       <parameter>callback</parameter> のシグネチャは、次のとおりです。
       </para>
       <para>
        <methodsynopsis>
@@ -95,9 +78,12 @@
          <term><parameter>phase</parameter></term>
          <listitem>
           <simpara>
-           <link
-           linkend="outcontrol.constants"><constant>PHP_OUTPUT_HANDLER_*</constant>
-           定数</link> のビットマスク
+           <link linkend="constant.php-output-handler-start">
+            <constant>PHP_OUTPUT_HANDLER_<replaceable>*</replaceable></constant>
+            定数
+           </link>のビットマスク。
+           詳細は <xref linkend="outcontrol.flags-passed-to-output-handlers"/>
+           を参照ください。
           </simpara>
          </listitem>
         </varlistentry>
@@ -105,33 +91,26 @@
       </para>
       <para>
        <parameter>callback</parameter> が &false;
-       を返すと、元の入力がそのままブラウザに送信されます。
+       を返すと、バッファの内容が返されます。
+       詳細は <xref linkend="outcontrol.output-handler-return-values"/>
+       を参照ください。
       </para>
+      <warning>
+       <simpara>
+        出力ハンドラの内部から次の関数をコールすると、
+        致命的なエラー (fatal error) となります。
+        <function>ob_clean</function>, <function>ob_end_clean</function>,
+        <function>ob_end_flush</function>, <function>ob_flush</function>,
+        <function>ob_get_clean</function>, <function>ob_get_flush</function>,
+        <function>ob_start</function>。
+       </simpara>
+      </warning>
       <para>
-       <parameter>callback</parameter> パラメータに &null; 値を渡すと、
-       これをバイパスすることができます。
+       <parameter>callback</parameter> (出力ハンドラ) の詳細は
+       <xref linkend="outcontrol.output-handlers"/> および
+       <xref linkend="outcontrol.working-with-output-handlers"/>
+       を参照ください。
       </para>
-      <para>
-       <function>ob_end_clean</function>、
-       <function>ob_end_flush</function>、<function>ob_clean</function>、
-       <function>ob_flush</function> および <function>ob_start</function>
-       をコールバック関数の内部からコールすることはできません。
-       実際にコールした際の挙動は未定義です。バッファの内容を消去したい際には、
-       コールバック関数から "" (空文字列) を返してください。
-       同じく、<literal>print_r($expression, true)</literal> や
-       <literal>highlight_file($filename, true)</literal> のような
-       出力バッファリング関数も、
-       コールバック関数の内部からコールすることはできません。
-      </para>
-      <note>
-       <para>
-        Web ページの圧縮をサポートする圧縮 gz エンコード
-        されたデータの Web ブラウザへの送信を容易にするために
-        <function>ob_gzhandler</function> が存在します。
-        <function>ob_gzhandler</function> は、ブラウザが受け入れる content
-        encoding の型を調べ、それに基づいて出力を返します。
-       </para>
-      </note>
      </listitem>
     </varlistentry>
     <varlistentry>
@@ -139,10 +118,11 @@
      <listitem>
       <para>
        オプションのパラメータ <parameter>chunk_size</parameter> が渡された場合、
-       バッファの長さが <parameter>chunk_size</parameter> バイトを超えるたびに、
-       出力の後でバッファがフラッシュされます。
-       デフォルト値は <literal>0</literal> で、これは出力関数がコールされるのが
-       出力バッファが閉じたときだけであることを意味します。
+       バッファの長さが <parameter>chunk_size</parameter> バイト以上になる出力があった後で、
+       バッファがフラッシュされます。
+       デフォルト値は <literal>0</literal> で、これはバッファがオフになるまで
+       すべての出力がバッファリングされることを意味します。
+       詳細は <xref linkend="outcontrol.buffer-size"/> を参照ください。
       </para>
      </listitem>
     </varlistentry>
@@ -179,7 +159,6 @@
           <row>
            <entry><constant>PHP_OUTPUT_HANDLER_FLUSHABLE</constant></entry>
            <entry>
-            <function>ob_end_flush</function>
             <function>ob_flush</function>
            </entry>
           </row>
