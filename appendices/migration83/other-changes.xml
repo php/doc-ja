@@ -19,7 +19,7 @@
    <title>FPM</title>
 
    <para>
-    ソケットのパスの長さが OS がサポートする長さ以上の場合、FPM CLI のテストが失敗するようになりました。
+    ソケットのパスの長さが OS がサポートする長さを超える場合、FPM CLI のテストが失敗するようになりました。
    </para>
   </sect3>
 
@@ -27,7 +27,7 @@
    <title>Opcache</title>
 
    <para>
-    CLI SAPI と phpdbg SAPI では、<link linkend="ini.opcache.preload-user">opcache.preload_user</link> ディレクティブを設定しなくても root として事前ロードを実行できるようになりました。これら以外の SAPI では、root として事前ロードを実行する際に このディレクティブの設定が未だ必須です。なぜなら、SAPI が特権を持っていないユーザに移行する前に事前ロードが実行されるからです。
+    CLI SAPI と phpdbg SAPI では、<link linkend="ini.opcache.preload-user">opcache.preload_user</link> ディレクティブを設定しなくても root として事前ロードを実行できるようになりました。これら以外の SAPI では、root として事前ロードを実行する際に このディレクティブの設定が未だ必須です。なぜなら、SAPI が特権を持っていないユーザーに移行する前に事前ロードが実行されるからです。
    </para>
   </sect3>
 
@@ -35,7 +35,7 @@
    <title>Streams</title>
 
    <para>
-    ソケット接続をブロックする <function>fread</function> 関数は、バッファリングされているデータが存在した場合、追加のデータを待つのではなく、すぐに値を返すようになりました。
+    ソケット接続に対するブロッキングモードの <function>fread</function> 関数は、バッファリングされているデータが存在した場合、追加のデータを待つのではなく、すぐに値を返すようになりました。
    </para>
 
    <para>
@@ -74,10 +74,10 @@
      <member><literal>"protected"</literal> => bool</member>
      <member><literal>"full"</literal> => bool</member>
      <member><literal>"buffer_size"</literal> => int</member>
-     <member><literal>"application_time"</literal> => float: gc の合計の実行時間を秒単位で示します(collector_time を含みます)</member>
-     <member><literal>"collector_time"</literal> => float: 循環参照を回収するのに使った時間を秒単位で示します(dessructor_time と free_time を含みます)</member>
+     <member><literal>"application_time"</literal> => float: アプリケーション全体の実行時間を秒単位で示します(collector_time を含みます)</member>
+     <member><literal>"collector_time"</literal> => float: 循環参照を回収するのに使った時間を秒単位で示します(destructor_time と free_time を含みます)</member>
      <member><literal>"destructor_time"</literal> => float: 循環参照を回収している間に、デストラクタを実行した時間を秒単位で示します</member>
-     <member><literal>"free_time"</literal> => float: 循環参照を回収している間に、メモリを開放するのにかかった時間を秒単位で示します</member>
+     <member><literal>"free_time"</literal> => float: 循環参照を回収している間に、メモリを解放するのにかかった時間を秒単位で示します</member>
     </simplelist>
    </para>
 
@@ -172,11 +172,11 @@
    </para>
 
    <para>
-    <function>mb_encode_mimeheader</function> は、入力文字列が Qprint エンコーディングの場合に、NUL(ゼロ)バイトを削除しなくなりました。これより前のバージョンでは、あるテキストエンコーディングの場合(特に UTF-16 と UTF-32) に NUL バイトが削除され、mb_encode_mimeheader の結果が壊れる場合がありました。
+    <function>mb_encode_mimeheader</function> は、入力文字列を QPrint エンコーディングする際に、NUL(ゼロ)バイトを削除しなくなりました。これより前のバージョンでは、あるテキストエンコーディングの場合(特に UTF-16 と UTF-32) に NUL バイトが削除され、mb_encode_mimeheader の結果が壊れる場合がありました。
    </para>
 
    <para>
-    <function>mb_detect_encoding</function> の "$strict に true を指定しない" モードが、ドキュメントの通りに振る舞うようになりました。これより前のバージョンでは、入力文字列と同一のバイト(たとえば、最初のバイト) が、候補となるエンコーディングのリスト全てに対して不正と判定された場合でも、&false; を返していました。もっと一般化すると、不正なバイトが見つかった時点で、候補となるエンコーディングから削除してしまっていました。そして、入力と同一のバイトを削除した場合に、残りのエンコーディングをすべて候補として考慮すべき場合でも、&false; を返していました。一方で、候補となるエンコーディングが削除されて残りがひとつだけになった場合、文字列中で後にどれくらいエンコーディングのエラーが見つかるのかを考慮することなく、その残ったエンコーディングを返していました。この振る舞いは、ドキュメントの以下の説明と一致しません: "strict が false の場合、 もっとも近いと判定された文字エンコーディングが返されます"
+    <function>mb_detect_encoding</function> の "$strict に true を指定しない" モードが、ドキュメントの通りに振る舞うようになりました。これより前のバージョンでは、入力文字列中の同じバイト(たとえば、最初のバイト) が、候補となるエンコーディングのリスト全てに対して不正と判定された場合に、&false; を返していました。もっと一般化すると、不正なバイトが見つかった時点で、候補となるエンコーディングを検討対象から削除してしまっていました。そして、同じ入力バイトによって検討中の残りのエンコーディングがすべて削除された場合には、&false; を返していました。一方で、候補となるエンコーディングが削除されて残りがひとつだけになった場合、文字列中で後にどれくらいエンコーディングのエラーが見つかるのかを考慮することなく、その残ったエンコーディングを返していました。この振る舞いは、ドキュメントの以下の説明と一致しません: "strict が false の場合、 もっとも近いと判定された文字エンコーディングが返されます"
    </para>
   </sect3>
 
@@ -200,7 +200,7 @@
    <title>ODBC</title>
 
    <simpara>
-    <function>odbc_autocommit</function >は、<parameter>enable</parameter> パラメータで &null; を受け入れるようになりました。&null; を渡すと、パラメータをひとつ渡した場合と同じ振る舞いをします。つまり、自動コミットが有効かどうかだけを示す動きをします。
+    <function>odbc_autocommit</function>は、<parameter>enable</parameter> パラメータで &null; を受け入れるようになりました。&null; を渡すと、引数をひとつだけ渡した場合と同じ振る舞いをします。つまり、自動コミットが有効かどうかだけを示す動きをします。
    </simpara>
   </sect3>
 
@@ -216,7 +216,7 @@
    </para>
 
    <para>
-    <function>pg_insert</function> と <function>pg_convert</function> は、フィールドの値/タイプ が PostgreSQL の型と一致しない場合に、<constant>E_WARNING</constant> ではなく <classname>ValueError</classname> または <classname>TypeError</classname> を発生させるようになりました。
+    <function>pg_insert</function> と <function>pg_convert</function> は、フィールドの値や型が PostgreSQL の型と一致しない場合に、<constant>E_WARNING</constant> ではなく <classname>ValueError</classname> または <classname>TypeError</classname> を発生させるようになりました。
    </para>
 
    <simpara>
@@ -255,7 +255,7 @@
    </para>
 
    <para>
-    <function>array_pad</function> は、配列が持つことができる最大の要素数だけを制限するようになりました。これより前のバージョンでは、一度に追加できる最大の要素数が 1048576 になっていました。
+    <function>array_pad</function> は、配列が持つことができる最大の要素数によってのみ制限されるようになりました。これより前のバージョンでは、一度に追加できる最大の要素数が 1048576 になっていました。
    </para>
 
    <para>
@@ -263,7 +263,7 @@
    </para>
 
    <simpara>
-    <function>password_hash</function> は、ソルトの生成が失敗した場合に、<exceptionname>ValueError</exceptionname> の <parameter>previous</parameter> (直前にスローされた例外) として、既に存在する <exceptionname>Random\RandomException</exceptionname> をチェインさせるようになりました。
+    <function>password_hash</function> は、ソルトの生成が失敗した場合に、<exceptionname>ValueError</exceptionname> の <parameter>previous</parameter> <exceptionname>Exception</exceptionname> (直前にスローされた例外) として、既に存在する <exceptionname>Random\RandomException</exceptionname> をチェインさせるようになりました。
    </simpara>
 
    <simpara>
@@ -271,7 +271,7 @@
    </simpara>
 
    <simpara>
-    <function>proc_open</function> の <parameter>command</parameter> に配列を指定する場合、かつそれが不正なコマンドの場合に、後に警告が発生するリソースではなく &false; を返すようになりました。Windows では既にそのように動作していましたが、posix_spawn を使っている場合(ほとんどのプラットフォーム Linux, BSD, MacOS) でも同様の振る舞いをするようになりました。ただ、posix_spawn をサポートしていないために、以前の振る舞いが変更されていない古いプラットフォームもまだ残っています。
+    <function>proc_open</function> の <parameter>command</parameter> に配列を指定する場合、かつそれが不正なコマンドの場合に、後に警告が発生するリソースではなく &false; を返すようになりました。Windows では既にそのように動作していましたが、posix_spawn を使っている場合(ほとんどの Linux, BSD, MacOS プラットフォーム) でも同様の振る舞いをするようになりました。ただ、posix_spawn をサポートしていないために、以前の振る舞いが変更されていない古いプラットフォームもまだ残っています。
    </simpara>
 
    <para>
@@ -288,7 +288,7 @@
    </simpara>
 
    <para>
-    <function>str_getcsv</function> と <function>fgetcsv</function> は、最後のフィールドに終端されていないクォートだけが含まれている場合、null バイトの文字列をひとつ返すのではなく、空文字列を返すようになりました。
+    <function>str_getcsv</function> と <function>fgetcsv</function> は、最後のフィールドが、閉じられていないフィールド囲み文字だけの場合、null バイト 1 つの文字列ではなく、空文字列を返すようになりました。
    </para>
   </sect3>
 
@@ -329,7 +329,7 @@
    </para>
 
    <para>
-    SQLite のエラーコードは、エラーメッセージに含められるのではなく、例外に渡されるようになりました。
+    SQLite のエラーコードは、エラーメッセージに含められるのではなく、例外のエラーコードとして渡されるようになりました。
    </para>
 
   </sect3>
@@ -355,7 +355,7 @@
    </listitem>
    <listitem>
     <para>
-     <link linkend="ini.zend.max-allowed-stack-size">zend.max_allowed_stack_size</link> は、許可される最大のスタックサイズの値を設定するための、新しい INI ディレクティブです。設定できる値は、<literal>0</literal> (プロセスやスレッドの、スタックサイズの最大値を用います)、<literal>-1</literal> (無制限)、そしてバイト単位の正の数値です。デフォルトは <literal>0</literal> です。プロセスやスレッドのスタックサイズの最大値がわからない場合、既知のシステムのデフォルト値を使います。この値に大き過ぎる値を設定すると、スタックサイズの制限を無効にすることと同じ効果があります。ファイバーは 許可される最大のスタックサイズとして <link linkend="ini.fiber.stack-size">fiber.stack_size</link> の値を使います。プロセスのコールスタックが <link linkend="ini.zend.max-allowed-stack-size">zend.max_allowed_stack_size</link>-<link linkend="ini.zend.reserved-stack-size">zend.reserved_stack_size</link> バイトを超えると、スタックオーバーフローが引き起こすセグメンテーションフォルトを防ぐため、<classname>Error</classname> がスローされます。これは、デバッグを容易にすることが目的です。スタックサイズは、制御されていない再帰処理によって増加します。増加する範囲は、内部関数やマジックメソッド <link linkend="object.tostring">__toString()</link>, <link linkend="object.clone">__clone()</link>, <link linkend="object.sleep">__sleep()</link>, <link linkend="object.destruct">__destruct()</link> 内も含みます。この機能はスタックバッファのオーバーフローとは無関係ですし、セキュリティのための機能でもありません。
+     <link linkend="ini.zend.max-allowed-stack-size">zend.max_allowed_stack_size</link> は、許可される最大のスタックサイズの値を設定するための、新しい INI ディレクティブです。設定できる値は、<literal>0</literal> (プロセスやスレッドの、スタックサイズの最大値を用います)、<literal>-1</literal> (無制限)、そしてバイト単位の正の数値です。デフォルトは <literal>0</literal> です。プロセスやスレッドのスタックサイズの最大値がわからない場合、既知のシステムのデフォルト値を使います。この値に大き過ぎる値を設定すると、スタックサイズの制限を無効にすることと同じ効果があります。ファイバーは 許可される最大のスタックサイズとして <link linkend="ini.fiber.stack-size">fiber.stack_size</link> の値を使います。プロセスのコールスタックが <link linkend="ini.zend.max-allowed-stack-size">zend.max_allowed_stack_size</link>-<link linkend="ini.zend.reserved-stack-size">zend.reserved_stack_size</link> バイトを超えると、スタックオーバーフローが引き起こすセグメンテーションフォルトを防ぐため、<classname>Error</classname> がスローされます。これは、デバッグを容易にすることが目的です。スタックサイズは、内部関数やマジックメソッド <link linkend="object.tostring">__toString()</link>, <link linkend="object.clone">__clone()</link>, <link linkend="object.sleep">__sleep()</link>, <link linkend="object.destruct">__destruct()</link> が関わる制御されていない再帰処理によって増加します。この機能はスタックバッファのオーバーフローとは無関係ですし、セキュリティのための機能でもありません。
     </para>
    </listitem>
    <listitem>
