@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 7132d8833a86604aa2d10c16c0470d0ef1a0fdfb Maintainer: takagi Status: ready -->
+<!-- EN-Revision: eb4bde8a489ee6523879baa482247ed49aea951d Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa,shimooka,mumumu -->
 <sect1 xml:id="language.types.string">
  <title>文字列</title>
@@ -217,7 +217,8 @@ echo 'Variables do not $expand $either', PHP_EOL;
 
    <simpara>
     終端ID は、スペースまたはタブでインデントできます。
-    その場合、インデントされた部分は文字列の全ての行から取り除かれます。
+    その場合、終端ID のインデントと同じ量の空白文字が、
+    ヒアドキュメント文字列の各行の先頭から取り除かれます。
     PHP 7.3.0 より前のバージョンでは、
     終端ID はその行の最初のカラムから始めなければ
     <emphasis>いけませんでした</emphasis>。
@@ -241,12 +242,13 @@ echo <<<END
     c
 \n
 END;
-// 終端IDを4つのスペースでインデントする場合
+
+// 終端IDを3つのスペースでインデントする場合。各行から3つのスペースが取り除かれる
 echo <<<END
       a
      b
     c
-    END;
+   END;
 ]]>
     </programlisting>
     &example.outputs.73;
@@ -255,9 +257,10 @@ echo <<<END
       a
      b
     c
-  a
- b
-c
+
+   a
+  b
+ c
 ]]>
     </screen>
    </example>
@@ -1098,10 +1101,16 @@ var_dump($str);
     </programlisting>
    </example>
    
-   <para>
+   <simpara>
     文字列のオフセットは整数あるいは整数と見なせる文字列に限られます。
-    それ以外の場合は警告が発生します。
-   </para>
+    PHP 8.0.0 以降では、それ以外の文字列を指定すると
+    <exceptionname>TypeError</exceptionname> がスローされます。
+    ただし、整数で始まりその後に他の文字が続く文字列の場合は
+    <constant>E_WARNING</constant> が発生し、先頭の整数として解釈されます。
+    PHP 8.0.0 より前のバージョンでは <exceptionname>TypeError</exceptionname>
+    はスローされず、不正なオフセットを指定した場合は
+    <constant>E_WARNING</constant> が発生していました。
+   </simpara>
 
    <example>
     <title>不正な文字列のオフセットの例</title>
@@ -1126,7 +1135,7 @@ foreach ($keys as $keyToTry) {
 ?>
 ]]>
     </programlisting>
-    &example.outputs;
+    &example.outputs.8;
     <screen>
 <![CDATA[
 bool(true)
@@ -1140,7 +1149,29 @@ Cannot access offset of type string on string
 
 bool(false)
 
-Warning: Illegal string offset "1x" in Standard input code on line 10
+Warning: Illegal string offset "1x" in example.php on line 10
+string(1) "b"
+]]>
+    </screen>
+    &example.outputs.7;
+    <screen>
+<![CDATA[
+bool(true)
+string(1) "b"
+
+bool(false)
+
+Warning: Illegal string offset '1.0' in example.php on line 10
+string(1) "b"
+
+bool(false)
+
+Warning: Illegal string offset 'x' in example.php on line 10
+string(1) "a"
+
+bool(false)
+
+Notice: A non well formed numeric value encountered in example.php on line 10
 string(1) "b"
 ]]>
     </screen>
