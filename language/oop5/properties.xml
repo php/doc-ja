@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: dff848b17dafaabfb7662ffb5fecfcb04e3b771d Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 4e77868e15fea65175b87a38d6d31b61d63f7f8e Maintainer: takagi Status: ready -->
 <!-- CREDITS: mumumu -->
 
  <sect1 xml:id="language.oop5.properties" xmlns="http://docbook.org/ns/docbook">
@@ -278,6 +278,37 @@ $test1->prop = "foobar";
    </para>
    <note>
     <para>
+     読み取り専用プロパティを初期化できるのは、直接代入する場合だけです。
+     初期化されていない読み取り専用プロパティを、
+     参照によって初期化することはできません。
+     これは、そのプロパティが宣言されたスコープからであっても同様です。
+     参照渡しを期待する関数のパラメータに渡したり、
+     参照による代入を行ったりすると、
+     <exceptionname>Error</exceptionname> 例外が発生します。
+     <informalexample>
+      <programlisting role="php" annotations="non-interactive">
+<![CDATA[
+<?php
+
+class Test {
+    public readonly array $matches;
+
+    public function __construct(string $subject) {
+        // 参照による不正な初期化
+        preg_match('/\d+/', $subject, $this->matches);
+        // Error: Cannot indirectly modify readonly property Test::$matches
+    }
+}
+
+new Test('abc 42');
+?>
+]]>
+      </programlisting>
+     </informalexample>
+    </para>
+   </note>
+   <note>
+    <para>
      読み取り専用プロパティに対して、
      明示的にデフォルト値を設定することはできません。
      なぜなら、読み取り専用プロパティにデフォルト値を設定することは、
@@ -391,6 +422,15 @@ var_dump($test2->prop); // NULL
      </programlisting>
     </example>
    </para>
+   <note>
+    <simpara>
+     PHP 8.4.0 以降では、<link linkend="object.clone">__clone()</link> 内で
+     読み取り専用プロパティを間接的に変更すること
+     (そのプロパティへの参照を取得する <code>$ref = &amp;$this->prop</code> など) は、
+     許可されなくなりました。
+     これは、読み取り専用プロパティの初期化時にはすでに禁止されていました。
+    </simpara>
+   </note>
   </sect2>
 
   <sect2 xml:id="language.oop5.properties.dynamic-properties">
