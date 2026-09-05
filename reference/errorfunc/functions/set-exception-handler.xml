@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 4a6671fe697ead5b27603b56face01a2c4e7ebe5 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 1cc803aaa07ac94ce8e3bfdf56f4b9ddd23326d3 Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa,mumumu -->
 <refentry xml:id="function.set-exception-handler" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -22,6 +22,34 @@
    実行は、<parameter>callback</parameter> がコールされた後に
    停止します。
   </para>
+
+  <note>
+   <simpara>
+    例外ハンドラの実行中は、有効な例外ハンドラが存在しない状態になります。
+    PHP 8.3.0 以降のエンジンは、ハンドラがスローした例外が再びそのハンドラに
+    渡されないよう、ハンドラを呼び出す前にその設定を解除するからです。
+    そのため、ハンドラの中から <function>set_exception_handler</function> を
+    コールすると、前に定義されたハンドラは存在しないと報告されます。
+   </simpara>
+   <simpara>
+    さらに PHP 8.3.5 以降のエンジンは、呼び出そうとしているハンドラを
+    ハンドラスタックにプッシュします。
+    そのため、ハンドラの中から <function>restore_exception_handler</function> を
+    コールすると、その前に有効だったハンドラではなく、
+    現在実行中のハンドラが再度設定されます。
+   </simpara>
+   <simpara>
+    実行中のハンドラは、リターンする際に自動的に再度設定されます。
+    ただし、その時点で有効な例外ハンドラが存在しない場合に限ります。
+    ハンドラが <function>set_exception_handler</function> または
+    <function>restore_exception_handler</function> をコールした時点で、
+    この自動的な復元は行われなくなり、
+    ハンドラ自身が設定したままのハンドラが有効になります。
+   </simpara>
+   <simpara>
+    したがって、例外ハンドラの中から例外ハンドラを変更することは推奨されません。
+   </simpara>
+  </note>
  </refsect1>
 
  <refsect1 role="parameters">
@@ -65,6 +93,40 @@
   </para>
  </refsect1>
 
+ <refsect1 role="changelog">
+  &reftitle.changelog;
+  <para>
+   <informaltable>
+    <tgroup cols="2">
+     <thead>
+      <row>
+       <entry>&Version;</entry>
+       <entry>&Description;</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry>8.3.5</entry>
+       <entry>
+        呼び出される例外ハンドラがハンドラスタックにプッシュされ、
+        リターンした時点で再度設定されるようになりました。
+        ただし、ハンドラ自身がスタックを変更した場合は除きます。
+       </entry>
+      </row>
+      <row>
+       <entry>8.3.0</entry>
+       <entry>
+        有効な例外ハンドラが、実行中は設定解除されるようになりました。
+        そのため、ハンドラの中から <function>set_exception_handler</function> を
+        コールすると、前に定義されたハンドラは存在しないと報告されます。
+       </entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </informaltable>
+  </para>
+ </refsect1>
+
  <refsect1 role="examples">
   &reftitle.examples;
   <para>
@@ -90,15 +152,13 @@ echo "Not Executed\n";
 
  <refsect1 role="seealso"><!-- {{{ -->
   &reftitle.seealso;
-  <para>
-   <simplelist>
-    <member><function>get_exception_handler</function></member>
-    <member><function>restore_exception_handler</function></member>
-    <member><function>restore_error_handler</function></member>
-    <member><function>error_reporting</function></member>
-    <member><link linkend="language.exceptions">例外(exceptions)</link></member>
-   </simplelist>
-  </para>
+  <simplelist>
+   <member><function>get_exception_handler</function></member>
+   <member><function>restore_exception_handler</function></member>
+   <member><function>restore_error_handler</function></member>
+   <member><function>error_reporting</function></member>
+   <member><link linkend="language.exceptions">例外(exceptions)</link></member>
+  </simplelist>
  </refsect1><!-- }}} -->
 
 </refentry>
