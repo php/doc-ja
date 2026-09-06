@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 3a8c3e77df070a046c9d5b56b68926ca2d7e5ee3 Maintainer: mumumu Status: ready -->
+<!-- EN-Revision: d0a271b7ed3149b465a364fadd3f1212d01efd22 Maintainer: mumumu Status: ready -->
 <refentry xml:id="datetime.serialize" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
   <refname>DateTime::__serialize</refname>
@@ -44,21 +44,48 @@
  <refsect1 role="examples">
   &reftitle.examples;
   <example>
-   <title><function>DateTime::serialize</function> の例</title>
+   <title><methodname>DateTime::__serialize</methodname> の例</title>
    <programlisting role="php">
 <![CDATA[
 <?php
-$date = new DateTime('2025-03-27');
+
+class CustomDateTimeImmutable extends DateTimeImmutable
+{
+    #[\Override]
+    public function __serialize(): array
+    {
+        return [
+            'date' => $this->format(DateTimeInterface::W3C),
+            'timestamp' => $this->getTimestamp(),
+            'timezone' => $this->getTimeZone()->getName(),
+            'to' => 'Drink a cup of coffee',
+        ];
+    }
+}
+
+$date = new CustomDateTimeImmutable('2025-03-27');
 var_dump(serialize($date));
 ]]>
    </programlisting>
    &example.outputs;
    <screen>
 <![CDATA[
-string(114) "O:8:"DateTime":3:{s:4:"date";s:26:"2025-03-27 00:00:00.000000";s:13:"timezone_type";i:3;s:8:"timezone";s:3:"UTC";}"
+string(171) "O:23:"CustomDateTimeImmutable":4:{s:4:"date";s:25:"2025-03-27T00:00:00+00:00";s:9:"timestamp";i:1743033600;s:8:"timezone";s:3:"UTC";s:2:"to";s:21:"Drink a cup of coffee";}"
 ]]>
    </screen>
   </example>
+ </refsect1>
+
+ <refsect1 role="notes">
+  &reftitle.notes;
+  <warning>
+   <simpara>
+    <link linkend="object.serialize">__serialize()</link> が定義されているのに
+    <link linkend="object.unserialize">__unserialize()</link> が定義されていない場合、
+    カスタムの <classname>DateTime</classname> オブジェクトをアンシリアライズしようとすると
+    <exceptionname>Error</exceptionname> がスローされます。
+   </simpara>
+  </warning>
  </refsect1>
 
  <refsect1 role="seealso">
