@@ -1,50 +1,83 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: a38e360ae1ce4169b331013958c519d17f19114e Maintainer: haruki Status: ready -->
+<!-- EN-Revision: ee7185a089f266a9475b069aa199314811fad8a8 Maintainer: haruki Status: ready -->
 <!-- Credits: hirokawa, haruki -->
 <sect1 xml:id="install.unix.apache2" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
- <title>Apache 2.x (Unixシステム用)</title>
+ <title>Apache httpd 2.x (Unixシステム用)</title>
 
- <para>
-  このセクションでは、PHPを Unix システム上の Apache 2.x にインストールする際の
-  手引きと注意事項について説明します。
- </para>
-   
- &warn.apache2.compat;
-    
- <para>
+ <simpara>
+  このセクションでは、PHP を Linux および Unix 系のシステム上の
+  Apache HTTP Server 2.x にインストールする際の手引きと注意事項について説明します。
+ </simpara>
+
+ <warning>
+  <title>mod_php ではなく PHP-FPM を使いましょう</title>
+  <simpara>
+   <emphasis role="strong">新規のインストールで <literal>mod_php</literal>
+   を使ってはいけません。</emphasis>
+   このページの手順は、過去の経緯を知るための参考として、また PHP を Apache httpd
+   のプロセスに直接組み込むことがどうしても必要な、まれなケースのために残されています。
+  </simpara>
+  <simpara>
+   最近のデプロイ環境であれば、どんな場合でも
+   <link linkend="install.fpm">PHP-FPM</link> (FastCGI Process Manager)
+   を Apache httpd の <literal>mod_proxy_fcgi</literal>
+   モジュールと組み合わせて使いましょう。PHP-FPM を使うと、
+   リソース管理やプロセスの分離がより優れたものになり、
+   Apache httpd を再起動せずに PHP だけを再起動できるようになります。
+   また、Apache httpd の <literal>event</literal> MPM (Apache httpd 2.4
+   以降のデフォルト) とも互換性があります。
+   主要な Linux ディストリビューションは、この構成をデフォルトとして提供しています。
+  </simpara>
+  <simpara>
+   <literal>mod_php</literal> による方式では、PHP が Apache httpd
+   のすべてのワーカープロセスに直接組み込まれます。
+   PHP をスレッドセーフ (<literal>--enable-zts</literal>) でコンパイルしていない限り、
+   <literal>mod_php</literal> は <literal>prefork</literal> MPM を必要とし、
+   同時実行性が大きく制限されます。それでも <literal>mod_php</literal>
+   を使う場合は、パフォーマンスとセキュリティの面でどんな影響があるのかを
+   完全に理解しておく必要があります。
+  </simpara>
+ </warning>
+
+ <simpara>
   <link xlink:href="&url.apache2.docs;">Apache ドキュメンテーション</link>
-  を参照し、Apache 2.x の基本的な事項について理解しておくことを強く推奨します。
-  Apache のインストールオプションについてのより詳しい情報が得られます。
- </para>
+  は、Apache httpd 2.x サーバーに関する最も信頼できる情報源です。
+  Apache httpd のインストールオプションについてのより詳しい情報も、
+  そこで得られます。
+ </simpara>
 
- <para>
-  最新バージョンの Apache HTTP Server を
+ <simpara>
+  最新バージョンの Apache httpd を
   <link xlink:href="&url.apache;">Apache ダウンロードサイト</link>
   からダウンロードし、上述のいずれかのバージョンの PHP を用意してください。
-  この手引きでは Apache 2.x で PHP を動作させるための
+  この手引きでは Apache httpd 2.x で PHP を動作させるための
   基本的な部分しかカバーしていません。さらに詳しい情報については、<link
   xlink:href="&url.apache2.docs;">Apache ドキュメンテーション</link> を参照ください。
   情報が古く不正確になってしまうため、以下では詳細なバージョン番号は
-  記述されていません。'NN' という文字列をご使用のバージョンに適宜置き換えて
-  ください。
- </para>
+  記述されていません。'NN' という文字列をご使用の Apache httpd
+  のバージョンに適宜置き換えてください。
+ </simpara>
 
- <para>
-  現在、Apache 2.x には 2.4 と 2.2 の二種類があります。
-  どちらを選ぶにしてもそれなりの理由があるでしょうが、
-  2.4 が現在の最新版です。もし選択の余地があるのなら
-  2.4 を使うことを推奨します。しかし、この例では 2.4 と 2.2
-  のどちらでも使えるようにしています。
-  Apache httpd 2.2 は正式には廃止予定で、新しい開発やパッチが
-  発行されないことに注意してください。
- </para>
+ <simpara>
+  ここで説明する手順は Apache httpd 2.4 を対象としています。
+  Apache httpd がサポートしているリリースブランチは 2.4 だけです。
+  それより前のバージョン (2.2 以前) はサポートが終了しているため、
+  使ってはいけません。
+ </simpara>
+
+ <note>
+  <simpara>
+   PHP 8.4.0 以降、apache2handler SAPI は Apache 2.4 以降を必要とします。
+   EOL を迎えた Apache 2.0 および 2.2 のサポートは削除されました。
+  </simpara>
+ </note>
 
  <orderedlist>
   <listitem>
-   <para>
-    Apache HTTP server を上のサイトから取得して展開します。
-   </para>
+   <simpara>
+    Apache httpd を上のサイトから取得して展開します。
+   </simpara>
 
    <informalexample>
     <screen>
@@ -56,9 +89,9 @@ tar -xzf httpd-2.x.NN.tar.gz
   </listitem>
 
   <listitem>
-   <para>
+   <simpara>
     同じく、PHP のソースを取得して展開します。
-   </para>
+   </simpara>
 
    <informalexample>
     <screen>
@@ -68,18 +101,24 @@ tar -xzf php-NN.tar.gz
     </screen>
    </informalexample>
   </listitem>
-   
+
   <listitem>
-   <para>
-    Apache をビルドしてインストールします。Apache のビルドに関する詳細は
-    Apache のドキュメントを参照ください。
-   </para>
+   <simpara>
+    Apache httpd をビルドしてインストールします。Apache httpd のビルドに関する詳細は
+    Apache httpd のドキュメントを参照ください。
+    PHP をスレッドセーフ (<literal>--enable-zts</literal>) でコンパイルしていない限り、
+    <literal>mod_php</literal> は <literal>prefork</literal> MPM
+    を必要とすることに注意してください。かわりに PHP-FPM を使うつもりなら (推奨)、
+    デフォルトの <literal>event</literal> MPM をそのまま使い、
+    <link linkend="install.fpm">PHP-FPM のインストール手順</link>
+    まで読み飛ばしてかまいません。
+   </simpara>
 
    <informalexample>
     <screen>
 <![CDATA[
 cd httpd-2_x_NN
-./configure --enable-so
+./configure --enable-so --with-mpm=prefork
 make
 make install
 ]]>
@@ -89,10 +128,9 @@ make install
 
   <listitem>
    <para>
-    以上で Apache 2.x.NN が、モジュールの動的ロードとデフォルトの
-    MPM（マルチプロセッシングモジュール）である prefork が有効になった
-    状態で、/usr/local/apache2 にインストールされます。
-    インストールが正常か調べるには、以下のようにして Apache サーバーを立ち上げます。
+    以上で Apache httpd 2.x.NN が、モジュールの動的ロードと
+    prefork MPM が有効になった状態で、/usr/local/apache2 にインストールされます。
+    インストールが正常か調べるには、以下のようにして Apache httpd サーバーを立ち上げます。
 
     <informalexample>
      <screen>
@@ -115,21 +153,21 @@ make install
   </listitem>
 
   <listitem>
-   <para>
+   <simpara>
     PHP の configure を行います。ここでは、様々なオプションを指定し、
     特定の拡張モジュールを有効にするといったカスタマイズを行います。
     指定可能なオプションの一覧は、<command>./configure --help</command> を実行すると得られます。
-    以下に、Apache 2 と MySQL のサポートを有効にする、簡単な設定例を示します。
-   </para>
+    以下に、Apache httpd と MySQL のサポートを有効にする、簡単な設定例を示します。
+   </simpara>
 
-   <para>
-    上で説明したように Apache をソースからビルドした場合は、
+   <simpara>
+    上で説明したように Apache httpd をソースからビルドした場合は、
     <command>apxs</command> のパスも下の例のとおりになっているでしょう。しかし、
-    もし別の方法で Apache をインストールした場合は <command>apxs</command>
+    もし別の方法で Apache httpd をインストールした場合は <command>apxs</command>
     のパスを適切に変更しなければなりません。
     ディストリビューションによっては、<command>apxs</command> の名前が
     <command>apxs2</command> と変更されていることもあるので注意しましょう。
-   </para>
+   </simpara>
 
    <informalexample>
     <screen>
@@ -142,14 +180,14 @@ make install
     </screen>
    </informalexample>
 
-   <para>
+   <simpara>
     configure オプションを変更して再インストールする場合は、
     <command>configure</command>, <command>make</command>,
     <command>make install</command> の手順を繰り返さなければなりません。
     共有モジュールとしてコンパイルされた PHP を有効にするには
-    Apache を再起動するだけです。Apache の再コンパイルは不要です。
-   </para>
-         
+    Apache を再起動するだけです。Apache httpd の再コンパイルは不要です。
+   </simpara>
+
    <para>
     特に断りがない限り、<command>make install</command> は、<link xlink:href="&url.php.pear;">PEAR</link>, <link linkend="install.pecl.phpize">phpize</link> のような様々な 
     関連ツール、CLI 版 PHP などもインストールすることに注意してください。
@@ -157,10 +195,10 @@ make install
   </listitem>
 
   <listitem>
-   <para>
+   <simpara>
     <filename>php.ini</filename> ファイルを設定する
-   </para>
-    
+   </simpara>
+
    <informalexample>
     <screen>
 <![CDATA[
@@ -169,62 +207,46 @@ cp php.ini-development /usr/local/lib/php.ini
     </screen>
    </informalexample>
 
-   <para>
+   <simpara>
     PHP の実行時設定を変更するには、<literal>.ini</literal> ファイルを編集します。
     <filename>php.ini</filename> ファイルを他の場所に置きたい場合は、手順 5 で、
     オプション <literal>--with-config-file-path=/some/path</literal> を使用します。
-   </para>
-   
-   <para>
+   </simpara>
+
+   <simpara>
     <filename>php.ini-development</filename> ではなく、<filename>php.ini-production</filename> を使用する場合は、PHP の
     動作が変化しますので、ファイル中に記載されている変更点の一覧を確認する
     ようにしてください。
-   </para>
+   </simpara>
   </listitem>
 
   <listitem>
-   <para>
+   <simpara>
     <filename>httpd.conf</filename> を編集し、PHP の共有モジュールをロードするよう設定します。
     <literal>LoadModule</literal> 命令の右側に記述するパスは、システムの PHP 共有モジュール
     を指している必要があります。上記の <command>make install</command> により既にこの設定は
     追加されている場合もありますが、確認が必要です。
-   </para>
+   </simpara>
 
    <informalexample>
-    <para>
-     PHP 8 向けの設定は以下のようになります:
-    </para>
-
     <programlisting role="apache-conf">
 <![CDATA[
 LoadModule php_module modules/libphp.so
 ]]>
     </programlisting>
    </informalexample>
-
-   <informalexample>
-    <para>
-     PHP 7 向けの設定は以下のようになります:
-    </para>
-
-    <programlisting role="apache-conf">
-<![CDATA[
-LoadModule php7_module modules/libphp7.so
-]]>
-    </programlisting>
-   </informalexample>
   </listitem>
 
   <listitem>
-   <para>
-    Apache が特定の拡張子のファイルを PHP としてパースするよう設定します。
-    たとえば、Apache が拡張子 <literal>.php</literal> のファイルを PHP としてパースするようにします。
-    単に Apache の <literal>AddType</literal> ディレクティブを使うだけではなく、
+   <simpara>
+    Apache httpd が特定の拡張子のファイルを PHP としてパースするよう設定します。
+    たとえば、Apache httpd が拡張子 <literal>.php</literal> のファイルを PHP としてパースするようにします。
+    単に <literal>AddType</literal> ディレクティブを使うだけで済ませるのではなく、
     悪意を持ってアップロード (あるいは作成) された <filename>exploit.php.jpg</filename>
     のようなファイルが PHP として実行されてしまわないようにしたいものです。
     この例では、PHP としてパースさせたい任意の拡張子を追加していくだけです。
     ためしに <literal>.php</literal> を追加してみましょう。
-   </para>
+   </simpara>
 
    <informalexample>
     <programlisting role="apache-conf">
@@ -236,17 +258,17 @@ LoadModule php7_module modules/libphp7.so
     </programlisting>
    </informalexample>
 
-   <para>
+   <simpara>
     あるいは、拡張子 <literal>.php</literal>, <literal>.php2</literal>,
     <literal>.php3</literal>, <literal>.php4</literal>, <literal>.php5</literal>,
     <literal>.php6</literal>, <literal>.phtml</literal>
     のファイルだけを PHP として実行したい場合は、以下のようにします。
-   </para>
+   </simpara>
 
    <informalexample>
     <programlisting role="apache-conf">
 <![CDATA[
-<FilesMatch "\.ph(p[2-6]?|tml)$">
+<FilesMatch "\.(php[2-6]?|phtml)$">
     SetHandler application/x-httpd-php
 </FilesMatch>
 ]]>
@@ -271,7 +293,6 @@ LoadModule php7_module modules/libphp7.so
    <simpara>
     他にハンドラが見つからないときのデフォルトのハンドラとして PHP ファイルを使いたい場合
     （ルーティングエンジンを使うときなど）は、<literal>FallbackResource</literal> ディレクティブが使えます。
-    このディレクティブは Apache 2.4.4 以降で使用できます。
    </simpara>
 
    <simpara>
@@ -317,10 +338,10 @@ RewriteRule (.*\.php)s$ $1 [H=application/x-httpd-php-source]
   </listitem>
 
   <listitem>
-   <para>
-    Apache サーバーを、通常の手順通り、起動させます。
-   </para>
-  
+   <simpara>
+    Apache httpd を、通常の手順通り、起動させます。
+   </simpara>
+
    <informalexample>
     <screen>
 <![CDATA[
@@ -341,46 +362,34 @@ service httpd restart
   </listitem>
  </orderedlist>
 
- <para>
-  上記の手順で、Apache2 ウェブサーバー上で
-  <literal>SAPI</literal> モジュールとして PHP を動作させることができます。もちろん、Apache と PHP の双方とも、もっと多くの configure オプションを指定することが出来ます。
+ <simpara>
+  上記の手順で、Apache httpd ウェブサーバー上で
+  <literal>SAPI</literal> モジュールとして PHP を動作させることができます。Apache httpd と PHP の双方とも、もっと多くの configure オプションを指定することが出来ます。
   詳しい情報を得るには、ソースツリーディレクトリで <command>./configure --help</command> を実行してください。
- </para>
-
- <para>
-  マルチスレッド版の Apache をビルドするには、Apache のビルド時に標準の
-  <filename>prefork</filename> MPM ではなく <filename>worker</filename> MPM を選択します。
-  そのためには、先ほどの手順 3 のところで <command>./configure</command> の引数に次のオプションを追加します。
- </para>
-
- <informalexample>
-  <screen>
-<![CDATA[
---with-mpm=worker
-]]>
-  </screen>
- </informalexample>
-
- <para>
-  そうすることで何がどのようになるのかをきちんと認識したうえで、これを行わなければなりません。
-  詳細については Apacheドキュメントの
-  <link xlink:href="&url.apache2.mpm;">マルチプロセッシングモジュール (MPM)</link>
-  を参照ください。
- </para>
+ </simpara>
 
  <note>
-  <para>
-  <link linkend="faq.installation.apache.multiviews">Apache MultiViews FAQ</link> では、PHP でマルチビューを使う方法について解説しています。
-  </para>
+  <title>MPM の互換性</title>
+  <simpara>
+   PHP を Zend Thread Safety (<literal>--enable-zts</literal>) でコンパイルしていない限り、
+   <literal>mod_php</literal> は <literal>prefork</literal> MPM を必要とします。
+   その理由については、<link linkend="faq.installation.apache2">マルチスレッド MPM
+   の Apache httpd を使う場合</link>についての FAQ の項目を参照してください。
+  </simpara>
+
+  <simpara>
+   ディストリビューションが提供する <literal>mod_php</literal> パッケージのほとんどは
+   ZTS でビルドされていないため、通常は <literal>prefork</literal> が必要になります。
+   マルチスレッド MPM が必要な場合 (負荷がかかる状況ではパフォーマンスが向上するため推奨されます) は、
+   かわりに <link linkend="install.fpm">PHP-FPM</link> と
+   <literal>mod_proxy_fcgi</literal> を使いましょう。
+  </simpara>
  </note>
 
  <note>
-  <para>
-   マルチスレッド版の Apache をビルドするには、ターゲットシステムがスレッドに対応していなければなりません。
-   その場合は、PHP についても Zend Thread Safety (ZTS) でビルドしなければなりません。
-   この構成では使用できない拡張モジュールもあります。推奨される方法は、Apache をデフォルトの
-   <filename>prefork</filename> MPM モジュールでビルドすることです。
-  </para>
+  <simpara>
+   <link linkend="faq.installation.apache.multiviews">Apache MultiViews FAQ</link> では、PHP でマルチビューを使う方法について解説しています。
+  </simpara>
  </note>
 </sect1>
 
@@ -404,3 +413,4 @@ vim600: syn=xml fen fdm=syntax fdl=2 si
 vim: et tw=78 syn=sgml
 vi: ts=1 sw=1
 -->
+
