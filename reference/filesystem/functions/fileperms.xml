@@ -90,51 +90,35 @@ echo substr(sprintf('%o', fileperms('/etc/passwd')), -4);
 $perms = fileperms('/etc/passwd');
 
 switch ($perms & 0xF000) {
-    case 0xC000: // ソケット
-        $info = 's';
-        break;
-    case 0xA000: // シンボリックリンク
-        $info = 'l';
-        break;
-    case 0x8000: // 通常のファイル
-        $info = 'r';
-        break;
-    case 0x6000: // ブロックスペシャルファイル
-        $info = 'b';
-        break;
-    case 0x4000: // ディレクトリ
-        $info = 'd';
-        break;
-    case 0x2000: // キャラクタスペシャルファイル
-        $info = 'c';
-        break;
-    case 0x1000: // FIFO パイプ
-        $info = 'p';
-        break;
-    default: // 不明
-        $info = 'u';
+    case 0x1000: $info = 'p'; break; // FIFO パイプ
+    case 0x2000: $info = 'c'; break; // キャラクタスペシャルファイル
+    case 0x4000: $info = 'd'; break; // ディレクトリ
+    case 0x6000: $info = 'b'; break; // ブロックスペシャルファイル
+    case 0x8000: $info = 'r'; break; // 通常のファイル
+    case 0xA000: $info = 'l'; break; // シンボリックリンク
+    case 0xC000: $info = 's'; break; // ソケット
+
+    // 不明
+    default: $info = 'u';
 }
 
 // 所有者
+$setuid = $perms & 0x0800;
 $info .= (($perms & 0x0100) ? 'r' : '-');
 $info .= (($perms & 0x0080) ? 'w' : '-');
-$info .= (($perms & 0x0040) ?
-            (($perms & 0x0800) ? 's' : 'x' ) :
-            (($perms & 0x0800) ? 'S' : '-'));
+$info .= (($perms & 0x0040) ? ($setuid ? 's' : 'x') : ($setuid ? 'S' : '-'));
 
 // グループ
+$setgid = $perms & 0x0400;
 $info .= (($perms & 0x0020) ? 'r' : '-');
 $info .= (($perms & 0x0010) ? 'w' : '-');
-$info .= (($perms & 0x0008) ?
-            (($perms & 0x0400) ? 's' : 'x' ) :
-            (($perms & 0x0400) ? 'S' : '-'));
+$info .= (($perms & 0x0008) ? ($setgid ? 's' : 'x') : ($setgid ? 'S' : '-'));
 
 // 全体
+$sticky = $perms & 0x0200;
 $info .= (($perms & 0x0004) ? 'r' : '-');
 $info .= (($perms & 0x0002) ? 'w' : '-');
-$info .= (($perms & 0x0001) ?
-            (($perms & 0x0200) ? 't' : 'x' ) :
-            (($perms & 0x0200) ? 'T' : '-'));
+$info .= (($perms & 0x0001) ? ($sticky ? 't' : 'x') : ($sticky ? 'T' : '-'));
 
 echo $info;
 ?>
