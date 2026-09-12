@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: dff848b17dafaabfb7662ffb5fecfcb04e3b771d Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 09c650422aec6f59dca08d1c65eaa633d391a525 Maintainer: hirokawa Status: ready -->
 <!-- Credits: mumumu -->
 
 <sect1 xml:id="language.oop5.cloning" xmlns="http://docbook.org/ns/docbook">
@@ -159,6 +159,59 @@ echo (clone $dateTime)->format('Y');
 ]]>
    </screen>
   </example>
+
+  <sect2 xml:id="language.oop5.cloning.with-properties">
+   <title>クローン作成時のプロパティの上書き</title>
+
+   <simpara>
+    PHP 8.5.0 以降、<literal>clone</literal> は関数としても使えます。
+    2 番目のパラメータ <parameter>withProperties</parameter> には、
+    プロパティ名をキー、コピーが受け取る値を値とする配列を渡します。
+    上書きされるのはそこで指定したプロパティだけで、
+    それ以外のプロパティはコピーされたときの値をそのまま保持します。
+   </simpara>
+
+   <simpara>
+    上書きは <link linkend="object.clone">__clone()</link> が実行された後に適用されます。
+    このとき、全てのプロパティのアクセス権が尊重されます。
+    <link linkend="language.oop5.properties.readonly-properties">readonly</link>
+    プロパティは、元のオブジェクトで既に値が設定されていても、
+    コピーでは更新できます。
+    このため clone 関数は、変更を加えたコピーを返すメソッドを実装するのに適しています。
+   </simpara>
+
+   <example>
+    <title>プロパティを上書きしてオブジェクトのクローンを作成する</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+class Point {
+    public function __construct(
+        public readonly int $x,
+        public readonly int $y,
+    ) {}
+
+    public function withX(int $x): static
+    {
+        return clone($this, ['x' => $x]);
+    }
+}
+
+$p = new Point(1, 2);
+$q = $p->withX(10);
+
+echo $q->x, ' ', $q->y;
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+10 2
+]]>
+    </screen>
+   </example>
+  </sect2>
 
  </sect1>
  
