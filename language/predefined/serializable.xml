@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 029f19dbc090e4d249a23c0ab087d47059b37adc Maintainer: satoruyoshida Status: ready -->
+<!-- EN-Revision: 72d861de4970c2dbc84c391c1a4caab4a10a91fa Maintainer: satoruyoshida Status: ready -->
 <reference xml:id="class.serializable" role="class" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xi="http://www.w3.org/2001/XInclude">
 
  <title>Serializable インターフェイス</title>
@@ -35,6 +35,37 @@
      を実装したクラスに対しては、推奨されない警告が発生します。
     </para>
    </warning>
+
+   <simpara>
+    新しいコードでは、代わりに PHP 7.4.0 以降で利用可能な
+    <link linkend="object.serialize">__serialize()</link> と
+    <link linkend="object.unserialize">__unserialize()</link>
+    マジックメソッドを使いましょう。
+    クラスがこれらのマジックメソッドとこのインターフェイスの両方を宣言している場合、
+    <function>serialize</function> は常に
+    <link linkend="object.serialize">__serialize()</link> を使い、
+    <methodname>Serializable::serialize</methodname> がコールされることはありません。
+    一方、アンシリアライズでどちらが使われるかは、データの形式によって決まります。
+    PHP 7.4.0 以降が書き出したデータは
+    <link linkend="object.unserialize">__unserialize()</link> が読み込み、
+    それより前のバージョンが書き出したデータは今でも
+    <methodname>Serializable::unserialize</methodname> が読み込みます。
+    そのため、<interfacename>Serializable</interfacename> の実装は、
+    このような古いデータを読み込む場合や、
+    <interfacename>Serializable</interfacename> による型宣言を満たす場合には、
+    依然として有用です。
+    4つのメソッドすべてを宣言すれば、あらゆるケースに対応でき、
+    推奨されない警告も発生しません。
+   </simpara>
+
+   <note>
+    <simpara>
+     マジックメソッドには専用のインターフェイスがありません。
+     そのため、<interfacename>Serializable</interfacename> を実装せずに
+     マジックメソッドだけを宣言したクラスは、このインターフェイスのインスタンスにはなりません。
+     マジックメソッドを検出するには <function>method_exists</function> を使います。
+    </simpara>
+   </note>
   </section>
 
   <section xml:id="serializable.synopsis">
@@ -54,45 +85,61 @@
   <section xml:id="serializable.examples">
    &reftitle.examples;
    <example xml:id="serializable.example.basic">
-    <title>基本的な使用法</title>
+    <title>PHP 7.1.0 から 7.3.0 までをサポートする</title>
+    <simpara>
+     シリアライズ後の形式はマジックメソッドが受け持ち、インターフェイスのメソッドは
+     そこに処理を委譲します。こうすることで、ひとつの表現で両方の仕組みをまかなえます。
+    </simpara>
     <programlisting role="php">
 <![CDATA[
 <?php
-class obj implements Serializable {
-    private $data;
-    public function __construct() {
-        $this->data = "My private data";
+class Task implements Serializable
+{
+    private $label;
+
+    public function __construct($label)
+    {
+        $this->label = $label;
     }
-    public function serialize() {
-        return serialize($this->data);
+
+    public function __serialize(): array
+    {
+        return ['label' => $this->label];
     }
-    public function unserialize($data) {
-        $this->data = unserialize($data);
+
+    public function __unserialize(array $data): void
+    {
+        $this->label = $data['label'];
     }
-    public function getData() {
-        return $this->data;
+
+    // PHP 7.4.0 以降はコールされません
+    public function serialize()
+    {
+        return serialize($this->__serialize());
+    }
+
+    // PHP 7.4.0 以降も、それより前に書き出されたデータに対してはコールされます
+    public function unserialize($data)
+    {
+        $this->__unserialize(unserialize($data));
     }
 }
 
-$obj = new obj;
-$ser = serialize($obj);
-
-var_dump($ser);
-
-$newobj = unserialize($ser);
-
-var_dump($newobj->getData());
+var_dump(serialize(new Task('deploy')));
 ?>
 ]]>
     </programlisting>
-    &example.outputs.similar;
+    &example.outputs;
     <screen>
 <![CDATA[
-Deprecated: obj implements the Serializable interface, which is deprecated. Implement __serialize() and __unserialize() instead (or in addition, if support for old PHP versions is necessary) in script on line 2
-string(38) "C:3:"obj":23:{s:15:"My private data";}"
-string(15) "My private data"
+string(40) "O:4:"Task":1:{s:5:"label";s:6:"deploy";}"
 ]]>
     </screen>
+    <simpara>
+     PHP 7.4.0 より前のバージョンでは、同じコードがインターフェイス経由でシリアライズを行い、
+     <literal>string(47) "C:4:"Task":31:{a:1:{s:5:"label";s:6:"deploy";}}"</literal>
+     を出力します。
+    </simpara>
    </example>
   </section>
 
