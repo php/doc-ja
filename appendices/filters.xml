@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 3f1dbc451b313fb1ec8058f24c1beccf55fce316 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 82b5e0afeb38142e91fbba05f06b46c3129420ba Maintainer: takagi Status: ready -->
 <!-- Credits: mumumu -->
 
 <appendix xml:id="filters" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
@@ -290,7 +290,7 @@ fclose($fp);
 
   <section xml:id="filters.compression.zlib">
    <title>zlib.deflate と zlib.inflate</title>
-   <simpara>
+   <para>
     <literal>zlib.deflate</literal> (圧縮) と
     <literal>zlib.inflate</literal> (展開) は、
     <link xlink:href="&url.rfc;1951">RFC 1951</link> で述べられている圧縮方法を
@@ -309,10 +309,123 @@ fclose($fp);
     効率は落ちますがメモリの消費量を抑えられます。値を指定しなかった際の
     <parameter>window</parameter> の初期値は、現在 <literal>15</literal> です。
  
+    <literal>zlib.deflate</literal> フィルタは
+    <literal>DEFLATE</literal>、<literal>ZLIB</literal>、<literal>GZIP</literal>
+    の 3 つの圧縮方法を実装しており、どれを使うかは
+    <parameter>window</parameter> パラメータの値で決まります。
+
+    window パラメータの下位 4 ビットは、内部で使われる「ヒストリバッファ」の
+    サイズを、2 を底とする対数で指定するもので、8 から 15 までの
+    範囲を取ります。それ以外のビットの意味は、
+    以下のとおりです。
+
+    <itemizedlist>
+     <listitem>
+      <simpara>
+       <literal>DEFLATE</literal> (<link xlink:href="&url.rfc;1951">RFC 1951</link>)
+       は、ヘッダもチェックサムも持たない生の圧縮アルゴリズムです。
+       window パラメータに -9 から -15 の範囲の値を指定した場合に、この圧縮が行われます。
+       この圧縮アルゴリズムは、<literal>zlib.deflate</literal> フィルタが生成する
+       すべてのフォーマットの基礎になっています。
+       文字列を直接扱う関数としては、<function>gzdeflate</function> と
+       <function>gzinflate</function> が対応します。
+      </simpara>
+     </listitem>
+
+     <listitem>
+      <simpara>
+       <literal>ZLIB</literal> (<link xlink:href="&url.rfc;1950">RFC 1950</link>)
+       は、<literal>DEFLATE</literal> アルゴリズムを適用した上で、2 バイトのヘッダと、
+       圧縮前のデータの Adler32 チェックサムをビッグエンディアンのバイトオーダーで
+       格納した 4 バイトのトレーラーを追加します:
+       <literal><![CDATA[ZLIB = ZLIBHEADER(2B)  DEFLATE  ADLER32(4B)]]></literal>
+
+       2 バイトのヘッダをビッグエンディアンの 16 ビット符号なし整数として読んだ値は、
+       31 の倍数でなければなりません。
+       window パラメータに 8 から 15 の範囲の値を指定した場合に、
+       このフォーマットが生成されます。
+       文字列を直接扱う関数としては、<function>gzcompress</function> と
+       <function>gzuncompress</function> が対応します。
+      </simpara>
+     </listitem>
+
+     <listitem>
+      <simpara>
+       <literal>GZIP</literal> (<link xlink:href="&url.rfc;1952">RFC 1952</link>)
+       は、<literal>DEFLATE</literal> アルゴリズムを適用した上で、ヘッダと、
+       圧縮前のデータの <literal>CRC32</literal> チェックサムおよびその長さを、
+       どちらもリトルエンディアンのバイトオーダーで格納したトレーラーを追加します:
+       <literal><![CDATA[GZIP = GZIPHEADER(10B)  DEFLATE  CRC32(4B)  LENGTH(4B)]]></literal>
+
+       これが <literal>.gz</literal> ファイルのフォーマットです。
+       <literal>GZIPHEADER</literal> には、順に
+       <literal>GZIP</literal> シグネチャ (<literal>\x1f\x8B</literal>)、
+       圧縮メソッド (<literal>\x08</literal>)、値がゼロのフラグバイト、
+       値がゼロの 4 バイトの更新時刻、圧縮レベルに応じた extra-flags バイト、
+       そして現在のオペレーティングシステム
+       (<literal>\x00</literal> = FAT ファイルシステム、
+       <literal>\x03</literal> = Unix など) が格納されます。
+       window パラメータに 9+16=25 から 15+16=31 の範囲の値を指定した場合に、
+       このフォーマットが生成されます。
+       圧縮前のデータの長さには 4GB という上限があることに注意してください。
+       この上限を超えた場合、<literal>LENGTH</literal> の部分には実際の長さを
+       2^32 で割った余りだけが格納されます。
+       文字列を直接扱う関数としては、<function>gzencode</function> と
+       <function>gzdecode</function> が対応します。また
+       <function>gzopen</function> 関数を使うと、<literal>.gz</literal>
+       ファイルの読み書きができます。
+      </simpara>
+     </listitem>
+    </itemizedlist>
+
+    <literal>zlib.inflate</literal> フィルタで指定できるのは
+    <parameter>window</parameter> パラメータだけで、それ以外のパラメータ
+    (<parameter>memory</parameter>、<parameter>level</parameter>) は無視されます。
+    $W をヒストリバッファのサイズの 2 を底とする対数とすると、展開時には
+    2^$W バイトが確保されます。ZLIB フォーマットの場合、この値はヘッダに記録された
+    値以上でなければならず、展開時にチェックされます。それ以外のフォーマットの場合は、
+    データ中に実際に現れるマッチ距離をまかなえる大きさであれば十分です。
+    範囲は 9 ≤ $W ≤ 15 です。値がわからない場合は $W=15 にしておくのが安全です。
+
+    <itemizedlist>
+     <listitem>
+      <simpara>
+       <literal>DEFLATE</literal> (<link xlink:href="&url.rfc;1951">RFC 1951</link>):
+       window=-$W を指定します。$W には、圧縮時に使った値以上を指定します。
+       値がわからない場合は window=-15 を指定してください。
+      </simpara>
+     </listitem>
+
+     <listitem>
+      <simpara>
+       <literal>ZLIB</literal> (<link xlink:href="&url.rfc;1950">RFC 1950</link>):
+       window=$W を指定します。$W の値は ZLIB ヘッダから取得できます。
+       値がわからない場合は window=15 を指定してください。
+      </simpara>
+     </listitem>
+
+     <listitem>
+      <simpara>
+       <literal>GZIP</literal> (<link xlink:href="&url.rfc;1952">RFC 1952</link>):
+       window=$W+16 を指定します。GZIP ヘッダは window サイズを保持していないので、
+       圧縮時に使った値がわからない場合は window=31 を指定してください。
+      </simpara>
+     </listitem>
+
+     <listitem>
+      <simpara>
+       <literal>ZLIB or GZIP</literal>:
+       ヘッダを自動で検出させるには window=$W+32 を指定します。こうすると
+       どちらのフォーマットも認識して展開できます。
+       window=15+32=47 にしておくのが安全です。
+      </simpara>
+     </listitem>
+    </itemizedlist>
+
     <parameter>memory</parameter> は、作業用の一時メモリをどの程度割り当てるかを
     指定します。1 (最小限) から 9 (最大限) の間で指定できます。この値は
     圧縮の速度のみに影響し、圧縮後のデータのサイズには影響しません。
-  </simpara>
+  </para>
 
   <note>
    <simpara>
