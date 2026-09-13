@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 55e0481a24fd4d7db21b62f1885973edbca25e60 Maintainer: mumumu Status: ready -->
+<!-- EN-Revision: 35cadcfe561fc27ee973457a64880f0b85db2ec5 Maintainer: mumumu Status: ready -->
 
 <chapter xml:id="session.security" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>セッション と セキュリティ</title>
@@ -668,13 +668,17 @@
      <para>
       <link linkend="ini.session.use-trans-sid">session.use_trans_sid</link>=Off
      </para>
-     <para>
-      透過的なセッションID管理を使うことは禁止されていません。
-      開発者は必要な場合は採用しても構いません。
-      しかし、透過的なセッションID管理を無効にすると、
+     <simpara>
+      透過的なセッションID管理を無効にすると、
       セッションIDインジェクションやリークの可能性が排除できるので、
       一般的なセッションIDのセキュリティを改善できます。
-     </para>
+     </simpara>
+     <warning>
+      <simpara>
+       <literal>session.use_trans_sid</literal> を有効にすることは、
+       PHP 8.4.0 以降は非推奨です。
+      </simpara>
+     </warning>
      <note>
       <para>
        セッションIDは、ブックマークされたURLや、電子メールに埋め込まれたURLや、
@@ -684,44 +688,60 @@
     </listitem>
 
     <listitem>
-     <para>
-      <link linkend="ini.session.trans-sid-tags">session.trans_sid_tags</link>=[limited tags]
-     </para>
-     <para>
-      (PHP 7.1.0 &gt;=) 開発者は必要ないのにHTMLタグを書き換えるべきではありません。
+     <simpara>
+      <link linkend="ini.session.trans-sid-tags">session.trans_sid_tags</link>="a=href,area=href,frame=src,form="
+     </simpara>
+     <simpara>
+      必要ないのにHTMLタグを書き換えるべきではありません。
       デフォルト値でほとんどの場合は十分です。古いPHPバージョンの場合は、
       <link linkend="ini.url-rewriter.tags">url_rewriter.tags</link> を代わりに使ってください。
-     </para>
+     </simpara>
+     <warning>
+      <simpara>
+       <literal>session.trans_sid_tags</literal> をデフォルト値から変更することは、
+       PHP 8.4.0 以降は非推奨です。
+      </simpara>
+     </warning>
     </listitem>
 
     <listitem>
-     <para>
-      <link linkend="ini.session.trans-sid-hosts">session.trans_sid_hosts</link>=[limited hosts]
-     </para>
-     <para>
-      (PHP 7.1.0 &gt;=) この INI 設定は、
-      trans sid の書き換えを許可するホストをホワイトリスト形式で定義します。
+     <simpara>
+      <link linkend="ini.session.trans-sid-hosts">session.trans_sid_hosts</link>=""
+     </simpara>
+     <simpara>
+      この設定は、セッションIDをURLに追加してもよいホストを列挙します。
       信頼できないホストを絶対に追加しないでください。
       セッションモジュールは、この設定が空の場合、
       <literal>$_SERVER['HTTP_HOST']</literal> だけを許可します。
-     </para>
+     </simpara>
+     <warning>
+      <simpara>
+       <literal>session.trans_sid_hosts</literal> に空でない値を設定することは、
+       PHP 8.4.0 以降は非推奨です。
+      </simpara>
+     </warning>
     </listitem>
 
     <listitem>
-     <para>
-      <link linkend="ini.session.referer-check">session.referer_check</link>=[originating URL]
-     </para>
-     <para>
+     <simpara>
+      <link linkend="ini.session.referer-check">session.referer_check</link>=""
+     </simpara>
+     <simpara>
       <link
       linkend="ini.session.use-trans-sid">session.use_trans_sid</link> が有効になっている場合、
-      この設定はセッションIDインジェクションのリスクを減らします。
-      website が <literal>http://example.com/</literal> の場合、
-      <literal>http://example.com/</literal> を設定してください。
-      HTTPS ブラウザはリファラヘッダを送信しないことに注意してください。
-      ブラウザはリファラヘッダを設定によって送信しない可能性もあります。
-      よって、この設定は信頼できるセキュリティ対策ではありませんが、
-      この設定を使うことは推奨します。
-     </para>
+      空でない値を設定するとセッションIDインジェクションのリスクを減らせます。
+      <literal>Referer</literal> ヘッダにその値が含まれていない限り、
+      クライアントが送信したセッションIDは破棄されるからです。
+      HTTPS の場合にブラウザが <literal>Referer</literal> ヘッダを送信しないことや、
+      設定によってこのヘッダが省略される場合があることに注意してください。
+      よって、この設定は信頼できるセキュリティ対策ではありません。
+     </simpara>
+     <warning>
+      <simpara>
+       <literal>session.referer_check</literal> に空でない値を設定することは、
+       PHP 8.4.0 以降は非推奨です。
+      </simpara>
+     </warning>
     </listitem>
 
     <listitem>
@@ -738,20 +758,6 @@
       プライベートなデータを送信する可能性があることに注意してください。
       <literal>"public"</literal> は、
       HTTPコンテンツがプライベートなデータを一切含んでいない場合にのみ使わなければなりません。
-     </para>
-    </listitem>
-
-    <listitem>
-     <para>
-      <link linkend="ini.session.hash-function">session.hash_function</link>="sha256"
-     </para>
-     <para>
-      (PHP 7.1.0 &lt;) より強いハッシュ関数は、より強いセッションIDを生成します。
-      ハッシュの衝突が起こる可能性は、MD5 ハッシュアルゴリズムを使っても低いですが、
-      開発者は SHA2 またはそれより強い sha384 や sha512 のようなハッシュアルゴリズムを使うべきです。
-      開発者は、十分に長い
-      <link linkend="ini.session.entropy-length">entropy</link>
-      をハッシュ関数を使うときに必ず与えなければなりません。
      </para>
     </listitem>
 
