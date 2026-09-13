@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 45042fef652f1b4e904e809fcbfcf31f6c60670b Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 1ed119182ad4629064b13301d0e427de47736bfe Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: shimooka -->
 <refentry xml:id="function.strtr" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -113,15 +113,20 @@
     <programlisting role="php">
 <![CDATA[
 <?php
-$addr = "The river å";
 
-// この形式の場合、strtr() はバイト単位での変換を行います。
-// したがって、ここではシングルバイトエンコーディングを想定しています。
-$addr = strtr($addr, "äåö", "aao");
-echo $addr, PHP_EOL;
-?>
+$original = "He1Lo, w0rld!";
+
+// 引数を三つ渡した場合、strtr() はバイト単位での変換を行います。
+$result = strtr($original, "1L0", "llo");
+echo $result;
 ]]>
     </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+Hello, world!
+]]>
+    </screen>
    </example>
   </para>
   <para>
@@ -135,9 +140,9 @@ echo $addr, PHP_EOL;
     <programlisting role="php">
 <![CDATA[
 <?php
-$trans = array("h" => "-", "hello" => "hi", "hi" => "hello");
-echo strtr("hi all, I said hello", $trans);
-?>
+
+$replace_pairs = ["h" => "-", "hello" => "hi", "hi" => "hello"];
+echo strtr("hi all, I said hello", $replace_pairs);
 ]]>
     </programlisting>
     &example.outputs;
@@ -156,11 +161,22 @@ hello all, I said hi
     <programlisting role="php">
 <![CDATA[
 <?php
-echo strtr("baab", "ab", "01"),"\n";
 
-$trans = array("ab" => "01");
-echo strtr("baab", $trans);
-?>
+// シングルバイト文字
+$singlebyte_string = "baab";
+echo strtr($singlebyte_string, "ab", "01"), "\n"; // バイト単位での変換
+
+$replace_pairs = ["ab" => "01"];
+echo strtr($singlebyte_string, $replace_pairs), "\n"; // 部分文字列の置換
+
+// マルチバイト文字
+$multibyte_string = "Ä"; // UTF-8 では 2 バイト "\xC3\x84" にエンコードされます
+
+$result = strtr($multibyte_string, 'Ä', 'A');
+echo bin2hex($result), "\n"; // "4184"。"c3" が "41" ("A") になり、"84" はそのまま残るので UTF-8 として壊れます
+
+$replace_pairs = ['Ä' => 'A'];
+echo strtr($multibyte_string, $replace_pairs); // マルチバイト文字列に対する正しい部分文字列の置換
 ]]>
     </programlisting>
     &example.outputs;
@@ -168,6 +184,8 @@ echo strtr("baab", $trans);
 <![CDATA[
 1001
 ba01
+4184
+A
 ]]>
     </screen>
   </example>

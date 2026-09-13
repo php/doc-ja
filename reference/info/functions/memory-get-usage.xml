@@ -1,41 +1,52 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 9af43469f46843451955b8926fe470a9f3d45034 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: f78a9528a2fe8e78380fb28cacbe6e152fa4bb6d Maintainer: hirokawa Status: ready -->
 <!-- Credits: mumumu -->
 <refentry xml:id="function.memory-get-usage" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>memory_get_usage</refname>
-  <refpurpose>PHP に割り当てられたメモリの量を返す </refpurpose>
+  <refpurpose>
+   PHP スクリプトに割り当てられたメモリの量、または PHP のメモリマネージャーがシステムから確保したメモリの量を返す
+  </refpurpose>
  </refnamediv>
- 
+
  <refsect1 role="description">
   &reftitle.description;
   <methodsynopsis>
    <type>int</type><methodname>memory_get_usage</methodname>
    <methodparam choice="opt"><type>bool</type><parameter>real_usage</parameter><initializer>&false;</initializer></methodparam>
   </methodsynopsis>
-  <para>
-   現在の PHP スクリプトに割り当てられたメモリの量をバイト単位で返します。
-  </para>
+  <simpara>
+   PHP のメモリマネージャーが現在 PHP スクリプトに割り当てているメモリの量を、バイト単位で返します。
+   報告される値はアロケータの割り当て単位に切り上げられるため、実際に要求されたバイト数よりも大きくなります。
+  </simpara>
  </refsect1>
 
  <refsect1 role="parameters">
   &reftitle.parameters;
-  <para>
-   <variablelist>
-    <varlistentry>
-     <term><parameter>real_usage</parameter></term>
-     <listitem>
-      <para>
-       これを &true; に設定すると、システムが割り当てた実際のメモリの大きさ (未使用のページも含むもの) を取得します。
-       省略したり &false; を設定したりすると、使用したメモリのみを報告します。
-      </para>
-     </listitem>
-    </varlistentry>
-   </variablelist>
-  </para>
+  <variablelist>
+   <varlistentry>
+    <term><parameter>real_usage</parameter></term>
+    <listitem>
+     <simpara>
+      これを &true; に設定すると、PHP のメモリマネージャーがシステムから確保したメモリの総量 (現在使われていないページも含む) を取得します。
+      <link linkend="ini.memory-limit">memory_limit</link> による制限は、この値に対して適用されます。
+      これは、オペレーティングシステムが PHP プロセスに与えたメモリの量ではありません。
+      オペレーティングシステムが与えるメモリは、通常これよりもはるかに大きくなります。
+     </simpara>
+     <simpara>
+      省略したり &false; を設定したりすると、現在 PHP スクリプトに割り当てられているメモリのみを報告します。
+     </simpara>
+    </listitem>
+   </varlistentry>
+  </variablelist>
   <note>
-   <para>PHP は、<literal>emalloc()</literal> が割り当てたメモリ以外のメモリは追跡しません。</para>
+   <simpara>
+    PHP が追跡するのは、自身のメモリマネージャーを通じて、つまり内部関数 <literal>emalloc()</literal>
+    やその関連関数を通じて割り当てられたメモリだけです。
+    永続的に割り当てられたメモリや、拡張モジュールが <literal>malloc()</literal> で直接割り当てたメモリは、
+    <parameter>real_usage</parameter> が &true; の場合でも報告されません。
+   </simpara>
   </note>
  </refsect1>
 
@@ -54,18 +65,19 @@
     <programlisting role="php">
 <![CDATA[
 <?php
+
 // これは単なる例にすぎません。
 // 以下の数値はシステムによって変化します。
 
-echo memory_get_usage() . "\n"; // 36640
+echo memory_get_usage(), "\n"; // 36640
 
 $a = str_repeat("Hello", 4242);
 
-echo memory_get_usage() . "\n"; // 57960
+echo memory_get_usage(), "\n"; // 57960
 
 unset($a);
 
-echo memory_get_usage() . "\n"; // 36744
+echo memory_get_usage(), "\n"; // 36744
 
 ?>
 ]]>

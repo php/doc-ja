@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 8bf3587d8f70239a65d9aa44d42ced8a696a3e86 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: b91033ba3d6831cfa2ef6745150cd5d6b4af65c9 Maintainer: takagi Status: ready -->
 <!-- Credits: mumumu -->
 <refentry xml:id="function.array-column" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -24,6 +24,14 @@
    入力配列内のカラム <parameter>index_key</parameter> の値をキーとし、
    カラム <parameter>column_key</parameter> を値とした配列が返されます。
   </para>
+  <simpara>
+   <parameter>array</parameter> は行のリストとして扱われ、
+   各行はそれ自体が配列またはオブジェクトです。
+   カラムとは、各行で <parameter>column_key</parameter> が指定する要素やプロパティのことです。
+   配列でもオブジェクトでもない行や、その要素やプロパティが存在しない行は、
+   エラーや警告を出さずにスキップされます。
+   <parameter>array</parameter> のキーが保持されることはありません。
+  </simpara>
  </refsect1>
  <refsect1 role="parameters">
   &reftitle.parameters;
@@ -32,25 +40,30 @@
     <varlistentry>
      <term><parameter>array</parameter></term>
      <listitem>
-      <para>
-       値を取り出したい多次元配列 (あるいはオブジェクトの配列)。
-       オブジェクトの配列を指定した場合は、public プロパティはそのまま取得できます。
-       protected や private なプロパティを取得したい場合は、そのクラスがマジックメソッド
-       <function>__get</function> および <function>__isset</function>
+      <simpara>
+       値を取り出したいリスト。各行は配列またはオブジェクトです。
+       行がオブジェクトの場合は、public プロパティを直接読み取れます。
+       public にアクセスできないプロパティを読み取るには、そのクラスがマジックメソッド
+       <link linkend="object.get">__get()</link> および
+       <link linkend="object.isset">__isset()</link>
        を実装している必要があります。
-      </para>
+       <link linkend="object.isset">__isset()</link> がない場合はその行がスキップされ、
+       <link linkend="object.isset">__isset()</link> はあるが
+       <link linkend="object.get">__get()</link> がない場合は
+       <exceptionname>Error</exceptionname> がスローされます。
+      </simpara>
      </listitem>
     </varlistentry>
     <varlistentry>
      <term><parameter>column_key</parameter></term>
      <listitem>
-      <para>
+      <simpara>
        値を返したいカラム。
        取得したいカラムの番号を整数値で指定することもできるし、
        連想配列のキーやプロパティの名前を指定することもできます。
-       &null; を指定すると、配列やオブジェクト全体を返します
+       &null; を指定すると、行全体を返します
        (<parameter>index_key</parameter> との組み合わせで、配列の並べ替えをするときに便利です)。
-      </para>
+      </simpara>
      </listitem>
     </varlistentry>
     <varlistentry>
@@ -71,9 +84,10 @@
  </refsect1>
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
-  <para>
+  <simpara>
    入力配列の単一のカラムを表す値の配列を返します。
-  </para>
+   <parameter>column_key</parameter> が &null; の場合、行そのものを返します。
+  </simpara>
  </refsect1>
  <refsect1 role="changelog">
   &reftitle.changelog;
@@ -93,6 +107,19 @@
         <parameter>index_key</parameter> で指定されたカラムにオブジェクトが含まれていても、
         文字列にキャストされなくなりました。
         代わりに、<classname>TypeError</classname> が発生するようになっています。
+       </entry>
+      </row>
+      <row>
+       <entry>7.1.0</entry>
+       <entry>
+        プロパティのアクセス権が尊重されるようになりました。
+        これより前のバージョンでは、protected や private なプロパティが直接読み取られていました。
+       </entry>
+      </row>
+      <row>
+       <entry>7.0.0</entry>
+       <entry>
+        <parameter>array</parameter> の行に、配列だけでなくオブジェクトも指定できるようになりました。
        </entry>
       </row>
      </tbody>
@@ -250,7 +277,7 @@ Array
    <example>
     <title>
      オブジェクトの private プロパティ "name" から、マジックメソッド
-     <function>__isset</function> と <function>__get</function> を使って名前を取得する例
+     <link linkend="object.isset">__isset()</link> と <link linkend="object.get">__get()</link> を使って名前を取得する例
     </title>
     <programlisting role="php">
 <![CDATA[
@@ -298,7 +325,8 @@ Array
 ]]>
     </screen>
    </example>
-   <function>__isset</function> が用意されていなければ、空の配列が返されます。
+   <link linkend="object.isset">__isset()</link> が用意されていなければ、
+   そのオブジェクトに対応する要素は返される配列に含まれません。
   </para>
  </refsect1>
 
