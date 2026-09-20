@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision$ -->
+<!-- EN-Revision: eff8e0d4dd463ae6bd387f304effeaf3d5ce44d5 Maintainer: KentarouTakeda Status: ready -->
+<refentry xml:id="pdo-sqlite.setauthorizer" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <refnamediv>
+  <refname>Pdo\Sqlite::setAuthorizer</refname>
+  <refpurpose>SQL 文ができることを制限するため、authorizer として使われるコールバックを設定する</refpurpose>
+ </refnamediv>
+
+ <refsect1 role="description">
+  &reftitle.description;
+  <methodsynopsis role="Pdo\\Sqlite">
+   <modifier>public</modifier> <type>void</type><methodname>Pdo\Sqlite::setAuthorizer</methodname>
+   <methodparam><type class="union"><type>callable</type><type>null</type></type><parameter>callback</parameter></methodparam>
+  </methodsynopsis>
+  <simpara>
+   アクション (読み取り、削除、更新など) が実行されるたびに SQLite が呼び出す
+   コールバックを設定します。これは、信頼できないソースに由来する SQL 文を準備する際に、
+   その SQL 文が参照を許可されていないデータにアクセスしたり、
+   データベースに損害を与える悪意のある SQL 文を実行したりしないようにするために使います。
+  </simpara>
+  <simpara>
+   authorizer が使われるのは SQL 文を準備する段階だけです。
+   ひとつの SQL 文に対して複数回呼び出されることもあります。
+   <literal>SELECT</literal> や <literal>UPDATE</literal> のクエリは、
+   読み取りや更新の対象となるカラムごとに authorizer を呼び出します。
+   また、SQLite が SQL 文を準備し直すたびに再度実行されます。
+   これは、たとえばスキーマが変更された後など、SQL 文の実行中に起こることもあります。
+  </simpara>
+  <simpara>
+   authorizer は最大5つの引数とともに呼び出されます。
+   受け取る引数については <methodname>SQLite3::setAuthorizer</methodname> で説明しています。
+  </simpara>
+  <simpara>
+   ひとつのデータベース接続に対して、同時に設定できる authorizer はひとつだけです。
+   このメソッドを呼び出すたびに、以前の設定は上書きされます。
+   authorizer はデフォルトで無効になっており、&null; のコールバックを設定すれば
+   再び無効にできます。
+  </simpara>
+  <simpara>
+   コールバックは、自身を呼び出したデータベース接続を変更してはいけません。
+  </simpara>
+  <simpara>
+   さらに詳しい情報は
+   <link xlink:href="&url.sqlite;c3ref/set_authorizer.html">SQLite のドキュメント</link>
+   を参照ください。
+  </simpara>
+  <note>
+   <simpara>
+    このメソッドは <methodname>SQLite3::setAuthorizer</methodname> と同等ですが、
+    <type>bool</type> ではなく <type>void</type> を返す点が異なります。
+   </simpara>
+  </note>
+ </refsect1>
+
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <variablelist>
+   <varlistentry>
+    <term><parameter>callback</parameter></term>
+    <listitem>
+     <simpara>
+      呼び出される <type>callable</type>。
+      現在の authorizer コールバックを無効にするには &null; を指定します。
+     </simpara>
+     <simpara>
+      コールバックは <constant>Pdo\Sqlite::OK</constant>、
+      <constant>Pdo\Sqlite::DENY</constant>、
+      <constant>Pdo\Sqlite::IGNORE</constant> のいずれかを返さなければなりません。
+      <constant>Pdo\Sqlite::DENY</constant> を返すと、authorizer を呼び出した SQL 文は、
+      アクセスが拒否された旨のエラーとともに失敗します。
+      読み取りのアクションに対して <constant>Pdo\Sqlite::IGNORE</constant> を返すと、
+      読み取られるはずだったカラムが &null; に置き換えられるように SQL 文が準備されます。
+     </simpara>
+    </listitem>
+   </varlistentry>
+  </variablelist>
+ </refsect1>
+
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <simpara>
+   &return.void;
+  </simpara>
+ </refsect1>
+
+ <refsect1 role="errors">
+  &reftitle.errors;
+  <simpara>
+   このメソッド自体は例外をスローしません。しかし、authorizer コールバックが
+   <type>int</type> を返さない場合や、返した <type>int</type> が
+   <constant>Pdo\Sqlite::OK</constant>、<constant>Pdo\Sqlite::DENY</constant>、
+   <constant>Pdo\Sqlite::IGNORE</constant> のいずれでもない場合、
+   SQL 文の準備はそれぞれ <exceptionname>TypeError</exceptionname> と
+   <exceptionname>ValueError</exceptionname> をスローします。
+  </simpara>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <example>
+   <title><methodname>Pdo\Sqlite::setAuthorizer</methodname> の例</title>
+   <simpara>
+    この接続では読み取りのアクションだけを許可します。
+    アクションコードは <classname>SQLite3</classname> クラスの定数として公開されているので、
+    これを使うには <link linkend="book.sqlite3">SQLite3</link>
+    拡張モジュールが利用できる必要があります。
+    利用できない場合は、対応する整数値を直接指定しても構いません。
+   </simpara>
+   <programlisting role="php">
+<![CDATA[
+<?php
+$db = new Pdo\Sqlite('sqlite::memory:');
+$db->exec('CREATE TABLE users (id, name)');
+
+$db->setAuthorizer(function (int $action, ...$args) {
+    return match ($action) {
+        SQLite3::SELECT, SQLite3::READ => Pdo\Sqlite::OK,
+        default => Pdo\Sqlite::DENY,
+    };
+});
+
+var_dump($db->query('SELECT name FROM users') instanceof PDOStatement);
+
+try {
+    $db->exec('DROP TABLE users');
+} catch (PDOException $e) {
+    echo $e->getMessage(), "\n";
+}
+?>
+]]>
+   </programlisting>
+   &example.outputs.similar;
+   <screen>
+<![CDATA[
+bool(true)
+SQLSTATE[HY000]: General error: 23 not authorized
+]]>
+   </screen>
+  </example>
+ </refsect1>
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <simplelist>
+   <member><methodname>SQLite3::setAuthorizer</methodname></member>
+  </simplelist>
+ </refsect1>
+
+</refentry>
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"~/.phpdoc/manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
