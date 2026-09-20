@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 75a76afb61d91f04feebc83931c5412b13682d2b Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: f3112c43e303fcd63c0df89798b45bfef9d49e15 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: shimooka,mumumu -->
 <refentry xml:id="function.flock" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -197,6 +197,23 @@ fclose($fp);
     旧式のファイルシステムではサポートされていないため、
     これらの環境の場合は常に&false;を返すことになります。
    </para>
+   <para>
+    Windows では、<constant>LOCK_EX</constant> でロックされた PHP のソースファイルを
+    PHP が実行しようとすると、そのファイルのロックが解放されるまでハングします。
+    以下の例はデッドロックを引き起こします。
+    <informalexample>
+     <programlisting role="php">
+<![CDATA[
+<?php
+if ($argv[1] ?? null === 'child') { die(); }
+$fp = fopen(__FILE__, "rb");
+flock($fp, LOCK_EX);
+shell_exec("php " . escapeshellarg(__FILE__) . " child");
+?>
+]]>
+     </programlisting>
+    </informalexample>
+   </para>
   </warning>
   <note>
    <para>
@@ -204,6 +221,9 @@ fclose($fp);
     ロックするプロセスが同じファイルを二回オープンする場合、
     ファイルをアンロックするまで二番目のハンドルではアクセスできません。
    </para>
+   <simpara>
+    Windows では、LOCK_EX でロックされたファイルを require しようとすると、ErrorException: require(): Read of X bytes failed with errno=13 Permission denied で失敗します。
+   </simpara>
   </note>
  </refsect1>
 
