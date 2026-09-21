@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 5fe0f8494374d594762e56b2d769c2828b1e0ddb Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 3866fba43ed70c07afa89df7daf21529b09b4f3b Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa,mumumu -->
 <refentry xml:id="function.pcntl-signal" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
   <refname>pcntl_signal</refname>
   <refpurpose>シグナルハンドラを設定する</refpurpose>
  </refnamediv>
- 
+
  <refsect1 role="description">
   &reftitle.description;
   <methodsynopsis>
@@ -37,11 +37,11 @@
     <varlistentry>
      <term><parameter>handler</parameter></term>
      <listitem>
-      <para>
+      <simpara>
        シグナルハンドラ。<type>callable</type> を渡すと、それを実行してシグナルを処理します。
        あるいは、グローバル定数 <constant>SIG_IGN</constant> または <constant>SIG_DFL</constant>
        を渡すこともできます。それぞれ、シグナルを無視することとデフォルトのシグナルハンドラを復活させることを表します。
-      </para>
+      </simpara>
       <para>
        <type>callable</type> を渡す場合は、次のシグネチャを実装したものでなければいけません。
       </para>
@@ -53,7 +53,7 @@
        </methodsynopsis>
        <variablelist>
         <varlistentry>
-         <term><parameter>signal</parameter></term>
+         <term><parameter>signo</parameter></term>
          <listitem>
           <simpara>
            処理するシグナル。
@@ -72,11 +72,11 @@
        </variablelist>
       </para>
       <note>
-       <para>
+       <simpara>
         オブジェクトのメソッドをハンドラとして指定した場合には、
         そのハンドラを別のものに変えたりスクリプトが終了したりするまでは
         オブジェクトのリファレンスカウントが増加したままであることに注意しましょう。
-       </para>
+       </simpara>
       </note>
      </listitem>
     </varlistentry>
@@ -87,6 +87,17 @@
        このシグナルが到着したときに、システムコールの再スタート (restart)
        を行うかどうかを指定します。
       </para>
+      <note>
+       <simpara>
+        このパラメータのデフォルトは &true; ですが、<constant>SIGALRM</constant>
+        ではそのデフォルトは適用されません。
+        つまり、<parameter>restart_syscalls</parameter> を渡さず、
+        <parameter>signal</parameter> が <constant>SIGALRM</constant> である場合、
+        システムコールの再スタートは無効になります。
+        <constant>SIGALRM</constant> でシステムコールの再スタートを有効にするには、
+        &true; を明示的に渡してください。
+       </simpara>
+      </note>
      </listitem>
     </varlistentry>
    </variablelist>
@@ -98,6 +109,21 @@
   <para>
    &return.success;
   </para>
+ </refsect1>
+
+ <refsect1 role="errors">
+  &reftitle.errors;
+  <simpara>
+   <parameter>signal</parameter> が <literal>1</literal> 未満または
+   <constant>NSIG</constant> 以上の場合、あるいは <parameter>handler</parameter> が
+   <constant>SIG_DFL</constant> と <constant>SIG_IGN</constant> のいずれでもない
+   <type>int</type> の場合、<exceptionname>ValueError</exceptionname>
+   がスローされます。
+  </simpara>
+  <simpara>
+   <parameter>handler</parameter> が <type>callable</type> でも <type>int</type>
+   でもない場合、<exceptionname>TypeError</exceptionname> がスローされます。
+  </simpara>
  </refsect1>
 
  <refsect1 role="changelog">
@@ -112,6 +138,16 @@
       </row>
      </thead>
      <tbody>
+      <row>
+       <entry>7.4.0</entry>
+       <entry>
+        <constant>SIGALRM</constant> でも <parameter>restart_syscalls</parameter>
+        の指定が反映されるようになりました。これより前のバージョンでは、
+        このシグナルに対するシステムコールの再スタートは常に無効でした。
+        引数を渡さなかった場合は、<constant>SIGALRM</constant>
+        に対するシステムコールの再スタートは無効のままです。
+       </entry>
+      </row>
       <row>
        <entry>7.1.0</entry>
        <entry>
@@ -186,9 +222,9 @@ echo "終了\n";
 
  <refsect1 role="notes"><!-- {{{ -->
   &reftitle.notes;
-  <para>
+  <simpara>
    <function>pcntl_signal</function> は、既存のシグナルハンドラがある場合にはそれを上書きします。
-  </para>
+  </simpara>
   <refsect2>
    <title>ディスパッチする方法</title>
    <para>
@@ -208,15 +244,13 @@ echo "終了\n";
 
  <refsect1 role="seealso">
   &reftitle.seealso;
-  <para>
-   <simplelist>
-    <member><link xlink:href="https://en.wikipedia.org/wiki/Signal_(IPC)">Signal (IPC)</link> on Wikipedia</member>
-    <member><function>pcntl_async_signals</function></member>
-    <member><function>pcntl_fork</function></member>
-    <member><function>pcntl_signal_dispatch</function></member>
-    <member><function>pcntl_waitpid</function></member>
-   </simplelist>
-  </para>
+  <simplelist>
+   <member><link xlink:href="https://en.wikipedia.org/wiki/Signal_(IPC)">Signal (IPC)</link> on Wikipedia</member>
+   <member><function>pcntl_async_signals</function></member>
+   <member><function>pcntl_fork</function></member>
+   <member><function>pcntl_signal_dispatch</function></member>
+   <member><function>pcntl_waitpid</function></member>
+  </simplelist>
  </refsect1>
 
 </refentry>
