@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 77a60306bc47d2151ebca7e6983897a0371a9671 Maintainer: mumumu Status: ready -->
+<!-- EN-Revision: eb10503592351cf78c25be21c60a9049784d57bb Maintainer: mumumu Status: ready -->
 
 <refentry xml:id="function.mb-scrub" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -71,6 +71,86 @@
     </tbody>
    </tgroup>
   </informaltable>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <example>
+   <title><function>mb_scrub</function> が行うバイト単位の置換</title>
+   <simpara>
+    ここで <function>bin2hex</function> を使っているのは、端末やブラウザ、
+    フォントが不正なバイト列を独自の置換文字で表示してしまうことがあり、
+    文字列が実際に何を含んでいるのかがわからなくなるからです。
+   </simpara>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+// バイト 0xFF は、正しい UTF-8 文字列には現れません。
+$input = "A\xFFB";
+echo bin2hex($input), "\n";
+
+// デフォルトの代替文字は "?" (0x3F) です。
+echo bin2hex(mb_scrub($input, 'UTF-8')), "\n";
+
+// U+FFFD REPLACEMENT CHARACTER は、UTF-8 では EF BF BD にエンコードされます。
+mb_substitute_character(0xFFFD);
+echo bin2hex(mb_scrub($input, 'UTF-8')), "\n";
+
+?>
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+41ff42
+413f42
+41efbfbd42
+]]>
+   </screen>
+  </example>
+  <example>
+   <title>UTF-8 を前提とする処理の前に <function>mb_scrub</function> を使う</title>
+   <simpara>
+    <literal>u</literal> 修飾子を使った PCRE のパターンは、
+    UTF-8 として正しくない対象文字列を受け付けません。
+    あらかじめ入力の不正なバイト列を置き換えておけば、
+    受け付けられるようになります。
+   </simpara>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+$input = "A\xFFB";
+
+var_dump(preg_match_all('/./us', $input));
+echo preg_last_error_msg(), "\n";
+
+$clean = mb_scrub($input, 'UTF-8');
+
+var_dump(preg_match_all('/./us', $clean));
+
+?>
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+bool(false)
+Malformed UTF-8 characters, possibly incorrectly encoded
+int(3)
+]]>
+   </screen>
+  </example>
+ </refsect1>
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <simplelist>
+   <member><function>mb_substitute_character</function></member>
+   <member><function>mb_check_encoding</function></member>
+   <member><function>mb_convert_encoding</function></member>
+  </simplelist>
  </refsect1>
 
 </refentry>
