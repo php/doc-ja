@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: a747e132c5506a0273c686cbe20e227c980d8ec7 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: ec891f50fa7c999195c1c792261bfd15e41daf73 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi -->
 <refentry xml:id="function.pcntl-waitpid" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -133,6 +133,24 @@
       </para>
      </listitem>
     </varlistentry>
+    <varlistentry>
+     <term><parameter>resource_usage</parameter></term>
+     <listitem>
+      <simpara>
+       <parameter>resource_usage</parameter> パラメータには、子プロセスの
+       リソース使用状況の統計情報を含む連想配列が設定されます。
+       内容については <function>getrusage</function> を参照ください。
+      </simpara>
+      <simpara>
+       これは、システム上で <literal>wait4(2)</literal>
+       システムコールが使用可能な場合にのみサポートされます。
+       使用できない場合、このパラメータは変更されません。
+       回収された子プロセスがない場合、つまりこの関数が <literal>0</literal>
+       または <literal>-1</literal> を返した場合は、
+       このパラメータには空の配列が設定されます。
+      </simpara>
+     </listitem>
+    </varlistentry>
    </variablelist>
   </para>
  </refsect1>
@@ -146,12 +164,72 @@
   </para>
  </refsect1>
 
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <example>
+   <title><function>pcntl_waitpid</function> の例</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+function checkChild(int $pid, bool $wait): void
+{
+    $flags = ($wait ? 0 : WNOHANG);
+    $deadPid = pcntl_waitpid($pid, $status, $flags, $rusage);
+    if ($deadPid === -1) {
+        $errNo = pcntl_get_last_error();
+        $errMsg = pcntl_strerror($errNo);
+        print "PARENT pcntl_waitpid FAILED ({$errNo}): {$errMsg}\n";
+    } elseif ($deadPid === 0) {
+        print "PARENT pcntl_waitpid: No exited children.\n";
+    } elseif (pcntl_wifexited($status)) {
+        print "PARENT pcntl_waitpid: Child PID {$deadPid} exited with status: "
+            . pcntl_wexitstatus($status) . "\n";
+        var_dump($rusage);
+    } else {
+        print "PARENT pcntl_waitpid: Child PID {$deadPid} was terminated by signal: "
+            . pcntl_wtermsig($status) . "\n";
+    }
+}
+
+$parentPid = getmypid();
+$forkedPid = pcntl_fork();
+if ($forkedPid == -1) {
+    die('Could not fork');
+} else if ($forkedPid) {
+    // 親プロセス
+    print "PARENT {$parentPid} has forked {$forkedPid}\n";
+
+    print "PARENT is checking for exited children\n";
+    checkChild($forkedPid, false);
+
+    // 子プロセスが「ゾンビプロセス」として残るのを防ぎます
+    print "PARENT is waiting for a child to exit\n";
+    checkChild($forkedPid, true);
+
+    print "PARENT is checking for exited children\n";
+    checkChild($forkedPid, false);
+
+    print "PARENT is exiting\n";
+} else {
+    // 子プロセス
+    $pid = getmypid();
+    print "CHILD {$pid} is sleeping\n";
+    sleep(10);
+    print "CHILD is exiting\n";
+    exit(7);
+}
+]]>
+   </programlisting>
+  </example>
+ </refsect1>
+
  <refsect1 role="seealso">
   &reftitle.seealso;
   <para>
    <simplelist>
     <member><function>pcntl_fork</function></member>
     <member><function>pcntl_signal</function></member>
+    <member><function>pcntl_wait</function></member>
     <member><function>pcntl_wifexited</function></member>
     <member><function>pcntl_wifstopped</function></member>
     <member><function>pcntl_wifsignaled</function></member>
