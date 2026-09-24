@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 6a5b227850bbad1ec81fd52b6a08e12e3f2c03ac Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: a88dc819007e9f520c8f912aab9c72aca6485d41 Maintainer: hirokawa Status: ready -->
 <!-- Credits: mumumu -->
 <refentry xml:id="function.stream-copy-to-stream" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -16,15 +16,15 @@
    <methodparam choice="opt"><type class="union"><type>int</type><type>null</type></type><parameter>length</parameter><initializer>&null;</initializer></methodparam>
    <methodparam choice="opt"><type>int</type><parameter>offset</parameter><initializer>0</initializer></methodparam>
   </methodsynopsis>
-  <para>
-   現在の位置（あるいはもし指定されていれば
-   <parameter>offset</parameter> の位置）から最大
+  <simpara>
+   現在の位置（<parameter>offset</parameter> が <literal>0</literal>
+   より大きい場合は <parameter>offset</parameter> の位置）から最大
    <parameter>length</parameter> バイトのデータを
    <parameter>from</parameter> から <parameter>to</parameter>
    にコピーします。もし <parameter>length</parameter> が &null; の
    場合は、<parameter>from</parameter> にある残りすべてのデータが
    コピーされます。
-  </para>
+  </simpara>
  </refsect1>
 
  <refsect1 role="parameters">
@@ -59,9 +59,14 @@
     <varlistentry>
      <term><parameter>offset</parameter></term>
      <listitem>
-      <para>
-       コピーを開始する位置。
-      </para>
+      <simpara>
+       <literal>0</literal> より大きい場合は、<parameter>from</parameter>
+       内でコピーを開始する位置を、ストリームの先頭から数えて指定します。
+       <function>fseek</function> で <constant>SEEK_SET</constant>
+       を指定したときと同じように、まず <parameter>from</parameter> をその位置にシークします。
+       <literal>0</literal>（デフォルト）または負の値の場合はシークを行わず、
+       <parameter>from</parameter> の現在の位置からコピーを開始します。
+      </simpara>
      </listitem>
     </varlistentry>
    </variablelist>
@@ -117,6 +122,22 @@ echo stream_copy_to_stream($src, $dest2) . " バイトが remainder.txt にコ�
     </programlisting>
    </example>
   </para>
+ </refsect1>
+
+ <refsect1 role="notes">
+  &reftitle.notes;
+  <note>
+   <simpara>
+    <parameter>from</parameter> がブロックモードのソケットストリームの場合、
+    タイムアウト時間内にデータを受信できなかった時点で、
+    終端に達していなくてもコピーを終了します。
+    このとき、それまでに読み込んだデータがすでに <parameter>to</parameter>
+    に書き込まれているにもかかわらず、&false; が返されることがあります。
+    このタイムアウトは、デフォルトでは
+    <link linkend="ini.default-socket-timeout">default_socket_timeout</link>
+    の値になり、<function>stream_set_timeout</function> で変更できます。
+   </simpara>
+  </note>
  </refsect1>
 
  <refsect1 role="seealso">
