@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 603435cd84951fc720eded819c62ef2466d21b5c Maintainer: mumumu Status: ready -->
+<!-- EN-Revision: 85264ba268a398c4b90c1948839d54ce688dd5cd Maintainer: mumumu Status: ready -->
 <refentry xml:id="function.filter-input-array" xmlns="http://docbook.org/ns/docbook" xmlns:xi="http://www.w3.org/2001/XInclude">
  <refnamediv>
   <refname>filter_input_array</refname>
@@ -55,22 +55,135 @@
   </simpara>
   <simpara>
    失敗した場合、&false; を返します。
-   <parameter>type</parameter> で指定された入力値の配列が得られなかった場合、
-   かつ <constant>FILTER_NULL_ON_FAILURE</constant> フラグが指定されていた場合は、
-   例外的に &null; を返します。
+   <parameter>type</parameter> で指定された入力配列に値が入っていない場合は、
+   代わりに &null; を返します。
   </simpara>
   <simpara>
-   入力された配列に欠けているエントリがあった場合、
-   <parameter>add_empty</parameter> が &true; のときは返される配列に追加されます。
-   この場合、欠けているエントリには、<constant>FILTER_NULL_ON_FAILURE</constant>
-   を使わない限り &null; が設定されます。
-   <constant>FILTER_NULL_ON_FAILURE</constant> を使った場合には、&false; が設定されます。
+   入力配列に欠けているエントリは、
+   <parameter>add_empty</parameter> が &true; の場合は返される配列に &null; として追加され、
+   &false; の場合は一切含まれません。
+   <function>filter_input</function> とは異なり、
+   <constant>FILTER_NULL_ON_FAILURE</constant> フラグを使ってもこの動作は変わらず、
+   欠けているエントリは常に &null; になります。
   </simpara>
   <simpara>
-   フィルタが失敗した場合、配列の値は &false; になります。
-   但し、<constant>FILTER_NULL_ON_FAILURE</constant> が使われている場合を除きます。
-   使われている場合、配列の値は &null; になります。
+   フィルタが失敗した場合、返される配列のエントリは &false; になります。
+   但し、<constant>FILTER_NULL_ON_FAILURE</constant> フラグを使った場合は &null; になります。
+   <constant>FILTER_FORCE_ARRAY</constant> フラグを使った場合は、
+   この失敗時の値も、ほかの結果と同様に要素を一つ持つ配列でラップされます。
   </simpara>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <example>
+   <title><function>filter_input_array</function> の例</title>
+   <simpara>
+    この例では、
+    <literal>?email=user@example.com&amp;age=twenty&amp;url=https://example.com</literal>
+    への GET リクエストを想定しています。
+    <literal>twenty</literal> は整数ではないため、
+    <literal>age</literal> エントリのフィルタは失敗します。
+    <literal>1</literal> から <literal>120</literal>
+    の範囲外の値の場合も、同じように失敗します。
+   </simpara>
+   <programlisting role="php">
+<![CDATA[
+<?php
+$filters = [
+    'email' => FILTER_VALIDATE_EMAIL,
+    'age'   => [
+        'filter'  => FILTER_VALIDATE_INT,
+        'options' => ['min_range' => 1, 'max_range' => 120],
+    ],
+    'url'   => FILTER_VALIDATE_URL,
+];
+
+$result = filter_input_array(INPUT_GET, $filters);
+
+var_dump($result);
+?>
+]]>
+   </programlisting>
+   &example.outputs.similar;
+   <screen>
+<![CDATA[
+array(3) {
+  ["email"]=>
+  string(16) "user@example.com"
+  ["age"]=>
+  bool(false)
+  ["url"]=>
+  string(19) "https://example.com"
+}
+]]>
+   </screen>
+  </example>
+  <example>
+   <title><function>filter_input_array</function> で POST データをフィルタリングする</title>
+   <simpara>
+    この例では、
+    <literal>username=&lt;script&gt;alert&lt;/script&gt;</literal> と
+    <literal>comment=Hello World</literal>
+    というフィールドを持つ POST リクエストを想定しています。
+    <literal>missing</literal> フィールドは送信されていませんが、
+    <parameter>add_empty</parameter> のデフォルトは &true; なので、
+    結果には &null; として含まれます。
+   </simpara>
+   <programlisting role="php">
+<![CDATA[
+<?php
+$filters = [
+    'username' => FILTER_SANITIZE_SPECIAL_CHARS,
+    'comment'  => FILTER_SANITIZE_SPECIAL_CHARS,
+    'missing'  => FILTER_VALIDATE_INT,
+];
+
+$result = filter_input_array(INPUT_POST, $filters);
+
+var_dump($result);
+?>
+]]>
+   </programlisting>
+   &example.outputs.similar;
+   <screen>
+<![CDATA[
+array(3) {
+  ["username"]=>
+  string(38) "&#60;script&#62;alert&#60;/script&#62;"
+  ["comment"]=>
+  string(11) "Hello World"
+  ["missing"]=>
+  NULL
+}
+]]>
+   </screen>
+  </example>
+  <example>
+   <title>値が入っていない入力の種類を指定する</title>
+   <simpara>
+    この例では GET リクエストを想定しています。
+    リクエストに POST フィールドが含まれていないため、
+    <constant>INPUT_POST</constant> で指定された入力配列には値が入っておらず、
+    配列の代わりに &null; が返されます。
+    これはどの入力の種類にも当てはまります。
+    クエリ文字列のないリクエストでは、
+    <constant>INPUT_GET</constant> を指定した場合も &null; が返されます。
+   </simpara>
+   <programlisting role="php">
+<![CDATA[
+<?php
+var_dump(filter_input_array(INPUT_POST, ['a' => FILTER_VALIDATE_INT]));
+?>
+]]>
+   </programlisting>
+   &example.outputs.similar;
+   <screen>
+<![CDATA[
+NULL
+]]>
+   </screen>
+  </example>
  </refsect1>
 
  <refsect1 role="notes">
