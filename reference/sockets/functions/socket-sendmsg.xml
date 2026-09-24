@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 14dc7c47365f2b71f6c907a5ba5bccf42534d5a9 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 30b010f003975adc755ebbf6097d3462bb1875db Maintainer: takagi Status: ready -->
 <!-- Credits: mumumu -->
 <refentry xml:id="function.socket-sendmsg" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -15,9 +15,11 @@
    <methodparam><type>array</type><parameter>message</parameter></methodparam>
    <methodparam choice="opt"><type>int</type><parameter>flags</parameter><initializer>0</initializer></methodparam>
   </methodsynopsis>
-  <para>
-  </para>
-  &warn.undocumented.func;
+  <simpara>
+   関数 <function>socket_sendmsg</function> は、<literal>sendmsg()</literal>
+   システムコールを使って、<parameter>message</parameter>
+   で指定したメッセージをソケット <parameter>socket</parameter> 経由で送信します。
+  </simpara>
  </refsect1>
 
  <refsect1 role="parameters">
@@ -27,21 +29,157 @@
     <varlistentry>
      <term><parameter>socket</parameter></term>
      <listitem>
-      <para>
-      </para>
+      <simpara>
+       <function>socket_create</function>、<function>socket_accept</function>
+       あるいは <function>socket_create_pair</function> で作成した
+       <classname>Socket</classname> クラスのインスタンス。
+      </simpara>
      </listitem>
     </varlistentry>
     <varlistentry>
      <term><parameter>message</parameter></term>
      <listitem>
-      <para>
-      </para>
+      <simpara>
+       以下の要素を含むことができる連想配列。要素はどれも省略でき、
+       認識できないキーは黙って無視されます。なお、送信時には
+       <varname>flags</varname> という要素はありません。このキーが現れるのは、
+       <function>socket_recvmsg</function> が値を設定する配列だけです。
+      </simpara>
+      <variablelist>
+       <varlistentry>
+        <term><varname>name</varname></term>
+        <listitem>
+         <simpara>
+          リモートホストのアドレスを表す配列。キーは、
+          <constant>AF_INET</constant> の場合は <varname>addr</varname> と
+          <varname>port</varname>、<constant>AF_INET6</constant> の場合は
+          <varname>addr</varname>、<varname>port</varname>、<varname>flowinfo</varname>
+          と <varname>scope_id</varname>、<constant>AF_UNIX</constant> の場合は
+          <varname>path</varname> です。
+          <varname>addr</varname> には IP アドレスかホスト名を指定でき、
+          ホスト名は名前解決されます。オプションの <varname>family</varname>
+          キーで、アドレスファミリーを明示的に指定できます。省略した場合は、
+          <parameter>socket</parameter> のアドレスファミリーを使います。
+          ソケットがサポートしていないアドレスファミリーを指定すると、
+          呼び出しは失敗します。
+         </simpara>
+        </listitem>
+       </varlistentry>
+       <varlistentry>
+        <term><varname>iov</varname></term>
+        <listitem>
+         <simpara>
+          送信するデータを格納したバッファのリスト。これらのバッファは、
+          順番どおりにひとつのメッセージとして送信されます。
+          配列のキーは無視され、値は文字列に変換されます。
+          このキー自体がないか空の場合は、データは送信されず、
+          関数は <literal>0</literal> を返します。
+         </simpara>
+        </listitem>
+       </varlistentry>
+       <varlistentry>
+        <term><varname>control</varname></term>
+        <listitem>
+         <simpara>
+          補助データメッセージのリスト。各メッセージは、<varname>level</varname>、
+          <varname>type</varname>、<varname>data</varname>
+          をキーに持つ配列です。サポートされているのは以下の組み合わせだけで、
+          使えるかどうかはプラットフォームによって異なります。
+         </simpara>
+         <table>
+          <title>サポートされている補助データ</title>
+          <tgroup cols="3">
+           <thead>
+            <row>
+             <entry><varname>level</varname></entry>
+             <entry><varname>type</varname></entry>
+             <entry><varname>data</varname></entry>
+            </row>
+           </thead>
+           <tbody>
+            <row>
+             <entry><constant>SOL_SOCKET</constant></entry>
+             <entry><constant>SCM_RIGHTS</constant></entry>
+             <entry>
+              <classname>Socket</classname> クラスのインスタンスかストリームリソースを
+              1 つ以上含むリスト。各要素のファイルディスクリプタが、
+              受信側のプロセスに送られます。
+             </entry>
+            </row>
+            <row>
+             <entry><constant>SOL_SOCKET</constant></entry>
+             <entry><constant>SCM_CREDENTIALS</constant></entry>
+             <entry>
+              <varname>pid</varname>、<varname>uid</varname>、
+              <varname>gid</varname> をキーに持つ配列。
+              一部のシステムでは、定数名が <constant>SCM_CREDS</constant>
+              または <constant>SCM_CREDS2</constant> になります。
+             </entry>
+            </row>
+            <row>
+             <entry><constant>IPPROTO_IPV6</constant></entry>
+             <entry><constant>IPV6_PKTINFO</constant></entry>
+             <entry>
+              <varname>addr</varname> と <varname>ifindex</varname>
+              をキーに持つ配列。
+             </entry>
+            </row>
+            <row>
+             <entry><constant>IPPROTO_IPV6</constant></entry>
+             <entry><constant>IPV6_HOPLIMIT</constant></entry>
+             <entry>整数値。</entry>
+            </row>
+            <row>
+             <entry><constant>IPPROTO_IPV6</constant></entry>
+             <entry><constant>IPV6_TCLASS</constant></entry>
+             <entry>整数値。</entry>
+            </row>
+           </tbody>
+          </tgroup>
+         </table>
+        </listitem>
+       </varlistentry>
+      </variablelist>
      </listitem>
     </varlistentry>
     <varlistentry>
      <term><parameter>flags</parameter></term>
      <listitem>
       <para>
+       <parameter>flags</parameter> の値は、以下のフラグの任意の組み合わせを
+       ビット OR 演算子 (<literal>|</literal>) で連結したものとなります。
+       <table>
+        <title><parameter>flags</parameter> がとりうる値</title>
+        <tgroup cols="2">
+         <tbody>
+          <row>
+           <entry><constant>MSG_OOB</constant></entry>
+           <entry>
+            OOB（out-of-band: 帯域外）データを送信します。
+           </entry>
+          </row>
+          <row>
+           <entry><constant>MSG_EOR</constant></entry>
+           <entry>
+            レコードの区切りを示します。
+            送信したデータでレコードが完結します。
+           </entry>
+          </row>
+          <row>
+           <entry><constant>MSG_DONTWAIT</constant></entry>
+           <entry>
+            このフラグを設定すると、通常ならブロックするような場面でも、関数はブロックせずに制御を返します。
+           </entry>
+          </row>
+          <row>
+           <entry><constant>MSG_DONTROUTE</constant></entry>
+           <entry>
+            ルータを使用せず、直接つながっているインターフェイスのみを使用します。
+           </entry>
+          </row>
+         </tbody>
+        </tgroup>
+       </table>
       </para>
      </listitem>
     </varlistentry>
@@ -71,6 +209,80 @@
     </tbody>
    </tgroup>
   </informaltable>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <example>
+   <title><function>socket_sendmsg</function> でメッセージを送信する</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+$server = socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
+socket_bind($server, '127.0.0.1', 1053);
+
+$client = socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
+$sent = socket_sendmsg($client, [
+    'name' => ['addr' => '127.0.0.1', 'port' => 1053],
+    'iov'  => ['Hello ', 'world'],
+], 0);
+
+echo "sent: $sent\n";
+
+socket_recvfrom($server, $buffer, 64, 0, $from, $port);
+echo "received: $buffer\n";
+?>
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+sent: 11
+received: Hello world
+]]>
+   </screen>
+  </example>
+  <example>
+   <title>UNIX ソケット経由でファイルディスクリプタを渡す</title>
+   <simpara>
+    <varname>control</varname> キーには補助データを格納します。
+    <constant>SCM_RIGHTS</constant> を使うと、開いているファイルディスクリプタが
+    UNIX ソケットの相手側のプロセスに渡されます。これは Windows では利用できません。
+   </simpara>
+   <programlisting role="php">
+<![CDATA[
+<?php
+socket_create_pair(AF_UNIX, SOCK_STREAM, 0, $pair);
+[$sender, $receiver] = $pair;
+
+$file = fopen(__FILE__, 'r');
+
+socket_sendmsg($sender, [
+    // 補助データを送るには、1 バイト以上の通常のデータも一緒に送る必要があります。
+    'iov'     => ['fd'],
+    'control' => [
+        ['level' => SOL_SOCKET, 'type' => SCM_RIGHTS, 'data' => [$file]],
+    ],
+], 0);
+
+$message = [
+    'buffer_size' => 16,
+    'controllen'  => socket_cmsg_space(SOL_SOCKET, SCM_RIGHTS, 1),
+];
+socket_recvmsg($receiver, $message, 0);
+
+$received = $message['control'][0]['data'][0];
+echo "first line: ", fgets($received);
+?>
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+first line: <?php
+]]>
+   </screen>
+  </example>
  </refsect1>
 
  <refsect1 role="seealso">

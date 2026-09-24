@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: a758e79c3bf173203550cb78ef07509cf859b212 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 3e6082f609ead63cfa7b33a06d8e0c723d51bc65 Maintainer: hirokawa Status: ready -->
 <!-- Credits: mumumu -->
 <refentry xml:id="function.stream-select" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -18,11 +18,15 @@
    <methodparam><type class="union"><type>int</type><type>null</type></type><parameter>seconds</parameter></methodparam>
    <methodparam choice="opt"><type class="union"><type>int</type><type>null</type></type><parameter>microseconds</parameter><initializer>&null;</initializer></methodparam>
   </methodsynopsis>
-  <para>
+  <simpara>
    <function>stream_select</function> はストリームの配列を受け取ると、
-   それらの状態が変化するまで待ちます。機能としては、ストリームに対して
-   働くという点以外では <function>socket_select</function> と同一です。
-  </para>
+   それらの状態が変化するまで待ちます。
+   <function>socket_select</function> のストリーム版にあたりますが、
+   両者の動作はすべての点で同じというわけではありません。
+   不正な引数を渡したときのエラーの報告方法が異なるうえ、
+   後述の「注意」にあるとおり、<function>stream_select</function> は
+   オペレーティングシステムに一切問い合わせずに戻ることもあります。
+  </simpara>
  </refsect1>
 
  <refsect1 role="parameters">
@@ -224,18 +228,28 @@ if (false === stream_select($r, $w, $e, 0)) {
    </para>
   </note>
   <note>
-   <para>
+   <simpara>
     配列に返されたストリームに対して読み込みまたは書き込み操作を行う際に、
     必ずしもあなたの希望しただけデータが読まれたり書かれたりはしないことに
     注意してください。たった 1 バイトしか読み出せない場合も、書き込めない
     場合もあるのです。
-   </para>
+   </simpara>
   </note>
   <note>
-   <para>
+   <simpara>
     ストリームの中には、(<literal>zlib</literal> などのように)
     この関数で select できないものもあります。
-   </para>
+   </simpara>
+  </note>
+  <note>
+   <simpara>
+    PHP 側のバッファにすでにデータがあるストリームは、内部で
+    <literal>select()</literal> を呼び出すことなく、準備済みと
+    報告されます。このとき、<parameter>write</parameter> 配列と
+    <parameter>except</parameter> 配列は、中身を調べずに空にされます。
+    そのため、書き込み可能だったストリームは報告されず、戻り値も
+    読み込み可能なストリームの数だけになります。
+   </simpara>
   </note>
   <note>
    <title>Windows の互換性</title>
@@ -256,6 +270,7 @@ if (false === stream_select($r, $w, $e, 0)) {
   &reftitle.seealso;
   <simplelist>
    <member><function>stream_set_blocking</function></member>
+   <member><function>socket_select</function></member>
   </simplelist>
  </refsect1>
 </refentry>
