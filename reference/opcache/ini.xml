@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: f2cdcd5af4558c22db95463b6ccdd25e4cea3cf5 Maintainer: satoruyoshida Status: ready -->
+<!-- EN-Revision: 83c44e16897a8f6371b0c652ce9610b396514fb8 Maintainer: satoruyoshida Status: ready -->
 <!-- CREDITS: mumumu -->
 <sect1 xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="opcache.configuration">
  &reftitle.runtime;
@@ -410,6 +410,14 @@
     <simpara>
      OPcache によって使用される共有メモリ・ストレージのサイズ。（ MB 単位）
      設定できる最小値は <literal>"8"</literal> です。これより小さい値を設定しても、最小値が強制されます。
+    </simpara>
+    <simpara>
+     JIT が有効な場合は、共有メモリ・セグメントに JIT バッファも含まれるため、
+     その合計サイズはこの値に
+     <link linkend="ini.opcache.jit-buffer-size">opcache.jit_buffer_size</link>
+     を加えたものになります。
+     OPcache は、まず HUGE PAGE を使ってこのセグメントを割り当てようとします。
+     OS が確保している HUGE PAGE が足りない場合は、黙って通常のページにフォールバックします。
     </simpara>
    </listitem>
   </varlistentry>
@@ -961,6 +969,10 @@ function getA() { return A; }
      PHPコード(textセグメント)を HUGE PAGE
      にコピーする機能を有効にしたり、無効にしたりできます。
      これにより、パフォーマンスは向上するはずですが、適切なOSの設定が必要です。
+     HUGE PAGE に再マップされるのは、PHP バイナリの textセグメントだけです。
+     <link linkend="ini.opcache.memory-consumption">opcache.memory_consumption</link>
+     の項で説明している共有メモリ・セグメントは、このディレクティブの影響を受けません。
+     再マップに失敗すると、<constant>E_WARNING</constant> が発生します。
      Linux では PHP 7.0.0 以降、FreeBSD では PHP 7.4.0 以降が必要です。
     </simpara>
    </listitem>
@@ -1153,7 +1165,9 @@ function getA() { return A; }
      <member><literal>off</literal>:  無効にしますが、実行時に有効にできます。</member>
      <member>
       <literal>tracing</literal>/<literal>on</literal>: トレーシングJIT を使う。
-      デフォルトはこの値です。ほとんどのユーザに推奨される値です。
+      ほとんどのユーザに推奨される値です。
+      PHP 8.4.0 より前のバージョンでは、これがデフォルト値でした。
+      PHP 8.4.0 以降のデフォルト値は <literal>disable</literal> です。
      </member>
      <member><literal>function</literal>: 関数単位でJITを使う。</member>
     </simplelist>
@@ -1216,6 +1230,12 @@ function getA() { return A; }
      <literal>"tracing"</literal> モードは、<code>CRTO = 1254</code> に対応しています。
      <literal>"function"</literal> モードは、<code>CRTO = 1205</code> に対応しています。
     </para>
+    <note>
+     <simpara>
+      PHP 8.4.0 以降では、JIT が有効なときに JIT の初期化に失敗すると、
+      PHP は起動時に致命的なエラーで終了します。
+     </simpara>
+    </note>
    </listitem>
   </varlistentry>
   <varlistentry xml:id="ini.opcache.jit-buffer-size">
