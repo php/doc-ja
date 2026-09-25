@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 627f933cfe6a033dccac32982cd68e7c1b86927f Maintainer: mumumu Status: ready -->
+<!-- EN-Revision: 85264ba268a398c4b90c1948839d54ce688dd5cd Maintainer: mumumu Status: ready -->
 <refentry xmlns="http://docbook.org/ns/docbook" xml:id="function.filter-var-array">
  <refnamediv>
   <refname>filter_var_array</refname>
@@ -48,7 +48,7 @@
      </simpara>
      <simpara>
       オプションの配列は、
-      <parameter>array</parameter> に存在するキーをキーとして持つ連想配列で、
+      入力配列に存在するキーをキーとして持つ連想配列で、
       キーに対応する値には、そのエントリに適用するフィルタ、
       または、そのエントリにどのフィルタを、
       どのように適用するかを記述した連想配列のいずれかを指定します。
@@ -82,18 +82,37 @@
 
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
-  <para>
-   成功した場合は要求された変数の値を含む配列、
-   あるいは失敗した場合に &false; を返します。
-   配列の値は、フィルタリングに失敗した場合には &false;、
-   変数が設定されていない場合は &null; となります。
-  </para>
+  <simpara>
+   成功した場合は要求された変数の値を含む配列。
+  </simpara>
+  <simpara>
+   失敗した場合、&false; を返します。
+  </simpara>
+  <simpara>
+   入力配列に欠けているエントリは、
+   <parameter>add_empty</parameter> が &true; の場合は返される配列に &null; として追加され、
+   &false; の場合は一切含まれません。
+  </simpara>
+  <simpara>
+   フィルタが失敗した場合、返される配列のエントリは &false; になります。
+   但し、<constant>FILTER_NULL_ON_FAILURE</constant> フラグを使った場合は &null; になります。
+   <constant>FILTER_FORCE_ARRAY</constant> フラグを使った場合は、
+   この失敗時の値も、ほかの結果と同様に要素を一つ持つ配列でラップされます。
+  </simpara>
  </refsect1>
 
  <refsect1 role="examples">
   &reftitle.examples;
   <example>
    <title><function>filter_var_array</function> の例</title>
+   <simpara>
+    <constant>FILTER_REQUIRE_ARRAY</constant> または
+    <constant>FILTER_FORCE_ARRAY</constant> を使わない限り、
+    各エントリはスカラーとしてフィルタリングされます。
+    そのため、以下の <literal>testscalar</literal> に指定している
+    <constant>FILTER_REQUIRE_SCALAR</constant> フラグは、
+    このデフォルトの動作を明示しているだけです。
+   </simpara>
    <programlisting role="php">
 <![CDATA[
 <?php
@@ -157,6 +176,78 @@ array(6) {
   }
   ["doesnotexist"]=>
   NULL
+}
+]]>
+   </screen>
+  </example>
+  <example>
+   <title>ひとつのフィルタをすべての値に適用する</title>
+   <simpara>
+    <parameter>options</parameter> が整数の場合は、
+    配列のすべてのエントリに同じフィルタが適用されます。
+   </simpara>
+   <programlisting role="php">
+<![CDATA[
+<?php
+$data = [
+    'name'  => '<b>John</b>',
+    'email' => 'john@example<script>.com',
+    'bio'   => 'Developer & writer',
+];
+
+var_dump(filter_var_array($data, FILTER_SANITIZE_SPECIAL_CHARS));
+?>
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+array(3) {
+  ["name"]=>
+  string(27) "&#60;b&#62;John&#60;/b&#62;"
+  ["email"]=>
+  string(32) "john@example&#60;script&#62;.com"
+  ["bio"]=>
+  string(22) "Developer &#38; writer"
+}
+]]>
+   </screen>
+  </example>
+  <example>
+   <title><constant>FILTER_CALLBACK</constant> の使用例</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+$data = [
+    'name'  => '  John Doe  ',
+    'city'  => '  New York  ',
+];
+
+$options = [
+    'name' => [
+        'filter'  => FILTER_CALLBACK,
+        'options' => 'trim',
+    ],
+    'city' => [
+        'filter'  => FILTER_CALLBACK,
+        'options' => function ($value) {
+            return strtoupper(trim($value));
+        },
+    ],
+];
+
+var_dump(filter_var_array($data, $options));
+?>
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+array(2) {
+  ["name"]=>
+  string(8) "John Doe"
+  ["city"]=>
+  string(8) "NEW YORK"
 }
 ]]>
    </screen>
