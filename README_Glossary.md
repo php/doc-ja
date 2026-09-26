@@ -35,18 +35,23 @@
     - php-src で言うところの ext/standard に入っている関数全てを指す
     - Standard PHP Librady (SPL) は別にあるが、「標準ライブラリ」でいいことにする
 - parameters / arguments
-  * パラメータ / 引数
-    - 以下の2つは明示的に区別されるべきである
-      * 「関数やメソッドを呼び出す時に渡す arguments(引数)」
-      * 「関数やメソッドに渡すべき値の仕様としての parameters(パラメータ)」は区別されるべき
-
-```php
-// $parameters はパラメータ
-function test($parameters = array()) {}
-// [1234] は引数
-test([1234]);
-```
-
+  * 原則として「引数」に統一
+    - 「パラメータ」「引数」の訳し分けは不要（原文の時点で基準なく揺れている）
+  * 区別が必要な場面では「仮引数」「実引数」
+    - 仮引数 (parameter): 関数やメソッドの定義での宣言
+      * 参考: https://developer.mozilla.org/ja/docs/Glossary/Parameter
+    - 実引数 (argument): 呼び出し側が渡す値
+      * 参考: https://developer.mozilla.org/ja/docs/Glossary/Argument
+    ```php
+    // $parameters は仮引数
+    function test(array $parameters) {}
+    // [1234] は実引数
+    test([1234]);
+    ```
+  * 本ルールは新たな訳文のみへ適用
+    - 既存の訳文の「パラメータ」をこの方針だけのために書き換える必要はない
+  * 本ルールは関数の文脈での parameter / argument にのみ適用
+    - ini 設定・SQL のバインド・URL のクエリなど、関数以外の文脈は対象外
 - override (OOP)
   * 「オーバーライド」で統一 ( [#26](https://github.com/php/doc-ja/issues/26) )
     - 継承の文脈（メソッド、プロパティ、定数の再定義）では「上書き」を使わない
