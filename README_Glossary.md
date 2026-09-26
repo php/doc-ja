@@ -3,6 +3,8 @@
 ここには、PHP マニュアル 日本語版で「統一した」訳語を当てている単語を記録しています。  
 以下の単語の訳がブレていたら、issue または Pull Request で報告してください。
 
+機械的に検出できる訳語・表記（長音の有無など）は [build/prh.yml](build/prh.yml) で管理しており、CI（Textlint）で検出されます。
+
 - visibility
   * 「アクセス権」で統一
   * protected/private/public を付けた、メソッドやプロパティが可視な範囲のこと
@@ -18,18 +20,9 @@
     - strict モードの対比の文脈で、coercive を「強制する」と訳さない
 - language construct
   * 言語構造
-- unserialize
-  * アンシリアライズ ( [#21](https://github.com/php/doc-ja/issues/21) )
-    - 「デシリアライズ」や「アンマーシャリング」にはしない
 - nullable
   * nullable のままにする。訳さない。
     - null を受け入れる何か、という意味だが、PHP マニュアル日本語版では「訳さない」で統一。
-- serialize
-  * シリアライズ / シリアル化
-    - 「マーシャリング」にはしないこと
-- メソッドや変数に付ける static
-  * static メソッド / static 変数 とする ( [#45](https://github.com/php/doc-ja/issues/45 ), [#46](https://github.com/php/doc-ja/issues/46) )
-    - 静的変数や静的メソッドなどとはしない
 - numeric string
   * 数値形式の文字列
 - preload
@@ -41,14 +34,6 @@
   * 移行ガイドの文脈での Standard は「標準ライブラリ」で統一する
     - php-src で言うところの ext/standard に入っている関数全てを指す
     - Standard PHP Librady (SPL) は別にあるが、「標準ライブラリ」でいいことにする
-- WHATWG URL Standard
-  * 「WHATWG URL Standard」（原語のまま）で統一
-    - ext/uri などで言及される、URL 仕様の固有名詞
-    - 「WHATWG URL 標準」とはしない
-- throw Exception
-  * 例外をスローする
-    - 例外を「投げる」とはしない
-    - Throwable を throw するという文脈ではすべてこれに統一する
 - parameters / arguments
   * パラメータ / 引数
     - 以下の2つは明示的に区別されるべきである
@@ -66,11 +51,3 @@ test([1234]);
   * 「オーバーライド」で統一 ( [#26](https://github.com/php/doc-ja/issues/26) )
     - 継承の文脈（メソッド、プロパティ、定数の再定義）では「上書き」を使わない
     - 「上書き」はファイルや設定値、配列の値を書き換える文脈 (overwrite) でのみ使う
-- fatal error
-  * 致命的なエラー ( [#321](https://github.com/php/doc-ja/issues/321) )
-    - 「fatal エラー」としない
-- parser
-  * 「パーサー」と伸ばす。「パーサ」としない ( [#310](https://github.com/php/doc-ja/issues/310) )
-    - server と同様、末尾の長音記号を付ける
-- server
-  * 「サーバー」と伸ばす。「サーバ」としない ( [#69](https://github.com/php/doc-ja/issues/69) )
