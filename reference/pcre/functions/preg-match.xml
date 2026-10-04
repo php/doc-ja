@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 4de6272a1f15efc9e3df21d255965fd890da0d6f Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: f88f34ad2f28993c120074306cccfc02a2a00db1 Maintainer: hirokawa Status: ready -->
 <!-- Credits: haruki,mumumu -->
 <refentry xml:id="function.preg-match" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -119,8 +119,11 @@ Array
          <term><constant>PREG_UNMATCHED_AS_NULL</constant></term>
          <listitem>
           <para>
-           このフラグを設定すると、サブパターンがマッチしなかった場合に &null; が渡されます。
-           通常は、空の <type>string</type> が渡されます。
+           このフラグを設定すると、マッチしなかったサブパターンは &null; として報告され、
+           末尾にあるものであっても常に結果に含まれます。
+           このフラグを設定しない場合、マッチしなかったサブパターンは、
+           後ろにマッチしたサブパターンがあれば空の <type>string</type> として報告され、
+           末尾にある場合は結果にまったく含まれません。
            <informalexample>
             <programlisting role="php">
 <![CDATA[
@@ -128,6 +131,12 @@ Array
 preg_match('/(a)(b)*(c)/', 'ac', $matches);
 var_dump($matches);
 preg_match('/(a)(b)*(c)/', 'ac', $matches, PREG_UNMATCHED_AS_NULL);
+var_dump($matches);
+
+// 末尾にあるマッチしなかったサブパターン:
+preg_match('/(a)(b)?(c)?/', 'a', $matches);
+var_dump($matches);
+preg_match('/(a)(b)?(c)?/', 'a', $matches, PREG_UNMATCHED_AS_NULL);
 var_dump($matches);
 ?>
 ]]>
@@ -154,6 +163,22 @@ array(4) {
   NULL
   [3]=>
   string(1) "c"
+}
+array(2) {
+  [0]=>
+  string(1) "a"
+  [1]=>
+  string(1) "a"
+}
+array(4) {
+  [0]=>
+  string(1) "a"
+  [1]=>
+  string(1) "a"
+  [2]=>
+  NULL
+  [3]=>
+  NULL
 }
 ]]>
             </screen>
@@ -231,12 +256,12 @@ Array
 )
 ]]>
          </screen>
-         <para>
+         <simpara>
           <function>substr</function> 関数を利用しない別の方法として、
           <literal>^</literal> アンカーではなく、 言明 <literal>\G</literal> または
           <literal>A</literal> 修飾子を使う方法があります。
           これらは両方とも <parameter>offset</parameter> パラメータとともに動作します。
-         </para>
+         </simpara>
         </informalexample>
        </para>
       </note>
@@ -274,6 +299,17 @@ Array
       </row>
      </thead>
      <tbody>
+      <row>
+       <entry>7.4.0</entry>
+       <entry>
+        <constant>PREG_UNMATCHED_AS_NULL</constant> フラグを使った場合に、
+        末尾にあるマッチしなかったキャプチャグループも &null;
+        (<constant>PREG_OFFSET_CAPTURE</constant> も使った場合は <literal>[null, -1]</literal>)
+        として結果に含まれるようになり、
+        <varname>$matches</varname> のサイズが常に同じになりました。
+        これより前のバージョンでは、それらは結果に含まれていませんでした。
+       </entry>
+      </row>
       <row>
        <entry>7.2.0</entry>
        <entry>
