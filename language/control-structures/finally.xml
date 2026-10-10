@@ -1,0 +1,492 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision$ -->
+<!-- EN-Revision: 7c915c0c28b8e2e4306333c64602ee4800c73754 Maintainer: KentarouTakeda Status: ready -->
+<sect1 xml:id="control-structures.finally" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <title>finally</title>
+ <?phpdoc print-version-for="finally"?>
+ <simpara>
+  &catch; ブロックの後、またはその代わりに、
+  &finally; ブロックも指定できます。
+  &finally; ブロックの中に書いたコードは、
+  &return; 文や &yield; 文に到達した場合や、
+  <exceptionname>Throwable</exceptionname> エラーがキャッチされなかったり、
+  スローしなおされたりした場合でも、
+  &try; および &catch; ブロックの後で常に実行されます。
+  このコードは、通常の実行フローが再開される前に実行されます。
+  このルールが当てはまらないのは、<function>exit</function> の呼び出しや、
+  致命的なエラー (最大実行時間を超えた場合など) によって、
+  スクリプトが突然終了した場合だけです。
+ </simpara>
+ <example>
+  <title>&finally; ブロックを使った <exceptionname>Throwable</exceptionname> エラーの処理</title>
+  <programlisting role="php">
+<![CDATA[
+<?php
+function inverse($x) {
+    return 1/$x;
+}
+
+try {
+    echo inverse(5) . "\n";
+} catch (\DivisionByZeroError $e) {
+    echo 'Caught error: ',  $e->getMessage(), "\n";
+} finally {
+    echo "First finally.\n";
+}
+
+try {
+    echo inverse(0) . "\n";
+} catch (\DivisionByZeroError $e) {
+    echo 'Caught error: ',  $e->getMessage(), "\n";
+} finally {
+    echo "Second finally.\n";
+}
+
+// 実行は継続される
+echo "Hello World\n";
+]]>
+  </programlisting>
+  &example.outputs.8;
+  <screen>
+<![CDATA[
+0.2
+First finally.
+Caught error: Division by zero
+Second finally.
+Hello World
+]]>
+  </screen>
+ </example>
+
+ <simpara>
+  <exceptionname>Throwable</exceptionname> エラーがスローされた後にコールスタックが巻き戻されるときは、
+  その途中で見つかったすべての &finally; ブロックが実行されます。
+  つまり、ネストした &finally; ブロックは、
+  隣接する &catch; ブロックで <exceptionname>Throwable</exceptionname>
+  エラーがキャッチされなかった場合でも実行されます。
+ </simpara>
+ <example>
+  <title>すべての &finally; ブロックが実行される</title>
+  <programlisting role="php">
+   <![CDATA[
+<?php
+try {
+    try {
+        throw new Exception();
+    } finally {
+        echo "Inner finally\n";
+    }
+} catch (Exception $e) {
+} finally {
+    echo "Outer finally\n";
+}
+]]>
+  </programlisting>
+  &example.outputs;
+  <screen>
+<![CDATA[
+Inner finally
+Outer finally
+]]>
+  </screen>
+ </example>
+
+ <sect2>
+  <title>&finally; ブロックと &return; 文の相互作用</title>
+  <simpara>
+   &finally; ブロックと &return; 文の間には注意すべき相互作用があります。
+   &try; や &catch; ブロックの内部で &return; 文に到達した場合でも、
+   &finally; ブロックは実行されます。
+   さらに、&return; 文は到達した時点で評価されますが、
+   結果は &finally; ブロックが実行された後に返されます。
+   また、&finally; ブロックにも &return; 文が存在した場合は、
+   &finally; ブロックから値が返されます。
+  </simpara>
+  <example>
+   <title>&finally; ブロック内の &return; と、それより前の &return; の相互作用</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+function testReturnTry() {
+    try {
+        echo 'Within try', "\n";
+        return 'try';
+    } finally {
+        echo 'Within finally', "\n";
+        return 'finally';
+    }
+}
+
+function testReturnCatch() {
+    try {
+        throw new Exception('foo');
+    } catch (Exception $e) {
+        echo 'Within catch', "\n";
+        return 'catch';
+    } finally {
+        echo 'Within finally', "\n";
+        return 'finally';
+    }
+}
+
+echo testReturnTry(), "\n";
+echo testReturnCatch(), "\n";
+
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+Within try
+Within finally
+finally
+Within catch
+Within finally
+finally
+]]>
+   </screen>
+  </example>
+  <example>
+   <title>&finally; ブロックと &return; の相互作用</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+function testReturnTry() {
+    try {
+        return 'try';
+    } finally {
+        echo 'finally ';
+    }
+}
+
+function testReturnCatch() {
+    try {
+        throw new Exception('foo');
+    } catch (Exception $e) {
+        return 'catch';
+    } finally {
+        echo 'finally ';
+    }
+}
+
+echo testReturnTry(), "\n";
+echo testReturnCatch(), "\n";
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+finally try
+finally catch
+]]>
+   </screen>
+  </example>
+ </sect2>
+
+ <sect2>
+  <title>&finally; ブロックと、&try; ブロック内でスローされた例外の相互作用</title>
+  <simpara>
+   &try; ブロックと &finally; ブロックの両方から例外がスローされると、
+   &finally; ブロックからスローされた例外が伝播し、
+   &try; ブロックからスローされた例外はその前の例外として使われます。
+  </simpara>
+  <example>
+   <title>try と finally の内部からスローされる例外</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+try {
+    try {
+        throw new Exception(message: 'Third', previous: new Exception('Fourth'));
+    } finally {
+        throw new Exception(message: 'First', previous: new Exception('Second'));
+    }
+} catch (Exception $e) {
+    var_dump(
+        $e->getMessage(),
+        $e->getPrevious()->getMessage(),
+        $e->getPrevious()->getPrevious()->getMessage(),
+        $e->getPrevious()->getPrevious()->getPrevious()->getMessage(),
+    );
+}
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+string(5) "First"
+string(6) "Second"
+string(5) "Third"
+string(6) "Fourth"
+]]>
+   </screen>
+  </example>
+ </sect2>
+
+ <sect2>
+  <title>
+   <link linkend="language.generators">ジェネレータ</link>内での
+   &finally; ブロックの振る舞い
+  </title>
+
+  <simpara>
+   ジェネレータを反復処理している途中で <exceptionname>Throwable</exceptionname>
+   エラーがスローされると、ジェネレータ内の &finally; ブロックが実行されます。
+   これは、コールスタック上のひとつ前の要素にあたるためです。
+  </simpara>
+  <example>
+   <title>
+    <exceptionname>Exception</exceptionname> がスローされたときに実行される
+    &finally; ブロック
+   </title>
+   <programlisting role="php">
+    <![CDATA[
+<?php
+function generate()
+{
+    try {
+        yield 1;
+        yield 2;
+    } catch(\Exception $e) {
+        echo 'catch';
+    } finally {
+        echo "finally\n";
+    }
+}
+
+try {
+    foreach (generate() as $i) {
+        echo $i, "\n";
+        throw new Exception();
+    }
+} catch(Exception $e) {
+    echo 'outer catch';
+}
+]]>
+   </programlisting>
+   &example.outputs.similar;
+   <screen>
+<![CDATA[
+1
+finally
+outer catch
+]]>
+   </screen>
+  </example>
+
+  <simpara>
+   &finally; ブロックの中で &yield; を使うこともできますが、
+   <exceptionname>Throwable</exceptionname> エラーが発生して
+   &foreach; の中でキャッチされなかった場合は、<literal>Cannot yield from finally in a force-closed
+   generator</literal> というメッセージの <exceptionname>Error</exceptionname> がスローされます。
+  </simpara>
+  <example>
+   <title>
+    <exceptionname>Exception</exceptionname> がスローされたときに
+    &finally; ブロック内で &yield; した場合のエラー
+   </title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+function generate()
+{
+    try {
+        yield 1;
+        yield 2;
+    } catch(\Exception $e) {
+        echo 'catch';
+    } finally {
+        echo "finally\n";
+        yield 3;
+    }
+}
+
+try {
+    foreach (generate() as $i) {
+        echo $i, "\n";
+        throw new Exception();
+    }
+} catch(Exception $e) {
+    echo 'outer catch';
+}
+]]>
+   </programlisting>
+   &example.outputs.similar;
+   <screen>
+<![CDATA[
+1
+finally
+
+Fatal error: Uncaught Exception in /in/GbFmu:19
+Stack trace:
+#0 {main}
+
+Next Error: Cannot yield from finally in a force-closed generator in /in/GbFmu:12
+Stack trace:
+#0 /in/GbFmu(19): generate()
+#1 {main}
+  thrown in /in/GbFmu on line 12
+]]>
+   </screen>
+  </example>
+ </sect2>
+
+ <sect2>
+  <title>&finally; ブロックと <function>exit</function> の呼び出しの相互作用</title>
+  <simpara>
+   &try; ブロックや &catch; ブロックの中で <function>exit</function> を呼び出すと、
+   すべての &finally; ブロックがスキップされます。
+  </simpara>
+  <example>
+   <title>&finally; ブロックと、&try; ブロック内で呼び出された <function>exit</function> の相互作用</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+try {
+    echo 'quit';
+    exit(0);
+} finally {
+    echo 'finally';
+}
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+quit
+]]>
+   </screen>
+  </example>
+  <example>
+   <title>&finally; ブロックと、&catch; ブロック内で呼び出された <function>exit</function> の相互作用</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+try {
+    throw new Exception('foo');
+} catch (Exception $e) {
+    echo 'catch';
+    exit(0);
+} finally {
+    echo 'finally ';
+}
+]]>
+   </programlisting>
+   &example.outputs;
+  <screen>
+<![CDATA[
+catch
+]]>
+   </screen>
+  </example>
+  <example>
+   <title><function>exit</function> を呼び出すとすべての &finally; ブロックがスキップされる</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+try {
+    try {
+        echo 'quit';
+        exit(0);
+    } finally {
+        echo 'inner finally ';
+    }
+} finally {
+    echo 'outer finally';
+}
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+quit
+]]>
+   </screen>
+  </example>
+
+  <simpara>
+   &finally; ブロックの中で <function>exit</function> を呼び出すと、
+   その外側にある他の &finally; ブロックはすべてスキップされます。
+  </simpara>
+  <example>
+   <title><function>exit</function> を呼び出して外側の &finally; ブロックをスキップする</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+try {
+    try {
+        echo 'try', "\n";
+    } finally {
+        echo 'inner finally ';
+        exit(0);
+    }
+} finally {
+    echo 'outer finally';
+}
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+try
+inner finally
+]]>
+   </screen>
+  </example>
+
+  <sect3>
+   <title>ジェネレータに対する &foreach; の中で <function>exit</function> を呼び出す場合のエッジケース</title>
+   <simpara>
+    このエッジケースでの振る舞いは、コードを実行する PHP のバージョンによって大きく異なります。
+   </simpara>
+
+   <informalexample>
+    <programlisting role="php">
+<![CDATA[
+<?php
+function generate()
+{
+    try {
+        yield 1;
+        yield 2;
+    } catch(\Exception $e) {
+        echo 'catch';
+    } finally {
+        echo "inner finally\n";
+    }
+}
+
+try {
+    foreach (generate() as $i) {
+        echo $i, "\n";
+        exit(0);
+    }
+} finally {
+    echo "outer finally\n";
+}
+]]>
+    </programlisting>
+    <simpara>
+     PHP 7.1.14 より前、PHP 7.2.0 と 7.2.1、および PHP 8.0.0 以降では、
+     上の例の出力は以下となります。
+    </simpara>
+    <screen>
+<![CDATA[
+1
+inner finally
+]]>
+    </screen>
+    <simpara>
+     PHP 7.1.14 および 7.2.2 以降、かつ PHP 8.0.0 より前では、
+     上の例の出力は以下となります。
+    </simpara>
+    <screen>
+<![CDATA[
+1
+]]>
+    </screen>
+   </informalexample>
+  </sect3>
+ </sect2>
+</sect1>
