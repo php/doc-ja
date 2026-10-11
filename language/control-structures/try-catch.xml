@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision$ -->
+<!-- EN-Revision: 7c915c0c28b8e2e4306333c64602ee4800c73754 Maintainer: KentarouTakeda Status: ready -->
+<sect1 xml:id="control-structures.try-catch" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <title>Try...Catch</title>
+ <sect2 xml:id="control-structures.try" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <title>try</title>
+  <?phpdoc print-version-for="try"?>
+  <simpara>
+   &try; ブロックは、処理が必要な <exceptionname>Throwable</exceptionname> エラーを
+   &throw; する可能性があるコードを囲むもので、
+   対応する &catch; ブロックあるいは &finally; ブロックが
+   <emphasis>必ず</emphasis>ひとつ以上必要です。
+  </simpara>
+  <simpara>
+   &try; ブロック内で <exceptionname>Throwable</exceptionname> エラーがスローされると、
+   PHP はそのエラーを処理するため、最初にマッチする &catch; ブロックを探します。
+   見つからなければ、マッチするブロックが見つかるか、
+   グローバルなエラーハンドラに到達するまで、コールスタックを巻き戻します。
+  </simpara>
+  <note>
+   <simpara>
+    <function>set_exception_handler</function> を使うと、
+    キャッチされないあらゆる <exceptionname>Throwable</exceptionname>
+    を処理するハンドラを設定できます。
+    これは、コード全体を &try;-&catch; ブロックで囲むのと似ています。
+   </simpara>
+  </note>
+ </sect2>
+ <sect2 xml:id="control-structures.catch" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <title>catch</title>
+  <?phpdoc print-version-for="catch"?>
+  <simpara>
+   &catch; ブロックには、スローされた <exceptionname>Throwable</exceptionname> エラーにどのように対処するかを記述します。
+   このブロックには、処理できる <exceptionname>Throwable</exceptionname> のサブクラス
+   (多くの場合は <exceptionname>Exception</exceptionname> 配下のクラス) をひとつ以上指定します。
+   オプションで、例外を代入する変数も指定できます。
+  </simpara>
+  <simpara>
+   スローされた <exceptionname>Throwable</exceptionname> オブジェクトのクラスにマッチする
+   最初の &catch; ブロックが、そのエラーを処理します。
+   通常の実行はその &catch; ブロックの後から再開され、
+   他にマッチする &catch; ブロックがあっても、それらは実行されません。
+  </simpara>
+  <example>
+   <title>例外をキャッチする</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+try {
+    throw new Exception('Error');
+} catch (Exception $e) {
+    echo 'Caught exception: ', $e->getMessage(), "\n";
+}
+
+// 実行は継続される
+echo "Hello World\n";
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+Caught exception: Error
+Hello World
+]]>
+   </screen>
+  </example>
+
+  <simpara>
+   PHP 7.1.0 以降では、&catch; ブロックで処理する <exceptionname>Throwable</exceptionname> のサブクラスを、
+   パイプ文字 (<literal>|</literal>) を使った union で指定できるようになりました。
+   これは、異なるクラス階層に由来する異なる例外を同じように処理したい場合に有用です。
+  </simpara>
+  <example>
+   <title>処理するクラスを union で指定してキャッチする</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+class MyException extends Exception { }
+
+class MyOtherException extends Exception { }
+
+class Test {
+    public function testing() {
+        try {
+            throw new MyException();
+        } catch (MyException | MyOtherException $e) {
+            var_dump(get_class($e));
+        }
+    }
+}
+
+$foo = new Test;
+$foo->testing();
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+string(11) "MyException"
+]]>
+   </screen>
+  </example>
+
+  <simpara>
+   複数の &catch; ブロックを使うと、
+   異なるクラスの <exceptionname>Throwable</exceptionname> エラーをそれぞれ異なる方法で処理できます。
+   &try; ブロック内でエラーがスローされなかった場合は、
+   連続して定義された最後の &catch; ブロックの後から、通常どおり実行が続きます。
+  </simpara>
+  <example>
+   <title>複数の catch ブロック</title>
+   <programlisting role="php" annotations="non-interactive">
+<![CDATA[
+<?php
+try {
+    do_something_io_related();
+} catch (FileNotFoundException $e) {
+    // FileNotFoundException だけをキャッチして、その場合の処理を行う
+} catch (MissingPermissionException $e) {
+    // MissingPermissionException だけをキャッチして、その場合は別の処理を行う
+}
+]]>
+   </programlisting>
+  </example>
+
+  <simpara>
+   &catch; ブロックの中から <exceptionname>Throwable</exceptionname> を &throw; する
+   (あるいはスローしなおす) こともできます。
+   何もスローされなければ、通常どおり実行が再開されます。
+  </simpara>
+  <example>
+   <title>ネストした例外</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+class MyException extends Exception { }
+
+class Test {
+    public function testing() {
+        try {
+            try {
+                throw new MyException('foo!');
+            } catch (MyException $e) {
+                // スローしなおす
+                throw $e;
+            }
+        } catch (Exception $e) {
+            var_dump($e->getMessage());
+        }
+    }
+}
+
+$foo = new Test;
+$foo->testing();
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+string(4) "foo!"
+]]>
+   </screen>
+  </example>
+  <caution>
+   <simpara>
+    &catch; ブロックの中でスローしたオブジェクトは、
+    隣接する &catch; ブロックではキャッチ<emphasis>されません</emphasis>。
+   </simpara>
+   <example>
+    <title>連続した catch ブロック</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+class A extends Exception {}
+class B extends Exception {}
+
+try {
+    throw new A;
+} catch(A $e) {
+    throw new B;
+} catch(B) {
+    echo 'Hello';
+}
+
+]]>
+    </programlisting>
+    &example.outputs.similar;
+    <screen>
+<![CDATA[
+Fatal error: Uncaught B in /in/K8Tl9:9
+Stack trace:
+#0 {main}
+  thrown in /in/K8Tl9 on line 9
+]]>
+    </screen>
+   </example>
+  </caution>
+
+  <simpara>
+   PHP 8.0.0 以降では、キャッチされた <exceptionname>Throwable</exceptionname>
+   に対応する変数はオプションになりました。
+   指定されない場合、&catch; ブロックは実行されるものの、
+   スローされたオブジェクトへアクセスすることはできません。
+  </simpara>
+  <example>
+   <title>キャッチするときに変数を省略する</title>
+   <simpara>PHP 8.0.0 以降でのみ許されます。</simpara>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+class SpecificException extends Exception {}
+
+function test() {
+    throw new SpecificException('Oopsie');
+}
+
+try {
+    test();
+} catch (SpecificException) {
+    print "A SpecificException was thrown, but we don't care about the details.";
+}
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+A SpecificException was thrown, but we don't care about the details.
+]]>
+   </screen>
+  </example>
+ </sect2>
+</sect1>

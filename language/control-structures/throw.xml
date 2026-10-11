@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision$ -->
+<!-- EN-Revision: 7c915c0c28b8e2e4306333c64602ee4800c73754 Maintainer: KentarouTakeda Status: ready -->
+<sect1 xml:id="control-structures.throw" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <title>throw</title>
+ <?phpdoc print-version-for="throw"?>
+ <simpara>
+  &throw; キーワードは式であり、式を書ける場所ならどこでも使えます。
+  引数として <exceptionname>Throwable</exceptionname>
+  のインスタンスを受け取ります。
+ </simpara>
+ <caution>
+  <simpara>
+   PHP 8.0 より前のバージョンでは、&throw; キーワードは式ではなく文でした。
+  </simpara>
+ </caution>
+ <para>
+  <exceptionname>Throwable</exceptionname> ではないオブジェクトを &throw; しようとすると、
+  <exceptionname>Error</exceptionname> がスローされます。
+
+  <example>
+   <title><exceptionname>Throwable</exceptionname> ではないオブジェクトをスローする</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+throw new class {};
+]]>
+   </programlisting>
+   &example.outputs.similar;
+   <screen>
+<![CDATA[
+PHP Fatal error:  Uncaught Error: Cannot throw objects that do not implement Throwable in Command line code:1
+Stack trace:
+#0 {main}
+]]>
+   </screen>
+  </example>
+ </para>
+
+ <simpara>
+  &throw; を使うと通常の処理の流れは中断され、
+  スローされたオブジェクトが &catch; ブロックでキャッチされるか、グローバルスコープに達するまで、
+  コールスタックが巻き戻されます。
+  後者の場合、プログラムは致命的なエラーで終了します。
+  このエラーには、<exceptionname>Throwable</exceptionname>
+  オブジェクトがスローされた場所を示すスタックトレースが含まれます。
+ </simpara>
+ <example>
+  <title>グローバルスコープで例外をスローする</title>
+  <programlisting role="php">
+<![CDATA[
+<?php
+echo "Before exception\n";
+throw new Exception('Stop execution');
+echo "After exception\n";
+]]>
+  </programlisting>
+  &example.outputs.similar;
+  <screen>
+<![CDATA[
+Before exception
+PHP Fatal error:  Uncaught Exception: Stop execution in Command line code:2
+Stack trace:
+#0 {main}
+  thrown in Command line code on line 2
+]]>
+  </screen>
+ </example>
+ <example>
+  <title>関数内で例外をスローする</title>
+  <programlisting role="php">
+   <![CDATA[
+<?php
+
+function foo() {
+    echo "Before exception\n";
+    throw new Exception('Stop execution');
+    echo "After exception\n";
+}
+
+foo();
+]]>
+  </programlisting>
+  &example.outputs.similar;
+  <screen>
+<![CDATA[
+Before exception
+PHP Fatal error:  Uncaught Exception: Stop execution in Command line code:3
+Stack trace:
+#0 Command line code(7): foo()
+#1 {main}
+  thrown in Command line code on line 3
+]]>
+  </screen>
+ </example>
+
+ <simpara>
+  &throw; は式なので、別の式の結果が不適切な値だった場合に、
+  処理を分岐させるのに使えます。
+ </simpara>
+ <example>
+  <title>throw を式として使う</title>
+  <simpara>PHP 8.0.0 以降でのみ許されます。</simpara>
+  <programlisting role="php">
+<![CDATA[
+<?php
+
+function test() {
+    do_something_risky() or throw new Exception('It did not work');
+}
+
+function do_something_risky() {
+    return false; // 失敗をシミュレートする
+}
+
+try {
+    test();
+} catch (Exception $e) {
+    print $e->getMessage();
+}
+]]>
+  </programlisting>
+  &example.outputs;
+  <screen>
+<![CDATA[
+It did not work
+]]>
+  </screen>
+ </example>
+
+ <simpara>
+  スローされた <exceptionname>Throwable</exceptionname> は、
+  <link linkend="control-structures.try-catch">try-catch</link> ブロックで処理できます。
+  詳細は <link linkend="language.error-handling.throwable">エラー処理</link>
+  を参照ください。
+ </simpara>
+</sect1>

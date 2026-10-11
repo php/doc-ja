@@ -1,0 +1,363 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision$ -->
+<!-- EN-Revision: 7c915c0c28b8e2e4306333c64602ee4800c73754 Maintainer: KentarouTakeda Status: ready -->
+<chapter xml:id="language.error-handling" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink" annotations="interactive">
+ <title>エラー処理</title>
+ <note>
+  <simpara><exceptionname>Exception</exceptionname> クラスも参照ください</simpara>
+ </note>
+ <simpara>
+  エラーは、アプリケーションの開発やライフサイクルの中でごく普通に起こるものです。
+  そのため PHP には、エラーを通知したり、エラーに対処したりする方法が複数用意されています。
+ </simpara>
+ <para>
+  PHP がエラーを報告する仕組みには、主に次のふたつがあります。
+  <itemizedlist>
+   <listitem>
+    <simpara>
+     <exceptionname>Throwable</exceptionname> エラー。これはさらに、
+     <exceptionname>Error</exceptionname> クラス配下の<emphasis>プログラミング上の</emphasis>エラーと、
+     <exceptionname>Exception</exceptionname> クラス配下の<emphasis>回復可能な</emphasis>エラーに分かれます。
+    </simpara>
+   </listitem>
+   <listitem>
+    <simpara>
+     診断エラー。これは、<link linkend="errorfunc.constants">深刻度</link>ごとに分類されます。
+    </simpara>
+   </listitem>
+  </itemizedlist>
+ </para>
+
+ <sect1 xml:id="language.error-handling.throwable">
+  <title><exceptionname>Throwable</exceptionname> エラー</title>
+  <anchor xml:id="language.exceptions"/>
+  <simpara>
+   <exceptionname>Throwable</exceptionname> エラーとは、実行中に発生し、
+   通常の命令の流れを中断するイベントです。
+   <exceptionname>Throwable</exceptionname> エラーがエンジンによって、または手動で &throw; されると、
+   &catch; ブロックでキャッチされるか、グローバルスコープに達するまで、
+   コールスタックが巻き戻されます。
+   グローバルスコープに達した場合、プログラムは致命的なエラーで終了します。
+   どちらの場合も、コールスタックを巻き戻す途中で見つかったすべての &finally; ブロックが実行されます。
+  </simpara>
+  <simpara>
+   PHP のコードから <exceptionname>Throwable</exceptionname> エラーをスローするには、
+   &throw; キーワードの後に、<exceptionname>Error</exceptionname> クラスか
+   <exceptionname>Exception</exceptionname> クラス、
+   またはそのいずれかのサブクラスのインスタンスを指定しなければなりません。
+   それ以外のオブジェクトをスローしようとすると、
+   <literal>Cannot throw objects that do not implement Throwable</literal>
+   というメッセージとともに <exceptionname>Error</exceptionname> がスローされます。
+  </simpara>
+  <tip>
+   <simpara>
+    <link linkend="intro.spl">Standard PHP Library (SPL)</link> には、
+    さまざまな<link linkend="spl.exceptions">組み込みの例外</link>が用意されています。
+    また、<link linkend="language.error-handling.throwable.extending">Exception
+    クラスを拡張する</link>ことで、独自の例外を作成することもできます。
+   </simpara>
+  </tip>
+  <simpara>
+   エラーをスローする可能性のあるコードを &try; ブロックで囲むと、
+   <exceptionname>Throwable</exceptionname> エラーを PHP のコード内で処理できます。
+   &try; ブロックには、対応する &catch; ブロックあるいは &finally; ブロックが
+   ひとつ以上必要です。
+  </simpara>
+  <note>
+   <simpara>
+    <exceptionname>Error</exceptionname> オブジェクトはプログラミング上のエラーを示すものなので、
+    キャッチすることは<emphasis>推奨されません</emphasis>。
+   </simpara>
+  </note>
+  <warning>
+   <simpara>
+    <exceptionname>Throwable</exceptionname> オブジェクトはクローンできません。
+    このようなオブジェクトを <link linkend="language.oop5.cloning">clone</link> しようとすると、
+    <literal>Trying to clone an uncloneable object of class Exception</literal>
+    というメッセージとともに <exceptionname>Error</exceptionname> がスローされます。
+    これは、サブクラスが独自の <link linkend="object.clone">__clone()</link>
+    メソッドを宣言していても同様です。
+   </simpara>
+  </warning>
+
+  <sect2 xml:id="language.error-handling.throwable.user">
+   <title><literal>グローバルな例外ハンドラ</literal></title>
+   <simpara>
+    <function>set_exception_handler</function> を使うと、
+    キャッチされないあらゆる <exceptionname>Throwable</exceptionname>
+    を処理するハンドラを設定できます。
+    これはコード全体を &try;-&catch; ブロックで囲むのと似ていますが、
+    その後に実行が再開されない点が異なります。
+    ハンドラから処理が戻った時点で、スクリプトは終了します。
+   </simpara>
+  </sect2>
+
+  <sect2 xml:id="language.error-handling.throwable.extending">
+   <title>例外を拡張する</title>
+   <simpara>
+    ユーザー定義の例外は、組み込みの <exceptionname>Exception</exceptionname>
+    クラスを拡張して定義できます。
+    子クラスの中でアクセスできるメソッドやプロパティについては、
+    派生元である <exceptionname>Exception</exceptionname> クラスのページを参照ください。
+   </simpara>
+   <simpara>
+    組み込みの <exceptionname>Exception</exceptionname> クラスを拡張したクラスで
+    <link linkend="language.oop5.decon">コンストラクタ</link>を再定義する場合、
+    利用可能なすべてのデータが正しく代入されるように、
+    <code>parent::__construct()</code> もコールすることを強く推奨します。
+    <link linkend="object.tostring">__toString()</link> メソッドをオーバーライドすると、
+    オブジェクトが文字列として使われたときの出力を独自に定義できます。
+   </simpara>
+   <example>
+    <title><exceptionname>Exception</exceptionname> を拡張する</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+class CustomException extends Exception
+{
+    // コンストラクタを再定義し、メッセージを必須にする
+    public function __construct($message, $code = 0, ?Throwable $previous = null) {
+        // 何らかのコード
+
+        // すべてを正しく確実に代入する
+        parent::__construct($message, $code, $previous);
+    }
+
+    // オブジェクトの文字列表現を独自に定義する
+    public function __toString() {
+        return __CLASS__ . ": [{$this->code}]: {$this->message}\n";
+    }
+
+    public function customFunction() {
+        echo "A custom function for this type of exception\n";
+    }
+}
+
+try {
+    throw new CustomException("Something happened", 5);
+} catch (CustomException $e) {
+    echo "Caught custom exception\n", $e;
+    $e->customFunction();
+}
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+Caught custom exception
+CustomException: [5]: Something happened
+A custom function for this type of exception
+]]>
+    </screen>
+   </example>
+  </sect2>
+
+  <sect2 xml:id="language.error-handling.throwable.hierarchy">
+   <title><exceptionname>Throwable</exceptionname> の階層</title>
+
+   <itemizedlist>
+    <listitem>
+     <simpara><exceptionname>Throwable</exceptionname></simpara>
+     <itemizedlist>
+      <listitem>
+       <simpara><exceptionname>Error</exceptionname></simpara>
+       <itemizedlist>
+        <listitem>
+         <simpara><exceptionname>ArithmeticError</exceptionname></simpara>
+         <itemizedlist>
+          <listitem>
+           <simpara><exceptionname>DivisionByZeroError</exceptionname></simpara>
+          </listitem>
+         </itemizedlist>
+        </listitem>
+        <listitem>
+         <simpara><exceptionname>AssertionError</exceptionname></simpara>
+        </listitem>
+        <listitem>
+         <simpara><exceptionname>CompileError</exceptionname></simpara>
+         <itemizedlist>
+          <listitem>
+           <simpara><exceptionname>ParseError</exceptionname></simpara>
+          </listitem>
+         </itemizedlist>
+        </listitem>
+        <listitem>
+         <simpara><exceptionname>TypeError</exceptionname></simpara>
+         <itemizedlist>
+          <listitem>
+           <simpara><exceptionname>ArgumentCountError</exceptionname></simpara>
+          </listitem>
+         </itemizedlist>
+        </listitem>
+        <listitem>
+         <simpara><exceptionname>ValueError</exceptionname></simpara>
+        </listitem>
+        <listitem>
+         <simpara><exceptionname>UnhandledMatchError</exceptionname></simpara>
+        </listitem>
+        <listitem>
+         <simpara><exceptionname>FiberError</exceptionname></simpara>
+        </listitem>
+       </itemizedlist>
+      </listitem>
+      <listitem>
+       <simpara><exceptionname>Exception</exceptionname></simpara>
+      </listitem>
+     </itemizedlist>
+    </listitem>
+   </itemizedlist>
+
+   <simpara>
+    <exceptionname>Exception</exceptionname> クラスには多くのサブクラスがあり、
+    その中には <link linkend="spl.exceptions">SPL の例外</link>や、
+    拡張モジュールが定義する例外が含まれます。
+   </simpara>
+  </sect2>
+ </sect1>
+
+ <sect1 xml:id="language.error-handling.diagnostic">
+  <title>診断エラー</title>
+  <simpara>
+   診断エラーは、従来からエラーと呼ばれてきたもので、
+   さまざまな状況を知らせるために使われます。
+   必要に応じて、画面に表示したりログに記録したりできます。
+   デフォルトでは、PHP はすべての診断エラーを報告します。
+   (PHP 8.0 より前のバージョンでは、<constant>E_NOTICE</constant> と
+   <constant>E_DEPRECATED</constant> の診断エラーはデフォルトでは報告されませんでした)
+  </simpara>
+  <simpara>
+   <exceptionname>Throwable</exceptionname> エラーとは異なり、ほとんどの診断エラーは
+   通常の処理の流れを<emphasis>中断しません</emphasis>。
+   <constant>E_ERROR</constant> のような致命的な診断エラーは、スクリプトを終了させます。
+  </simpara>
+  <simpara>
+   どの診断エラーを報告し、どれを無視するのかを決めるのが、
+   <link linkend="ini.error-reporting"><parameter>error_reporting</parameter></link>
+   &php.ini; ディレクティブです。あるいは、実行時に
+   <function>error_reporting</function> をコールして設定することもできます。
+   スクリプトの実行が始まる前に発生するエラーもあるため、
+   ディレクティブで設定しておくことを強く推奨します。
+  </simpara>
+  <note>
+   <simpara>
+    開発環境では常に、
+    <link linkend="ini.error-reporting"><parameter>error_reporting</parameter></link>
+    を <constant>E_ALL</constant> にしておくべきです。
+    PHP が発する報告をすべて確認して対応する必要があるからです。
+    一方、運用環境では、もう少しレベルを下げて
+    <code>E_ALL &amp; ~E_NOTICE &amp; ~E_DEPRECATED</code> にすることもできますが、
+    多くの場合は <constant>E_ALL</constant> のままでも適切です。
+    潜在的な問題に早い段階で気づくことができるからです。
+   </simpara>
+  </note>
+
+  <simpara>
+   診断エラーが発生したときの PHP の挙動を決める &php.ini; ディレクティブが、あとふたつあります。
+   <link linkend="ini.display-errors"><parameter>display_errors</parameter></link>
+   は、診断エラーの内容をスクリプトの出力に含めるかどうかを設定します。
+   このディレクティブは、運用環境では常に無効にしておくべきです。
+   エラーメッセージの中には、データベースのパスワードなどの機密情報が含まれることもありえるからです。
+   しかし、開発環境では有効にしておくと便利なことがよくあります。
+   どこに問題があるのかに、すぐに気づけるからです。
+  </simpara>
+
+  <simpara>
+   <link linkend="ini.log-errors"><parameter>log_errors</parameter></link>
+   ディレクティブを有効にすると、PHP はエラーを表示するだけでなく、
+   診断エラーをログに記録することもできます。
+   発生したすべての診断エラーが、
+   <link linkend="ini.error-log"><parameter>error_log</parameter></link>
+   で定義したファイルまたは syslog に書き出されます。
+   これは運用環境で非常に役立ちます。
+   診断エラーが発生した時点で記録され、
+   後からそのログをもとにレポートを生成できるからです。
+  </simpara>
+  <simpara>
+   <literal linkend="language.operators.errorcontrol">@</literal>
+   演算子を使うと、個々の診断エラーを抑制できます。
+  </simpara>
+
+  <warning>
+   <simpara>
+    PHP 8.0.0 より前のバージョンでは、PHP スクリプトの実行を終了させるような
+    重大な診断エラーでも抑制できました。
+   </simpara>
+  </warning>
+
+  <note>
+   <simpara>
+    PHP のバージョンが変わると、診断エラーの追加や削除、深刻度の変更や
+    <exceptionname>Throwable</exceptionname> エラーへの昇格が行われることがあります。
+   </simpara>
+  </note>
+
+  <sect2 xml:id="language.error-handling.diagnostic.user">
+   <title>ユーザー定義の診断エラーハンドラ</title>
+
+   <simpara>
+    PHP のデフォルトの診断エラー処理では不十分な場合は、
+    <function>set_error_handler</function> で独自のハンドラを設定して置き換えることができます。
+    <constant>E_ERROR</constant> や <constant>E_PARSE</constant>
+    などの一部の診断エラーは、この方法では処理できません
+    (完全な一覧は <function>set_error_handler</function> を参照ください)。
+    それ以外の診断エラーは、さまざまな方法で処理できます。
+    たとえば、ユーザーにはカスタムエラーページを表示しつつ、
+    メールの送信など、ログよりも直接的な方法で報告するといった使い方ができます。
+   </simpara>
+
+   <simpara>
+    もうひとつの典型的な使い方は、
+    <link linkend="class.errorexception">ErrorException</link>
+    を使って、診断エラーを例外に昇格させることです。
+   </simpara>
+   <example>
+    <title>診断エラーを例外に昇格させる</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+function exceptions_error_handler($severity, $message, $filename, $lineno) {
+    if (error_reporting() & $severity) {
+       throw new ErrorException($message, 0, $severity, $filename, $lineno);
+    }
+}
+
+set_error_handler('exceptions_error_handler');
+]]>
+    </programlisting>
+    <note>
+     <simpara>
+      深刻度が現在の報告対象に含まれているかを
+      確認することが重要です。そうしないと、抑制された診断エラーに対しても
+      例外がスローされるため、
+      <literal linkend="language.operators.errorcontrol">@</literal>
+      演算子が機能しなくなります。
+      <!-- TODO: add an example? -->
+     </simpara>
+    </note>
+   </example>
+  </sect2>
+
+  <sect2 role="changelog">
+   &reftitle.changelog;
+   <informaltable>
+    <tgroup cols="2">
+     <thead>
+      <row>
+       <entry>&Version;</entry>
+       <entry>&Description;</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry>8.5.0</entry>
+       <entry>
+        (Maximum execution time exceeded のような) 致命的なエラーのメッセージに、
+        スタックトレースが含まれるようになりました。
+       </entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </informaltable>
+  </sect2>
+ </sect1>
+</chapter>
