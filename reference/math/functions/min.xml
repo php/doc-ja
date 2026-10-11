@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 761d72245071f89a626903c9bcdc6aaff1252d54 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 9b77252fe6d218efb8921e3cc4a1abc948fd7c39 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi,mumumu -->
 <refentry xml:id="function.min" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -26,14 +26,16 @@
    はそれらの中で最も小さいものを返します。
   </para>
   <note>
-   <para>
+   <simpara>
     異なる型の値を比較する際には、<link linkend="language.operators.comparison">
     標準の比較ルール</link>に従います。
     たとえば、数値形式でない <type>string</type> を
-    <type>int</type> と比較するときには、数値 <literal>0</literal> と評価します。
-    しかし、数値形式でない <type>string</type> どうしを比較するときには、アルファベット順で評価します。
+    <type>int</type> と比較するときには、<type>int</type> を <type>string</type> にキャストし、
+    文字列として比較します。PHP 8.0.0 より前のバージョンでは、逆に <type>string</type> を
+    <type>int</type> にキャストしていました。
+    数値形式でない <type>string</type> どうしを比較するときも、文字列として比較します。
     返される値は、何も変換をしていない、元の型の値となります。
-   </para>
+   </simpara>
   </note>
   <caution>
    <simpara>
@@ -75,11 +77,11 @@
  </refsect1>
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
-  <para>
+  <simpara>
    <function>min</function> は、パラメータとして渡した値の中で、標準の比較ルールに従って最小になるものを返します。
-   異なる型で同じ値と評価される複数の値 (<literal>0</literal> と <literal>'abc'</literal> など)
-   があった場合は、関数に最初に渡されたほうを返します。
-  </para>
+   異なる型で同じ値と評価される複数の値 (<literal>0</literal> と &false; など)
+   があった場合は、関数に最初に渡されたものを返します。
+  </simpara>
  </refsect1>
 
  <refsect1 role="errors">
@@ -134,7 +136,8 @@
 echo min(2, 3, 1, 6, 7), PHP_EOL;  // 1
 echo min(array(2, 4, 5)), PHP_EOL; // 2
 
-// -1 と 0 の比較なので、-1 のほうが小さくなります
+// 'hello' は数値形式でない文字列なので、-1 は文字列 "-1" にキャストされ、
+// 文字列として比較されます。"-1" は "hello" より小さくなります
 echo min('hello', -1), PHP_EOL;    // -1
 
 // 長さが異なる複数の配列を渡すと、いちばん短い配列を返します
@@ -148,7 +151,9 @@ var_dump($val);
 
 // 配列と配列でない値が渡された場合、常に
 // 配列が最大と判定されます。
-$val = min('string', array(2, 5, 7), 42);   // string
+// 残る 'string' と 42 の比較では、'string' が数値形式でない文字列なので、
+// 42 は文字列 "42" にキャストされます。"42" は "string" より小さくなります
+$val = min('string', array(2, 5, 7), 42);   // 42
 var_dump($val);
 
 // 一方の値が NULL や boolean の場合、それを他の値と比較するときには、
