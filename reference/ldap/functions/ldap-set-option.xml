@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 5b3a84935252a553528cb81b3dacb88647b57c7b Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 9ade3ccfc8f1fa82f116a2b2c1e5e3f516fb11e7 Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi,mumumu -->
 <refentry xml:id="function.ldap-set-option" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -16,9 +16,18 @@
    <methodparam><type>int</type><parameter>option</parameter></methodparam>
    <methodparam><type class="union"><type>array</type><type>string</type><type>int</type><type>bool</type></type><parameter>value</parameter></methodparam>
   </methodsynopsis>
-  <para>
+  <simpara>
    指定したオプションの値を <parameter>value</parameter> に設定します。
-  </para>
+  </simpara>
+  <note>
+   <simpara>
+    TLS 関連のオプション (<literal>LDAP_OPT_X_TLS_*</literal>) は、
+    <parameter>ldap</parameter> に &null; を渡してグローバルに設定しなければなりません。
+    TLS コンテキストは、接続ごとの設定より前に初期化されるからです。
+    また、これらのオプションは <function>ldap_bind</function>
+    をコールする前に設定しなければなりません。
+   </simpara>
+  </note>
  </refsect1>
 
  <refsect1 role="parameters">
@@ -261,6 +270,13 @@
      </row>
     </thead>
     <tbody>
+     <row>
+      <entry>8.5.0</entry>
+      <entry>
+       無効な <parameter>option</parameter> を渡すと、
+       <exceptionname>ValueError</exceptionname> がスローされるようになりました。
+      </entry>
+     </row>
      &ldap.changelog.ldap-object;
     </tbody>
    </tgroup>
@@ -298,6 +314,24 @@ $ctrl2 = array("oid" => "1.2.752.58.1.10", "value" => "magic");
 if (!ldap_set_option($ds, LDAP_OPT_SERVER_CONTROLS, array($ctrl1, $ctrl2))) {
     echo "サーバーコントロールの設定に失敗しました。";
 }
+?>
+]]>
+    </programlisting>
+   </example>
+   <example>
+    <title>接続の問題のデバッグ</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+// 接続に NULL を指定すると、プロセス全体に対してオプションを設定します (OpenLDAP のみ)。
+// ldap_connect() の前に設定すると、初期化処理もトレースされます。後から設定すると、
+// それ以降の操作だけがトレースされます。
+// 7 は、OpenLDAP のレベル 1 (トレース)、2 (パケット)、4 (引数) を組み合わせたものです。
+// トレースはスクリプトの出力ではなく、stderr に書き込まれます。
+ldap_set_option(null, LDAP_OPT_DEBUG_LEVEL, 7);
+
+$ds = ldap_connect("ldaps://ldap.example.com:636");
+ldap_bind($ds);
 ?>
 ]]>
     </programlisting>
