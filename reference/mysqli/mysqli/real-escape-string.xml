@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: fc174e8d6162091550edde46159917ee7e5a2e73 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 01175bf92d73d885dc5a19793bc1d0c5d1a75bac Maintainer: takagi Status: ready -->
 <!-- Credits: mumumu -->
 <refentry xml:id="mysqli.real-escape-string" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -23,22 +23,32 @@
    <methodparam><type>string</type><parameter>string</parameter></methodparam>
   </methodsynopsis>
   <para>
-   この関数を使用して、SQL 文中で使用できる正当な形式の SQL 文字列を作成します。
+   この関数を使用して、SQL 文中で使用できる正しい形式の SQL 文字列を作成します。
    文字列 <literal>escapestr</literal> が、エスケープされた
    SQL に変換されます。その際、接続で使用している現在の文字セットが考慮されます。
   </para>
   <caution>
    <title>セキュリティ: デフォルトの文字セット</title>
    <para>
-    サーバーレベルで設定するなり API 関数
-    <function>mysqli_set_charset</function> を使うなりして、
-    文字セットを明示しておく必要があります。この文字セットが
-    <function>mysqli_real_escape_string</function>
-    に影響を及ぼします。詳細は
+    文字セットは、サーバーレベルか API 関数
+    <function>mysqli_set_charset</function> のどちらかで設定しないと、
+    <function>mysqli_real_escape_string</function> に反映されません。詳細は
     <link linkend="mysqlinfo.concepts.charset">文字セットの概念</link>
     を参照ください。
    </para>
   </caution>
+  <warning>
+   <simpara>
+    この関数は結果をクォートで囲まないため、呼び出し側で囲む必要があります。
+    接続で <literal>NO_BACKSLASH_ESCAPES</literal> SQL モードが有効になっている場合、
+    エスケープされるのはシングルクォート (<literal>'</literal>) だけです。
+    そのため、値をダブルクォート (<literal>"</literal>) で囲むと、
+    文字列が途中で終わってしまい、SQL インジェクションにつながるおそれがあります。
+    代わりに <link linkend="mysqli.quickstart.prepared-statements">プリペアドステートメント</link>
+    を使ってください。それができない場合は、結果を常にシングルクォートで囲む
+    <methodname>mysqli::quote_string</methodname> を使ってください。
+   </simpara>
+  </warning>
  </refsect1>
 
  <refsect1 role="parameters">
@@ -52,7 +62,7 @@
       <para>
        エスケープする文字列。
       </para>
-      <para>
+      <simpara>
        エンコードされる文字は
        <literal>NUL (ASCII 0)</literal>、
        <literal>\n</literal>、<literal>\r</literal>、
@@ -60,7 +70,9 @@
        <literal>"</literal>、および
        <keycombo action='simul'><keycap>CTRL</keycap><keycap>Z</keycap></keycombo>
        です。
-      </para>
+       接続で <literal>NO_BACKSLASH_ESCAPES</literal> SQL モードが有効になっている場合は、
+       <literal>'</literal> だけを 2 つ重ねてエンコードします。
+      </simpara>
      </listitem>
     </varlistentry>
    </variablelist>
@@ -133,11 +145,10 @@ Fatal error: Uncaught mysqli_sql_exception: You have an error in your SQL syntax
 
  <refsect1 role="seealso">
   &reftitle.seealso;
-  <para>
-   <simplelist>
-    <member><function>mysqli_set_charset</function></member>
-   </simplelist>
-  </para>
+  <simplelist>
+   <member><function>mysqli_set_charset</function></member>
+   <member><function>mysqli_quote_string</function></member>
+  </simplelist>
  </refsect1>
 
 </refentry>
