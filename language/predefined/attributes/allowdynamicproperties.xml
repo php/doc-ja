@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 8dc5bef8981ffd33c8c51f7f33414fcf5c03767a Maintainer: mumumu Status: ready -->
+<!-- EN-Revision: 822b0828562580aac0327eb2d84e8e6e06e51a98 Maintainer: mumumu Status: ready -->
 <reference xml:id="class.allowdynamicproperties" role="class" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xi="http://www.w3.org/2001/XInclude">
  <title>AllowDynamicProperties アトリビュート</title>
  <titleabbrev>AllowDynamicProperties</titleabbrev>
@@ -23,6 +23,16 @@
      明示的にアトリビュートを宣言していなくても、動的なプロパティが許可されます。
     </simpara>
    </note>
+   <note>
+    <simpara>
+     このアトリビュートは、動的なプロパティを明示的に許可する手段として
+     PHP 8.2.0 で導入されました。
+     このアトリビュートを使っておらず、かつ
+     <link linkend="object.get">__get()</link> も
+     <link linkend="object.set">__set()</link> も実装していないクラスで
+     動的なプロパティを作成することは非推奨です。
+    </simpara>
+   </note>
   </section>
 
   <section xml:id="allowdynamicproperties.synopsis">
@@ -43,34 +53,47 @@
 
   <section>
    &reftitle.examples;
-   <simpara>
-    動的なプロパティは、PHP 8.2.0 以降は推奨されなくなりました。
-    よって、このアトリビュートでクラスをマークせずに、
-    動的なプロパティを使うと、
-    推奨されない警告が発生します。
-   </simpara>
    <example>
-    <title>存在しないプロパティに対する AllowDynamicProperties</title>
+    <title>動的なプロパティに対する AllowDynamicProperties</title>
+    <simpara>
+     動的なプロパティを許可するには、クラスに <literal>#[\AllowDynamicProperties]</literal> を付けます。
+    </simpara>
     <programlisting role="php">
 <![CDATA[
 <?php
-class DefaultBehaviour { }
-
 #[\AllowDynamicProperties]
-class ClassAllowsDynamicProperties { }
+class ValidExample { }
 
-$o1 = new DefaultBehaviour();
-$o2 = new ClassAllowsDynamicProperties();
+$obj = new ValidExample();
+$obj->myDynamicProp = 1234;
+?>
+]]>
+    </programlisting>
+   </example>
 
-$o1->nonExistingProp = true;
-$o2->nonExistingProp = true;
+   <example>
+    <title>存在しないプロパティに対する AllowDynamicProperties</title>
+    <simpara>
+     PHP 8.2.0 以降、このアトリビュートを使っていないクラスでは、
+     プロパティの宣言が必要です。
+     そのようなクラスで宣言されていないプロパティを作成すると、
+     推奨されない警告が発生します。
+    </simpara>
+
+    <programlisting role="php">
+<![CDATA[
+<?php
+class InvalidExample { }
+
+$obj = new InvalidExample();
+$obj->myUnknownProperty = 1234;
 ?>
 ]]>
     </programlisting>
     &example.outputs.82;
     <screen>
 <![CDATA[
-Deprecated: Creation of dynamic property DefaultBehaviour::$nonExistingProp is deprecated in file on line 10
+Deprecated: Creation of dynamic property InvalidExample::$myUnknownProperty is deprecated in file on line 5
 ]]>
     </screen>
    </example>
