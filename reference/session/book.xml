@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: ba6a83ca3558574695be5ef0a0e008e4e5f78ddb Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 211645e4fc10c688b3813dbcce05965a5f95f00e Maintainer: takagi Status: ready -->
 <!-- CREDITS: shimooka,hirokawa,mumumu -->
 
 <book xml:id="book.session" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
@@ -57,15 +57,34 @@
     セッションデータはシリアライズされるので、
     <type>resource</type> 型の変数はセッションに格納できません。
    </para>
-   <para>
-     シリアライズハンドラ (<literal>php</literal>
-     および <literal>php_binary</literal>) は、register_globals
-     の制約を引き継いでいます。
-     そのため、数値のインデックスや特殊文字 (<literal>|</literal>
-     や <literal>!</literal>) を含む文字列のインデックスは使えません。
-     これらを使っていると、スクリプトのシャットダウン時にエラーが発生します。
-     <literal>php_serialize</literal> には、そのような制約はありません。
-   </para>
+   <simpara>
+     シリアライズハンドラ <literal>php</literal> と <literal>php_binary</literal>
+     は、<varname>$_SESSION</varname> の<emphasis>最上位</emphasis>のキーに制約を課します。
+     セッションに格納した配列やオブジェクトの中にネストしたキーは、この制約を受けません。
+     最上位のキーとして、次のものは使えません:
+   </simpara>
+   <itemizedlist>
+    <listitem>
+     <simpara>
+      数値のキー (たとえば <literal>$_SESSION[0]</literal>)。
+      このようなキーはセッションの書き込み時にスキップされ、警告が発生します。
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <literal>|</literal> を含む文字列のキー
+      (シリアライズハンドラ <literal>php</literal> を使う場合)。
+      このようなキーを使うと、セッションの書き込みに失敗します
+      (PHP 8.5.0 以降では警告も発生します)。
+     </simpara>
+    </listitem>
+   </itemizedlist>
+   <simpara>
+    <literal>php_serialize</literal> ハンドラには、これらの制約はありません。
+    数値のキーや <literal>|</literal> を含むキーを
+    <varname>$_SESSION</varname> の最上位に格納する必要がある場合、
+    このハンドラが使えます。
+   </simpara>
   </warning>
   <note>
    <para>
