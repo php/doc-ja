@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 8a4f1c0069f2f5ad08dfd5dfbd8ddc6a4107f110 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 42b47025176b4d1d6ac6b6ba8d46b317b8206baa Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: mumumu -->
 
 <chapter xml:id="configuration" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xi="http://www.w3.org/2001/XInclude">
@@ -10,105 +10,173 @@
    <title>設定ファイル</title>
 
    <simpara>
-    設定ファイル (&php.ini;) は PHP の起動時に読み込まれます。
+    メインの設定ファイル (&php.ini;) は PHP の起動時に読み込まれます。
     PHP のサーバーモジュール版では、Web サーバーの起動時に
     一度だけ読み込まれます。<acronym>CGI</acronym> 版と
     <acronym>CLI</acronym> 版では、スクリプトが呼び出される度に読み込まれます。
    </simpara>
    <para>
-    読み込む &php.ini; は、これらの場所を順に探します。
+    PHP は、メインの設定ファイルを次の手順で探します。
+    <orderedlist>
+     <listitem>
+      <simpara>
+       使用中の SAPI 固有の方法 (たとえば、Apache 2 の
+       <literal>PHPIniDir</literal> ディレクティブや、
+       <acronym>CGI</acronym> と <acronym>CLI</acronym> の
+       <literal>-c</literal> コマンドラインオプション) で
+       &php.ini; のパスが指定されている場合は、そのパスを使います。
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       そうでない場合は、以下の場所から検索パスを組み立てます。
+      </simpara>
+      <itemizedlist>
+       <listitem>
+        <simpara>
+         <varname>PHPRC</varname> 環境変数。
+        </simpara>
+       </listitem>
+       <listitem>
+        <simpara>
+         Windows の場合は、レジストリに設定されたパス
+         (<literal>IniFilePath</literal>)。
+        </simpara>
+       </listitem>
+       <listitem>
+        <simpara>
+         現在の作業ディレクトリ (<acronym>CLI</acronym> など、
+         作業ディレクトリ内を探さない SAPI を除く)。
+        </simpara>
+        <note>
+         <simpara>
+          Apache web サーバーは、スタート時にディレクトリをルート
+          に変更するので、ファイルシステムのルートに &php.ini;
+          が存在する場合、PHP はそれを読もうとします。
+         </simpara>
+        </note>
+       </listitem>
+       <listitem>
+        <simpara>
+         PHP の実行ファイルまたは SAPI モジュールがあるディレクトリ。
+        </simpara>
+       </listitem>
+       <listitem>
+        <simpara>
+         コンパイル時のオプション <literal>--with-config-file-path</literal>
+         で指定したディレクトリ、または Windows の場合は Windows ディレクトリ
+         (<filename class="directory">C:\windows</filename>
+         もしくは <filename class="directory">C:\winnt</filename>)。
+        </simpara>
+       </listitem>
+      </itemizedlist>
+     </listitem>
+     <listitem>
+      <simpara>
+       続いて、その検索パスから <filename>php-SAPI.ini</filename> を探し、
+       見つからなければ &php.ini; を探します。
+       SAPI 名は <function>php_sapi_name</function> で調べられます。
+      </simpara>
+     </listitem>
+    </orderedlist>
+   </para>
+   <simpara>
+    メインの設定ファイルを探した後、PHP は追加の
+    <literal>.ini</literal> ファイルをスキャンすることがあります。
+    スキャンする場所は、環境変数 <varname>PHP_INI_SCAN_DIR</varname>
+    で指定されたパスです。この環境変数が設定されていない場合は、
+    コンパイル時のオプション
+    <option role="configure">--with-config-file-scan-dir</option>
+    で指定されたパスです。
+   </simpara>
+  <sect2 xml:id="configuration.file.windows">
+   <title>Windows レジストリによる場所の指定</title>
+
+   <simpara>
+    Windows では、PHP がメインの設定ファイルの場所を、レジストリの
+    <literal>IniFilePath</literal> の値から取得することがあります。
+   </simpara>
+
+   <simpara>
+    どのレジストリキーを調べるかは、PHP のバージョンと、
+    PHP と Windows がそれぞれ 32bit か 64bit かによって変わります。
+   </simpara>
+
+   <para>
+    32bit OS 上の 32bit ビルドの PHP、
+    もしくは 64bit OS 上の 64bit ビルドの PHP では、
+    以下のレジストリキーを順に調べます。
     <itemizedlist>
      <listitem>
       <simpara>
-       SAPI モジュール特有の場所 (Apache 2 における
-       <literal>PHPIniDir</literal> ディレクティブ、
-       CGI/CLI 版における <literal>-c</literal> コマンドラインオプション)
+       <literal>[HKEY_LOCAL_MACHINE\SOFTWARE\PHP\x.y.z]</literal>
       </simpara>
      </listitem>
      <listitem>
       <simpara>
-       <varname>PHPRC</varname> 環境変数。
+       <literal>[HKEY_LOCAL_MACHINE\SOFTWARE\PHP\x.y]</literal>
       </simpara>
      </listitem>
      <listitem>
       <simpara>
-       PHP のバージョンごとに別の場所の <literal>php.ini</literal>
-       を使用することができます。レジストリキーの root は、
-       インストールされたOS や PHP が 32bit や 64bit どちらのビルドかによって変わります。
-       32bit OS 上の 32bit ビルドの PHP、
-       もしくは 64bit OS 上の 64bit ビルドの PHP は
-       <literal>[HKEY_LOCAL_MACHINE\SOFTWARE\PHP]</literal> を使いますが、
-       64bit OS 上での 32bit ビルドのPHPは、
-       <literal>[HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\PHP]</literal> を代わりに使います。
-       ビルドのbit数がOSと同じPHPのインストールの場合、
-       以下のレジストリキーを順に調べて使用します。
-       <literal>[HKEY_LOCAL_MACHINE\SOFTWARE\PHP\x.y.z]</literal>、
-       <literal>[HKEY_LOCAL_MACHINE\SOFTWARE\PHP\x.y]</literal> および
-       <literal>[HKEY_LOCAL_MACHINE\SOFTWARE\PHP\x]</literal>。
-       x、y および z はそれぞれ PHP のメジャーバージョン、マイナーバージョン、
-       リリース番号を表します。
-       64bit OS の 32bitビルドの PHP では、
-       以下のレジストリキーを順に調べて使用します。
-      <literal>[HKEY_LOCAL_MACHINE\SOFTWARE\WOW6421Node\PHP\x.y.z]</literal>,
-      <literal>[HKEY_LOCAL_MACHINE\SOFTWARE\WOW6421Node\PHP\x.y]</literal> および
-      <literal>[HKEY_LOCAL_MACHINE\SOFTWARE\WOW6421Node\PHP\x]</literal>
-       x、y および z はそれぞれ PHP のメジャーバージョン、マイナーバージョン、
-       リリース番号を表します。
-       これらのキーに <literal>IniFilePath</literal>
-       の値が設定されていれば、最初に見つかった場所の <literal>php.ini</literal>
-       を使用します (Windows のみ)。
+       <literal>[HKEY_LOCAL_MACHINE\SOFTWARE\PHP\x]</literal>
       </simpara>
      </listitem>
      <listitem>
       <simpara>
-        <literal>[HKEY_LOCAL_MACHINE\SOFTWARE\PHP]</literal> または
-        <literal>[HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\PHP]</literal> にある
-        <literal>IniFilePath</literal> の値 (Windows のみ)。
-      </simpara>
-     </listitem>
-     <listitem>
-      <para>
-       現在の作業ディレクトリ (CLI を除く)
-      </para>
-     </listitem>
-     <listitem>
-      <simpara>
-       Web サーバーのディレクトリ (SAPI モジュールの場合)、
-       もしくは PHP ディレクトリ (そうでない Windows の場合)
-      </simpara>
-     </listitem>
-     <listitem>
-      <simpara>
-       Windows ディレクトリ (<filename class="directory">C:\windows</filename>
-       もしくは <filename class="directory">C:\winnt</filename>))
-       (Windows の場合) 、もしくはコンパイル時のオプション
-       <literal>--with-config-file-path</literal>
+       <literal>[HKEY_LOCAL_MACHINE\SOFTWARE\PHP]</literal>
       </simpara>
      </listitem>
     </itemizedlist>
    </para>
+   <simpara>
+    キー名の <literal>x</literal>、<literal>y</literal>、
+    <literal>z</literal> は、それぞれ PHP のメジャーバージョン、
+    マイナーバージョン、リリース番号を表します。
+    これらのキーのいずれかに <literal>IniFilePath</literal>
+    の値があれば、最初に見つかった値を使います。
+   </simpara>
    <para>
-    <filename>php-SAPI.ini</filename> (ここで SAPI は使用する SAPI 名。
-    たとえば <filename>php-cli.ini</filename> や <filename>php-apache.ini</filename>)
-    が存在する場合、
-    &php.ini; の代わりに使用されます。
-    SAPI 名は <function>php_sapi_name</function> によって決定されます。
+    64bit OS 上の 32bit ビルドの PHP では、
+    以下のレジストリキーを順に調べます。
+    <itemizedlist>
+     <listitem>
+      <simpara>
+       <literal>[HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\PHP\x.y.z]</literal>
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       <literal>[HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\PHP\x.y]</literal>
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       <literal>[HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\PHP\x]</literal>
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       <literal>[HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\PHP]</literal>
+      </simpara>
+     </listitem>
+    </itemizedlist>
    </para>
-   <note>
-    <para>
-     Apache web サーバーは、スタート時にディレクトリをルート
-     に変更するので、ファイルシステムのルートに &php.ini;
-     が存在する場合、PHP はそれを読もうとします。
-    </para>
-   </note>
-  <simpara>
-   &php.ini; の中で環境変数を参照するには、次のようにします。
-   PHP 8.3.0 以降では、参照する変数が未定義の場合にフォールバックする値を
-   指定できるようになりました。
-  </simpara>
-  <example>
-   <title>&php.ini; での環境変数</title>
-    <programlisting role="ini">
+   <simpara>
+    これらのキーのいずれかに <literal>IniFilePath</literal>
+    の値があれば、最初に見つかった値を使います。
+   </simpara>
+  </sect2>
+  <sect2 xml:id="configuration.file.syntax">
+   <title>設定ファイルの構文</title>
+   <simpara>
+    &php.ini; の中で環境変数を参照するには、次のようにします。
+    PHP 8.3.0 以降では、参照する変数が未定義の場合にフォールバックする値を
+    指定できるようになりました。
+   </simpara>
+   <example>
+    <title>&php.ini; での環境変数</title>
+     <programlisting role="ini">
 <![CDATA[
 ; 環境変数 PHP_MEMORY_LIMIT を利用します
 memory_limit = ${PHP_MEMORY_LIMIT}
@@ -117,7 +185,7 @@ max_execution_time = ${PHP_MAX_EXECUTION_TIME:-30}
 ]]>
     </programlisting>
    </example>
-   <para>
+   <simpara>
     拡張モジュールに対する &php.ini; ディレクティブは、
     各拡張モジュールのドキュメントで解説されています。
     <link linkend="ini">コア ディレクティブ</link>
@@ -128,11 +196,10 @@ max_execution_time = ${PHP_MAX_EXECUTION_TIME:-30}
     &php.ini; ファイル内に詳細なコメントが記されていますので、参照ください。
     もしくは、Git から入手可能な <link xlink:href="&url.php.git.phpini;">
     最新の &php.ini;</link> も有用でしょう。
-   </para>
-   <para>
-    <example>
-     <title>&php.ini; の例</title>
-     <programlisting role="ini">
+   </simpara>
+   <example>
+    <title>&php.ini; の例</title>
+    <programlisting role="ini">
 <![CDATA[
 ; 引用符をつけないセミコロン(;)の後のテキストは、すべて無視されます
 [php] ; セクションマーカ (角括弧の中のテキスト) は無視されます
@@ -148,15 +215,15 @@ include_path = ".:/usr/local/lib/php"
 ; バックスラッシュは他の文字と同様に処理されます
 include_path = ".;c:\php\lib"
 ]]>
-</programlisting>
-<!-- TODO: add more details about values and expressions -->
-    </example>
-   </para>
-   <para>
+    </programlisting>
+   <!-- TODO: add more details about values and expressions -->
+   </example>
+   <simpara>
     ini ファイル内で既存の ini 変数を参照することが可能です。
     例: <literal>open_basedir = ${open_basedir}
     ":/new/dir"</literal>
-   </para>
+   </simpara>
+  </sect2>
   <sect2 xml:id="configuration.file.scan">
    <title>スキャンディレクトリ</title>
 

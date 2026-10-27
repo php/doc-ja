@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: f011a5989304239063769239761b5c39c68af12f Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 8c42bb41c9ecc3b278c4be82e4280f7bc9c36283 Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa,shimooka,mumumu -->
 
  <section xml:id="ini.core" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
@@ -451,6 +451,12 @@ Fatal error: Maximum execution time of 30+2 seconds exceeded (terminated) in Unk
         <entry><constant>INI_SYSTEM</constant></entry>
         <entry>PHP 8.5.0 以降で利用可能。</entry>
        </row>
+       <row>
+        <entry><link linkend="ini.memory-hard-limit-percent">memory_hard_limit_percent</link></entry>
+        <entry>&null;</entry>
+        <entry><constant>INI_ALL</constant></entry>
+        <entry>PHP 8.5.12, 8.4.27, 8.3.36, 8.2.35 以降で利用可能。</entry>
+       </row>
       </tbody>
      </tgroup>
     </table>
@@ -472,6 +478,15 @@ Fatal error: Maximum execution time of 30+2 seconds exceeded (terminated) in Unk
         もし、使用可能メモリに制限を設けたくない場合は、
         ここに <literal>-1</literal> を指定してください。
        </para>
+       <simpara>
+        PHP 8.5.12, 8.4.27, 8.3.36, 8.2.35 以降では、これはソフトリミットです。
+        この制限を超えるメモリ確保も、ほとんどの場合はそのまま完了し、
+        その後に致命的なエラーが発生します。そのため、プロセスのメモリ使用量が
+        一時的に <parameter>memory_limit</parameter> を超えることがあります。
+        どこまで超えられるかは、
+        <link linkend="ini.memory-hard-limit-percent">memory_hard_limit_percent</link>
+        で制御されるハードリミットで決まります。
+       </simpara>
 
        &ini.shorthandbytes;
 
@@ -497,6 +512,103 @@ Fatal error: Maximum execution time of 30+2 seconds exceeded (terminated) in Unk
 
        &ini.shorthandbytes;
 
+      </listitem>
+     </varlistentry>
+     <varlistentry xml:id="ini.memory-hard-limit-percent">
+      <term>
+       <parameter>memory_hard_limit_percent</parameter>
+       <type>int</type>
+      </term>
+      <listitem>
+       <simpara>
+        PHP 8.5.12, 8.4.27, 8.3.36, 8.2.35 以降で利用可能です。
+        メモリのハードリミットを、
+        <link linkend="ini.memory-limit">memory_limit</link>
+        に対するパーセンテージで設定します。
+        たとえば、<literal>memory_limit=128M</literal> で
+        <literal>memory_hard_limit_percent=150</literal> の場合、ハードリミットは
+        <literal>192M</literal> になります。
+        <link linkend="ini.memory-limit">memory_limit</link> と異なり、
+        ハードリミットは超えられません。
+       </simpara>
+       <warning>
+        <simpara>
+         このディレクティブは、2026 年 10 月 21 日のセキュリティリリースで導入されました。
+         このリリースでは、認証なしでのリモートコード実行につながるおそれのある
+         深刻な脆弱性 2 件 (CVE-2026-109618, CVE-2026-109619) が修正されています。
+         そのうち 1 件は、メモリ不足時の処理を経由して突かれるものです。
+         このディレクティブが認識されない場合、使用中の PHP は
+         これらの脆弱性の影響を受けるバージョンなので、ただちに更新する必要があります。
+         詳細は
+         <link xlink:href="&url.php;archive/2026.php#2026-10-21-5">セキュリティアドバイザリ</link>
+         を参照ください。
+        </simpara>
+       </warning>
+       <simpara>
+        <link linkend="ini.memory-limit">memory_limit</link>
+        (ソフトリミット) を超えるメモリ確保も、そのまま完了し、
+        エンジンが安全な時点に達したところで通常の致命的なエラーが発生します。
+        <function>register_shutdown_function</function> で登録したシャットダウン関数は、
+        この場合も実行されます。
+       </simpara>
+       <simpara>
+        メモリを確保するとハードリミットを超えてしまう場合、
+        プロセスは終了ステータス <literal>137</literal> でただちに終了します。
+        その際、次のようなメッセージが標準エラー出力に直接書き込まれます。
+       </simpara>
+       <screen>
+<![CDATA[
+Hard memory limit of 201326592 bytes exhausted
+]]>
+       </screen>
+       <simpara>
+        このメッセージはエラー処理の仕組みを経由しないため、
+        エラーハンドラには渡されず、
+        <link linkend="ini.error-log">error_log</link> にも書き込まれません。
+        以降の PHP コードは一切実行されません。
+        シャットダウン関数、デストラクタ、出力バッファハンドラも、すべてスキップされます。
+       </simpara>
+       <simpara>
+        値は <literal>100</literal> 以上か、
+        <literal>-1</literal> でなければいけません。
+       </simpara>
+       <simpara>
+        未設定 (デフォルト) の場合、または <literal>-1</literal> を設定した場合、
+        ハードリミットは、<link linkend="ini.memory-limit">memory_limit</link> が
+        <literal>1G</literal> 以下なら
+        <link linkend="ini.memory-limit">memory_limit</link> の 2 倍、
+        それより大きければ
+        <link linkend="ini.memory-limit">memory_limit</link> に
+        <literal>1G</literal> を足した値になります。
+        たとえば、デフォルトの <literal>memory_limit=128M</literal> では
+        ハードリミットは <literal>256M</literal>、
+        <literal>memory_limit=4G</literal> では <literal>5G</literal> です。
+        <link linkend="ini.memory-limit">memory_limit</link> に
+        <literal>-1</literal> を設定した場合は、ハードリミットもなくなります。
+       </simpara>
+       <caution>
+        <simpara>
+         <literal>100</literal> を指定すると、ハードリミットが
+         <link linkend="ini.memory-limit">memory_limit</link> と等しくなり、
+         ほとんどのメモリ不足で、致命的なエラーが発生する代わりに
+         プロセスがただちに終了するようになります。
+         そのため、メモリ不足になると、ログの記録やロックの解放、
+         レスポンスを最後まで返すといったシャットダウン時の処理は一切実行されません。
+        </simpara>
+       </caution>
+       <note>
+        <simpara>
+         プロセスは何も出力しないまま終了します。
+         そのため、PHP-FPM のような複数のリクエストを処理する環境では、
+         そのリクエストを処理していたワーカーが終了し、
+         クライアントは PHP からのレスポンスを受け取れません。
+         プロセスマネージャは代わりのワーカーを起動します。
+         カーネルの OOM killer やコンテナランタイムなどによって
+         <literal>SIGKILL</literal> で強制終了された場合も、
+         終了ステータスは <literal>137</literal> になります。
+         どちらなのか見分けるには、標準エラー出力を確認してください。
+        </simpara>
+       </note>
       </listitem>
      </varlistentry>
     </variablelist>
