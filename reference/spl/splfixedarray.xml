@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 603435cd84951fc720eded819c62ef2466d21b5c Maintainer: takagi Status: ready -->
+<!-- EN-Revision: a833060594749e44ff296fee01fd587d6395cff7 Maintainer: takagi Status: ready -->
 <reference xml:id="class.splfixedarray" role="class" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xi="http://www.w3.org/2001/XInclude">
  <title>SplFixedArray クラス</title>
  <titleabbrev>SplFixedArray</titleabbrev>
@@ -88,6 +88,14 @@
       <row>
        <entry>8.1.0</entry>
        <entry>
+        <classname>SplFixedArray</classname> で整数でないキーを使うと、
+        <exceptionname>RuntimeException</exceptionname> ではなく
+        <exceptionname>TypeError</exceptionname> がスローされるようになりました。
+       </entry>
+      </row>
+      <row>
+       <entry>8.1.0</entry>
+       <entry>
         <classname>SplFixedArray</classname> は、
         <interfacename>JsonSerializable</interfacename>
         を実装するようになりました。
@@ -136,23 +144,25 @@ $array[9] = "asdf";
 // 配列のサイズを 2 に縮めます
 $array->setSize(2);
 
-// 以下は RuntimeException: Index invalid or out of range となります
-try {
-    var_dump($array["non-numeric"]);
-} catch(RuntimeException $re) {
-    echo "RuntimeException: ".$re->getMessage()."\n";
-}
-
+// 以下の 2 つのブロックでは RuntimeException: Index invalid or out of range がスローされます
 try {
     var_dump($array[-1]);
-} catch(RuntimeException $re) {
-    echo "RuntimeException: ".$re->getMessage()."\n";
+} catch(RuntimeException $e) {
+    echo "RuntimeException: ".$e->getMessage()."\n";
 }
 
 try {
     var_dump($array[5]);
-} catch(RuntimeException $re) {
-    echo "RuntimeException: ".$re->getMessage()."\n";
+} catch(RuntimeException $e) {
+    echo "RuntimeException: ".$e->getMessage()."\n";
+}
+
+// PHP 8.1.0 以降では、整数でないキーを使うと TypeError がスローされます。
+// PHP 8.1.0 より前のバージョンでは、RuntimeException がスローされていました。
+try {
+    var_dump($array["non-numeric"]);
+} catch(TypeError $e) {
+    echo "TypeError: ".$e->getMessage()."\n";
 }
 ?>
 ]]>
@@ -165,11 +175,18 @@ int(2)
 string(3) "foo"
 RuntimeException: Index invalid or out of range
 RuntimeException: Index invalid or out of range
-RuntimeException: Index invalid or out of range
+TypeError: Illegal offset type
 ]]>
      </screen>
     </example>
    </para>
+   <note>
+    <simpara>
+     PHP 8.1.0 より前のバージョンでは、整数でないキーで <classname>SplFixedArray</classname>
+     にアクセスすると、<exceptionname>TypeError</exceptionname> ではなく
+     <exceptionname>RuntimeException</exceptionname> がスローされていました。
+    </simpara>
+   </note>
   </section>
 <!-- }}} -->
  
