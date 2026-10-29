@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: e290572f2599305beb62b13988024b5da187979d Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 0b916fb90f8862046a56a5e05057ef6cd78384c1 Maintainer: takagi Status: ready -->
 <refentry xml:id="collator.setstrength" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
   <refname>Collator::setStrength</refname>
@@ -205,7 +205,7 @@ $arr  = array( 'aò', 'Ao', 'ao' );
 $coll = collator_create( 'en_US' );
 
 // デフォルトの強度で配列を並べ替えます
-collator_sort( $coll, $arr ); 
+collator_sort( $coll, $arr );
 var_export( $arr );
 
 // 第一段階の強度で配列を並べ替えます
@@ -231,6 +231,68 @@ array (
 ]]>
     </screen>
    </example>
+   <example>
+    <title>Unicode ロケール拡張のキー <literal>ks</literal> で強度を設定する</title>
+    <simpara>
+     照合強度は、<classname>Collator</classname> の生成時に、ロケール識別子の中で
+     Unicode ロケール拡張のキー <literal>ks</literal> を使って設定することもできます。
+     <literal>ks</literal> の値と <classname>Collator</classname>
+     の定数の対応は次のとおりです。
+    </simpara>
+    <informaltable>
+     <tgroup cols="2">
+      <thead>
+       <row>
+        <entry>ロケールキーの値</entry>
+        <entry>Collator の定数</entry>
+       </row>
+      </thead>
+      <tbody>
+       <row><entry><literal>ks-level1</literal></entry><entry><constant>Collator::PRIMARY</constant></entry></row>
+       <row><entry><literal>ks-level2</literal></entry><entry><constant>Collator::SECONDARY</constant></entry></row>
+       <row><entry><literal>ks-level3</literal></entry><entry><constant>Collator::TERTIARY</constant></entry></row>
+       <row><entry><literal>ks-level4</literal></entry><entry><constant>Collator::QUATERNARY</constant></entry></row>
+       <row><entry><literal>ks-identic</literal></entry><entry><constant>Collator::IDENTICAL</constant></entry></row>
+      </tbody>
+     </tgroup>
+    </informaltable>
+    <simpara>
+     <constant>Collator::DEFAULT_STRENGTH</constant> に相当する <literal>ks-*</literal>
+     の値はありません。この強度にするには <function>collator_set_strength</function>
+     を使う必要があります。
+    </simpara>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+$textStyle  = "\u{263A}\u{FE0E}"; // U+263A + U+FE0E (テキスト表示の異体字セレクタ)
+$emojiStyle = "\u{263A}\u{FE0F}"; // U+263A + U+FE0F (絵文字表示の異体字セレクタ)
+
+// デフォルトの Collator (強度は TERTIARY): 異体字セレクタは無視されます
+$collDefault = new Collator('en_US');
+var_dump($collDefault->compare($textStyle, $emojiStyle) === 0); // bool(true)
+
+// setStrength() で一致段階の強度を設定します
+$coll1 = new Collator('en_US');
+$coll1->setStrength(Collator::IDENTICAL);
+var_dump($coll1->compare($textStyle, $emojiStyle) === 0); // bool(false)
+
+// ロケール拡張のキー ks で一致段階の強度を設定しても同じです
+$coll2 = new Collator('en_US-u-ks-identic');
+var_dump($coll2->compare($textStyle, $emojiStyle) === 0); // bool(false)
+
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+bool(true)
+bool(false)
+bool(false)
+]]>
+    </screen>
+   </example>
   </para>
  </refsect1>
 
@@ -240,6 +302,7 @@ array (
    <simplelist>
     <member><link linkend="intl.collator-constants">Collator の定数</link></member>
     <member><function>collator_get_strength</function></member>
+    <member><function>collator_create</function></member>
    </simplelist>
   </para>
  </refsect1>
