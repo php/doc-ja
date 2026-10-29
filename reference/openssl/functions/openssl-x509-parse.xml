@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: af4e920c7232115ba0fe800b280eefbbed078597 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 2ad26fb7916c8ffb5264c07b30610ef4553e4cbf Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: takagi,mumumu -->
 <refentry xml:id="function.openssl-x509-parse" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -52,9 +52,215 @@
 
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
+  <simpara>
+   成功した場合に証明書のフィールドを含む配列を、失敗した場合に &false; を返します。
+  </simpara>
+  <simpara>
+   <literal>alias</literal> は、証明書にエイリアスがある場合にだけ存在します。
+   以下に示すそれ以外のキーは、常に存在します。
+  </simpara>
   <para>
-   返されるデータの構造については（わざと）まだ文書化していません。
-   これは、今後もデータの構造が変更される可能性があるためです。
+   <table>
+    <title><function>openssl_x509_parse</function> が返す配列</title>
+    <tgroup cols="3">
+     <thead>
+      <row>
+       <entry>キー</entry>
+       <entry>型</entry>
+       <entry>&Description;</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry><literal>name</literal></entry>
+       <entry><type>string</type></entry>
+       <entry>
+        subject の識別名を 1 つの文字列で表したもの。各要素はスラッシュで区切られます。
+        例えば <literal>/C=US/O=Example/CN=example.com</literal> のようになります。
+       </entry>
+      </row>
+      <row>
+       <entry><literal>subject</literal></entry>
+       <entry><type>array</type></entry>
+       <entry>
+        subject の識別名。キーは、<parameter>short_names</parameter> が
+        &true; の場合は <literal>CN</literal> のような短縮名、
+        そうでない場合は <literal>commonName</literal> のような長い名前です。
+        各値は UTF-8 文字列です。同じ要素が複数回現れる場合は、
+        UTF-8 文字列の配列になります。
+       </entry>
+      </row>
+      <row>
+       <entry><literal>hash</literal></entry>
+       <entry><type>string</type></entry>
+       <entry>
+        subject の識別名のハッシュ値を小文字の 16 進数で表したもの。
+        OpenSSL が CA ディレクトリから証明書を探すときに使う 8 桁の値です。
+        証明書のフィンガープリントではありません。フィンガープリントについては
+        <function>openssl_x509_fingerprint</function> を参照ください。
+       </entry>
+      </row>
+      <row>
+       <entry><literal>issuer</literal></entry>
+       <entry><type>array</type></entry>
+       <entry>
+        発行者の識別名。形式は
+        <literal>subject</literal> と同じです。
+       </entry>
+      </row>
+      <row>
+       <entry><literal>version</literal></entry>
+       <entry><type>int</type></entry>
+       <entry>
+        証明書に格納されている、バージョンフィールドの生の値。
+        証明書のバージョンとして通常表示される番号より 1 小さい値です。
+        バージョン 1 の証明書は <literal>0</literal>、バージョン 2 の証明書は
+        <literal>1</literal>、バージョン 3 の証明書は
+        <literal>2</literal> になります。
+       </entry>
+      </row>
+      <row>
+       <entry><literal>serialNumber</literal></entry>
+       <entry><type>string</type></entry>
+       <entry>
+        シリアル番号を 10 進数で表したもの。シリアル番号が大きい場合は、
+        先頭に <literal>0x</literal> を付けた 16 進数の文字列になります。
+       </entry>
+      </row>
+      <row>
+       <entry><literal>serialNumberHex</literal></entry>
+       <entry><type>string</type></entry>
+       <entry>
+        シリアル番号を大文字の 16 進数で表したもの。
+       </entry>
+      </row>
+      <row>
+       <entry><literal>validFrom</literal></entry>
+       <entry><type>string</type></entry>
+       <entry>
+        有効期間の開始日時を ASN.1 の形式で表したもの。UTCTime
+        (<literal>YYMMDDHHMMSSZ</literal>) と GeneralizedTime
+        (<literal>YYYYMMDDHHMMSSZ</literal>) のいずれかです。
+       </entry>
+      </row>
+      <row>
+       <entry><literal>validTo</literal></entry>
+       <entry><type>string</type></entry>
+       <entry>
+        有効期間の終了日時。形式は <literal>validFrom</literal> と同じです。
+       </entry>
+      </row>
+      <row>
+       <entry><literal>validFrom_time_t</literal></entry>
+       <entry><type>int</type></entry>
+       <entry>
+        有効期間の開始日時を表す Unix タイムスタンプ。日時をパースできなかった場合は
+        <literal>-1</literal> になります。
+       </entry>
+      </row>
+      <row>
+       <entry><literal>validTo_time_t</literal></entry>
+       <entry><type>int</type></entry>
+       <entry>
+        有効期間の終了日時を表す Unix タイムスタンプ。日時をパースできなかった場合は
+        <literal>-1</literal> になります。
+       </entry>
+      </row>
+      <row>
+       <entry><literal>alias</literal></entry>
+       <entry><type>string</type></entry>
+       <entry>
+        証明書のエイリアス (フレンドリ名)。設定されている場合にだけ存在します。
+       </entry>
+      </row>
+      <row>
+       <entry><literal>signatureTypeSN</literal></entry>
+       <entry><type>string</type></entry>
+       <entry>
+        署名アルゴリズムの短縮名。
+       </entry>
+      </row>
+      <row>
+       <entry><literal>signatureTypeLN</literal></entry>
+       <entry><type>string</type></entry>
+       <entry>
+        署名アルゴリズムの長い名前。
+       </entry>
+      </row>
+      <row>
+       <entry><literal>signatureTypeNID</literal></entry>
+       <entry><type>int</type></entry>
+       <entry>
+        署名アルゴリズムを表す数値の識別子 (OpenSSL の NID)。
+       </entry>
+      </row>
+      <row>
+       <entry><literal>purposes</literal></entry>
+       <entry><type>array</type></entry>
+       <entry>
+        目的ごとの確認結果。キーは目的の ID で、
+        <link linkend="openssl.purpose-check"><constant>X509_PURPOSE_<replaceable>*</replaceable></constant></link>
+        定数の値です。各値は、後述する配列です。
+       </entry>
+      </row>
+      <row>
+       <entry><literal>extensions</literal></entry>
+       <entry><type>array</type></entry>
+       <entry>
+        証明書の拡張。キーは <literal>subjectAltName</literal> のような拡張の短縮名で、
+        短縮名がない拡張は OID がキーになります。
+        各値は拡張の内容を表すテキストで、テキストとして出力できない場合は
+        拡張の生データになります。どのキーが存在するかは証明書によって異なります。
+        この配列は <parameter>short_names</parameter> の影響を受けません。
+       </entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </table>
+  </para>
+  <simpara>
+   <literal>purposes</literal> の各要素には、以下のキーがあります。
+  </simpara>
+  <para>
+   <table>
+    <title>目的ごとの配列</title>
+    <tgroup cols="3">
+     <thead>
+      <row>
+       <entry>キー</entry>
+       <entry>型</entry>
+       <entry>&Description;</entry>
+      </row>
+     </thead>
+     <tbody>
+      <row>
+       <entry><literal>0</literal></entry>
+       <entry><type>bool</type></entry>
+       <entry>
+        エンドエンティティ証明書として、この目的に使える場合に
+        &true; になります。
+       </entry>
+      </row>
+      <row>
+       <entry><literal>1</literal></entry>
+       <entry><type>bool</type></entry>
+       <entry>
+        CA 証明書として、この目的に使える場合に
+        &true; になります。
+       </entry>
+      </row>
+      <row>
+       <entry><literal>2</literal></entry>
+       <entry><type>string</type></entry>
+       <entry>
+        目的の名前。<parameter>short_names</parameter> が &true; の場合は
+        <literal>sslclient</literal> のような短縮名、
+        そうでない場合は <literal>SSL client</literal> のような長い名前です。
+       </entry>
+      </row>
+     </tbody>
+    </tgroup>
+   </table>
   </para>
  </refsect1>
 
