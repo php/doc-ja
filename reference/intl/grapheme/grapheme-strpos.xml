@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 9a8c593c09cf7d84085989e42f3b2b23536279db Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 0b916fb90f8862046a56a5e05057ef6cd78384c1 Maintainer: takagi Status: ready -->
 <refentry xml:id="function.grapheme-strpos" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
   <refname>grapheme_strpos</refname>
@@ -56,7 +56,19 @@
     <varlistentry>
      <term><parameter>locale</parameter></term>
      <listitem>
-      &intl.param.grapheme.locale;
+      <simpara>
+       使用するロケール。ロケールによって、書記素クラスターの定義と文字列の比較方法が変わります。
+       空文字列または &null; を指定すると、デフォルトのロケールを使用します。
+      </simpara>
+      <simpara>
+       ロケール識別子には、照合の挙動を制御する Unicode ロケール拡張のキーを含めることができます。
+       なかでも <literal>ks</literal> キーは照合強度を制御します。
+       たとえば <literal>en_US-u-ks-identic</literal> を指定すると一致段階で比較するようになり、
+       他の強度では同等とみなされる Unicode の異体字セレクタの違い
+       (絵文字表示とテキスト表示など) を区別します。
+       <literal>ks</literal> の値と照合強度の対応の一覧は、
+       <methodname>Collator::setStrength</methodname> を参照ください。
+      </simpara>
      </listitem>
     </varlistentry>
    </variablelist>
@@ -117,6 +129,42 @@ print grapheme_strpos( $char_a_ring_nfd . $char_a_ring_nfd . $char_o_diaeresis_n
 2
 ]]>
   </screen>
+  <example>
+   <title><literal>ks-identic</literal> ロケールキーで異体字セレクタを区別する</title>
+   <simpara>
+    デフォルトでは、Unicode の異体字セレクタ (テキスト表示の U+FE0E、絵文字表示の U+FE0F)
+    は比較の際に無視されます。ロケール拡張のキー <literal>ks-identic</literal>
+    を使うと一致段階で照合するようになり、異体字セレクタの違いを区別します。
+   </simpara>
+   <note>
+    <simpara>
+     <parameter>locale</parameter> 引数は PHP 8.5.0 以降で利用可能です。
+    </simpara>
+   </note>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+$textStyle  = "\u{263A}\u{FE0E}"; // U+263A + U+FE0E (テキスト表示の異体字セレクタ)
+$emojiStyle = "\u{263A}\u{FE0F}"; // U+263A + U+FE0F (絵文字表示の異体字セレクタ)
+
+// デフォルトのロケール: 異体字セレクタは無視されるので、needle は位置 0 で見つかります
+var_dump(grapheme_strpos($textStyle, $emojiStyle));
+
+// ks-identic を指定した場合: 異体字セレクタが区別されるので、一致するものは見つかりません
+var_dump(grapheme_strpos($textStyle, $emojiStyle, 0, 'en_US-u-ks-identic'));
+
+?>
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+int(0)
+bool(false)
+]]>
+   </screen>
+  </example>
  </refsect1>
 
  <refsect1 role="seealso">
@@ -128,6 +176,7 @@ print grapheme_strpos( $char_a_ring_nfd . $char_a_ring_nfd . $char_o_diaeresis_n
     <member><function>grapheme_strripos</function></member>
     <member><function>grapheme_strrpos</function></member>
     <member><function>grapheme_strstr</function></member>
+    <member><methodname>Collator::setStrength</methodname></member>
     <member>
      <link xlink:href="&uri.unicode.graphemes;">
       Unicode Text Segmentation: Grapheme Cluster Boundaries
