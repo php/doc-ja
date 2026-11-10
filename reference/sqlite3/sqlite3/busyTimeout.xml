@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 855bfee2f3db70d7dbb4c60c7c4a4efa567f1c60 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: b57e4540345a84d3f82ffd0e84dc40d3f9c35241 Maintainer: takagi Status: ready -->
 
 <refentry xml:id="sqlite3.busytimeout" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
@@ -18,6 +18,26 @@
    ビジーハンドラを設定します。
    これは、データベースのロックが解除されるかあるいはタイムアウトに達するまでスリープさせます。
   </para>
+  <simpara>
+   ビジーハンドラは SQLite に組み込まれているので、コールバックを渡す必要はありません。
+   ステートメントを実行しようとしたときに、データベースが別の接続によってロックされていると、
+   SQLite は最大 <parameter>milliseconds</parameter> ミリ秒のあいだ再試行を続けます。
+   それを過ぎてもロックされている場合、そのステートメントは
+   <literal>database is locked</literal> エラー (<literal>SQLITE_BUSY</literal>)
+   で失敗します。
+  </simpara>
+  <simpara>
+   この失敗がどのように通知されるかは、
+   <methodname>SQLite3::enableExceptions</methodname> の設定によって決まります。
+   例外が有効な場合は、<exceptionname>SQLite3Exception</exceptionname> がスローされます。
+   そうでない場合は、<constant>E_WARNING</constant> が発生し、
+   <methodname>SQLite3::exec</methodname> や <methodname>SQLite3::query</methodname>
+   など、そのステートメントを実行したメソッドが &false; を返します。
+  </simpara>
+  <simpara>
+   デフォルトではビジーハンドラは設定されていないので、
+   データベースがロックされているとステートメントはすぐに失敗します。
+  </simpara>
  </refsect1>
 
  <refsect1 role="parameters">
@@ -27,10 +47,10 @@
     <varlistentry>
      <term><parameter>milliseconds</parameter></term>
      <listitem>
-      <para>
-       スリープさせる時間 (ミリ秒)。この値をゼロ以下にすると、
+      <simpara>
+       ロックを待つ最大の時間 (ミリ秒)。この値をゼロ以下にすると、
        すでに設定されているタイムアウトハンドラを無効にします。
-      </para>
+      </simpara>
      </listitem>
     </varlistentry>
    </variablelist>
@@ -39,9 +59,11 @@
 
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
-  <para>
-   成功した場合に &true;、&return.falseforfailure;
-  </para>
+  <simpara>
+   ビジータイムアウトを設定できた場合に &true;、&return.falseforfailure;。
+   戻り値は、タイムアウトを設定できたかどうかを示すだけです。
+   その後に実行するステートメントが、タイムアウトまでにロックを取得できるとは限りません。
+  </simpara>
  </refsect1>
 
 </refentry>
