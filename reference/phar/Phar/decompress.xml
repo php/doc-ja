@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: f03806fcd8fe03a0501bd40b6e3939ff6589a1d2 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 76e420706b6f54cdca08416d1ecdc4d1a7dd69e4 Maintainer: takagi Status: ready -->
 <!-- Credits: mumumu -->
 <refentry xml:id="phar.decompress" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -16,10 +16,13 @@
   </methodsynopsis>
  &phar.write;
 
-  <para>
+  <simpara>
    tar 形式あるいは phar 形式の phar アーカイブの場合は、
    このメソッドはアーカイブ全体の圧縮を解除します。
-  </para>
+   圧縮を解除したアーカイブは、元のアーカイブと同じディレクトリに別のファイルとして書き込まれ、
+   新しい <classname>Phar</classname> オブジェクトとして返されます。
+   元のアーカイブは変更されません。
+  </simpara>
   <para>
    zip 形式の phar アーカイブの場合は、このメソッドは失敗して例外が発生します。
    gzip で圧縮されたファイルの圧縮を解除するためには <link linkend="ref.zlib">zlib</link>
@@ -29,12 +32,15 @@
    <link linkend="ini.phar.readonly">phar.readonly</link>
    が off になっていなければなりません。
   </para>
-  <para>
-   さらに、このメソッドは自動的にアーカイブの拡張子を変更し、
-   phar アーカイブなら <literal>.phar</literal>、
-   tar 形式のアーカイブなら <literal>.phar.tar</literal> をデフォルトで追加します。
-   もうひとつの方法として、ファイルの拡張子を 2 番目のパラメータで指定することもできます。
-  </para>
+  <simpara>
+   さらに、このメソッドは新しいアーカイブの拡張子を自動的に変更します。
+   デフォルトの拡張子は、phar アーカイブなら <literal>.phar</literal>、
+   tar 形式のアーカイブなら <literal>.phar.tar</literal> です。
+   たとえば、<filename>/path/to/my.phar.gz</filename> の圧縮を解除すると
+   <filename>/path/to/my.phar</filename> が作成されます。
+   もうひとつの方法として、ファイルの拡張子を
+   <parameter>extension</parameter> 引数で指定することもできます。
+  </simpara>
  </refsect1>
 
  <refsect1 role="parameters">
@@ -51,6 +57,13 @@
        実行可能な phar アーカイブは、ファイル名に必ず
        <literal>.phar</literal> を含まなければならないことに注意しましょう。
       </para>
+      <simpara>
+       元のアーカイブの拡張子 (<literal>.phar.gz</literal>
+       や <literal>.tar.gz</literal> など) は、指定した拡張子に置き換わります。
+       そのため、<literal>decompressed.phar</literal> を渡して
+       <filename>/path/to/my.phar.gz</filename> の圧縮を解除すると、
+       <filename>/path/to/my.decompressed.phar</filename> が作成されます。
+      </simpara>
      </listitem>
     </varlistentry>
    </variablelist>
@@ -68,13 +81,14 @@
 
  <refsect1 role="errors">
   &reftitle.errors;
-  <para>
+  <simpara>
    INI 設定 <link linkend="ini.phar.readonly">phar.readonly</link>
    が on の場合、<link linkend="ref.zlib">zlib</link>
-   拡張モジュールが使用できない場合、あるいは
-   <link linkend="ref.bzip2">bzip2</link> 拡張モジュールが使用できない場合に
+   拡張モジュールが使用できない場合、
+   <link linkend="ref.bzip2">bzip2</link> 拡張モジュールが使用できない場合、
+   作成するアーカイブと同じ名前の phar が既に存在する場合に
    <classname>BadMethodCallException</classname> をスローします。
-  </para>
+  </simpara>
  </refsect1>
 
  <refsect1 role="changelog">
@@ -107,10 +121,11 @@
     <programlisting role="php">
 <![CDATA[
 <?php
-$p = new Phar('/path/to/my.phar', 0, 'my.phar.gz');
+$p = new Phar('/path/to/my.phar', 0, 'my.phar');
 $p['myfile.txt'] = 'hi';
 $p['myfile2.txt'] = 'hi';
-$p3 = $p2->decompress(); // /path/to/my.phar を作成します
+$p2 = $p->compress(Phar::GZ); // /path/to/my.phar.gz を作成します
+$p3 = $p2->decompress('decompressed.phar'); // /path/to/my.decompressed.phar を作成します
 ?>
 ]]>
     </programlisting>
