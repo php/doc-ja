@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: a641e6b538290c138828651ac2a8713eb79c5389 Maintainer: hirokawa Status: ready -->
+<!-- EN-Revision: 124e1f57f5dc2cd667536dc8eb027816effcfead Maintainer: hirokawa Status: ready -->
 <!-- CREDITS: shimooka,mumumu -->
 <refentry xml:id="function.clearstatcache" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -112,33 +112,36 @@
     <programlisting role="php">
 <![CDATA[
 <?php
-$file = 'output_log.txt';
 
-function get_owner($file)
-{
-    $stat = stat($file);
-    $user = posix_getpwuid($stat['uid']);
-    return $user['name'];
-}
+$file = tempnam(sys_get_temp_dir(), 'stat-demo-');
+file_put_contents($file, 'Hello');
 
-$format = "UID @ %s: %s\n";
+echo "Run this command in another shell:\n";
+echo "\techo \" World!\" >> $file\n";
 
-printf($format, date('r'), get_owner($file));
+$before = filesize($file); // メタデータをキャッシュする
 
-chown($file, 'ross');
-printf($format, date('r'), get_owner($file));
+sleep(20); // この間に別のシェルで echo コマンドを実行してください
+
+$cached = filesize($file); // 古いデータが返される
 
 clearstatcache();
-printf($format, date('r'), get_owner($file));
-?>
+
+$fresh = filesize($file);  // 正しいデータを返す
+
+printf("Before: %d\nCached: %d\nFresh: %d\n", $before, $cached, $fresh);
+
+unlink($file);
 ]]>
     </programlisting>
     &example.outputs.similar;
     <screen>
 <![CDATA[
-UID @ Sun, 12 Oct 2008 20:48:28 +0100: root
-UID @ Sun, 12 Oct 2008 20:48:28 +0100: root
-UID @ Sun, 12 Oct 2008 20:48:28 +0100: ross
+Run this command in another shell:
+    echo " World!" >> /tmp/stat-demo-6fjvs4vir9ll2haCl4W
+Before: 5
+Cached: 5
+Fresh: 13
 ]]>
     </screen>
    </example>
