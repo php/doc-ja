@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 83c44e16897a8f6371b0c652ce9610b396514fb8 Maintainer: satoruyoshida Status: ready -->
+<!-- EN-Revision: 8cdccd62091924e8fdec3424c748c3a34f279ceb Maintainer: satoruyoshida Status: ready -->
 <!-- CREDITS: mumumu -->
 <sect1 xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="opcache.configuration">
  &reftitle.runtime;
@@ -229,6 +229,12 @@
       <entry>Windows のみ</entry>
      </row>
      <row>
+      <entry><link linkend="ini.opcache.file-cache-read-only">opcache.file_cache_read_only</link></entry>
+      <entry>0</entry>
+      <entry><constant>INI_SYSTEM</constant></entry>
+      <entry>PHP 8.5.0 以降で利用可能</entry>
+     </row>
+     <row>
       <entry><link linkend="ini.opcache.validate-permission">opcache.validate_permission</link></entry>
       <entry>0</entry>
       <entry><constant>INI_SYSTEM</constant></entry>
@@ -418,6 +424,12 @@
      を加えたものになります。
      OPcache は、まず HUGE PAGE を使ってこのセグメントを割り当てようとします。
      OS が確保している HUGE PAGE が足りない場合は、黙って通常のページにフォールバックします。
+    </simpara>
+    <simpara>
+     PHP 8.5.0 以降、OPcache の初期化後にこのディレクティブを変更しようとすると、
+     失敗して警告がログに記録されます。
+     FPM のプール設定で <literal>php_admin_value</literal> を使った場合などが該当します。
+     これより前のバージョンでは、変更は無視されていました。
     </simpara>
    </listitem>
   </varlistentry>
@@ -942,6 +954,34 @@ function getA() { return A; }
     <simpara>
      OPcache API 関数の呼び出しを、指定した文字列から始まるパス上の PHP スクリプトからだけに制限します。
      デフォルトは  <literal>""</literal> で、これは、何も制限しないことを意味します。
+     呼び出しが許可されていない場合、<function>opcache_get_status</function>、
+     <function>opcache_get_configuration</function>、
+     <function>opcache_reset</function>、<function>opcache_invalidate</function>、
+     <function>opcache_is_script_cached</function>、
+     <function>opcache_is_script_cached_in_file_cache</function> (PHP 8.5.0 以降) は
+     <constant>E_WARNING</constant> を発生させ、&false; を返します。
+    </simpara>
+    <simpara>
+     チェックされるのは、SAPI から渡されるメインスクリプトのパスです。
+     メインスクリプトとは、Web サーバーにリクエストされたスクリプトや、
+     CLI に渡されたスクリプトのことです。
+     関数を呼び出しているファイルのパスは関係ありません。
+     許可されたスクリプトがインクルードしたファイルは API を呼び出せますが、
+     許可されたディレクトリにあるファイルでも、
+     その外にあるスクリプトからインクルードされた場合は呼び出せません。
+     CLI SAPI は、チェックの前にスクリプトのパスに含まれるシンボリックリンクを解決します。
+    </simpara>
+    <simpara>
+     比較は、パスを一切正規化しない、大文字小文字を区別する単純な前方一致です。
+     そのため、<literal>/var/www/admin</literal> を指定すると、
+     <literal>/var/www/administrator</literal> にあるスクリプトも許可されます。
+     そのディレクトリとサブディレクトリだけに一致させるには、
+     値の末尾をディレクトリ区切り文字にしてください。
+     また、値には SAPI から渡されるパスと同じディレクトリ区切り文字を使わなければいけません。
+     Windows の apache2handler SAPI では、パスにスラッシュが使われる
+     (たとえば <literal>C:/www/admin/status.php</literal>) ため、
+     <literal>C:\www\admin</literal> ではなく
+     <literal>C:/www/admin</literal> を指定する必要があります。
     </simpara>
    </listitem>
   </varlistentry>
@@ -1062,6 +1102,32 @@ function getA() { return A; }
       そのため推奨しません。
      </simpara>
     </caution>
+   </listitem>
+  </varlistentry>
+  <varlistentry xml:id="ini.opcache.file-cache-read-only">
+   <term>
+    <parameter>opcache.file_cache_read_only</parameter>
+    <type>bool</type>
+   </term>
+   <listitem>
+    <simpara>
+     有効にすると、読み取り専用の
+     <link linkend="ini.opcache.file-cache">opcache.file_cache</link> ディレクトリを使えるようになります。
+     読み取り専用の Docker コンテナなど、書き込めないファイルシステムでの使用を想定しています。
+     <literal>opcache.validate_timestamps=0</literal>、
+     <literal>opcache.enable_file_override=1</literal>、
+     <literal>opcache.file_cache_consistency_checks=0</literal>
+     と組み合わせて使うのが最適です。
+    </simpara>
+    <note>
+     <simpara>
+      PHP のビルド、ファイルパス、設定 (ロードする拡張モジュールを含む) のいずれかが現在と異なる状態で生成されたキャッシュは、
+      無視されることがあります。
+     </simpara>
+    </note>
+    <simpara>
+     PHP 8.5.0 以降で利用可能です。
+    </simpara>
    </listitem>
   </varlistentry>
   <varlistentry xml:id="ini.opcache.validate-permission">
