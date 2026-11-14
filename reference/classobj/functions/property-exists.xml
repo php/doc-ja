@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- $Revision$ -->
-<!-- EN-Revision: a4fb7f59310a598b8cb8ca1daa47e557f32ae66e Maintainer: shimooka Status: ready -->
+<!-- EN-Revision: a18c79a1de6746cc3065af3446b93e06105d3751 Maintainer: shimooka Status: ready -->
 <!-- CREDITS: takagi,mumumu -->
 <refentry xml:id="function.property-exists" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -21,11 +21,11 @@
    指定されたクラスに存在するかどうかを確認します。
   </para>
   <note>
-   <para>
+   <simpara>
     <function>isset</function> とは対照的に、
     プロパティの値が &null; の場合でも <function>property_exists</function> は
     &true; を返します。
-   </para>
+   </simpara>
   </note>
  </refsect1>
  <refsect1 role="parameters">
@@ -87,6 +87,69 @@ myClass::test();
 ?>
 ]]>
     </programlisting>
+   </example>
+  </para>
+  <simpara>
+   <function>property_exists</function> は、プロパティのアクセス権に関係なく &true; を返し、
+   インスタンスに追加された動的なプロパティ
+   (クラスに <literal>#[AllowDynamicProperties]</literal> が付いている場合) も検出し、
+   マジックメソッド
+   <link linkend="language.oop5.overloading.members"><literal>__isset</literal></link>
+   と <literal>__get</literal> は無視します。
+  </simpara>
+  <para>
+   <example>
+    <title>アクセス権、動的なプロパティ、マジックメソッド</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+
+#[AllowDynamicProperties]
+class MyClass {
+    public $public;
+    private $private;
+    static protected $protectedStatic;
+
+    // property_exists では無視される
+    public function __isset(string $name): bool {
+        return true;
+    }
+
+    // property_exists では無視される
+    public function __get(string $name): string {
+        return '';
+    }
+}
+
+$instance = new MyClass();
+$instance->instanced = 'abc';
+
+var_dump(property_exists($instance, 'public'));          // true  (public)
+var_dump(property_exists($instance, 'private'));         // true  (アクセス権は無視される)
+var_dump(property_exists($instance, 'protectedStatic')); // true  (アクセス権は無視される)
+var_dump(property_exists($instance, 'instanced'));       // true  (インスタンスの動的なプロパティ)
+var_dump(property_exists($instance, 'undefined'));       // false (宣言されておらず、__isset は無視される)
+
+var_dump(property_exists(MyClass::class, 'public'));    // true
+var_dump(property_exists(MyClass::class, 'instanced')); // false (動的なプロパティはクラスにはない)
+var_dump(property_exists(MyClass::class, 'undefined')); // false
+
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+bool(true)
+bool(true)
+bool(true)
+bool(true)
+bool(false)
+bool(true)
+bool(false)
+bool(false)
+]]>
+    </screen>
    </example>
   </para>
  </refsect1>
