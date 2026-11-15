@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: d51166ca16fda8e766849505b84f9306ef443f71 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 5f12cb58d98c9843cdcbee9f22b05f77038432db Maintainer: takagi Status: ready -->
 <refentry xml:id="multipleiterator.current" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
   <refname>MultipleIterator::current</refname>
-  <refpurpose>登録されているイテレータインスタンスを取得する</refpurpose>
+  <refpurpose>アタッチされているイテレータの現在の要素を取得する</refpurpose>
  </refnamediv>
 
  <refsect1 role="description">
@@ -13,12 +13,17 @@
    <modifier>public</modifier> <type>array</type><methodname>MultipleIterator::current</methodname>
    <void/>
   </methodsynopsis>
-  <para>
-   登録されているイテレータインスタンスの current() の結果を取得します。
-  </para>
-
-  &warn.undocumented.func;
-
+  <simpara>
+   有効なイテレータそれぞれの <methodname>Iterator::current</methodname>
+   をコールし、アタッチされているすべてのイテレータの現在の要素を取得します。
+  </simpara>
+  <simpara>
+   <constant>MultipleIterator::MIT_KEYS_NUMERIC</constant> の場合、
+   要素はイテレータをアタッチした順に並びます。
+   <constant>MultipleIterator::MIT_KEYS_ASSOC</constant> の場合、
+   <methodname>MultipleIterator::attachIterator</methodname>
+   で各イテレータに関連づけた情報が、返される配列のキーになります。
+  </simpara>
  </refsect1>
 
  <refsect1 role="parameters">
@@ -28,23 +33,26 @@
 
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
-  <para>
-   アタッチされている各イテレータの現在の値を含む配列を返します。
-  </para>
+  <simpara>
+   アタッチされている各イテレータの現在の要素を含む配列を返します。
+   <constant>MultipleIterator::MIT_NEED_ANY</constant> の場合、
+   無効なイテレータの要素は &null; になります。
+  </simpara>
  </refsect1>
 
  <refsect1 role="errors">
   &reftitle.errors;
-  <para>
-   イテレータが無効な場合(PHP 8.1.0 以降) には、
-   <classname>RuntimeException</classname> が発生します。
-   モード <constant>MIT_NEED_ALL</constant> が設定されているときに、
-   アタッチされているイテレータの中にひとつでも無効なものがあった場合も、
-   <classname>RuntimeException</classname> が発生します。また、
-   キーが &null; で
-   <constant>MIT_KEYS_ASSOC</constant> が設定されている場合には
-   <classname>IllegalValueException</classname> が発生します。
-  </para>
+  <simpara>
+   アタッチされているイテレータがない場合、または
+   <constant>MultipleIterator::MIT_NEED_ALL</constant> が設定されていて、
+   無効なイテレータがひとつでもある場合、
+   <exceptionname>RuntimeException</exceptionname> をスローします。
+  </simpara>
+  <simpara>
+   <constant>MultipleIterator::MIT_KEYS_ASSOC</constant> が設定されていて、
+   情報を関連づけずアタッチされたイテレータがある場合、
+   <exceptionname>InvalidArgumentException</exceptionname> をスローします。
+  </simpara>
  </refsect1>
 
  <refsect1 role="changelog">
@@ -61,9 +69,9 @@
      <row>
       <entry>8.1.0</entry>
       <entry>
-       <methodname>MultipleIterator::current</methodname> 
-       が無効なイテレータを使って呼び出された場合に、
-       <classname>RuntimeException</classname> をスローするようになりました。
+       アタッチされているイテレータがないときに
+       <methodname>MultipleIterator::current</methodname> をコールすると、
+       <exceptionname>RuntimeException</exceptionname> をスローするようになりました。
        これより前のバージョンでは、&false; を返していました。
       </entry>
      </row>
@@ -72,13 +80,51 @@
   </informaltable>
  </refsect1>
 
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <example>
+   <title><methodname>MultipleIterator::current</methodname> の例</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+$iterator = new MultipleIterator(MultipleIterator::MIT_NEED_ANY | MultipleIterator::MIT_KEYS_ASSOC);
+$iterator->attachIterator(new ArrayIterator(['a' => 'apple', 'b' => 'banana']), 'fruit');
+$iterator->attachIterator(new ArrayIterator(['x' => 'red']), 'color');
+
+$iterator->rewind();
+while ($iterator->valid()) {
+    var_dump($iterator->current());
+    $iterator->next();
+}
+?>
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+array(2) {
+  ["fruit"]=>
+  string(5) "apple"
+  ["color"]=>
+  string(3) "red"
+}
+array(2) {
+  ["fruit"]=>
+  string(6) "banana"
+  ["color"]=>
+  NULL
+}
+]]>
+   </screen>
+  </example>
+ </refsect1>
+
  <refsect1 role="seealso">
   &reftitle.seealso;
-  <para>
-   <simplelist>
-    <member><methodname>MultipleIterator::valid</methodname></member>
-   </simplelist>
-  </para>
+  <simplelist>
+   <member><methodname>MultipleIterator::key</methodname></member>
+   <member><methodname>MultipleIterator::valid</methodname></member>
+  </simplelist>
  </refsect1>
 
 </refentry>
