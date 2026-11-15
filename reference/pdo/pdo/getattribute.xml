@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 00b118595a963f00211e96224e3fba35bdebc83c Maintainer: takagi Status: ready -->
+<!-- EN-Revision: ea010c6c957f8fdd64e1d622ab5fbe584cf3d231 Maintainer: takagi Status: ready -->
 <!-- CREDITS: shimooka -->
 <refentry xml:id="pdo.getattribute" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
@@ -22,11 +22,10 @@
    を参照ください。
   </para>
 
-  <para>
-   データベースとドライバの組み合わせによっては、
-   データベース接続の属性のすべてをサポートしていないかも知れないことに
-   注意してください。
-  </para>
+  <simpara>
+   ドライバを問わず取得できるのは、以下に示す一般的な属性だけです。
+   それ以外の属性を取得できるかどうかは、ドライバ次第です。
+  </simpara>
 
  </refsect1>
 
@@ -39,8 +38,8 @@
      <listitem>
       <para>
        <constant>PDO::ATTR_<replaceable>*</replaceable></constant> 定数の 1 つを指定します。
-       データベース接続に適用される一般的な属性は以下の通りです。
-       <simplelist> 
+       以下の一般的な属性は PDO 自体が処理するので、ドライバを問わず取得できます。
+       <simplelist>
         <member><constant>PDO::ATTR_CASE</constant></member>
         <member><constant>PDO::ATTR_DEFAULT_FETCH_MODE</constant></member>
         <member><constant>PDO::ATTR_DRIVER_NAME</constant></member>
@@ -49,12 +48,20 @@
         <member><constant>PDO::ATTR_PERSISTENT</constant></member>
         <member><constant>PDO::ATTR_STATEMENT_CLASS</constant></member>
         <member><constant>PDO::ATTR_STRINGIFY_FETCHES</constant></member>
-       </simplelist> 
+       </simplelist>
       </para>
       <simpara>
-       ドライバによっては、
-       そのドライバ固有の属性を使っているかもしれません。
-       そういう属性は、他のドライバでは使っては
+       それ以外の属性は、ドライバが処理します。
+       そのうちどれを取得できるかは、ドライバ次第です。
+       ドライバが処理する属性には、
+       <constant>PDO::ATTR_AUTOCOMMIT</constant>、
+       <constant>PDO::ATTR_CLIENT_VERSION</constant>、
+       <constant>PDO::ATTR_CONNECTION_STATUS</constant>、
+       <constant>PDO::ATTR_SERVER_INFO</constant>、
+       <constant>PDO::ATTR_SERVER_VERSION</constant>、
+       <constant>PDO::ATTR_TIMEOUT</constant>
+       などの一般的な属性と、ドライバ固有の属性が含まれます。
+       ドライバ固有の属性は、他のドライバでは使っては
        <emphasis>いけない</emphasis> ことに注意して下さい。
       </simpara>
      </listitem>
@@ -66,19 +73,22 @@
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <simpara>
-   コールに成功した場合は要求された PDO 属性の値を返します。
-   コールに失敗した場合は &null; を返します。
+   要求された属性の値を返します。失敗した場合は &false; を返します。
+  </simpara>
+  <simpara>
+   <constant>PDO::ATTR_PERSISTENT</constant> のように、値そのものが &false;
+   になる属性もあるため、&false; が返されても失敗したとは限りません。
   </simpara>
  </refsect1>
 
  <refsect1 role="errors">
   &reftitle.errors;
-  <para>
+  <simpara>
    ドライバが要求された <parameter>attribute</parameter>
    をサポートしていない場合、
    <methodname>PDO::getAttribute</methodname> は
    <exceptionname>PDOException</exceptionname> をスローします。
-  </para>
+  </simpara>
  </refsect1>
 
  <refsect1 role="changelog">
@@ -123,28 +133,38 @@
     <programlisting role="php">
 <![CDATA[
 <?php
-$conn = new PDO('odbc:sample', 'db2inst1', 'ibmdb2');
-$attributes = array(
-    "AUTOCOMMIT", "ERRMODE", "CASE", "CLIENT_VERSION", "CONNECTION_STATUS",
-    "ORACLE_NULLS", "PERSISTENT", "PREFETCH", "SERVER_INFO", "SERVER_VERSION",
-    "TIMEOUT"
-);
+$pdo = new PDO('sqlite::memory:');
 
-foreach ($attributes as $val) {
-    echo "PDO::ATTR_$val: ";
-    echo $conn->getAttribute(constant("PDO::ATTR_$val")) . "\n";
+$attributes = [
+    'DRIVER_NAME', 'ERRMODE', 'CASE', 'ORACLE_NULLS', 'PERSISTENT',
+    'CLIENT_VERSION', 'SERVER_VERSION', 'AUTOCOMMIT', 'TIMEOUT',
+];
+
+foreach ($attributes as $name) {
+    try {
+        $value = $pdo->getAttribute(constant("PDO::ATTR_$name"));
+        echo "PDO::ATTR_$name: ", var_export($value, true), "\n";
+    } catch (PDOException $e) {
+        echo "PDO::ATTR_$name: ", $e->getMessage(), "\n";
+    }
 }
 ?>
 ]]>
     </programlisting>
-    <!--
-    &example.outputs;
+    &example.outputs.similar;
     <screen>
 <![CDATA[
-Use the PEAR Coding Standards
+PDO::ATTR_DRIVER_NAME: 'sqlite'
+PDO::ATTR_ERRMODE: 2
+PDO::ATTR_CASE: 0
+PDO::ATTR_ORACLE_NULLS: 0
+PDO::ATTR_PERSISTENT: false
+PDO::ATTR_CLIENT_VERSION: '3.46.1'
+PDO::ATTR_SERVER_VERSION: '3.46.1'
+PDO::ATTR_AUTOCOMMIT: SQLSTATE[IM001]: Driver does not support this function: driver does not support that attribute
+PDO::ATTR_TIMEOUT: SQLSTATE[IM001]: Driver does not support this function: driver does not support that attribute
 ]]>
     </screen>
-    -->
    </example>
   </para>
  </refsect1>
