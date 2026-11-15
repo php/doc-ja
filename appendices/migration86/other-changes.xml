@@ -1,0 +1,588 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision$ -->
+<!-- EN-Revision: 894fa67ba030cd241a56d898869852c7b1a59c0a Maintainer: KentarouTakeda Status: ready -->
+<sect1 xml:id="migration86.other-changes">
+ <title>その他の変更</title>
+
+ <sect2 xml:id="migration86.other-changes.core">
+  <title>PHP コア</title>
+
+  <sect3 xml:id="migration86.other-changes.core.core">
+   <title>PHP コア</title>
+
+   <simpara>
+    システムからメモリを確保できない <acronym>OOM</acronym> (メモリ不足) が発生した場合、PHP は
+    <literal>exit(1)</literal> ではなく <literal>abort()</literal>
+    を呼び出すようになりました。
+    そのため、終了コードが 134 に変わり、コアダンプが生成されることもあります。
+   </simpara>
+
+   <simpara>
+    <constant>PHP_OS_FAMILY</constant> 定数は、
+    AIX 上か、PASE を介した IBM i 上で実行している場合、
+    <literal>AIX</literal> という値を取るようになりました。
+   </simpara>
+
+  </sect3>
+
+ </sect2>
+
+ <sect2 xml:id="migration86.other-changes.sapi">
+  <title>SAPI モジュールへの変更</title>
+
+  <sect3 xml:id="migration86.other-changes.sapi.cli">
+   <title>CLI</title>
+
+   <simpara>
+    <link linkend="features.commandline.webserver">ビルトインの開発用サーバー</link>
+    は、<acronym>HTTP</acronym> の <literal>QUERY</literal>
+    メソッドを使ったリクエストを、<literal>501 Not Implemented</literal>
+    を返さず受け付けるようになりました。
+   </simpara>
+
+   <simpara>
+    <link linkend="features.commandline.webserver">ビルトインの開発用サーバー</link>
+    は、リクエストの <literal>Host</literal>
+    ヘッダをレスポンスで送り返さなくなりました。
+   </simpara>
+
+  </sect3>
+
+ </sect2>
+
+ <sect2 xml:id="migration86.other-changes.functions">
+  <title>変更された関数</title>
+
+  <sect3 xml:id="migration86.other-changes.functions.core">
+   <title>PHP コア</title>
+
+   <simpara>
+    <function>header_register_callback</function> は、
+    戻り値の型を正式に <type>true</type> としました。
+    PHP 8.0.0 以降、無効なコールバックを渡すと
+    <exceptionname>TypeError</exceptionname> がスローされていたため、
+    &false; を返すことはありませんでした。
+   </simpara>
+
+   <simpara>
+    <function>register_tick_function</function> は、
+    戻り値の型を正式に <type>true</type> としました。
+    これまでも、成功時には常に &true; を返していました。
+    無効なコールバックを渡すと、関数本体に到達する前、引数を解析する段階で
+    <exceptionname>TypeError</exceptionname> がスローされます。
+   </simpara>
+
+   <simpara>
+    <function>ini_get_all</function> は、
+    <parameter>details</parameter> が &true; の場合、各ディレクティブに
+    <literal>"builtin_default_value"</literal> 要素を含めるようになりました。
+    この要素には、&php.ini;、コマンドライン、実行時に設定された値とは関係なく、
+    ディレクティブのビルトインのデフォルト値 (存在しない場合は &null;)
+    が格納されます。
+   </simpara>
+
+   <simpara>
+    <function>fclose</function>、<function>file_put_contents</function>、
+    <function>copy</function> は、ストリームのフラッシュやクローズに失敗した場合に
+    &false; を返すようになりました。
+    これより前のバージョンでは、こうした失敗は無視されていました。
+   </simpara>
+
+  </sect3>
+
+  <sect3 xml:id="migration86.other-changes.functions.date">
+   <title>Date</title>
+
+   <para>
+    以下のメソッドは、仮の戻り値の型が <type>static</type>
+    になりました:
+
+    <simplelist>
+     <member><methodname>DateTime::createFromInterface</methodname></member>
+     <member><methodname>DateTimeImmutable::__set_state</methodname></member>
+     <member><methodname>DateTimeImmutable::modify</methodname></member>
+     <member><methodname>DateTimeImmutable::add</methodname></member>
+     <member><methodname>DateTimeImmutable::sub</methodname></member>
+     <member><methodname>DateTimeImmutable::setTimezone</methodname></member>
+     <member><methodname>DateTimeImmutable::setTime</methodname></member>
+     <member><methodname>DateTimeImmutable::setDate</methodname></member>
+     <member><methodname>DateTimeImmutable::setISODate</methodname></member>
+     <member><methodname>DateTimeImmutable::setTimestamp</methodname></member>
+     <member><methodname>DateTimeImmutable::createFromInterface</methodname></member>
+     <member><methodname>DateTimeZone::__set_state</methodname></member>
+     <member><methodname>DateInterval::__set_state</methodname></member>
+     <member><methodname>DatePeriod::__set_state</methodname></member>
+    </simplelist>
+   </para>
+
+  </sect3>
+
+  <sect3 xml:id="migration86.other-changes.functions.filter">
+   <title>Filter</title>
+
+   <simpara>
+    <function>filter_var_array</function> の戻り値の型が、
+    <type class="union"><type>array</type><type>false</type><type>null</type></type>
+    から <type class="union"><type>array</type><type>false</type></type>
+    に絞り込まれました。
+    この関数はフィルタリングの前に必ず配列を用意するため、
+    &null; を返すことはありませんでした。
+    <function>filter_input_array</function> は影響を受けません。
+    指定したスーパーグローバルが存在しない場合、これまでどおり &null; を返します。
+   </simpara>
+
+  </sect3>
+
+  <sect3 xml:id="migration86.other-changes.functions.ldap">
+   <title>LDAP</title>
+
+   <simpara>
+    <function>ldap_free_result</function> の戻り値の型が、
+    <type>bool</type> から <type>true</type> に絞り込まれました。
+    この関数は、もともと常に &true; を返していました。
+   </simpara>
+
+  </sect3>
+
+  <sect3 xml:id="migration86.other-changes.functions.mysqli">
+   <title>MySQLi</title>
+
+   <simpara>
+    <function>mysqli_get_charset</function> の戻り値には、ドキュメント化されていない
+    <literal>"comment"</literal> 要素が含まれなくなりました。
+    <literal>"charsetnr"</literal> の値は、本来公開すべきでなかった実装の詳細であるため、常に
+    <literal>0</literal> になりました。
+   </simpara>
+
+  </sect3>
+
+  <sect3 xml:id="migration86.other-changes.functions.openssl">
+   <title>OpenSSL</title>
+
+   <simpara>
+    <function>openssl_x509_parse</function> の戻り値に、
+    クリティカルな証明書拡張をすべて列挙した
+    <literal>"criticalExtensions"</literal> エントリが含まれるようになりました。
+   </simpara>
+
+   <simpara>
+    <function>openssl_sign</function> と <function>openssl_verify</function>
+    に、オプションの引数 <parameter>salt_length</parameter> が追加されました。
+    これにより、<constant>OPENSSL_PKCS1_PSS_PADDING</constant>
+    を使う場合の <acronym>RSA</acronym>-PSS のソルト長を制御できます。
+    この引数には、具体的な長さか、新しく追加された
+    <constant>OPENSSL_RSA_PSS_SALTLEN_<replaceable>*</replaceable></constant>
+    定数のいずれかを指定します。
+   </simpara>
+
+  </sect3>
+
+  <sect3 xml:id="migration86.other-changes.functions.pdo-dblib">
+   <title>PDO_DBLIB</title>
+
+   <simpara>
+    持続的接続を使う場合、<methodname>PDO::__construct</methodname>
+    で接続が生きているかを確認するようになりました。
+   </simpara>
+
+  </sect3>
+
+  <sect3 xml:id="migration86.other-changes.functions.phar">
+   <title>Phar</title>
+
+   <simpara>
+    <methodname>Phar::mungServer</methodname>
+    は、渡された配列の値がリファレンスであっても受け付けるようになりました。
+   </simpara>
+
+  </sect3>
+
+  <sect3 xml:id="migration86.other-changes.functions.readline">
+   <title>Readline</title>
+
+   <simpara>
+    <function>readline_completion_function</function> は、
+    戻り値の型を正式に <type>true</type> としました。
+    これまでも、成功時には常に &true; を返していました。
+    無効なコールバックを渡すと、関数本体に到達する前、引数を解析する段階で
+    <exceptionname>TypeError</exceptionname> がスローされます。
+   </simpara>
+
+  </sect3>
+
+  <sect3 xml:id="migration86.other-changes.functions.reflection">
+   <title>Reflection</title>
+
+   <simpara>
+    <methodname>ReflectionClassConstant::__toString</methodname> と
+    <methodname>ReflectionConstant::__toString</methodname> は、
+    <type>bool</type> 型の定数の値を、<literal>1</literal> と空文字列ではなく、
+    <literal>true</literal> と <literal>false</literal>
+    として出力するようになりました。
+    これは、<methodname>ReflectionClass::__toString</methodname>
+    など、クラス定数を出力する他の方法にも影響します。
+   </simpara>
+
+  </sect3>
+
+  <sect3 xml:id="migration86.other-changes.functions.sockets">
+   <title>Sockets</title>
+
+   <simpara>
+    <function>socket_addrinfo_lookup</function> に、オプションの引数
+    <parameter>error_code</parameter> が追加されました。
+    この引数を指定すると、失敗時にエラーコード
+    (<constant>EAI_<replaceable>*</replaceable></constant> 定数のいずれか)
+    が格納されます。
+   </simpara>
+
+   <simpara>
+    <function>socket_cmsg_space</function> の戻り値の型が、
+    <type class="union"><type>int</type><type>null</type></type>
+    から <type>int</type> に絞り込まれました。
+    PHP 8.0.0 以降、失敗するケースではすべて
+    <exceptionname>ValueError</exceptionname> がスローされていたため、
+    &null; を返すことはありませんでした。
+   </simpara>
+
+  </sect3>
+
+  <sect3 xml:id="migration86.other-changes.functions.zip">
+   <title>Zip</title>
+
+   <simpara>
+    <function>zip_entry_close</function> の戻り値の型が、
+    <type>bool</type> から <type>true</type> に絞り込まれました。
+    この関数は、もともと常に &true; を返していました。
+   </simpara>
+
+  </sect3>
+
+ </sect2>
+
+ <sect2 xml:id="migration86.other-changes.extensions">
+  <title>拡張モジュールへのその他の変更</title>
+
+  <sect3 xml:id="migration86.other-changes.extensions.fileinfo">
+   <title>Fileinfo</title>
+
+   <simpara>
+    file が 5.48 に更新されました。
+    古いバージョンの file で独自にコンパイルした magic データベースは、
+    再生成する必要があります。
+   </simpara>
+
+  </sect3>
+
+  <sect3 xml:id="migration86.other-changes.extensions.hash">
+   <title>Hash</title>
+
+   <simpara>
+    バンドルしている xxHash のバージョンが 0.8.2 に更新されました。
+   </simpara>
+
+  </sect3>
+
+  <sect3 xml:id="migration86.other-changes.extensions.mysqli">
+   <title>MySQLi</title>
+
+   <simpara>
+    <constant>MYSQLI_OPT_COMPRESS</constant> 定数が追加されました。
+   </simpara>
+
+  </sect3>
+
+  <sect3 xml:id="migration86.other-changes.extensions.opcache">
+   <title>Opcache</title>
+
+   <simpara>
+    <acronym>JIT</acronym> が、Apple Silicon 上の <acronym>ZTS</acronym>
+    ビルドでサポートされるようになりました。
+   </simpara>
+
+  </sect3>
+
+ </sect2>
+
+ <sect2 xml:id="migration86.other-changes.ini">
+  <title>INI ファイルの扱いの変更</title>
+
+  <sect3 xml:id="migration86.other-changes.ini.core">
+   <title>PHP コア</title>
+
+   <simpara>
+    エラーメッセージに関数の引数を一貫した形で含めるため、
+    <!-- <link linkend="ini.error-include-args"> -->error_include_args<!-- </link> -->
+    INI ディレクティブが追加されました。デフォルトでは無効です。
+    これより前のバージョンでは、エラーメッセージに引数を含めるかどうかは、
+    内部のエラー関数を呼び出す箇所ごとに決められていました。
+    このディレクティブを有効にすると、関数に実際に渡されたとおりに、すべての引数が表示されます。
+    スタックトレースと同じ仕組みを使っているため、
+    機密性の高い引数は表示されず、文字列は
+    <link linkend="ini.zend.exception-string-param-max-len">zend.exception_string_param_max_len</link>
+    に従って切り詰められます。
+    <!-- RFC: https://wiki.php.net/rfc/display_error_function_args -->
+   </simpara>
+
+  </sect3>
+
+  <sect3 xml:id="migration86.other-changes.ini.mbstring">
+   <title>MBString</title>
+
+   <simpara>
+    <link linkend="ini.mbstring.detect-order">mbstring.detect_order</link>
+    INI ディレクティブを実行時に <function>ini_set</function>
+    で変更すると、内部の検出順も更新されるようになりました。
+    これより前のバージョンでは、<function>ini_set</function>
+    で変更しても <function>mb_detect_order</function>
+    には反映されませんでした。
+    実行時にこのディレクティブを &null; か空文字列に設定した場合、それまでの検出順が維持されるようになりました。
+   </simpara>
+
+  </sect3>
+
+  <sect3 xml:id="migration86.other-changes.ini.mysqli">
+   <title>MySQLi</title>
+
+   <simpara>
+    <link linkend="ini.mysqli.default-port">mysqli.default_port</link>
+    に設定した値が有効かどうかをチェックするようになりました。
+    値は <literal>0</literal> 以上 <literal>65535</literal>
+    以下である必要があります。
+   </simpara>
+
+  </sect3>
+
+  <sect3 xml:id="migration86.other-changes.ini.opcache">
+   <title>Opcache</title>
+
+   <simpara>
+    <link linkend="ini.opcache.jit-debug">opcache.jit_debug</link>
+    に、新しいフラグ <literal>ZEND_JIT_DEBUG_TRACE_EXIT_INFO_SRC</literal>
+    を指定できるようになりました。
+    デバッグビルドでは、このフラグを
+    <literal>ZEND_JIT_DEBUG_TRACE_EXIT_INFO</literal>
+    と組み合わせて使うと、exit info の出力に exit point の生成元が含まれます。
+   </simpara>
+
+  </sect3>
+
+ </sect2>
+
+ <sect2 xml:id="migration86.other-changes.performance">
+  <title>パフォーマンスに関わる変更</title>
+
+  <sect3 xml:id="migration86.other-changes.performance.core">
+   <title>PHP コア</title>
+
+   <simpara>
+    <literal>%s</literal> と <literal>%d</literal> のみを使用する
+    <function>printf</function> の呼び出しは、同等の文字列補間にコンパイルされるようになりました。
+    これにより、関数呼び出しのオーバーヘッドも、フォーマット文字列を毎回解析する処理もなくなります。
+   </simpara>
+
+   <simpara>
+    呼び出すコンストラクタをコンパイル時に特定できる場合 (たとえば
+    <code>new self()</code>)、引数をより効率的に渡すようになりました。
+   </simpara>
+
+   <simpara>
+    <link linkend="functions.first_class_callable_syntax">第一級callable</link>
+    や <link linkend="migration86.new-features.core.partial-function-application">関数の部分適用</link>
+    で作ったコールバックを渡す <function>array_map</function> の呼び出しは、同等の
+    <link linkend="control-structures.foreach">foreach</link>
+    ループにコンパイルされるようになりました。
+    これにより、中間的な <classname>Closure</classname> の生成と、
+    内部関数からユーザー定義のコールバックを呼び出すオーバーヘッドを回避でき、
+    <acronym>JIT</acronym> もコードをより詳しく把握できるようになります。
+   </simpara>
+
+   <simpara>
+    TAILCALL <acronym>VM</acronym> は、パフォーマンスが向上し、
+    x86_64 の Windows で Clang 19 以降を使ってコンパイルした場合に有効になりました。
+   </simpara>
+
+   <simpara>
+    <acronym>ZTS</acronym> ビルドのパフォーマンスが向上しました。
+   </simpara>
+
+   <simpara>
+    状態を持たないクロージャのキャッシュが追加されました。
+    <!-- RFC: https://wiki.php.net/rfc/closure-optimizations#stateless_closure_caching -->
+   </simpara>
+
+   <simpara>
+    VM が新しいスタックページを割り当てるほど深く再帰するコードは、
+    高速になったはずです。
+   </simpara>
+
+   <simpara>
+    要素が 1 つだけの配列をソートする際のパフォーマンスが向上しました。
+   </simpara>
+
+   <para>
+    以下の関数のパフォーマンスが向上しました:
+
+    <simplelist>
+     <member><function>addcslashes</function> (8 進数のエスケープを生成する場合)</member>
+     <member><function>array_fill_keys</function></member>
+     <member><function>array_intersect</function></member>
+     <member><function>array_map</function> (複数の配列を渡した場合)</member>
+     <member><function>array_product</function> と <function>array_sum</function> (整数のみの配列の場合)</member>
+     <member><function>array_unshift</function></member>
+     <member><function>array_walk</function></member>
+     <member><function>intval</function> (<code>intval('0b...', 2)</code> と <code>intval('+0b...', 2)</code> の場合)</member>
+     <member><function>pathinfo</function> (要素を 1 つだけ要求する場合)</member>
+     <member><function>str_pad</function></member>
+     <member><function>str_repeat</function> (繰り返し回数が <literal>1</literal> の場合)</member>
+     <member><function>str_split</function></member>
+    </simplelist>
+   </para>
+
+  </sect3>
+
+  <sect3 xml:id="migration86.other-changes.performance.dom">
+   <title>DOM</title>
+
+   <simpara>
+    <methodname>DOMText::splitText</methodname> と
+    <methodname>Dom\Text::splitText</methodname> が高速になり、
+    メモリの消費量も減りました。
+   </simpara>
+
+  </sect3>
+
+  <sect3 xml:id="migration86.other-changes.performance.gd">
+   <title>GD</title>
+
+   <simpara>
+    <function>imagebmp</function>、<function>imagewbmp</function>、
+    <function>imagegd</function>、<function>imagegd2</function> は、
+    PHP のストリームに書き込む際に出力をバッファリングするようになりました。
+    これにより、画像をファイルに書き込む際のパフォーマンスが大幅に向上します。
+   </simpara>
+
+   <simpara>
+    Windows における <function>imagegrabscreen</function> と
+    <function>imagegrabwindow</function> のパフォーマンスが向上しました。
+   </simpara>
+
+  </sect3>
+
+  <sect3 xml:id="migration86.other-changes.performance.intl">
+   <title>Intl</title>
+
+   <simpara>
+    戻り値の配列を事前に確保することで、
+    <methodname>IntlCalendar::getAvailableLocales</methodname> と
+    <methodname>IntlDateFormatter::localtime</methodname>/<function>datefmt_localtime</function>
+    のパフォーマンスが向上しました。
+   </simpara>
+
+   <simpara>
+    戻り値の配列を事前に確保することで、
+    <function>transliterator_list_ids</function> と
+    <function>resourcebundle_locales</function> のパフォーマンスが向上しました。
+   </simpara>
+
+   <simpara>
+    <methodname>IntlChar::enumCharTypes</methodname>
+    でのコールバックの呼び出しが最適化されました。
+   </simpara>
+
+  </sect3>
+
+  <sect3 xml:id="migration86.other-changes.performance.json">
+   <title>JSON</title>
+
+   <simpara>
+    配列とオブジェクトをエンコードする際のパフォーマンスが向上しました。
+   </simpara>
+
+   <simpara>
+    <constant>JSON_PRETTY_PRINT</constant> を指定した
+    <function>json_encode</function> で、インデントを生成する処理のパフォーマンスが向上しました。
+   </simpara>
+
+  </sect3>
+
+  <sect3 xml:id="migration86.other-changes.performance.mbstring">
+   <title>MBString</title>
+
+   <simpara>
+    <function>mb_str_pad</function> のパフォーマンスが向上しました。
+   </simpara>
+
+  </sect3>
+
+  <sect3 xml:id="migration86.other-changes.performance.phar">
+   <title>Phar</title>
+
+   <simpara>
+    Phar のディレクトリを反復処理する際の、一時的なメモリ確保が減りました。
+   </simpara>
+
+  </sect3>
+
+  <sect3 xml:id="migration86.other-changes.performance.uri">
+   <title>URI</title>
+
+   <simpara>
+    エラーの配列を事前に確保することで、検証エラーを収集する場合の
+    <methodname>Uri\WhatWg\Url::parse</methodname>
+    のパフォーマンスが向上しました。
+   </simpara>
+
+   <simpara>
+    <classname>Uri\Rfc3986\Uri</classname> でパスや IPv6/IPvFuture
+    のホストを読み取る際のメモリ確保が減りました。
+   </simpara>
+
+   <simpara>
+    <classname>Uri\Rfc3986\Uri</classname> の正規化を行う (raw ではない)
+    ゲッターを、既に正規化されている URI
+    に対して使う場合のパフォーマンスとメモリ消費量が改善されました。
+   </simpara>
+
+  </sect3>
+
+  <sect3 xml:id="migration86.other-changes.performance.zip">
+   <title>Zip</title>
+
+   <simpara>
+    戻り値の配列を事前に確保することで、
+    <methodname>ZipArchive::addGlob</methodname> と
+    <methodname>ZipArchive::addPattern</methodname>
+    のパフォーマンスが向上しました。
+   </simpara>
+
+   <simpara>
+    <methodname>ZipArchive::addFromString</methodname>
+    で文字列をコピーしなくなりました。
+   </simpara>
+
+  </sect3>
+
+ </sect2>
+
+</sect1>
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"~/.phpdoc/manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
