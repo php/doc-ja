@@ -1,0 +1,712 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision$ -->
+<!-- EN-Revision: d4ec626e80bf919b8b8e862bdd6cc698c6c983a1 Maintainer: KentarouTakeda Status: ready -->
+<sect1 xml:id="migration86.new-features" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <title>新機能</title>
+
+ <sect2 xml:id="migration86.new-features.core">
+  <title>PHP コア</title>
+
+  <sect3 xml:id="migration86.new-features.core.readonly-property-defaults">
+   <title>読み取り専用プロパティのデフォルト値</title>
+
+   <simpara>
+    <link linkend="language.oop5.properties.readonly-properties">読み取り専用プロパティ</link>
+    に、デフォルト値を宣言できるようになりました。
+    <!-- RFC: https://wiki.php.net/rfc/readonly_property_defaults -->
+   </simpara>
+
+   <informalexample>
+    <programlisting role="php">
+<![CDATA[
+<?php
+class Config
+{
+    public readonly int $timeout = 30;
+}
+
+$config = new Config();
+var_dump($config->timeout); // int(30)
+]]>
+    </programlisting>
+   </informalexample>
+
+  </sect3>
+
+  <sect3 xml:id="migration86.new-features.core.weakmap-reference-assignment">
+   <title>WeakMap での参照による代入</title>
+
+   <simpara>
+    <classname>WeakMap</classname> で、事前にキーが存在していなくても、
+    参照による代入を使えるようになりました。
+   </simpara>
+
+   <informalexample>
+    <programlisting role="php">
+<![CDATA[
+<?php
+$obj = new stdClass();
+$map = new WeakMap();
+$count = 0;
+
+// PHP 8.6.0 より前は、Error: "Object stdClass#1 not contained in WeakMap" が発生していました
+$map[$obj] = &$count;
+$count++;
+
+var_dump($map[$obj]); // int(1)
+]]>
+    </programlisting>
+   </informalexample>
+
+  </sect3>
+
+  <sect3 xml:id="migration86.new-features.core.debuginfo-on-enums">
+   <title>列挙型での <methodname>__debugInfo</methodname></title>
+
+   <simpara>
+    <link linkend="language.oop5.magic.debuginfo">__debugInfo()</link>
+    マジックメソッドを、<link linkend="language.enumerations">列挙型</link>
+    に定義できるようになりました。
+    これより前のバージョンでは、致命的なエラーになっていました。
+    <!-- RFC: https://wiki.php.net/rfc/debugable-enums -->
+   </simpara>
+
+   <informalexample>
+    <programlisting role="php">
+<![CDATA[
+<?php
+enum Suit: string
+{
+    case Hearts = 'H';
+    case Spades = 'S';
+
+    public function __debugInfo(): array
+    {
+        return ['suit' => $this->name, 'symbol' => $this->value];
+    }
+}
+
+var_dump(Suit::Hearts);
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+enum(Suit::Hearts) (2) {
+  ["suit"]=>
+  string(6) "Hearts"
+  ["symbol"]=>
+  string(1) "H"
+}
+]]>
+    </screen>
+   </informalexample>
+
+  </sect3>
+
+  <sect3 xml:id="migration86.new-features.core.override-for-constants">
+   <title>クラス定数に対する <code>#[\Override]</code> 指定</title>
+
+   <simpara>
+    <classname>Override</classname> アトリビュートを、
+    列挙型の case を含むクラス定数に指定できるようになりました。
+    メソッドやプロパティと同様に、親クラスや実装しているインターフェイスに
+    対応する定数が存在しない場合、コンパイル時エラーが発生します。
+    <!-- RFC: https://wiki.php.net/rfc/override_constants -->
+   </simpara>
+
+   <informalexample>
+    <programlisting role="php">
+<![CDATA[
+<?php
+interface HasVersion
+{
+    const VERSION = '1.0';
+}
+
+class Package implements HasVersion
+{
+    #[\Override]
+    const VERSION = '2.0';
+
+    // Fatal error: Package::NAME has #[\Override] attribute,
+    // but no matching parent constant exists
+    // #[\Override]
+    // const NAME = 'package';
+}
+]]>
+    </programlisting>
+   </informalexample>
+
+  </sect3>
+
+  <sect3 xml:id="migration86.new-features.core.partial-function-application">
+   <title>関数の部分適用</title>
+
+   <simpara>
+    関数の部分適用がサポートされました。
+    1 つ以上の引数を <literal>?</literal> プレースホルダに、または残りの引数を
+    <literal>...</literal> プレースホルダに置き換えて呼び出すと、足りない引数を受け取る
+    <classname>Closure</classname> が作成されます。
+    <!-- RFC: https://wiki.php.net/rfc/partial_function_application_v2 -->
+   </simpara>
+
+   <informalexample>
+    <programlisting role="php">
+<![CDATA[
+<?php
+function add(int $a, int $b, int $c = 0): int
+{
+    return $a + $b + $c;
+}
+
+// "?" はちょうど 1 つの引数を置き換えます
+$addOne = add(1, ?);
+var_dump($addOne(5)); // int(6)
+
+// "..." は残りの引数をすべて置き換えます
+$addToOne = add(1, ...);
+var_dump($addToOne(2, 3)); // int(6)
+
+// 内部関数を含め、あらゆる callable で使えます
+$stripSpaces = str_replace(' ', '', ?);
+var_dump($stripSpaces('a b c')); // string(3) "abc"
+]]>
+    </programlisting>
+   </informalexample>
+
+  </sect3>
+
+  <sect3 xml:id="migration86.new-features.core.const-object-property-write">
+   <title>定数に格納されたオブジェクトの変更</title>
+
+   <simpara>
+    定数やクラス定数に格納されたオブジェクトを、
+    <code>OBJ->prop = $val</code> で直接変更できるようになりました。
+    <!-- RFC: https://wiki.php.net/rfc/const_object_property_write -->
+   </simpara>
+
+   <informalexample>
+    <programlisting role="php">
+<![CDATA[
+<?php
+const CONFIG = new stdClass();
+
+// PHP 8.6.0 より前は、"Fatal error: Cannot use temporary expression in write context" が発生していました
+CONFIG->debug = true;
+
+var_dump(CONFIG->debug); // bool(true)
+]]>
+    </programlisting>
+   </informalexample>
+
+  </sect3>
+
+  <sect3 xml:id="migration86.new-features.core.pack-unpack-endianness">
+   <title>pack() と unpack() のエンディアン修飾子</title>
+
+   <simpara>
+    <function>pack</function> と <function>unpack</function> が、
+    <literal>&lt;</literal> (リトルエンディアン) と <literal>&gt;</literal>
+    (ビッグエンディアン) の修飾子を受け付けるようになりました。
+    この修飾子は、整数のフォーマットコード <literal>s</literal>、<literal>S</literal>、
+    <literal>l</literal>、<literal>L</literal>、<literal>q</literal>、
+    <literal>Q</literal> の後と、float と double のフォーマットコード
+    <literal>f</literal>、<literal>d</literal> の後に指定できます。
+    <!-- RFC: https://wiki.php.net/rfc/pack-unpack-endianness-signed-integers-support -->
+    <!-- RFC: https://wiki.php.net/rfc/pack-unpack-float-endianness-modifier -->
+   </simpara>
+
+   <informalexample>
+    <programlisting role="php">
+<![CDATA[
+<?php
+echo bin2hex(pack('l>', 1)), PHP_EOL;   // Prints "00000001"
+echo bin2hex(pack('l<', 1)), PHP_EOL;   // Prints "01000000"
+echo bin2hex(pack('f>', 1.5)), PHP_EOL; // Prints "3fc00000"
+
+var_dump(unpack('s>value', "\xff\xfe")); // ["value" => int(-2)]
+]]>
+    </programlisting>
+   </informalexample>
+
+  </sect3>
+
+ </sect2>
+
+ <sect2 xml:id="migration86.new-features.curl">
+  <title>cURL</title>
+
+  <simpara>
+   <function>curl_getinfo</function> が返す配列に、
+   <literal>"size_delivered"</literal> キーが追加されました。
+   これは、ダウンロード用の書き込みコールバックに渡された合計バイト数を示します。
+   この値は、<constant>CURLINFO_SIZE_DELIVERED</constant> を
+   <parameter>option</parameter> 引数に渡しても取得できます。
+   libcurl 8.20.0 以降が必要です。
+  </simpara>
+
+  <simpara>
+   ストリーミングで送信するリクエストボディの読み取り位置を移動するコールバックを登録する、
+   <constant>CURLOPT_SEEKFUNCTION</constant> が追加されました。
+   これにより libcurl は、リダイレクト、複数回のやり取りを伴う認証、
+   再利用した接続でのリトライの際に、
+   <constant>CURLE_SEND_FAIL_REWIND</constant> で失敗せず、
+   リクエストボディを巻き戻して再送できます。
+   コールバックは <classname>CurlHandle</classname>、オフセット、基準位置を受け取り、
+   <constant>CURL_SEEKFUNC_OK</constant>、
+   <constant>CURL_SEEKFUNC_FAIL</constant>、
+   <constant>CURL_SEEKFUNC_CANTSEEK</constant> のいずれかを返さなければなりません。
+  </simpara>
+
+ </sect2>
+
+ <sect2 xml:id="migration86.new-features.date">
+  <title>Date</title>
+
+  <simpara>
+   タイムアウトのような、長さが一定の経過時間をナノ秒の精度で表す
+   <classname>Time\Duration</classname> クラスが追加されました。
+   <classname>DateInterval</classname> とは異なり、日や月などの暦の単位を持たないため、
+   長さに曖昧さがありません。
+   <!-- RFC: https://wiki.php.net/rfc/duration_class -->
+  </simpara>
+
+  <para>
+   期間は不変で、比較演算子で比較できます。
+   このクラスは、以下を提供します:
+   <simplelist>
+    <member>
+     <methodname>Time\Duration::fromSeconds</methodname>、
+     <methodname>Time\Duration::fromMilliseconds</methodname>、
+     <methodname>Time\Duration::fromIso8601DurationString</methodname>
+     などのファクトリメソッド
+    </member>
+    <member>
+     <methodname>Time\Duration::add</methodname>、
+     <methodname>Time\Duration::sub</methodname>、
+     <methodname>Time\Duration::multiplyBy</methodname>、
+     <methodname>Time\Duration::divideBy</methodname> による算術演算
+    </member>
+    <member>
+     符号を変える <methodname>Time\Duration::negate</methodname> と
+     <methodname>Time\Duration::absolute</methodname>
+    </member>
+    <member>
+     ソートのコールバックとして使える
+     <methodname>Time\Duration::compare</methodname>
+    </member>
+   </simplelist>
+  </para>
+
+  <simpara>
+   期間が表現できる範囲 (約 292 年) を超えた場合や、
+   <acronym>ISO</acronym> 8601 の期間指定が不正な場合、
+   <exceptionname>Time\TimeException</exceptionname> がスローされます。
+  </simpara>
+
+  <informalexample>
+   <programlisting role="php">
+<![CDATA[
+<?php
+$timeout = \Time\Duration::fromSeconds(2)->add(\Time\Duration::fromMilliseconds(500));
+
+printf("%d.%09d seconds\n", $timeout->seconds, $timeout->nanoseconds);
+var_dump($timeout > \Time\Duration::fromSeconds(2));
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+2.500000000 seconds
+bool(true)
+]]>
+   </screen>
+  </informalexample>
+
+ </sect2>
+
+ <sect2 xml:id="migration86.new-features.fileinfo">
+  <title>FileInfo</title>
+
+  <simpara>
+   <function>finfo_file</function> が、リモートストリームでも動作するようになりました。
+  </simpara>
+
+ </sect2>
+
+ <sect2 xml:id="migration86.new-features.gmp">
+  <title>GMP</title>
+
+  <simpara>
+   べき乗剰余を、サイドチャネル攻撃に耐性のある方法で計算する
+   <function>gmp_powm_sec</function> が追加されました。
+   GNU MP 5.0.0 以降が必要です。
+   MPIR を使う公式の Windows ビルドでは利用できません。
+  </simpara>
+
+  <simpara>
+   指定した数より小さい最大の素数を取得する
+   <function>gmp_prevprime</function> が追加されました。
+   オプションの出力用引数 <parameter>definitely_prime</parameter>
+   は、返された数が確実に素数なのか、おそらく素数というだけなのかを示します。
+   そのような素数が存在しない場合、
+   <exceptionname>ValueError</exceptionname> がスローされます。
+   この関数は、GNU MP 6.3.0 以降を使って PHP をビルドした場合のみ利用できます。
+   MPIR を使う公式の Windows ビルドでは利用できません。
+  </simpara>
+
+ </sect2>
+
+ <sect2 xml:id="migration86.new-features.intl">
+  <title>Intl</title>
+
+  <simpara>
+   static メソッド
+   <methodname>IntlDatePatternGenerator::getSkeleton</methodname> と
+   <methodname>IntlDatePatternGenerator::getBaseSkeleton</methodname> が追加されました。
+   これらは、日付/時刻のパターンから一意なスケルトンと基本スケルトンを生成します。
+  </simpara>
+
+  <simpara>
+   <methodname>Locale::getDisplayKeyword</methodname> と
+   <methodname>Locale::getDisplayKeywordValue</methodname> が追加されました。
+   エイリアスはそれぞれ
+   <function>locale_get_display_keyword</function> と
+   <function>locale_get_display_keyword_value</function> です。
+   <!-- RFC: https://wiki.php.net/rfc/getdisplaykeyword_and_getdisplaykeywordvalue -->
+  </simpara>
+
+  <para>
+   指定したスケルトンとロケールで、2 つの数値で表す範囲をフォーマットする
+   <classname>IntlNumberRangeFormatter</classname> クラスが追加されました。
+   このクラスは <acronym>ICU</acronym> 63 以降でサポートされます。
+   collapse の動作は、以下のいずれかです:
+   <simplelist>
+    <member><constant>IntlNumberRangeFormatter::COLLAPSE_AUTO</constant></member>
+    <member><constant>IntlNumberRangeFormatter::COLLAPSE_NONE</constant></member>
+    <member><constant>IntlNumberRangeFormatter::COLLAPSE_UNIT</constant></member>
+    <member><constant>IntlNumberRangeFormatter::COLLAPSE_ALL</constant></member>
+   </simplelist>
+   identity fallback は、以下のいずれかです:
+   <simplelist>
+    <member><constant>IntlNumberRangeFormatter::IDENTITY_FALLBACK_SINGLE_VALUE</constant></member>
+    <member><constant>IntlNumberRangeFormatter::IDENTITY_FALLBACK_APPROXIMATELY_OR_SINGLE_VALUE</constant></member>
+    <member><constant>IntlNumberRangeFormatter::IDENTITY_FALLBACK_APPROXIMATELY</constant></member>
+    <member><constant>IntlNumberRangeFormatter::IDENTITY_FALLBACK_RANGE</constant></member>
+   </simplelist>
+  </para>
+
+  <simpara>
+   2 つの文字列が、指定したテキストの方向で紛らわしいかどうかを調べる
+   <methodname>SpoofChecker::areBidiConfusable</methodname> と、
+   方向を表す定数 <constant>SpoofChecker::LTR</constant> と
+   <constant>SpoofChecker::RTL</constant> が追加されました。
+   これらは <acronym>ICU</acronym> 74 以降でサポートされます。
+  </simpara>
+
+  <simpara>
+   指定したテキストの方向に応じた、紛らわしさの判定に使うスケルトンを生成する
+   <methodname>SpoofChecker::getBidiSkeleton</methodname> が追加されました。
+   このメソッドは <acronym>ICU</acronym> 74 以降でサポートされます。
+  </simpara>
+
+  <simpara>
+   指定した文字列から、紛らわしさの判定に使うスケルトンを生成する
+   <methodname>SpoofChecker::getSkeleton</methodname> が追加されました。
+  </simpara>
+
+ </sect2>
+
+ <sect2 xml:id="migration86.new-features.io">
+  <title>IO</title>
+
+  <para>
+   ポーリング <acronym>API</acronym> が追加されました。
+   この API は、以下で構成されています:
+   <simplelist>
+    <member><classname>Io\Poll\Context</classname> クラスと <classname>Io\Poll\Watcher</classname> クラス</member>
+    <member><enumname>Io\Poll\Backend</enumname> 列挙型と <enumname>Io\Poll\Event</enumname> 列挙型</member>
+    <member><interfacename>Io\Poll\Handle</interfacename> インターフェイス</member>
+    <member>ストリームを監視する <classname>StreamPollHandle</classname> クラス</member>
+   </simplelist>
+   <!-- RFC: https://wiki.php.net/rfc/poll_api -->
+  </para>
+
+ </sect2>
+
+ <sect2 xml:id="migration86.new-features.json">
+  <title>JSON</title>
+
+  <simpara>
+   <function>json_last_error_msg</function> が返すエラーメッセージと
+   <exceptionname>JsonException</exceptionname> のメッセージに、
+   エラーの位置についての情報が追加されました。
+  </simpara>
+
+ </sect2>
+
+ <sect2 xml:id="migration86.new-features.openssl">
+  <title>OpenSSL</title>
+
+  <para>
+   ストリームで <acronym>TLS</acronym> のセッション再開がサポートされました。
+   以下の新しい <link linkend="context.ssl">SSL コンテキスト</link> オプションを使うと、
+   リクエストをまたいだクライアントセッションの保存と復元、
+   サーバー側の独自のセッションストレージの実装、
+   セッションキャッシュの動作の制御ができます:
+   <simplelist>
+    <member><literal>session_data</literal></member>
+    <member><literal>session_new_cb</literal></member>
+    <member><literal>session_cache</literal></member>
+    <member><literal>session_cache_size</literal></member>
+    <member><literal>session_timeout</literal></member>
+    <member><literal>session_id_context</literal></member>
+    <member><literal>session_get_cb</literal></member>
+    <member><literal>session_remove_cb</literal></member>
+    <member><literal>num_tickets</literal></member>
+   </simplelist>
+   <!-- RFC: https://wiki.php.net/rfc/tls_session_resumption_api -->
+  </para>
+
+  <simpara>
+   ストリームで <acronym>TLS</acronym> の外部 <acronym>PSK</acronym> がサポートされました。
+   新しい <link linkend="context.ssl">SSL コンテキスト</link> オプション
+   <literal>psk_client_cb</literal> と
+   <literal>psk_server_cb</literal> で、事前共有鍵を設定したり受け取ったりできます。
+  </simpara>
+
+  <simpara>
+   ストリームで <acronym>TLS</acronym> 1.3 の早期データ (0-RTT) がサポートされました。
+   クライアントは <literal>early_data</literal>
+   <link linkend="context.ssl">SSL コンテキスト</link> オプションで早期データを送信します。
+   サーバーは <literal>max_early_data</literal> を設定すると早期データを受け付け、
+   受け取ったデータは <literal>early_data_cb</literal> コールバックに渡されます。
+   結果は、<function>stream_get_meta_data</function> が返す配列の
+   <literal>"crypto"</literal> エントリにある
+   <literal>"early_data"</literal> キーで取得できます。
+   <literal>"accepted"</literal>、<literal>"rejected"</literal>、<literal>"not_sent"</literal>
+   のいずれかです。
+  </simpara>
+
+ </sect2>
+
+ <sect2 xml:id="migration86.new-features.pdo-pgsql">
+  <title>PDO_PGSQL</title>
+
+  <simpara>
+   ステートメントがチャンクごとにフェッチする行数を表す
+   <constant>Pdo\Pgsql::ATTR_CHUNK_SIZE</constant> が追加されました。
+   1 以上の値を指定すると、
+   <code>PDO::ATTR_PREFETCH => 0</code> の遅延フェッチモードになります。
+   <constant>PDO::ATTR_PREFETCH</constant> を設定すると、チャンクサイズはその設定で置き換えられます。
+   この属性も
+   <constant>PDO::ATTR_PREFETCH</constant> も指定せずに準備したステートメントでは、
+   接続に設定した値が使われます。
+   libpq 17 以降が必要です。
+  </simpara>
+
+ </sect2>
+
+ <sect2 xml:id="migration86.new-features.phar">
+  <title>Phar</title>
+
+  <simpara>
+   <methodname>SplFileInfo::getMTime</methodname> メソッドと
+   <methodname>SplFileInfo::getPathname</methodname> メソッドをオーバーライドすると、
+   <methodname>Phar::buildFromDirectory</methodname> と
+   <methodname>Phar::buildFromIterator</methodname> 系のメソッドの結果に
+   反映されるようになりました。
+   これにより、ファイルのタイムスタンプと名前を変更できます。
+  </simpara>
+
+ </sect2>
+
+ <sect2 xml:id="migration86.new-features.snmp">
+  <title>SNMP</title>
+
+  <simpara>
+   使用するライブラリがサポートしていれば、
+   <literal>AES192</literal>、
+   <literal>AES192C</literal>、<literal>AES256</literal>、
+   <literal>AES256C</literal> を SNMPv3 のセキュリティプロトコルとして
+   使えるようになりました。
+   <!-- RFC: https://wiki.php.net/rfc/snmp_improvements_2026#increase_the_number_of_snmpv3_security_protocols_supported -->
+  </simpara>
+
+  <simpara>
+   <acronym>MIB</acronym> ツリーを、新しい関数
+   <function>snmp_init_mib</function> でリセットできるようになりました。
+   <!-- RFC: https://wiki.php.net/rfc/snmp_improvements_2026#allow_the_snmp_mib_to_be_reset -->
+  </simpara>
+
+  <para>
+   <acronym>MIB</acronym> のパースと出力を制御する機能が、以下で使えるようになりました:
+   <simplelist>
+    <member><function>snmp_set_mib_option</function></member>
+    <member><function>snmp_set_output_option</function></member>
+    <member><function>snmp_set_string_output_format</function></member>
+    <member><property>SNMP::$numeric_index</property></member>
+    <member><property>SNMP::$numeric_timeticks</property></member>
+    <member><property>SNMP::$extended_index</property></member>
+    <member><property>SNMP::$dont_print_units</property></member>
+    <member><property>SNMP::$escape_quotes</property></member>
+    <member><property>SNMP::$print_hex_text</property></member>
+    <member><methodname>SNMP::setOidOutputFormat</methodname></member>
+    <member><methodname>SNMP::setStringOutputFormat</methodname></member>
+   </simplelist>
+   <!-- RFC: https://wiki.php.net/rfc/snmp_improvements_2026#implement_more_mib_parsing_and_value_output_controls -->
+  </para>
+
+ </sect2>
+
+ <sect2 xml:id="migration86.new-features.soap">
+  <title>SOAP</title>
+
+  <simpara>
+   <literal>"keep_headers"</literal> オプションが
+   <methodname>SoapClient::__construct</methodname> に追加されました。
+   これは、元のホストとは異なるホストから <acronym>WSDL</acronym> をインポートする際に、
+   <classname>SoapClient</classname> が保持する <acronym>HTTP</acronym> ヘッダを指定するものです。
+   その際、デフォルトでは <literal>Authorization</literal>、
+   <literal>Proxy-Authorization</literal>、<literal>Cookie</literal>
+   ヘッダが取り除かれます。
+   このオプションには、<code>['keep_headers' => ['authorization']]</code>
+   のように、保持するヘッダ名の配列を指定します。
+  </simpara>
+
+ </sect2>
+
+ <sect2 xml:id="migration86.new-features.streams">
+  <title>Streams</title>
+
+  <para>
+   ストリームエラー <acronym>API</acronym> が追加されました。
+   この API は、以下で構成されています:
+   <simplelist>
+    <member><exceptionname>StreamError</exceptionname> クラスと <exceptionname>StreamException</exceptionname> クラス</member>
+    <member><enumname>StreamErrorStore</enumname>、<enumname>StreamErrorMode</enumname>、<enumname>StreamErrorCode</enumname> 列挙型</member>
+    <member><function>stream_last_errors</function> 関数と <function>stream_clear_errors</function> 関数</member>
+   </simplelist>
+   この API の動作は、ストリームコンテキストオプション <literal>error_mode</literal>、
+   <literal>error_store</literal>、<literal>error_handler</literal>
+   で制御します。
+   <!-- RFC: https://wiki.php.net/rfc/stream_errors -->
+  </para>
+
+  <simpara>
+   <link linkend="wrappers.php">php://filter</link> URL 向けに、
+   ストリームコンテキストオプション <literal>filter.max_filter_count</literal> が追加されました。
+   このオプションを設定すると、
+   URL で指定したフィルタの数が設定値を超えた場合に警告が発生し、ストリームのオープンに失敗します。
+   負の値を指定すると、このチェックは無効になります。
+   <!-- RFC: https://wiki.php.net/rfc/limit-maximum-number-of-filter-chains -->
+  </simpara>
+
+  <simpara>
+   アドレスの再利用 (<literal>SO_REUSEADDR</literal>) を無効にできる、
+   <link linkend="context.socket">ソケットコンテキスト</link> オプション
+   <literal>so_reuseaddr</literal> が追加されました。無効にすると、Windows では
+   <literal>SO_EXCLUSIVEADDRUSE</literal> を明示的に使います。
+  </simpara>
+
+  <simpara>
+   ソケットのキープアライブを設定できる、
+   <link linkend="context.socket">ソケットコンテキスト</link> オプション
+   <literal>so_keepalive</literal>、<literal>tcp_keepidle</literal>、
+   <literal>tcp_keepintvl</literal>、<literal>tcp_keepcnt</literal>
+   が追加されました。
+  </simpara>
+
+  <simpara>
+   <link linkend="context.socket">ソケットコンテキスト</link> オプション
+   <literal>so_linger</literal> が追加されました。これは
+   <literal>SO_LINGER</literal> を
+   <acronym>TCP</acronym> ソケットに設定します。
+   正の値を指定すると、その秒数だけ linger が有効になり、
+   0 または負の値を指定すると無効になります。
+   プラットフォームによっては linger の時間が unsigned short に制限されるため、
+   65535 を超える値は 65535 として扱われます。
+  </simpara>
+
+  <simpara>
+   <link linkend="context.socket">ソケットコンテキスト</link> オプション
+   <literal>so_rcvbuf</literal> と <literal>so_sndbuf</literal> が追加されました。
+   これらは、<acronym>TCP</acronym> ソケットと
+   <acronym>UDP</acronym> ソケットの受信バッファと送信バッファのサイズ
+   (<literal>SO_RCVBUF</literal> と <literal>SO_SNDBUF</literal>)
+   をバイト単位で設定します。
+   値は 1 から 2147483647 までの整数でなければならず、
+   それ以外の値を指定するとストリームの作成に失敗します。
+   OS は、要求されたサイズを丸めたり、上限で抑えたり、その他の方法で調整したりすることがあり、バッファのサイズを自動で調整しなくなることもあります。
+   そのため、後から読み取ったサイズは、要求したサイズと異なる場合があります。
+  </simpara>
+
+  <simpara>
+   フィルタを適用したストリームを、
+   <function>stream_select</function> で使うためにファイルディスクリプタにキャストできるようになりました。
+  </simpara>
+
+  <para>
+   bz2、iconv、zlib、<link linkend="filters.convert">convert</link>
+   ストリームフィルタに、フィルタパラメータ <literal>"write_seek_mode"</literal> が追加されました。
+   このパラメータは、キーが <literal>"write_seek_mode"</literal>
+   で、値が以下の文字列のいずれかである連想配列で設定しなければなりません:
+   <simplelist>
+    <member><literal>"preserve"</literal></member>
+    <member><literal>"reset"</literal></member>
+    <member><literal>"strict"</literal></member>
+   </simplelist>
+  </para>
+
+ </sect2>
+
+ <sect2 xml:id="migration86.new-features.uri">
+  <title>URI</title>
+
+  <simpara>
+   <methodname>Uri\Rfc3986\Uri::getUriType</methodname> と
+   <methodname>Uri\WhatWg\Url::isSpecialScheme</methodname> が追加されました。
+   <!-- RFC: https://wiki.php.net/rfc/uri_followup#uri_type_detection -->
+  </simpara>
+
+  <simpara>
+   <methodname>Uri\Rfc3986\Uri::getHostType</methodname> と
+   <methodname>Uri\WhatWg\Url::getHostType</methodname> が追加されました。
+   <!-- RFC: https://wiki.php.net/rfc/uri_followup#host_type_detection -->
+  </simpara>
+
+  <simpara>
+   <classname>Uri\Rfc3986\UriBuilder</classname> クラスと
+   <classname>Uri\WhatWg\UrlBuilder</classname> クラスが追加されました。
+   <!-- RFC: https://wiki.php.net/rfc/uri_followup#uri_building -->
+  </simpara>
+
+  <simpara>
+   <function>Uri\WhatWg\url_percent_encode</function> が追加されました。
+   <!-- RFC: https://wiki.php.net/rfc/uri_followup#percent-encoding_support -->
+  </simpara>
+
+ </sect2>
+
+</sect1>
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"~/.phpdoc/manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
