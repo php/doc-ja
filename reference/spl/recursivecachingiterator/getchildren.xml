@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: d51166ca16fda8e766849505b84f9306ef443f71 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 311705fd828e1a14ea539394ec7230f3a78c8f39 Maintainer: takagi Status: ready -->
 <!-- CREDITS: shimooka -->
 <refentry xml:id="recursivecachingiterator.getchildren" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>RecursiveCachingIterator::getChildren</refname>
-  <refpurpose>内部イテレータの子を RecursiveCachingIterator として返す</refpurpose>
+  <refpurpose>現在の要素の子を RecursiveCachingIterator として返す</refpurpose>
  </refnamediv>
  <refsect1 role="description">
   &reftitle.description;
@@ -13,9 +13,12 @@
    <modifier>public</modifier> <type class="union"><type>RecursiveCachingIterator</type><type>null</type></type><methodname>RecursiveCachingIterator::getChildren</methodname>
    <void/>
   </methodsynopsis>
-
-   &warn.undocumented.func;
-
+  <simpara>
+   現在の要素の子を、同じフラグを持つ
+   <classname>RecursiveCachingIterator</classname> でラップして返します。
+   子はイテレータがその要素に移動したときに内部イテレータから取得されるため、
+   このメソッドは次に移動するまで同じオブジェクトを返します。
+  </simpara>
  </refsect1>
 
  <refsect1 role="parameters">
@@ -25,10 +28,59 @@
 
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
-  <para>
-   内部イテレータの子を RecursiveCachingIterator として返します。
-   子が存在しない場合、&null; を返します。
-  </para>
+  <simpara>
+   現在の要素の子を
+   <classname>RecursiveCachingIterator</classname> として返します。
+   現在の要素が子を持たない場合は &null; を返します。
+  </simpara>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <example>
+   <title>子を反復処理する</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+$iterator = new RecursiveCachingIterator(
+    new RecursiveArrayIterator(['a' => 1, 'b' => ['c' => 2, 'd' => 3], 'e' => 4]),
+    0
+);
+
+foreach ($iterator as $key => $value) {
+    if (!$iterator->hasChildren()) {
+        echo $key, ' = ', $value, "\n";
+        continue;
+    }
+
+    echo $key, ":\n";
+    $children = $iterator->getChildren();
+    foreach ($children as $childKey => $childValue) {
+        echo '  ', $childKey, ' = ', $childValue, $children->hasNext() ? '' : ' (last)', "\n";
+    }
+}
+?>
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+a = 1
+b:
+  c = 2
+  d = 3 (last)
+e = 4
+]]>
+   </screen>
+  </example>
+ </refsect1>
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <simplelist>
+   <member><methodname>RecursiveCachingIterator::hasChildren</methodname></member>
+   <member><methodname>RecursiveIterator::getChildren</methodname></member>
+  </simplelist>
  </refsect1>
 
 </refentry>
