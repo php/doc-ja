@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 5d8dfb31071496ffd2d51609ba098e6c9a3ce0d2 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: aa135ef2689157299c23fd4b8eb8c4f70733deaa Maintainer: takagi Status: ready -->
 <refentry xml:id="mysqli-stmt.insert-id" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>mysqli_stmt::$insert_id</refname>
   <refname>mysqli_stmt_insert_id</refname>
-  <refpurpose>直近の INSERT 操作で生成した ID を取得する</refpurpose>
+  <refpurpose>直近に実行したステートメントで生成された AUTO_INCREMENT カラムの値を返す</refpurpose>
  </refnamediv>
 
  <refsect1 role="description">
@@ -17,9 +17,117 @@
    <type class="union"><type>int</type><type>string</type></type><methodname>mysqli_stmt_insert_id</methodname>
    <methodparam><type>mysqli_stmt</type><parameter>statement</parameter></methodparam>
   </methodsynopsis>
+  <simpara>
+   <literal>AUTO_INCREMENT</literal>
+   属性を持つカラムがあるテーブル上での
+   <literal>INSERT</literal> 文や <literal>UPDATE</literal>
+   文が生成した ID を返します。
+   複数行の <literal>INSERT</literal> 文の場合、
+   自動生成されて挿入に成功した最初の値を返します。
+   <literal>LAST_INSERT_ID(expr)</literal> を
+   <literal>AUTO_INCREMENT</literal> の値の設定に使った場合や、
+   <literal>UPDATE</literal> 文で使った場合は、
+   <literal>expr</literal> の値を返します。
+  </simpara>
+  <simpara>
+   ステートメントが
+   <literal>AUTO_INCREMENT</literal> の値を変更しなかった場合、
+   <literal>0</literal> を返します。
+  </simpara>
+ </refsect1>
 
-  &warn.undocumented.func;
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <variablelist>
+   &mysqli.stmt.description;
+  </variablelist>
+ </refsect1>
 
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <simpara>
+   ステートメントが更新した <literal>AUTO_INCREMENT</literal>
+   フィールドの値を返します。ステートメントがまだ実行されていない場合や、
+   <literal>AUTO_INCREMENT</literal> の値を更新しなかった場合はゼロを返します。
+  </simpara>
+  <simpara>
+   この値はステートメントオブジェクトに固有のものです。
+   同じ接続でこのステートメントの後に実行された別のステートメントからも、
+   他の接続やクライアントが発行したステートメントからも影響を受けません。
+  </simpara>
+  <note>
+   <simpara>
+    数値が int の最大値をこえる場合、
+    文字列として返します。
+   </simpara>
+  </note>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <example>
+   <title><varname>mysqli_stmt::$insert_id</varname> の例</title>
+   <simpara>&style.oop;</simpara>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+$mysqli = new mysqli("localhost", "my_user", "my_password", "world");
+
+$mysqli->query("CREATE TEMPORARY TABLE myCity LIKE City");
+
+$stmt = $mysqli->prepare("INSERT INTO myCity (Name, CountryCode, District, Population) VALUES (?, ?, ?, ?)");
+
+$name = 'Stuttgart';
+$countryCode = 'DEU';
+$district = 'Stuttgart';
+$population = 617000;
+$stmt->bind_param('sssi', $name, $countryCode, $district, $population);
+$stmt->execute();
+
+printf("New record has ID %d.\n", $stmt->insert_id);
+]]>
+   </programlisting>
+   <simpara>&style.procedural;</simpara>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+$link = mysqli_connect("localhost", "my_user", "my_password", "world");
+
+mysqli_query($link, "CREATE TEMPORARY TABLE myCity LIKE City");
+
+$stmt = mysqli_prepare($link, "INSERT INTO myCity (Name, CountryCode, District, Population) VALUES (?, ?, ?, ?)");
+
+$name = 'Stuttgart';
+$countryCode = 'DEU';
+$district = 'Stuttgart';
+$population = 617000;
+mysqli_stmt_bind_param($stmt, 'sssi', $name, $countryCode, $district, $population);
+mysqli_stmt_execute($stmt);
+
+printf("New record has ID %d.\n", mysqli_stmt_insert_id($stmt));
+]]>
+   </programlisting>
+   &examples.outputs;
+   <screen>
+<![CDATA[
+New record has ID 1.
+]]>
+   </screen>
+  </example>
+ </refsect1>
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+
+  <simplelist>
+   <member><function>mysqli_insert_id</function></member>
+   <member><function>mysqli_stmt_affected_rows</function></member>
+   <member><function>mysqli_stmt_execute</function></member>
+  </simplelist>
  </refsect1>
 
 </refentry>
