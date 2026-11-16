@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
 <!-- splitted from ./ja/functions/pcre.xml, last change in rev 1.1 -->
-<!-- EN-Revision: c414a81646ee424d1814725f54ec86b9a8f6b434 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 75ed9b0163e3e0563e82fdb98ef1cc9008c794a9 Maintainer: takagi Status: ready -->
 <!-- Credits: haruki,hirokawa,mumumu -->
 <chapter xml:id="reference.pcre.pattern.syntax" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>パターン構文</title>
@@ -322,7 +322,15 @@
     <varlistentry>
      <term><emphasis>\R</emphasis></term>
      <listitem>
-      <simpara>改行: \n、\r、\r\n にマッチする</simpara>
+      <simpara>
+       改行。デフォルトでは、<literal>\R</literal> はどの Unicode
+       改行シーケンスにもマッチします。UTF-8 モード以外の 8 ビットモードでは、
+       <literal>(?&gt;\r\n|\n|\x0b|\f|\r|\x85)</literal> と等価です。
+       UTF-8 モードでは、さらに U+2028 と U+2029 の 2 文字が加わります。
+       パターンに特殊シーケンス <literal>(*BSR_ANYCRLF)</literal> が含まれている場合、
+       <literal>\R</literal> は <literal>\r\n</literal>、
+       <literal>\r</literal>、<literal>\n</literal> だけにマッチします。
+      </simpara>
      </listitem>
     </varlistentry>
        <varlistentry>
@@ -336,6 +344,26 @@
         <listitem>
          <simpara>
           16 進コードで hh の文字
+         </simpara>
+        </listitem>
+       </varlistentry>
+       <varlistentry>
+        <term><emphasis>\x{hhhh}</emphasis></term>
+        <listitem>
+         <simpara>
+          <emphasis>UTF-8 モード</emphasis> では、指定した 16 進数を
+          コードポイントとする Unicode 文字
+         </simpara>
+        </listitem>
+       </varlistentry>
+       <varlistentry>
+        <term><emphasis>\N{U+hhhh}</emphasis></term>
+        <listitem>
+         <simpara>
+          <emphasis>UTF-8 モード</emphasis> では、指定した 16 進数を
+          コードポイントとする Unicode 文字で、<literal>\x{hhhh}</literal>
+          と等価。<literal>\x{hhhh}</literal> と異なり、UTF-8 モード以外では
+          この構文は認識されない
          </simpara>
         </listitem>
        </varlistentry>
@@ -662,6 +690,25 @@
       引数に指定されたマッチングの開始位置である場合に真になります。
       <parameter>offset</parameter> が非ゼロの場合は、<literal>\A</literal>
       と等価ではありません。
+     </para>
+     <simpara>
+      バックスラッシュは、次のシーケンスにも使われます。
+     </simpara>
+     <para>
+      <variablelist>
+       <varlistentry>
+        <term><emphasis>\Q</emphasis></term>
+        <listitem><simpara>クォート範囲の開始。<literal>\E</literal> までのメタ文字はリテラルとして扱われる</simpara></listitem>
+       </varlistentry>
+       <varlistentry>
+        <term><emphasis>\E</emphasis></term>
+        <listitem><simpara><literal>\Q</literal> で始めたクォート範囲の終了</simpara></listitem>
+       </varlistentry>
+       <varlistentry>
+        <term><emphasis>\K</emphasis></term>
+        <listitem><simpara>報告されるマッチの開始位置をリセットする</simpara></listitem>
+       </varlistentry>
+      </variablelist>
      </para>
      
      <para>
@@ -1130,13 +1177,18 @@
    として取り扱います。記号プロパティ付きの文字とは、アクセント記号などの
    直前の文字に対して影響するようなもののことです。
   </simpara>
-     <para>
+     <simpara>
       Unicode プロパティを使った文字列マッチングは速くありません。PCRE は
       15,000 以上のデータからなるデータ構造を検索する必要が有るためです。
-      そのため、PCRE では、<literal>\d</literal> や <literal>\w</literal> といった
-      以前から有るエスケープシーケンスは Unicode プロパティを使用しないように
-      なっています。
-     </para>
+      PHP 5.4.0 以降、<link linkend="reference.pcre.pattern.modifiers">PCRE_UTF8</link>
+      (<literal>u</literal>) 修飾子を指定すると、包括的な文字型を表すエスケープシーケンス
+      <literal>\d</literal>、<literal>\s</literal>、<literal>\w</literal>
+      (およびそれぞれの大文字版) は Unicode プロパティを使用します。
+      そのため、たとえば <literal>\d</literal> は ASCII 以外の 10 進数字にもマッチします。
+      PHP 5.4.0 より前のバージョンでは、効率上の理由から、パターンに
+      <literal>(*UCP)</literal> を明示的に追加しない限り、これらのエスケープシーケンスは
+      Unicode プロパティを使用しませんでした。
+     </simpara>
     </section>
 
  <section xml:id="regexp.reference.anchors">
@@ -1936,15 +1988,15 @@
 
     <section xml:id="regexp.reference.assertions">
      <title>言明</title>
-     <para>
+     <simpara>
      言明 (assertion) とは、カレントのマッチング位置の直前・直後の文字に対する
      テストであり、文字を消費 (consume)〔つまり文字自体にマッチ〕しません。
      単純な言明コード \b, \B, \A, \Z, \z, ^ および $ については、
      <link linkend="regexp.reference.escape">エスケープシーケンス</link> で説明しました。より複雑な言明は、サブパターンを用いて記述します
      〔言明サブパターン (assertion subpattern) と呼ばれる〕。
      言明サブパターンには、2 種類あります。対象文字列において
-     カレントの位置の<emphasis>先を読む</emphasis>ものと、<emphasis>後ろを読む</emphasis>ものです。
-    </para>
+     現在の位置より先を調べる<emphasis>先読み</emphasis>言明と、手前を調べる<emphasis>戻り読み</emphasis>言明です。
+    </simpara>
     <para>
      言明サブパターンは、カレントのマッチング位置を変更しないことを除き、
      通常と同じようにマッチングが行われます。<emphasis>先読み</emphasis>言明 (lookahead assertion) は、
