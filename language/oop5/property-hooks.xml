@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: dff848b17dafaabfb7662ffb5fecfcb04e3b771d Maintainer: KentarouTakeda Status: ready -->
+<!-- EN-Revision: 3a0bf5e678f1023de7cd2148f2c5a70ffdff4a59 Maintainer: KentarouTakeda Status: ready -->
 <sect1 xml:id="language.oop5.property-hooks" xmlns="http://docbook.org/ns/docbook">
  <title>プロパティフック</title>
 
@@ -410,6 +410,150 @@ class Person {
    配列全体を上書きする場合は問題ありません。他のプロパティと同様に扱われます。
    配列の個々の要素を操作する場合のみ注意が必要です。
   </simpara>
+ </sect2>
+ <sect2 xml:id="language.oop5.property-hooks.isset-unset">
+  <title><function>isset</function>、<function>empty</function>、<function>unset</function></title>
+  <simpara>
+   <literal>get</literal> フックを持つプロパティに <function>isset</function> や
+   <function>empty</function> を使うと、フックが呼び出され、
+   プロパティの実体の値ではなく、その戻り値が調べられます。
+   <function>isset</function> はその値が &null; でなければ &true; を返し、
+   <function>empty</function> はその値が &false; に等しければ &true; を返します。
+   これは意図した動作です。<literal>get</literal> フックは読み取り時に
+   値を計算したり初期化したりすることがあるため、
+   プロパティのフック以外のコードから実体の値を直接参照することはできません。
+  </simpara>
+  <simpara>
+   そのため、初期化されていない実体の値を <literal>get</literal> フックが読み取ると、
+   そのプロパティに対する <function>isset</function> や
+   <function>empty</function> は、プロパティを読み取ったときと同じく <exceptionname>Error</exceptionname> をスローします。
+   <link linkend="language.operators.comparison.coalesce">Null 合体演算子</link> も同様です。
+  </simpara>
+  <example>
+   <title><literal>get</literal> フックを持つプロパティに対する <function>isset</function></title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+class Article
+{
+    public ?string $title = null {
+        get => $this->title ?? 'Untitled';
+    }
+
+    public string $author {
+        get => ucfirst($this->author);
+        set => $this->author = $value;
+    }
+}
+
+$article = new Article();
+
+// 実体の値は null だが、get フックは 'Untitled' を返す
+var_dump(isset($article->title));
+
+// 初期化されていない実体の値を get フックが読み取る
+try {
+    var_dump(isset($article->author));
+} catch (Error $e) {
+    echo $e->getMessage(), "\n";
+}
+?>
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+bool(true)
+Typed property Article::$author must not be accessed before initialization
+]]>
+   </screen>
+  </example>
+  <simpara>
+   <literal>get</literal> フックを持たないバックドプロパティでは、
+   <function>isset</function> と <function>empty</function> は、フックのないプロパティと同じく
+   実体の値を直接調べます。
+   <literal>get</literal> フックを持たない仮想プロパティは読み取れないため、
+   <exceptionname>Error</exceptionname> がスローされます。
+  </simpara>
+  <simpara>
+   プロパティのフックの中では、<code>$this->propName</code> はそのプロパティの
+   実体の値を指すため、<code>isset($this->propName)</code> はそれを直接調べます。
+   <literal>get</literal> フックの中でこれを使えば、実体の値が初期化されていない場合に対処できます。
+   多くの場合、&null; などのデフォルト値をプロパティに指定するほうが簡単です。
+  </simpara>
+  <example>
+   <title>初期化されていない実体の値への対処</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+class Article
+{
+    // 実体の値を初期化しておけば、エラーにならない
+    public ?string $subtitle = null {
+        get => $this->subtitle !== null ? ucfirst($this->subtitle) : null;
+    }
+
+    // get フックで自身の実体の値を調べる
+    public string $author {
+        get => isset($this->author) ? ucfirst($this->author) : 'Anonymous';
+        set => $this->author = $value;
+    }
+}
+
+$article = new Article();
+
+var_dump(isset($article->subtitle));
+var_dump(isset($article->author));
+var_dump($article->author);
+?>
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+bool(false)
+bool(true)
+string(9) "Anonymous"
+]]>
+   </screen>
+  </example>
+  <simpara>
+   フックを持つプロパティは unset できません。
+   <function>unset</function> を使うと、バックドプロパティか仮想プロパティかにかかわらず
+   <exceptionname>Error</exceptionname> がスローされます。
+   クラスの内部やフックから <function>unset</function> を呼び出した場合も同じです。
+  </simpara>
+  <example>
+   <title>フックを持つプロパティに対する <function>unset</function></title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+class Rectangle
+{
+    public int $area {
+        get => $this->h * $this->w;
+    }
+
+    public function __construct(public int $h, public int $w) {}
+}
+
+$r = new Rectangle(4, 5);
+
+try {
+    unset($r->area);
+} catch (Error $e) {
+    echo $e->getMessage(), "\n";
+}
+?>
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+Cannot unset hooked property Rectangle::$area
+]]>
+   </screen>
+  </example>
  </sect2>
  <sect2>
   <title>継承</title>
