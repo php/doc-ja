@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 594c8c0a0188faae493b7070b3c1e331678e1655 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: cb48df95d708f20d723ea1d444ddfa17f2e04ceb Maintainer: takagi Status: ready -->
 <!-- CREDITS: hirokawa,mumumu,jdkfx -->
  <chapter xml:id="language.functions" xmlns="http://docbook.org/ns/docbook" annotations="interactive">
   <title>関数</title>
@@ -1748,6 +1748,30 @@ $privateMethod();  // Foo1::privateMethod
     </programlisting>
    </informalexample>
 
+   <para>
+    PHP 8.6.0 以降では、引数の一部だけを渡し、残りは <code>?</code> プレースホルダにして
+    <classname>Closure</classname> を生成できます。
+    詳しくは <link linkend="functions.partial-application">関数の部分適用</link> を参照ください。
+    <example>
+     <title>部分適用の簡単な例</title>
+     <programlisting role="php" annotations="non-interactive">
+<![CDATA[
+<?php
+class Foo {
+    public function method($first, $second) {}
+    public static function staticmethod($first, $second) {}
+}
+
+$obj = new Foo();
+
+$partial1 = $obj->method(1, ?);          // $second を受け取ります
+$partial2 = $obj->method(?, 2);          // $first を受け取ります
+$partial3 = Foo::staticmethod(1, ...);   // 残りの引数をすべて受け取ります
+]]>
+     </programlisting>
+    </example>
+   </para>
+
    <note>
     <para>
      この記法を使ってオブジェクトを生成する操作
@@ -1795,6 +1819,294 @@ $obj?->prop->method(...);
       </tbody>
      </tgroup>
     </informaltable>
+   </sect2>
+  </sect1>
+
+  <sect1 xml:id="functions.partial-application">
+   <title>関数の部分適用</title>
+
+   <simpara>
+    部分適用は、PHP 8.6.0 以降で使えます。
+    関数やメソッドの呼び出しで引数の一部だけを渡し、残りはプレースホルダにすると、
+    関数は呼び出されず、プレースホルダにした引数を受け取る
+    <classname>Closure</classname> が生成されます。
+    <link linkend="functions.first_class_callable_syntax">第一級callableを生成する記法</link>
+    は、引数を 1 つも渡さない部分適用にあたります。
+    部分適用はこの記法を拡張したもので、呼び出し可能な式であれば何にでも使えます。
+    その式で呼び出される関数やメソッドは、<classname>Closure</classname> の生成時に決まります。
+   </simpara>
+
+   <itemizedlist>
+    <listitem>
+     <simpara>
+      <code>?</code> はちょうど 1 つの引数を表します。
+      このプレースホルダに対応する <classname>Closure</classname> の引数は、
+      元の関数の引数が省略可能であっても常に必須です。
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      <code>...</code> は、残りの引数をすべて表します。
+      これらの引数のデフォルト値は保たれ、可変長引数もそのままです。
+      このプレースホルダは、引数の最後に 1 回しか書けません。
+     </simpara>
+    </listitem>
+   </itemizedlist>
+
+   <example>
+    <title>部分適用</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+function volume(int $length, int $width, int $height): int
+{
+    return $length * $width * $height;
+}
+
+// "?" はちょうど 1 つの引数を表します
+$closure = volume(2, ?, 4);
+// static fn(int $width): int => volume(2, $width, 4) と同等です
+var_dump($closure(3));
+
+$closure = volume(?, 3, ?);
+// static fn(int $length, int $height): int => volume($length, 3, $height) と同等です
+var_dump($closure(2, 4));
+
+// "..." は残りの引数をすべて表します
+$closure = volume(2, ...);
+// static fn(int $width, int $height): int => volume(2, $width, $height) と同等です
+var_dump($closure(3, 4));
+
+// 引数をすべて渡した場合、"..." は呼び出しを遅らせるだけです
+$closure = volume(2, 3, 4, ...);
+// static fn(): int => volume(2, 3, 4) と同等です
+var_dump($closure());
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+int(24)
+int(24)
+int(24)
+int(24)
+]]>
+    </screen>
+   </example>
+
+   <simpara>
+    <link linkend="language.operators.functional">パイプ演算子</link>
+    に渡す、引数を 1 つだけ受け取る callable は、部分適用で手軽に作れます。
+   </simpara>
+
+   <example>
+    <title><literal>|&gt;</literal> と部分適用を組み合わせる</title>
+    <programlisting role="php">
+<![CDATA[
+<?php
+echo ' Hello  World '
+    |> trim(...)
+    |> str_replace(' ', '', ?)
+    |> strtoupper(...)
+    |> str_pad(?, 12, '*', STR_PAD_BOTH);
+?>
+]]>
+    </programlisting>
+    &example.outputs;
+    <screen>
+<![CDATA[
+*HELLOWORLD*
+]]>
+    </screen>
+   </example>
+
+   <simpara>
+    <classname>Closure</classname> の引数の名前、型宣言、リファレンス渡しかどうかは、
+    元の関数のものを引き継ぎます。戻り値の型も同様です。
+    部分適用は、渡す引数自体が定数式であれば、定数式の中でも使えます。
+   </simpara>
+
+   <sect2 xml:id="functions.partial-application.named">
+    <title>名前付きプレースホルダ</title>
+
+    <simpara>
+     引数は <link linkend="functions.named-arguments">名前付き引数</link>
+     で渡すこともでき、プレースホルダにも <code>name: ?</code> のように名前を付けられます。
+     通常の呼び出しと同じく、これらは位置を指定した引数の後に書かなければなりません。
+     <classname>Closure</classname> の引数は名前付きプレースホルダを書いた順に並ぶので、
+     引数の順番を入れ替えられます。
+    </simpara>
+
+    <example>
+     <title>名前付きプレースホルダ</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+// クロージャの引数は $subject、$search の順になります
+$remove = str_replace(subject: ?, search: ?, replace: '');
+
+var_dump($remove('a-b-c', '-'));
+?>
+]]>
+     </programlisting>
+     &example.outputs;
+     <screen>
+<![CDATA[
+string(3) "abc"
+]]>
+     </screen>
+    </example>
+   </sect2>
+
+   <sect2 xml:id="functions.partial-application.evaluation">
+    <title>引数の評価</title>
+
+    <simpara>
+     部分適用で渡した引数は、<classname>Closure</classname> の生成時に 1 回だけ評価され、
+     呼び出すたびに評価し直されることはありません。
+     同じ呼び出しを <link linkend="functions.arrow">アロー関数</link>
+     で包んだ場合とは、この点が異なります。アロー関数では、呼び出すたびに本体が評価されます。
+    </simpara>
+
+    <example>
+     <title>引数は <classname>Closure</classname> の生成時に評価される</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+function now(): string
+{
+    echo "now() called\n";
+    return '12:00';
+}
+
+function greet(string $name, string $time): string
+{
+    return "Hello $name, it is $time\n";
+}
+
+$arrow = fn(string $name) => greet($name, now());
+echo "Arrow function created\n";
+echo $arrow('Alice');
+
+$partial = greet(?, now());
+echo "Partial application created\n";
+echo $partial('Bob');
+?>
+]]>
+     </programlisting>
+     &example.outputs;
+     <screen>
+<![CDATA[
+Arrow function created
+now() called
+Hello Alice, it is 12:00
+now() called
+Partial application created
+Hello Bob, it is 12:00
+]]>
+     </screen>
+    </example>
+   </sect2>
+
+   <sect2 xml:id="functions.partial-application.extra-arguments">
+    <title>余分な引数</title>
+
+    <simpara>
+     <code>...</code> プレースホルダを使わない場合、
+     <classname>Closure</classname> を呼び出すときに、その引数の数を超えて渡した引数は無視されます。
+     使った場合は、元の関数に渡されます。
+     この違いが重要になるのは、<classname>Closure</classname> をコールバックとして受け取る関数が、
+     配列のキーなどを余分な引数としてコールバックに渡す場合です。
+     <code>...</code> を使うと、それらの値は元の関数の省略可能な引数に渡されます。
+    </simpara>
+
+    <example>
+     <title>余分な引数は <code>...</code> を使った場合のみ元の関数に渡される</title>
+     <programlisting role="php">
+<![CDATA[
+<?php
+function greet(string $name, string $greeting = 'Hello'): string
+{
+    return "$greeting $name\n";
+}
+
+// 2 番目の引数は無視されます
+$closure = greet(?);
+echo $closure('Alice', 'Goodbye');
+
+// 2 番目の引数は greet() に渡されます
+$closure = greet(?, ...);
+echo $closure('Alice', 'Goodbye');
+?>
+]]>
+     </programlisting>
+     &example.outputs;
+     <screen>
+<![CDATA[
+Hello Alice
+Goodbye Alice
+]]>
+     </screen>
+    </example>
+   </sect2>
+
+   <sect2 xml:id="functions.partial-application.errors">
+    <title>制限</title>
+
+    <itemizedlist>
+     <listitem>
+      <simpara>
+       <code>new Foo()</code> は呼び出しとは見なされないため、
+       部分適用によるオブジェクトの生成 (例: <code>new Foo(1, ?)</code>) はサポートされていません。
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       プレースホルダは、
+       <link linkend="language.oop5.basic.nullsafe">nullsafe 演算子</link>
+       と組み合わせて使えません。
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       プレースホルダは、
+       <link linkend="functions.variable-arg-list">引数の展開</link>
+       と組み合わせて使えません。
+      </simpara>
+     </listitem>
+     <listitem>
+      <simpara>
+       <function>compact</function>、<function>extract</function>、
+       <function>func_get_args</function>、<function>get_defined_vars</function>
+       など、呼び出し元のスコープを調べる関数は部分適用できません。
+       <exceptionname>Error</exceptionname> がスローされます。
+      </simpara>
+     </listitem>
+    </itemizedlist>
+
+    <example>
+     <title>コンパイルエラーになる不正な使い方</title>
+     <programlisting role="php" annotations="non-interactive">
+<![CDATA[
+<?php
+new Foo(1, ?);             // Cannot create Closure for new expression
+
+$obj?->method(1, ?);       // Cannot combine nullsafe operator with Closure creation
+
+foo(?, ...$array);         // Cannot combine partial application and unpacking
+
+foo(..., ?);               // Variadic placeholder must be last
+foo(a: 1, ?);              // Cannot use positional argument after named argument
+]]>
+     </programlisting>
+    </example>
+
+    <simpara>
+     渡した引数とプレースホルダの合計が、関数が受け取る引数の数と合わない場合、
+     <classname>Closure</classname> の生成時に
+     <exceptionname>ArgumentCountError</exceptionname> がスローされます。
+    </simpara>
    </sect2>
   </sect1>
 
