@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: c938838be5a7f6d2a0b0710476afb9fb2ccb6e52 Maintainer: mumumu Status: ready -->
+<!-- EN-Revision: d5e14b9107cacb7d7257ebcf4beec48e0ea741bc Maintainer: mumumu Status: ready -->
 <refentry xml:id="function.filter-var" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>filter_var</refname>
@@ -92,6 +92,17 @@
    あるいは処理に失敗した場合は &false; を返します。
    フラグ <constant>FILTER_NULL_ON_FAILURE</constant>
    を指定した場合は、&null; を返します。
+  </simpara>
+ </refsect1>
+
+ <refsect1 role="errors">
+  &reftitle.errors;
+  <simpara>
+   PHP 8.5.0 以降、<constant>FILTER_THROW_ON_FAILURE</constant> フラグを使うと、
+   フィルタが失敗した場合は
+   <exceptionname>Filter\FilterFailedException</exceptionname> を、
+   このフラグを <constant>FILTER_NULL_ON_FAILURE</constant> と一緒に使った場合は
+   <exceptionname>ValueError</exceptionname> をスローします。
   </simpara>
  </refsect1>
 
@@ -193,6 +204,68 @@ var_dump(filter_var($str, FILTER_VALIDATE_BOOLEAN, ['flags' => FILTER_NULL_ON_FA
 <![CDATA[
 NULL
 NULL
+]]>
+   </screen>
+  </example>
+
+  <example>
+   <title>検証結果を正しく確認する例</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+$value = '0';
+
+// 間違い: 0 は有効な整数だが、false とみなされる
+if (!filter_var($value, FILTER_VALIDATE_INT)) {
+    echo "Wrong check: '$value' rejected\n";
+}
+
+// 正しい: false と厳密に比較する
+if (filter_var($value, FILTER_VALIDATE_INT) === false) {
+    echo "'$value' is not a valid integer\n";
+} else {
+    echo "'$value' is a valid integer\n";
+}
+
+?>
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+Wrong check: '0' rejected
+'0' is a valid integer
+]]>
+   </screen>
+  </example>
+
+  <example>
+   <title>boolean の検証結果を確認する例</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+
+foreach (['yes', 'no', 'maybe'] as $value) {
+    $result = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+
+    // ここでは false も有効な結果なので、null かどうかで判定する
+    if ($result === null) {
+        echo "'$value' is not a valid boolean\n";
+    } else {
+        echo "'$value' is ", var_export($result, true), "\n";
+    }
+}
+
+?>
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+'yes' is true
+'no' is false
+'maybe' is not a valid boolean
 ]]>
    </screen>
   </example>
