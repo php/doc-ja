@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 9960a09a5705102bf4dd0ce63e03d9ec716d0015 Maintainer: mumumu Status: ready -->
+<!-- EN-Revision: 9dced3f1c003674afe3342b51e8ca23fde0dddb0 Maintainer: mumumu Status: ready -->
 <refentry xml:id="function.imagebmp" xmlns="http://docbook.org/ns/docbook">
  <refnamediv>
   <refname>imagebmp</refname>
@@ -18,6 +18,34 @@
   <para>
    与えられた <parameter>image</parameter> のビットマップ版を保存するか出力します。
   </para>
+  <para>
+   ビット深度は指定できず、<parameter>image</parameter>
+   に応じて次のように決まります:
+   <itemizedlist>
+    <listitem>
+     <simpara>
+      truecolor 画像は、完全に不透明でないピクセルが 1 つでもあれば、
+      アルファチャネルを含めて 1 ピクセルあたり 32 ビット、
+      そうでなければ 24 ビットで保存されます。
+     </simpara>
+    </listitem>
+    <listitem>
+     <simpara>
+      パレット画像は、パレットの色数が 2 色以下なら 1 ピクセルあたり 1 ビット、
+      16 色以下なら 4 ビット、それ以外は 8 ビットで保存されます。
+      パレットの色数は、<function>imagecolorstotal</function> が返す値です。
+     </simpara>
+    </listitem>
+   </itemizedlist>
+  </para>
+  <note>
+   <simpara>
+    上記は、PHP 8.6.0 以降にバンドルされている GD ライブラリでの動作です。
+    それより古いバージョンの GD ライブラリは、PHP 8.6.0 より前にバンドルされていたものも含め、
+    truecolor 画像をアルファチャネルなしの 1 ピクセルあたり 24 ビットで、
+    パレット画像を 8 ビットで保存します。
+   </simpara>
+  </note>
  </refsect1>
 
  <refsect1 role="parameters">
@@ -43,6 +71,10 @@
       <para>
        ビットマップをランレングス法(RLE)を使って圧縮するかどうか。
       </para>
+      <simpara>
+       圧縮できるのは、1 ピクセルあたり 4 ビットか 8 ビットで保存される場合だけです。
+       それ以外のビット深度では、この引数は無視されます。
+      </simpara>
      </listitem>
     </varlistentry>
    </variablelist>
@@ -68,6 +100,16 @@
      </row>
     </thead>
     <tbody>
+     <row>
+      <entry>8.6.0</entry>
+      <entry>
+       バンドルされている GD ライブラリは、完全に不透明でない truecolor 画像を
+       1 ピクセルあたり 32 ビットで、パレット画像を色数に応じて
+       1、4、8 ビットで保存するようになりました。
+       これより前のバージョンでは、truecolor 画像は常に 24 ビットで、
+       パレット画像は 8 ビットで保存されていました。
+      </entry>
+     </row>
      &gd.changelog.image-param;
      <row>
       <entry>8.0.0</entry>
@@ -105,6 +147,27 @@ imagebmp($im, 'php.bmp');
     </programlisting>
    </example>
   </para>
+  <example>
+   <title>1 ビットの BMP を保存する</title>
+   <simpara>
+    PHP 8.6.0 以降にバンドルされている GD ライブラリでは、2 色のパレットに変換した画像が
+    1 ピクセルあたり 1 ビットで保存されます。サーマルプリンタなどのデバイスが求める形式です。
+   </simpara>
+   <programlisting role="php">
+<![CDATA[
+<?php
+$im = imagecreatetruecolor(120, 40);
+imagefill($im, 0, 0, imagecolorallocate($im, 255, 255, 255));
+imagestring($im, 5, 10, 12, 'Total: 9.99', imagecolorallocate($im, 0, 0, 0));
+
+// ディザリングを使い、画像を 2 色に減らします
+imagetruecolortopalette($im, true, 2);
+
+imagebmp($im, 'receipt.bmp');
+?>
+]]>
+   </programlisting>
+  </example>
  </refsect1>
 </refentry>
 <!-- Keep this comment at the end of the file
