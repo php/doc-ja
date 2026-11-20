@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- $Revision$ -->
+<!-- EN-Revision: 0fed0090046dc4a062211dd285a3bc89e07696c2 Maintainer: KentarouTakeda Status: ready -->
+<refentry xml:id="reflectionproperty.isreadable" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <refnamediv>
+  <refname>ReflectionProperty::isReadable</refname>
+  <refpurpose>指定したスコープからプロパティを読み取れるかどうかを調べる</refpurpose>
+ </refnamediv>
+
+ <refsect1 role="description">
+  &reftitle.description;
+  <methodsynopsis role="ReflectionProperty">
+   <modifier>public</modifier> <type>bool</type><methodname>ReflectionProperty::isReadable</methodname>
+   <methodparam><type class="union"><type>string</type><type>null</type></type><parameter>scope</parameter></methodparam>
+   <methodparam choice="opt"><type class="union"><type>object</type><type>null</type></type><parameter>object</parameter><initializer>&null;</initializer></methodparam>
+  </methodsynopsis>
+  <simpara>
+   指定した <parameter>scope</parameter> からプロパティを読み取れるかどうかを調べます。
+   プロパティのアクセス権、
+   <link linkend="language.oop5.property-hooks">フック</link>、
+   マジックメソッド <link linkend="object.get">__get()</link> と
+   <link linkend="object.isset">__isset()</link> を考慮します。
+   <parameter>object</parameter> を渡した場合、
+   オブジェクトにおけるプロパティの状態も考慮します。
+  </simpara>
+  <note>
+   <simpara>
+    戻り値が &true; であっても、プロパティの読み取りが成功するとは限りません。
+    たとえば、<literal>get</literal> フックや
+    <link linkend="object.get">__get()</link> が例外をスローすることがあります。
+   </simpara>
+  </note>
+ </refsect1>
+
+ <refsect1 role="parameters">
+  &reftitle.parameters;
+  <variablelist>
+   <varlistentry>
+    <term><parameter>scope</parameter></term>
+    <listitem>
+     <simpara>
+      プロパティを読み取る側のクラスの名前。
+      グローバルスコープ（クラスの外にあるコード）の場合は &null; を指定します。
+      クラスの中から呼び出す場合、呼び出し元のスコープで調べるには
+      <literal>static::class</literal> を渡します。
+     </simpara>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term><parameter>object</parameter></term>
+    <listitem>
+     <simpara>
+      プロパティを読み取る対象のオブジェクト。
+      &null; の場合、プロパティの宣言だけを考慮します。
+      static プロパティでは &null; でなければなりません。
+     </simpara>
+    </listitem>
+   </varlistentry>
+  </variablelist>
+ </refsect1>
+
+ <refsect1 role="returnvalues">
+  &reftitle.returnvalues;
+  <simpara>
+   プロパティが <parameter>scope</parameter> からアクセスできないか、
+   <literal>get</literal> フックのない<link linkend="language.oop5.property-hooks.virtual">仮想プロパティ</link>であるか、
+   初期化されていない場合は &false; を返します。
+   それ以外の場合は &true; を返します。
+  </simpara>
+  <simpara>
+   ただし、クラスが <link linkend="object.get">__get()</link> を定義していれば、
+   static でないプロパティが <parameter>scope</parameter> からアクセスできないか
+   <parameter>object</parameter> に存在しない場合に &true; を返します。
+   <parameter>object</parameter> を渡し、クラスが
+   <link linkend="object.isset">__isset()</link> も定義している場合、
+   代わりに <link linkend="object.isset">__isset()</link> を呼び出した結果を返します。
+  </simpara>
+ </refsect1>
+
+ <refsect1 role="errors">
+  &reftitle.errors;
+  <simpara>
+   static プロパティに対して <parameter>object</parameter> を渡した場合や、
+   <parameter>object</parameter> がプロパティを宣言したクラスのインスタンスでない場合、
+   <exceptionname>ReflectionException</exceptionname> をスローします。
+  </simpara>
+  <simpara>
+   <parameter>scope</parameter> に存在しないクラスの名前を渡した場合、
+   <exceptionname>Error</exceptionname> をスローします。
+  </simpara>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <example xml:id="reflectionproperty.isreadable.example.basic">
+   <title><methodname>ReflectionProperty::isReadable</methodname> の例</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+class User
+{
+    public string $name;
+    private string $password = 'secret';
+}
+
+$user = new User();
+
+$nameProperty = new ReflectionProperty(User::class, 'name');
+
+// オブジェクトを渡さない場合、プロパティの宣言だけを考慮します
+var_dump($nameProperty->isReadable(null));
+
+// プロパティはまだ初期化されていません
+var_dump($nameProperty->isReadable(null, $user));
+
+$user->name = 'Alice';
+var_dump($nameProperty->isReadable(null, $user));
+
+$passwordProperty = new ReflectionProperty(User::class, 'password');
+
+// private プロパティはクラスの内部からしか読み取れません
+var_dump($passwordProperty->isReadable(null));
+var_dump($passwordProperty->isReadable(User::class));
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+bool(true)
+bool(false)
+bool(true)
+bool(false)
+bool(true)
+]]>
+   </screen>
+  </example>
+ </refsect1>
+
+ <refsect1 role="notes">
+  &reftitle.notes;
+  <note>
+   <simpara>
+    <parameter>object</parameter> が未初期化の
+    <link linkend="language.oop5.lazy-objects">レイジーオブジェクト</link>の場合、
+    このメソッドを呼び出すとオブジェクトの初期化がトリガーされることがあります。
+   </simpara>
+  </note>
+ </refsect1>
+
+ <refsect1 role="seealso">
+  &reftitle.seealso;
+  <simplelist>
+   <member><methodname>ReflectionProperty::isWritable</methodname></member>
+   <member><methodname>ReflectionProperty::isInitialized</methodname></member>
+   <member><methodname>ReflectionProperty::hasHook</methodname></member>
+   <member><link linkend="language.oop5.overloading.members">プロパティのオーバーロード</link></member>
+  </simplelist>
+ </refsect1>
+
+</refentry>
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:1
+sgml-indent-data:t
+indent-tabs-mode:nil
+sgml-parent-document:nil
+sgml-default-dtd-file:"~/.phpdoc/manual.ced"
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+vim600: syn=xml fen fdm=syntax fdl=2 si
+vim: et tw=78 syn=sgml
+vi: ts=1 sw=1
+-->
