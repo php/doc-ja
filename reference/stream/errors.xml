@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 96c9d88bad9a7d7d44bfb7f26c226df7ee9ddf26 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: 8d7f211071c3b37962c15528835d9971f6b7eef9 Maintainer: takagi Status: ready -->
 <!-- CREDITS: shimooka,hirokawa -->
 
 <chapter xml:id="stream.errors">
@@ -19,6 +19,109 @@
   <constant>E_WARNING</constant> メッセージがエラー時に出力され、
   エラーの原因を報告します。
  </para>
+
+ <section xml:id="stream.errors.handling">
+  <title>エラー処理の設定</title>
+  <simpara>
+   PHP 8.6.0 以降、<link linkend="stream.contexts">ストリームコンテキスト</link>
+   を使うすべての操作で、
+   <link linkend="context.stream">ストリームコンテキストオプション</link>
+   の <parameter>error_mode</parameter>、<parameter>error_store</parameter>、
+   <parameter>error_handler</parameter> を設定して、
+   ストリームのエラーを報告する方法を変更できます。
+   各エラーは <exceptionname>StreamError</exceptionname> オブジェクトで表され、その
+   <link linkend="streamerror.props.code">code</link> プロパティは
+   <enumname>StreamErrorCode</enumname> の case です。
+  </simpara>
+  <simpara>
+   エラーには、ファイルを開けない場合のように<emphasis>操作を打ち切るエラー</emphasis>と、
+   <emphasis>操作を打ち切らないエラー</emphasis>があります。
+   操作を打ち切らないエラーは、報告はされますが、
+   <constant>StreamErrorMode::Exception</constant> モードでも例外はスローされません。
+   1 回の操作で複数のエラーが報告されることもあります。
+  </simpara>
+  <simpara>
+   <parameter>error_mode</parameter> オプションには
+   <enumname>StreamErrorMode</enumname> の case を指定し、
+   エラーの報告方法を選択します:
+  </simpara>
+  <itemizedlist>
+   <listitem>
+    <simpara>
+     デフォルトの <constant>StreamErrorMode::Error</constant> は、
+     <constant>E_WARNING</constant> や <constant>E_NOTICE</constant>
+     などの診断エラーを発生させます。
+    </simpara>
+   </listitem>
+   <listitem>
+    <simpara>
+     <constant>StreamErrorMode::Exception</constant> は、
+     操作を打ち切るエラーが報告された場合、
+     <exceptionname>StreamException</exceptionname> をスローします。
+     操作を打ち切らないエラーでは、例外をスローせず、診断エラーも発生させません。
+    </simpara>
+   </listitem>
+   <listitem>
+    <simpara>
+     <constant>StreamErrorMode::Silent</constant> は、
+     診断エラーを発生させず、例外もスローしません。
+    </simpara>
+   </listitem>
+  </itemizedlist>
+  <simpara>
+   <parameter>error_store</parameter> オプションには
+   <enumname>StreamErrorStore</enumname> の case を指定し、
+   どのエラーを保持するかを選択します。
+   保持されたエラーは <function>stream_last_errors</function> で取得できます。
+   デフォルトの <constant>StreamErrorStore::Auto</constant> では、
+   保持するエラーがエラーモードによって決まります:
+  </simpara>
+  <informaltable>
+   <tgroup cols="2">
+    <thead>
+     <row>
+      <entry>エラーモード</entry>
+      <entry><constant>StreamErrorStore::Auto</constant> で保持されるエラー</entry>
+     </row>
+    </thead>
+    <tbody>
+     <row>
+      <entry><constant>StreamErrorMode::Error</constant></entry>
+      <entry>なし</entry>
+     </row>
+     <row>
+      <entry><constant>StreamErrorMode::Exception</constant></entry>
+      <entry>操作を打ち切らないエラー</entry>
+     </row>
+     <row>
+      <entry><constant>StreamErrorMode::Silent</constant></entry>
+      <entry>すべてのエラー</entry>
+     </row>
+    </tbody>
+   </tgroup>
+  </informaltable>
+  <simpara>
+   <parameter>error_handler</parameter> オプションには
+   <type>callable</type> を指定します。
+   このコールバックは、エラーが報告された操作ごとに呼び出され、
+   その操作で報告されたエラーを表す
+   <exceptionname>StreamError</exceptionname> オブジェクトの配列を受け取ります。
+   ただし、<exceptionname>StreamException</exceptionname>
+   がスローされた場合は呼び出されません。
+  </simpara>
+  <note>
+   <simpara>
+    <function>stream_context_set_default</function> は、これらのオプションを受け付けません。
+    これらのオプションは、<function>stream_context_create</function> で作成したコンテキストに設定し、
+    そのコンテキストを関数に渡すか、ストリームを開く際に指定する必要があります。
+   </simpara>
+  </note>
+  <simpara>
+   各エラーモードとエラーハンドラの例は、
+   <link linkend="context.stream">ストリームコンテキストオプション</link>
+   を参照ください。
+  </simpara>
+ </section>
 </chapter>
 
 <!-- Keep this comment at the end of the file
