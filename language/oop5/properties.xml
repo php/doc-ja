@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 822b0828562580aac0327eb2d84e8e6e06e51a98 Maintainer: takagi Status: ready -->
+<!-- EN-Revision: e4676cd5278b301e0f83938a4d5798ab29198868 Maintainer: takagi Status: ready -->
 <!-- CREDITS: mumumu -->
 
  <sect1 xml:id="language.oop5.properties" xmlns="http://docbook.org/ns/docbook">
@@ -307,34 +307,49 @@ new Test('abc 42');
      </informalexample>
     </para>
    </note>
-   <note>
-    <para>
-     読み取り専用プロパティに対して、
-     明示的にデフォルト値を設定することはできません。
-     なぜなら、読み取り専用プロパティにデフォルト値を設定することは、
-     本質的に定数と同じであり、あまり役に立たないからです。
-     <informalexample>
-      <programlisting role="php" annotations="non-interactive">
+   <para>
+    PHP 8.6.0 以降では、読み取り専用プロパティにデフォルト値を宣言できます。
+    デフォルト値はプロパティの初期化として扱われるため、
+    コンストラクタからも再代入できません。
+    これにより、get フックだけを宣言した
+    <link linkend="language.oop5.interfaces.properties">インターフェイスのプロパティ</link>
+    を、コンストラクタで代入しなくても固定値で実装できます。
+    PHP 8.6.0 より前のバージョンでは、読み取り専用プロパティにデフォルト値を宣言すると、
+    コンパイル時にエラーが発生していました。
+    <informalexample>
+     <programlisting role="php" annotations="non-interactive">
 <![CDATA[
 <?php
 
 class Test {
-    // Fatal error: Readonly property Test::$prop cannot have default value
+    // デフォルト値でプロパティが初期化されます。
     public readonly int $prop = 42;
 }
-?>
+
+$test = new Test();
+var_dump($test->prop); // int(42)
+
+// プロパティはデフォルト値で初期化済みです。
+$test->prop = 43;
+// Error: Cannot modify readonly property Test::$prop
 ]]>
-      </programlisting>
-     </informalexample>
-    </para>
+     </programlisting>
+    </informalexample>
+   </para>
+   <note>
+    <simpara>
+     <link linkend="language.oop5.decon.constructor.promotion">昇格したコンストラクタの引数</link>
+     に指定したデフォルト値は、プロパティではなく引数のデフォルト値です。
+    </simpara>
    </note>
    <note>
-    <para>
+    <simpara>
      読み取り専用プロパティは、
      一度初期化されると <function>unset</function> できません。
      しかし、初期化する前であれば
      プロパティを宣言した同一のスコープから unset することはできます。
-    </para>
+     デフォルト値を宣言した読み取り専用プロパティは、オブジェクトの生成時に初期化されるため、unset できません。
+    </simpara>
    </note>
    <para>
     プロパティの変更は、単純な代入にとどまりません。
