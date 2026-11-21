@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: b890f28c0c6d2856eadcdc34b3faf83a846b3d79 Maintainer: mumumu Status: ready -->
+<!-- EN-Revision: 3e4d4fa6a24d0f04db6fa1f42905653bdd853905 Maintainer: mumumu Status: ready -->
 <refentry xml:id="function.pcntl-async-signals" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
   <refname>pcntl_async_signals</refname>
@@ -65,6 +65,64 @@
     </tbody>
    </tgroup>
   </informaltable>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <example>
+   <title>cURL の転送中にシグナルハンドラを呼び出す</title>
+   <simpara>
+    進捗コールバックがなければ、転送が完了するまでハンドラは呼び出されません。
+    <constant>CURLOPT_XFERINFOFUNCTION</constant> は PHP 8.2.0 以降で利用できます。
+    それより前のバージョンでは <constant>CURLOPT_PROGRESSFUNCTION</constant> を使ってください。
+   </simpara>
+   <programlisting role="php">
+<![CDATA[
+<?php
+pcntl_async_signals(true);
+
+pcntl_signal(SIGALRM, function () {
+    echo "Heartbeat\n";
+    pcntl_alarm(1);
+});
+pcntl_alarm(1);
+
+$ch = curl_init('https://example.com/slow-endpoint');
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+// 転送中に PHP のコードが呼び出されるようにすると、ハンドラが実行されます
+curl_setopt($ch, CURLOPT_NOPROGRESS, false);
+curl_setopt($ch, CURLOPT_XFERINFOFUNCTION, function () {
+    return 0;
+});
+
+$response = curl_exec($ch);
+?>
+]]>
+   </programlisting>
+  </example>
+ </refsect1>
+
+ <refsect1 role="notes">
+  &reftitle.notes;
+  <simpara>
+   非同期のシグナルハンドリングを有効にしている場合、
+   <function>pcntl_signal</function> で設定したハンドラは、シグナルを受け取った時点では呼び出されません。
+   シグナルは記録され、PHP のコードを実行しているエンジンが次に保留中のシグナルを確認したとき、
+   ハンドラが呼び出されます。
+   たとえば、関数呼び出しから戻った後や、ループが次の反復に進むときに確認します。
+  </simpara>
+  <simpara>
+   そのため、<function>curl_exec</function> やデータベースへのクエリなど、
+   時間のかかる内部関数の実行が、ハンドラを呼び出すために中断されることはありません。
+   ハンドラは関数から戻った後に呼び出されます。
+   実行中の関数が <constant>CURLOPT_XFERINFOFUNCTION</constant> のコールバックなどで
+   PHP のコードを呼ぶ場合のみ、関数が戻る前にハンドラが呼び出されます。
+  </simpara>
+  <simpara>
+   ただし、関数の中でブロックしているシステムコールは、シグナルで中断されることがあります。
+   たとえば <function>sleep</function> は指定した時間が経つ前に戻り、その後ハンドラが呼び出されます。
+  </simpara>
  </refsect1>
 
  <refsect1 role="seealso"><!-- {{{ -->
