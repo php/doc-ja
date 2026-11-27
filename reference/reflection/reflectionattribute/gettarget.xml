@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision$ -->
-<!-- EN-Revision: 983b98c1a60e7c7eabb42323a3c4b52cc29e2c75 Maintainer: mumumu Status: ready -->
+<!-- EN-Revision: bcda69de512ca685721e09e8b8dc634a00d8b238 Maintainer: mumumu Status: ready -->
 
 <refentry xml:id="reflectionattribute.gettarget" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
   <refname>ReflectionAttribute::getTarget</refname>
-  <refpurpose>アトリビュートのターゲットをビットマスクとして返す</refpurpose>
+  <refpurpose>アトリビュートが適用されているターゲットを返す</refpurpose>
  </refnamediv>
 
  <refsect1 role="description">
@@ -14,9 +14,10 @@
    <modifier>public</modifier> <type>int</type><methodname>ReflectionAttribute::getTarget</methodname>
    <void/>
   </methodsynopsis>
-  <para>
-   アトリビュートのターゲットをビットマスクとして取得します。
-  </para>
+  <simpara>
+   このアトリビュートが適用されている宣言の種類を返します。
+   これは、アトリビュートクラスで許可されているターゲットの集合とは異なります。
+  </simpara>
  </refsect1>
 
  <refsect1 role="parameters">
@@ -26,9 +27,53 @@
 
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
-  <para>
-   アトリビュートのターゲットを <link linkend="attribute.constants"><constant>Attribute::TARGET_*</constant> 定数</link> のビットマスクとして返します。
-  </para>
+  <simpara>
+   アトリビュートが適用されている宣言の種類を表す
+   <link linkend="attribute.constants"><constant>Attribute::TARGET_*</constant> 定数</link>
+   を返します。
+   一方、アトリビュートクラスで許可されているターゲットは、
+   そのクラスに適用されている <classname>Attribute</classname> のインスタンスの
+   <property>flags</property> プロパティから取得できます。
+  </simpara>
+ </refsect1>
+
+ <refsect1 role="examples">
+  &reftitle.examples;
+  <example>
+   <title>アトリビュートの実際のターゲットと許可されているターゲットを区別する</title>
+   <programlisting role="php">
+<![CDATA[
+<?php
+#[Attribute(Attribute::TARGET_CLASS | Attribute::TARGET_PROPERTY)]
+class Marker {}
+
+#[Marker]
+class Example
+{
+    #[Marker]
+    public $value;
+}
+
+$class = new ReflectionClass(Example::class);
+$property = new ReflectionProperty(Example::class, 'value');
+
+var_dump($class->getAttributes(Marker::class)[0]->getTarget());
+var_dump($property->getAttributes(Marker::class)[0]->getTarget());
+
+$definition = new ReflectionClass(Marker::class);
+var_dump($definition->getAttributes(Attribute::class)[0]->newInstance()->flags);
+?>
+]]>
+   </programlisting>
+   &example.outputs;
+   <screen>
+<![CDATA[
+int(1)
+int(8)
+int(9)
+]]>
+   </screen>
+  </example>
  </refsect1>
 
 </refentry>
