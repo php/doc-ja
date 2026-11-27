@@ -58,3 +58,24 @@
     - 「上書き」はファイルや設定値、配列の値を書き換える文脈 (overwrite) でのみ使う
 - context
   * 「コンテキスト」で統一（「コンテクスト」とは書かない）
+- deprecated
+  * 「非推奨」で統一
+    - 原文が not recommended / discouraged のときは「推奨されません」
+- verify / verification（証明書・署名）
+  * 「検証」で統一
+    - 「認証」は authentication の訳
+- key（暗号鍵）
+  * 「鍵」で統一（秘密鍵、公開鍵、鍵ペア、鍵長）
+    - 配列のキーは「キー」
+- cookie
+  * 「クッキー」で統一
+    - ヘッダ名（`Cookie`、`Set-Cookie`）や識別子は英語のまま
+- clone
+  * 「クローン」で統一（「コピー」とは書かない）
+- code point / code unit / replacement character
+  * 「コードポイント」「コードユニット」「置換文字」で統一
+    - mbstring の substitute character は「代替文字」
+- one-way（ハッシュ関数など）
+  * 「一方向」で統一
+- SNI (Server Name Indication)
+  * 訳さない
